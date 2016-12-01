@@ -9,7 +9,7 @@ set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
 # Create a model namme for this build.
-MODEL="${BULD_TAG}"
+MODEL="${BUILD_TAG}"
 # Create a model just for this run of the tests.
 in-jujubox "sudo chown -R ubuntu:ubuntu /home/ubuntu/.local/share/juju && juju add-model $MODEL"
 # Catch all EXITs from this script and make sure to destroy the model.
