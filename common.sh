@@ -12,15 +12,15 @@ function in-jujubox {
   # Format the command to run inside the container.
   docker run \
     --rm \
-    -v $JUJU_DATA:${WORKSPACE}/juju \
-    -v $WORKSPACE:/home/ubuntu/workspace \
+    -v ${JUJU_DATA}:${WORKSPACE}/juju \
+    -v ${WORKSPACE}:/home/ubuntu/workspace \
     jujusolutions/jujubox:latest \
-    sh -c "$command"
+    sh -c "${command}"
 }
 
 # A function to make juju commands run inside a container.
 function juju {
   args=$@
   # Call the function that runs the commands in a jujubox container.
-  in-jujubox juju $args
+  in-jujubox juju ${args}
 }
