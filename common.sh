@@ -12,7 +12,7 @@ function in-jujubox {
   # Format the command to run inside the container.
   docker run \
     --rm \
-    -v ${JUJU_DATA}:${WORKSPACE}/juju \
+    -v ${JUJU_DATA}:/home/ubuntu/.local/share/juju \
     -v ${WORKSPACE}:/home/ubuntu/workspace \
     jujusolutions/jujubox:latest \
     sh -c "${command}"
