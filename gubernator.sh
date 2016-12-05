@@ -14,18 +14,11 @@ if [ ! -e ./logging.sh ]; then
 fi
 source logging.sh
 
-# The artifacts directory is where the results are stored.
-ARTIFACTS=${ARTIFACTS:-"${PWD}/artifacts"}
+# This script assumes there is a gce.json file in $GCE_ACCOUNT_CREDENTIAL.
+# Keep this service account credential (.p12) file in a Jenkins Secret
+source define-gcloud.sh
 
-# Use a docker container for the gcloud commands.
-function gcloud {
-  docker run --rm --volumes-from gcloud-config google/cloud-sdk gcloud $@
-}
-# Use a docker dontainer for the gsutil commands.
-function gsutil {
-  docker run --rm --volumes-from gcloud-config \
-    -v $ARTIFACTS:$ARTIFACTS google/cloud-sdk gsutil $@
-}
+gcloud auth activate-service-account --key-file /root/gce.json --project ubuntu-benchmarking
 
 # Ensure the user has an ACTIVE credentialed account.
 if ! gcloud auth list | grep -q "ACTIVE"; then
@@ -34,8 +27,11 @@ if ! gcloud auth list | grep -q "ACTIVE"; then
 fi
 
 readonly gcs_acl="public-read"
+
 bucket_name="canonical-kubernetes-tests"
+
 echo ""
+
 V=2 kube::log::status "Using bucket ${bucket_name}"
 
 # Check if the bucket exists.
@@ -48,8 +44,10 @@ else
   V=2 kube::log::status "Bucket already exists"
 fi
 
+# The name must start with kubernetes to be picked up by filter.
+GCS_JOB_NAME=kubernetes-${CLOUD}-e2e-node
 # The google storage location for e2e-node test results.
-GCS_JOBS_PATH=${GCS_JOBS_PATH:-"gs://${bucket_name}/logs/undefined/e2e-node"}
+GCS_JOBS_PATH=${GCS_JOBS_PATH:-"gs://${bucket_name}/logs/${GCS_JOB_NAME}"}
 # The local path to the build log file.
 BUILD_LOG_PATH="${ARTIFACTS}/build-log.txt"
 
