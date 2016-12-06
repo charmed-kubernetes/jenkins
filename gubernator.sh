@@ -5,20 +5,24 @@
 set -o errexit  # Exit when an individual command fails.
 set -o nounset  # Exit when undeclaried variables are used.
 set -o pipefail  # The exit status of the last command is returned.
-set -o xtrace  # Print the commands that are executed.
+#set -o xtrace  # Print the commands that are executed.
 
-# Does the logging file exist?
-if [ ! -e ./logging.sh ]; then
-  # Download the logging script dependency.
-  wget https://raw.githubusercontent.com/kubernetes/kubernetes/master/cluster/lib/logging.sh
-fi
-source logging.sh
+# The location of the artifacts from the e2e run that are to be uploaded.
+export ARTIFACTS=${WORKSPACE}/artifacts
+
+LOG_LEVEL=${LOG_LEVEL:-1}
+
+# Put a timestamp on the message if log level is greater than zero.
+function log () {
+  if [[ ${LOG_LEVEL} -gt 0 ]]; then
+    current_time=$(date +"[%m%d %H:%M:%S]")
+    echo "${current_time} ${1}"
+  fi
+}
 
 # This script assumes there is a gce.json file in $GCE_ACCOUNT_CREDENTIAL.
 # Keep this service account credential (.p12) file in a Jenkins Secret
 source define-gcloud.sh
-
-gcloud auth activate-service-account --key-file /root/gce.json --project ubuntu-benchmarking
 
 # Ensure the user has an ACTIVE credentialed account.
 if ! gcloud auth list | grep -q "ACTIVE"; then
@@ -32,16 +36,16 @@ bucket_name="canonical-kubernetes-tests"
 
 echo ""
 
-V=2 kube::log::status "Using bucket ${bucket_name}"
+log "Using bucket ${bucket_name}"
 
 # Check if the bucket exists.
 if ! gsutil ls gs:// | grep -q "gs://${bucket_name}/"; then
-  V=2 kube::log::status "Creating public bucket ${bucket_name}"
+  log "Creating public bucket ${bucket_name}"
   gsutil mb gs://${bucket_name}/
   # Make all files in the bucket publicly readable
   gsutil acl ch -u AllUsers:R gs://${bucket_name}
 else
-  V=2 kube::log::status "Bucket already exists"
+  log "Bucket already exists"
 fi
 
 # The name must start with kubernetes to be picked up by filter.
@@ -71,9 +75,9 @@ GCS_LOGS_PATH="${GCS_JOBS_PATH}/${BUILD_STAMP}"
 
 # Check if folder for same logs already exists
 if gsutil ls "${GCS_JOBS_PATH}" | grep -q "${BUILD_STAMP}"; then
-  V=2 kube::log::status "Log files already uploaded"
+  log "Log files already uploaded"
   echo "Gubernator linked below:"
-  echo "k8s-gubernator.appspot.com/build/${GCS_LOGS_PATH}?local=on"
+  echo "https://k8s-gubernator.appspot.com/build/${bucket_name}/logs/${GCS_JOB_NAME}/${BUILD_STAMP}"
   exit
 fi
 
@@ -86,7 +90,7 @@ done
 # Upload log files
 for upload_attempt in $(seq 3); do
   if [[ -d "${ARTIFACTS}" && -n $(ls -A "${ARTIFACTS}") ]]; then
-    V=2 kube::log::status "Uploading artifacts"
+    log "Uploading artifacts"
     gsutil -m cp -a "${gcs_acl}" -r -c -Z \
       "${ARTIFACTS}" "${GCS_LOGS_PATH}/artifacts" || continue
   fi
@@ -94,7 +98,7 @@ for upload_attempt in $(seq 3); do
 done
 for upload_attempt in $(seq 3); do
   if [[ -e "${BUILD_LOG_PATH}" ]]; then
-    V=2 kube::log::status "Uploading build log"
+    log "Uploading build log"
     gsutil -q cp -Z -a "${gcs_acl}" "${BUILD_LOG_PATH}" "${GCS_LOGS_PATH}" || continue
   fi
   break
@@ -105,9 +109,9 @@ version_line=$(grep JUJU_E2E_VERSION ${BUILD_LOG_PATH})
 version=$(echo $start_line | cut -d = -f 2)
 
 if [[ -n "${version}" ]]; then
-  V=2 kube::log::status "Found Kubernetes version: ${version}"
+  log "Found Kubernetes version: ${version}"
 else
-  V=2 kube::log::status "Could not find Kubernetes version"
+  log "Could not find Kubernetes version"
 fi
 
 # Find build result from build-log.txt
@@ -118,7 +122,7 @@ else
     build_result="FAILURE"
 fi
 
-V=4 kube::log::status "Build result is ${build_result}"
+log "Build result is ${build_result}"
 
 if [[ -e "${ARTIFACTS}/started.json" ]]; then
   rm "${ARTIFACTS}/started.json"
@@ -128,7 +132,7 @@ if [[ -e "${ARTIFACTS}/finished.json" ]]; then
   rm "${ARTIFACTS}/finished.json"
 fi
 
-V=2 kube::log::status "Constructing started.json and finished.json files"
+log "Constructing started.json and finished.json files"
 echo "{" >> "${ARTIFACTS}/started.json"
 echo "    \"version\": \"${version}\"," >> "${ARTIFACTS}/started.json"
 echo "    \"timestamp\": ${start_time_epoch}," >> "${ARTIFACTS}/started.json"
@@ -141,12 +145,12 @@ echo "    \"timestamp\": ${end_time_epoch}" >> "${ARTIFACTS}/finished.json"
 echo "}" >> "${ARTIFACTS}/finished.json"
 
 # Upload started.json
-V=2 kube::log::status "Uploading started.json and finished.json"
-V=2 kube::log::status "Run started at ${start_time}"
+log "Uploading started.json and finished.json"
+log "Run started at ${start_time}"
 json_file="${GCS_LOGS_PATH}/started.json"
 
 for upload_attempt in $(seq 3); do
-  V=2 kube::log::status "Uploading started.json to ${json_file} (attempt ${upload_attempt})"
+  log "Uploading started.json to ${json_file} (attempt ${upload_attempt})"
   gsutil -q -h "Content-Type:application/json" cp -a "${gcs_acl}" "${ARTIFACTS}/started.json" \
     "${json_file}" || continue
   break
@@ -154,11 +158,11 @@ done
 
 # Upload finished.json
 for upload_attempt in $(seq 3); do
-  V=2 kube::log::status "Uploading finished.json to ${GCS_LOGS_PATH} (attempt ${upload_attempt})"
+  log "Uploading finished.json to ${GCS_LOGS_PATH} (attempt ${upload_attempt})"
   gsutil -q -h "Content-Type:application/json" cp -a "${gcs_acl}" "${ARTIFACTS}/finished.json" \
     "${GCS_LOGS_PATH}/finished.json" || continue
   break
 done
 
 echo "Gubernator linked below:"
-echo "k8s-gubernator.appspot.com/build/${bucket_name}/logs/e2e-node/${BUILD_STAMP}"
+echo "https://k8s-gubernator.appspot.com/build/${bucket_name}/logs/${GCS_JOB_NAME}/${BUILD_STAMP}"

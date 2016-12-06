@@ -6,6 +6,22 @@ set -o nounset  # Exit when undeclaried variables are used.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
+# The maximum amount of seconds to wait for a complete deployment.
+MAXIMUM_WAIT_SECONDS=3600
+
+# The check_time function requires two parameters start_time and max_seconds.
+function check_time () {
+  local start_time=$1
+  local maximum_seconds=$2
+  local current_time=`date +"%s"`
+  local difference=$(expr ${current_time} - ${start_time})
+  # When the difference is greater than maximum seconds, exit this script.
+  if [ ${difference} -gt ${maximum_seconds} ]; then
+    echo "The process is taking more than ${maximum_seconds} seconds!"
+    # End this script because too much time has passed.
+    exit 3
+  fi
+}
 
 # A full path to the location of the JUJU_DATA.
 JUJU_DATA=${JUJU_DATA:-"${HOME}/.local/share/juju"}
@@ -31,23 +47,32 @@ juju add-unit kubernetes-worker
 juju relate kubernetes-e2e kubernetes-master
 juju relate kubernetes-e2e easyrsa
 
-sleep 10
-# Wait for the deployment to be ready TODO make this a function with max wait.
+START_TIME=`date +"%s"`
 set +x
-until juju status -m ${MODEL} | grep "Ready to test."; do
+# Wait for the kubernetes-e2e charm emit the "Ready to test." status.
+until juju status -m ${MODEL} kubernetes-e2e | grep "Ready to test."; do
+  check_time ${START_TIME} ${MAXIMUM_WAIT_SECONDS}
   sleep 10
 done
-until [ "$(juju status -m ${MODEL} | grep "Kubernetes worker running." | wc -l)" -eq "2" ]; do
+# Wait for the kubernetes-worker charms to emit the "worker running" status.
+until [ "$(juju status -m ${MODEL} kubernetes-worker | grep "Kubernetes worker running." | wc -l)" -eq "2" ]; do
+  check_time ${START_TIME} ${MAXIMUM_WAIT_SECONDS}
   sleep 10
 done
 set -x
 
 # Run the e2e test action.
 ACTION_ID=$(juju run-action kubernetes-e2e/0 test | cut -d " " -f 5)
+
+START_TIME=`date +"%s"`
+set +x
 # Wait for the action to be complete.
 while juju show-action-status ${ACTION_ID} | grep pending || juju show-action-status ${ACTION_ID} | grep running; do
+  check_time ${START_TIME} ${MAXIMUM_WAIT_SECONDS}
   sleep 5
 done
+set -x
+# Print out the action result.
 juju show-action-status ${ACTION_ID}
 
 # Download results and move them to the bind mount
