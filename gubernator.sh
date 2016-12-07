@@ -10,6 +10,25 @@ set -o xtrace  # Print the commands that are executed.
 # The location of the artifacts from the e2e run that are to be uploaded.
 export ARTIFACTS=${WORKSPACE}/artifacts
 
+# Use a docker container for the gcloud commands.
+function gcloud {
+  docker run \
+    --rm \
+    --volumes-from gcloud-config \
+    google/cloud-sdk \
+    gcloud "$@"
+}
+
+# Use a docker container for the gsutil commands.
+function gsutil {
+  docker run \
+    --rm \
+    --volumes-from gcloud-config \
+    -v ${ARTIFACTS}:${ARTIFACTS} \
+    google/cloud-sdk \
+    gsutil $@
+}
+
 LOG_LEVEL=${LOG_LEVEL:-1}
 
 # Put a timestamp on the message if log level is greater than zero.
@@ -20,9 +39,21 @@ function log () {
   fi
 }
 
-# This script assumes there is a gce.json file in $GCE_ACCOUNT_CREDENTIAL.
-# Keep this service account credential (.p12) file in a Jenkins Secret
-source define-gcloud.sh
+# Remove any old gcloud-config containers.
+docker rm gcloud-config || true
+# Are there any gcloud-config containers left?
+CONFIG_CONTAINER=$(docker ps -a -q -f name=gcloud-config)
+
+if [ -z ${CONFIG_CONTAINER} ]; then
+  # Authorize the service account and save the container as "glcoud-config".
+  docker run \
+    -v ${GCE_ACCOUNT_CREDENTIAL}:/root/gce.json \
+    --name gcloud-config \
+    google/cloud-sdk \
+    gcloud auth activate-service-account \
+    --key-file /root/gce.json \
+    --project ubuntu-benchmarking
+fi
 
 # Ensure the user has an ACTIVE credentialed account.
 if ! gcloud auth list | grep -q "ACTIVE"; then
@@ -32,18 +63,15 @@ fi
 
 readonly gcs_acl="public-read"
 
-bucket_name="canonical-kubernetes-tests"
-
-echo ""
-
-log "Using bucket ${bucket_name}"
+BUCKET_NAME="canonical-kubernetes-tests"
+log "Using bucket ${BUCKET_NAME}"
 
 # Check if the bucket exists.
-if ! gsutil ls gs:// | grep -q "gs://${bucket_name}/"; then
-  log "Creating public bucket ${bucket_name}"
-  gsutil mb gs://${bucket_name}/
+if ! gsutil ls gs:// | grep -q "gs://${BUCKET_NAME}/"; then
+  log "Creating public bucket ${BUCKET_NAME}"
+  gsutil mb gs://${BUCKET_NAME}/
   # Make all files in the bucket publicly readable
-  gsutil acl ch -u AllUsers:R gs://${bucket_name}
+  gsutil acl ch -u AllUsers:R gs://${BUCKET_NAME}
 else
   log "Bucket already exists"
 fi
@@ -51,7 +79,7 @@ fi
 # The name must start with kubernetes to be picked up by filter.
 GCS_JOB_NAME=kubernetes-${CLOUD}-e2e-node
 # The google storage location for e2e-node test results.
-GCS_JOBS_PATH=${GCS_JOBS_PATH:-"gs://${bucket_name}/logs/${GCS_JOB_NAME}"}
+GCS_JOBS_PATH=${GCS_JOBS_PATH:-"gs://${BUCKET_NAME}/logs/${GCS_JOB_NAME}"}
 # The local path to the build log file.
 BUILD_LOG_PATH="${ARTIFACTS}/build-log.txt"
 
@@ -77,7 +105,7 @@ GCS_LOGS_PATH="${GCS_JOBS_PATH}/${BUILD_STAMP}"
 if gsutil ls "${GCS_JOBS_PATH}" | grep -q "${BUILD_STAMP}"; then
   log "Log files already uploaded"
   echo "Gubernator linked below:"
-  echo "https://k8s-gubernator.appspot.com/build/${bucket_name}/logs/${GCS_JOB_NAME}/${BUILD_STAMP}"
+  echo "https://k8s-gubernator.appspot.com/build/${BUCKET_NAME}/logs/${GCS_JOB_NAME}/${BUILD_STAMP}"
   exit
 fi
 
@@ -165,4 +193,4 @@ for upload_attempt in $(seq 3); do
 done
 
 echo "Gubernator linked below:"
-echo "https://k8s-gubernator.appspot.com/build/${bucket_name}/logs/${GCS_JOB_NAME}/${BUILD_STAMP}"
+echo "https://k8s-gubernator.appspot.com/build/${BUCKET_NAME}/logs/${GCS_JOB_NAME}/${BUILD_STAMP}"
