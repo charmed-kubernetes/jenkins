@@ -45,7 +45,7 @@ docker rm gcloud-config || true
 CONFIG_CONTAINER=$(docker ps -a -q -f name=gcloud-config)
 
 if [ -z ${CONFIG_CONTAINER} ]; then
-  # Authorize the service accountn and save the container as "glcoud-config".
+  # Authorize the service account and save the container as "glcoud-config".
   docker run \
     -v ${GCE_ACCOUNT_CREDENTIAL}:/root/gce.json \
     --name gcloud-config \

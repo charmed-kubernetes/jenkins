@@ -27,6 +27,7 @@ function check_time () {
 function in-jujubox {
   { set +x; } 2> /dev/null
   local command=$@
+  { set -x; } 2> /dev/null
   # Format the command to run inside the container.
   docker run \
     --rm \
@@ -35,7 +36,6 @@ function in-jujubox {
     --entrypoint /bin/bash \
     jujusolutions/jujubox:latest \
     -c "${command}"
-  { set -x; } 2> /dev/null
 }
 
 # A function to make juju commands run inside a container.
