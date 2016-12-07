@@ -5,7 +5,7 @@
 set -o errexit  # Exit when an individual command fails.
 set -o nounset  # Exit when undeclaried variables are used.
 set -o pipefail  # The exit status of the last command is returned.
-#set -o xtrace  # Print the commands that are executed.
+set -o xtrace  # Print the commands that are executed.
 
 # The location of the artifacts from the e2e run that are to be uploaded.
 export ARTIFACTS=${WORKSPACE}/artifacts

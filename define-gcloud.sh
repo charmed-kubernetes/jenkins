@@ -1,7 +1,7 @@
 # Define functions so scripts can use glcoud commands as if they were installed.
 
 # Remove any old gcloud-config containers.
-docker rm gcloud-config
+docker rm gcloud-config || true
 # Are there any gcloud-config containers left?
 CONFIG_CONTAINER=$(docker ps -a -q -f name=gcloud-config)
 
