@@ -23,11 +23,29 @@ function check_time () {
   fi
 }
 
-# A full path to the location of the JUJU_DATA.
-JUJU_DATA=${JUJU_DATA:-"${HOME}/.local/share/juju"}
+# A function to run a command in the jujubox container.
+function in-jujubox {
+  { set +x; } 2> /dev/null
+  local command=$@
+  # Format the command to run inside the container.
+  docker run \
+    --rm \
+    -v ${JUJU_DATA}:/home/ubuntu/.local/share/juju \
+    -v ${WORKSPACE}:/home/ubuntu/workspace \
+    --entrypoint /bin/bash \
+    jujusolutions/jujubox:latest \
+    -c "${command}"
+  { set -x; } 2> /dev/null
+}
 
-# Juju is not installed define the juju functions that use containers.
-source define-juju.sh
+# A function to make juju commands run inside a container.
+function juju {
+  { set +x; } 2> /dev/null
+  local args=$@
+  # Call the function that runs the commands in a jujubox container.
+  in-jujubox juju ${args}
+  { set -x; } 2> /dev/null
+}
 
 # Create a model namme for this build.
 MODEL="${BUILD_TAG}"
@@ -48,7 +66,7 @@ juju relate kubernetes-e2e kubernetes-master
 juju relate kubernetes-e2e easyrsa
 
 START_TIME=`date +"%s"`
-set +x
+{ set +x; } 2>/dev/null
 # Wait for the kubernetes-e2e charm emit the "Ready to test." status.
 until juju status -m ${MODEL} kubernetes-e2e | grep "Ready to test."; do
   check_time ${START_TIME} ${MAXIMUM_WAIT_SECONDS}
@@ -59,19 +77,21 @@ until [ "$(juju status -m ${MODEL} kubernetes-worker | grep "Kubernetes worker r
   check_time ${START_TIME} ${MAXIMUM_WAIT_SECONDS}
   sleep 10
 done
-set -x
+{ set -x; } 2>/dev/null
+# Print out the full status one time.
+juju status -m ${MODEL}
 
 # Run the e2e test action.
 ACTION_ID=$(juju run-action kubernetes-e2e/0 test | cut -d " " -f 5)
 
 START_TIME=`date +"%s"`
-set +x
+{ set +x; } 2>/dev/null
 # Wait for the action to be complete.
 while juju show-action-status ${ACTION_ID} | grep pending || juju show-action-status ${ACTION_ID} | grep running; do
   check_time ${START_TIME} ${MAXIMUM_WAIT_SECONDS}
   sleep 5
 done
-set -x
+{ set -x; } 2>/dev/null
 # Print out the action result.
 juju show-action-status ${ACTION_ID}
 
@@ -87,6 +107,3 @@ tar xvfz ${WORKSPACE}/e2e-junit.tar.gz -C ${ARTIFACTS}
 tar xvfz ${WORKSPACE}/e2e.log.tar.gz -C ${ARTIFACTS}
 # Rename the ACTION_ID log file to build-log.txt
 mv ${ARTIFACTS}/${ACTION_ID}.log ${ARTIFACTS}/build-log.txt
-
-# Call the gubernator script to copy the results to the right format.
-./gubernator.sh
