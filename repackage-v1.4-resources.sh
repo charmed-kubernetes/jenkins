@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Package the upstream Kubernetes release into Juju Charms resources.
-# The first ($1) and only argument should be the url or a path to the release.
+# The first ($1) and only argument should be the url or path to the archive.
 
 set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
 #set -o xtrace  # Print the commands that are executed.
 
 echo "${0} started at `date`."
+
+source ./util.sh
 
 SCRIPT_DIR=${PWD}
 
@@ -22,57 +24,58 @@ if [[ ${1} == "http"* ]]; then
 else
   RELEASE_TAR=${1}
 fi
-# Print out the sha256sum and size.
-SHA256SUM=`sha256sum ${RELEASE_TAR}`
-echo ${SHA256SUM} ${RELEASE_TAR}
-ls -hl ${RELEASE_TAR} | cut -d ' ' -f 5
+# Print out the size and sha256 hash sum of the release archive.
+echo "$(ls -hl ${RELEASE_TAR} | cut -d ' ' -f 5) $(basename ${RELEASE_TAR})"
+echo "$(sha256sum_file ${RELEASE_TAR}) $(basename ${RELEASE_TAR})"
 
 echo "Expanding ${RELEASE_TAR} to ${TEMPORARY_DIRECTORY}"
 tar -xvzf ${RELEASE_TAR} -C ${TEMPORARY_DIRECTORY}
+KUBE_ROOT=${TEMPORARY_DIRECTORY}/kubernetes
 
-if [[ ! -e "${TEMPORARY_DIRECTORY}/kubernetes/version" ]]; then
+if [[ ! -e "${KUBE_ROOT}/version" ]]; then
   echo "Can not determine Kubernetes release." >&2
   exit 2
 fi
-VERSION=$(cat ${TEMPORARY_DIRECTORY}/kubernetes/version)
-echo "Kubernetes release: ${VERSION}"
+VERSION=$(cat ${KUBE_ROOT}/version)
+echo "Found version: ${VERSION}"
+
+ARCH=$(get_arch)
+OS=$(get_os)
 
 ARCHITECTURES="amd64 arm64 ppc64le s390x"
 # Iterate over the supported architectures.
 for ARCH in ${ARCHITECTURES}; do
-  ARCH_DIR=${TEMPORARY_DIRECTORY}/${ARCH}
-  mkdir -p ${ARCH_DIR}
-  TARGET_SERVER_FILE=kubernetes/server/kubernetes-server-linux-${ARCH}.tar.gz
+  SERVER_FILE=kubernetes/server/kubernetes-server-${OS}-${ARCH}.tar.gz
   # Check for this architecture in the archive.
-  if ! tar -tzf ${RELEASE_TAR} ${TARGET_SERVER_FILE} 2>/dev/null; then
+  if ! tar -tzf ${RELEASE_TAR} ${SERVER_FILE} 2>/dev/null; then
     echo "Could not find ${ARCH} in ${RELEASE_TAR}"
     continue
   fi
+  ARCH_DIR=${TEMPORARY_DIRECTORY}/${ARCH}
+  mkdir -p ${ARCH_DIR}
   # Expand the target server file to the architecture directory.
-  tar -xvzf ${RELEASE_TAR} -C ${ARCH_DIR} ${TARGET_SERVER_FILE}
+  tar -xvzf ${RELEASE_TAR} -C ${ARCH_DIR} ${SERVER_FILE}
 
-  TEMPORARY_SERVER_DIR=${ARCH_DIR}/server
-  mkdir -p ${TEMPORARY_SERVER_DIR}
-  echo "Expanding ${TARGET_SERVER_FILE} to ${TEMPORARY_SERVER_DIR}"
-  tar -xvzf ${ARCH_DIR}/${TARGET_SERVER_FILE} -C ${TEMPORARY_SERVER_DIR}
-
-  cd ${ARCH_DIR}/server/kubernetes/server/bin
-  echo "Creating the ${SCRIPT_DIR}/kubernetes-master-${VERSION}-${ARCH}.tar.gz file."
-  MASTER_BINS="kube-apiserver kube-controller-manager kubectl kube-dns kube-scheduler"
-  tar -cvzf ${SCRIPT_DIR}/kubernetes-master-${VERSION}-${ARCH}.tar.gz ${MASTER_BINS}
-  sha256sum ${SCRIPT_DIR}/kubernetes-master-${VERSION}-${ARCH}.tar.gz
-  ls -hl ${SCRIPT_DIR}/kubernetes-master-${VERSION}-${ARCH}.tar.gz | cut -d ' ' -f 5
-
-  echo "Creating the ${SCRIPT_DIR}/kubernetes-worker-${VERSION}-${ARCH}.tar.gz file."
-  WORKER_BINS="kubectl kubelet kube-proxy"
-  tar -cvzf ${SCRIPT_DIR}/kubernetes-worker-${VERSION}-${ARCH}.tar.gz ${WORKER_BINS}
-  sha256sum ${SCRIPT_DIR}/kubernetes-worker-${VERSION}-${ARCH}.tar.gz
-  ls -hl ${SCRIPT_DIR}/kubernetes-worker-${VERSION}-${ARCH}.tar.gz | cut -d ' ' -f 5
-
+  SERVER_DIRECTORY=${ARCH_DIR}/server
+  mkdir -p ${SERVER_DIRECTORY}
+  echo "Expanding ${SERVER_FILE} to ${SERVER_DIRECTORY}"
+  tar -xvzf ${ARCH_DIR}/${SERVER_FILE} -C ${SERVER_DIRECTORY}
+  # The bin directory is where the master and server binaries are kept.
+  SERVER_BIN_DIRECTORY=${ARCH_DIR}/server/kubernetes/server/bin
+  
+  MASTER_ARCHIVE=${SCRIPT_DIR}/kubernetes-master-${VERSION}-${ARCH}.tar.gz
+  echo "Creating the ${MASTER_ARCHIVE} file."
+  MASTER_FILES="kube-apiserver kube-controller-manager kubectl kube-dns kube-scheduler"
+  create_archive ${SERVER_BIN_DIRECTORY} ${MASTER_ARCHIVE} "${MASTER_FILES}"
+  
+  WORKER_ARCHIVE=${SCRIPT_DIR}/kubernetes-worker-${VERSION}-${ARCH}.tar.gz
+  echo "Creating the ${WORKER_ARCHIVE} file."
+  WORKER_FILES="kubectl kubelet kube-proxy"
+  create_archive ${SERVER_BIN_DIRECTORY} ${WORKER_ARCHIVE} "${WORKER_FILES}"
 done
 # Change back to the original directory.
 cd ${SCRIPT_DIR}
-# Remove the temporary directory and all files in there.
+echo "Removing ${TEMPORARY_DIRECTORY}"
 rm -rf ${TEMPORARY_DIRECTORY}
-
+echo 
 echo "${0} completed successfully at `date`."
