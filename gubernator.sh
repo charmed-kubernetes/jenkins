@@ -7,6 +7,8 @@ set -o nounset  # Exit when undeclaried variables are used.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
+echo "${0} started at `date`."
+
 # The location of the artifacts from the e2e run that are to be uploaded.
 export ARTIFACTS=${WORKSPACE}/artifacts
 
@@ -194,3 +196,5 @@ done
 
 echo "Gubernator linked below:"
 echo "https://k8s-gubernator.appspot.com/build/${BUCKET_NAME}/logs/${GCS_JOB_NAME}/${BUILD_STAMP}"
+
+echo "${0} completed successfully at `date`."
