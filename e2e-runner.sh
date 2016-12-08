@@ -6,6 +6,8 @@ set -o nounset  # Exit when undeclaried variables are used.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
+echo "The ${0} started at `date`."
+
 # The maximum amount of seconds to wait for a complete deployment.
 MAXIMUM_WAIT_SECONDS=3600
 
@@ -59,9 +61,10 @@ juju model-config -m ${MODEL} test-mode=1
 
 # Deploy the kubernetes bundle.
 juju deploy cs:~containers/kubernetes-core
-# Deploy the e2e charm.
-juju deploy cs:~containers/kubernetes-e2e
+# Add one more kubernetes node to the cluster.
 juju add-unit kubernetes-worker
+# Deploy the e2e charm and make the relations.
+juju deploy cs:~containers/kubernetes-e2e
 juju relate kubernetes-e2e kubernetes-master
 juju relate kubernetes-e2e easyrsa
 
@@ -107,3 +110,5 @@ tar xvfz ${WORKSPACE}/e2e-junit.tar.gz -C ${ARTIFACTS}
 tar xvfz ${WORKSPACE}/e2e.log.tar.gz -C ${ARTIFACTS}
 # Rename the ACTION_ID log file to build-log.txt
 mv ${ARTIFACTS}/${ACTION_ID}.log ${ARTIFACTS}/build-log.txt
+
+echo "The ${0} completed successfully at `date`."
