@@ -6,7 +6,7 @@ set -o nounset  # Exit when undeclaried variables are used.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
-echo "The ${0} started at `date`."
+echo "${0} started at `date`."
 
 # The maximum amount of seconds to wait for a complete deployment.
 MAXIMUM_WAIT_SECONDS=3600
@@ -111,4 +111,4 @@ tar xvfz ${WORKSPACE}/e2e.log.tar.gz -C ${ARTIFACTS}
 # Rename the ACTION_ID log file to build-log.txt
 mv ${ARTIFACTS}/${ACTION_ID}.log ${ARTIFACTS}/build-log.txt
 
-echo "The ${0} completed successfully at `date`."
+echo "${0} completed successfully at `date`."

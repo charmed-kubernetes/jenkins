@@ -6,7 +6,7 @@ set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
 #set -o xtrace  # Print the commands that are executed.
 
-echo "The ${0} started at `date`."
+echo "${0} started at `date`."
 
 SCRIPT_DIR=${PWD}
 
@@ -75,4 +75,4 @@ cd ${SCRIPT_DIR}
 # Remove the temporary directory and all files in there.
 rm -rf ${TEMPORARY_DIRECTORY}
 
-echo "The ${0} script completed successfully at `date`."
+echo "${0} completed successfully at `date`."
