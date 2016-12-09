@@ -70,7 +70,7 @@ TARGETS='cmd/kube-dns \
   vendor/github.com/onsi/ginkgo/ginkgo \
   test/e2e_node/e2e_node.test'
 # Only build the targets we are interested in.
-${BUILD_DIR}/run.sh make all WHAT="${TARGETS}"
+${BUILD_DIR}/run.sh make cross WHAT="${TARGETS}"
 
 echo "Build finished `date`"
 
