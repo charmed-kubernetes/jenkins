@@ -3,7 +3,7 @@
 
 set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
-set -o xtrace  # Print the commands that are executed.
+#set -o xtrace  # Print the commands that are executed.
 
 echo "${0} started at `date`."
 
@@ -11,9 +11,9 @@ SCRIPT_DIR=${PWD}
 
 source ./util.sh
 
-# The version is the first argument.
+# The version is the first optional argument.
 VERSION=${1:-"v1.5.0"}
-# The URL is the second argument.
+# The URL is the second optional argument.
 KUBERNETES_GIT_URL=${2:-"https://github.com/kubernetes/kubernetes.git"}
 
 KUBE_ROOT=${SCRIPT_DIR}/kubernetes
