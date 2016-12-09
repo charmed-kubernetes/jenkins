@@ -77,5 +77,5 @@ done
 cd ${SCRIPT_DIR}
 echo "Removing ${TEMPORARY_DIRECTORY}"
 rm -rf ${TEMPORARY_DIRECTORY}
-echo 
+echo ""
 echo "${0} completed successfully at `date`."
