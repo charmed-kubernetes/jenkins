@@ -18,9 +18,10 @@ VERSION=${1:-"v1.5.0"}
 # The URL is the second argument.
 KUBERNETES_GIT_URL=${2:-"https://github.com/kubernetes/kubernetes.git"}
 
-KUBE_ROOT=./
+KUBE_ROOT=kubernetes
 
 git clone ${KUBERNETES_GIT_URL} ${KUBE_ROOT}
+cd ${KUBE_ROOT}
 git checkout -f ${VERSION}
 
 echo "Starting build `date`."
