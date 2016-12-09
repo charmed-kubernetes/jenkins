@@ -59,16 +59,16 @@ echo "Starting build `date`."
 # test/e2e_node/e2e_node.test
 
 # Create a list of the targets we are interested in.
-TARGETS="cmd/kube-dns
-  cmd/kube-proxy
-  cmd/kube-apiserver
-  cmd/kube-controller-manager
-  cmd/kubelet
-  plugin/cmd/kube-scheduler
-  cmd/kubectl
-  vendor/github.com/onsi/ginkgo/ginkgo
-  test/e2e/e2e.test
-  test/e2e_node/e2e_node.test"
+TARGETS='cmd/kube-dns \
+  cmd/kube-proxy \
+  cmd/kube-apiserver \
+  cmd/kube-controller-manager \
+  cmd/kubelet \
+  plugin/cmd/kube-scheduler \
+  cmd/kubectl \
+  test/e2e/e2e.test \
+  vendor/github.com/onsi/ginkgo/ginkgo \
+  test/e2e_node/e2e_node.test'
 # Only build the targets we are interested in.
 ${BUILD_DIR}/run.sh make all WHAT="${TARGETS}"
 
