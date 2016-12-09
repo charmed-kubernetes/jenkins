@@ -84,7 +84,12 @@ for ARCH in ${ARCHITECTURES}; do
     E2E_ARCHIVE=${SCRIPT_DIR}/e2e-${VERSION}-${ARCH}.tar.gz
     echo "Creating the ${E2E_ARCHIVE} file."
     E2E_FILES="kubectl ginkgo e2e.test e2e_node.test"
-    create_archive ${OUTPUT_DIRECTORY} ${E2E_ARCHIVE} "${E2E_FILES}"
+    if [ -e ${OUTPUT_DIRECTORY}/e2e.test ]; then
+      create_archive ${OUTPUT_DIRECTORY} ${E2E_ARCHIVE} "${E2E_FILES}"
+    else
+        echo "The ${ARCH}/e2e.test file does not exist."
+        echo "Can not create the e2e-${VERSION}-${ARCH}.tar.gz archive."
+    fi
 
     MASTER_ARCHIVE=${SCRIPT_DIR}/kubernetes-master-${VERSION}-${ARCH}.tar.gz
     echo "Creating the ${MASTER_ARCHIVE} file."
