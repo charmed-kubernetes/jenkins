@@ -98,8 +98,8 @@ end_line=$(grep JUJU_E2E_END ${BUILD_LOG_PATH})
 end_time_epoch=$(echo $end_line | cut -d = -f 2)
 end_time=$(date -d @${end_time_epoch} '+%m/%d %H:%M:%S.000')
 
-# Make folder name for build from timestamp
-BUILD_STAMP=$(echo $start_time | sed 's/\///' | sed 's/ /_/')
+# Create a folder safe name for build timestamp
+BUILD_STAMP=$(date -d @${start_time_epoch} '+%m%d%H%M%S000')
 
 GCS_LOGS_PATH="${GCS_JOBS_PATH}/${BUILD_STAMP}"
 
