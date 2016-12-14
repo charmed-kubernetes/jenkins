@@ -5,6 +5,14 @@ set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
+# The path to the archive of the JUJU_DATA directory for the specific cloud.
+JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
+# Uncompress the file that contains the Juju data to the workspace directory.
+tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
+
+# Set the JUJU_DATA directory for this jenkins workspace.
+export JUJU_DATA=${WORKSPACE}/juju
+
 # Define a unique model name for this run.
 MODEL=${1:-${BUILD_TAG}}
 # Set the bundle to deploy.
