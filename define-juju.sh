@@ -1,11 +1,11 @@
 # Define common Juju functions such as jujubox and charmbox.
 
-
 # A function to run a command in the charmbox container.
 function in-charmbox() {
   docker run \
     --rm \
     -v ${JUJU_DATA}:/home/ubuntu/.local/share/juju \
+    -v ${JUJU_REPOSITORY}:/home/ubuntu/charms \
     -v ${WORKSPACE}:/home/ubuntu/workspace \
     --entrypoint /bin/bash \
     jujusolutions/charmbox:latest \

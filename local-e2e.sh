@@ -20,7 +20,7 @@ tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
 # Set the JUJU_DATA directory for this jenkins workspace.
 export JUJU_DATA=${WORKSPACE}/juju
 # Set the model to a unique name for this run.
-export MODEL=${BULD_TAG}
+export MODEL=${BUILD_TAG}
 # Set the output directory to store the results.
 export OUTPUT_DIRECTORY=${WORKSPACE}/artifacts
 

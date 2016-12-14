@@ -15,7 +15,7 @@ tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
 export JUJU_DATA=${WORKSPACE}/juju
 
 # Define a unique model name for this run.
-MODEL=${BULD_TAG}
+MODEL=${BUILD_TAG}
 # Set the output directory to store the results.
 OUTPUT_DIRECTORY=artifacts
 # Set the bundle name to use.
