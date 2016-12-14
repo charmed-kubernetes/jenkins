@@ -21,6 +21,10 @@ OUTPUT_DIRECTORY=artifacts
 # Set the bundle name to use.
 BUNDLE=kubernetes-core
 
+source ./define-juju.sh
+# Catch all EXITs from this script and make sure to destroy the model.
+trap "juju destroy-model -y ${MODEL} || true" EXIT
+
 # Deploy the bundle and add the kubernetes-e2e charm.
 ./juju-deploy-test-bundle.sh ${MODEL} ${BUNDLE}
 
