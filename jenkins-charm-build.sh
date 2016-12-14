@@ -15,27 +15,7 @@ tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
 export JUJU_DATA=${WORKSPACE}/juju
 export JUJU_REPOSITORY=${WORKSPACE}/charms
 
-SCRIPT_DIR=${PWD}
-
-# Clone the charm repositories.
-git clone https://github.com/juju-solutions/layer-easyrsa.git 
-git clone https://github.com/juju-solutions/layer-etcd.git
-git clone https://github.com/juju-solutions/charm-flannel.git
-# The kubernetes repository holds several charm layers.
-git clone https://github.com/juju-solutions/kubernetes.git
-cd kubernetes
-# Checkout the right branch.
-git checkout -f master-node-split
-
-# Build the charms with no local layers
-CHARM_BUILD_CMD="charm build -r --no-local-layers" 
-in-charmbox "cd workspace/layer-easyrsa && ${CHARM_BUILD_CMD}"
-in-charmbox "cd workspace/layer-etcd && ${CHARM_BUILD_CMD}"
-in-charmbox "cd workspace/charm-flannel && ${CHARM_BUILD_CMD}"
-in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubeapi-loadbalancer && ${CHARM_BUILD_CMD}"
-in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-e2e && ${CHARM_BUILD_CMD}"
-in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-master && ${CHARM_BUILD_CMD}"
-in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubermetes-worker && ${CHARM_BUILD_CMD}"
+./git-clone-charm-build.sh
 
 echo "Deploy the locally built charms."
 
