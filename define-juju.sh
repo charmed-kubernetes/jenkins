@@ -14,7 +14,7 @@ function in-charmbox() {
 
 # A function to make charm commands run inside a container.
 function charm() {
-  in-charmbox charm $@
+  in-charmbox charm "$@"
 }
 
 # A function to run a command in the jujubox container.
@@ -31,5 +31,5 @@ function in-jujubox() {
 # A function to make juju commands run inside a container.
 function juju() {
   # Call the function that runs the commands in a jujubox container.
-  in-jujubox juju $@
+  in-jujubox juju "$@"
 }
