@@ -9,6 +9,9 @@ echo "${0} started at `date`."
 
 SCRIPT_DIR=${PWD}
 
+# Define the juju and in-charmbox functions.
+source ./define-juju.sh
+
 # Clone the charm repositories to the current directory.
 git clone https://github.com/juju-solutions/layer-easyrsa.git 
 git clone https://github.com/juju-solutions/layer-etcd.git
@@ -18,9 +21,6 @@ git clone https://github.com/juju-solutions/kubernetes.git
 cd kubernetes
 # Checkout the right branch.
 git checkout -f master-node-split
-
-# Define the juju and in-charmbox functions.
-source ./define-juju.sh
 
 # Build the charms with no local layers
 CHARM_BUILD_CMD="charm build -r --no-local-layers" 
