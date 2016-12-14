@@ -1,3 +1,37 @@
+# Define some common utility functions that are used by other scripts here.
+
+
+# The maximum amount of seconds to wait in a loop.
+MAXIMUM_WAIT_SECONDS=3600
+
+# The check_time function requires two parameters start_time and max_seconds.
+function check_time() {
+  local start_time=${1}
+  local maximum_seconds=${2}
+  local current_time=`date +"%s"`
+  local difference=$(expr ${current_time} - ${start_time})
+  # When the difference is greater than maximum seconds, exit this script.
+  if [ ${difference} -gt ${maximum_seconds} ]; then
+    echo "The process is taking more than ${maximum_seconds} seconds!"
+    # End this script because too much time has passed.
+    exit 3
+  fi
+}
+
+# Run a command in a loop waiting for specific output use MAXIMUM_WAIT_SECONDS.
+function run_and_wait() {
+  local cmd=${1}
+  local match=${2}
+  local sleep_seconds=${3:-5}
+  local start_time=`date +"%s"`
+  # Run the command in a loop looking for output.
+  until $(${cmd} | grep -q "${match}"); do 
+    # Check the time so this does not loop forever.
+    check_time ${start_time} ${MAXIMUM_WAIT_SECONDS}
+    sleep ${sleep_seconds}
+  done
+}
+
 # A platform neutral way to get the md5 hash sum of a file.
 function md5sum_file() {
   if which md5sum > /dev/null 2>&1; then

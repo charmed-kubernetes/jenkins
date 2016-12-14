@@ -14,8 +14,21 @@ tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
 # Set the JUJU_DATA directory for this jenkins workspace.
 export JUJU_DATA=${WORKSPACE}/juju
 
-# Deploy a Kubernetes cluster and the e2e charm, and run the test action.
-./e2e-runner.sh
+# Define a unique model name for this run.
+MODEL=${BULD_TAG}
+# Set the output directory to store the results.
+OUTPUT_DIRECTORY=artifacts
+# Set the bundle name to use.
+BUNDLE=kubernetes-core
 
-# Formats the data and upload to GCE.
-./gubernator.sh
+# Deploy the bundle and add the kubernetes-e2e charm.
+./juju-deploy-test-bundle.sh ${MODEL} ${BUNDLE}
+
+# Let the deployment complete.
+./wait-cluster-ready.sh
+
+# Run the end to end tests and 
+./run-e2e-tests.sh ${OUTPUT_DIRECTORY}
+
+# Formats the output data and upload to GCE.
+./gubernator.sh ${OUTPUT_DIRECTORY}

@@ -8,8 +8,6 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-source ./util.sh
-
 SCRIPT_DIR=${PWD}
 
 # Create a temporary directory to hold the files.
@@ -43,10 +41,13 @@ export KUBERNETES_SKIP_CONFIRM=Y
 export KUBERNETES_DOWNLOAD_TESTS=Y
 # Use the upstream utility for downloading binaries.
 ${KUBE_ROOT}/cluster/get-kube-binaries.sh
-# This script does not download architectures other than the host system.
-# TODO figure out how to download different architectures.
+
+# Get the function definitions for os and architecture detection.
+source ./utilities.sh
+
 ARCH=$(get_arch)
 OS=$(get_os)
+# TODO figure out how to download different architectures for 1.5 structure.
 
 E2E_DIRECTORY=${KUBE_ROOT}/platforms/${OS}/${ARCH}
 E2E_ARCHIVE=${SCRIPT_DIR}/e2e-${VERSION}-${ARCH}.tar.gz

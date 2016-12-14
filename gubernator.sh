@@ -10,7 +10,7 @@ set -o xtrace  # Print the commands that are executed.
 echo "${0} started at `date`."
 
 # The location of the artifacts from the e2e run that are to be uploaded.
-export ARTIFACTS=${WORKSPACE}/artifacts
+export ARTIFACTS=${1:-"artifacts"}
 
 # Use a docker container for the gcloud commands.
 function gcloud {

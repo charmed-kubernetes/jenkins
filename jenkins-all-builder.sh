@@ -9,8 +9,6 @@ echo "${0} started at `date`."
 
 SCRIPT_DIR=${PWD}
 
-source ./util.sh
-
 # The version is the first optional argument.
 VERSION=${1:-"v1.5.0"}
 # The URL is the second optional argument.
@@ -73,6 +71,9 @@ TARGETS='cmd/kube-dns \
 ${BUILD_DIR}/run.sh make all WHAT="${TARGETS}"
 
 echo "Build finished `date`"
+
+# Get the function definitions for os and architecture detection.
+source ./utilities.sh
 
 OS=$(get_os)
 ARCH=$(get_arch)
