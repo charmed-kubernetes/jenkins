@@ -9,8 +9,6 @@ echo "${0} started at `date`."
 
 SCRIPT_DIR=${PWD}
 
-source ./util.sh
-
 # The version is the first optional argument.
 VERSION=${1:-"v1.5.0"}
 # The URL is the second optional argument.
@@ -74,8 +72,12 @@ ${BUILD_DIR}/run.sh make cross WHAT="${TARGETS}"
 
 echo "Build finished `date`"
 
+# Get the function definitions for os detection and create_archive.
+source ./utilities.sh
+
 OS=$(get_os)
 ARCHITECTURES="amd64 arm64 ppc64le s390x"
+
 # Iterate over the supported architectures.
 for ARCH in ${ARCHITECTURES}; do
   OUTPUT_DIRECTORY=${KUBE_ROOT}/_output/dockerized/bin/${OS}/${ARCH}

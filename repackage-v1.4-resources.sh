@@ -8,8 +8,6 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-source ./util.sh
-
 SCRIPT_DIR=${PWD}
 
 # Create a temporary directory to hold the files.
@@ -38,6 +36,9 @@ if [[ ! -e "${KUBE_ROOT}/version" ]]; then
 fi
 VERSION=$(cat ${KUBE_ROOT}/version)
 echo "Found version: ${VERSION}"
+
+# Get the function definitions for os and architecture detection.
+source ./utilities.sh
 
 ARCH=$(get_arch)
 OS=$(get_os)
