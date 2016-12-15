@@ -22,12 +22,13 @@ cd kubernetes
 # Checkout the right branch.
 git checkout -f master-node-split
 
+in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
 # Build the charms with no local layers
 CHARM_BUILD_CMD="charm build -r --no-local-layers" 
 in-charmbox "cd workspace/layer-easyrsa && ${CHARM_BUILD_CMD}"
 in-charmbox "cd workspace/layer-etcd && ${CHARM_BUILD_CMD}"
 in-charmbox "cd workspace/charm-flannel && ${CHARM_BUILD_CMD}"
-in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubeapi-loadbalancer && ${CHARM_BUILD_CMD}"
+in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubeapi-load-balancer && ${CHARM_BUILD_CMD}"
 in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-e2e && ${CHARM_BUILD_CMD}"
 in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-master && ${CHARM_BUILD_CMD}"
 in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubermetes-worker && ${CHARM_BUILD_CMD}"
