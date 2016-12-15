@@ -20,6 +20,6 @@ juju status
 # Wait in 10 second increments for "KubeDNS" to show up in cluster-info output.
 run_and_wait 'juju run --application kubernetes-master "kubectl cluster-info"' "KubeDNS" 10
 # Print out the cluster-info
-juju run --application kubernetes-master "kubectl cluster-info"
+juju run --application kubernetes-master \"kubectl cluster-info\"
 
 echo "${0} completed successfully at `date`."
