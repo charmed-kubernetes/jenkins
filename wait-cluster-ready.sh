@@ -13,7 +13,7 @@ source ./define-juju.sh
 source ./utilities.sh
 
 # Wait in 10 second increments for the master charm to print running in status.
-run_and_wait "juju status kubernetes-master" "Kubernetes master services ready." 10
+run_and_wait "juju status kubernetes-master" "Kubernetes master running." 10
 # Print out a full juju status.
 juju status
 
