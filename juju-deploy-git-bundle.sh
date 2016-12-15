@@ -26,9 +26,10 @@ juju model-config -m ${MODEL} test-mode=1
 git clone ${BUNDLE} bundle
 cd bundle
 git checkout ${BRANCH}
+cd ..
 
-# Deploy the kubernetes bundle.
-juju deploy .
+# Deploy the kubernetes bundle remember the pwd is mounted as workspace.
+juju deploy /home/ubuntu/workspace/bundle/
 
 # TODO Check for a second worker, the bundle could already define one.
 # Add one more kubernetes node to the cluster.
