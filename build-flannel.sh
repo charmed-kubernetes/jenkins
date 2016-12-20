@@ -23,15 +23,11 @@ SCRIPT_DIR=${PWD}
 # Get the function definition for download.
 source ./utilities.sh
 
-# Build the CNI binaries for a version os and arch.
+# Build the CNI binaries for a version, os and arch.
 ./build-cni.sh ${CNI_VERSION} ${OS} ${ARCH}
 
-# Create a url to the Etcd release archive.
-ETCD_URL=https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-${OS}-${ARCH}.tar.gz
-ETCD_ARCHIVE=${TEMPORARY_DIRECTORY}/etcd-${ETCD_VERSION}-${OS}-${ARCH}.tar.gz
-download ${ETCD_URL} ${ETCD_ARCHIVE}
-tar -xzvf ${ETCD_ARCHIVE} -C ${TEMPORARY_DIRECTORY}/${OS}/${ARCH} etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
-ETCDCTL=${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
+# Build the etcd binaries for a version, os and arch.
+./build-etcd.sh ${ETCD_VERSION}
 # Copy the etcdctl binary to the temporary directory for the flannel resource.
 cp -v ${ETCDCTL} ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/etcdctl
 
