@@ -66,6 +66,9 @@ git clone https://github.com/coreos/flannel.git build-flannel
 cd build-flannel
 # Checkout the desired version.
 git checkout -f ${FLANNEL_VERSION}
+
+sed -i 's/-it//' Makefile
+sed -i 's/-ti//' Makefile
 # Build the flanneld binary in a docker container.
 make dist/flanneld-${ARCH}
 
