@@ -37,7 +37,7 @@ download ${ETCD_URL} ${ETCD_ARCHIVE}
 tar -xzvf ${ETCD_ARCHIVE} -C ${TEMPORARY_DIRECTORY} etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
 ETCDCTL=${TEMPORARY_DIRECTORY}/etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
 # Copy the etcdctl binary to the temporary directory for the flannel resource.
-cp -v ${ETCDCTL} ${TEMPORARY_DIRECTORY}/etcdclt
+cp -v ${ETCDCTL} ${TEMPORARY_DIRECTORY}/etcdctl
 
 # Create a url to the Flannel release archive.
 FLANNEL_URL=https://github.com/coreos/flannel/releases/download/${FLANNEL_VERSION}/flannel-${FLANNEL_VERSION}-${OS}-${ARCH}.tar.gz
