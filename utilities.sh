@@ -4,6 +4,20 @@
 # The maximum amount of seconds to wait in a loop.
 MAXIMUM_WAIT_SECONDS=3600
 
+# Download requires the url and the output directory or name.
+function download() {
+  local url=${1}
+  local destination=${2}
+  # -f fail silently
+  # -L Follow location redirects
+  # --retry three times
+  # -o write output to a file
+  curl -f -L --retry 3 ${url} -o ${destination}
+  # Print out the size and sha256 hash sum of the archive.
+  echo "$(ls -hl ${destination} | cut -d ' ' -f 5) $(basename ${destination})"
+  echo "$(sha256sum_file ${destination}) $(basename ${destination})"
+}
+
 # The check_time function requires two parameters start_time and max_seconds.
 function check_time() {
   local start_time=${1}
