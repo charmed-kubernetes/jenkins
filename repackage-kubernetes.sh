@@ -8,7 +8,7 @@
 
 set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
-set -o xtrace  # Print the commands that are executed.
+#set -o xtrace  # Print the commands that are executed.
 
 echo "${0} started at `date`."
 
@@ -17,7 +17,7 @@ KUBE_VERSION=${1:-"v1.5.1"}
 SCRIPT_DIR=${PWD}
 
 # Get the function definitions for os and architecture detection.
-source ./utilities.sh
+source ./utilities.shg
 
 ARCH=$(get_arch)
 OS=$(get_os)
