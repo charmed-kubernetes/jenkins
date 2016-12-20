@@ -8,6 +8,7 @@ MAXIMUM_WAIT_SECONDS=3600
 function download() {
   local url=${1}
   local destination=${2}
+  echo "Downloading ${url}"
   # -f fail silently
   # -L Follow location redirects
   # --retry three times
