@@ -85,6 +85,7 @@ function create_archive() {
   echo "$(md5sum_file ${archive}) $(basename ${archive})"
   echo "$(sha1sum_file ${archive}) $(basename ${archive})"
   echo "$(sha256sum_file ${archive}) $(basename ${archive})"
+  cd -
 }
 
 # Return the operating system of the host system.
