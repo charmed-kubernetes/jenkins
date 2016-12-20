@@ -45,7 +45,7 @@ docker run \
   /bin/bash -c "cd /build-cni && ./build && chown -R ${USER_ID}:${GROUP_ID} /build-cni"
 
 # Copy the binaries to the output directory.
-cp -v -r build-cni/bin ${TEMPORARY_DIRECTORY}/
+cp -v build-cni/bin/* ${TEMPORARY_DIRECTORY}/
 # Remove the source build directory.
 
 # Create a url to the Etcd release archive.
