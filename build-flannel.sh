@@ -15,49 +15,27 @@ FLANNEL_VERSION=${1:-"v0.6.2"}
 CNI_VERSION=${2:-"v0.3.0"}
 ETCD_VERSION=${3:-"v2.2.5"}
 
+OS=${OS:-"linux"}
+ARCH=${ARCH:-"amd64"}
+
 SCRIPT_DIR=${PWD}
 
 # Get the function definition for download.
 source ./utilities.sh
 
-ARCH=$(get_arch)
-OS=$(get_os)
-
-# Grab the user id and group id of this current user.
-GROUP_ID=$(id -g)
-USER_ID=$(id -u)
-
-# Remove any current build-cni directory.
-rm -rf build-cni || true
-# Clone the container networking project.
-git clone https://github.com/containernetworking/cni.git build-cni
-cd build-cni
-git checkout -f ${CNI_VERSION}
-cd ..
-
-# Build the binaries in a docker container.
-docker run \
-  --rm \
-  -e "GOOS=${OS}" \
-  -e "GOARCH=${ARCH}" \
-  -v ${PWD}/build-cni:/build-cni \
-  golang \
-  /bin/bash -c "cd /build-cni && ./build && chown -R ${USER_ID}:${GROUP_ID} /build-cni"
-
-# Copy the binaries to the output directory.
-cp -v build-cni/bin/* ${TEMPORARY_DIRECTORY}/
-# Remove the source build directory.
+# Build the CNI binaries for a version os and arch.
+./build-cni.sh ${CNI_VERSION} ${OS} ${ARCH}
 
 # Create a url to the Etcd release archive.
 ETCD_URL=https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-${OS}-${ARCH}.tar.gz
-ETCD_ARCHIVE=${TEMPORARY_DIRECTORY}/etcd.tar.gz
+ETCD_ARCHIVE=${TEMPORARY_DIRECTORY}/etcd-${ETCD_VERSION}-${OS}-${ARCH}.tar.gz
 download ${ETCD_URL} ${ETCD_ARCHIVE}
-tar -xzvf ${ETCD_ARCHIVE} -C ${TEMPORARY_DIRECTORY} etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
-ETCDCTL=${TEMPORARY_DIRECTORY}/etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
+tar -xzvf ${ETCD_ARCHIVE} -C ${TEMPORARY_DIRECTORY}/${OS}/${ARCH} etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
+ETCDCTL=${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
 # Copy the etcdctl binary to the temporary directory for the flannel resource.
-cp -v ${ETCDCTL} ${TEMPORARY_DIRECTORY}/etcdctl
+cp -v ${ETCDCTL} ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/etcdctl
 
-# Remove any current build-flannel directory.
+# Remove the existing flannel build directory.
 rm -rf build-flannel || true
 
 # Clone the flannel project.
@@ -74,13 +52,13 @@ make dist/flanneld-${ARCH}
 
 cd ..
 
-cp -v build-flannel/dist/flanneld-${ARCH} ${TEMPORARY_DIRECTORY}/flanneld
+cp -v build-flannel/dist/flanneld-${ARCH} ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/flanneld
 
 # Create the flannel resource archive name with version os and architecture.
 FLANNEL_ARCHIVE=${SCRIPT_DIR}/flannel-resource-${FLANNEL_VERSION}-${OS}-${ARCH}.tar.gz
 echo "Creating the ${FLANNEL_ARCHIVE} file."
 FLANNEL_FILES="bridge etcdctl flannel flanneld host-local"
-create_archive ${TEMPORARY_DIRECTORY} ${FLANNEL_ARCHIVE} "${FLANNEL_FILES}"
+create_archive ${TEMPORARY_DIRECTORY}/${OS}/${ARCH} ${FLANNEL_ARCHIVE} "${FLANNEL_FILES}"
 
 cd ${SCRIPT_DIR}
 echo "${0} completed successfully at `date`."

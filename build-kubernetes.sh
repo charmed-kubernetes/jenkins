@@ -16,6 +16,9 @@ KUBE_VERSION=${1:-"v1.5.1"}
 
 SCRIPT_DIR=${PWD}
 
+# Get the create_archive function definition.
+source ./utilities.sh
+
 # The URL is the second optional argument.
 KUBERNETES_GIT_URL=${2:-"https://github.com/kubernetes/kubernetes.git"}
 
@@ -77,29 +80,39 @@ ${BUILD_DIR}/run.sh make all WHAT="${TARGETS}"
 
 echo "Build finished `date`"
 
-# Get the function definitions for os and architecture detection.
-source ./utilities.sh
-OS=$(get_os)
-ARCH=$(get_arch)
-OUTPUT_DIRECTORY=${KUBE_ROOT}/_output/dockerized/bin/${OS}/${ARCH}
+OS=${OS:-"linux"}
+ARCHITECTURES=${ARCHITECTURES:-"amd64 arm64 ppc64le s390x"}
 
-E2E_ARCHIVE=${SCRIPT_DIR}/e2e-${KUBE_VERSION}-${ARCH}.tar.gz
-echo "Creating the ${E2E_ARCHIVE} file."
-E2E_FILES="kubectl ginkgo e2e.test e2e_node.test"
-create_archive ${OUTPUT_DIRECTORY} ${E2E_ARCHIVE} "${E2E_FILES}"
+# Iterate over the supported architectures.
+for ARCH in ${ARCHITECTURES}; do
+  OUTPUT_DIRECTORY=${KUBE_ROOT}/_output/dockerized/bin/${OS}/${ARCH}
+  # Check if the architecture specific directory exists.
+  if [ -d ${OUTPUT_DIRECTORY} ]; then
+    E2E_ARCHIVE=${SCRIPT_DIR}/e2e-${KUBE_VERSION}-${ARCH}.tar.gz
+    echo "Creating the ${E2E_ARCHIVE} file."
+    E2E_FILES="kubectl ginkgo e2e.test e2e_node.test"
+    if [ -e ${OUTPUT_DIRECTORY}/e2e.test ]; then
+      create_archive ${OUTPUT_DIRECTORY} ${E2E_ARCHIVE} "${E2E_FILES}"
+    else
+        echo "The ${ARCH}/e2e.test file does not exist."
+        echo "Can not create the e2e-${KUBE_VERSION}-${ARCH}.tar.gz archive."
+    fi
 
-MASTER_ARCHIVE=${SCRIPT_DIR}/kubernetes-master-${KUBE_VERSION}-${ARCH}.tar.gz
-echo "Creating the ${MASTER_ARCHIVE} file."
-MASTER_FILES="kube-apiserver kube-controller-manager kubectl kube-dns kube-scheduler"
-create_archive ${OUTPUT_DIRECTORY} ${MASTER_ARCHIVE} "${MASTER_FILES}"
+    MASTER_ARCHIVE=${SCRIPT_DIR}/kubernetes-master-${KUBE_VERSION}-${ARCH}.tar.gz
+    echo "Creating the ${MASTER_ARCHIVE} file."
+    MASTER_FILES="kube-apiserver kube-controller-manager kubectl kube-dns kube-scheduler"
+    create_archive ${OUTPUT_DIRECTORY} ${MASTER_ARCHIVE} "${MASTER_FILES}"
 
-# Copy the loopback binary (needed for CNI) to the server directory.
-cp -v ${TEMPORARY_DIRECTORY}/loopback ${OUTPUT_DIRECTORY}/
-WORKER_ARCHIVE=${SCRIPT_DIR}/kubernetes-worker-${KUBE_VERSION}-${ARCH}.tar.gz
-echo "Creating the ${WORKER_ARCHIVE} file."
-WORKER_FILES="kubectl kubelet kube-proxy loopback"
-create_archive ${OUTPUT_DIRECTORY} ${WORKER_ARCHIVE} "${WORKER_FILES}"
-
+    # Copy the loopback binary (needed for CNI) to the server directory.
+    cp -v ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/loopback ${OUTPUT_DIRECTORY}
+    WORKER_ARCHIVE=${SCRIPT_DIR}/kubernetes-worker-${KUBE_VERSION}-${ARCH}.tar.gz
+    echo "Creating the ${WORKER_ARCHIVE} file."
+    WORKER_FILES="kubectl kubelet kube-proxy loopback"
+    create_archive ${OUTPUT_DIRECTORY} ${WORKER_ARCHIVE} "${WORKER_FILES}"
+  else
+    echo "Missing architecture: ${ARCH}"
+  fi
+done
 # Change back to the original directory.
 cd ${SCRIPT_DIR}
 echo ""
