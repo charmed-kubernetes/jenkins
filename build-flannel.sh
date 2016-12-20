@@ -28,8 +28,6 @@ source ./utilities.sh
 
 # Build the etcd binaries for a version, os and arch.
 ./build-etcd.sh ${ETCD_VERSION}
-# Copy the etcdctl binary to the temporary directory for the flannel resource.
-cp -v ${ETCDCTL} ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/etcdctl
 
 # Remove the existing flannel build directory.
 rm -rf build-flannel || true
