@@ -17,7 +17,7 @@ KUBE_VERSION=${1:-"v1.5.1"}
 SCRIPT_DIR=${PWD}
 
 # Get the function definitions for os and architecture detection.
-source ./utilities.shg
+source ./utilities.sh
 
 ARCH=$(get_arch)
 OS=$(get_os)
