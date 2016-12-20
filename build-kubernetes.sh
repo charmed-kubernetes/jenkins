@@ -19,12 +19,9 @@ SCRIPT_DIR=${PWD}
 # Get the create_archive function definition.
 source ./utilities.sh
 
-# The URL is the second optional argument.
-KUBERNETES_GIT_URL=${2:-"https://github.com/kubernetes/kubernetes.git"}
-
 KUBE_ROOT=${SCRIPT_DIR}/kubernetes
 
-git clone ${KUBERNETES_GIT_URL} ${KUBE_ROOT}
+git clone https://github.com/kubernetes/kubernetes.git ${KUBE_ROOT}
 cd ${KUBE_ROOT}
 git checkout -f ${KUBE_VERSION}
 
@@ -75,13 +72,14 @@ TARGETS='cmd/kube-dns \
   test/e2e/e2e.test \
   vendor/github.com/onsi/ginkgo/ginkgo \
   test/e2e_node/e2e_node.test'
-# Only build the targets we are interested in.
+# Only build the targets we are interested in. 
+# TODO replace with cross once testing is complete
 ${BUILD_DIR}/run.sh make all WHAT="${TARGETS}"
 
 echo "Build finished `date`"
 
 OS=${OS:-"linux"}
-ARCHITECTURES=${ARCHITECTURES:-"amd64 arm64 ppc64le s390x"}
+ARCHITECTURES=${ARCHITECTURES:-"amd64"}
 
 # Iterate over the supported architectures.
 for ARCH in ${ARCHITECTURES}; do
@@ -103,12 +101,18 @@ for ARCH in ${ARCHITECTURES}; do
     MASTER_FILES="kube-apiserver kube-controller-manager kubectl kube-dns kube-scheduler"
     create_archive ${OUTPUT_DIRECTORY} ${MASTER_ARCHIVE} "${MASTER_FILES}"
 
-    # Copy the loopback binary (needed for CNI) to the server directory.
-    cp -v ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/loopback ${OUTPUT_DIRECTORY}
-    WORKER_ARCHIVE=${SCRIPT_DIR}/kubernetes-worker-${KUBE_VERSION}-${ARCH}.tar.gz
-    echo "Creating the ${WORKER_ARCHIVE} file."
-    WORKER_FILES="kubectl kubelet kube-proxy loopback"
-    create_archive ${OUTPUT_DIRECTORY} ${WORKER_ARCHIVE} "${WORKER_FILES}"
+    # This loopback file is created in the build-cni.sh script.
+    CNI_LOOPBACK=${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/loopback
+    if [ -e ${CNI_LOOPBACK} ]; then
+      # Copy the CNI loopback plugin to the output directory for archival.
+      cp -v ${CNI_LOOPBACK} ${OUTPUT_DIRECTORY}
+      WORKER_ARCHIVE=${SCRIPT_DIR}/kubernetes-worker-${KUBE_VERSION}-${ARCH}.tar.gz
+      echo "Creating the ${WORKER_ARCHIVE} file."
+      WORKER_FILES="kubectl kubelet kube-proxy loopback"
+      create_archive ${OUTPUT_DIRECTORY} ${WORKER_ARCHIVE} "${WORKER_FILES}"
+    else
+      echo "The ${CNI_LOOPBACK} is missing for ${ARCH} can not create resource."
+    fi 
   else
     echo "Missing architecture: ${ARCH}"
   fi

@@ -25,11 +25,11 @@ source ./utilities.sh
 export TEMPORARY_DIRECTORY=${SCRIPT_DIR}/temp
 mkdir -p ${TEMPORARY_DIRECTORY}
 
-# EasyRSA is a collection of scripts and not built.
+# EasyRSA is a collection of scripts, not compiled or built.
 ./repackage-easyrsa.sh ${EASYRSA_VERSION}
 
 export OS=$(get_os)
-export ARCHITECTURES="amd64 arm64 ppc64le s390x"
+export ARCHITECTURES=${ARCHITECTURES:-"amd64"}  #"amd64 arm arm64 ppc64le"
 for ARCHITECTURE in ${ARCHITECTURES}; do
   export ARCH=${ARCHITECTURE}
   mkdir -p ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
