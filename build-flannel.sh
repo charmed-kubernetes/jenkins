@@ -39,7 +39,7 @@ cd ..
 docker run \
   --rm \
   -e "GOOS=${OS}" \
-  -e "GOARCH=${ARCHITECTURE}" \
+  -e "GOARCH=${ARCH}" \
   -v ${PWD}/build-cni:/build-cni \
   golang \
   /bin/bash -c "cd /build-cni && ./build && chown -R ${USER_ID}:${GROUP_ID} /build-cni"
@@ -67,11 +67,11 @@ cd build-flannel
 # Checkout the desired version.
 git checkout -f ${FLANNEL_VERSION}
 # Build the flanneld binary in a docker container.
-make dist/flanneld-${ARCHITECTURE}
+make dist/flanneld-${ARCH}
 
 cd ..
 
-cp -v build-flannel/dist/flanneld-${ARCHITECTURE} ${TEMPORARY_DIRECTORY}/flanneld
+cp -v build-flannel/dist/flanneld-${ARCH} ${TEMPORARY_DIRECTORY}/flanneld
 
 # Create the flannel resource archive name with version os and architecture.
 FLANNEL_ARCHIVE=${SCRIPT_DIR}/flannel-resource-${FLANNEL_VERSION}-${OS}-${ARCH}.tar.gz
