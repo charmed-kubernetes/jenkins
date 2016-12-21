@@ -23,6 +23,6 @@ MODEL=${BUILD_TAG}
 ./juju-deploy-local-charms.sh ${MODEL}
 
 # Attach the resources built from a previous step.
-./juju-attach-resources.sh charms/builds
+./juju-attach-resources.sh resources
 
 juju status
