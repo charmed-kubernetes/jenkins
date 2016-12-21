@@ -19,3 +19,9 @@ export GCE_ACCOUNT_CREDENTIAL=${GCE_ACCOUNT_CREDENTIAL:-"${HOME}/.ssh/gce.json"}
 
 # The absolute path of the directory assigned to the build as a workspace.
 export WORKSPACE=${WORKSPACE:-"/tmp/${BUILD_NUMBER}/workspace"}
+
+# The absolute path to the directory containing the juju data.
+export JUJU_DATA=${WORKSPACE}/juju
+
+# The absolute path to the charms directory.
+export JUJU_REPOSITORY=${WORKSPACE}/charms
