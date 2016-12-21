@@ -16,9 +16,3 @@ export JUJU_DATA=${WORKSPACE}/juju
 export JUJU_REPOSITORY=${WORKSPACE}/charms
 
 ./git-clone-charm-build.sh
-
-echo "Deploy the locally built charms."
-
-echo "Relate the charms."
-
-echo "Attach the resources."
