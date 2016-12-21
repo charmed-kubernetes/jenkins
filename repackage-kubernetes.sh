@@ -63,7 +63,7 @@ MASTER_FILES="kube-apiserver kube-controller-manager kubectl kube-dns kube-sched
 create_archive ${SERVER_DIRECTORY} ${MASTER_ARCHIVE} "${MASTER_FILES}"
 
 # Copy the loopback binary (needed for CNI) to the server directory.
-cp -v ${TEMPORARY_DIRECTORY}/loopback ${SERVER_DIRECTORY}/
+cp -v ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/loopback ${SERVER_DIRECTORY}/
 WORKER_ARCHIVE=${SCRIPT_DIR}/kubernetes-worker-${KUBE_VERSION}-${ARCH}.tar.gz
 echo "Creating the ${WORKER_ARCHIVE} file."
 # NOTE The loopback binary is from the CNI project, see repackage-flannel.sh
