@@ -30,7 +30,7 @@ cd ..
 GROUP_ID=$(id -g)
 USER_ID=$(id -u)
 
-# Build the binaries in a docker container.
+echo "Building etcd for ${OS} and ${ARCH} in a docker conatiner..."
 docker run \
   --rm \
   -e "GOOS=${OS}" \

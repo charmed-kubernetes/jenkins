@@ -40,7 +40,7 @@ git checkout -f ${FLANNEL_VERSION}
 
 sed -i 's/-it//' Makefile
 sed -i 's/-ti//' Makefile
-# Build the flanneld binary in a docker container.
+echo "Building flanneld=${ARCH}..."
 make dist/flanneld-${ARCH}
 
 cd ..
