@@ -10,15 +10,18 @@ echo "${0} started at `date`."
 # First argument is the model namme for this build.
 MODEL=${1:-"model-is-undefined"}
 
-# Some of the files in JUJU_DATA my not be owned by the ubuntu user, fix that.
-CHOWN_CMD="sudo chown -R ubuntu:ubuntu /home/ubuntu/.local/share/juju"
 # Define the juju and in-jujubox functions.
 source ./define-juju.sh
+
+# Some of the files in JUJU_DATA my not be owned by the ubuntu user, fix that.
+CHOWN_CMD="sudo chown -R ubuntu:ubuntu /home/ubuntu/.local/share/juju"
 # Create a model just for this run of the tests.
 in-jujubox "${CHOWN_CMD} && juju add-model ${MODEL}"
 
+# Make the charms owned by the ubuntu user.
+CHOWN_CMD="sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
 # Set test mode on the deployment so we dont bloat charm-store deployment count
-juju model-config -m ${MODEL} test-mode=1
+in-jujubox "${CHOWN_CMD} && juju model-config -m ${MODEL} test-mode=1"
 
 # TODO we could alternately use the local.yaml of bundle-canonical-kubernetes.
 # Deploy the kubernetes charms with the jujubox path.
@@ -29,10 +32,10 @@ juju deploy /home/ubuntu/charms/builds/kubeapi-load-balancer
 juju deploy /home/ubuntu/charms/builds/kubernetes-e2e
 juju deploy /home/ubuntu/charms/builds/kubernetes-master
 juju deploy /home/ubuntu/charms/builds/kubernetes-worker -n 2
-
+# Expose the load balancer and the worker.
 juju expose kubeapi-load-balancer
 juju expose kubernetes-worker
-
+# Add the relations.
 juju add-relation kubernetes-master:kube-api-endpoint kubeapi-load-balancer:apiserver
 juju add-relation kubernetes-master:loadbalancer kubeapi-load-balancer:loadbalancer
 juju add-relation kubernetes-master:cluster-dns kubernetes-worker:kube-dns

@@ -22,11 +22,7 @@ MODEL=${BUILD_TAG}
 # Create a model, deploy, expose, relate all the Kubernetes charms.
 ./juju-deploy-local-charms.sh ${MODEL}
 
-source ./define-juju.sh
-# Catch all EXITs from this script and make sure to destroy the model.
-trap "juju destroy-model -y ${MODEL} || true" EXIT
-
 # Attach the resources built from a previous step.
-./juju-attach-resources.sh ${}
+./juju-attach-resources.sh charms/builds
 
 juju status
