@@ -9,9 +9,7 @@
 
 set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
-set -o xtrace  # Print the commands that are executed.
-
-SCRIPT_DIR=${PWD}
+#set -o xtrace  # Print the commands that are executed.
 
 EASYRSA_VERSION=${1:-"3.0.1"}
 FLANNEL_VERSION=${2:-"v0.6.2"}
@@ -19,14 +17,27 @@ CNI_VERSION=${3:-"v0.3.0"}
 ETCD_VERSION=${4:-"v2.2.5"}
 KUBE_VERSION=${5:-"v1.5.1"}
 
+SCRIPT_DIR=${PWD}
+
+# Define the get_os function.
+source ./utilities.sh
+
 # Create a temporary directory to hold the files.
 export TEMPORARY_DIRECTORY=${SCRIPT_DIR}/temp
 mkdir -p ${TEMPORARY_DIRECTORY}
 
+# EasyRSA is a collection of scripts, not compiled or built.
 ./repackage-easyrsa.sh ${EASYRSA_VERSION}
 
-./repackage-flannel.sh ${FLANNEL_VERSION} ${CNI_VERSION} ${ETCD_VERSION}
-
+export OS=$(get_os)
+export ARCHITECTURES=${ARCHITECTURES:-"amd64"}  #"amd64 arm arm64 ppc64le"
+for ARCHITECTURE in ${ARCHITECTURES}; do
+  export ARCH=${ARCHITECTURE}
+  mkdir -p ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
+  # Repackage the CNI, etcd, and flannel resources
+  ./repackage-flannel.sh ${FLANNEL_VERSION} ${CNI_VERSION} ${ETCD_VERSION}
+done
+# Package the kubernetes binaries which is not arch specific at this time.
 ./repackage-kubernetes.sh ${KUBE_VERSION}
 
 # Change back to the original directory.

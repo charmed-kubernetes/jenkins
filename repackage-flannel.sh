@@ -20,36 +20,36 @@ SCRIPT_DIR=${PWD}
 # Get the function definition for download.
 source ./utilities.sh
 
-ARCH=$(get_arch)
-OS=$(get_os)
+ARCH=${ARCH:-"amd64"}
+OS=${OS:-"linux"}
 
-# Create a url to the CNI release archive.
+# Create a url to the CNI release archive which is linux amd64 right now.
 CNI_URL=https://github.com/containernetworking/cni/releases/download/${CNI_VERSION}/cni-${CNI_VERSION}.tgz
-CNI_ARCHIVE=${TEMPORARY_DIRECTORY}/cni.tgz
+CNI_ARCHIVE=${TEMPORARY_DIRECTORY}/linux/amd64/cni-${CNI_VERSION}.tgz
 download ${CNI_URL} ${CNI_ARCHIVE}
 # NOTE The CNI loopback file is required for the kubernetes-worker resource.
-tar -xzvf ${CNI_ARCHIVE} -C ${TEMPORARY_DIRECTORY}
+tar -xzvf ${CNI_ARCHIVE} -C ${TEMPORARY_DIRECTORY}/linux/amd64
 
 # Create a url to the Etcd release archive.
 ETCD_URL=https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-${OS}-${ARCH}.tar.gz
-ETCD_ARCHIVE=${TEMPORARY_DIRECTORY}/etcd.tar.gz
+ETCD_ARCHIVE=${TEMPORARY_DIRECTORY}/etcd-${ETCD_VERSION}-${OS}-${ARCH}.tar.gz
 download ${ETCD_URL} ${ETCD_ARCHIVE}
-tar -xzvf ${ETCD_ARCHIVE} -C ${TEMPORARY_DIRECTORY} etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
+tar -xzvf ${ETCD_ARCHIVE} -C ${TEMPORARY_DIRECTORY}/ etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
 ETCDCTL=${TEMPORARY_DIRECTORY}/etcd-${ETCD_VERSION}-${OS}-${ARCH}/etcdctl
 # Copy the etcdctl binary to the temporary directory for the flannel resource.
-cp -v ${ETCDCTL} ${TEMPORARY_DIRECTORY}/etcdctl
+cp -v ${ETCDCTL} ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/etcdctl
 
 # Create a url to the Flannel release archive.
 FLANNEL_URL=https://github.com/coreos/flannel/releases/download/${FLANNEL_VERSION}/flannel-${FLANNEL_VERSION}-${OS}-${ARCH}.tar.gz
-FLANNEL_TAR_GZ=${TEMPORARY_DIRECTORY}/flannel.tar.gz
+FLANNEL_TAR_GZ=${TEMPORARY_DIRECTORY}/flannel-${FLANNEL_VERSION}-${OS}-${ARCH}.tar.gz
 download ${FLANNEL_URL} ${FLANNEL_TAR_GZ}
-tar -xvzf ${FLANNEL_TAR_GZ} -C ${TEMPORARY_DIRECTORY} 
+tar -xvzf ${FLANNEL_TAR_GZ} -C ${TEMPORARY_DIRECTORY}/${OS}/${ARCH} 
 
 # Create the flannel resource archive name with version os and architecture.
 FLANNEL_ARCHIVE=${SCRIPT_DIR}/flannel-resource-${FLANNEL_VERSION}-${OS}-${ARCH}.tar.gz
 echo "Creating the ${FLANNEL_ARCHIVE} file."
 FLANNEL_FILES="bridge etcdctl flannel flanneld host-local"
-create_archive ${TEMPORARY_DIRECTORY} ${FLANNEL_ARCHIVE} "${FLANNEL_FILES}"
+create_archive ${TEMPORARY_DIRECTORY}/${OS}/${ARCH} ${FLANNEL_ARCHIVE} "${FLANNEL_FILES}"
 
 cd ${SCRIPT_DIR}
 echo "${0} completed successfully at `date`."

@@ -19,8 +19,8 @@ SCRIPT_DIR=${PWD}
 # Get the function definitions for os and architecture detection.
 source ./utilities.sh
 
-ARCH=$(get_arch)
-OS=$(get_os)
+ARCH=${ARCH:-"amd64"}
+OS=${OS:-"linux"}
 
 # Create a url to the Kubernetes release archive.
 KUBE_URL=https://github.com/kubernetes/kubernetes/releases/download/${KUBE_VERSION}/kubernetes.tar.gz
@@ -34,7 +34,7 @@ export KUBERNETES_DOWNLOAD_TESTS=Y
 # Use the upstream utility for downloading the server binaries.
 ${KUBE_ROOT}/cluster/get-kube-binaries.sh
 
-# TODO figure out how to download different architectures for 1.5 structure.
+# TODO Figure out how to download server binaries for each architecture.
 
 E2E_DIRECTORY=${KUBE_ROOT}/platforms/${OS}/${ARCH}
 E2E_ARCHIVE=${SCRIPT_DIR}/e2e-${KUBE_VERSION}-${ARCH}.tar.gz
