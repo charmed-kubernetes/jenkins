@@ -25,6 +25,7 @@ function in-jujubox() {
   docker run \
     --rm \
     -v ${JUJU_DATA}:/home/ubuntu/.local/share/juju \
+    -v ${JUJU_REPOSITORY}:/home/ubuntu/charms \
     -v ${WORKSPACE}:/home/ubuntu/workspace \
     --entrypoint /bin/bash \
     jujusolutions/jujubox:latest \
