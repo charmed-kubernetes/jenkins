@@ -6,8 +6,8 @@ MAXIMUM_WAIT_SECONDS=3600
 
 # Download requires the url and the output directory or name.
 function download() {
-  local url=${1}
-  local destination=${2}
+  local url=$1
+  local destination=$2
   echo "Downloading ${url}"
   # -f fail silently
   # -L Follow location redirects
@@ -21,8 +21,8 @@ function download() {
 
 # The check_time function requires two parameters start_time and max_seconds.
 function check_time() {
-  local start_time=${1}
-  local maximum_seconds=${2}
+  local start_time=$1
+  local maximum_seconds=$2
   local current_time=`date +"%s"`
   local difference=$(expr ${current_time} - ${start_time})
   # When the difference is greater than maximum seconds, exit this script.
@@ -35,8 +35,8 @@ function check_time() {
 
 # Run a command in a loop waiting for specific output use MAXIMUM_WAIT_SECONDS.
 function run_and_wait() {
-  local cmd=${1}
-  local match=${2}
+  local cmd=$1
+  local match=$2
   local sleep_seconds=${3:-5}
   local start_time=`date +"%s"`
   # Run the command in a loop looking for output.
@@ -76,9 +76,12 @@ function sha256sum_file() {
 
 # Create an archive and print the hash values for that file.
 function create_archive() {
-  local directory=${1}
-  local archive=${2}
-  local files="${3}"
+  local directory=$1
+  shift
+  local archive=$2
+  shift
+  # The rest of the arguments are for the tar command.
+  local files="$@"
   # Change to the target directory.
   cd ${directory}
   tar -cvzf ${archive} ${files}
