@@ -78,7 +78,7 @@ function sha256sum_file() {
 function create_archive() {
   local directory=$1
   shift
-  local archive=$2
+  local archive=$1
   shift
   # The rest of the arguments are for the tar command.
   local files="$@"
