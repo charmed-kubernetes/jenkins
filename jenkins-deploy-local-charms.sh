@@ -13,6 +13,16 @@ JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
 # Uncompress the file that contains the Juju data to the workspace directory.
 tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
 
+CHARMS_BUILDS=${WORKSPACE}/charms/builds
+# Expand all the charm archives to the charms/builds directory.
+tar -xzf ${CHARMS_BUILDS}/easyrsa.tar.gz -C ${CHARMS_BUILDS}
+tar -xzf ${CHARMS_BUILDS}/etcd.tar.gz -C ${CHARMS_BUILDS}
+tar -xzf ${CHARMS_BUILDS}/flannel.tar.gz -C ${CHARMS_BUILDS}
+tar -xzf ${CHARMS_BUILDS}/kubeapi-load-balancer.tar.gz -C ${CHARMS_BUILDS}
+tar -xzf ${CHARMS_BUILDS}/kubernetes-e2e.tar.gz -C ${CHARMS_BUILDS}
+tar -xzf ${CHARMS_BUILDS}/kubernetes-master.tar.gz -C ${CHARMS_BUILDS}
+tar -xzf ${CHARMS_BUILDS}/kubernetes-worker.tar.gz -C ${CHARMS_BUILDS}
+
 # Set the JUJU_DATA directory for this jenkins workspace.
 export JUJU_DATA=${WORKSPACE}/juju
 export JUJU_REPOSITORY=${WORKSPACE}/charms
