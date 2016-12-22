@@ -24,8 +24,6 @@ git checkout -f master-node-split
 
 cd ${SCRIPT_DIR}
 
-# Change the ownership of the charms directory to ubuntu user.
-in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
 # Build the charms with no local layers
 CHARM_BUILD_CMD="charm build -r --no-local-layers --force" 
 in-charmbox "cd workspace/layer-easyrsa && ${CHARM_BUILD_CMD}"
@@ -35,6 +33,17 @@ in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubeapi-load-balancer &
 in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-e2e && ${CHARM_BUILD_CMD}"
 in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-master && ${CHARM_BUILD_CMD}"
 in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-worker && ${CHARM_BUILD_CMD}"
+# Change the ownership of the charms directory to ubuntu user.
+in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
+
+source ./utilities.sh
+create_archive charms/builds/easyrsa ${SCRIPT_DIR}/easyrsa.tar.gz *
+create_archive charms/builds/etcd ${SCRIPT_DIR}/etcd.tar.gz *
+create_archive charms/builds/flannel ${SCRIPT_DIR}/flannel.tar.gz *
+create_archive charms/builds/kubeapi-load-balancer ${SCRIPT_DIR}/kubeapi-load-balancer.tar.gz *
+create_archive charms/builds/kubernetes-e2e ${SCRIPT_DIR}/kubernetes-e2e.tar.gz *
+create_archive charms/builds/kubernetes-master ${SCRIPT_DIR}/kubernetes-master.tar.gz *
+create_archive charms/builds/kubernetes-worker ${SCRIPT_DIR}/kubernetes-worker.tar.gz *
 
 echo "Build successfull the charms are available at ${SCRIPT_DIR}/charms"
 

@@ -25,4 +25,7 @@ MODEL=${BUILD_TAG}
 # Attach the resources built from a previous step.
 ./juju-attach-resources.sh resources
 
+echo "Charms deployed and resources uploaded to ${MODEL} at `date`."
+
+source ./define-juju.sh
 juju status
