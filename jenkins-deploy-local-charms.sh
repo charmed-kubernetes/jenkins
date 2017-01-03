@@ -26,6 +26,7 @@ tar -xzf ${CHARMS_BUILDS}/kubernetes-worker.tar.gz -C ${CHARMS_BUILDS}
 # Set the JUJU_DATA directory for this jenkins workspace.
 export JUJU_DATA=${WORKSPACE}/juju
 export JUJU_REPOSITORY=${WORKSPACE}/charms
+
 # Define a unique model name for this run.
 MODEL=${BUILD_TAG}
 

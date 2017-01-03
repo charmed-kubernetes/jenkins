@@ -12,6 +12,7 @@ tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
 
 # Set the JUJU_DATA directory for this jenkins workspace.
 export JUJU_DATA=${WORKSPACE}/juju
+export JUJU_REPOSITORY=${WORKSPACE}/charms
 
 # Define a unique model name for this run.
 MODEL=${1:-${BUILD_TAG}}
