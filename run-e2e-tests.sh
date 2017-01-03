@@ -30,8 +30,8 @@ in-jujubox "juju scp kubernetes-e2e/0:${ACTION_ID}.log.tar.gz e2e.log.tar.gz && 
 in-jujubox "juju scp kubernetes-e2e/0:${ACTION_ID}-junit.tar.gz e2e-junit.tar.gz && sudo mv e2e-junit.tar.gz /home/ubuntu/workspace"
 
 # Extract the results into the output directory.
-tar -xvfz e2e-junit.tar.gz -C ${OUTPUT_DIRECTORY}
-tar -xvfz e2e.log.tar.gz -C ${OUTPUT_DIRECTORY}
+tar -xvzf e2e-junit.tar.gz -C ${OUTPUT_DIRECTORY}
+tar -xvzf e2e.log.tar.gz -C ${OUTPUT_DIRECTORY}
 # Rename the ACTION_ID log file to build-log.txt
 mv ${OUTPUT_DIRECTORY}/${ACTION_ID}.log ${OUTPUT_DIRECTORY}/build-log.txt
 
