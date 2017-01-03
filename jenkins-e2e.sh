@@ -11,8 +11,9 @@ JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
 # Uncompress the file that contains the Juju data to the workspace directory.
 tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
 
-# Set the JUJU_DATA directory for this jenkins workspace.
+# Set the Juju envrionment variables for this jenkins job.
 export JUJU_DATA=${WORKSPACE}/juju
+export JUJU_REPOSITORY=${WORKSPACE}/charms
 
 # Define a unique model name for this run.
 MODEL=${BUILD_TAG}
