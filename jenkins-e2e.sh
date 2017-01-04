@@ -18,7 +18,7 @@ export JUJU_REPOSITORY=${WORKSPACE}/charms
 # Define a unique model name for this run.
 MODEL=${BUILD_TAG}
 # Set the output directory to store the results.
-OUTPUT_DIRECTORY=artifacts
+OUTPUT_DIRECTORY=${WORKSPACE}/artifacts
 # Set the bundle name to use.
 BUNDLE=kubernetes-core
 
