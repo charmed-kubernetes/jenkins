@@ -23,6 +23,10 @@ export JUJU_REPOSITORY=${WORKSPACE}/charms
 OUTPUT_DIRECTORY=${WORKSPACE}/artifacts
 
 source ./define-juju.sh
+# Make the charms owned by the ubuntu user.
+CHOWN_CMD="sudo chown -R ubuntu:ubuntu /home/ubuntu/.local/share/juju"
+# Set test mode on the deployment so we dont bloat charm-store deployment count
+in-jujubox "${CHOWN_CMD} && juju switch ${MODEL}"
 # Catch all EXITs from this script and make sure to destroy the model.
 trap "juju destroy-model -y ${MODEL} || true" EXIT
 

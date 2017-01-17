@@ -9,7 +9,7 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-ETCD_VERSION=${1:-"v2.2.5"}
+ETCD_VERSION=${1:-"v2.3.7"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}

@@ -11,9 +11,9 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-FLANNEL_VERSION=${1:-"v0.6.2"}
-CNI_VERSION=${2:-"v0.3.0"}
-ETCD_VERSION=${3:-"v2.2.5"}
+FLANNEL_VERSION=${1:-"v0.7.0"}
+CNI_VERSION=${2:-"v0.4.0"}
+ETCD_VERSION=${3:-"v2.3.7"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}
@@ -38,8 +38,6 @@ cd flannel
 # Checkout the desired version.
 git checkout -f ${FLANNEL_VERSION}
 
-sed -i 's/-it//' Makefile
-sed -i 's/-ti//' Makefile
 echo "Building flanneld=${ARCH}..."
 make dist/flanneld-${ARCH}
 

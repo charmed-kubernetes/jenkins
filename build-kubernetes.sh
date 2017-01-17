@@ -12,7 +12,7 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-KUBE_VERSION=${1:-"v1.5.1"}
+KUBE_VERSION=${1:-"v1.5.2"}
 
 SCRIPT_DIR=${PWD}
 

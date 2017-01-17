@@ -9,7 +9,7 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-CNI_VERSION=${1:-"v0.3.0"}
+CNI_VERSION=${1:-"v0.4.0"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}

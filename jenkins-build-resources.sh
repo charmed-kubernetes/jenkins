@@ -12,10 +12,10 @@ set -o pipefail  # The exit status of the last command is returned.
 #set -o xtrace  # Print the commands that are executed.
 
 EASYRSA_VERSION=${1:-"3.0.1"}
-FLANNEL_VERSION=${2:-"v0.6.2"}
-CNI_VERSION=${3:-"v0.3.0"}
-ETCD_VERSION=${4:-"v2.2.5"}
-KUBE_VERSION=${5:-"v1.5.1"}
+FLANNEL_VERSION=${2:-"v0.7.0"}
+CNI_VERSION=${3:-"v0.4.0"}
+ETCD_VERSION=${4:-"v2.3.7"}
+KUBE_VERSION=${5:-"v1.5.2"}
 
 SCRIPT_DIR=${PWD}
 

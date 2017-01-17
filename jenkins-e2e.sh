@@ -23,8 +23,13 @@ OUTPUT_DIRECTORY=${WORKSPACE}/artifacts
 BUNDLE=kubernetes-core
 
 source ./define-juju.sh
+# Grab the user id and group id of this current user.
+GROUP_ID=$(id -g)
+USER_ID=$(id -u)
+# Change the permissions back to the current user so jenkins can clean up.
+CHOWN_CMD="sudo chown -R ${USER_ID}:${GROUP_ID} /home/ubuntu/.local/share/juju"
 # Catch all EXITs from this script and make sure to destroy the model.
-trap "juju destroy-model -y ${MODEL} || true" EXIT
+trap "juju destroy-model -y ${MODEL} || in-jujubox ${CHOWN_CMD} || true" EXIT
 
 # Deploy the bundle and add the kubernetes-e2e charm.
 ./juju-deploy-test-bundle.sh ${MODEL} ${BUNDLE}
