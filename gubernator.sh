@@ -9,8 +9,8 @@ set -o xtrace  # Print the commands that are executed.
 
 echo "${0} started at `date`."
 
-# The location of the artifacts from the e2e run that are to be uploaded.
-export ARTIFACTS=${1:-"artifacts"}
+# The absolute path of the artifacts from the e2e run that are to be uploaded.
+export ARTIFACTS=${1:-`readlink -e artifacts`}
 
 # Use a docker container for the gcloud commands.
 function gcloud {
@@ -21,7 +21,7 @@ function gcloud {
     gcloud "$@"
 }
 
-# Use a docker container for the gsutil commands.
+# Use a docker container for the gsutil commands, all volumes must be absolute.
 function gsutil {
   docker run \
     --rm \
