@@ -32,6 +32,9 @@ in-jujubox "juju scp kubernetes-e2e/0:${ACTION_ID}-junit.tar.gz e2e-junit.tar.gz
 # Extract the results into the output directory.
 tar -xvzf e2e-junit.tar.gz -C ${OUTPUT_DIRECTORY}
 tar -xvzf e2e.log.tar.gz -C ${OUTPUT_DIRECTORY}
+
+# Print the tail of the action output to show our success or failure.
+tail -n 30 ${OUTPUT_DIRECTORY}/${ACTION_ID}.log
 # Rename the ACTION_ID log file to build-log.txt
 mv ${OUTPUT_DIRECTORY}/${ACTION_ID}.log ${OUTPUT_DIRECTORY}/build-log.txt
 
