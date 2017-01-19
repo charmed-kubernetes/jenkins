@@ -28,28 +28,28 @@ in-jujubox "${CHOWN_CMD} && juju model-config -m ${MODEL} test-mode=1"
 juju deploy /home/ubuntu/charms/builds/easyrsa
 juju deploy /home/ubuntu/charms/builds/etcd
 juju deploy /home/ubuntu/charms/builds/flannel
-#juju deploy /home/ubuntu/charms/builds/kubeapi-load-balancer
+juju deploy /home/ubuntu/charms/builds/kubeapi-load-balancer
 juju deploy /home/ubuntu/charms/builds/kubernetes-e2e
 juju deploy /home/ubuntu/charms/builds/kubernetes-master
 juju deploy /home/ubuntu/charms/builds/kubernetes-worker -n 2
 # Expose the load balancer and the worker.
-#juju expose kubeapi-load-balancer
+juju expose kubeapi-load-balancer
 juju expose kubernetes-worker
 # Add the relations.
-#juju add-relation kubernetes-master:kube-api-endpoint kubeapi-load-balancer:apiserver
-#juju add-relation kubernetes-master:loadbalancer kubeapi-load-balancer:loadbalancer
+juju add-relation kubernetes-master:kube-api-endpoint kubeapi-load-balancer:apiserver
+juju add-relation kubernetes-master:loadbalancer kubeapi-load-balancer:loadbalancer
 juju add-relation kubernetes-master:cluster-dns kubernetes-worker:kube-dns
 juju add-relation kubernetes-master easyrsa
 juju add-relation kubernetes-master etcd
 juju add-relation kubernetes-master flannel
 juju add-relation kubernetes-worker easyrsa
 juju add-relation kubernetes-worker flannel
-#juju add-relation kubernetes-worker kubeapi-load-balancer
-juju add-relation kubernetes-worker:kube-api-endpoint kubernetes-master:kube-api-endpoint
+juju add-relation kubernetes-worker kubeapi-load-balancer
+#juju add-relation kubernetes-worker:kube-api-endpoint kubernetes-master:kube-api-endpoint
 juju add-relation kubernetes-e2e kubernetes-master
 juju add-relation kubernetes-e2e easyrsa
 juju add-relation etcd easyrsa
 juju add-relation flannel etcd
-#juju add-relation kubeapi-load-balancer easyrsa
+juju add-relation kubeapi-load-balancer easyrsa
 
 echo "${0} completed successfully at `date`."
