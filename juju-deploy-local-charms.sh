@@ -45,7 +45,7 @@ juju add-relation kubernetes-master flannel
 juju add-relation kubernetes-worker easyrsa
 juju add-relation kubernetes-worker flannel
 #juju add-relation kubernetes-worker kubeapi-load-balancer
-juju add-relation kubernetes-worker kubernetes-master
+juju add-relation kubernetes-worker:kube-api-endpoint kubernetes-master:kube-api-endpoint
 juju add-relation kubernetes-e2e kubernetes-master
 juju add-relation kubernetes-e2e easyrsa
 juju add-relation etcd easyrsa
