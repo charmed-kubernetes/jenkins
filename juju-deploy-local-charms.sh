@@ -33,7 +33,7 @@ juju deploy /home/ubuntu/charms/builds/kubernetes-e2e
 juju deploy /home/ubuntu/charms/builds/kubernetes-master
 juju deploy /home/ubuntu/charms/builds/kubernetes-worker -n 2
 # Expose the load balancer and the worker.
-juju expose kubeapi-load-balancer
+#juju expose kubeapi-load-balancer
 juju expose kubernetes-worker
 # Add the relations.
 #juju add-relation kubernetes-master:kube-api-endpoint kubeapi-load-balancer:apiserver
