@@ -16,11 +16,16 @@ source ./define-juju.sh
 git clone https://github.com/juju-solutions/layer-easyrsa.git 
 git clone https://github.com/juju-solutions/layer-etcd.git
 git clone https://github.com/juju-solutions/charm-flannel.git
+
+# If the kubernetes repostory environment variable is defined use it, otherwise use upstream.
+KUBERNETES_REPOSITORY=${KUBERNETES_REPOSITORY:-https://github.com/kubernetes/kubernetes.git}
 # The kubernetes repository contains several charm layers.
-git clone https://github.com/juju-solutions/kubernetes.git
+git clone ${KUBERNETES_REPOSITORY} kubernetes
 cd kubernetes
+# If the kubernetes branch environment variable is defined use it, otherwise build from master.
+KUBERNETES_BRANCH=${KUBERNETES_BRANCH:-master}
 # Checkout the right branch.
-git checkout -f master-node-split
+git checkout -f ${KUBERNETES_BRANCH}
 
 cd ${SCRIPT_DIR}
 
