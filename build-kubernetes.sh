@@ -12,7 +12,7 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-KUBE_VERSION=${1:-"v1.5.2"}
+KUBE_VERSION=${KUBE_VERSION:-"v1.5.2"}
 
 SCRIPT_DIR=${PWD}
 
@@ -21,12 +21,16 @@ source ./utilities.sh
 
 KUBE_ROOT=${SCRIPT_DIR}/kubernetes
 
-git clone https://github.com/kubernetes/kubernetes.git ${KUBE_ROOT}
+if [ ! -d ${KUBE_ROOT} ]; then
+  git clone https://github.com/kubernetes/kubernetes.git ${KUBE_ROOT}
+fi
+
 cd ${KUBE_ROOT}
+# Checkout a specific branch or tag version of Kubernetes.
 git checkout -f ${KUBE_VERSION}
 
 # The build directory changed between 1.4 to 1.5
-if [[ -d build-tools ]]; then
+if [ -d build-tools ]; then
   BUILD_DIR=build-tools
 else
   BUILD_DIR=build

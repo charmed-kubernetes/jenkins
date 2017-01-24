@@ -11,14 +11,12 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-FLANNEL_VERSION=${1:-"v0.6.2"}
-CNI_VERSION=${2:-"v0.3.0"}
-ETCD_VERSION=${3:-"v2.2.5"}
-
 SCRIPT_DIR=${PWD}
 
 # Get the function definition for download.
 source ./utilities.sh
+# Get the versions of the software to package.
+source ./versions.sh
 
 ARCH=${ARCH:-"amd64"}
 OS=${OS:-"linux"}
@@ -28,7 +26,7 @@ CNI_URL=https://github.com/containernetworking/cni/releases/download/${CNI_VERSI
 CNI_ARCHIVE=${TEMPORARY_DIRECTORY}/linux/amd64/cni-${CNI_VERSION}.tgz
 download ${CNI_URL} ${CNI_ARCHIVE}
 # NOTE The CNI loopback file is required for the kubernetes-worker resource.
-tar -xzvf ${CNI_ARCHIVE} -C ${TEMPORARY_DIRECTORY}/linux/amd64
+tar -xzvf ${CNI_ARCHIVE} -C ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
 
 # Create a url to the Etcd release archive.
 ETCD_URL=https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-${OS}-${ARCH}.tar.gz

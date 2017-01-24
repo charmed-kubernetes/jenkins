@@ -11,9 +11,7 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-FLANNEL_VERSION=${1:-"v0.7.0"}
-CNI_VERSION=${2:-"v0.4.0"}
-ETCD_VERSION=${3:-"v2.3.7"}
+FLANNEL_VERSION=${FLANNEL_VERSION:-"v0.7.0"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}
@@ -24,14 +22,14 @@ SCRIPT_DIR=${PWD}
 source ./utilities.sh
 
 # Build the CNI binaries for a version, os and arch.
-./build-cni.sh ${CNI_VERSION} ${OS} ${ARCH}
+./build-cni.sh
 
 # Build the etcd binaries for a version, os and arch.
-./build-etcd.sh ${ETCD_VERSION}
+./build-etcd.sh
 
 if [ ! -d flannel ]; then
   # Clone the flannel project.
-  git clone https://github.com/coreos/flannel.git
+  git clone https://github.com/coreos/flannel.git flannel
 fi 
 
 cd flannel

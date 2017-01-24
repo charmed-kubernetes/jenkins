@@ -9,7 +9,7 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-CNI_VERSION=${1:-"v0.4.0"}
+CNI_VERSION=${CNI_VERSION:-"v0.4.0"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}
@@ -18,7 +18,7 @@ SCRIPT_DIR=${PWD}
 
 if [ ! -d cni ]; then
   # Clone the containernetworking cni project.
-  git clone https://github.com/containernetworking/cni.git
+  git clone https://github.com/containernetworking/cni.git cni
 fi
 
 cd cni

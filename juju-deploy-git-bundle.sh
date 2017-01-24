@@ -25,7 +25,7 @@ juju model-config -m ${MODEL} test-mode=1
 
 git clone ${BUNDLE} bundle
 cd bundle
-git checkout ${BRANCH}
+git checkout -f ${BRANCH}
 cd ..
 
 # Deploy the kubernetes bundle remember the pwd is mounted as workspace.

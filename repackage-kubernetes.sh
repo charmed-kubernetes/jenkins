@@ -12,12 +12,12 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-KUBE_VERSION=${1:-"v1.5.1"}
-
 SCRIPT_DIR=${PWD}
 
 # Get the function definitions for os and architecture detection.
 source ./utilities.sh
+# Get the versions of the software to package.
+source ./versions.sh
 
 ARCH=${ARCH:-"amd64"}
 OS=${OS:-"linux"}
@@ -26,6 +26,9 @@ OS=${OS:-"linux"}
 KUBE_URL=https://github.com/kubernetes/kubernetes/releases/download/${KUBE_VERSION}/kubernetes.tar.gz
 KUBE_ARCHIVE=${TEMPORARY_DIRECTORY}/kubernetes.tar.gz
 download ${KUBE_URL} ${KUBE_ARCHIVE}
+echo "Compare this hash to https://github.com/kubernetes/kubernetes/releases"
+echo ""
+echo "Uncompressing ${KUBE_ARCHIVE}"
 tar -xvzf ${KUBE_ARCHIVE} -C ${TEMPORARY_DIRECTORY}
 KUBE_ROOT=${TEMPORARY_DIRECTORY}/kubernetes
 

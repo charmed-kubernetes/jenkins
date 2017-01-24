@@ -9,7 +9,7 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-ETCD_VERSION=${1:-"v2.3.7"}
+ETCD_VERSION=${ETCD_VERSION:-"v2.3.7"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}
@@ -18,7 +18,7 @@ SCRIPT_DIR=${PWD}
 
 if [ ! -d etcd ]; then
   # Clone the coreos etcd project.
-  git clone https://github.com/coreos/etcd.git
+  git clone https://github.com/coreos/etcd.git etcd
 fi
 
 cd etcd

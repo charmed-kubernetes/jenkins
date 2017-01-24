@@ -11,13 +11,10 @@ set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
 #set -o xtrace  # Print the commands that are executed.
 
-EASYRSA_VERSION=${1:-"3.0.1"}
-FLANNEL_VERSION=${2:-"v0.7.0"}
-CNI_VERSION=${3:-"v0.4.0"}
-ETCD_VERSION=${4:-"v2.3.7"}
-KUBE_VERSION=${5:-"v1.5.2"}
-
 SCRIPT_DIR=${PWD}
+
+# Define the versions of the software to build.
+source ./versions.sh
 
 # Define the get_os function.
 source ./utilities.sh
@@ -35,10 +32,10 @@ for ARCHITECTURE in ${ARCHITECTURES}; do
   export ARCH=${ARCHITECTURE}
   mkdir -p ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
   # Build the CNI, etcd, and flannel resources.
-  ./build-flannel.sh ${FLANNEL_VERSION} ${CNI_VERSION} ${ETCD_VERSION}
+  ./build-flannel.sh
 done
 # Build the cross platform kubernetes binaries.
-./build-kubernetes.sh ${KUBE_VERSION}
+./build-kubernetes.sh
 
 # Change back to the original directory.
 cd ${SCRIPT_DIR}
