@@ -66,8 +66,7 @@ echo "Starting build `date`."
 # test/e2e_node/e2e_node.test
 
 # Create a list of the targets we are interested in.
-TARGETS='cmd/kube-dns \
-  cmd/kube-proxy \
+TARGETS='cmd/kube-proxy \
   cmd/kube-apiserver \
   cmd/kube-controller-manager \
   cmd/kubelet \
@@ -77,7 +76,7 @@ TARGETS='cmd/kube-dns \
   vendor/github.com/onsi/ginkgo/ginkgo \
   test/e2e_node/e2e_node.test'
 echo "${BUILD_DIR}/run.sh make cross WHAT="${TARGETS}""
-# Only build the targets we actually use. 
+# Only build the targets we actually use.
 ${BUILD_DIR}/run.sh make cross WHAT="${TARGETS}"
 
 echo "Build finished `date`"
@@ -102,7 +101,7 @@ for ARCH in ${ARCHITECTURES}; do
 
     MASTER_ARCHIVE=${SCRIPT_DIR}/kubernetes-master-${KUBE_VERSION}-${ARCH}.tar.gz
     echo "Creating the ${MASTER_ARCHIVE} file."
-    MASTER_FILES="kube-apiserver kube-controller-manager kubectl kube-dns kube-scheduler"
+    MASTER_FILES="kube-apiserver kube-controller-manager kubectl kube-scheduler"
     create_archive ${OUTPUT_DIRECTORY} ${MASTER_ARCHIVE} "${MASTER_FILES}"
 
     # This loopback file is created in the build-cni.sh script.
@@ -116,7 +115,7 @@ for ARCH in ${ARCHITECTURES}; do
       create_archive ${OUTPUT_DIRECTORY} ${WORKER_ARCHIVE} "${WORKER_FILES}"
     else
       echo "The ${CNI_LOOPBACK} is missing for ${ARCH} can not create resource."
-    fi 
+    fi
   else
     echo "Missing architecture: ${ARCH}"
   fi
