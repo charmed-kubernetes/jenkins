@@ -15,13 +15,11 @@ mkdir -p ${OUTPUT_DIRECTORY}
 
 # Define the in-jujubox and juju functions.
 source ./define-juju.sh
-# Define the utilities such as the run_and_wait function.
-source ./utilities.sh
 
 # Run the e2e test action.
 ACTION_ID=$(juju run-action kubernetes-e2e/0 test | cut -d " " -f 5)
-# Wait in 5 second increments for the action to be complete.
-run_and_wait "juju show-action-status ${ACTION_ID}" "status: completed" 5
+# Wait 1 hour for the action to complete.
+in-jujubox "juju show-action-status --wait=1h ${ACTION_ID}"
 # Print out the action result.
 juju show-action-status ${ACTION_ID}
 
