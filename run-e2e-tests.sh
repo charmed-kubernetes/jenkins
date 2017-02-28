@@ -18,10 +18,10 @@ source ./define-juju.sh
 
 # Run the e2e test action.
 ACTION_ID=$(juju run-action kubernetes-e2e/0 test | cut -d " " -f 5)
-# Wait 1 hour for the action to complete.
-in-jujubox "juju show-action-status --wait=1h ${ACTION_ID}"
+# Wait 2 hour for the action to complete.
+in-jujubox "juju show-action-output --wait=2h ${ACTION_ID}"
 # Print out the action result.
-juju show-action-status ${ACTION_ID}
+juju show-action-output ${ACTION_ID}
 
 # Download results from the charm and move them to the the volume directory.
 in-jujubox "juju scp kubernetes-e2e/0:${ACTION_ID}.log.tar.gz e2e.log.tar.gz && sudo mv e2e.log.tar.gz /home/ubuntu/workspace"
