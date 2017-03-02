@@ -59,6 +59,11 @@ FLANNEL=$(charm_id ${ID} "" flannel)
 MASTER=$(charm_id ${ID} "" kubernetes-master)
 WORKER=$(charm_id ${ID} "" kubernetes-worker)
 
+# Some of the files in JUJU_DATA my not be owned by the ubuntu user, fix that.
+CHOWN_CMD="sudo chown -R ubuntu:ubuntu /home/ubuntu/.local/share/juju"
+# Create a model just for this run of the tests.
+in-charmbox "${CHOWN_CMD} && charm login"
+
 CONTAINER_PATH=/home/ubuntu/workspace
 # Attach the resources using the workspace directory inside the container.
 charm attach ${E2E} ${CHANNEL_FLAG} e2e_${ARCH}=${CONTAINER_PATH}/${E2E_RESOURCE}
