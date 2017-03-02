@@ -37,12 +37,6 @@ tar -xzf ${CHARMS_BUILDS}/kubernetes-master.tar.gz -C ${CHARMS_BUILDS}
 tar -xzf ${CHARMS_BUILDS}/kubernetes-worker.tar.gz -C ${CHARMS_BUILDS}
 ls -al ${CHARMS_BUILDS}/*
 
-CHANNEL_FLAG=""
-# The channel is optional, when a channel is specified add the channel flag.
-if [[ -n "${CHANNEL}" ]]; then
-  CHANNEL_FLAG="--channel=${CHANNEL}"
-fi
-
 ARCH=${ARCH:-"amd64"}
 # The resources must be in the current directory.
 E2E_RESOURCE=$(ls -1 e2e-*-${ARCH}.tar.gz)
@@ -66,22 +60,22 @@ in-charmbox "${CHOWN_CMD} && charm login"
 
 CONTAINER_PATH=/home/ubuntu/workspace
 # Attach the resources using the workspace directory inside the container.
-charm attach ${E2E} ${CHANNEL_FLAG} e2e_${ARCH}=${CONTAINER_PATH}/${E2E_RESOURCE}
-charm attach ${EASYRSA} ${CHANNEL_FLAG} easyrsa=${CONTAINER_PATH}/${EASYRSA_RESOURCE}
-charm attach ${FLANNEL} ${CHANNEL_FLAG} flannel=${CONTAINER_PATH}/${FLANNEL_RESOURCE}
+charm attach ${E2E} --channel=unpublished e2e_${ARCH}=${CONTAINER_PATH}/${E2E_RESOURCE}
+charm attach ${EASYRSA} --channel=unpublished easyrsa=${CONTAINER_PATH}/${EASYRSA_RESOURCE}
+charm attach ${FLANNEL} --channel=unpublished flannel=${CONTAINER_PATH}/${FLANNEL_RESOURCE}
 # The etcd charm has a snapshot resource, that is not uploaded to the charm store.
-charm attach ${MASTER} ${CHANNEL_FLAG} kubernetes=${CONTAINER_PATH}/${MASTER_RESOURCE}
-charm attach ${WORKER} ${CHANNEL_FLAG} kubernetes=${CONTAINER_PATH}/${WORKER_RESOURCE}
+charm attach ${MASTER} --channel=unpublished kubernetes=${CONTAINER_PATH}/${MASTER_RESOURCE}
+charm attach ${WORKER} --channel=unpublished kubernetes=${CONTAINER_PATH}/${WORKER_RESOURCE}
 
-E2E_RESOURCES=$(charm_resources ${E2E} ${CHANNEL})
+E2E_RESOURCES=$(charm_resources ${E2E})
 charm_push_release ${CHARM_BUILDS}/kubernetes-e2e ${E2E} ${CHANNEL} "${E2E_RESOURCES}"
-EASYRSA_RESOURCES=$(charm_resources ${EASYRSA} ${CHANNEL})
+EASYRSA_RESOURCES=$(charm_resources ${EASYRSA})
 charm_push_release ${CHARM_BUILDS}/easyrsa ${EASYRSA} ${CHANNEL} "${EASYRSA_RESOURCES}"
-ETCD_RESOURCES=$(charm_resources ${ETCD} ${CHANNEL})
+ETCD_RESOURCES=$(charm_resources ${ETCD})
 charm_push_release ${CHARM_BUILDS}/etcd ${ETCD} ${CHANNEL} "${ETCD_RESOURCES}"
-FLANNEL_RESOURCES=$(charm_resources ${FLANNEL} ${CHANNEL})
+FLANNEL_RESOURCES=$(charm_resources ${FLANNEL})
 charm_push_release ${CHARM_BUILDS}/flannel ${FLANNEL} ${CHANNEL} "${FLANNEL_RESOURCES}"
-MASTER_RESOURCES=$(charm_resources ${MASTER} ${CHANNEL})
+MASTER_RESOURCES=$(charm_resources ${MASTER})
 charm_push_release ${CHARM_BUILDS}/kubernetes-master ${MASTER} ${CHANNEL} "${MASTER_RESOURCES}"
-WORKER_RESOURCES=$(charm_resources ${WORKER} ${CHANNEL})
+WORKER_RESOURCES=$(charm_resources ${WORKER})
 charm_push_release ${CHARM_BUILDS}/kubernetes-worker ${WORKER} ${CHANNEL} "${WORKER_RESOURCES}"

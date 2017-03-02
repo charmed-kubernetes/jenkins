@@ -55,12 +55,8 @@ function charm_id() {
 # Print a string of resources that exist for this charm.
 function charm_resources() {
   local charm_id=$1
-  local channel=$2
-  local channel_flag=""
-  if [[ -n "${channel}" ]]; then
-    channel_flag="--channel=${channel}"
-  fi
-  local show_cmd="charm show ${channel_flag} ${charm_id} resources"
+  # There is a bug with the attach where resources always go to unpublished.
+  local show_cmd="charm show --channel=unpublished ${charm_id} resources"
   echo `${show_cmd} | grep -E 'Name:|Revision:' | awk '{print $2}' | paste - - | tr [:blank:] '-'`
   # charm show cs:~containers/kubernetes-e2e resources | grep -E 'Name:|Revision:' | awk '{print $2}' | paste - - | tr [:blank:] '-'
   # charm show ~containers/kubernetes-e2e resources --format json | jq -r '.resources[] | [.Name,.Revision|tostring] | join("-")'
