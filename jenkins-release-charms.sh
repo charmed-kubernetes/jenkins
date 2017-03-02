@@ -46,7 +46,7 @@ MASTER_RESOURCE=$(ls -1 kubernetes-master-*-${ARCH}.tar.gz)
 WORKER_RESOURCE=$(ls -1 kubernetes-worker-*-${ARCH}.tar.gz)
 
 # Get the charm identifiers for each charm, none of them have a series.
-E2E=$(charm_id ${ID} "" kubernete-e2e)
+E2E=$(charm_id ${ID} "" kubernetes-e2e)
 EASYRSA=$(charm_id ${ID} "" easyrsa)
 ETCD=$(charm_id ${ID} "" etcd)
 FLANNEL=$(charm_id ${ID} "" flannel)
@@ -58,24 +58,18 @@ CHOWN_CMD="sudo chown -R ubuntu:ubuntu /home/ubuntu/.local/share/juju"
 # Create a model just for this run of the tests.
 in-charmbox "${CHOWN_CMD} && charm login"
 
+# The resources are in /home/ubuntu/workspace inside the container.
 CONTAINER_PATH=/home/ubuntu/workspace
-# Attach the resources using the workspace directory inside the container.
-charm attach ${E2E} --channel=unpublished e2e_${ARCH}=${CONTAINER_PATH}/${E2E_RESOURCE}
-charm attach ${EASYRSA} --channel=unpublished easyrsa=${CONTAINER_PATH}/${EASYRSA_RESOURCE}
-charm attach ${FLANNEL} --channel=unpublished flannel=${CONTAINER_PATH}/${FLANNEL_RESOURCE}
-# The etcd charm has a snapshot resource, that is not uploaded to the charm store.
-charm attach ${MASTER} --channel=unpublished kubernetes=${CONTAINER_PATH}/${MASTER_RESOURCE}
-charm attach ${WORKER} --channel=unpublished kubernetes=${CONTAINER_PATH}/${WORKER_RESOURCE}
 
-E2E_RESOURCES=$(charm_resources ${E2E})
+E2E_RESOURCES=e2e_${ARCH}=${CONTAINER_PATH}/${E2E_RESOURCE}
 charm_push_release ${CHARM_BUILDS}/kubernetes-e2e ${E2E} ${CHANNEL} "${E2E_RESOURCES}"
-EASYRSA_RESOURCES=$(charm_resources ${EASYRSA})
+EASYRSA_RESOURCES=easyrsa=${CONTAINER_PATH}/${EASYRSA_RESOURCE}
 charm_push_release ${CHARM_BUILDS}/easyrsa ${EASYRSA} ${CHANNEL} "${EASYRSA_RESOURCES}"
-ETCD_RESOURCES=$(charm_resources ${ETCD})
-charm_push_release ${CHARM_BUILDS}/etcd ${ETCD} ${CHANNEL} "${ETCD_RESOURCES}"
-FLANNEL_RESOURCES=$(charm_resources ${FLANNEL})
+# The etcd charm does not have a built resource at this time.
+charm_push_release ${CHARM_BUILDS}/etcd ${ETCD} ${CHANNEL}
+FLANNEL_RESOURCES=flannel=${CONTAINER_PATH}/${FLANNEL_RESOURCE}
 charm_push_release ${CHARM_BUILDS}/flannel ${FLANNEL} ${CHANNEL} "${FLANNEL_RESOURCES}"
-MASTER_RESOURCES=$(charm_resources ${MASTER})
+MASTER_RESOURCES=kubernetes=${CONTAINER_PATH}/${MASTER_RESOURCE}
 charm_push_release ${CHARM_BUILDS}/kubernetes-master ${MASTER} ${CHANNEL} "${MASTER_RESOURCES}"
-WORKER_RESOURCES=$(charm_resources ${WORKER})
+WORKER_RESOURCES=kubernetes=${CONTAINER_PATH}/${WORKER_RESOURCE}
 charm_push_release ${CHARM_BUILDS}/kubernetes-worker ${WORKER} ${CHANNEL} "${WORKER_RESOURCES}"
