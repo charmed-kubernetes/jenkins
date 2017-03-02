@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the full suite of e2e-runner and gubernator scripts on jenkins.
+# Runs the full suite of e2e tests and gubernator scripts on jenkins.
 
 set -o errexit  # Exit when an individual command fails.
 set -o nounset  # Exit when undeclaried variables are used.
@@ -37,7 +37,7 @@ trap "juju destroy-model -y ${MODEL} || in-jujubox ${CHOWN_CMD} || true" EXIT
 # Let the deployment complete.
 ./wait-cluster-ready.sh
 
-# Run the end to end tests and 
+# Run the end to end tests and copy results to the output directory.
 ./run-e2e-tests.sh ${OUTPUT_DIRECTORY}
 
 # Formats the output data and upload to GCE.
