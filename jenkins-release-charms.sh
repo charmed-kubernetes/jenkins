@@ -61,18 +61,18 @@ in-charmbox "${CHOWN_CMD} && charm login"
 
 # The resources are in /home/ubuntu/workspace inside the container.
 CONTAINER_PATH=/home/ubuntu/workspace
-CONTAINTER_BUILDS=/home/ubuntu/charms/builds
+CONTAINER_BUILDS=/home/ubuntu/charms/builds
 E2E_RESOURCES=e2e_${ARCH}=${CONTAINER_PATH}/${E2E_RESOURCE}
-charm_push_release ${CONTAINTER_BUILDS}/kubernetes-e2e ${E2E} ${CHANNEL} "${E2E_RESOURCES}"
+charm_push_release ${CONTAINER_BUILDS}/kubernetes-e2e ${E2E} ${CHANNEL} "${E2E_RESOURCES}"
 EASYRSA_RESOURCES=easyrsa=${CONTAINER_PATH}/${EASYRSA_RESOURCE}
-charm_push_release ${CONTAINTER_BUILDS}/easyrsa ${EASYRSA} ${CHANNEL} "${EASYRSA_RESOURCES}"
+charm_push_release ${CONTAINER_BUILDS}/easyrsa ${EASYRSA} ${CHANNEL} "${EASYRSA_RESOURCES}"
 # The etcd charm does not have a built resource at this time.
-charm_push_release ${CONTAINTER_BUILDS}/etcd ${ETCD} ${CHANNEL}
+charm_push_release ${CONTAINER_BUILDS}/etcd ${ETCD} ${CHANNEL}
 FLANNEL_RESOURCES=flannel=${CONTAINER_PATH}/${FLANNEL_RESOURCE}
-charm_push_release ${CONTAINTER_BUILDS}/flannel ${FLANNEL} ${CHANNEL} "${FLANNEL_RESOURCES}"
+charm_push_release ${CONTAINER_BUILDS}/flannel ${FLANNEL} ${CHANNEL} "${FLANNEL_RESOURCES}"
 # The load balancer charm does not have a built resource at this time.
 charm push_release ${CONTAINER_BUILDS}/kubeapi-load-balancer ${LOAD} ${CHANNEL}
 MASTER_RESOURCES=kubernetes=${CONTAINER_PATH}/${MASTER_RESOURCE}
-charm_push_release ${CONTAINTER_BUILDS}/kubernetes-master ${MASTER} ${CHANNEL} "${MASTER_RESOURCES}"
+charm_push_release ${CONTAINER_BUILDS}/kubernetes-master ${MASTER} ${CHANNEL} "${MASTER_RESOURCES}"
 WORKER_RESOURCES=kubernetes=${CONTAINER_PATH}/${WORKER_RESOURCE}
-charm_push_release ${CONTAINTER_BUILDS}/kubernetes-worker ${WORKER} ${CHANNEL} "${WORKER_RESOURCES}"
+charm_push_release ${CONTAINER_BUILDS}/kubernetes-worker ${WORKER} ${CHANNEL} "${WORKER_RESOURCES}"
