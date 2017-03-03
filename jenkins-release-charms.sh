@@ -71,7 +71,7 @@ charm_push_release ${CONTAINER_BUILDS}/etcd ${ETCD} ${CHANNEL}
 FLANNEL_RESOURCES=flannel=${CONTAINER_PATH}/${FLANNEL_RESOURCE}
 charm_push_release ${CONTAINER_BUILDS}/flannel ${FLANNEL} ${CHANNEL} "${FLANNEL_RESOURCES}"
 # The load balancer charm does not have a built resource at this time.
-charm push_release ${CONTAINER_BUILDS}/kubeapi-load-balancer ${LOAD} ${CHANNEL}
+charm_push_release ${CONTAINER_BUILDS}/kubeapi-load-balancer ${LOAD} ${CHANNEL}
 MASTER_RESOURCES=kubernetes=${CONTAINER_PATH}/${MASTER_RESOURCE}
 charm_push_release ${CONTAINER_BUILDS}/kubernetes-master ${MASTER} ${CHANNEL} "${MASTER_RESOURCES}"
 WORKER_RESOURCES=kubernetes=${CONTAINER_PATH}/${WORKER_RESOURCE}
