@@ -50,6 +50,7 @@ E2E=$(charm_id ${ID} "" kubernetes-e2e)
 EASYRSA=$(charm_id ${ID} "" easyrsa)
 ETCD=$(charm_id ${ID} "" etcd)
 FLANNEL=$(charm_id ${ID} "" flannel)
+LOAD=$(charm_id ${ID} "" kubeapi-load-balancer)
 MASTER=$(charm_id ${ID} "" kubernetes-master)
 WORKER=$(charm_id ${ID} "" kubernetes-worker)
 
@@ -69,6 +70,8 @@ charm_push_release ${CONTAINTER_BUILDS}/easyrsa ${EASYRSA} ${CHANNEL} "${EASYRSA
 charm_push_release ${CONTAINTER_BUILDS}/etcd ${ETCD} ${CHANNEL}
 FLANNEL_RESOURCES=flannel=${CONTAINER_PATH}/${FLANNEL_RESOURCE}
 charm_push_release ${CONTAINTER_BUILDS}/flannel ${FLANNEL} ${CHANNEL} "${FLANNEL_RESOURCES}"
+# The load balancer charm does not have a built resource at this time.
+charm push_release ${CONTAINER_BUILDS}/kubeapi-load-balancer ${LOAD} ${CHANNEL}
 MASTER_RESOURCES=kubernetes=${CONTAINER_PATH}/${MASTER_RESOURCE}
 charm_push_release ${CONTAINTER_BUILDS}/kubernetes-master ${MASTER} ${CHANNEL} "${MASTER_RESOURCES}"
 WORKER_RESOURCES=kubernetes=${CONTAINER_PATH}/${WORKER_RESOURCE}
