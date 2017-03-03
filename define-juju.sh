@@ -91,7 +91,7 @@ function charm_push_release() {
   local cs_resources=$(charm_resources ${charm_id})
   # The charm release command requires all the resources from the charm store.
   local charm_store_resources=""
-  for resource in "${cs_resources}"; do
+  for resource in ${cs_resources}; do
     charm_store_resources="${charm_store_resources} --resource ${resource}"
   done
   # Release the charm to the specific channel.
