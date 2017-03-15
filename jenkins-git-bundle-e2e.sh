@@ -9,32 +9,32 @@ set -o xtrace  # Print the commands that are executed.
 CLOUD=${1:-"gce"}
 GIT_URL=${2:-"https://github.com/juju-solutions/bundle-kubernetes-core.git"}
 GIT_BRANCH=${3:-"master"}
-
+# The directory to use for this script, should be WORKSPACE, but can be PWD.
+SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
 # The path to the archive of the JUJU_DATA directory for the specific cloud.
 JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
 # Uncompress the file that contains the Juju data to the workspace directory.
-tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
-
-# Set the JUJU_DATA directory for this jenkins workspace.
-export JUJU_DATA=${WORKSPACE}/juju
-export JUJU_REPOSITORY=${WORKSPACE}/charms
+tar -xvzf ${JUJU_DATA_TAR} -C ${SCRIPT_DIRECTORY}
 
 # Define a unique model name for this run.
-MODEL=${BUILD_TAG}
+MODEL=${BUILD_TAG:-"no-model-defined"}
 # Set the output directory to store the results.
-OUTPUT_DIRECTORY=artifacts
+OUTPUT_DIRECTORY=${SCRIPT_DIRECTORY}/artifacts
 
-source ./define-juju.sh
+# Set the JUJU_DATA directory for this jenkins workspace.
+export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
+export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
+source ${SCRIPT_DIRECTORY}/define-juju.sh
 # Catch all EXITs from this script and make sure to destroy the model.
 trap "juju destroy-model -y ${MODEL} || true" EXIT
 
 # Deploy the bundle and add the kubernetes-e2e charm.
-./juju-deploy-git-bundle.sh ${MODEL} ${GIT_URL} ${GIT_BRANCH}
+${SCRIPT_DIRECTORY}/juju-deploy-git-bundle.sh ${MODEL} ${GIT_URL} ${GIT_BRANCH}
 
 # Let the deployment complete.
-./wait-cluster-ready.sh
+${SCRIPT_DIRECTORY}/wait-cluster-ready.sh
 
 # Run the end to end tests and 
-./run-e2e-tests.sh ${OUTPUT_DIRECTORY}
+${SCRIPT_DIRECTORY}/run-e2e-tests.sh ${OUTPUT_DIRECTORY}
 
 # TODO Parse output and exit one on failure, or zero on success.

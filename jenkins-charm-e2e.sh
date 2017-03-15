@@ -9,29 +9,38 @@ if [ -z "${MODEL}" ]; then
   echo "Can not test, the model is undefined."
   exit 1 
 fi
+# The cloud is an option for this script, default to gce.
+CLOUD=${CLOUD:-"gce"}
+# The directory to use for this script, should be WORKSPACE, but can be PWD.
+SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
+# Set the output directory to store the results.
+OUTPUT_DIRECTORY=${SCRIPT_DIRECTORY}/artifacts
 
 # The path to the archive of the JUJU_DATA directory for the specific cloud.
 JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
 # Uncompress the file that contains the Juju data to the workspace directory.
-tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
+tar -xvzf ${JUJU_DATA_TAR} -C ${SCRIPT_DIRECTORY}
 
 # Set the Juju envrionment variables for this jenkins job.
-export JUJU_DATA=${WORKSPACE}/juju
-export JUJU_REPOSITORY=${WORKSPACE}/charms
+export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
+export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
+source ${SCRIPT_DIRECTORY}/define-juju.sh
 
-# Set the output directory to store the results.
-OUTPUT_DIRECTORY=${WORKSPACE}/artifacts
-
-source ./define-juju.sh
 # Make the charms owned by the ubuntu user.
 CHOWN_CMD="sudo chown -R ubuntu:ubuntu /home/ubuntu/.local/share/juju"
 # Set test mode on the deployment so we dont bloat charm-store deployment count
 in-jujubox "${CHOWN_CMD} && juju switch ${MODEL}"
+
+# Grab the user id and group id of this current user.
+GROUP_ID=$(id -g)
+USER_ID=$(id -u)
+# Change the permissions back to the current user so jenkins can clean up.
+CHOWN_CMD="sudo chown -R ${USER_ID}:${GROUP_ID} /home/ubuntu/.local/share/juju"
 # Catch all EXITs from this script and make sure to destroy the model.
-trap "juju destroy-model -y ${MODEL} || true" EXIT
+trap "juju destroy-model -y ${MODEL} && in-jujubox ${CHOWN_CMD}" EXIT
 
 # Let the deployment complete.
-./wait-cluster-ready.sh
+${SCRIPT_DIRECTORY}/wait-cluster-ready.sh
 
 # Run the end to end tests.
-./run-e2e-tests.sh ${OUTPUT_DIRECTORY}
+${SCRIPT_DIRECTORY}/run-e2e-tests.sh ${OUTPUT_DIRECTORY}

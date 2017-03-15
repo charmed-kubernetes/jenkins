@@ -5,11 +5,6 @@ set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
-SCRIPT_DIR="$( cd "$( dirname "${0}" )" && pwd )"
-if [[ -z "${WORKSPACE}" ]]; then
-  export WORKSPACE=${PWD}
-fi
-
 ID=${1:-"containers"}
 CHANNEL=${2}
 
@@ -20,17 +15,19 @@ fi
 
 # The cloud is an option for this script, default to gce.
 CLOUD=${CLOUD:-"gce"}
+# The directory to use for this script, should be WORKSPACE, but can be PWD.
+SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
 # The path to the archive of the JUJU_DATA directory for the specific cloud.
 JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
 # Uncompress the file that contains the Juju data to the workspace directory.
-tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
+tar -xvzf ${JUJU_DATA_TAR} -C ${SCRIPT_DIRECTORY}
 
 # Set the JUJU_DATA directory for this jenkins workspace.
-export JUJU_DATA=${SCRIPT_DIR}/juju
-export JUJU_REPOSITORY=${SCRIPT_DIR}/charms
+export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
+export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
 
 # Define the juju functions.
-source ${SCRIPT_DIR}/define-juju.sh
+source ${SCRIPT_DIRECTORY}/define-juju.sh
 
 BUNDLE_REPOSITORY="https://github.com/juju-solutions/bundle-canonical-kubernetes.git"
 git clone ${BUNDLE_REPOSITORY} bundle
@@ -59,5 +56,13 @@ PUSH_CMD="charm push ${CONTAINER_PATH}/core-flannel ${CORE}"
 # Run the push command and capture the id of the bundle.
 CORE_REVISION=`${PUSH_CMD} | head 1 | awk '{print $2}'`
 charm release ${CHANNEL_FLAG} ${CORE_REVISION}
+
+# Grab the user id and group id of this current user.
+GROUP_ID=$(id -g)
+USER_ID=$(id -u)
+# Change the permissions back to the current user so jenkins can clean up.
+CHOWN_CMD="sudo chown -R ${USER_ID}:${GROUP_ID} /home/ubuntu/.local/share/juju"
+# Change the permissions back.
+in-charmbox "${CHOWN_CMD}"
 
 echo "${0} completed successfully at `date`."
