@@ -5,14 +5,19 @@ set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
+# The cloud is an option for this script, default to gce.
+CLOUD=${CLOUD:-"gce"}
+# The directory to use for this script, should be WORKSPACE, but can be PWD.
+SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
+
 # The path to the archive of the JUJU_DATA directory for the specific cloud.
 JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
 # Uncompress the file that contains the Juju data to the workspace directory.
-tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
+tar -xvzf ${JUJU_DATA_TAR} -C ${SCRIPT_DIRECTORY}
 
 # Set the JUJU_DATA directory for this jenkins workspace.
-export JUJU_DATA=${WORKSPACE}/juju
-export JUJU_REPOSITORY=${WORKSPACE}/charms
+export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
+export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
 
 # Define a unique model name for this run.
 MODEL=${1:-${BUILD_TAG}}
@@ -24,16 +29,16 @@ RESOURCES_DIRECTORY=${3:-"resources"}
 OUTPUT_DIRECTORY=${4:"artifacts/bundletester"}
 
 # Deploy the bundle and add the kubernetes-e2e charm.
-./juju-deploy-test-bundle.sh ${MODEL} ${BUNDLE}
+${SCRIPT_DIRECTORY}/juju-deploy-test-bundle.sh ${MODEL} ${BUNDLE}
 
 # Run a fresh deploy with resources copied from another jenkins job.
-./juju-attach-resources.sh ${RESOURCES_DIRECTORY}
+${SCRIPT_DIRECTORY}/juju-attach-resources.sh ${RESOURCES_DIRECTORY}
 
 # Let the deployment complete.
-./wait-cluster-ready.sh
+${SCRIPT_DIRECTORY}/wait-cluster-ready.sh
 
 # Run bundletester against the model.
-./run-bundletester.sh ${BUNDLE} ${OUTPUT_DIRECTORY}
+${SCRIPT_DIRECTORY}/run-bundletester.sh ${BUNDLE} ${OUTPUT_DIRECTORY}
 
 # According to the design bundletester results verify new resources.
 # The e2e tests can be run in a non blocking downstream job.
