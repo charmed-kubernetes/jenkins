@@ -16,4 +16,8 @@ JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
 # Uncompress the file that contains the Juju data to the workspace directory.
 tar -xvzf ${JUJU_DATA_TAR} -C ${SCRIPT_DIRECTORY}
 
+# Set the Juju envrionment variables for this script.
+export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
+export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
+
 ${SCRIPT_DIRECTORY}/git-clone-charm-build.sh

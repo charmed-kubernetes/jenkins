@@ -16,6 +16,12 @@ JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
 # Uncompress the file that contains the Juju data to the workspace directory.
 tar -xvzf ${JUJU_DATA_TAR} -C ${SCRIPT_DIRECTORY}
 
+# Set the Juju environment variables for this script.
+export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
+export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
+# Define a unique model name for this run.
+export MODEL=${BUILD_TAG:-"default-model"}
+
 CHARMS_BUILDS=${SCRIPT_DIRECTORY}/charms/builds
 # Expand all the charm archives to the charms/builds directory.
 tar -xzf ${CHARMS_BUILDS}/easyrsa.tar.gz -C ${CHARMS_BUILDS}
@@ -26,9 +32,6 @@ tar -xzf ${CHARMS_BUILDS}/kubernetes-e2e.tar.gz -C ${CHARMS_BUILDS}
 tar -xzf ${CHARMS_BUILDS}/kubernetes-master.tar.gz -C ${CHARMS_BUILDS}
 tar -xzf ${CHARMS_BUILDS}/kubernetes-worker.tar.gz -C ${CHARMS_BUILDS}
 
-# Define a unique model name for this run.
-export MODEL=${MODEL:-${BUILD_TAG}}
-
 # Create a model, deploy, expose, relate all the Kubernetes charms.
 ${SCRIPT_DIRECTORY}/juju-deploy-local-charms.sh ${MODEL}
 
@@ -37,8 +40,5 @@ ${SCRIPT_DIRECTORY}/juju-attach-resources.sh resources
 
 echo "Charms deployed and resources attached to ${MODEL} at `date`."
 
-# Set the Juju environment variables for this script.
-export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
-export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
 source ${SCRIPT_DIRECTORY}/define-juju.sh
 juju status
