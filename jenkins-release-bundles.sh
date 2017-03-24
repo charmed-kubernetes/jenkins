@@ -54,10 +54,14 @@ PUSH_CMD="charm push ${CONTAINER_PATH}/cdk-flannel ${CDK}"
 # Run the push command and capture the id of the bundle.
 CDK_REVISION=`${PUSH_CMD} | head -1 | awk '{print $2}'`
 charm release ${CHANNEL_FLAG} ${CDK_REVISION}
+# Grant everyone read access to this charm in channel.
+charm grant ${CHANNEL_FLAG} ${CDK_REVISION} everyone
 
 PUSH_CMD="charm push ${CONTAINER_PATH}/core-flannel ${CORE}"
 # Run the push command and capture the id of the bundle.
 CORE_REVISION=`${PUSH_CMD} | head 1 | awk '{print $2}'`
 charm release ${CHANNEL_FLAG} ${CORE_REVISION}
+# Grant everyone read access to this charm in channel.
+charm grant ${CHANNEL_FLAG} ${CORE_REVISION} everyone
 
 echo "${0} completed successfully at `date`."

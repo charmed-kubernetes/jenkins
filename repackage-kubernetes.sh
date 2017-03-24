@@ -57,12 +57,12 @@ echo "$(sha256sum_file ${SERVER_FILE}) $(basename ${SERVER_FILE})"
 
 # Expand the server file archive to get the master binaries.
 tar -xvzf ${SERVER_FILE} -C ${TEMPORARY_DIRECTORY}
-# The server directory is where the master and server binaries are kept. 
+# The server directory is where the master and worker binaries are kept.
 SERVER_DIRECTORY=${KUBE_ROOT}/server/bin
 
 MASTER_ARCHIVE=${SCRIPT_DIR}/kubernetes-master-${KUBE_VERSION}-${ARCH}.tar.gz
 echo "Creating the ${MASTER_ARCHIVE} file."
-MASTER_FILES="kube-apiserver kube-controller-manager kubectl kube-dns kube-scheduler"
+MASTER_FILES="kube-apiserver kube-controller-manager kubectl kube-scheduler"
 create_archive ${SERVER_DIRECTORY} ${MASTER_ARCHIVE} "${MASTER_FILES}"
 
 # Copy the loopback binary (needed for CNI) to the server directory.
