@@ -11,20 +11,21 @@ set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
 #set -o xtrace  # Print the commands that are executed.
 
-SCRIPT_DIR=${PWD}
+# The directory to use for this script, should be WORKSPACE, but can be PWD.
+SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
 
 # Define the versions of the software to build.
-source ./versions.sh
+source ${SCRIPT_DIRECTORY}/versions.sh
 
 # Define the get_os function.
-source ./utilities.sh
+source ${SCRIPT_DIRECTORY}/utilities.sh
 
 # Create a temporary directory to hold the files.
-export TEMPORARY_DIRECTORY=${SCRIPT_DIR}/temp
+export TEMPORARY_DIRECTORY=${SCRIPT_DIRECTORY}/temp
 mkdir -p ${TEMPORARY_DIRECTORY}
 
 # EasyRSA is a collection of scripts, not compiled or built.
-./repackage-easyrsa.sh ${EASYRSA_VERSION}
+${SCRIPT_DIRECTORY}/repackage-easyrsa.sh ${EASYRSA_VERSION}
 
 export OS=$(get_os)
 export ARCHITECTURES=${ARCHITECTURES:-"amd64"}  #"amd64 arm arm64 ppc64le"
@@ -32,12 +33,12 @@ for ARCHITECTURE in ${ARCHITECTURES}; do
   export ARCH=${ARCHITECTURE}
   mkdir -p ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
   # Build the CNI, etcd, and flannel resources.
-  ./build-flannel.sh
+  ${SCRIPT_DIRECTORY}/build-flannel.sh
 done
 # Build the cross platform kubernetes binaries.
-./build-kubernetes.sh
+${SCRIPT_DIRECTORY}/build-kubernetes.sh
 
 # Change back to the original directory.
-cd ${SCRIPT_DIR}
+cd ${SCRIPT_DIRECTORY}
 echo "Removing ${TEMPORARY_DIRECTORY}"
 rm -rf ${TEMPORARY_DIRECTORY}

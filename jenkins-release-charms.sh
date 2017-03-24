@@ -5,26 +5,24 @@ set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
-SCRIPT_DIR="$( cd "$( dirname "${0}" )" && pwd )"
-if [[ -z "${WORKSPACE}" ]]; then
-  export WORKSPACE=${PWD}
-fi
 ID=${1}
 CHANNEL=${2}
 
 # The cloud is an option for this script, default to gce.
 CLOUD=${CLOUD:-"gce"}
+# The directory to use for this script, should be WORKSPACE, but can be PWD.
+SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
 # The path to the archive of the JUJU_DATA directory for the specific cloud.
 JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
 # Uncompress the file that contains the Juju data to the workspace directory.
-tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
+tar -xvzf ${JUJU_DATA_TAR} -C ${SCRIPT_DIRECTORY}
 
 # Set the JUJU_DATA directory for this jenkins workspace.
-export JUJU_DATA=${SCRIPT_DIR}/juju
-export JUJU_REPOSITORY=${SCRIPT_DIR}/charms
+export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
+export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
 
 # Define the juju functions.
-source ${SCRIPT_DIR}/define-juju.sh
+source ${SCRIPT_DIRECTORY}/define-juju.sh
 
 # Expand all the charm archives to the charms/builds directory.
 CHARMS_BUILDS=${JUJU_REPOSITORY}/builds
@@ -76,3 +74,10 @@ MASTER_RESOURCES=kubernetes=${CONTAINER_PATH}/${MASTER_RESOURCE}
 charm_push_release ${CONTAINER_BUILDS}/kubernetes-master ${MASTER} ${CHANNEL} "${MASTER_RESOURCES}"
 WORKER_RESOURCES=kubernetes=${CONTAINER_PATH}/${WORKER_RESOURCE}
 charm_push_release ${CONTAINER_BUILDS}/kubernetes-worker ${WORKER} ${CHANNEL} "${WORKER_RESOURCES}"
+
+# Grab the user id and group id of this current user.
+GROUP_ID=$(id -g)
+USER_ID=$(id -u)
+# Change the permissions back to the current user so jenkins can clean up.
+CHOWN_CMD="sudo chown -R ${USER_ID}:${GROUP_ID} /home/ubuntu/.local/share/juju"
+in-charmbox "${CHOWN_CMD}"
