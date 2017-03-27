@@ -9,7 +9,7 @@ set -o pipefail  # The exit status of the last command is returned.
 
 echo "${0} started at `date`."
 
-CNI_VERSION=${CNI_VERSION:-"v0.5.0"}
+CNI_VERSION=${CNI_VERSION:-"v0.5.1"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}
@@ -41,6 +41,9 @@ docker run \
 
 # Copy the binaries to the output directory.
 cp -v cni/bin/* ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
+
+# Create the cni resource archive for kubernetes-worker charm.
+create_archive cni/bin ${SCRIPT_DIR}/cni-${ARCH}-${VERSION}.tgz '*'
 
 cd ${SCRIPT_DIR}
 echo "${0} completed successfully at `date`."
