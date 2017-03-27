@@ -42,6 +42,7 @@ docker run \
 # Copy the binaries to the output directory.
 cp -v cni/bin/* ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
 
+source ${SCRIPT_DIR}/utilities.sh
 # Create the cni resource archive for kubernetes-worker charm.
 create_archive cni/bin ${SCRIPT_DIR}/cni-${ARCH}-${VERSION}.tgz '*'
 
