@@ -44,7 +44,7 @@ cp -v cni/bin/* ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
 
 source ${SCRIPT_DIR}/utilities.sh
 # Create the cni resource archive for kubernetes-worker charm.
-create_archive cni/bin ${SCRIPT_DIR}/cni-${ARCH}-${VERSION}.tgz '*'
+create_archive cni/bin ${SCRIPT_DIR}/cni-${ARCH}-${CNI_VERSION}.tgz '*'
 
 cd ${SCRIPT_DIR}
 echo "${0} completed successfully at `date`."
