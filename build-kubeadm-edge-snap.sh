@@ -6,8 +6,6 @@ set -o pipefail  # The exit status of the last command is returned.
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}
 
-SCRIPT_DIR=${PWD}
-
 rm -rf kubernetes
 git clone https://github.com/kubernetes/kubernetes.git
 
