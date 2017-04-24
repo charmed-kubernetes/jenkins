@@ -16,7 +16,7 @@ export KUBE_VERSION=`git describe --dirty`
 GROUP_ID=$(id -g)
 USER_ID=$(id -u)
 
-docker run -it \
+docker run \
   --rm \
   -e "GOOS=${OS}" \
   -e "GOARCH=${ARCH}" \
