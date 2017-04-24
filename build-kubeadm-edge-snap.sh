@@ -20,7 +20,7 @@ docker run -it \
   --rm \
   -e "GOOS=${OS}" \
   -e "GOARCH=${ARCH}" \
-  -v ${PWD}:/kubernetes \
+  -v "${PWD}":/kubernetes \
   golang:1.7.0 \
   /bin/bash -c "cd /kubernetes/cmd/kubeadm && go get k8s.io/kubernetes/cmd/kubeadm/app && go build && chown -R ${USER_ID}:${GROUP_ID} kubeadm"
 
