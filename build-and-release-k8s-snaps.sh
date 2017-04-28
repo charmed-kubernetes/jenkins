@@ -2,7 +2,7 @@
 
 set -eux
 
-KUBE_ARCH="amd64 arm64"
+KUBE_ARCH="amd64 arm64 ppc64le s390x"
 
 git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
 (cd release/snap
