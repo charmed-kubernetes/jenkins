@@ -87,10 +87,10 @@ NAMESPACE=${NAMESPACE:-"cs:~containers"}
 
 cd $WORKSPACE
 
-/snap/bin/charm push $PWD/charms/builds/kubernetes-master $NAMESPACE/kubernetes-master
-/snap/bin/charm push $PWD/charms/builds/kubernetes-worker $NAMESPACE/kubernetes-worker
-/snap/bin/charm push $PWD/charms/builds/kubernetes-e2e $NAMESPACE/kubernetes-e2e
-/snap/bin/charm push $PWD/charms/builds/kubeapi-load-balancer $NAMESPACE/kubeapi-load-balancer
-/snap/bin/charm push $PWD/charms/builds/flannel $NAMESPACE/flannel
-/snap/bin/charm push $PWD/charms/builds/easyrsa $NAMESPACE/easyrsa
-/snap/bin/charm push $PWD/charms/builds/etcd $NAMESPACE/etcd
+/usr/bin/charm push $PWD/charms/builds/kubernetes-master $NAMESPACE/kubernetes-master
+/usr/bin/charm push $PWD/charms/builds/kubernetes-worker $NAMESPACE/kubernetes-worker
+/usr/bin/charm push $PWD/charms/builds/kubernetes-e2e $NAMESPACE/kubernetes-e2e
+/usr/bin/charm push $PWD/charms/builds/kubeapi-load-balancer $NAMESPACE/kubeapi-load-balancer
+/usr/bin/charm push $PWD/charms/builds/flannel $NAMESPACE/flannel
+/usr/bin/charm push $PWD/charms/builds/easyrsa $NAMESPACE/easyrsa
+/usr/bin/charm push $PWD/charms/builds/etcd $NAMESPACE/etcd
