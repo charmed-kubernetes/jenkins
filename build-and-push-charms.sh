@@ -6,25 +6,29 @@ set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
-# banana
-WORKSPACE=$PWD
-
 source ./define-juju.sh
 
 # The directory to use for this script, should be WORKSPACE, but can be PWD.
-SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
+WORKSPACE=${WORKSPACE:-${PWD}}
 
 echo "${0} started at `date`."
 
-SCRIPT_DIR=${PWD}
-
 # Set the Juju envrionment variables for this script.
-export JUJU_DATA=/home/charles/work/.juju
-export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
+export JUJU_REPOSITORY=${WORKSPACE}/charms
+
+# The cloud is an option for this script, default to gce.
+CLOUD=${CLOUD:-"gce"}
+# The directory to use for this script, should be WORKSPACE, but can be PWD.
+WORKSPACE=${WORKSPACE:-${PWD}}
 
 
-# Define the juju and in-charmbox functions.
-source ./define-juju.sh
+if [ -z ${JUJU_DATA} ]; then
+  export JUJU_DATA=${WORKSPACE}/juju
+  # The path to the archive of the JUJU_DATA directory for the specific cloud.
+  JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
+  # Uncompress the file that contains the Juju data to the workspace directory.
+  tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
+fi
 
 # Clone the charm repositories to the current directory.
 if [ ! -d "$PWD/layer-easyrsa" ]; then
@@ -55,7 +59,7 @@ KUBERNETES_BRANCH=${KUBERNETES_BRANCH:-"master"}
 # Checkout the right branch.
 git checkout -f ${KUBERNETES_BRANCH}
 
-cd ${SCRIPT_DIR}
+cd ${WORKSPACE}
 
 # Change the ownership of the charms directory to ubuntu user.
 #in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
@@ -74,7 +78,7 @@ in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-worker && ${
 # Change the ownership of the charms directory to ubuntu user.
 in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
 
-echo "Build successfull the charms are available at ${SCRIPT_DIR}/charms/builds"
+echo "Build successfull the charms are available at ${WORKSPACE}/charms/builds"
 
 echo "${0} completed successfully at `date`."
 
