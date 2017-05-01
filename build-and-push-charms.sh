@@ -2,7 +2,7 @@
 # Runs the charm build for the Canonical Kubernetes charms.
 
 set -o errexit  # Exit when an individual command fails.
-#set -o nounset  # Exit when undeclaried variables are used.
+set -o nounset  # Exit when undeclaried variables are used.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
@@ -86,11 +86,11 @@ NAMESPACE=${NAMESPACE:-"cs:~containers"}
 
 cd $WORKSPACE
 
-charm push $PWD/charms/builds/kubernetes-master $NAMESPACE/kubernetes-master
-charm push $PWD/charms/builds/kubernetes-worker $NAMESPACE/kubernetes-worker
-charm push $PWD/charms/builds/kubernetes-e2e $NAMESPACE/kubernetes-e2e
-charm push $PWD/charms/builds/kubeapi-load-balancer $NAMESPACE/kubeapi-load-balancer
-charm push $PWD/charms/builds/flannel $NAMESPACE/flannel
-charm push $PWD/charms/builds/easyrsa $NAMESPACE/easyrsa
-charm push $PWD/charms/builds/etcd $NAMESPACE/etcd
+/snap/bin/charm push $PWD/charms/builds/kubernetes-master $NAMESPACE/kubernetes-master
+/snap/bin/charm push $PWD/charms/builds/kubernetes-worker $NAMESPACE/kubernetes-worker
+/snap/bin/charm push $PWD/charms/builds/kubernetes-e2e $NAMESPACE/kubernetes-e2e
+/snap/bin/charm push $PWD/charms/builds/kubeapi-load-balancer $NAMESPACE/kubeapi-load-balancer
+/snap/bin/charm push $PWD/charms/builds/flannel $NAMESPACE/flannel
+/snap/bin/charm push $PWD/charms/builds/easyrsa $NAMESPACE/easyrsa
+/snap/bin/charm push $PWD/charms/builds/etcd $NAMESPACE/etcd
 

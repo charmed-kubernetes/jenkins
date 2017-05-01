@@ -14,10 +14,10 @@ function in-charmbox() {
 }
 
 # A function to make charm commands run inside a container.
-#function charm() {
-#  local args=$@
-#  in-charmbox charm ${args}
-#}
+function charm() {
+  local args=$@
+  in-charmbox charm ${args}
+}
 
 # A function to run a command in the jujubox container.
 function in-jujubox() {
