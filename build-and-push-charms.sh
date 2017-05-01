@@ -21,7 +21,7 @@ CLOUD=${CLOUD:-"gce"}
 # The directory to use for this script, should be WORKSPACE, but can be PWD.
 WORKSPACE=${WORKSPACE:-${PWD}}
 
-
+set +u
 if [ -z ${JUJU_DATA} ]; then
   export JUJU_DATA=${WORKSPACE}/juju
   # The path to the archive of the JUJU_DATA directory for the specific cloud.
@@ -29,6 +29,7 @@ if [ -z ${JUJU_DATA} ]; then
   # Uncompress the file that contains the Juju data to the workspace directory.
   tar -xvzf ${JUJU_DATA_TAR} -C ${WORKSPACE}
 fi
+set -u
 
 # Clone the charm repositories to the current directory.
 if [ ! -d "$PWD/layer-easyrsa" ]; then
@@ -93,4 +94,3 @@ cd $WORKSPACE
 /snap/bin/charm push $PWD/charms/builds/flannel $NAMESPACE/flannel
 /snap/bin/charm push $PWD/charms/builds/easyrsa $NAMESPACE/easyrsa
 /snap/bin/charm push $PWD/charms/builds/etcd $NAMESPACE/etcd
-
