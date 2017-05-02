@@ -87,10 +87,42 @@ NAMESPACE=${NAMESPACE:-"cs:~containers"}
 
 cd $WORKSPACE
 
-/usr/bin/charm push $PWD/charms/builds/kubernetes-master $NAMESPACE/kubernetes-master
-/usr/bin/charm push $PWD/charms/builds/kubernetes-worker $NAMESPACE/kubernetes-worker
-/usr/bin/charm push $PWD/charms/builds/kubernetes-e2e $NAMESPACE/kubernetes-e2e
-/usr/bin/charm push $PWD/charms/builds/kubeapi-load-balancer $NAMESPACE/kubeapi-load-balancer
-/usr/bin/charm push $PWD/charms/builds/flannel $NAMESPACE/flannel
-/usr/bin/charm push $PWD/charms/builds/easyrsa $NAMESPACE/easyrsa
-/usr/bin/charm push $PWD/charms/builds/etcd $NAMESPACE/etcd
+MASTER_CHARM=$(/usr/bin/charm push $PWD/charms/builds/kubernetes-master $NAMESPACE/kubernetes-master | tail -n +1 | head -1 | awk '{print $2}')
+WORKER_CHARM=$(/usr/bin/charm push $PWD/charms/builds/kubernetes-worker $NAMESPACE/kubernetes-worker | tail -n +1 | head -1 | awk '{print $2}')
+E2E_CHARM=$(/usr/bin/charm push $PWD/charms/builds/kubernetes-e2e $NAMESPACE/kubernetes-e2e | tail -n +1 | head -1 | awk '{print $2}')
+LB_CHARM=$(/usr/bin/charm push $PWD/charms/builds/kubeapi-load-balancer $NAMESPACE/kubeapi-load-balancer | tail -n +1 | head -1 | awk '{print $2}')
+FLANNEL_CHARM=$(/usr/bin/charm push $PWD/charms/builds/flannel $NAMESPACE/flannel | tail -n +1 | head -1 | awk '{print $2}')
+EASY_CHARM=$(/usr/bin/charm push $PWD/charms/builds/easyrsa $NAMESPACE/easyrsa | tail -n +1 | head -1 | awk '{print $2}')
+ETCD_CHARM=$(/usr/bin/charm push $PWD/charms/builds/etcd $NAMESPACE/etcd | tail -n +1 | head -1 | awk '{print $2}')
+
+function easyrsa_resource() {
+  CHARM=cs:~containers/easyrsa
+  RESOURCE_REV=`/usr/bin/charm show ${CHARM} --channel stable resources | grep Revision | awk '{print $2}'`
+  echo "easyrsa-${RESOURCE_REV}"
+}
+
+function flannel_resource() {
+  CHARM=cs:~containers/flannel
+  RESOURCE_REV=`/usr/bin/charm show ${CHARM} --channel stable resources | grep Revision | awk '{print $2}'`
+  echo "flannel-${RESOURCE_REV}"
+}
+
+/usr/bin/charm release ${MASTER_CHARM} --channel edge -r cdk-addons-0 -r kube-apiserver-0 -r kube-controller-manager-0 -r kube-scheduler-0 -r kubectl-0
+/usr/bin/charm grant ${MASTER_CHARM} everyone --channel edge
+
+/usr/bin/charm release ${WORKER_CHARM} --channel edge -r cni-0 -r kube-proxy-0 -r kubectl-0 -r kubelet-0
+/usr/bin/charm grant ${WORKER_CHARM} everyone --channel edge
+
+RESOURCE=$(easyrsa_resource)
+/usr/bin/charm release ${EASY_CHARM} --channel edge -r ${RESOURCE}
+/usr/bin/charm grant ${EASY_CHARM} everyone --channel edge
+
+/usr/bin/charm release ${ETCD_CHARM} --channel edge -r etcd-3 -r snapshot-0
+/usr/bin/charm grant ${ETCD_CHARM} everyone --channel edge
+
+RESOURCE=$(flannel_resource)
+/usr/bin/charm release ${FLANNEL_CHARM} --channel edge -r ${RESOURCE}
+/usr/bin/charm grant ${FLANNEL_CHARM} everyone --channel edge
+
+/usr/bin/charm release ${LB_CHARM} --channel edge
+/usr/bin/charm grant ${LB_CHARM} everyone --channel edge
