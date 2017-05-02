@@ -32,6 +32,9 @@ juju deploy cs:~containers/kubernetes-e2e
 juju relate kubernetes-e2e kubernetes-master
 juju relate kubernetes-e2e easyrsa
 
+juju config kubernetes-worker allow-privileged=true
+juju config kubernetes-master allow-privileged=true
+
 # NOTE This script only deploys the bundle and charms, no waiting is done here!
 
 echo "${0} completed successfully at `date`."
