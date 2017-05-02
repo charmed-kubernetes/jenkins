@@ -76,8 +76,6 @@ in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-e2e && ${CHA
 in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-master && ${CHARM_BUILD_CMD}"
 
 in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-worker && ${CHARM_BUILD_CMD}"
-# Change the ownership of the charms directory to ubuntu user.
-in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
 
 NAMESPACE=${NAMESPACE:-"cs:~containers"}
 
