@@ -63,7 +63,7 @@ git checkout -f ${KUBERNETES_BRANCH}
 cd ${WORKSPACE}
 
 # Change the ownership of the charms directory to ubuntu user.
-#in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
+in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
 
 # Build the charms with no local layers
 CHARM_BUILD_CMD="charm build -r --no-local-layers --force"
@@ -78,10 +78,6 @@ in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-master && ${
 in-charmbox "cd workspace/kubernetes/cluster/juju/layers/kubernetes-worker && ${CHARM_BUILD_CMD}"
 # Change the ownership of the charms directory to ubuntu user.
 in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
-
-echo "Build successfull the charms are available at ${WORKSPACE}/charms/builds"
-
-echo "${0} completed successfully at `date`."
 
 NAMESPACE=${NAMESPACE:-"cs:~containers"}
 
@@ -126,3 +122,22 @@ RESOURCE=$(flannel_resource)
 
 /usr/bin/charm release ${LB_CHARM} --channel edge
 /usr/bin/charm grant ${LB_CHARM} everyone --channel edge
+
+BUNDLE_REPOSITORY="https://github.com/juju-solutions/bundle-canonical-kubernetes.git"
+git clone ${BUNDLE_REPOSITORY} bundle
+
+bundle/bundle -o ./bundles/cdk-flannel -c edge k8s/cdk cni/flannel
+bundle/bundle -o ./bundles/core-flannel -c edge k8s/core cni/flannel
+
+CDK="cs:~containers/bundle/canonical-kubernetes"
+CORE="cs:~containers/bundle/kubernetes-core"
+
+PUSH_CMD="/usr/bin/charm push ./bundles/cdk-flannel ${CDK}"
+CDK_REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
+/usr/bin/charm release --channel edge ${CDK_REVISION}
+/usr/bin/charm grant --channel edge ${CDK_REVISION} everyone
+
+PUSH_CMD="/usr/bin/charm push ./bundles/core-flannel ${CORE}"
+CORE_REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
+/usr/bin/charm release --channel edge ${CORE_REVISION}
+/usr/bin/charm grant --channel edge ${CORE_REVISION} everyone
