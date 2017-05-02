@@ -62,9 +62,6 @@ git checkout -f ${KUBERNETES_BRANCH}
 
 cd ${WORKSPACE}
 
-# Change the ownership of the charms directory to ubuntu user.
-in-charmbox "sudo chown -R ubuntu:ubuntu /home/ubuntu/charms"
-
 # Build the charms with no local layers
 CHARM_BUILD_CMD="charm build -r --no-local-layers --force"
 in-charmbox "cd workspace/layer-easyrsa && ${CHARM_BUILD_CMD}"
