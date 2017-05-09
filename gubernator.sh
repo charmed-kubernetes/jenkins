@@ -99,7 +99,7 @@ end_time_epoch=$(echo $end_line | cut -d = -f 2)
 end_time=$(date -d @${end_time_epoch} '+%m/%d %H:%M:%S.000')
 
 # Create a folder safe name for build timestamp
-BUILD_STAMP=$(date -d @${start_time_epoch} '+%m%d%H%M%S000')
+BUILD_STAMP=$(date -d @${start_time_epoch} '+%s')
 
 GCS_LOGS_PATH="${GCS_JOBS_PATH}/${BUILD_STAMP}"
 
