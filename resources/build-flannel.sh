@@ -22,15 +22,15 @@ SCRIPT_DIR=${PWD}
 source ./utilities.sh
 
 # Build the CNI binaries for a version, os and arch.
-./build-cni.sh
+resources/build-cni.sh
 
 # Build the etcd binaries for a version, os and arch.
-./build-etcd.sh
+resources/build-etcd.sh
 
 if [ ! -d flannel ]; then
   # Clone the flannel project.
   git clone https://github.com/coreos/flannel.git flannel
-fi 
+fi
 
 cd flannel
 # Checkout the desired version.

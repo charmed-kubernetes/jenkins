@@ -15,7 +15,7 @@ set -o pipefail  # The exit status of the last command is returned.
 SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
 
 # Define the versions of the software to build.
-source ${SCRIPT_DIRECTORY}/versions.sh
+source ${SCRIPT_DIRECTORY}/resources/versions.sh
 
 # Define the get_os function.
 source ${SCRIPT_DIRECTORY}/utilities.sh
@@ -25,7 +25,7 @@ export TEMPORARY_DIRECTORY=${SCRIPT_DIRECTORY}/temp
 mkdir -p ${TEMPORARY_DIRECTORY}
 
 # EasyRSA is a collection of scripts, not compiled or built.
-${SCRIPT_DIRECTORY}/repackage-easyrsa.sh ${EASYRSA_VERSION}
+${SCRIPT_DIRECTORY}/resources/repackage-easyrsa.sh ${EASYRSA_VERSION}
 
 export OS=$(get_os)
 export ARCHITECTURES=${ARCHITECTURES:-"amd64"}  #"amd64 arm arm64 ppc64le"
@@ -33,10 +33,10 @@ for ARCHITECTURE in ${ARCHITECTURES}; do
   export ARCH=${ARCHITECTURE}
   mkdir -p ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
   # Build the CNI, etcd, and flannel resources.
-  ${SCRIPT_DIRECTORY}/build-flannel.sh
+  ${SCRIPT_DIRECTORY}/resources/build-flannel.sh
 done
 # Build the cross platform kubernetes binaries.
-${SCRIPT_DIRECTORY}/build-kubernetes.sh
+${SCRIPT_DIRECTORY}/resources/build-kubernetes.sh
 
 # Change back to the original directory.
 cd ${SCRIPT_DIRECTORY}

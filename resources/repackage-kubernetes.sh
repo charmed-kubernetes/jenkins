@@ -17,7 +17,7 @@ SCRIPT_DIR=${PWD}
 # Get the function definitions for os and architecture detection.
 source ./utilities.sh
 # Get the versions of the software to package.
-source ./versions.sh
+source resources/versions.sh
 
 ARCH=${ARCH:-"amd64"}
 OS=${OS:-"linux"}
