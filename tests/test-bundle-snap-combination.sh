@@ -21,7 +21,7 @@ juju switch ${MODEL}
 BUNDLE_NAME_AND_REVISION="cs:~containers/bundle/"${BUNDLE_NAME}"-"${REVISION}
 charm pull ${BUNDLE_NAME_AND_REVISION}
 if [ ! ${SNAP_CHANNEL} = "" ]; then
-  ./set-snap-channel.py ${BUNDLE_NAME} ${SNAP_CHANNEL}
+  ./tests/set-snap-channel.py ${BUNDLE_NAME} ${SNAP_CHANNEL}
 fi
 
 # Deploy bundle

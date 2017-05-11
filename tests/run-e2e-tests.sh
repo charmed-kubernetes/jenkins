@@ -14,7 +14,7 @@ OUTPUT_DIRECTORY=${1:-"artifacts"}
 mkdir -p ${OUTPUT_DIRECTORY}
 
 # Define the in-jujubox and juju functions.
-source ./define-juju.sh
+source ./tests/define-juju.sh
 
 # Run the e2e test action.
 ACTION_ID=$(juju run-action kubernetes-e2e/0 test | cut -d " " -f 5)
