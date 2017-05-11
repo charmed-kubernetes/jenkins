@@ -48,6 +48,6 @@ touch report.xml
 if [ ${RELEASE} = true ]; then
   CHARM=$(/usr/bin/charm push charms/builds/kubernetes-e2e cs:~containers/kubernetes-e2e | head -n 1 | awk '{print $2}')
   echo "Releasing ${CHARM}"
-  charm release ${CHARM} --channel ${RELEASE_TO_CHANNEL}
+  charm release ${CHARM} --channel ${RELEASE_TO_CHANNEL} -r kubectl-0 -r kubernetes-test-0
   charm grant ${CHARM} everyone --channel ${RELEASE_TO_CHANNEL}
 fi
