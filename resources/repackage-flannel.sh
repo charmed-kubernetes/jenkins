@@ -16,7 +16,7 @@ SCRIPT_DIR=${PWD}
 # Get the function definition for download.
 source ./utilities.sh
 # Get the versions of the software to package.
-source ./versions.sh
+source resources/versions.sh
 
 ARCH=${ARCH:-"amd64"}
 OS=${OS:-"linux"}

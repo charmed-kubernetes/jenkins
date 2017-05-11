@@ -21,7 +21,7 @@ export TEMPORARY_DIRECTORY=${SCRIPT_DIR}/temp
 mkdir -p ${TEMPORARY_DIRECTORY}
 
 # EasyRSA is a collection of scripts, not compiled or built.
-./repackage-easyrsa.sh
+resources/repackage-easyrsa.sh
 
 export OS=$(get_os)
 export ARCHITECTURES=${ARCHITECTURES:-"amd64"}  #"amd64 arm arm64 ppc64le"
@@ -29,10 +29,10 @@ for ARCHITECTURE in ${ARCHITECTURES}; do
   export ARCH=${ARCHITECTURE}
   mkdir -p ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
   # Repackage the CNI, etcd, and flannel resources.
-  ./repackage-flannel.sh
+  resources/repackage-flannel.sh
 done
 # Package the kubernetes binaries which is not arch specific at this time.
-./repackage-kubernetes.sh
+resources/repackage-kubernetes.sh
 
 # Change back to the original directory.
 cd ${SCRIPT_DIR}
