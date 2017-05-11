@@ -4,7 +4,7 @@ set -eu
 # Example usage:
 # export PROMOTE_FROM="1.6/edge"
 # export PROMOTE_TO="1.6/beta 1.6/candidate edge beta candidate"
-# ./promote-snaps.sh
+# snaps/promote-snaps.sh
 
 SNAPS="kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet kube-proxy cdk-addons kubeadm kubefed kubernetes-test"
 
