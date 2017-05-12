@@ -14,7 +14,7 @@ BUNDLE=${2:-"kubernetes-core"}
 # Some of the files in JUJU_DATA my not be owned by the ubuntu user, fix that.
 CHOWN_CMD="sudo chown -R ubuntu:ubuntu /home/ubuntu/.local/share/juju"
 # Define the juju and in-jujubox functions.
-source ./define-juju.sh
+source ./tests/define-juju.sh
 # Create a model just for this run of the tests.
 in-jujubox "${CHOWN_CMD} && juju add-model ${MODEL}"
 

@@ -8,7 +8,7 @@ set -o xtrace  # Print the commands that are executed.
 echo "${0} started at `date`."
 
 # Define the in-jujubox and juju functions.
-source ./define-juju.sh
+source ./tests/define-juju.sh
 # Define the utility functions such as run_and_wait.
 source ./utilities.sh
 

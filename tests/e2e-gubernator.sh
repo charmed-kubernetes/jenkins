@@ -29,7 +29,7 @@ export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
 export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
 
 mkdir ${JUJU_REPOSITORY}
-source ${SCRIPT_DIRECTORY}/define-juju.sh
+source ${SCRIPT_DIRECTORY}/tests/define-juju.sh
 # Grab the user id and group id of this current user.
 GROUP_ID=$(id -g)
 USER_ID=$(id -u)
@@ -39,13 +39,13 @@ CHOWN_CMD="sudo chown -R ${USER_ID}:${GROUP_ID} /home/ubuntu/.local/share/juju"
 trap "juju destroy-model -y ${MODEL} && in-jujubox ${CHOWN_CMD}" EXIT
 
 # Deploy the bundle and add the kubernetes-e2e charm.
-${SCRIPT_DIRECTORY}/juju-deploy-test-bundle.sh ${MODEL} ${BUNDLE}
+${SCRIPT_DIRECTORY}/tests/deploy-test-bundle.sh ${MODEL} ${BUNDLE}
 
 # Let the deployment complete.
-${SCRIPT_DIRECTORY}/wait-cluster-ready.sh
+${SCRIPT_DIRECTORY}/tests/wait-cluster-ready.sh
 
 # Run the end to end tests and copy results to the output directory.
-${SCRIPT_DIRECTORY}/run-e2e-tests.sh ${OUTPUT_DIRECTORY}
+${SCRIPT_DIRECTORY}/tests/run-e2e-tests.sh ${OUTPUT_DIRECTORY}
 
 # Formats the output data and upload to GCE.
-${SCRIPT_DIRECTORY}/gubernator.sh ${OUTPUT_DIRECTORY}
+${SCRIPT_DIRECTORY}/tests/upload-e2e-results-to-gubernator.sh ${OUTPUT_DIRECTORY}
