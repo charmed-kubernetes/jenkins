@@ -10,7 +10,7 @@ set -o xtrace  # Print the commands that are executed.
 echo "${0} started at `date`."
 
 # Set the Juju envrionment variables for this script.
-export JUJU_REPOSITORY=${WORKSPACE}/charms
+export JUJU_REPOSITORY=${WORKSPACE}/build/charms
 mkdir -p ${JUJU_REPOSITORY}
 
 # The cloud is an option for this script, default to gce.
@@ -46,7 +46,7 @@ fi
 touch report.xml
 
 if [ ${RELEASE} = true ]; then
-  ETCD_CHARM=$(/usr/bin/charm push charms/builds/etcd cs:~containers/etcd | head -n 1 | awk '{print $2}')
+  ETCD_CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/etcd cs:~containers/etcd | head -n 1 | awk '{print $2}')
   echo "Releasing ${ETCD_CHARM}"
   charm release ${ETCD_CHARM} --channel ${RELEASE_TO_CHANNEL} -r etcd-3 -r snapshot-0
   charm grant ${ETCD_CHARM} everyone --channel ${RELEASE_TO_CHANNEL}

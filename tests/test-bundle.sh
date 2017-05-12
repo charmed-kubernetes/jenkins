@@ -36,7 +36,7 @@ BUNDLE=`charm show ${BUNDLE_NAME} --channel $CHANNEL id | head -n 2 | tail -n 1 
 ################################################
 
 # Set the Juju envrionment variables for this jenkins job.
-export JUJU_REPOSITORY=${WORKSPACE}/charms
+export JUJU_REPOSITORY=${WORKSPACE}/build/charms
 
 JUJU_CONTROLLER=jenkins-ci-${CLOUD}
 juju switch ${JUJU_CONTROLLER}
