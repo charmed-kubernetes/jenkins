@@ -26,9 +26,9 @@ BUNDLE=kubernetes-core
 
 # Set the Juju envrionment variables for this script.
 export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
-export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/charms
+export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/build/charms
 
-mkdir ${JUJU_REPOSITORY}
+mkdir -p ${JUJU_REPOSITORY}
 source ${SCRIPT_DIRECTORY}/tests/define-juju.sh
 # Grab the user id and group id of this current user.
 GROUP_ID=$(id -g)
