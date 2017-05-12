@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -eux
 
+export CLOUD=aws
+export RELEASE=true
+export RELEASE_TO_CHANNEL=edge
+
 ./charms/build-and-release-easyrsa.sh
 ./charms/build-and-release-etcd.sh
 ./charms/build-and-release-flannel.sh
