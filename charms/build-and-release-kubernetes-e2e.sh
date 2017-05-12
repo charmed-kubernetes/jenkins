@@ -14,7 +14,9 @@ CLOUD=${CLOUD:-"google"}
 
 
 # Clone the git repo
-git clone ${GIT_REPO}
+if ! [ -d kubernetes ]; then
+  git clone ${GIT_REPO}
+fi
 
 # Build the charm with no local layers
 cd kubernetes/cluster/juju/layers/kubernetes-e2e
