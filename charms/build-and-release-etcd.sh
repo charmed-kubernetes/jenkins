@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
-# Runs the charm build for the Canonical Kubernetes charms.
+set -eux
 
-set -o errexit  # Exit when an individual command fails.
-set -o nounset  # Exit when undeclaried variables are used.
-set -o pipefail  # The exit status of the last command is returned.
-set -o xtrace  # Print the commands that are executed.
-
+export GIT_REPO="${GIT_REPO:-https://github.com/juju-solutions/layer-etcd.git}"
 
 echo "${0} started at `date`."
 
