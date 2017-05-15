@@ -19,9 +19,9 @@ if ! [ -d kubernetes ]; then
 fi
 
 # Build the charm with no local layers
-cd kubernetes/cluster/juju/layers/kubeapi-load-balancer
-charm build -r --no-local-layers --force
-cd ..
+(cd kubernetes/cluster/juju/layers/kubeapi-load-balancer
+  charm build -r --no-local-layers --force
+)
 
 if [ ${RUN_TESTS} = true ]; then
   JUJU_CONTROLLER="jenkins-ci-${CLOUD}"
