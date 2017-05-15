@@ -19,3 +19,25 @@ PUSH_CMD="/usr/bin/charm push ./bundles/core-flannel ${CORE}"
 CORE_REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
 /usr/bin/charm release --channel edge ${CORE_REVISION}
 /usr/bin/charm grant --channel edge ${CORE_REVISION} everyone
+
+if [ "$RUN_TESTS" = "true" ]; then
+  export CHANNEL="edge"
+  export RUN_MATRIX_TESTS=true
+  export BUNDLE_NAME="canonical-kubernetes"
+  export CLOUD=google
+  ./tests/test-bundle.sh
+  export CLOUD=aws
+  ./tests/test-bundle.sh
+  export BUNDLE_NAME="kubernetes-core"
+  export CLOUD=google
+  ./tests/test-bundle.sh
+  export CLOUD=aws
+  ./tests/test-bundle.sh
+
+  export FROM_CHANNEL=edge
+  export TO_CHANNEL=beta
+  export BUNDLE_NAME_AND_REVISION=$(charm show cs:~containers/bundle/canonical-kubernetes --channel edge id | grep Id | awk '{print $2}')
+  ./charms/release-bundle-to-channel.sh
+  export BUNDLE_NAME_AND_REVISION=$(charm show cs:~containers/bundle/kubernetes-core --channel edge id | grep Id | awk '{print $2}')
+  ./charms/release-bundle-to-channel.sh
+fi

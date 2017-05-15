@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
-# Runs the charm build for the Canonical Kubernetes charms.
+set -eux
 
-set -o errexit  # Exit when an individual command fails.
-set -o nounset  # Exit when undeclaried variables are used.
-set -o pipefail  # The exit status of the last command is returned.
-set -o xtrace  # Print the commands that are executed.
-
+export GIT_REPO="${GIT_REPO:-https://github.com/kubernetes/kubernetes.git}"
 
 echo "${0} started at `date`."
 
@@ -18,7 +14,9 @@ CLOUD=${CLOUD:-"google"}
 
 
 # Clone the git repo
-git clone ${GIT_REPO}
+if ! [ -d kubernetes ]; then
+  git clone ${GIT_REPO}
+fi
 
 # Build the charm with no local layers
 cd kubernetes/cluster/juju/layers/kubernetes-master
@@ -48,6 +46,6 @@ touch report.xml
 if [ ${RELEASE} = true ]; then
   CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/kubernetes-master cs:~containers/kubernetes-master | head -n 1 | awk '{print $2}')
   echo "Releasing ${CHARM}"
-  charm release ${CHARM} --channel ${RELEASE_TO_CHANNEL} -r cdk-addons-0 -r kube-apiserver-0 -r kube-controller-manager-0 -r kube-scheduler-0 -r kubectl-0
+  ./charms/charm-release-with-latest-resources.sh ${CHARM} --channel ${RELEASE_TO_CHANNEL}
   charm grant ${CHARM} everyone --channel ${RELEASE_TO_CHANNEL}
 fi

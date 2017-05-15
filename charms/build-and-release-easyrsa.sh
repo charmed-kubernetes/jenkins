@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
-# Runs the charm build for the Canonical Kubernetes charms.
+set -eux
 
-set -o errexit  # Exit when an individual command fails.
-set -o nounset  # Exit when undeclaried variables are used.
-set -o pipefail  # The exit status of the last command is returned.
-set -o xtrace  # Print the commands that are executed.
-
+export GIT_REPO="${GIT_REPO:-https://github.com/juju-solutions/layer-easyrsa.git}"
 
 echo "${0} started at `date`."
 
@@ -48,6 +44,6 @@ touch report.xml
 if [ ${RELEASE} = true ]; then
   CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/easyrsa cs:~containers/easyrsa | head -n 1 | awk '{print $2}')
   echo "Releasing ${CHARM}"
-  charm release ${CHARM} --channel ${RELEASE_TO_CHANNEL} -r easyrsa-${RESOURCE_REV}
+  ./charms/charm-release-with-latest-resources.sh ${CHARM} --channel ${RELEASE_TO_CHANNEL}
   charm grant ${CHARM} everyone --channel ${RELEASE_TO_CHANNEL}
 fi
