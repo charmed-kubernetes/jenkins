@@ -44,6 +44,6 @@ touch report.xml
 if [ ${RELEASE} = true ]; then
   CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/flannel cs:~containers/flannel | head -n 1 | awk '{print $2}')
   echo "Releasing ${CHARM}"
-  charm release ${CHARM} --channel ${RELEASE_TO_CHANNEL} -r flannel-${RESOURCE_REV}
+  ./charms/charm-release-with-latest-resources.sh ${CHARM} --channel ${RELEASE_TO_CHANNEL}
   charm grant ${CHARM} everyone --channel ${RELEASE_TO_CHANNEL}
 fi

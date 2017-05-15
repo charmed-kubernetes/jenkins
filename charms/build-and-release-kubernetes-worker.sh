@@ -46,6 +46,6 @@ touch report.xml
 if [ ${RELEASE} = true ]; then
   CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/kubernetes-worker cs:~containers/kubernetes-worker | head -n 1 | awk '{print $2}')
   echo "Releasing ${CHARM}"
-  charm release ${CHARM} --channel ${RELEASE_TO_CHANNEL}  -r cni-0 -r kube-proxy-0 -r kubectl-0 -r kubelet-0
+  ./charms/charm-release-with-latest-resources.sh ${CHARM} --channel ${RELEASE_TO_CHANNEL}
   charm grant ${CHARM} everyone --channel ${RELEASE_TO_CHANNEL}
 fi
