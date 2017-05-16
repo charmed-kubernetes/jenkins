@@ -46,6 +46,5 @@ touch report.xml
 if [ ${RELEASE} = true ]; then
   CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/kubernetes-master cs:~containers/kubernetes-master | head -n 1 | awk '{print $2}')
   echo "Releasing ${CHARM}"
-  ./charms/charm-release-with-latest-resources.sh ${CHARM} --channel ${RELEASE_TO_CHANNEL}
-  charm grant ${CHARM} everyone --channel ${RELEASE_TO_CHANNEL}
+  CHARM="$CHARM" FROM_CHANNEL=unpublished TO_CHANNEL=edge ./charms/promote-charm.sh
 fi

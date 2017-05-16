@@ -44,6 +44,5 @@ touch report.xml
 if [ ${RELEASE} = true ]; then
   ETCD_CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/etcd cs:~containers/etcd | head -n 1 | awk '{print $2}')
   echo "Releasing ${ETCD_CHARM}"
-  ./charms/charm-release-with-latest-resources.sh ${ETCD_CHARM} --channel ${RELEASE_TO_CHANNEL}
-  charm grant ${ETCD_CHARM} everyone --channel ${RELEASE_TO_CHANNEL}
+  CHARM="$ETCD_CHARM" FROM_CHANNEL=unpublished TO_CHANNEL=edge ./charms/promote-charm.sh
 fi
