@@ -36,8 +36,5 @@ if [ "$RUN_TESTS" = "true" ]; then
 
   export FROM_CHANNEL=edge
   export TO_CHANNEL=beta
-  export BUNDLE_NAME_AND_REVISION=$(charm show cs:~containers/bundle/canonical-kubernetes --channel edge id | grep Id | awk '{print $2}')
-  ./charms/release-bundle-to-channel.sh
-  export BUNDLE_NAME_AND_REVISION=$(charm show cs:~containers/bundle/kubernetes-core --channel edge id | grep Id | awk '{print $2}')
-  ./charms/release-bundle-to-channel.sh
+  ./charms/promote-all-charms-and-bundles.sh
 fi
