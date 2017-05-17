@@ -13,12 +13,10 @@ CORE="cs:~containers/bundle/kubernetes-core"
 PUSH_CMD="/usr/bin/charm push ./bundles/cdk-flannel ${CDK}"
 CDK_REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
 /usr/bin/charm release --channel edge ${CDK_REVISION}
-/usr/bin/charm grant --channel edge ${CDK_REVISION} everyone
 
 PUSH_CMD="/usr/bin/charm push ./bundles/core-flannel ${CORE}"
 CORE_REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
 /usr/bin/charm release --channel edge ${CORE_REVISION}
-/usr/bin/charm grant --channel edge ${CORE_REVISION} everyone
 
 if [ "$RUN_TESTS" = "true" ]; then
   export CHANNEL="edge"

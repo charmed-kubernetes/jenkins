@@ -28,4 +28,3 @@ done
 (set +u # allows expansion of empty RESOURCE_ARGS
   charm release "$CHARM_ID" --channel "$TO_CHANNEL" "${RESOURCE_ARGS[@]}"
 )
-charm grant "$CHARM_ID" everyone --channel "$TO_CHANNEL"
