@@ -27,7 +27,7 @@ for controller in $TEST_CONTROLLERS; do
       charm pull canonical-kubernetes --channel "$TEST_BUNDLE_CHANNEL" bundle-under-test
       ./tests/set-snap-channel.py bundle-under-test "$TEST_SNAP_CHANNEL"
 
-      bundletester --no-matrix -vF -l DEBUG -t bundle-under-test
+      bundletester --no-matrix -vF -l DEBUG -t bundle-under-test -r xml -o bundle-test-results.xml
     )
   done
 done
