@@ -22,7 +22,8 @@ rm -rf results
 for controller in $TEST_CONTROLLERS; do
   juju switch "$controller"
   for bundle in $TEST_BUNDLES; do
-    result_dir="results/$(echo $bundle | sed 's|/|_|g')/$controller"
+    bundle_dir="$(echo "$bundle" | sed -e 's|^cs:~||' -e 's|/|_|g')"
+    result_dir="results/$bundle_dir/$controller"
     mkdir -p "$result_dir"
     export TEST_RESULT_DIR="$(readlink -f "$result_dir")"
 
