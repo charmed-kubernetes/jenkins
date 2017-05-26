@@ -2,6 +2,7 @@
 
 set -eux
 
+KUBE_VERSION="${KUBE_VERSION:-$(curl -L https://dl.k8s.io/release/stable.txt)}"
 KUBE_ARCH="amd64"
 
 git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
