@@ -45,9 +45,13 @@ async def wait_for_ready(model):
     # Subordinate units, for example, don't come into existence until after the
     # principal unit has settled.
     #
-    # If you see problems where this didn't wait long enough, it's probably that.
+    # If you see problems where this didn't wait long enough, it's probably
+    # that.
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + 1800  # 15 minutes
     while not all_units_ready(model):
         assert_no_unit_errors(model)
+        assert loop.time() < deadline
         await asyncio.sleep(1)
     assert_no_unit_errors(model)
 
@@ -56,8 +60,8 @@ def assert_healthy(model):
     ''' Assert that the current deployment is healthy. '''
     assert_no_unit_errors(model)
     expected_messages = {
-      'kubernetes-master': 'Kubernetes master running.',
-      'kubernetes-worker': 'Kubernetes worker running.'
+        'kubernetes-master': 'Kubernetes master running.',
+        'kubernetes-worker': 'Kubernetes worker running.'
     }
     for app, message in expected_messages.items():
         for unit in model.applications[app].units:
