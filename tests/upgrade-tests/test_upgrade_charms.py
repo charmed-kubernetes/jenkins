@@ -15,6 +15,6 @@ async def test_upgrade_charms(bundle, from_channel, to_channel):
         await model.deploy(bundle, channel=from_channel)
         await wait_for_ready(model)
         for app in model.applications.values():
-            app.upgrade_charm(channel=to_channel)
+            await app.upgrade_charm(channel=to_channel)
         await wait_for_ready(model)
         assert_healthy(model)
