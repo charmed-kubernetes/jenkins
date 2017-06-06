@@ -18,5 +18,7 @@ async def test_upgrade_charms(bundle, from_channel, to_channel):
         await model.applications['flannel'].upgrade_charm(channel=to_channel)
         await model.applications['kubernetes-master'].upgrade_charm(channel=to_channel)
         await model.applications['kubernetes-worker'].upgrade_charm(channel=to_channel)
+        if 'kubeapi-load-balancer' in model.applications:
+            await model.applications['kubeapi-load-balancer'].upgrade_charm(channel=to_channel)
         await wait_for_ready(model)
         assert_healthy(model)
