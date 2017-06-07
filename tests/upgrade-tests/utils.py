@@ -53,16 +53,3 @@ async def wait_for_ready(model):
         assert_no_unit_errors(model)
         assert loop.time() < deadline
         await asyncio.sleep(1)
-    assert_no_unit_errors(model)
-
-
-def assert_healthy(model):
-    ''' Assert that the current deployment is healthy. '''
-    assert_no_unit_errors(model)
-    expected_messages = {
-        'kubernetes-master': 'Kubernetes master running.',
-        'kubernetes-worker': 'Kubernetes worker running.'
-    }
-    for app, message in expected_messages.items():
-        for unit in model.applications[app].units:
-            assert unit.data['workload-status']['message'] == message

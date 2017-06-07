@@ -1,12 +1,13 @@
 import pytest
-from utils import temporary_model, wait_for_ready, assert_healthy
+from utils import temporary_model, wait_for_ready
+from validation import validate_all
 
 test_cases = [
-    # bundle                 from_channel  to_channel
-    ('kubernetes-core',      '1.6/stable', '1.6/edge'),
-    ('kubernetes-core',      '1.6/stable', '1.7/edge'),
-    ('canonical-kubernetes', '1.6/stable', '1.6/edge'),
-    ('canonical-kubernetes', '1.6/stable', '1.7/edge'),
+    # bundle                 charm_channel  from_channel  to_channel
+    ('kubernetes-core',      'beta',        '1.6/stable', '1.6/edge'),
+    ('kubernetes-core',      'beta',        '1.6/stable', '1.7/edge'),
+    ('canonical-kubernetes', 'beta',        '1.6/stable', '1.6/edge'),
+    ('canonical-kubernetes', 'beta',        '1.6/stable', '1.7/edge'),
 ]
 
 
@@ -18,11 +19,11 @@ async def set_snap_channel(model, channel):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('bundle,from_channel,to_channel', test_cases)
-async def test_upgrade_snaps(bundle, from_channel, to_channel):
+@pytest.mark.parametrize('bundle,charm_channel,from_channel,to_channel',
+                         test_cases)
+async def test_upgrade_snaps(bundle, charm_channel, from_channel, to_channel):
     async with temporary_model() as model:
-        # FIXME: this should be channel='edge' once the edge channel works
-        await model.deploy(bundle, channel='beta')
+        await model.deploy(bundle, channel=charm_channel)
         await set_snap_channel(model, from_channel)
         await wait_for_ready(model)
         await set_snap_channel(model, to_channel)
@@ -31,4 +32,4 @@ async def test_upgrade_snaps(bundle, from_channel, to_channel):
             await action.wait()
             assert action.status == 'completed'
         await wait_for_ready(model)
-        assert_healthy(model)
+        await validate_all(model)
