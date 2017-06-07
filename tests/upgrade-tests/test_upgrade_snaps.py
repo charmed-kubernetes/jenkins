@@ -21,7 +21,8 @@ async def set_snap_channel(model, channel):
 @pytest.mark.parametrize('bundle,from_channel,to_channel', test_cases)
 async def test_upgrade_snaps(bundle, from_channel, to_channel):
     async with temporary_model() as model:
-        await model.deploy(bundle, channel='stable')
+        # FIXME: this should be channel='edge' once the edge channel works
+        await model.deploy(bundle, channel='beta')
         await set_snap_channel(model, from_channel)
         await wait_for_ready(model)
         await set_snap_channel(model, to_channel)
