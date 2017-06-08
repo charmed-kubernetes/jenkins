@@ -4,10 +4,10 @@ from validation import validate_all
 
 test_cases = [
     # bundle                 charm_channel  from_channel  to_channel
-    ('kubernetes-core',      'beta',        '1.6/stable', '1.6/edge'),
-    ('kubernetes-core',      'beta',        '1.6/stable', '1.7/edge'),
-    ('canonical-kubernetes', 'beta',        '1.6/stable', '1.6/edge'),
-    ('canonical-kubernetes', 'beta',        '1.6/stable', '1.7/edge'),
+    ('kubernetes-core',      'edge',        '1.6/stable', '1.6/edge'),
+    ('kubernetes-core',      'edge',        '1.6/stable', '1.7/edge'),
+    ('canonical-kubernetes', 'edge',        '1.6/stable', '1.6/edge'),
+    ('canonical-kubernetes', 'edge',        '1.6/stable', '1.7/edge'),
 ]
 
 

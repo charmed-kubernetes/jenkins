@@ -4,8 +4,8 @@ from validation import validate_all
 
 test_cases = [
     # bundle                 # channel
-    ('kubernetes-core',      'beta'),
-    ('canonical-kubernetes', 'beta'),
+    ('kubernetes-core',      'edge'),
+    ('canonical-kubernetes', 'edge'),
 ]
 
 
