@@ -1,8 +1,20 @@
 import asyncio
+import json
 import random
+import sys
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from juju.controller import Controller
+
+
+def dump_model_info(model):
+    ''' Dumps information about the model to stdout '''
+    data = {
+        'applications': {k: v.data for k, v in model.applications.items()},
+        'units': {k: v.data for k, v in model.units.items()},
+        'machines': {k: v.data for k, v in model.machines.items()}
+    }
+    json.dump(data, sys.stdout, indent=2)
 
 
 @async_contextmanager
@@ -17,6 +29,9 @@ async def temporary_model():
     model = await controller.add_model(model_name)
     try:
         await yield_(model)
+    except:
+        dump_model_info(model)
+        raise
     finally:
         await model.disconnect()
         await controller.destroy_model(model.info.uuid)
