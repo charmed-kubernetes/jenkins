@@ -3,6 +3,8 @@ set -eux
 
 export GIT_REPO="${GIT_REPO:-https://github.com/kubernetes/kubernetes.git}"
 
+source utils/retry.sh
+
 echo "${0} started at `date`."
 
 # Set the Juju envrionment variables for this script.
@@ -20,7 +22,7 @@ fi
 
 # Build the charm with no local layers
 (cd kubernetes/cluster/juju/layers/kubernetes-master
-  charm build -r --no-local-layers --force
+  retry charm build -r --no-local-layers --force
 )
 
 if [ ${RUN_TESTS} = true ]; then
