@@ -41,10 +41,11 @@ async def temporary_model():
 def assert_no_unit_errors(model):
     for unit in model.units.values():
         workload_status = unit.data['workload-status']['current']
-        juju_status = unit.data['juju-status']['current']
         assert workload_status != 'error'
-        assert juju_status != 'failed'
-        assert juju_status != 'lost'
+        if 'juju-status' in unit.data:
+            juju_status = unit.data['juju-status']['current']
+            assert juju_status != 'failed'
+            assert juju_status != 'lost'
 
 
 def all_units_ready(model):
