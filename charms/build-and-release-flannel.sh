@@ -3,6 +3,8 @@ set -eux
 
 export GIT_REPO="${GIT_REPO:-https://github.com/juju-solutions/charm-flannel.git}"
 
+source utils/retry.sh
+
 echo "${0} started at `date`."
 
 # Set the Juju envrionment variables for this script.
@@ -18,7 +20,7 @@ git clone ${GIT_REPO}
 
 # Build the charm with no local layers
 cd charm-flannel
-charm build -r --no-local-layers --force
+retry charm build -r --no-local-layers --force
 cd ..
 
 if [ ${RUN_TESTS} = true ]; then
