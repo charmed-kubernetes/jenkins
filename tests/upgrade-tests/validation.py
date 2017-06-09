@@ -46,6 +46,11 @@ async def validate_snap_versions(model):
             action = await unit.run('snap list')
             assert action.status == 'completed'
             raw_output = action.data['results']['Stdout']
+            # Example of the `snap list` output format we're expecting:
+            # Name        Version  Rev   Developer  Notes
+            # conjure-up  2.1.5    352   canonical  classic
+            # core        16-2     1689  canonical  -
+            # kubectl     1.6.2    27    canonical  classic
             lines = raw_output.splitlines()[1:]
             snap_versions = dict(line.split()[:2] for line in lines)
             for snap in snaps:
