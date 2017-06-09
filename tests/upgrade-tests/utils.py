@@ -63,7 +63,7 @@ async def wait_for_ready(model):
     # If you see problems where this didn't wait long enough, it's probably
     # that.
     loop = asyncio.get_event_loop()
-    deadline = loop.time() + 1800  # 15 minutes
+    deadline = loop.time() + 1800  # 30 minutes
     while not all_units_ready(model):
         assert_no_unit_errors(model)
         assert loop.time() < deadline
