@@ -40,19 +40,17 @@ async def temporary_model():
 
 def assert_no_unit_errors(model):
     for unit in model.units.values():
-        workload_status = unit.data['workload-status']['current']
-        juju_status = unit.data['juju-status']['current']
-        assert workload_status != 'error'
-        assert juju_status != 'failed'
-        assert juju_status != 'lost'
+        assert unit.workload_status != 'error'
+        assert unit.agent_status != 'failed'
+        assert unit.agent_status != 'lost'
 
 
 def all_units_ready(model):
     ''' Returns True if all units are 'active' and 'idle', False otherwise. '''
     for unit in model.units.values():
-        if unit.data['workload-status']['current'] != 'active':
+        if unit.workload_status != 'active':
             return False
-        if unit.data['agent-status']['current'] != 'idle':
+        if unit.agent_status != 'idle':
             return False
     return True
 
