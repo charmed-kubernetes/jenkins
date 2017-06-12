@@ -16,7 +16,7 @@ def validate_status_messages(model):
     }
     for app, message in expected_messages.items():
         for unit in model.applications[app].units:
-            assert unit.data['workload-status']['message'] == message
+            assert unit.workload_status_message == message
 
 
 async def validate_snap_versions(model):

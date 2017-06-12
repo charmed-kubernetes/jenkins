@@ -48,9 +48,9 @@ def assert_no_unit_errors(model):
 def all_units_ready(model):
     ''' Returns True if all units are 'active' and 'idle', False otherwise. '''
     for unit in model.units.values():
-        if unit.data['workload-status']['current'] != 'active':
+        if unit.workload_status != 'active':
             return False
-        if unit.data['agent-status']['current'] != 'idle':
+        if unit.agent_status != 'idle':
             return False
     return True
 
