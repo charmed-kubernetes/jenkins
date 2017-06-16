@@ -26,7 +26,8 @@ async def temporary_model():
     controller = Controller()
     await controller.connect_current()
     model_name = 'cdk-build-upgrade-%d' % random.randint(0, 10000)
-    model = await controller.add_model(model_name)
+    model_config = {'test-mode': True}
+    model = await controller.add_model(model_name, config=model_config)
     try:
         await yield_(model)
     except:
