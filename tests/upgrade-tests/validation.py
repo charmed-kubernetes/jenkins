@@ -41,6 +41,11 @@ async def validate_snap_versions(model):
         app = model.applications[app_name]
         config = await app.get_config()
         channel = config['channel']['value']
+        if '/' not in channel:
+            message = 'validate_snap_versions: skipping %s, channel=%s'
+            message = message % (app_name, channel)
+            print(message)
+            continue
         track = channel.split('/')[0]
         for unit in app.units:
             action = await unit.run('snap list')
