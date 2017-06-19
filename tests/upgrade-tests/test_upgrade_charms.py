@@ -1,4 +1,5 @@
 import pytest
+import rewrite_asserts
 from utils import temporary_model, wait_for_ready
 from validation import validate_all
 
