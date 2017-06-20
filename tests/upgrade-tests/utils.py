@@ -2,9 +2,11 @@ import asyncio
 import json
 import random
 import sys
+import subprocess
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from juju.controller import Controller
+from juju.model import Model
 
 
 def dump_model_info(model):
@@ -17,6 +19,27 @@ def dump_model_info(model):
     json.dump(data, sys.stdout, indent=2)
 
 
+async def add_model_via_cli(controller, name, config):
+    ''' Add a Juju model using the CLI.
+
+    Workaround for https://github.com/juju/python-libjuju/issues/122
+    '''
+    cmd = ['juju', 'add-model', name]
+    controller_name = controller.controller_name
+    if controller_name:
+        cmd += ['-c', controller_name]
+    for k, v in config.items():
+        cmd += ['--config', k + '=' + json.dumps(v)]
+    # Screw you, event loop!
+    subprocess.check_call(cmd)
+    model = Model()
+    if controller_name:
+        await model.connect_model(controller_name + ':' + name)
+    else:
+        await model.connect_model(name)
+    return model
+
+
 @async_contextmanager
 async def temporary_model():
     ''' Create and destroy a temporary Juju model named cdk-build-upgrade-*.
@@ -27,7 +50,7 @@ async def temporary_model():
     await controller.connect_current()
     model_name = 'cdk-build-upgrade-%d' % random.randint(0, 10000)
     model_config = {'test-mode': True}
-    model = await controller.add_model(model_name, config=model_config)
+    model = await add_model_via_cli(controller, model_name, model_config)
     try:
         await yield_(model)
     except:
