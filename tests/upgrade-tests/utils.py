@@ -2,7 +2,6 @@ import asyncio
 import json
 import random
 import sys
-import subprocess
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from juju.controller import Controller
@@ -30,8 +29,9 @@ async def add_model_via_cli(controller, name, config):
         cmd += ['-c', controller_name]
     for k, v in config.items():
         cmd += ['--config', k + '=' + json.dumps(v)]
-    # Screw you, event loop!
-    subprocess.check_call(cmd)
+    process = await asyncio.create_subprocess_exec(*cmd)
+    await process.wait()
+    assert process.returncode == 0
     model = Model()
     if controller_name:
         await model.connect_model(controller_name + ':' + name)
