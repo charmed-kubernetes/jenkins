@@ -5,6 +5,7 @@ import sys
 import logging
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
+from contextlib import contextmanager
 from juju.controller import Controller
 from juju.model import Model
 
@@ -45,26 +46,45 @@ async def add_model_via_cli(controller, name, config):
     return model
 
 
+@contextmanager
+def timeout_for_current_task(timeout):
+    ''' Create a context with a timeout.
+
+    If the context body does not finish within the time limit, then the current
+    asyncio task will be cancelled, and an asyncio.TimeoutError will be raised.
+    '''
+    loop = asyncio.get_event_loop()
+    task = asyncio.Task.current_task()
+    handle = loop.call_later(timeout, task.cancel)
+    try:
+        yield
+    except asyncio.CancelledError:
+        raise asyncio.TimeoutError('Timed out after %f seconds' % timeout)
+    finally:
+        handle.cancel()
+
+
 @async_contextmanager
-async def temporary_model():
+async def temporary_model(timeout=1800):
     ''' Create and destroy a temporary Juju model named cdk-build-upgrade-*.
 
     This is an async context, to be used within an `async with` statement.
     '''
-    controller = Controller()
-    await controller.connect_current()
-    model_name = 'cdk-build-upgrade-%d' % random.randint(0, 10000)
-    model_config = {'test-mode': True}
-    model = await add_model_via_cli(controller, model_name, model_config)
-    try:
-        await yield_(model)
-    except:
-        dump_model_info(model)
-        raise
-    finally:
-        await model.disconnect()
-        await controller.destroy_model(model.info.uuid)
-        await controller.disconnect()
+    with timeout_for_current_task(timeout):
+        controller = Controller()
+        await controller.connect_current()
+        model_name = 'cdk-build-upgrade-%d' % random.randint(0, 10000)
+        model_config = {'test-mode': True}
+        model = await add_model_via_cli(controller, model_name, model_config)
+        try:
+            await yield_(model)
+        except:
+            dump_model_info(model)
+            raise
+        finally:
+            await model.disconnect()
+            await controller.destroy_model(model.info.uuid)
+            await controller.disconnect()
 
 
 def assert_no_unit_errors(model):
@@ -93,9 +113,6 @@ async def wait_for_ready(model):
     #
     # If you see problems where this didn't wait long enough, it's probably
     # that.
-    loop = asyncio.get_event_loop()
-    deadline = loop.time() + 1800  # 30 minutes
     while not all_units_ready(model):
         assert_no_unit_errors(model)
-        assert loop.time() < deadline
         await asyncio.sleep(1)
