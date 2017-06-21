@@ -2,10 +2,15 @@ import asyncio
 import json
 import random
 import sys
+import logging
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from juju.controller import Controller
 from juju.model import Model
+
+
+# Get verbose output from libjuju
+logging.basicConfig(level=logging.DEBUG)
 
 
 def dump_model_info(model):
