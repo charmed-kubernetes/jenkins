@@ -65,7 +65,7 @@ def timeout_for_current_task(timeout):
 
 
 @async_contextmanager
-async def temporary_model(timeout=1800):
+async def temporary_model(timeout=3600):
     ''' Create and destroy a temporary Juju model named cdk-build-upgrade-*.
 
     This is an async context, to be used within an `async with` statement.
