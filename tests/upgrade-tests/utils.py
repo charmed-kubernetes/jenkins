@@ -1,8 +1,13 @@
+import os
+import sys
 import asyncio
 import json
 import random
-import sys
 import logging
+import tempfile
+import shutil
+import yaml
+import subprocess
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from contextlib import contextmanager
@@ -116,3 +121,48 @@ async def wait_for_ready(model):
     while not all_units_ready(model):
         assert_no_unit_errors(model)
         await asyncio.sleep(1)
+
+async def conjureup(namespace, bundle, channel, snap_channel, model):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        cmd = 'charm pull --channel=%s cs:~%s/%s %s'
+        cmd %= channel, namespace, bundle, os.path.join(tmpdirname, bundle)
+        cmd = cmd.split()
+        process = await asyncio.create_subprocess_exec(*cmd)
+        await process.wait()
+        assert process.returncode == 0
+        shutil.copytree(
+            os.path.join('/snap/conjure-up/current/spells', bundle),
+            os.path.join(tmpdirname, 'spell')
+        )
+        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-01_get-kubectl'))
+        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-01_get-kubectl.yaml'))
+        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-02_cluster-info'))
+        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-02_cluster-info.yaml'))
+        with open(os.path.join(tmpdirname, bundle, 'bundle.yaml')) as f:
+            bundledata = yaml.load(f)
+        appkey = 'services' if 'services' in bundledata else 'applications'
+        master = bundledata[appkey]['kubernetes-master']
+        worker = bundledata[appkey]['kubernetes-worker']
+        master.setdefault('options', {})['channel'] = snap_channel
+        worker.setdefault('options', {})['channel'] = snap_channel
+        with open(os.path.join(tmpdirname, 'spell', 'bundle.yaml'), 'w') as f:
+            yaml.dump(bundledata, f, default_flow_style=False)
+        with open(os.path.join(tmpdirname, 'spell', 'metadata.yaml')) as f:
+            metadata = yaml.load(f)
+        del metadata['bundle-name']
+        with open(os.path.join(tmpdirname, 'spell', 'metadata.yaml'), 'w') as f:
+            yaml.dump(metadata, f, default_flow_style=False)
+        cmd = 'juju show-controller --format=json'.split()
+        controller_raw = subprocess.check_output(cmd)
+        controller_name, controller = list(yaml.load(controller_raw).items())[0]
+        cloud = controller['details']['cloud']
+        cloud += '/' + controller['details']['region']
+        cmd = ('conjure-up %s %s %s %s --debug --notrack --noreport' % (
+            os.path.join(tmpdirname, 'spell'),
+            cloud,
+            controller_name,
+            model.info.name
+        )).split()
+        process = await asyncio.create_subprocess_exec(*cmd)
+        await process.wait()
+        assert process.returncode == 0
