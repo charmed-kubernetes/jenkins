@@ -1,3 +1,4 @@
+import asyncio
 import requests
 from utils import assert_no_unit_errors, asyncify
 
@@ -77,10 +78,11 @@ async def validate_microbot(model):
 
 async def validate_kubelet_anonymous_auth_disabled(model):
     ''' Validate that kubelet has anonymous auth disabled '''
-    units = model.applications['kubernetes-worker'].units
-    for unit in units:
+    async def validate_unit(unit):
         await unit.run('open-port 10250')
         address = unit.public_address
         url = 'https://%s:10250/runningpods/' % address
         response = await asyncify(requests.get)(url, verify=False)
         assert response.status_code == 401  # Unauthorized
+    units = model.applications['kubernetes-worker'].units
+    await asyncio.gather(*(validate_unit(unit) for unit in units))
