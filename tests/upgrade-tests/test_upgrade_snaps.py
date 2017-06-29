@@ -1,6 +1,6 @@
 import pytest
 import rewrite_asserts
-from utils import temporary_model, wait_for_ready
+from utils import temporary_model, wait_for_ready, deploy_bundle
 from validation import validate_all
 
 test_cases = [
@@ -24,7 +24,7 @@ async def set_snap_channel(model, channel):
                          test_cases)
 async def test_upgrade_snaps(bundle, charm_channel, from_channel, to_channel):
     async with temporary_model() as model:
-        await model.deploy(bundle, channel=charm_channel)
+        await deploy_bundle(model, bundle, channel)
         await set_snap_channel(model, from_channel)
         await wait_for_ready(model)
         await set_snap_channel(model, to_channel)

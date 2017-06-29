@@ -47,6 +47,14 @@ async def add_model_via_cli(controller, name, config):
     return model
 
 
+async def get_model(name):
+    ''' Get current model
+    '''
+    model = Model()
+    await model.connect_model(name)
+    return model
+
+
 @contextmanager
 def timeout_for_current_task(timeout):
     ''' Create a context with a timeout.
@@ -126,3 +134,11 @@ def asyncify(f):
         partial = functools.partial(f, *args, **kwargs)
         return await loop.run_in_executor(None, partial)
     return wrapper
+
+
+async def deploy_bundle(model, bundle, channel='stable'):
+    ''' Deploy the bundle requested and augment it with kubernetes-e2e.'''
+    await model.deploy(bundle, channel=channel)
+    await model.deploy('cs:~containers/kubernetes-e2e', channel=channel)
+    await model.add_relation('kubernetes-e2e', 'kubernetes-master')
+    await model.add_relation('kubernetes-e2e', 'easyrsa')

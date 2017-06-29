@@ -8,6 +8,7 @@ async def validate_all(model):
     await validate_snap_versions(model)
     await validate_microbot(model)
     await validate_kubelet_anonymous_auth_disabled(model)
+    await validate_e2e_tests(model)
     assert_no_unit_errors(model)
 
 
@@ -15,7 +16,8 @@ def validate_status_messages(model):
     ''' Validate that the status messages are correct. '''
     expected_messages = {
         'kubernetes-master': 'Kubernetes master running.',
-        'kubernetes-worker': 'Kubernetes worker running.'
+        'kubernetes-worker': 'Kubernetes worker running.',
+        'kubernetes-e2e': 'Ready to test.'
     }
     for app, message in expected_messages.items():
         for unit in model.applications[app].units:
@@ -86,3 +88,11 @@ async def validate_kubelet_anonymous_auth_disabled(model):
         assert response.status_code == 401  # Unauthorized
     units = model.applications['kubernetes-worker'].units
     await asyncio.gather(*(validate_unit(unit) for unit in units))
+
+
+async def validate_e2e_tests(model):
+    ''' Validate that the e2e tests pass.'''
+    e2e_unit = model.applications['kubernetes-e2e'].units[0]
+    action = await e2e_unit.run_action('test')
+    await action.wait()
+    assert action.status == 'completed'
