@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import json
 import random
 import sys
@@ -116,3 +117,12 @@ async def wait_for_ready(model):
     while not all_units_ready(model):
         assert_no_unit_errors(model)
         await asyncio.sleep(1)
+
+
+def asyncify(f):
+    ''' Convert a blocking function into a coroutine '''
+    async def wrapper(*args, **kwargs):
+        loop = asyncio.get_event_loop()
+        partial = functools.partial(f, *args, **kwargs)
+        return await loop.run_in_executor(None, partial)
+    return wrapper
