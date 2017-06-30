@@ -1,6 +1,6 @@
 import asyncio
 import requests
-from utils import assert_no_unit_errors, asyncify
+from utils import assert_no_unit_errors, asyncify, wait_for_ready
 
 
 async def validate_all(model):
@@ -92,6 +92,14 @@ async def validate_kubelet_anonymous_auth_disabled(model):
 
 async def validate_e2e_tests(model):
     ''' Validate that the e2e tests pass.'''
+    masters = model.applications['kubernetes-master']
+    await masters.set_config({'allow-privileged': 'true'})
+    workers = model.applications['kubernetes-worker']
+    await workers.set_config({'allow-privileged': 'true'})
+    if len(workers.units) < 2:
+        await workers.add_unit(1)
+    await wait_for_ready(model)
+
     e2e_unit = model.applications['kubernetes-e2e'].units[0]
     action = await e2e_unit.run_action('test')
     await action.wait()

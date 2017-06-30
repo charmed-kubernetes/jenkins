@@ -16,17 +16,3 @@ async def test_deploy(bundle, channel):
         await deploy_bundle(model, bundle, channel)
         await wait_for_ready(model)
         await validate_all(model)
-
-
-'''
-@pytest.mark.asyncio
-@pytest.mark.parametrize('bundle,channel', test_cases)
-async def test_deploy(bundle, channel):
-    model = await get_model('t1')
-    #await model.deploy(bundle, channel=channel)
-    #await model.deploy('cs:~containers/kubernetes-e2e', channel=channel)
-    #await model.add_relation('kubernetes-e2e', 'kubernetes-master')
-    #await model.add_relation('kubernetes-e2e', 'easyrsa')
-    await wait_for_ready(model)
-    await validate_all(model)
-'''
