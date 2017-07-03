@@ -81,7 +81,7 @@ async def validate_kubelet_anonymous_auth_disabled(model):
     async def validate_unit(unit):
         await unit.run('open-port 10250')
         address = unit.public_address
-        url = 'https://%s:10250/runningpods/' % address
+        url = 'https://%s:10250/pods/' % address
         response = await asyncify(requests.get)(url, verify=False)
         assert response.status_code == 401  # Unauthorized
     units = model.applications['kubernetes-worker'].units
