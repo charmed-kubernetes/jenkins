@@ -8,7 +8,7 @@ import logging
 import tempfile
 import shutil
 import yaml
-import subprocess
+from subprocess import check_output, check_call
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from contextlib import contextmanager
@@ -41,9 +41,7 @@ async def add_model_via_cli(controller, name, config):
         cmd += ['-c', controller_name]
     for k, v in config.items():
         cmd += ['--config', k + '=' + json.dumps(v)]
-    process = await asyncio.create_subprocess_exec(*cmd)
-    await process.wait()
-    assert process.returncode == 0
+    await asyncify(check_call)(cmd)
     model = Model()
     if controller_name:
         await model.connect_model(controller_name + ':' + name)
@@ -129,9 +127,7 @@ async def conjureup(model, namespace, bundle, channel, snap_channel=None):
         cmd = 'charm pull --channel=%s cs:~%s/%s %s'
         cmd %= channel, namespace, bundle, os.path.join(tmpdirname, bundle)
         cmd = cmd.split()
-        process = await asyncio.create_subprocess_exec(*cmd)
-        await process.wait()
-        assert process.returncode == 0
+        await asyncify(check_call)(cmd)
         shutil.copytree(
             os.path.join('/snap/conjure-up/current/spells', bundle),
             os.path.join(tmpdirname, 'spell')
@@ -156,7 +152,7 @@ async def conjureup(model, namespace, bundle, channel, snap_channel=None):
         with open(os.path.join(tmpdirname, 'spell', 'metadata.yaml'), 'w') as f:
             yaml.dump(metadata, f, default_flow_style=False)
         cmd = 'juju show-controller --format=json'.split()
-        controller_raw = subprocess.check_output(cmd)
+        controller_raw = await asyncify(check_output)(cmd)
         controller_name, controller = list(yaml.load(controller_raw).items())[0]
         cloud = controller['details']['cloud']
         cloud += '/' + controller['details']['region']
@@ -166,9 +162,7 @@ async def conjureup(model, namespace, bundle, channel, snap_channel=None):
             controller_name,
             model.info.name
         )).split()
-        process = await asyncio.create_subprocess_exec(*cmd)
-        await process.wait()
-        assert process.returncode == 0
+        await asyncify(check_call(cmd))
 
 
 def asyncify(f):
