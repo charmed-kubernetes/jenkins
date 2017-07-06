@@ -1,6 +1,7 @@
 import os
 import sys
 import asyncio
+import functools
 import json
 import random
 import logging
@@ -122,6 +123,7 @@ async def wait_for_ready(model):
         assert_no_unit_errors(model)
         await asyncio.sleep(1)
 
+
 async def conjureup(model, namespace, bundle, channel, snap_channel=None):
     with tempfile.TemporaryDirectory() as tmpdirname:
         cmd = 'charm pull --channel=%s cs:~%s/%s %s'
@@ -167,3 +169,12 @@ async def conjureup(model, namespace, bundle, channel, snap_channel=None):
         process = await asyncio.create_subprocess_exec(*cmd)
         await process.wait()
         assert process.returncode == 0
+
+
+def asyncify(f):
+    ''' Convert a blocking function into a coroutine '''
+    async def wrapper(*args, **kwargs):
+        loop = asyncio.get_event_loop()
+        partial = functools.partial(f, *args, **kwargs)
+        return await loop.run_in_executor(None, partial)
+    return wrapper

@@ -32,7 +32,7 @@ for controller in $TEST_CONTROLLERS; do
     (trap "juju destroy-model -y $model" EXIT
       rm -rf bundle-under-test
       charm pull "$bundle" --channel "$TEST_BUNDLE_CHANNEL" bundle-under-test
-      ./tests/set-snap-channel.py bundle-under-test "$TEST_SNAP_CHANNEL"
+      ./tests/set-bundle-options.py bundle-under-test "$TEST_SNAP_CHANNEL"
 
       bundletester --no-matrix -vF -l DEBUG -t bundle-under-test -r xml -o "$result_dir/bundletester.xml"
     )
