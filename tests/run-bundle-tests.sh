@@ -15,7 +15,7 @@ set -eux
 TEST_BUNDLES="${TEST_BUNDLES:-canonical-kubernetes}"
 TEST_CONTROLLERS="${TEST_CONTROLLERS:-$(juju switch | cut -d ':' -f 1)}"
 TEST_BUNDLE_CHANNEL="${TEST_BUNDLE_CHANNEL:-edge}"
-TEST_SNAP_CHANNEL="${TEST_SNAP_CHANNEL:-1.6/edge}"
+TEST_SNAP_CHANNEL="${TEST_SNAP_CHANNEL:-1.7/stable}"
 
 rm -rf results
 
