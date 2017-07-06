@@ -122,7 +122,7 @@ async def wait_for_ready(model):
         assert_no_unit_errors(model)
         await asyncio.sleep(1)
 
-async def conjureup(namespace, bundle, channel, snap_channel, model):
+async def conjureup(model, namespace, bundle, channel, snap_channel=None):
     with tempfile.TemporaryDirectory() as tmpdirname:
         cmd = 'charm pull --channel=%s cs:~%s/%s %s'
         cmd %= channel, namespace, bundle, os.path.join(tmpdirname, bundle)
@@ -143,8 +143,9 @@ async def conjureup(namespace, bundle, channel, snap_channel, model):
         appkey = 'services' if 'services' in bundledata else 'applications'
         master = bundledata[appkey]['kubernetes-master']
         worker = bundledata[appkey]['kubernetes-worker']
-        master.setdefault('options', {})['channel'] = snap_channel
-        worker.setdefault('options', {})['channel'] = snap_channel
+        if snap_channel is not None:
+            master.setdefault('options', {})['channel'] = snap_channel
+            worker.setdefault('options', {})['channel'] = snap_channel
         with open(os.path.join(tmpdirname, 'spell', 'bundle.yaml'), 'w') as f:
             yaml.dump(bundledata, f, default_flow_style=False)
         with open(os.path.join(tmpdirname, 'spell', 'metadata.yaml')) as f:
