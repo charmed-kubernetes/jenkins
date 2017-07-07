@@ -23,7 +23,6 @@ async def set_snap_channel(model, channel):
 async def test_upgrade_snaps(namespace, bundle, charm_channel, from_channel, to_channel):
     async with temporary_model() as model:
         await conjureup(model, namespace, bundle, charm_channel, from_channel)
-        await set_snap_channel(model, from_channel)
         await wait_for_ready(model)
         await set_snap_channel(model, to_channel)
         for unit in model.applications['kubernetes-worker'].units:
