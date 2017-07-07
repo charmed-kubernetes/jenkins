@@ -3,6 +3,7 @@ import sys
 import asyncio
 import functools
 import json
+import os
 import random
 import logging
 import tempfile
@@ -21,14 +22,16 @@ from juju.errors import JujuAPIError
 logging.basicConfig(level=logging.DEBUG)
 
 
-def dump_model_info(model):
-    ''' Dumps information about the model to stdout '''
+def dump_model_info(model, log_dir):
+    ''' Dumps information about the model to the log dir '''
     data = {
         'applications': {k: v.data for k, v in model.applications.items()},
         'units': {k: v.data for k, v in model.units.items()},
         'machines': {k: v.data for k, v in model.machines.items()}
     }
-    json.dump(data, sys.stdout, indent=2)
+    path = os.path.join(log_dir, 'model-info')
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
 
 
 async def add_model_via_cli(controller, name, config):
@@ -70,7 +73,7 @@ def timeout_for_current_task(timeout):
 
 
 @async_contextmanager
-async def temporary_model(timeout=3600):
+async def temporary_model(log_dir, timeout=3600):
     ''' Create and destroy a temporary Juju model named cdk-build-upgrade-*.
 
     This is an async context, to be used within an `async with` statement.
@@ -84,7 +87,7 @@ async def temporary_model(timeout=3600):
         try:
             await yield_(model)
         except:
-            dump_model_info(model)
+            dump_model_info(model, log_dir)
             raise
         finally:
             await model.disconnect()

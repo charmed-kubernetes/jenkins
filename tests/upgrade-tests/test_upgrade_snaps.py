@@ -1,5 +1,4 @@
 import pytest
-import rewrite_asserts
 from utils import temporary_model, wait_for_ready, conjureup, deploy_e2e
 from validation import validate_all
 
@@ -20,8 +19,8 @@ async def set_snap_channel(model, channel):
 @pytest.mark.asyncio
 @pytest.mark.parametrize('namespace,bundle,charm_channel,from_channel,to_channel',
                          test_cases)
-async def test_upgrade_snaps(namespace, bundle, charm_channel, from_channel, to_channel):
-    async with temporary_model() as model:
+async def test_upgrade_snaps(namespace, bundle, charm_channel, from_channel, to_channel, log_dir):
+    async with temporary_model(log_dir) as model:
         await conjureup(model, namespace, bundle, charm_channel, from_channel)
         await wait_for_ready(model)
         await set_snap_channel(model, to_channel)
