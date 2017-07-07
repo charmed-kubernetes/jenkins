@@ -5,8 +5,8 @@ from validation import validate_all
 
 test_cases = [
     # namespace    # bundle                # channel  # snap channel
-    ('containers', 'kubernetes-core',      'edge',    '1.6/stable'),
-    ('containers', 'canonical-kubernetes', 'edge',    '1.6/stable'),
+    ('containers', 'kubernetes-core',      'edge',    '1.7/stable'),
+    ('containers', 'canonical-kubernetes', 'edge',    '1.7/stable'),
 ]
 
 

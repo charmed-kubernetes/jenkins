@@ -162,7 +162,7 @@ async def conjureup(model, namespace, bundle, channel, snap_channel=None):
             controller_name,
             model.info.name
         )).split()
-        await asyncify(check_call(cmd))
+        await asyncify(check_call)(cmd)
 
 
 def asyncify(f):
