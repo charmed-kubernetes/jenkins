@@ -30,5 +30,6 @@ async def test_upgrade_snaps(namespace, bundle, charm_channel, from_channel, to_
             action = await unit.run_action('upgrade')
             await action.wait()
             assert action.status == 'completed'
+        await deploy_e2e(model, charm_channel, to_channel)
         await wait_for_ready(model)
         await validate_all(model)

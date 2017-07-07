@@ -14,6 +14,7 @@ from async_generator import yield_
 from contextlib import contextmanager
 from juju.controller import Controller
 from juju.model import Model
+from juju.errors import JujuAPIError
 
 
 # Get verbose output from libjuju
@@ -172,3 +173,14 @@ def asyncify(f):
         partial = functools.partial(f, *args, **kwargs)
         return await loop.run_in_executor(None, partial)
     return wrapper
+
+
+async def deploy_e2e(model, charm_channel='stable', snap_channel='stable'):
+    await model.deploy('cs:~containers/kubernetes-e2e', channel=charm_channel)
+    await model.add_relation('kubernetes-e2e', 'easyrsa')
+    await model.add_relation('kubernetes-e2e:kubernetes-master', 'kubernetes-master:kube-api-endpoint')
+    try:
+        await model.add_relation('kubernetes-e2e:kube-control', 'kubernetes-master:kube-control')
+    except JujuAPIError:
+        logging.info("kube-control not in kubernetes-e2e, probably this is an old build.")
+    await model.applications['kubernetes-e2e'].set_config({'channel': snap_channel})
