@@ -6,7 +6,7 @@ from validation import validate_all
 test_cases = [
     # namespace, bundle, charm channel, snap from channel, snap to channel
     ('containers', 'kubernetes-core',      'edge', '1.6/stable', '1.7/stable'),
-    # ('containers', 'canonical-kubernetes', 'edge', '1.6/stable', '1.7/stable'),
+    ('containers', 'canonical-kubernetes', 'edge', '1.6/stable', '1.7/stable'),
 ]
 
 
