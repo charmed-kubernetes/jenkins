@@ -1,6 +1,6 @@
 import pytest
 import rewrite_asserts
-from utils import temporary_model, wait_for_ready, get_model, deploy_bundle
+from utils import temporary_model, wait_for_ready, deploy_bundle
 from validation import validate_all
 
 test_cases = [
