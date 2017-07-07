@@ -1,9 +1,14 @@
+import os
+import sys
 import asyncio
 import functools
 import json
 import random
-import sys
 import logging
+import tempfile
+import shutil
+import yaml
+from subprocess import check_output, check_call
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from contextlib import contextmanager
@@ -37,9 +42,7 @@ async def add_model_via_cli(controller, name, config):
         cmd += ['-c', controller_name]
     for k, v in config.items():
         cmd += ['--config', k + '=' + json.dumps(v)]
-    process = await asyncio.create_subprocess_exec(*cmd)
-    await process.wait()
-    assert process.returncode == 0
+    await asyncify(check_call)(cmd)
     model = Model()
     if controller_name:
         await model.connect_model(controller_name + ':' + name)
@@ -120,6 +123,49 @@ async def wait_for_ready(model):
         await asyncio.sleep(1)
 
 
+async def conjureup(model, namespace, bundle, channel, snap_channel=None):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        cmd = 'charm pull --channel=%s cs:~%s/%s %s'
+        cmd %= channel, namespace, bundle, os.path.join(tmpdirname, bundle)
+        cmd = cmd.split()
+        await asyncify(check_call)(cmd)
+        shutil.copytree(
+            os.path.join('/snap/conjure-up/current/spells', bundle),
+            os.path.join(tmpdirname, 'spell')
+        )
+        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-01_get-kubectl'))
+        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-01_get-kubectl.yaml'))
+        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-02_cluster-info'))
+        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-02_cluster-info.yaml'))
+        with open(os.path.join(tmpdirname, bundle, 'bundle.yaml')) as f:
+            bundledata = yaml.load(f)
+        appkey = 'services' if 'services' in bundledata else 'applications'
+        master = bundledata[appkey]['kubernetes-master']
+        worker = bundledata[appkey]['kubernetes-worker']
+        if snap_channel is not None:
+            master.setdefault('options', {})['channel'] = snap_channel
+            worker.setdefault('options', {})['channel'] = snap_channel
+        with open(os.path.join(tmpdirname, 'spell', 'bundle.yaml'), 'w') as f:
+            yaml.dump(bundledata, f, default_flow_style=False)
+        with open(os.path.join(tmpdirname, 'spell', 'metadata.yaml')) as f:
+            metadata = yaml.load(f)
+        del metadata['bundle-name']
+        with open(os.path.join(tmpdirname, 'spell', 'metadata.yaml'), 'w') as f:
+            yaml.dump(metadata, f, default_flow_style=False)
+        cmd = 'juju show-controller --format=json'.split()
+        controller_raw = await asyncify(check_output)(cmd)
+        controller_name, controller = list(yaml.load(controller_raw).items())[0]
+        cloud = controller['details']['cloud']
+        cloud += '/' + controller['details']['region']
+        cmd = ('conjure-up %s %s %s %s --debug --notrack --noreport' % (
+            os.path.join(tmpdirname, 'spell'),
+            cloud,
+            controller_name,
+            model.info.name
+        )).split()
+        await asyncify(check_call)(cmd)
+
+
 def asyncify(f):
     ''' Convert a blocking function into a coroutine '''
     async def wrapper(*args, **kwargs):
@@ -129,16 +175,11 @@ def asyncify(f):
     return wrapper
 
 
-async def deploy_bundle(model, bundle, channel='stable'):
-    ''' Deploy the bundle requested and augment it with kubernetes-e2e.'''
-    await model.deploy(bundle, channel=channel)
-    await model.deploy('cs:~containers/kubernetes-e2e', channel=channel)
+async def deploy_e2e(model, charm_channel='stable', snap_channel=None):
+    config = None if snap_channel is None else {'channel': snap_channel}
+    await model.deploy('cs:~containers/kubernetes-e2e', channel=charm_channel, config=config)
     await model.add_relation('kubernetes-e2e', 'easyrsa')
     await model.add_relation('kubernetes-e2e:kubernetes-master', 'kubernetes-master:kube-api-endpoint')
-    await add_new_e2e_relation(model)
-
-
-async def add_new_e2e_relation(model):
     try:
         await model.add_relation('kubernetes-e2e:kube-control', 'kubernetes-master:kube-control')
     except JujuAPIError:

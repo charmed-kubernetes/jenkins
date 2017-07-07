@@ -1,14 +1,12 @@
 import pytest
 import rewrite_asserts
-from utils import temporary_model, wait_for_ready, deploy_bundle
+from utils import temporary_model, wait_for_ready, conjureup, deploy_e2e
 from validation import validate_all
 
 test_cases = [
-    # bundle                 charm_channel  from_channel  to_channel
-    ('kubernetes-core',      'edge',        '1.6/stable', '1.6/edge'),
-    ('kubernetes-core',      'edge',        '1.6/stable', '1.7/edge'),
-    ('canonical-kubernetes', 'edge',        '1.6/stable', '1.6/edge'),
-    ('canonical-kubernetes', 'edge',        '1.6/stable', '1.7/edge'),
+    # namespace, bundle, charm channel, snap from channel, snap to channel
+    ('containers', 'kubernetes-core',      'edge', '1.6/stable', '1.7/stable'),
+    ('containers', 'canonical-kubernetes', 'edge', '1.6/stable', '1.7/stable'),
 ]
 
 
@@ -20,17 +18,17 @@ async def set_snap_channel(model, channel):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('bundle,charm_channel,from_channel,to_channel',
+@pytest.mark.parametrize('namespace,bundle,charm_channel,from_channel,to_channel',
                          test_cases)
-async def test_upgrade_snaps(bundle, charm_channel, from_channel, to_channel):
+async def test_upgrade_snaps(namespace, bundle, charm_channel, from_channel, to_channel):
     async with temporary_model() as model:
-        await deploy_bundle(model, bundle, charm_channel)
-        await set_snap_channel(model, from_channel)
+        await conjureup(model, namespace, bundle, charm_channel, from_channel)
         await wait_for_ready(model)
         await set_snap_channel(model, to_channel)
         for unit in model.applications['kubernetes-worker'].units:
             action = await unit.run_action('upgrade')
             await action.wait()
             assert action.status == 'completed'
+        await deploy_e2e(model, charm_channel, to_channel)
         await wait_for_ready(model)
         await validate_all(model)
