@@ -17,7 +17,7 @@ def log_dir(request):
     path = os.path.join(
         'logs',
         request.module.__name__,
-        request.node.name
+        request.node.name.replace('/', '_')
     )
     os.makedirs(path)
     return path
