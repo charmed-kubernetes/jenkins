@@ -48,14 +48,6 @@ async def add_model_via_cli(controller, name, config):
     return model
 
 
-async def get_model(name):
-    ''' Get current model
-    '''
-    model = Model()
-    await model.connect_model(name)
-    return model
-
-
 @contextmanager
 def timeout_for_current_task(timeout):
     ''' Create a context with a timeout.
