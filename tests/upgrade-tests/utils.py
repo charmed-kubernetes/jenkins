@@ -1,21 +1,21 @@
-import os
-import sys
 import asyncio
 import functools
 import json
+import logging
 import os
 import random
-import logging
-import tempfile
 import shutil
+import subprocess
+import tempfile
 import yaml
-from subprocess import check_output, check_call
+
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from contextlib import contextmanager
 from juju.controller import Controller
 from juju.model import Model
 from juju.errors import JujuAPIError
+from subprocess import check_output, check_call
 
 
 # Get verbose output from libjuju
@@ -32,6 +32,16 @@ def dump_model_info(model, log_dir):
     path = os.path.join(log_dir, 'model-info')
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)
+        f.write('\n')
+
+
+async def dump_debug_log(model, log_dir):
+    ''' Dumps Juju debug log to the log dir '''
+    path = os.path.join(log_dir, 'debug-log')
+    with open(path, 'w') as f:
+        cmd = ['juju', 'debug-log', '-m', model.info.name, '--replay']
+        await asyncify(subprocess.call)(cmd, stdout=f,
+                                        stderr=subprocess.STDOUT)
 
 
 async def add_model_via_cli(controller, name, config):
@@ -88,6 +98,7 @@ async def temporary_model(log_dir, timeout=3600):
             await yield_(model)
         except:
             dump_model_info(model, log_dir)
+            await dump_debug_log(model, log_dir)
             raise
         finally:
             await model.disconnect()
