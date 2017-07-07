@@ -4,13 +4,11 @@
 import os
 import pytest
 import shutil
-from contextlib import suppress
 
 pytest.register_assert_rewrite('utils')
 pytest.register_assert_rewrite('validation')
 
-with suppress(FileNotFoundError):
-    shutil.rmtree('logs')
+shutil.rmtree('logs', ignore_errors=True)
 
 
 @pytest.fixture
