@@ -4,19 +4,21 @@ set -eux
 BUNDLE_REPOSITORY="https://github.com/juju-solutions/bundle-canonical-kubernetes.git"
 git clone ${BUNDLE_REPOSITORY} bundle
 
+release-bundle() {
+  LOCAL_PATH="$1"
+  CS_PATH="$2"
+  PUSH_CMD="/usr/bin/charm push $LOCAL_PATH $CS_PATH"
+  REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
+  /usr/bin/charm release --channel edge ${REVISION}
+}
+
 bundle/bundle -o ./bundles/cdk-flannel -c edge k8s/cdk cni/flannel
 bundle/bundle -o ./bundles/core-flannel -c edge k8s/core cni/flannel
+bundle/bundle -o ./bundles/cdk-flannel-elastic -c edge k8s/cdk cni/flannel monitor/elastic
 
-CDK="cs:~containers/bundle/canonical-kubernetes"
-CORE="cs:~containers/bundle/kubernetes-core"
-
-PUSH_CMD="/usr/bin/charm push ./bundles/cdk-flannel ${CDK}"
-CDK_REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
-/usr/bin/charm release --channel edge ${CDK_REVISION}
-
-PUSH_CMD="/usr/bin/charm push ./bundles/core-flannel ${CORE}"
-CORE_REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
-/usr/bin/charm release --channel edge ${CORE_REVISION}
+release-bundle ./bundles/cdk-flannel cs:~containers/bundle/canonical-kubernetes
+release-bundle ./bundles/core-flannel cs:~containers/bundle/kubernetes-core
+release-bundle ./bundles/cdk-flannel-elastic cs:~containers/bundle/canonical-kubernetes-elastic
 
 if [ "$RUN_TESTS" = "true" ]; then
   ./tests/run-bundle-tests.sh
