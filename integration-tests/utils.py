@@ -199,3 +199,9 @@ async def deploy_e2e(model, charm_channel='stable', snap_channel=None):
     except JujuAPIError:
         logging.info("kube-control not in kubernetes-e2e, probably this is an old build.")
     await wait_for_ready(model)
+
+
+async def upgrade_charms(model, channel):
+    for app in model.applications.values():
+        await app.upgrade_charm(channel=channel)
+    await wait_for_ready(model)
