@@ -14,7 +14,7 @@ from async_generator import yield_
 from contextlib import contextmanager
 from juju.controller import Controller
 from juju.model import Model
-from juju.errors import JujuAPIError
+from juju.errors import JujuAPIError, JujuError
 from subprocess import check_output, check_call
 
 
@@ -203,5 +203,9 @@ async def deploy_e2e(model, charm_channel='stable', snap_channel=None):
 
 async def upgrade_charms(model, channel):
     for app in model.applications.values():
-        await app.upgrade_charm(channel=channel)
+        try:
+            await app.upgrade_charm(channel=channel)
+        except JujuError as e:
+            if "already running charm" not in e.message:
+                raise
     await wait_for_ready(model)
