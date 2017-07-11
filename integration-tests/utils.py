@@ -198,3 +198,4 @@ async def deploy_e2e(model, charm_channel='stable', snap_channel=None):
         await model.add_relation('kubernetes-e2e:kube-control', 'kubernetes-master:kube-control')
     except JujuAPIError:
         logging.info("kube-control not in kubernetes-e2e, probably this is an old build.")
+    await wait_for_ready(model)

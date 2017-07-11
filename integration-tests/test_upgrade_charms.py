@@ -18,5 +18,4 @@ async def test_upgrade_charms(namespace, bundle, from_channel, to_channel, snap_
         for app in model.applications.values():
             await app.upgrade_charm(channel=to_channel)
         await deploy_e2e(model, to_channel, snap_channel)
-        await wait_for_ready(model)
         await validate_all(model)
