@@ -206,6 +206,6 @@ async def upgrade_charms(model, channel):
         try:
             await app.upgrade_charm(channel=channel)
         except JujuError as e:
-            if "already running charm" not in e.message:
+            if "already running charm" not in str(e):
                 raise
     await wait_for_ready(model)
