@@ -14,7 +14,7 @@ from async_generator import yield_
 from contextlib import contextmanager
 from juju.controller import Controller
 from juju.model import Model
-from juju.errors import JujuAPIError
+from juju.errors import JujuAPIError, JujuError
 from subprocess import check_output, check_call
 
 
@@ -198,3 +198,14 @@ async def deploy_e2e(model, charm_channel='stable', snap_channel=None):
         await model.add_relation('kubernetes-e2e:kube-control', 'kubernetes-master:kube-control')
     except JujuAPIError:
         logging.info("kube-control not in kubernetes-e2e, probably this is an old build.")
+    await wait_for_ready(model)
+
+
+async def upgrade_charms(model, channel):
+    for app in model.applications.values():
+        try:
+            await app.upgrade_charm(channel=channel)
+        except JujuError as e:
+            if "already running charm" not in str(e):
+                raise
+    await wait_for_ready(model)
