@@ -1,5 +1,5 @@
 import pytest
-from utils import temporary_model, wait_for_ready, conjureup, deploy_e2e
+from utils import temporary_model, conjureup, deploy_e2e
 from validation import validate_all
 
 test_cases = [
@@ -22,7 +22,6 @@ async def set_snap_channel(model, channel):
 async def test_upgrade_snaps(namespace, bundle, charm_channel, from_channel, to_channel, log_dir):
     async with temporary_model(log_dir) as model:
         await conjureup(model, namespace, bundle, charm_channel, from_channel)
-        await wait_for_ready(model)
         await set_snap_channel(model, to_channel)
         for unit in model.applications['kubernetes-worker'].units:
             action = await unit.run_action('upgrade')
