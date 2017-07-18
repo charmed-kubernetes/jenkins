@@ -74,8 +74,12 @@ async def validate_microbot(model):
     action = await unit.run_action('microbot', replicas=3)
     await action.wait()
     assert action.status == 'completed'
-    # TODO: wait for pods running
-    # TODO: test that we can reach the ingress endpoint
+    for i in range(60):
+        resp = requests.get('http://' + action.data['results']['address'])
+        if resp.ok:
+            return
+        await asyncio.sleep(1)
+    raise MicrobotError('Microbot failed to start.')
 
 
 async def validate_kubelet_anonymous_auth_disabled(model):
@@ -104,3 +108,7 @@ async def validate_e2e_tests(model):
     action = await e2e_unit.run_action('test')
     await action.wait()
     assert action.status == 'completed'
+
+
+class MicrobotError(Exception):
+    pass
