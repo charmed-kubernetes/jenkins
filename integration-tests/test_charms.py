@@ -3,7 +3,7 @@ import pytest
 import subprocess
 import yaml
 from utils import temporary_model, conjureup, deploy_e2e, upgrade_charms
-from utils import asyncify
+from utils import asyncify, juju_deploy
 from validation import validate_all
 
 namespace = os.environ.get('TEST_CHARMS_NAMESPACE', 'containers')
@@ -18,7 +18,8 @@ bundles = [
 @pytest.mark.parametrize('bundle', bundles)
 async def test_deploy(bundle, log_dir):
     async with temporary_model(log_dir) as model:
-        await conjureup(model, namespace, bundle, channel)
+        # await conjureup(model, namespace, bundle, channel)
+        await juju_deploy(model, namespace, bundle, channel)
         await deploy_e2e(model, channel)
         await validate_all(model)
 
@@ -27,7 +28,8 @@ async def test_deploy(bundle, log_dir):
 @pytest.mark.parametrize('bundle', bundles)
 async def test_upgrade(bundle, log_dir):
     async with temporary_model(log_dir) as model:
-        await conjureup(model, namespace, bundle, 'stable')
+        # await conjureup(model, namespace, bundle, 'stable')
+        await juju_deploy(model, namespace, bundle, channel)
         await upgrade_charms(model, channel)
         await deploy_e2e(model, channel)
         await validate_all(model)

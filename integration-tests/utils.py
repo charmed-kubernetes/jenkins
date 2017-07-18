@@ -137,7 +137,7 @@ async def wait_for_ready(model):
         await asyncio.sleep(1)
 
 
-async def conjureup(model, namespace, bundle, channel, snap_channel=None):
+async def conjureup(model, namespace, bundle, channel='stable', snap_channel=None):
     with tempfile.TemporaryDirectory() as tmpdirname:
         cmd = 'charm pull --channel=%s cs:~%s/%s %s'
         cmd %= channel, namespace, bundle, os.path.join(tmpdirname, bundle)
@@ -178,6 +178,12 @@ async def conjureup(model, namespace, bundle, channel, snap_channel=None):
             model.info.name
         )).split()
         await asyncify(check_call)(cmd)
+
+
+async def juju_deploy(model, namespace, bundle, channel='stable'):
+    ''' Deploy the requested bundle. '''
+    await model.deploy('cs:~%s/%s' % (namespace, bundle), channel=channel)
+    await wait_for_ready(model)
 
 
 def asyncify(f):
