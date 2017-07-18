@@ -83,6 +83,18 @@ def timeout_for_current_task(timeout):
 
 
 @async_contextmanager
+async def captured_fail_logs(model, log_dir):
+    ''' Create a context that captures model info when any exception is raised.
+    '''
+    try:
+        await yield_()
+    except:
+        dump_model_info(model, log_dir)
+        await dump_debug_log(model, log_dir)
+        raise
+
+
+@async_contextmanager
 async def temporary_model(log_dir, timeout=3600):
     ''' Create and destroy a temporary Juju model named cdk-build-upgrade-*.
 
@@ -95,11 +107,8 @@ async def temporary_model(log_dir, timeout=3600):
         model_config = {'test-mode': True}
         model = await add_model_via_cli(controller, model_name, model_config)
         try:
-            await yield_(model)
-        except:
-            dump_model_info(model, log_dir)
-            await dump_debug_log(model, log_dir)
-            raise
+            async with captured_fail_logs(model, log_dir):
+                await yield_(model)
         finally:
             await model.disconnect()
             await controller.destroy_model(model.info.uuid)
