@@ -47,8 +47,8 @@ fi
 touch report.xml
 
 if [ ${RELEASE} = true ]; then
-  ETCD_CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/etcd cs:~containers/etcd | head -n 1 | awk '{print $2}')
+  CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/etcd cs:~containers/etcd | head -n 1 | awk '{print $2}')
   charm set ${CHARM} commit=${COMMIT_HASH}
-  echo "Releasing ${ETCD_CHARM}"
-  CHARM="$ETCD_CHARM" FROM_CHANNEL=unpublished TO_CHANNEL=edge ./charms/promote-charm.sh
+  echo "Releasing ${CHARM}"
+  CHARM="$CHARM" FROM_CHANNEL=unpublished TO_CHANNEL=edge ./charms/promote-charm.sh
 fi
