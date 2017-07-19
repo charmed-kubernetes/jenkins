@@ -20,6 +20,9 @@ if ! [ -d kubernetes ]; then
   git clone ${GIT_REPO}
 fi
 
+# Get the commit hash
+COMMIT_HASH=$(cd kubernetes && git rev-parse HEAD)
+
 # Build the charm with no local layers
 (cd kubernetes/cluster/juju/layers/kubernetes-master
   retry charm build -r --no-local-layers --force
@@ -47,6 +50,7 @@ touch report.xml
 
 if [ ${RELEASE} = true ]; then
   CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/kubernetes-master cs:~containers/kubernetes-master | head -n 1 | awk '{print $2}')
+  charm set ${CHARM} commit=${COMMIT_HASH}
   echo "Releasing ${CHARM}"
   CHARM="$CHARM" FROM_CHANNEL=unpublished TO_CHANNEL=edge ./charms/promote-charm.sh
 fi

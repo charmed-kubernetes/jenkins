@@ -18,6 +18,9 @@ CLOUD=${CLOUD:-"google"}
 # Clone the git repo
 git clone ${GIT_REPO}
 
+# Get the commit hash
+COMMIT_HASH=$(cd layer-etcd && git rev-parse HEAD)
+
 # Build the charm with no local layers
 cd layer-etcd
 retry charm build -r --no-local-layers --force
@@ -44,7 +47,8 @@ fi
 touch report.xml
 
 if [ ${RELEASE} = true ]; then
-  ETCD_CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/etcd cs:~containers/etcd | head -n 1 | awk '{print $2}')
-  echo "Releasing ${ETCD_CHARM}"
-  CHARM="$ETCD_CHARM" FROM_CHANNEL=unpublished TO_CHANNEL=edge ./charms/promote-charm.sh
+  CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/etcd cs:~containers/etcd | head -n 1 | awk '{print $2}')
+  charm set ${CHARM} commit=${COMMIT_HASH}
+  echo "Releasing ${CHARM}"
+  CHARM="$CHARM" FROM_CHANNEL=unpublished TO_CHANNEL=edge ./charms/promote-charm.sh
 fi
