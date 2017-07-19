@@ -11,6 +11,7 @@ CHARMS="
   cs:~containers/kubernetes-e2e
   cs:~containers/kubernetes-core
   cs:~containers/canonical-kubernetes
+  cs:~containers/canonical-kubernetes-elastic
 "
 
 for charm in $CHARMS; do
