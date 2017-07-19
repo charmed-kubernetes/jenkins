@@ -18,6 +18,9 @@ CLOUD=${CLOUD:-"google"}
 # Clone the git repo
 git clone ${GIT_REPO}
 
+# Get the commit hash
+COMMIT_HASH=$(cd layer-easyrsa && git rev-parse HEAD)
+
 # Build the charm with no local layers
 cd layer-easyrsa
 retry charm build -r --no-local-layers --force
@@ -45,6 +48,7 @@ touch report.xml
 
 if [ ${RELEASE} = true ]; then
   CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/easyrsa cs:~containers/easyrsa | head -n 1 | awk '{print $2}')
+  charm set ${CHARM} commit=${COMMIT_HASH}
   echo "Releasing ${CHARM}"
   CHARM="$CHARM" FROM_CHANNEL=unpublished TO_CHANNEL=edge ./charms/promote-charm.sh
 fi
