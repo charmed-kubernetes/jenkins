@@ -21,7 +21,9 @@ release-bundle ./bundles/core-flannel cs:~containers/bundle/kubernetes-core
 release-bundle ./bundles/cdk-flannel-elastic cs:~containers/bundle/canonical-kubernetes-elastic
 
 if [ "$RUN_TESTS" = "true" ]; then
-  ./tests/run-bundle-tests.sh
+  (cd integration-tests
+    pytest --junit-xml=report.xml test_charms.py
+  )
 
   export FROM_CHANNEL=edge
   export TO_CHANNEL=beta
