@@ -12,6 +12,6 @@ async def test_live_model(log_dir):
     try:
         await model.connect_current()
         async with captured_fail_logs(model, log_dir):
-            await validate_all(model)
+            await validate_all(model, log_dir)
     finally:
         await model.disconnect()

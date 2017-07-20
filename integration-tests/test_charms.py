@@ -21,7 +21,7 @@ async def test_deploy(bundle, log_dir):
         # await conjureup(model, namespace, bundle, channel)
         await juju_deploy(model, namespace, bundle, channel)
         await deploy_e2e(model, channel)
-        await validate_all(model)
+        await validate_all(model, log_dir)
 
 
 @pytest.mark.asyncio
@@ -32,7 +32,7 @@ async def test_upgrade(bundle, log_dir):
         await juju_deploy(model, namespace, bundle, channel)
         await upgrade_charms(model, channel)
         await deploy_e2e(model, channel)
-        await validate_all(model)
+        await validate_all(model, log_dir)
 
 
 @pytest.mark.asyncio
