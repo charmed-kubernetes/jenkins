@@ -1,14 +1,20 @@
 import asyncio
+import os
 import requests
+import yaml
+
+from tempfile import NamedTemporaryFile
+
 from utils import assert_no_unit_errors, asyncify, wait_for_ready
 
 
-async def validate_all(model):
+async def validate_all(model, log_dir):
     validate_status_messages(model)
     await validate_snap_versions(model)
     await validate_microbot(model)
     await validate_kubelet_anonymous_auth_disabled(model)
     await validate_e2e_tests(model)
+    await validate_dashboard(model, log_dir)
     assert_no_unit_errors(model)
 
 
@@ -75,11 +81,33 @@ async def validate_microbot(model):
     await action.wait()
     assert action.status == 'completed'
     for i in range(60):
-        resp = requests.get('http://' + action.data['results']['address'])
-        if resp.ok:
+        resp = await asyncify(requests.get)('http://' + action.data['results']['address'])
+        if resp.status_code == 200:
             return
         await asyncio.sleep(1)
     raise MicrobotError('Microbot failed to start.')
+
+
+async def validate_dashboard(model, log_dir):
+    ''' Validate that the dashboard is operational '''
+    unit = model.applications['kubernetes-master'].units[0]
+    with NamedTemporaryFile() as f:
+        await unit.scp_from('config', f.name)
+        with open(f.name, 'r') as stream:
+            config = yaml.load(stream)
+    url = config['clusters'][0]['cluster']['server']
+    user = config['users'][0]['user']['username']
+    password = config['users'][0]['user']['password']
+    auth = requests.auth.HTTPBasicAuth(user, password)
+    resp = await asyncify(requests.get)(url, auth=auth, verify=False)
+    assert resp.status_code == 200
+    url = '%s/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/api/v1/workload/default?filterBy=&itemsPerPage=10&page=1&sortBy=d,creationTimestamp'
+    url %= config['clusters'][0]['cluster']['server']
+    resp = await asyncify(requests.get)(url, auth=auth, verify=False)
+    assert resp.status_code == 200
+    data = resp.json()
+    with open(os.path.join(log_dir, 'dashboard.yaml'), 'w') as f:
+        yaml.dump(data, f, default_flow_style=False)
 
 
 async def validate_kubelet_anonymous_auth_disabled(model):
