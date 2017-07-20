@@ -82,7 +82,7 @@ async def validate_microbot(model):
     assert action.status == 'completed'
     for i in range(60):
         resp = await asyncify(requests.get)('http://' + action.data['results']['address'])
-        if resp.ok:
+        if resp.status_code == 200:
             return
         await asyncio.sleep(1)
     raise MicrobotError('Microbot failed to start.')
@@ -100,15 +100,13 @@ async def validate_dashboard(model, log_dir):
     password = config['users'][0]['user']['password']
     auth = requests.auth.HTTPBasicAuth(user, password)
     resp = await asyncify(requests.get)(url, auth=auth, verify=False)
-    assert resp.ok is True
+    assert resp.status_code == 200
     url = '%s/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/api/v1/workload/default?filterBy=&itemsPerPage=10&page=1&sortBy=d,creationTimestamp'
     url %= config['clusters'][0]['cluster']['server']
     resp = await asyncify(requests.get)(url, auth=auth, verify=False)
-    assert resp.ok is True
+    assert resp.status_code == 200
     data = resp.json()
-    assert len(data['podList']['pods'][0]['metrics']['cpuUsageHistory']) > 0
-    assert len(data['podList']['pods'][0]['metrics']['memoryUsageHistory']) > 0
-    with open(os.path.join(log_dir, 'dashboard.json'), 'w') as f:
+    with open(os.path.join(log_dir, 'dashboard.yaml'), 'w') as f:
         yaml.dump(data, f, default_flow_style=False)
 
 
