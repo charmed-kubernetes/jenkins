@@ -13,9 +13,9 @@ async def validate_all(model, log_dir):
     validate_status_messages(model)
     await validate_snap_versions(model)
     await validate_microbot(model)
+    await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
     await validate_e2e_tests(model)
-    await validate_dashboard(model, log_dir)
     assert_no_unit_errors(model)
 
 
