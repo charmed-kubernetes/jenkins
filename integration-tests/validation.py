@@ -15,7 +15,7 @@ async def validate_all(model, log_dir):
     await validate_microbot(model)
     await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
-    await validate_e2e_tests(model)
+    await validate_e2e_tests(model, log_dir)
     assert_no_unit_errors(model)
 
 
@@ -127,7 +127,7 @@ async def validate_kubelet_anonymous_auth_disabled(model):
     await asyncio.gather(*(validate_unit(unit) for unit in units))
 
 
-async def validate_e2e_tests(model):
+async def validate_e2e_tests(model, log_dir):
     ''' Validate that the e2e tests pass.'''
     masters = model.applications['kubernetes-master']
     await masters.set_config({'allow-privileged': 'true'})
@@ -140,6 +140,12 @@ async def validate_e2e_tests(model):
     e2e_unit = model.applications['kubernetes-e2e'].units[0]
     action = await e2e_unit.run_action('test')
     await action.wait()
+
+    for suffix in ['.log', '-junit.tar.gz']:
+        src = action.entity_id + suffix
+        dest = os.path.join(log_dir, 'e2e' + suffix)
+        await e2e_unit.scp_from(src, dest)
+
     assert action.status == 'completed'
 
 
