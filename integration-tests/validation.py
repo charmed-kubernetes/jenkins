@@ -1,6 +1,7 @@
 import asyncio
 import os
 import requests
+import traceback
 import yaml
 
 from tempfile import NamedTemporaryFile
@@ -81,9 +82,13 @@ async def validate_microbot(model):
     await action.wait()
     assert action.status == 'completed'
     for i in range(60):
-        resp = await asyncify(requests.get)('http://' + action.data['results']['address'])
-        if resp.status_code == 200:
-            return
+        try:
+            resp = await asyncify(requests.get)('http://' + action.data['results']['address'])
+            if resp.status_code == 200:
+                return
+        except requests.exceptions.ConnectionError:
+            print("Caught connection error attempting to hit xip.io, retrying. Error follows:")
+            traceback.print_exc()
         await asyncio.sleep(1)
     raise MicrobotError('Microbot failed to start.')
 
