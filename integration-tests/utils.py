@@ -189,9 +189,23 @@ async def conjureup(model, namespace, bundle, channel='stable', snap_channel=Non
         await asyncify(check_call)(cmd)
 
 
-async def juju_deploy(model, namespace, bundle, channel='stable'):
+async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=None):
     ''' Deploy the requested bundle. '''
-    await model.deploy('cs:~%s/%s' % (namespace, bundle), channel=channel)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        url = 'cs:~%s/%s' % (namespace, bundle)
+        bundle_dir = os.path.join(temp_dir, 'bundle')
+        cmd = ['charm', 'pull', '--channel', channel, url, bundle_dir]
+        await asyncify(subprocess.check_call)(cmd)
+        if snap_channel:
+            data_path = os.path.join(bundle_dir, 'bundle.yaml')
+            with open(data_path) as f:
+                data = yaml.load(f)
+            for app in ['kubernetes-master', 'kubernetes-worker']:
+                options = data['services'][app].setdefault('options', {})
+                options['channel'] = snap_channel
+            with open(data_path, 'w') as f:
+                yaml.dump(data, f)
+        await model.deploy(bundle_dir)
     await wait_for_ready(model)
 
 
@@ -220,4 +234,16 @@ async def upgrade_charms(model, channel):
         except JujuError as e:
             if "already running charm" not in str(e):
                 raise
+    await wait_for_ready(model)
+
+
+async def upgrade_snaps(model, channel):
+    for app in ['kubernetes-master', 'kubernetes-worker', 'kubernetes-e2e']:
+        app = model.applications.get(app)
+        if app:
+            await app.set_config({'channel': channel})
+    for unit in model.applications['kubernetes-worker'].units:
+        action = await unit.run_action('upgrade')
+        await action.wait()
+        assert action.status == 'completed'
     await wait_for_ready(model)

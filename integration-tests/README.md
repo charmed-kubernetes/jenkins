@@ -21,6 +21,11 @@ To run charm tests:
 pytest test_charms.py
 ```
 
+To run snap tests:
+```
+pytest test_snaps.py
+```
+
 To run tests against an existing deployment:
 ```
 pytest test_live_model.py
