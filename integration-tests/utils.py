@@ -247,3 +247,36 @@ async def upgrade_snaps(model, channel):
         await action.wait()
         assert action.status == 'completed'
     await wait_for_ready(model)
+
+
+async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=None):
+    async with temporary_model(log_dir) as model:
+        # fetch bundle
+        bundle = 'canonical-kubernetes'
+        url = 'cs:~%s/%s' % (namespace, bundle)
+        bundle_dir = os.path.join(log_dir, bundle)
+        cmd = ['charm', 'pull', url, '--channel', channel, bundle_dir]
+        await asyncify(subprocess.check_call)(cmd)
+
+        # update bundle config
+        data_path = os.path.join(bundle_dir, 'bundle.yaml')
+        with open(data_path, 'r') as f:
+            data = yaml.load(f)
+        if snap_channel:
+            for app in ['kubernetes-master', 'kubernetes-worker']:
+                options = data['services'][app].setdefault('options', {})
+                options['channel'] = snap_channel
+        data['services']['kubernetes-worker'].setdefault('options', {})['labels'] = 'mylabel=thebest'
+        yaml.Dumper.ignore_aliases = lambda *args: True
+        with open(data_path, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False)
+
+        # run bundletester
+        output_file = os.path.join(log_dir, 'bundletester.xml')
+        cmd = [
+            'bundletester',
+            '--no-matrix', '-vF', '-l', 'DEBUG',
+            '-t', bundle_dir,
+            '-r', 'xml', '-o', output_file
+        ]
+        await asyncify(subprocess.check_call)(cmd)
