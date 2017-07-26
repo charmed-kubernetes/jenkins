@@ -1,7 +1,7 @@
 import os
 import pytest
 from utils import temporary_model, conjureup, juju_deploy, deploy_e2e
-from utils import upgrade_snaps
+from utils import upgrade_snaps, run_bundletester
 from validation import validate_all
 
 namespace = os.environ.get('TEST_SNAPS_NAMESPACE', 'containers')
@@ -31,3 +31,8 @@ async def test_upgrade(bundle, log_dir):
         await upgrade_snaps(model, channel)
         await deploy_e2e(model, 'stable', channel)
         await validate_all(model, log_dir)
+
+
+@pytest.mark.asyncio
+async def test_bundletester(log_dir):
+    await run_bundletester(namespace, log_dir, snap_channel=channel)
