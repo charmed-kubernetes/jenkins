@@ -95,7 +95,7 @@ async def captured_fail_logs(model, log_dir):
 
 
 @async_contextmanager
-async def temporary_model(log_dir, timeout=3600):
+async def temporary_model(log_dir, timeout=7200):
     ''' Create and destroy a temporary Juju model named cdk-build-upgrade-*.
 
     This is an async context, to be used within an `async with` statement.
