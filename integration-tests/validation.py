@@ -138,13 +138,21 @@ async def validate_e2e_tests(model, log_dir):
     await wait_for_ready(model)
 
     e2e_unit = model.applications['kubernetes-e2e'].units[0]
-    action = await e2e_unit.run_action('test')
-    await action.wait()
 
-    for suffix in ['.log', '-junit.tar.gz']:
-        src = action.entity_id + suffix
-        dest = os.path.join(log_dir, 'e2e' + suffix)
-        await e2e_unit.scp_from(src, dest)
+    attempts = 0
+
+    while attempts < 3:
+        attempts += 1
+        action = await e2e_unit.run_action('test')
+        await action.wait()
+        for suffix in ['.log', '-junit.tar.gz']:
+            src = action.entity_id + suffix
+            dest = os.path.join(log_dir, 'e2e-%d' % attempts + suffix)
+            await e2e_unit.scp_from(src, dest)
+        if action.status == 'completed':
+            break
+        else:
+            print("Attempt %d/3 failed." % attempts)
 
     assert action.status == 'completed'
 
