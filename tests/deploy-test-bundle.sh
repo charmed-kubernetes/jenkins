@@ -11,13 +11,8 @@ echo "${0} started at `date`."
 MODEL=${1:-"model-is-undefined"}
 # The second argument is the bundle name.
 BUNDLE=${2:-"kubernetes-core"}
-# Some of the files in JUJU_DATA my not be owned by the ubuntu user, fix that.
-CHOWN_CMD="sudo chown -R ubuntu:ubuntu /home/ubuntu/.local/share/juju"
-# Define the juju and in-jujubox functions.
-source ./tests/define-juju.sh
 # Create a model just for this run of the tests.
-in-jujubox "${CHOWN_CMD} && juju add-model ${MODEL}"
-
+juju add-model ${MODEL}
 # Set test mode on the deployment so we dont bloat charm-store deployment count
 juju model-config -m ${MODEL} test-mode=1
 
@@ -29,8 +24,9 @@ juju add-unit kubernetes-worker
 # TODO Check for the e2e charm, the bundle could already define one.
 # Deploy the e2e charm and make the relations.
 juju deploy cs:~containers/kubernetes-e2e
-juju relate kubernetes-e2e kubernetes-master
 juju relate kubernetes-e2e easyrsa
+juju add-relation kubernetes-e2e:kube-control kubernetes-master:kube-control
+juju add-relation kubernetes-e2e:kubernetes-master kubernetes-master:kube-api-endpoint
 
 juju config kubernetes-worker allow-privileged=true
 juju config kubernetes-master allow-privileged=true

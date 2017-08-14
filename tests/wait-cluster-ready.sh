@@ -7,8 +7,6 @@ set -o xtrace  # Print the commands that are executed.
 
 echo "${0} started at `date`."
 
-# Define the in-jujubox and juju functions.
-source ./tests/define-juju.sh
 # Define the utility functions such as run_and_wait.
 source ./utilities.sh
 
@@ -18,8 +16,8 @@ run_and_wait "juju status kubernetes-master" "Kubernetes master running." 10
 juju status
 
 # Wait in 10 second increments for "KubeDNS" to show up in cluster-info output.
-run_and_wait 'juju run --application kubernetes-master "/snap/bin/kubectl cluster-info"' "KubeDNS" 10
+run_and_wait 'juju run --application kubernetes-master /snap/bin/kubectl cluster-info' "KubeDNS" 10
 # Print out the cluster-info
-juju run --application kubernetes-master \"/snap/bin/kubectl cluster-info\"
+juju run --application kubernetes-master /snap/bin/kubectl cluster-info
 
 echo "${0} completed successfully at `date`."
