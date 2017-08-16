@@ -11,12 +11,6 @@ CLOUD=${CLOUD:-"gce"}
 # The directory to use for this script, should be WORKSPACE, but can be PWD.
 SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
 
-# The path to the archive of the JUJU_DATA directory for the specific cloud.
-JUJU_DATA_TAR="/var/lib/jenkins/juju/juju_${CLOUD}.tar.gz"
-
-# Uncompress the file that contains the Juju data to the workspace directory.
-tar -xvzf ${JUJU_DATA_TAR} -C ${SCRIPT_DIRECTORY}
-
 # Define a unique model name for this run.
 MODEL=${BUILD_TAG:-"default-model"}
 # Set the output directory to store the results.
@@ -25,18 +19,11 @@ OUTPUT_DIRECTORY=${SCRIPT_DIRECTORY}/artifacts
 BUNDLE=kubernetes-core
 
 # Set the Juju envrionment variables for this script.
-export JUJU_DATA=${SCRIPT_DIRECTORY}/juju
 export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/build/charms
 
 mkdir -p ${JUJU_REPOSITORY}
-source ${SCRIPT_DIRECTORY}/tests/define-juju.sh
-# Grab the user id and group id of this current user.
-GROUP_ID=$(id -g)
-USER_ID=$(id -u)
-# Change the permissions back to the current user so jenkins can clean up.
-CHOWN_CMD="sudo chown -R ${USER_ID}:${GROUP_ID} /home/ubuntu/.local/share/juju"
 # Catch all EXITs from this script and make sure to destroy the model.
-trap "juju destroy-model -y ${MODEL} && in-jujubox ${CHOWN_CMD}" EXIT
+trap "sleep 10 && juju destroy-model -y ${MODEL}" EXIT
 
 # Deploy the bundle and add the kubernetes-e2e charm.
 ${SCRIPT_DIRECTORY}/tests/deploy-test-bundle.sh ${MODEL} ${BUNDLE}
