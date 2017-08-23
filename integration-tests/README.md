@@ -16,14 +16,16 @@ Select the juju controller you want to use:
 juju switch my-controller
 ```
 
-To run charm tests:
+To run tests:
 ```
-pytest test_charms.py
+pytest test_cdk.py
 ```
 
-To run snap tests:
+The tests can be run against specific charm and snap channels:
 ```
-pytest test_snaps.py
+export TEST_CHARM_CHANNEL=edge
+export TEST_SNAP_CHANNEL=1.7/edge
+pytest test_cdk.py
 ```
 
 To run tests against an existing deployment:

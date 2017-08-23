@@ -24,7 +24,8 @@ release-bundle ./bundles/cdk-calico cs:~containers/bundle/kubernetes-calico
 
 if [ "$RUN_TESTS" = "true" ]; then
   (cd integration-tests
-    pytest --junit-xml=report.xml test_charms.py
+    export TEST_CHARM_CHANNEL=edge
+    pytest --junit-xml=report.xml test_cdk.py
   )
 
   export FROM_CHANNEL=edge
