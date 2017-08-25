@@ -3,10 +3,12 @@ import os
 import requests
 import traceback
 import yaml
+import kubernetes
 
+from kubernetes.client.rest import ApiException
 from tempfile import NamedTemporaryFile
 
-from utils import assert_no_unit_errors, asyncify, wait_for_ready
+from utils import assert_no_unit_errors, asyncify, wait_for_ready, run_juju_ssh
 
 
 async def validate_all(model, log_dir):
@@ -15,6 +17,8 @@ async def validate_all(model, log_dir):
     await validate_microbot(model)
     await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
+    await validate_rbac_flag(model)
+    await validate_rbac(model)
     await validate_e2e_tests(model, log_dir)
     await validate_worker_removal(model)
     if "canal" in model.applications:
@@ -77,6 +81,51 @@ async def validate_snap_versions(model):
             for snap in snaps:
                 snap_version = snap_versions[snap]
                 assert snap_version.startswith(track + '.')
+
+
+async def validate_rbac(model):
+    ''' Validate RBAC is actually on '''
+    unit = model.applications['kubernetes-master'].units[0]
+    with NamedTemporaryFile() as f:
+        await unit.scp_from('config', f.name)
+        config = kubernetes.config.load_kube_config(f.name)
+    rbacv1 = kubernetes.client.RbacAuthorizationV1alpha1Api()
+    roles = rbacv1.list_cluster_role()
+    # In non-rbac setup an unauthorized exception is thrown
+    assert len(roles.items) > 0
+    worker = model.applications['kubernetes-worker'].units[0]
+    await run_juju_ssh(worker.name, "sudo cp /root/cdk/kubeconfig /tmp/cfg")
+    await run_juju_ssh(worker.name, "sudo chmod 777 /tmp/cfg")
+    with NamedTemporaryFile() as f:
+        await worker.scp_from('/tmp/cfg', f.name)
+        config = kubernetes.config.load_kube_config(f.name)
+    try:
+        rbacv1 = kubernetes.client.RbacAuthorizationV1alpha1Api()
+        roles = rbacv1.list_cluster_role() # This should fail
+        assert False
+    except ApiException:
+        assert True
+
+
+async def validate_rbac_flag(model):
+    ''' Switch between auth modes and check the apiserver follows '''
+    master = model.applications['kubernetes-master']
+    await master.set_config({'authorization-mode': 'None'})
+    await asyncio.sleep(30) # Wait for a restart
+    await api_server_with_arg(model, 'AlwaysAllow')
+    await master.set_config({'authorization-mode': 'RBAC'})
+    await asyncio.sleep(30) # Wait for a restart
+    await api_server_with_arg(model, 'RBAC')
+
+
+async def api_server_with_arg(model, argument):
+    master = model.applications['kubernetes-master']
+    for unit in master.units:
+        search = 'ps -ef | grep {} | grep apiserver'.format(argument)
+        action = await unit.run(search)
+        assert action.status == 'completed'
+        raw_output = action.data['results']['Stdout']
+        assert len(raw_output.splitlines()) == 1
 
 
 async def validate_microbot(model):
