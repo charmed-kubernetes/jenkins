@@ -16,11 +16,13 @@ bundle/bundle -o ./bundles/cdk-flannel -c edge k8s/cdk cni/flannel
 bundle/bundle -o ./bundles/core-flannel -c edge k8s/core cni/flannel
 bundle/bundle -o ./bundles/cdk-flannel-elastic -c edge k8s/cdk cni/flannel monitor/elastic
 bundle/bundle -o ./bundles/cdk-calico -c edge k8s/cdk cni/calico
+bundle/bundle -o ./bundles/cdk-canal -c edge k8s-cdk cni/canal
 
 release-bundle ./bundles/cdk-flannel cs:~containers/bundle/canonical-kubernetes
 release-bundle ./bundles/core-flannel cs:~containers/bundle/kubernetes-core
 release-bundle ./bundles/cdk-flannel-elastic cs:~containers/bundle/canonical-kubernetes-elastic
 release-bundle ./bundles/cdk-calico cs:~containers/bundle/kubernetes-calico
+release-bundle ./bundles/cdk-canal cs:~containers/bundle/canonical-kubernetes-canal
 
 if [ "$RUN_TESTS" = "true" ]; then
   (cd integration-tests
