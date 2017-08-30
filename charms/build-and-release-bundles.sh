@@ -16,7 +16,7 @@ bundle/bundle -o ./bundles/cdk-flannel -c edge k8s/cdk cni/flannel
 bundle/bundle -o ./bundles/core-flannel -c edge k8s/core cni/flannel
 bundle/bundle -o ./bundles/cdk-flannel-elastic -c edge k8s/cdk cni/flannel monitor/elastic
 bundle/bundle -o ./bundles/cdk-calico -c edge k8s/cdk cni/calico
-bundle/bundle -o ./bundles/cdk-canal -c edge k8s-cdk cni/canal
+bundle/bundle -o ./bundles/cdk-canal -c edge k8s/cdk cni/canal
 
 release-bundle ./bundles/cdk-flannel cs:~containers/bundle/canonical-kubernetes
 release-bundle ./bundles/core-flannel cs:~containers/bundle/kubernetes-core
