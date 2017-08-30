@@ -6,6 +6,7 @@ CHARMS="
   cs:~containers/etcd
   cs:~containers/flannel
   cs:~containers/calico
+  cs:~containers/canal
   cs:~containers/kubernetes-master
   cs:~containers/kubernetes-worker
   cs:~containers/kubeapi-load-balancer
@@ -14,6 +15,7 @@ CHARMS="
   cs:~containers/canonical-kubernetes
   cs:~containers/canonical-kubernetes-elastic
   cs:~containers/kubernetes-calico
+  cs:~containers/canonical-kubernetes-canal
 "
 
 for charm in $CHARMS; do

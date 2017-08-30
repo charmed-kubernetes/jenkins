@@ -13,4 +13,5 @@ export RELEASE_TO_CHANNEL=edge
 ./charms/build-and-release-kubernetes-worker.sh
 ./charms/build-and-release-kubernetes-e2e.sh
 ./charms/build-and-release-calico.sh
+./charms/build-and-release-canal.sh
 ./charms/build-and-release-bundles.sh
