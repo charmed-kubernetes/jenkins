@@ -8,6 +8,7 @@ namespace = os.environ.get('TEST_CHARM_NAMESPACE', 'containers')
 charm_channel = os.environ.get('TEST_CHARM_CHANNEL', 'stable')
 snap_channel = os.environ.get('TEST_SNAP_CHANNEL', '1.7/stable')
 bundles = [
+    'canonical-kubernetes-canal',
     'kubernetes-core',
     # 'canonical-kubernetes',
 ]
