@@ -3,6 +3,7 @@ import os
 import requests
 import traceback
 import yaml
+import kubernetes
 
 from tempfile import NamedTemporaryFile
 
@@ -16,6 +17,9 @@ async def validate_all(model, log_dir):
     await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
     await validate_e2e_tests(model, log_dir)
+    if "canal" in model.applications:
+        print("Running canal specific tests")
+        await validate_network_policies(model)
     assert_no_unit_errors(model)
 
 
@@ -155,6 +159,104 @@ async def validate_e2e_tests(model, log_dir):
             print("Attempt %d/3 failed." % attempts)
 
     assert action.status == 'completed'
+
+
+async def validate_network_policies(model):
+    ''' Apply network policy and test it '''
+    here = os.path.dirname(os.path.abspath(__file__))
+    policy_test_ns = "netpolicy"
+    unit = model.applications['kubernetes-master'].units[0]
+    with NamedTemporaryFile() as f:
+        await unit.scp_from('config', f.name)
+        config = kubernetes.config.load_kube_config(f.name)
+
+    core = kubernetes.client.CoreV1Api()
+    # Clean namespace before testing
+    namespaces = core.list_namespace()
+    for ns in namespaces.items:
+        if ns.metadata.name == policy_test_ns:
+            opts = kubernetes.client.V1DeleteOptions()
+            core.delete_namespace(policy_test_ns, opts)
+            # Kubernetes takes some time to remove services stop pods etc.
+            await asyncio.sleep(60)
+
+    # Create the namespace
+    with open(os.path.join(here, "templates", "network-namespace.yaml")) as f:
+        ns_body = yaml.load(f)
+        core.create_namespace(ns_body)
+
+    # Create the deployment
+    with open(os.path.join(here, "templates", "nginx-deployment.yaml")) as f:
+        dep = yaml.load(f)
+        k8s_beta = kubernetes.client.ExtensionsV1beta1Api()
+        resp = k8s_beta.create_namespaced_deployment(
+            body=dep, namespace=policy_test_ns)
+
+    # Create the service
+    with open(os.path.join(here, "templates", "nginx-service.yaml")) as f:
+        svc = yaml.load(f)
+        core.create_namespaced_service(namespace=policy_test_ns, body=svc)
+
+    # Get to nginx
+    resp = await exec_in_pod(core, "wget nginx.{}".format(policy_test_ns),
+                             namespace = policy_test_ns)
+    assert "index.html" in resp
+
+    # Restrict access
+    with open(os.path.join(here, "templates", "restrict.yaml")) as f:
+        np = yaml.load(f)
+        net_api = kubernetes.client.NetworkingV1Api()
+        net_api.create_namespaced_network_policy(policy_test_ns, np)
+
+    # Fail to get to nginx
+    resp = await exec_in_pod(core, "wget --timeout=3 nginx.{}".format(policy_test_ns),
+                             label='retry', namespace=policy_test_ns)
+    assert "index.html" not in resp
+
+
+async def exec_in_pod(api, command, label='nolabel', namespace="netpolicy"):
+    ''' Create a busybox and run a command. '''
+    name = 'busybox-{}-netpolicy'.format(label)
+    print("Creating pod...{}".format(name))
+    pod_manifest = {
+        'apiVersion': 'v1',
+        'kind': 'Pod',
+        'metadata': {
+            'name': name,
+        },
+        'spec': {
+            'containers': [{
+                'image': 'busybox',
+                'name': 'sleep',
+                "args": [
+                    "/bin/sh",
+                    "-c",
+                    "while true;do date;sleep 5; done"
+                ]
+            }]
+        }
+    }
+    api.create_namespaced_pod(body=pod_manifest,
+                                     namespace=namespace)
+    while True:
+        resp = api.read_namespaced_pod(name=name,
+                                       namespace=namespace)
+        if resp.status.phase != 'Pending':
+            break
+        asyncio.sleep(10)
+    print("Done creating {}.".format(namespace))
+
+    # calling exec and wait for response.
+    exec_command = [
+        '/bin/sh',
+        '-c',
+        command]
+    resp = api.connect_get_namespaced_pod_exec(name, namespace,
+                                               command=exec_command,
+                                               stderr=True, stdin=False,
+                                               stdout=True, tty=False)
+    print("Response: " + resp)
+    return resp
 
 
 class MicrobotError(Exception):
