@@ -213,6 +213,11 @@ async def validate_network_policies(model):
                              label='retry', namespace=policy_test_ns)
     assert "index.html" not in resp
 
+    # Use right label to get to nginx
+    resp = await exec_in_pod(core, "wget --timeout=3 nginx.{}".format(policy_test_ns),
+                label='yes', namespace=policy_test_ns)
+    assert "index.html" in resp
+
 
 async def exec_in_pod(api, command, label='nolabel', namespace="netpolicy"):
     ''' Create a busybox and run a command. '''
@@ -223,6 +228,9 @@ async def exec_in_pod(api, command, label='nolabel', namespace="netpolicy"):
         'kind': 'Pod',
         'metadata': {
             'name': name,
+            'labels': {
+                'access': label
+            }
         },
         'spec': {
             'containers': [{

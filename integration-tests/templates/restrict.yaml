@@ -12,3 +12,6 @@ spec:
     - podSelector:
         matchLabels:
           access: "yes"
+    ports:
+    - protocol: TCP
+      port: 80
