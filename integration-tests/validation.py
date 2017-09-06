@@ -111,11 +111,23 @@ async def validate_rbac_flag(model):
     ''' Switch between auth modes and check the apiserver follows '''
     master = model.applications['kubernetes-master']
     await master.set_config({'authorization-mode': 'None'})
-    await asyncio.sleep(30) # Wait for a restart
-    await api_server_with_arg(model, 'AlwaysAllow')
+    await wait_for_process(model, 'AlwaysAllow')
     await master.set_config({'authorization-mode': 'RBAC'})
-    await asyncio.sleep(30) # Wait for a restart
-    await api_server_with_arg(model, 'RBAC')
+    await wait_for_process(model, 'RBAC')
+
+
+async def wait_for_process(model, arg):
+    ''' Retry api_server_with_arg <checks> times with a 5 sec interval '''
+    checks = 10
+    ready = False
+    while not ready:
+        checks -= 1
+        if await api_server_with_arg(model, arg):
+            return
+        else:
+            if checks <= 0:
+                assert False
+            asyncio.sleep(5)
 
 
 async def api_server_with_arg(model, argument):
@@ -125,8 +137,8 @@ async def api_server_with_arg(model, argument):
         action = await unit.run(search)
         assert action.status == 'completed'
         raw_output = action.data['results']['Stdout']
-        assert len(raw_output.splitlines()) == 1
-
+        return len(raw_output.splitlines()) == 1
+    return False
 
 async def validate_microbot(model):
     ''' Validate the microbot action '''
