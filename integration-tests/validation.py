@@ -17,6 +17,7 @@ async def validate_all(model, log_dir):
     await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
     await validate_e2e_tests(model, log_dir)
+    await validate_worker_removal(model)
     if "canal" in model.applications:
         print("Running canal specific tests")
         await validate_network_policies(model)
@@ -265,6 +266,21 @@ async def exec_in_pod(api, command, label='nolabel', namespace="netpolicy"):
                                                stdout=True, tty=False)
     print("Response: " + resp)
     return resp
+
+  
+async def validate_worker_removal(model):
+    workers = model.applications['kubernetes-worker']
+    unit_count = len(workers.units)
+    if unit_count < 2:
+        await workers.add_unit(1)
+    await wait_for_ready(model)
+    unit_count = len(workers.units)
+    await workers.units[0].remove()
+    while len(workers.units) == unit_count:
+        await asyncio.sleep(1)
+        print('Waiting for worker removal.')
+        assert_no_unit_errors(model)
+    await wait_for_ready(model)
 
 
 class MicrobotError(Exception):
