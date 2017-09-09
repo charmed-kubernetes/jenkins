@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: netpolicy
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: netpolicy
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nginx
+  namespace: netpolicy
+spec:
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bboxgood
+  namespace: netpolicy
+  labels:
+    access: 'yes'
+spec:
+  containers:
+  - image: 'busybox'
+    name: 'bboxgood'
+    command:
+      - sleep
+      - "3600"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bboxbad
+  namespace: netpolicy
+  labels:
+    access: 'no'
+spec:
+  containers:
+  - image: 'busybox'
+    name: 'bboxbad'
+    command:
+      - sleep
+      - "3600"
