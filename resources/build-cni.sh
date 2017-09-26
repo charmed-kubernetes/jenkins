@@ -5,11 +5,11 @@
 
 set -o errexit  # Exit when an individual command fails.
 set -o pipefail  # The exit status of the last command is returned.
-#set -o xtrace  # Print the commands that are executed.
+set -o xtrace  # Print the commands that are executed.
 
 echo "${0} started at `date`."
 
-CNI_VERSION=${CNI_VERSION:-"v0.5.1"}
+CNI_VERSION=${CNI_VERSION:-"v0.6.0"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}
@@ -18,7 +18,7 @@ SCRIPT_DIR=${PWD}
 
 if [ ! -d cni ]; then
   # Clone the containernetworking cni project.
-  git clone https://github.com/containernetworking/cni.git cni
+  git clone https://github.com/containernetworking/plugins.git cni
 fi
 
 cd cni
@@ -37,7 +37,7 @@ docker run \
   -e "GOARCH=${ARCH}" \
   -v ${PWD}/cni:/cni \
   golang \
-  /bin/bash -c "cd /cni && ./build && chown -R ${USER_ID}:${GROUP_ID} /cni"
+  /bin/bash -c "cd /cni && ./build.sh && chown -R ${USER_ID}:${GROUP_ID} /cni"
 
 # Copy the binaries to the output directory.
 cp -v cni/bin/* ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
