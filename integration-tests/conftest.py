@@ -21,3 +21,13 @@ def log_dir(request):
     )
     os.makedirs(path)
     return path
+
+
+def pytest_addoption(parser):
+    parser.addoption("--bundle", action="store", default=None,
+        help="bundle: specify the bundle under containers namespace")
+
+
+@pytest.fixture
+def bundle_override(request):
+    return request.config.getoption("--bundle")

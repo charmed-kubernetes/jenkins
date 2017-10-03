@@ -16,7 +16,9 @@ bundles = [
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('bundle', bundles)
-async def test_deploy(bundle, log_dir):
+async def test_deploy(bundle, log_dir, bundle_override):
+    if bundle_override:
+        bundle = bundle_override
     async with temporary_model(log_dir) as model:
         # await conjureup(model, namespace, bundle, charm_channel,
         #                 snap_channel)
@@ -28,7 +30,9 @@ async def test_deploy(bundle, log_dir):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('bundle', bundles)
-async def test_upgrade(bundle, log_dir):
+async def test_upgrade(bundle, log_dir, bundle_override):
+    if bundle_override:
+        bundle = bundle_override
     async with temporary_model(log_dir) as model:
         # await conjureup(model, namespace, bundle, 'stable')
         await juju_deploy(model, namespace, bundle, 'stable')
@@ -39,6 +43,6 @@ async def test_upgrade(bundle, log_dir):
 
 
 @pytest.mark.asyncio
-async def test_bundletester(log_dir):
+async def test_bundletester(log_dir, bundle_override):
     await run_bundletester(namespace, log_dir, channel=charm_channel,
                            snap_channel=snap_channel)
