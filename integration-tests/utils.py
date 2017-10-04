@@ -44,6 +44,28 @@ async def dump_debug_log(model, log_dir):
                                         stderr=subprocess.STDOUT)
 
 
+async def dump_debug_actions(model, log_dir):
+    ''' Runs debug action on all units, dumping the results to log dir '''
+    result_dir = os.path.join(log_dir, 'debug-actions')
+    os.mkdir(result_dir)
+
+    async def dump_debug_action(unit):
+        try:
+            action = await unit.run_action('debug')
+        except JujuError as e:
+            if 'no actions defined on charm' in str(e):
+                return
+            raise
+        await action.wait()
+        remote_path = action.data['results']['path']
+        filename = unit.name.replace('/', '_') + '.tar.gz'
+        local_path = os.path.join(result_dir, filename)
+        await unit.scp_from(remote_path, local_path)
+
+    coroutines = [dump_debug_action(unit) for unit in model.units.values()]
+    await asyncio.wait(coroutines)
+
+
 async def add_model_via_cli(controller, name, config):
     ''' Add a Juju model using the CLI.
 
@@ -91,6 +113,7 @@ async def captured_fail_logs(model, log_dir):
     except:
         dump_model_info(model, log_dir)
         await dump_debug_log(model, log_dir)
+        await dump_debug_actions(model, log_dir)
         raise
 
 
