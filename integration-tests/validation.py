@@ -175,7 +175,7 @@ async def validate_network_policies(model):
     await unit.scp_to(os.path.join(here, "templates", "restrict.yaml"), "restrict.yaml")
     cmd = await unit.run('/snap/bin/kubectl create -f /home/ubuntu/netpolicy-test.yaml')
     assert cmd.status == 'completed'
-    asyncio.sleep(10)
+    await asyncio.sleep(10)
 
     # Try to get to nginx from both busyboxes.
     # We expect no failures since we have not applied the policy yet.
@@ -192,7 +192,7 @@ async def validate_network_policies(model):
     # This time the policy should block us.
     cmd = await unit.run('/snap/bin/kubectl create -f /home/ubuntu/restrict.yaml')
     assert cmd.status == 'completed'
-    asyncio.sleep(10)
+    await asyncio.sleep(10)
     query_from_bad="/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=3  nginx.netpolicy -O foo.html"
     query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=3  nginx.netpolicy -O foo.html"
     cmd = await unit.run(query_from_good)
