@@ -53,7 +53,8 @@ async def dump_debug_actions(model, log_dir):
         try:
             action = await unit.run_action('debug')
         except JujuError as e:
-            if 'no actions defined on charm' in str(e):
+            if 'no actions defined on charm' in str(e) \
+                    or 'not defined on unit' in str(e):
                 return
             raise
         await action.wait()
@@ -62,7 +63,7 @@ async def dump_debug_actions(model, log_dir):
         local_path = os.path.join(result_dir, filename)
         await unit.scp_from(remote_path, local_path)
 
-    coroutines = [dump_debug_action(unit) for unit in model.units.values()]
+    coroutines = [dump_debug_action(unit) for unit in model.units.values() if unit]
     await asyncio.wait(coroutines)
 
 
