@@ -86,6 +86,8 @@ async def validate_snap_versions(model):
 async def validate_rbac(model):
     ''' Validate RBAC is actually on '''
     unit = model.applications['kubernetes-master'].units[0]
+    await unit.set_config({'authorization-mode': 'RBAC'})
+    await wait_for_process(model, 'RBAC')
     with NamedTemporaryFile() as f:
         await unit.scp_from('config', f.name)
         config = kubernetes.config.load_kube_config(f.name)
@@ -105,15 +107,17 @@ async def validate_rbac(model):
         assert False
     except ApiException:
         assert True
+    await unit.set_config({'authorization-mode': 'None'})
+    await wait_for_process(model, 'AlwaysAllow')
 
 
 async def validate_rbac_flag(model):
     ''' Switch between auth modes and check the apiserver follows '''
     master = model.applications['kubernetes-master']
-    await master.set_config({'authorization-mode': 'None'})
-    await wait_for_process(model, 'AlwaysAllow')
     await master.set_config({'authorization-mode': 'RBAC'})
     await wait_for_process(model, 'RBAC')
+    await master.set_config({'authorization-mode': 'None'})
+    await wait_for_process(model, 'AlwaysAllow')
 
 
 async def wait_for_process(model, arg):
