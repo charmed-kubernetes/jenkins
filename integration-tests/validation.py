@@ -3,11 +3,8 @@ import os
 import requests
 import traceback
 import yaml
-import kubernetes
 
-from kubernetes.client.rest import ApiException
 from tempfile import NamedTemporaryFile
-
 from utils import assert_no_unit_errors, asyncify, wait_for_ready, run_juju_ssh
 
 
@@ -85,30 +82,19 @@ async def validate_snap_versions(model):
 
 async def validate_rbac(model):
     ''' Validate RBAC is actually on '''
-    unit = model.applications['kubernetes-master'].units[0]
-    await unit.set_config({'authorization-mode': 'RBAC'})
+    app = model.applications['kubernetes-master']
+    await app.set_config({'authorization-mode': 'RBAC'})
     await wait_for_process(model, 'RBAC')
-    with NamedTemporaryFile() as f:
-        await unit.scp_from('config', f.name)
-        config = kubernetes.config.load_kube_config(f.name)
-    rbacv1 = kubernetes.client.RbacAuthorizationV1alpha1Api()
-    roles = rbacv1.list_cluster_role()
-    # In non-rbac setup an unauthorized exception is thrown
-    assert len(roles.items) > 0
+    cmd = "/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig get clusterroles"
     worker = model.applications['kubernetes-worker'].units[0]
-    await run_juju_ssh(worker.name, "sudo cp /root/cdk/kubeconfig /tmp/cfg")
-    await run_juju_ssh(worker.name, "sudo chmod 777 /tmp/cfg")
-    with NamedTemporaryFile() as f:
-        await worker.scp_from('/tmp/cfg', f.name)
-        config = kubernetes.config.load_kube_config(f.name)
-    try:
-        rbacv1 = kubernetes.client.RbacAuthorizationV1alpha1Api()
-        roles = rbacv1.list_cluster_role() # This should fail
-        assert False
-    except ApiException:
-        assert True
-    await unit.set_config({'authorization-mode': 'None'})
+    output = await worker.run(cmd)
+    assert output.status == 'completed'
+    assert "forbidden" in output.data['results']['Stderr']
+    await app.set_config({'authorization-mode': 'None'})
     await wait_for_process(model, 'AlwaysAllow')
+    output = await worker.run(cmd)
+    assert output.status == 'completed'
+    assert "forbidden" not in output.data['results']['Stderr']
 
 
 async def validate_rbac_flag(model):
@@ -147,6 +133,8 @@ async def api_server_with_arg(model, argument):
 async def validate_microbot(model):
     ''' Validate the microbot action '''
     unit = model.applications['kubernetes-worker'].units[0]
+    action = await unit.run_action('microbot', delete=True)
+    await action.wait()
     action = await unit.run_action('microbot', replicas=3)
     await action.wait()
     assert action.status == 'completed'
