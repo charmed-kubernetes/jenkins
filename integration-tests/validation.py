@@ -1,6 +1,7 @@
 import asyncio
 import os
 import requests
+import time
 import traceback
 import yaml
 
@@ -20,6 +21,7 @@ async def validate_all(model, log_dir):
     if "canal" in model.applications:
         print("Running canal specific tests")
         await validate_network_policies(model)
+    await validate_api_extra_args(model)
     assert_no_unit_errors(model)
 
 
@@ -220,6 +222,60 @@ async def validate_worker_removal(model):
         print('Waiting for worker removal.')
         assert_no_unit_errors(model)
     await wait_for_ready(model)
+
+
+async def validate_api_extra_args(model):
+    app = model.applications['kubernetes-master']
+    original_config = await app.get_config()
+
+    async def get_apiserver_args():
+        results = []
+        for unit in app.units:
+            action = await unit.run('pgrep -a kube-apiserver')
+            assert action.status == 'completed'
+            raw_output = action.data['results']['Stdout']
+            args = raw_output.partition(' ')[2].partition(' ')[2]
+            results.append(args)
+        return results
+
+    original_args = await get_apiserver_args()
+
+    extra_args = ' '.join([
+        'min-request-timeout=314',  # int arg, overrides a charm default
+        'watch-cache=true',         # bool arg, explicit
+        'enable-swagger-ui'         # bool arg, implied true
+    ])
+    await app.set_config({'api-extra-args': extra_args})
+
+    expected_args = [
+        '--min-request-timeout=314',
+        '--watch-cache=true',
+        '--enable-swagger-ui=true'
+    ]
+
+    deadline = time.time() + 60
+    while time.time() < deadline:
+        all_args = await get_apiserver_args()
+        for args in all_args:
+            for expected_arg in expected_args:
+                if expected_arg not in args:
+                    await asyncio.sleep(1)
+                    continue
+        break
+    else:
+        raise TimeoutError('api-extra-args config did not propagate')
+
+    original_args_config = original_config['api-extra-args']['value']
+    await app.set_config({'api-extra-args': original_args_config})
+
+    deadline = time.time() + 60
+    while time.time() < deadline:
+        new_args = await get_apiserver_args()
+        if new_args == original_args:
+            break
+        await asyncio.sleep(1)
+    else:
+        raise TimeoutError('api-extra-args config did not restore properly')
 
 
 class MicrobotError(Exception):
