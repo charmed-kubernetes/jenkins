@@ -305,10 +305,3 @@ async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=No
             '-r', 'xml', '-o', output_file
         ]
         await asyncify(subprocess.check_call)(cmd)
-
-
-async def run_juju_ssh(unit, command):
-    ''' You can use this in case you need to do a unit.run("sudo ...") '''
-    cmd = ['juju', 'ssh', unit]
-    cmd += command.split()
-    await asyncify(subprocess.check_call)(cmd)

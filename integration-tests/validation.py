@@ -117,7 +117,7 @@ async def wait_for_process(model, arg):
         else:
             if checks <= 0:
                 assert False
-            asyncio.sleep(5)
+            await asyncio.sleep(5)
 
 
 async def api_server_with_arg(model, argument):
