@@ -234,7 +234,8 @@ async def validate_api_extra_args(model):
             action = await unit.run('pgrep -a kube-apiserver')
             assert action.status == 'completed'
             raw_output = action.data['results']['Stdout']
-            args = raw_output.partition(' ')[2].partition(' ')[2]
+            arg_string = raw_output.partition(' ')[2].partition(' ')[2]
+            args = {arg.strip() for arg in arg_string.split('--')[1:]}
             results.append(args)
         return results
 
@@ -242,26 +243,23 @@ async def validate_api_extra_args(model):
 
     extra_args = ' '.join([
         'min-request-timeout=314',  # int arg, overrides a charm default
-        'watch-cache=true',         # bool arg, explicit
-        'enable-swagger-ui'         # bool arg, implied true
+        'watch-cache',              # bool arg, implied true
+        'enable-swagger-ui=false'   # bool arg, explicit false
     ])
     await app.set_config({'api-extra-args': extra_args})
 
-    expected_args = [
-        '--min-request-timeout=314',
-        '--watch-cache=true',
-        '--enable-swagger-ui=true'
-    ]
+    expected_args = {
+        'min-request-timeout 314',
+        'watch-cache',
+        'enable-swagger-ui=false'
+    }
 
     deadline = time.time() + 60
     while time.time() < deadline:
-        all_args = await get_apiserver_args()
-        for args in all_args:
-            for expected_arg in expected_args:
-                if expected_arg not in args:
-                    await asyncio.sleep(1)
-                    continue
-        break
+        args_per_unit = await get_apiserver_args()
+        if all(expected_args <= args for args in args_per_unit):
+            break
+        await asyncio.sleep(1)
     else:
         raise TimeoutError('api-extra-args config did not propagate')
 
