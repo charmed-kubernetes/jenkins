@@ -41,8 +41,7 @@ then
     # Promote snaps from edge to candidate
     version=${KUBE_VERSION:1:3}
     export PROMOTE_FROM="$version/edge"
-    export PROMOTE_TO="$version/candidate"
-    export FAKE_PROMOTE="no"
+    export PROMOTE_TO="$version/beta $version/candidate"
     $scripts_path/promote-snaps.sh
   fi
 fi
