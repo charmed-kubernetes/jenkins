@@ -12,13 +12,14 @@ echo PROMOTE_FROM="$PROMOTE_FROM"
 echo PROMOTE_TO="$PROMOTE_TO"
 echo SNAPS="$SNAPS"
 
-echo "NOTE: Not actually releasing. Please look over this output carefully and run it manually.\n"
+. utils/retry.sh
 
 for snap in $SNAPS; do
   revisions="$(snapcraft revisions $snap | grep " ${PROMOTE_FROM}\*" | cut -d " " -f 1)"
   for rev in $revisions; do
     for target in $PROMOTE_TO; do
       echo snapcraft release $snap $rev $target
+      retry snapcraft release $snap $rev $target
     done
   done
 done
