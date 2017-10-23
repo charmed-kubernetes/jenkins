@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 
+set -eux
+
 KUBE_VERSION="${KUBE_VERSION:-$(curl -L https://dl.k8s.io/release/stable.txt)}"
 # LAST_RELEASE_FILE keeps the last release we did.
 LAST_RELEASE_FILE="/var/tmp/last_k8s_patch_release"
@@ -14,7 +16,6 @@ function check_for_release {
     if [ "$LAST_RELEASED" != "$KUBE_VERSION" ]
     then
       echo "New release ($KUBE_VERSION) detected."
-      echo "$KUBE_VERSION" > $LAST_RELEASE_FILE
       trigger='yes'
     else
       echo "No new release detected. Latest release is $LAST_RELEASED."
@@ -36,12 +37,12 @@ then
   # Build the snaps and push to edge
   $scripts_path/build-and-release-k8s-snaps.sh
 
-  if [ "$?" == 0 ]
-  then
-    # Promote snaps from edge to candidate
-    version=${KUBE_VERSION:1:3}
-    export PROMOTE_FROM="$version/edge"
-    export PROMOTE_TO="$version/beta $version/candidate"
-    $scripts_path/promote-snaps.sh
-  fi
+  # Promote snaps from edge to candidate
+  version=${KUBE_VERSION:1:3}
+  export PROMOTE_FROM="$version/edge"
+  export PROMOTE_TO="$version/beta $version/candidate"
+  $scripts_path/promote-snaps.sh
+
+  # We are done with promoting the snaps. Lets mark the release.
+  echo "$KUBE_VERSION" > $LAST_RELEASE_FILE
 fi
