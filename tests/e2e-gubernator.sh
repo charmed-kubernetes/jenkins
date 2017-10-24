@@ -16,7 +16,7 @@ MODEL=${BUILD_TAG:-"default-model"}
 # Set the output directory to store the results.
 OUTPUT_DIRECTORY=${SCRIPT_DIRECTORY}/artifacts
 # Set the bundle name to use.
-BUNDLE=kubernetes-core
+BUNDLE=canonical-kubernetes
 
 # Set the Juju envrionment variables for this script.
 export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/build/charms

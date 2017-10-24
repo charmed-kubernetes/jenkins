@@ -18,7 +18,12 @@ ACTION_ID=$(juju run-action kubernetes-e2e/0 test | cut -d " " -f 5)
 # Wait 2 hour for the action to complete.
 juju show-action-output --wait=2h ${ACTION_ID}
 # Print out the action result.
-juju show-action-output ${ACTION_ID}
+outcome=`juju show-action-output ${ACTION_ID}`
+echo $outcome
+if [[ "$outcome" == *"failed"* ]]
+then
+  exit 1
+fi
 
 # Download results from the charm and move them to the the volume directory.
 juju scp kubernetes-e2e/0:${ACTION_ID}.log.tar.gz e2e.log.tar.gz

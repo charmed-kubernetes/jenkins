@@ -10,7 +10,7 @@ echo "${0} started at `date`."
 # First argument is the model namme for this build.
 MODEL=${1:-"model-is-undefined"}
 # The second argument is the bundle name.
-BUNDLE=${2:-"kubernetes-core"}
+BUNDLE=${2:-"canonical-kubernetes"}
 # Create a model just for this run of the tests.
 juju add-model ${MODEL}
 # Set test mode on the deployment so we dont bloat charm-store deployment count
@@ -19,8 +19,6 @@ juju model-config -m ${MODEL} test-mode=1
 # Deploy the kubernetes bundle.
 juju deploy ${BUNDLE}
 # TODO Check for a second worker, the bundle could already define one.
-# Add one more kubernetes node to the cluster.
-juju add-unit kubernetes-worker
 # TODO Check for the e2e charm, the bundle could already define one.
 # Deploy the e2e charm and make the relations.
 juju deploy cs:~containers/kubernetes-e2e
