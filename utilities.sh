@@ -47,6 +47,21 @@ function run_and_wait() {
   done
 }
 
+# Wait for deployment to get ready.
+function wait_for_ready() {
+  local cmd='juju status'
+  local sleep_seconds=30
+  local start_time=`date +"%s"`
+  lines=$(${cmd} | grep  -e "waiting" -e "executing" -e "maintenance" -e "blocked" -e "error" | wc -l)
+  until (( $lines <= 0 )); do
+    # Check the time so this does not loop forever.
+    check_time ${start_time} ${MAXIMUM_WAIT_SECONDS}
+    sleep ${sleep_seconds}
+    lines=$(${cmd} | grep  -e "waiting" -e "executing" -e "maintenance" -e "blocked" -e "error" | wc -l) || true
+    # if lines == 0 then $? > 0 because wc -l got no lines. We should not return this code.
+  done
+}
+
 # A platform neutral way to get the md5 hash sum of a file.
 function md5sum_file() {
   if which md5sum > /dev/null 2>&1; then
