@@ -6,7 +6,7 @@ import traceback
 import yaml
 
 from tempfile import NamedTemporaryFile
-from utils import assert_no_unit_errors, asyncify, wait_for_ready, run_juju_ssh
+from utils import assert_no_unit_errors, asyncify, wait_for_ready
 
 
 async def validate_all(model, log_dir):
