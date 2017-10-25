@@ -7,6 +7,7 @@ KUBE_ARCH="amd64"
 
 source utils/retry.sh
 
+rm -rf ./release
 git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
 (cd release/snap
   make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
@@ -15,6 +16,7 @@ git clone https://github.com/juju-solutions/release.git --branch rye/snaps --dep
     targets="kube-controller-manager kubernetes-test"
 )
 
+rm -rf ./cdk-addons
 git clone https://github.com/juju-solutions/cdk-addons.git --depth 1
 for arch in $KUBE_ARCH; do
   (cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH=${arch})
