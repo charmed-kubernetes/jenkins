@@ -83,14 +83,14 @@ async def validate_snap_versions(model):
 async def validate_rbac(model):
     ''' Validate RBAC is actually on '''
     app = model.applications['kubernetes-master']
-    await app.set_config({'authorization-mode': 'RBAC'})
+    await app.set_config({'authorization-mode': 'RBAC,Node'})
     await wait_for_process(model, 'RBAC')
     cmd = "/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig get clusterroles"
     worker = model.applications['kubernetes-worker'].units[0]
     output = await worker.run(cmd)
     assert output.status == 'completed'
     assert "forbidden" in output.data['results']['Stderr']
-    await app.set_config({'authorization-mode': 'None'})
+    await app.set_config({'authorization-mode': 'AlwaysAllow'})
     await wait_for_process(model, 'AlwaysAllow')
     output = await worker.run(cmd)
     assert output.status == 'completed'
@@ -102,7 +102,7 @@ async def validate_rbac_flag(model):
     master = model.applications['kubernetes-master']
     await master.set_config({'authorization-mode': 'RBAC'})
     await wait_for_process(model, 'RBAC')
-    await master.set_config({'authorization-mode': 'None'})
+    await master.set_config({'authorization-mode': 'AlwaysAllow'})
     await wait_for_process(model, 'AlwaysAllow')
 
 
