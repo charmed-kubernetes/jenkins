@@ -20,7 +20,7 @@ async def test_deploy(bundle, log_dir):
         #                 snap_channel)
         await juju_deploy(model, namespace, bundle, charm_channel,
                           snap_channel)
-        await deploy_e2e(model, charm_channel, snap_channel)
+        await deploy_e2e(model, charm_channel, snap_channel, namespace=namespace)
         await validate_all(model, log_dir)
 
 
@@ -32,7 +32,7 @@ async def test_upgrade(bundle, log_dir):
         await juju_deploy(model, namespace, bundle, 'stable')
         await upgrade_charms(model, charm_channel)
         await upgrade_snaps(model, snap_channel)
-        await deploy_e2e(model, charm_channel, snap_channel)
+        await deploy_e2e(model, charm_channel, snap_channel, namespace=namespace)
         await validate_all(model, log_dir)
 
 

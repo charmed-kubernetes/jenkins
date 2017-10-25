@@ -14,7 +14,7 @@ from async_generator import yield_
 from contextlib import contextmanager
 from juju.controller import Controller
 from juju.model import Model
-from juju.errors import JujuAPIError, JujuError
+from juju.errors import JujuError
 from subprocess import check_output, check_call
 
 
@@ -242,12 +242,13 @@ def asyncify(f):
     return wrapper
 
 
-async def deploy_e2e(model, charm_channel='stable', snap_channel=None):
+async def deploy_e2e(model, charm_channel='stable', snap_channel=None, namespace='containers'):
     config = None if snap_channel is None else {'channel': snap_channel}
-    await model.deploy('cs:~containers/kubernetes-e2e', channel=charm_channel, config=config)
+    e2e_charm = 'cs:~{}/kubernetes-e2e'.format(namespace)
+    await model.deploy(e2e_charm, channel=charm_channel, config=config)
     await model.add_relation('kubernetes-e2e', 'easyrsa')
-    await model.add_relation('kubernetes-e2e:kubernetes-master', 'kubernetes-master:kube-api-endpoint')
     await model.add_relation('kubernetes-e2e:kube-control', 'kubernetes-master:kube-control')
+    await model.add_relation('kubernetes-e2e:kubernetes-master', 'kubernetes-master:kube-api-endpoint')
     await wait_for_ready(model)
 
 

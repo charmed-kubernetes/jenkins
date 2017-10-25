@@ -6,8 +6,7 @@ import traceback
 import yaml
 
 from tempfile import NamedTemporaryFile
-
-from utils import assert_no_unit_errors, asyncify, wait_for_ready
+from utils import assert_no_unit_errors, asyncify, wait_for_ready, run_juju_ssh
 
 
 async def validate_all(model, log_dir):
@@ -16,6 +15,8 @@ async def validate_all(model, log_dir):
     await validate_microbot(model)
     await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
+    await validate_rbac_flag(model)
+    await validate_rbac(model)
     await validate_e2e_tests(model, log_dir)
     await validate_worker_removal(model)
     if "canal" in model.applications:
@@ -81,9 +82,61 @@ async def validate_snap_versions(model):
                 assert snap_version.startswith(track + '.')
 
 
+async def validate_rbac(model):
+    ''' Validate RBAC is actually on '''
+    app = model.applications['kubernetes-master']
+    await app.set_config({'authorization-mode': 'RBAC,Node'})
+    await wait_for_process(model, 'RBAC')
+    cmd = "/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig get clusterroles"
+    worker = model.applications['kubernetes-worker'].units[0]
+    output = await worker.run(cmd)
+    assert output.status == 'completed'
+    assert "forbidden" in output.data['results']['Stderr']
+    await app.set_config({'authorization-mode': 'AlwaysAllow'})
+    await wait_for_process(model, 'AlwaysAllow')
+    output = await worker.run(cmd)
+    assert output.status == 'completed'
+    assert "forbidden" not in output.data['results']['Stderr']
+
+
+async def validate_rbac_flag(model):
+    ''' Switch between auth modes and check the apiserver follows '''
+    master = model.applications['kubernetes-master']
+    await master.set_config({'authorization-mode': 'RBAC'})
+    await wait_for_process(model, 'RBAC')
+    await master.set_config({'authorization-mode': 'AlwaysAllow'})
+    await wait_for_process(model, 'AlwaysAllow')
+
+
+async def wait_for_process(model, arg):
+    ''' Retry api_server_with_arg <checks> times with a 5 sec interval '''
+    checks = 10
+    ready = False
+    while not ready:
+        checks -= 1
+        if await api_server_with_arg(model, arg):
+            return
+        else:
+            if checks <= 0:
+                assert False
+            await asyncio.sleep(5)
+
+
+async def api_server_with_arg(model, argument):
+    master = model.applications['kubernetes-master']
+    for unit in master.units:
+        search = 'ps -ef | grep {} | grep apiserver'.format(argument)
+        action = await unit.run(search)
+        assert action.status == 'completed'
+        raw_output = action.data['results']['Stdout']
+        return len(raw_output.splitlines()) == 1
+    return False
+
 async def validate_microbot(model):
     ''' Validate the microbot action '''
     unit = model.applications['kubernetes-worker'].units[0]
+    action = await unit.run_action('microbot', delete=True)
+    await action.wait()
     action = await unit.run_action('microbot', replicas=3)
     await action.wait()
     assert action.status == 'completed'
