@@ -1,12 +1,12 @@
 import asyncio
 import os
 import requests
-import time
 import traceback
 import yaml
 
 from tempfile import NamedTemporaryFile
 from utils import assert_no_unit_errors, asyncify, wait_for_ready
+from utils import timeout_for_current_task
 
 
 async def validate_all(model, log_dir):
@@ -307,26 +307,22 @@ async def validate_api_extra_args(model):
         'enable-swagger-ui=false'
     }
 
-    deadline = time.time() + 60
-    while time.time() < deadline:
-        args_per_unit = await get_apiserver_args()
-        if all(expected_args <= args for args in args_per_unit):
-            break
-        await asyncio.sleep(1)
-    else:
-        raise TimeoutError('api-extra-args config did not propagate')
+    with timeout_for_current_task(60):
+        while True:
+            args_per_unit = await get_apiserver_args()
+            if all(expected_args <= args for args in args_per_unit):
+                break
+            await asyncio.sleep(1)
 
     original_args_config = original_config['api-extra-args']['value']
     await app.set_config({'api-extra-args': original_args_config})
 
-    deadline = time.time() + 60
-    while time.time() < deadline:
-        new_args = await get_apiserver_args()
-        if new_args == original_args:
-            break
-        await asyncio.sleep(1)
-    else:
-        raise TimeoutError('api-extra-args config did not restore properly')
+    with timeout_for_current_task(60):
+        while True:
+            new_args = await get_apiserver_args()
+            if new_args == original_args:
+                break
+            await asyncio.sleep(1)
 
 
 class MicrobotError(Exception):
