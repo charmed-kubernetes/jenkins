@@ -3,6 +3,8 @@
 
 set -eux
 
+source utilities.sh
+
 # K8s versions we want to check for new releases
 declare -a VERSIONS=('1.6' '1.7' '1.8' '1.9' '2.0' 'latest');
 
@@ -41,7 +43,7 @@ function build_promote {
   $scripts_path/build-and-release-k8s-snaps.sh
 
   # Promote snaps from edge to candidate
-  version=${KUBE_VERSION:1:3}
+  version=$(get_major_minor $KUBE_VERSION)
   export PROMOTE_FROM="$version/edge"
   export PROMOTE_TO="$version/beta $version/candidate"
   if [ "$BRANCH" == "latest" ]
@@ -72,7 +74,7 @@ function promote_stable {
     echo "Promoting mature $KUBE_VERSION release to stable"
     # Promote snaps from edge to candidate
     scripts_path=$(dirname "$0")
-    version=${KUBE_VERSION:1:3}
+    version=$(get_major_minor $KUBE_VERSION)
     export PROMOTE_FROM="$version/candidate"
     export PROMOTE_TO="$version/stable"
     if [ "$BRANCH" == "latest" ]
