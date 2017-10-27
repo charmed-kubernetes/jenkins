@@ -4,6 +4,7 @@ set -eux
 
 KUBE_VERSION="${KUBE_VERSION:-$(curl -L https://dl.k8s.io/release/stable.txt)}"
 KUBE_ARCH="amd64"
+ADDONS_BRANCH_VERSION="release-${KUBE_VERSION:1:3}"
 
 source utils/retry.sh
 source utilities.sh
@@ -18,7 +19,13 @@ git clone https://github.com/juju-solutions/release.git --branch rye/snaps --dep
 )
 
 rm -rf ./cdk-addons
-git clone https://github.com/juju-solutions/cdk-addons.git --depth 1
+if git ls-remote --exit-code --heads https://github.com/juju-solutions/cdk-addons.git ${ADDONS_BRANCH_VERSION}
+then
+  git clone https://github.com/juju-solutions/cdk-addons.git --branch ${ADDONS_BRANCH_VERSION} --depth 1
+else
+  echo "Branch for ${ADDONS_BRANCH_VERSION} does not exist. Getting cdk-addons from master head."
+  git clone https://github.com/juju-solutions/cdk-addons.git --depth 1
+fi
 for arch in $KUBE_ARCH; do
   (cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH=${arch})
 done
