@@ -21,6 +21,7 @@ git clone https://github.com/juju-solutions/release.git --branch rye/snaps --dep
 rm -rf ./cdk-addons
 if git ls-remote --exit-code --heads https://github.com/juju-solutions/cdk-addons.git ${ADDONS_BRANCH_VERSION}
 then
+  echo "Getting cdk-addons from ${ADDONS_BRANCH_VERSION} branch."
   git clone https://github.com/juju-solutions/cdk-addons.git --branch ${ADDONS_BRANCH_VERSION} --depth 1
 else
   echo "Branch for ${ADDONS_BRANCH_VERSION} does not exist. Getting cdk-addons from master head."
