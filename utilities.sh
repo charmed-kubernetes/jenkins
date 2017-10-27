@@ -165,3 +165,11 @@ function get_arch() {
   esac
   echo "${arch}"
 }
+
+# Get the major.minor part of a version of the format vX.Y.Z
+function get_major_minor() {
+  local version=$1
+  # version is of format vX.Y.Z
+  echo `expr "${version#v}" : '\(.[0-9]*.[0-9]*\)'`
+}
+
