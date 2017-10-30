@@ -307,22 +307,22 @@ async def validate_api_extra_args(model):
         'enable-swagger-ui=false'
     }
 
-    with timeout_for_current_task(60):
+    with timeout_for_current_task(180):
         while True:
             args_per_unit = await get_apiserver_args()
             if all(expected_args <= args for args in args_per_unit):
                 break
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
 
     original_args_config = original_config['api-extra-args']['value']
     await app.set_config({'api-extra-args': original_args_config})
 
-    with timeout_for_current_task(60):
+    with timeout_for_current_task(180):
         while True:
             new_args = await get_apiserver_args()
             if new_args == original_args:
                 break
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
 
 
 class MicrobotError(Exception):
