@@ -331,6 +331,8 @@ async def validate_sans(model):
     example_domain = "santest.example.com"
     app = model.applications['kubernetes-master']
     original_config = await app.get_config()
+    lb = None
+    original_lb_config = None
     if 'kubeapi-load-balancer' in model.applications:
         lb = model.applications['kubeapi-load-balancer']
         original_lb_config = await lb.get_config()
@@ -344,7 +346,7 @@ async def validate_sans(model):
             results.append(raw_output)
 
         # if there is a load balancer, ask it as well
-        if lb:
+        if lb is not None:
             for unit in lb.units:
                 action = await unit.run('openssl s_client -connect 127.0.0.1:443 </dev/null 2>/dev/null | openssl x509 -text')
                 assert action.status == 'completed'
@@ -355,7 +357,7 @@ async def validate_sans(model):
 
     # add san to extra san list
     await app.set_config({'extra_sans': example_domain})
-    if lb:
+    if lb is not None:
         await lb.set_config({'extra_sans': example_domain})
 
     # wait for server certs to update
@@ -370,7 +372,7 @@ async def validate_sans(model):
 
     # now remove it
     await app.set_config({'extra_sans': ''})
-    if lb:
+    if lb is not None:
         await lb.set_config({'extra_sans': ''})
 
     # verify it went away
@@ -385,7 +387,7 @@ async def validate_sans(model):
 
     # reset back to what they had before
     await app.set_config({'extra_sans': original_config['extra_sans']['value']})
-    if lb and original_lb_config:
+    if lb is not None and original_lb_config is not None:
         await lb.set_config({'extra_sans': original_lb_config['extra_sans']['value']})
 
 
