@@ -19,6 +19,7 @@ async def validate_all(model, log_dir):
     await validate_rbac(model)
     await validate_e2e_tests(model, log_dir)
     await validate_worker_removal(model)
+    await validate_sans(model)
     if "canal" in model.applications:
         print("Running canal specific tests")
         await validate_network_policies(model)
@@ -323,6 +324,68 @@ async def validate_api_extra_args(model):
             if new_args == original_args:
                 break
             await asyncio.sleep(3)
+
+
+async def validate_sans(model):
+    example_domain = "santest.example.com"
+    app = model.applications['kubernetes-master']
+    original_config = await app.get_config()
+    if 'kubeapi-load-balancer' in model.applications:
+        lb = model.applications['kubeapi-load-balancer']
+        original_lb_config = await lb.get_config()
+
+    async def get_server_certs():
+        results = []
+        for unit in app.units:
+            action = await unit.run('openssl s_client -connect 127.0.0.1:6443 </dev/null 2>/dev/null | openssl x509 -text')
+            assert action.status == 'completed'
+            raw_output = action.data['results']['Stdout']
+            results.append(raw_output)
+
+        # if there is a load balancer, ask it as well
+        if lb:
+            for unit in lb.units:
+                action = await unit.run('openssl s_client -connect 127.0.0.1:443 </dev/null 2>/dev/null | openssl x509 -text')
+                assert action.status == 'completed'
+                raw_output = action.data['results']['Stdout']
+                results.append(raw_output)
+
+        return results
+
+    # add san to extra san list
+    await app.set_config({'extra_sans': example_domain})
+    if lb:
+        await lb.set_config({'extra_sans': example_domain})
+
+    # wait for server certs to update
+    deadline = time.time() + 60
+    while time.time() < deadline:
+        certs = await get_server_certs()
+        if all(example_domain in cert for cert in certs):
+            break
+        await asyncio.sleep(1)
+    else:
+        raise TimeoutError('extra sans config did not propogate to server certs')
+
+    # now remove it
+    await app.set_config({'extra_sans': ''})
+    if lb:
+        await lb.set_config({'extra_sans': ''})
+
+    # verify it went away
+    deadline = time.time() + 60
+    while time.time() < deadline:
+        certs = await get_server_certs()
+        if not any(example_domain in cert for cert in certs):
+            break
+        await asyncio.sleep(1)
+    else:
+        raise TimeoutError('extra sans config removal did not propogate to server certs')
+
+    # reset back to what they had before
+    await app.set_config({'extra_sans': original_config['extra_sans']['value']})
+    if lb and original_lb_config:
+        await lb.set_config({'extra_sans': original_lb_config['extra_sans']['value']})
 
 
 class MicrobotError(Exception):
