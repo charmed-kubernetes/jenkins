@@ -19,7 +19,7 @@ async def validate_all(model, log_dir):
     await validate_rbac_flag(model)
     await validate_rbac(model)
     await validate_e2e_tests(model, log_dir)
-    await validate_worker_removal(model)
+    await validate_worker_master_removal(model)
     await validate_sans(model)
     if "canal" in model.applications:
         print("Running canal specific tests")
@@ -264,17 +264,38 @@ async def validate_network_policies(model):
     assert cmd.status == 'completed'
 
 
-async def validate_worker_removal(model):
+async def validate_worker_master_removal(model):
+    # Add a second master
+    masters = model.applications['kubernetes-master']
+    unit_count = len(masters.units)
+    if unit_count < 2:
+        await masters.add_unit(1)
+    await wait_for_ready(model)
+
+    # Add a second worker
     workers = model.applications['kubernetes-worker']
     unit_count = len(workers.units)
     if unit_count < 2:
         await workers.add_unit(1)
     await wait_for_ready(model)
     unit_count = len(workers.units)
+
+    # Remove a worker to see how the masters handle it
     await workers.units[0].remove()
     while len(workers.units) == unit_count:
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
         print('Waiting for worker removal.')
+        assert_no_unit_errors(model)
+    await wait_for_ready(model)
+
+    # Remove the master leader
+    unit_count = len(masters.units)
+    for master in masters.units:
+        if await master.is_leader_from_status():
+            await master.remove()
+    while len(masters.units) == unit_count:
+        await asyncio.sleep(3)
+        print('Waiting for master removal.')
         assert_no_unit_errors(model)
     await wait_for_ready(model)
 
