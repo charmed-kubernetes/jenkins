@@ -361,12 +361,12 @@ async def validate_sans(model):
         await lb.set_config({'extra_sans': example_domain})
 
     # wait for server certs to update
-    deadline = time.time() + 60
+    deadline = time.time() + 180
     while time.time() < deadline:
         certs = await get_server_certs()
         if all(example_domain in cert for cert in certs):
             break
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
     else:
         raise TimeoutError('extra sans config did not propogate to server certs')
 
@@ -376,12 +376,12 @@ async def validate_sans(model):
         await lb.set_config({'extra_sans': ''})
 
     # verify it went away
-    deadline = time.time() + 60
+    deadline = time.time() + 180
     while time.time() < deadline:
         certs = await get_server_certs()
         if not any(example_domain in cert for cert in certs):
             break
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
     else:
         raise TimeoutError('extra sans config removal did not propogate to server certs')
 
