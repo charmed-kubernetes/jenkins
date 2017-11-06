@@ -20,14 +20,20 @@ juju show-action-output --wait=2h ${ACTION_ID}
 # Print out the action result.
 outcome=`juju show-action-output ${ACTION_ID}`
 echo $outcome
-if [[ "$outcome" == *"failed"* ]]
-then
-  exit 1
-fi
 
 # Download results from the charm and move them to the the volume directory.
 juju scp kubernetes-e2e/0:${ACTION_ID}.log.tar.gz e2e.log.tar.gz
 juju scp kubernetes-e2e/0:${ACTION_ID}-junit.tar.gz e2e-junit.tar.gz
+
+if [[ "$outcome" == *"failed"* ]]
+then
+  echo "${0} failed at `date`."
+  mkdir -p ${OUTPUT_DIRECTORY}/failed
+  tar -xvzf e2e.log.tar.gz -C ${OUTPUT_DIRECTORY}/failed
+  tail -n 30 ${OUTPUT_DIRECTORY}/failed/${ACTION_ID}.log
+  rm -rf ${OUTPUT_DIRECTORY}/failed
+  exit 1
+fi
 
 # Extract the results into the output directory.
 tar -xvzf e2e-junit.tar.gz -C ${OUTPUT_DIRECTORY}

@@ -6,6 +6,8 @@ set -o nounset  # Exit when undeclaried variables are used.
 set -o pipefail  # The exit status of the last command is returned.
 set -o xtrace  # Print the commands that are executed.
 
+source "utils/retry.sh"
+
 # The cloud is an option for this script, default to gce.
 CLOUD=${CLOUD:-"gce"}
 # The directory to use for this script, should be WORKSPACE, but can be PWD.
@@ -32,7 +34,9 @@ ${SCRIPT_DIRECTORY}/tests/deploy-test-bundle.sh ${MODEL} ${BUNDLE}
 ${SCRIPT_DIRECTORY}/tests/wait-cluster-ready.sh
 
 # Run the end to end tests and copy results to the output directory.
-${SCRIPT_DIRECTORY}/tests/run-e2e-tests.sh ${OUTPUT_DIRECTORY}
+# Retry 3 times. The second and third retries should be quick since
+# we have any images cached
+retry ${SCRIPT_DIRECTORY}/tests/run-e2e-tests.sh ${OUTPUT_DIRECTORY}
 
 # Formats the output data and upload to GCE.
 ${SCRIPT_DIRECTORY}/tests/upload-e2e-results-to-gubernator.sh ${OUTPUT_DIRECTORY}
