@@ -21,7 +21,7 @@ stage('Input Validation') {
 
     // Fill the clouds array
     if (CLOUD_AWS == "true") { clouds+="jenkins-ci-aws" }
-    if (CLOUD_GCE == "true") { clouds+="jenkins-ci-gce" }
+    if (CLOUD_GCE == "true") { clouds+="jenkins-ci-google" }
     if (CLOUD_LXD == "true") { clouds+="jenkins-ci-lxd" }
 
     if (tests.contains("test_bundletester")) {

@@ -33,6 +33,8 @@ PUSH ~/.local/share/juju/accounts.yaml /root/.local/share/juju/
 PUSH ~/.local/share/juju/models.yaml /root/.local/share/juju/
 PUSH ~/.local/share/juju/controllers.yaml /root/.local/share/juju/
 PUSH ~/.local/share/juju/credentials.yaml /root/.local/share/juju/ 
+RUN mkdir -p /var/lib/jenkins/.local/share/juju
+PUSH ~/.local/share/juju/foo.json /var/lib/jenkins/.local/share/juju/
 
 # Allow ssh access
 RUN mkdir -p /root/.ssh
