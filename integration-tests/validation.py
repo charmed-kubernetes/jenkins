@@ -312,71 +312,104 @@ async def validate_extra_args(model):
             results.append(args)
         return results
 
-    new_config = {
-        'api-extra-args': ' '.join([
-            'min-request-timeout=314',  # int arg, overrides a charm default
-            'watch-cache',              # bool arg, implied true
-            'enable-swagger-ui=false'   # bool arg, explicit false
-        ]),
-        'controller-manager-extra-args': ' '.join([
-            'v=3',                        # int arg, overrides a charm default
-            'profiling',                  # bool arg, implied trie
-            'contention-profiling=false'  # bool arg, explicit false
-        ]),
-        'scheduler-extra-args': ' '.join([
-            'v=3',                        # int arg, overrides a charm default
-            'profiling',                  # bool arg, implied trie
-            'contention-profiling=false'  # bool arg, explicit false
-        ])
-    }
+    async def run_extra_args_test(app_name, new_config, expected_args):
+        app = model.applications[app_name]
+        original_config = await app.get_config()
+        original_args = {}
+        for service in expected_args:
+            original_args[service] = await get_service_args(app, service)
 
-    expected_args = {
-        'kube-apiserver': {
-            'min-request-timeout 314',
-            'watch-cache',
-            'enable-swagger-ui=false'
-        },
-        'kube-controller-manager': {
-            'v 3',
-            'profiling',
-            'contention-profiling=false'
-        },
-        'kube-scheduler': {
-            'v 3',
-            'profiling',
-            'contention-profiling=false'
+        await app.set_config(new_config)
+
+        with timeout_for_current_task(180):
+            for service, expected_service_args in expected_args.items():
+                while True:
+                    args_per_unit = await get_service_args(app, service)
+                    if all(expected_service_args <= args for args in args_per_unit):
+                        break
+                    await asyncio.sleep(3)
+
+        filtered_original_config = {
+            key: original_config[key]['value']
+            for key in new_config
         }
-    }
+        await app.set_config(filtered_original_config)
 
-    app = model.applications['kubernetes-master']
-    original_config = await app.get_config()
-    original_args = {}
-    for service in expected_args:
-        original_args[service] = await get_service_args(app, service)
+        with timeout_for_current_task(180):
+            for service, original_service_args in original_args.items():
+                while True:
+                    new_args = await get_service_args(app, service)
+                    if new_args == original_service_args:
+                        break
+                    await asyncio.sleep(3)
 
-    await app.set_config(new_config)
+    master_task = run_extra_args_test(
+        app_name='kubernetes-master',
+        new_config={
+            'api-extra-args': ' '.join([
+                'min-request-timeout=314',  # int arg, overrides a charm default
+                'watch-cache',              # bool arg, implied true
+                'enable-swagger-ui=false'   # bool arg, explicit false
+            ]),
+            'controller-manager-extra-args': ' '.join([
+                'v=3',                        # int arg, overrides a charm default
+                'profiling',                  # bool arg, implied true
+                'contention-profiling=false'  # bool arg, explicit false
+            ]),
+            'scheduler-extra-args': ' '.join([
+                'v=3',                        # int arg, overrides a charm default
+                'profiling',                  # bool arg, implied true
+                'contention-profiling=false'  # bool arg, explicit false
+            ])
+        },
+        expected_args={
+            'kube-apiserver': {
+                'min-request-timeout 314',
+                'watch-cache',
+                'enable-swagger-ui=false'
+            },
+            'kube-controller-manager': {
+                'v 3',
+                'profiling',
+                'contention-profiling=false'
+            },
+            'kube-scheduler': {
+                'v 3',
+                'profiling',
+                'contention-profiling=false'
+            }
+        }
+    )
 
-    with timeout_for_current_task(180):
-        for service, expected_service_args in expected_args.items():
-            while True:
-                args_per_unit = await get_service_args(app, service)
-                if all(expected_service_args <= args for args in args_per_unit):
-                    break
-                await asyncio.sleep(3)
+    worker_task = run_extra_args_test(
+        app_name='kubernetes-worker',
+        new_config={
+            'kubelet-extra-args': ' '.join([
+                'v=1',                   # int arg, overrides a charm default
+                'enable-server',         # bool arg, implied true
+                'alsologtostderr=false'  # bool arg, explicit false
+            ]),
+            'proxy-extra-args': ' '.join([
+                'v=1',                   # int arg, overrides a charm default
+                'profiling',             # bool arg, implied true
+                'alsologtostderr=false'  # bool arg, explicit false
+            ])
+        },
+        expected_args={
+            'kubelet': {
+                'v 1',
+                'enable-server',
+                'alsologtostderr=false'
+            },
+            'kube-proxy': {
+                'v 1',
+                'profiling',
+                'alsologtostderr=false'
+            }
+        }
+    )
 
-    filtered_original_config = {
-        key: original_config[key]['value']
-        for key in new_config
-    }
-    await app.set_config(filtered_original_config)
-
-    with timeout_for_current_task(180):
-        for service, original_service_args in original_args.items():
-            while True:
-                new_args = await get_service_args(app, service)
-                if new_args == original_service_args:
-                    break
-                await asyncio.sleep(3)
+    await asyncio.gather(master_task, worker_task)
 
 
 async def validate_sans(model):
