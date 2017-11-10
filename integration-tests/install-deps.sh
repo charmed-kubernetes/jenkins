@@ -5,13 +5,12 @@ set -eux
 # Can be run again to upgrade dependencies.
 
 sudo apt update -yq
-sudo apt install -y unzip python3-pip python-pip squashfuse snapd
+sudo apt install -y unzip python3-pip python-pip squashfuse snapd charm-tools
 sudo snap install juju --classic
 sudo snap install conjure-up --classic
-sudo snap install charm
 sudo pip2 install 'git+https://github.com/juju/juju-crashdump'
 sudo pip2 install -U pyopenssl bundletester
-sudo pip3 install -U pytest  pytest-asyncio asyncio_extras juju requests pyyaml kubernetes amulet juju
+sudo pip3 install -U pytest  pytest-asyncio asyncio_extras juju requests pyyaml kubernetes amulet
 # Leaving those here in case we need to build a client from bleeding edge
 # sudo pip2 install 'git+https://github.com/juju-solutions/bundletester' \
 #                 'git+https://github.com/juju/juju-crashdump'
