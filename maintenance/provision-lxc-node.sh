@@ -11,22 +11,9 @@ while ! lxc info $container | grep -qE 'eth0:\sinet\s'; do
     sleep 3
 done
 
-RUN add-apt-repository -y ppa:juju/stable
-RUN apt update -yq
-RUN apt install -y juju unzip python3-pip python-pip charm-tools squashfuse snapd
-RUN pip2 install 'git+https://github.com/juju-solutions/bundletester' \
-                 'git+https://github.com/juju-solutions/cloud-weather-report' \
-                 'git+https://github.com/juju/juju-crashdump'
-RUN pip3 install 'git+https://github.com/juju/python-libjuju' \
-                 'git+https://github.com/juju-solutions/matrix' \
-                 'git+https://github.com/juju/amulet'
+PUSH integration-tests/install-deps.sh /root/
+RUN /root/install-deps.sh
 
-
-RUN pip2 install -U charm-tools pyopenssl
-RUN pip3 install -U pytest  pytest-asyncio asyncio_extras juju requests pyyaml kubernetes
-RUN snap install conjure-up --classic
-
-RUN mkdir -p /srv/artifacts
 RUN mkdir -p /root/.local/share/juju
 
 PUSH ~/.local/share/juju/accounts.yaml /root/.local/share/juju/
