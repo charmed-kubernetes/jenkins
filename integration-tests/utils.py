@@ -61,7 +61,7 @@ async def dump_debug_actions(model, log_dir):
         remote_path = action.data['results']['path']
         filename = unit.name.replace('/', '_') + '.tar.gz'
         local_path = os.path.join(result_dir, filename)
-        await unit.scp_from(remote_path, local_path)
+        await scp_from(unit, remote_path, local_path)
 
     coroutines = [dump_debug_action(unit) for unit in model.units.values() if unit]
     await asyncio.wait(coroutines)
@@ -323,3 +323,27 @@ async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=No
             '-r', 'xml', '-o', output_file
         ]
         await asyncify(subprocess.check_call)(cmd)
+
+
+async def scp_from(unit, remote_path, local_path):
+    if await is_localhost():
+        cmd = "juju scp {}:{} {}".format(unit.name, remote_path, local_path)
+        await asyncify(subprocess.check_call)(cmd.split())
+    else:
+        await unit.scp_from(remote_path, local_path)
+
+
+async def scp_to(local_path, unit, remote_path):
+    if await is_localhost():
+        cmd = "juju scp {} {}:{}".format(local_path, unit.name, remote_path)
+        await asyncify(subprocess.check_call)(cmd.split())
+    else:
+        await unit.scp_to(local_path, remote_path)
+
+
+async def is_localhost():
+    controller = Controller()
+    await controller.connect_current()
+    cloud = await controller.get_cloud()
+    await controller.disconnect()
+    return cloud == 'localhost'
