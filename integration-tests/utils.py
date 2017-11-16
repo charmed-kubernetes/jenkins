@@ -61,7 +61,7 @@ async def dump_debug_actions(model, log_dir):
         remote_path = action.data['results']['path']
         filename = unit.name.replace('/', '_') + '.tar.gz'
         local_path = os.path.join(result_dir, filename)
-        await unit.scp_from(remote_path, local_path)
+        await scp_from(unit, remote_path, local_path)
 
     coroutines = [dump_debug_action(unit) for unit in model.units.values() if unit]
     await asyncio.wait(coroutines)
@@ -118,6 +118,21 @@ async def captured_fail_logs(model, log_dir):
         raise
 
 
+def apply_profile(model_name):
+    '''
+    Apply the lxd profile
+    Args:
+        model_name: the model name
+
+    Returns: lxc profile edit output
+
+    '''
+    here = os.path.dirname(os.path.abspath(__file__))
+    profile = os.path.join(here, "templates", "lxd-profile.yaml")
+    cmd ='sed "s/##MODEL##/{0}/" "{1}" | lxc profile edit "juju-{0}"'.format(model_name, profile)
+    return check_output(['bash', '-c', cmd])
+
+
 @async_contextmanager
 async def temporary_model(log_dir, timeout=7200):
     ''' Create and destroy a temporary Juju model named cdk-build-upgrade-*.
@@ -130,6 +145,9 @@ async def temporary_model(log_dir, timeout=7200):
         model_name = 'cdk-build-upgrade-%d' % random.randint(0, 10000)
         model_config = {'test-mode': True}
         model = await add_model_via_cli(controller, model_name, model_config)
+        cloud = await controller.get_cloud()
+        if cloud == 'localhost':
+            await asyncify(apply_profile)(model_name)
         try:
             async with captured_fail_logs(model, log_dir):
                 await yield_(model)
@@ -305,3 +323,27 @@ async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=No
             '-r', 'xml', '-o', output_file
         ]
         await asyncify(subprocess.check_call)(cmd)
+
+
+async def scp_from(unit, remote_path, local_path):
+    if await is_localhost():
+        cmd = "juju scp {}:{} {}".format(unit.name, remote_path, local_path)
+        await asyncify(subprocess.check_call)(cmd.split())
+    else:
+        await unit.scp_from(remote_path, local_path)
+
+
+async def scp_to(local_path, unit, remote_path):
+    if await is_localhost():
+        cmd = "juju scp {} {}:{}".format(local_path, unit.name, remote_path)
+        await asyncify(subprocess.check_call)(cmd.split())
+    else:
+        await unit.scp_to(local_path, remote_path)
+
+
+async def is_localhost():
+    controller = Controller()
+    await controller.connect_current()
+    cloud = await controller.get_cloud()
+    await controller.disconnect()
+    return cloud == 'localhost'

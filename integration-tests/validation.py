@@ -7,7 +7,7 @@ import yaml
 
 from tempfile import NamedTemporaryFile
 from utils import assert_no_unit_errors, asyncify, wait_for_ready
-from utils import timeout_for_current_task
+from utils import timeout_for_current_task, scp_from, scp_to
 
 
 async def validate_all(model, log_dir):
@@ -158,7 +158,7 @@ async def validate_dashboard(model, log_dir):
     ''' Validate that the dashboard is operational '''
     unit = model.applications['kubernetes-master'].units[0]
     with NamedTemporaryFile() as f:
-        await unit.scp_from('config', f.name)
+        await scp_from(unit, 'config', f.name)
         with open(f.name, 'r') as stream:
             config = yaml.load(stream)
     url = config['clusters'][0]['cluster']['server']
@@ -209,7 +209,7 @@ async def validate_e2e_tests(model, log_dir):
         for suffix in ['.log', '-junit.tar.gz']:
             src = action.entity_id + suffix
             dest = os.path.join(log_dir, 'e2e-%d' % attempts + suffix)
-            await e2e_unit.scp_from(src, dest)
+            await scp_from(e2e_unit, src, dest)
         if action.status == 'completed':
             break
         else:
@@ -228,8 +228,8 @@ async def validate_network_policies(model):
     assert cmd.status == 'completed'
 
     # Move menaifests to the master
-    await unit.scp_to(os.path.join(here, "templates", "netpolicy-test.yaml"), "netpolicy-test.yaml")
-    await unit.scp_to(os.path.join(here, "templates", "restrict.yaml"), "restrict.yaml")
+    await scp_to(os.path.join(here, "templates", "netpolicy-test.yaml"), unit, "netpolicy-test.yaml")
+    await scp_to(os.path.join(here, "templates", "restrict.yaml"), unit, "restrict.yaml")
     cmd = await unit.run('/snap/bin/kubectl create -f /home/ubuntu/netpolicy-test.yaml')
     assert cmd.status == 'completed'
     await asyncio.sleep(10)
