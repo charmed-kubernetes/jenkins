@@ -118,6 +118,21 @@ async def captured_fail_logs(model, log_dir):
         raise
 
 
+def apply_profile(model_name):
+    '''
+    Apply the lxd profile
+    Args:
+        model_name: the model name
+
+    Returns: lxc profile edit output
+
+    '''
+    here = os.path.dirname(os.path.abspath(__file__))
+    profile = os.path.join(here, "templates", "lxd-profile.yaml")
+    cmd ='sed "s/##MODEL##/{0}/" "{1}" | lxc profile edit "juju-{0}"'.format(model_name, profile)
+    return check_output(['bash', '-c', cmd])
+
+
 @async_contextmanager
 async def temporary_model(log_dir, timeout=7200):
     ''' Create and destroy a temporary Juju model named cdk-build-upgrade-*.
@@ -130,6 +145,9 @@ async def temporary_model(log_dir, timeout=7200):
         model_name = 'cdk-build-upgrade-%d' % random.randint(0, 10000)
         model_config = {'test-mode': True}
         model = await add_model_via_cli(controller, model_name, model_config)
+        cloud = await controller.get_cloud()
+        if cloud == 'localhost':
+            await asyncify(apply_profile)(model_name)
         try:
             async with captured_fail_logs(model, log_dir):
                 await yield_(model)
