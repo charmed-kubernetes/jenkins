@@ -1,14 +1,13 @@
 import os
 import pytest
 from utils import temporary_model, deploy_e2e, upgrade_charms, upgrade_snaps
-from utils import juju_deploy, run_bundletester
+from utils import juju_deploy, run_bundletester, default_bundles
 from validation import validate_all
 
 namespace = os.environ.get('TEST_CHARM_NAMESPACE', 'containers')
 charm_channel = os.environ.get('TEST_CHARM_CHANNEL', 'stable')
 snap_channel = os.environ.get('TEST_SNAP_CHANNEL', '1.8/stable')
-bundles_csv = os.environ.get('TEST_BUNDLES',
-                             'canonical-kubernetes-canal,kubernetes-core')
+bundles_csv = os.environ.get('TEST_BUNDLES', default_bundles())
 bundles = [bundle.strip() for bundle in bundles_csv.split(',')]
 
 
