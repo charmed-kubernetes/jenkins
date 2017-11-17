@@ -7,7 +7,7 @@ import yaml
 
 from tempfile import NamedTemporaryFile
 from utils import assert_no_unit_errors, asyncify, wait_for_ready
-from utils import timeout_for_current_task, scp_from, scp_to
+from utils import timeout_for_current_task, scp_from, scp_to, is_localhost
 
 
 async def validate_all(model, log_dir):
@@ -204,7 +204,11 @@ async def validate_e2e_tests(model, log_dir):
 
     while attempts < 3:
         attempts += 1
-        action = await e2e_unit.run_action('test')
+        if await is_localhost():
+            # add HostPath test to the already skipped tests
+            action = await e2e_unit.run_action('test', skip='Flaky|Serial|HostPath')
+        else:
+            action = await e2e_unit.run_action('test')
         await action.wait()
         for suffix in ['.log', '-junit.tar.gz']:
             src = action.entity_id + suffix
