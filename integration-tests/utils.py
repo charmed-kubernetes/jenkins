@@ -352,7 +352,6 @@ async def is_localhost():
 def default_bundles():
     loop = asyncio.get_event_loop()
     localhost = loop.run_until_complete(is_localhost())
-    loop.close()
     if localhost:
         return 'canonical-kubernetes'
     else:
