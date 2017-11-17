@@ -347,3 +347,12 @@ async def is_localhost():
     cloud = await controller.get_cloud()
     await controller.disconnect()
     return cloud == 'localhost'
+
+
+def default_bundles():
+    loop = asyncio.get_event_loop()
+    localhost = loop.run_until_complete(is_localhost())
+    if localhost:
+        return 'canonical-kubernetes'
+    else:
+        return 'canonical-kubernetes-canal,kubernetes-core'
