@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import yaml
+import time
 
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
@@ -280,15 +281,32 @@ async def upgrade_charms(model, channel):
     await wait_for_ready(model)
 
 
-async def upgrade_snaps(model, channel):
-    for app in ['kubernetes-master', 'kubernetes-worker', 'kubernetes-e2e']:
-        app = model.applications.get(app)
-        if app:
-            await app.set_config({'channel': channel})
-    for unit in model.applications['kubernetes-worker'].units:
-        action = await unit.run_action('upgrade')
-        await action.wait()
-        assert action.status == 'completed'
+async def upgrade_snaps(model, channel, app_name, blocking):
+    app = model.applications.get(app_name)
+    if not app:
+        raise Exception('upgrade_snaps: Unable to find {0} application!'.format(app_name))
+    await app.set_config({'channel': channel})
+
+    if blocking:
+        for unit in app.units:
+            # wait for blocked status
+            deadline = time.time() + 180
+            while time.time() < deadline:
+                if (unit.workload_status == 'blocked' and
+                        unit.workload_status_message == 'Needs manual upgrade, run the upgrade action'):
+                    break
+                await asyncio.sleep(3)
+            else:
+                raise TimeoutError(
+                    'Unable to find blocked status on unit {0} - {1} {2}'.format(
+                        unit.name, unit.workload_status, unit.agent_status))
+
+            # run upgrade action
+            action = await unit.run_action('upgrade')
+            await action.wait()
+            assert action.status == 'completed'
+
+    # wait for upgrade to complete
     await wait_for_ready(model)
 
 
