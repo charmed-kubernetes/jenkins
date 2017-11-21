@@ -1,7 +1,6 @@
 import asyncio
 import functools
 import json
-import logging
 import os
 import random
 import shutil
@@ -16,13 +15,11 @@ from contextlib import contextmanager
 from juju.controller import Controller
 from juju.model import Model
 from juju.errors import JujuError
+from logger import log_calls, log_calls_async
 from subprocess import check_output, check_call
 
 
-# Get verbose output from libjuju
-logging.basicConfig(level=logging.DEBUG)
-
-
+@log_calls
 def dump_model_info(model, log_dir):
     ''' Dumps information about the model to the log dir '''
     data = {
@@ -36,6 +33,7 @@ def dump_model_info(model, log_dir):
         f.write('\n')
 
 
+@log_calls_async
 async def dump_debug_log(model, log_dir):
     ''' Dumps Juju debug log to the log dir '''
     path = os.path.join(log_dir, 'debug-log')
@@ -44,7 +42,7 @@ async def dump_debug_log(model, log_dir):
         await asyncify(subprocess.call)(cmd, stdout=f,
                                         stderr=subprocess.STDOUT)
 
-
+@log_calls_async
 async def dump_debug_actions(model, log_dir):
     ''' Runs debug action on all units, dumping the results to log dir '''
     result_dir = os.path.join(log_dir, 'debug-actions')
@@ -68,6 +66,7 @@ async def dump_debug_actions(model, log_dir):
     await asyncio.wait(coroutines)
 
 
+@log_calls_async
 async def add_model_via_cli(controller, name, config):
     ''' Add a Juju model using the CLI.
 
@@ -119,6 +118,7 @@ async def captured_fail_logs(model, log_dir):
         raise
 
 
+@log_calls
 def apply_profile(model_name):
     '''
     Apply the lxd profile
@@ -175,6 +175,7 @@ def all_units_ready(model):
     return True
 
 
+@log_calls_async
 async def wait_for_ready(model):
     ''' Wait until all units are 'active' and 'idle'. '''
     # FIXME: We might need to wait for more than just unit status.
@@ -189,6 +190,7 @@ async def wait_for_ready(model):
         await asyncio.sleep(1)
 
 
+@log_calls_async
 async def conjureup(model, namespace, bundle, channel='stable', snap_channel=None):
     with tempfile.TemporaryDirectory() as tmpdirname:
         cmd = 'charm pull --channel=%s cs:~%s/%s %s'
@@ -232,6 +234,7 @@ async def conjureup(model, namespace, bundle, channel='stable', snap_channel=Non
         await asyncify(check_call)(cmd)
 
 
+@log_calls_async
 async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=None):
     ''' Deploy the requested bundle. '''
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -261,6 +264,7 @@ def asyncify(f):
     return wrapper
 
 
+@log_calls_async
 async def deploy_e2e(model, charm_channel='stable', snap_channel=None, namespace='containers'):
     config = None if snap_channel is None else {'channel': snap_channel}
     e2e_charm = 'cs:~{}/kubernetes-e2e'.format(namespace)
@@ -271,6 +275,7 @@ async def deploy_e2e(model, charm_channel='stable', snap_channel=None, namespace
     await wait_for_ready(model)
 
 
+@log_calls_async
 async def upgrade_charms(model, channel):
     for app in model.applications.values():
         try:
@@ -281,6 +286,7 @@ async def upgrade_charms(model, channel):
     await wait_for_ready(model)
 
 
+@log_calls_async
 async def upgrade_snaps(model, channel, app_name, blocking):
     app = model.applications.get(app_name)
     if not app:
@@ -310,6 +316,7 @@ async def upgrade_snaps(model, channel, app_name, blocking):
     await wait_for_ready(model)
 
 
+@log_calls_async
 async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=None):
     async with temporary_model(log_dir) as model:
         # fetch bundle
@@ -343,6 +350,7 @@ async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=No
         await asyncify(subprocess.check_call)(cmd)
 
 
+@log_calls_async
 async def scp_from(unit, remote_path, local_path):
     if await is_localhost():
         cmd = "juju scp {}:{} {}".format(unit.name, remote_path, local_path)
@@ -351,6 +359,7 @@ async def scp_from(unit, remote_path, local_path):
         await unit.scp_from(remote_path, local_path)
 
 
+@log_calls_async
 async def scp_to(local_path, unit, remote_path):
     if await is_localhost():
         cmd = "juju scp {} {}:{}".format(local_path, unit.name, remote_path)
