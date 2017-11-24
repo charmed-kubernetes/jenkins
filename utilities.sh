@@ -173,3 +173,70 @@ function get_major_minor() {
   echo `expr "${version#v}" : '\(.[0-9]*.[0-9]*\)'`
 }
 
+# Get the previous version of X.Y
+function get_prev_major_minor() {
+  local version=$1
+  # version is of format X.Y
+  X="$(expr "${version#v}" : '\(.[0-9]*\)')"
+  Y="$(expr "${version#*.}" : '\(.[0-9]*\)')"
+  if [ "$Y" != "0" ]
+  then
+    Y=$(expr $Y - 1)
+    echo "$X.$Y"
+  else
+    X=$(expr $X - 1)
+    Y="0"
+    while wget -S --spider https://dl.k8s.io/release/stable-$X.$Y.txt  2>&1 | grep 'HTTP/1.1 200 OK' > /dev/null
+    do
+      OK_Y=$Y
+      Y=$(expr $Y + 1)
+    done
+    echo "$X.${OK_Y}"
+  fi
+}
+
+# Create a release tag at gh_owner/gh_repo
+function tag_release() {
+  gh_owner=$1
+  gh_repo=$2
+  gh_branch=$3
+  gh_user=$4
+  gh_token=$5
+  tag=$6
+
+  # We use this: https://developer.github.com/v3/repos/releases/#create-a-release
+  echo "{
+    \"tag_name\": \"$tag\",
+    \"target_commitish\": \"$gh_branch\",
+    \"name\": \"$tag\",
+    \"body\": \"Release $tag\",
+    \"draft\": false,
+    \"prerelease\": false
+  }" > /tmp/tag.json
+
+  curl -v -X POST -d @/tmp/tag.json --header "Content-Type:application/json" -u $gh_user:$gh_token \
+    "https://api.github.com/repos/$gh_owner/$gh_repo/releases"
+}
+
+# Create a branch in gh_owner/gh_repo
+function create_branch() {
+
+  gh_owner=$1
+  gh_repo=$2
+  gh_user=$3
+  gh_token=$4
+  version=$5
+
+  # We wand to branch https://developer.github.com/v3/git/refs/#create-a-reference
+  # but we first need the masters sha https://developer.github.com/v3/git/refs/#get-all-references
+  heads="$(curl -v -u $gh_user:$gh_token "https://api.github.com/repos/$gh_owner/$gh_repo/git/refs/heads")"
+  master_sha="$(echo $heads | jq '.[]  | select(.ref == "refs/heads/master") | .object.sha')"
+
+  echo "{
+    \"ref\": \"refs/heads/$version\",
+    \"sha\": $master_sha
+  }" > /tmp/branch.json
+
+  curl -v -X POST -d @/tmp/branch.json --header "Content-Type:application/json" -u $gh_user:$gh_token \
+    "https://api.github.com/repos/$gh_owner/$gh_repo/git/refs"
+}
