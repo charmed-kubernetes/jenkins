@@ -30,10 +30,7 @@ async def test_upgrade(bundle, log_dir):
         # await conjureup(model, namespace, bundle, 'stable')
         await juju_deploy(model, namespace, bundle, 'stable')
         await upgrade_charms(model, charm_channel)
-        for app_name, blocking in {'kubernetes-master': True, 'kubernetes-worker': True, 'kubernetes-e2e': False}.items():
-            # missing applications are simply not tested
-            if model.applications.get(app_name):
-                await upgrade_snaps(model, snap_channel, app_name, blocking)
+        await upgrade_snaps(model, snap_channel)
         await deploy_e2e(model, charm_channel, snap_channel, namespace=namespace)
         await validate_all(model, log_dir)
 
