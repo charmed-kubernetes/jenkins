@@ -6,7 +6,7 @@ set -eux
 source utilities.sh
 
 # K8s versions we want to check for new releases
-declare -a VERSIONS=('1.6' '1.7' '1.8' '1.9' '2.0' 'latest');
+declare -a VERSIONS=('1.6' '1.7' '1.8' '1.9' '1.10' '1.11' '2.0' 'latest');
 
 function check_for_release {
   # Sets $trigger to 'yes' when a new release is available.

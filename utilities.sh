@@ -173,3 +173,72 @@ function get_major_minor() {
   echo `expr "${version#v}" : '\(.[0-9]*.[0-9]*\)'`
 }
 
+# Get the previous version of X.Y
+function get_prev_major_minor() {
+  local version=$1
+  # version is of format X.Y
+  X="$(expr "${version#v}" : '\(.[0-9]*\)')"
+  Y="$(expr "${version#*.}" : '\(.[0-9]*\)')"
+  if [ "$Y" != "0" ]
+  then
+    Y=$(expr $Y - 1)
+    echo "$X.$Y"
+  else
+    X=$(expr $X - 1)
+    Y="0"
+    while wget -S --spider https://dl.k8s.io/release/stable-$X.$Y.txt  2>&1 | grep 'HTTP/1.1 200 OK' > /dev/null
+    do
+      OK_Y=$Y
+      Y=$(expr $Y + 1)
+    done
+    echo "$X.${OK_Y}"
+  fi
+}
+
+# Create a release tag at gh_owner/gh_repo
+function tag_release() {
+  gh_owner=$1
+  gh_repo=$2
+  gh_branch=$3
+  gh_user=$4
+  gh_token=$5
+  tag=$6
+
+  rm -rf /tmp/repo2tag
+  mkdir /tmp/repo2tag
+  (
+    cd /tmp/repo2tag
+    git clone https://github.com/${gh_owner}/${gh_repo}.git
+    cd ${gh_repo}
+    git checkout ${gh_branch}
+    if git rev-parse -q --verify "refs/tags/$tag" >/dev/null
+    then
+      echo "Tag $tag already present"
+    else
+      git tag ${tag}
+      git push https://${gh_user}:${gh_token}@github.com/${gh_owner}/${gh_repo}.git ${tag}
+    fi
+  )
+  rm -rf /tmp/repo2tag
+}
+
+# Create a branch in gh_owner/gh_repo
+function create_branch() {
+
+  gh_owner=$1
+  gh_repo=$2
+  gh_user=$3
+  gh_token=$4
+  branch=$5
+
+  rm -rf /tmp/repo2branch
+  mkdir /tmp/repo2branch
+  (
+    cd /tmp/repo2branch
+    git clone https://github.com/${gh_owner}/${gh_repo}.git
+    cd ${gh_repo}
+    git checkout -b ${branch}
+    git push https://${gh_user}:${gh_token}@github.com/${gh_owner}/${gh_repo}.git --all
+  )
+  rm -rf /tmp/repo2branch
+}
