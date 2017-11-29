@@ -204,18 +204,22 @@ function tag_release() {
   gh_token=$5
   tag=$6
 
-  # We use this: https://developer.github.com/v3/repos/releases/#create-a-release
-  echo "{
-    \"tag_name\": \"$tag\",
-    \"target_commitish\": \"$gh_branch\",
-    \"name\": \"$tag\",
-    \"body\": \"Release $tag\",
-    \"draft\": false,
-    \"prerelease\": false
-  }" > /tmp/tag.json
-
-  curl -v -X POST -d @/tmp/tag.json --header "Content-Type:application/json" -u $gh_user:$gh_token \
-    "https://api.github.com/repos/$gh_owner/$gh_repo/releases"
+  rm -rf /tmp/repo2tag
+  mkdir /tmp/repo2tag
+  (
+    cd /tmp/repo2tag
+    git clone https://github.com/${gh_owner}/${gh_repo}.git
+    cd ${gh_repo}
+    git checkout ${gh_branch}
+    if git rev-parse -q --verify "refs/tags/$tag" >/dev/null
+    then
+      echo "Tag $tag already present"
+    else
+      git tag ${tag}
+      git push https://${gh_user}:${gh_token}@github.com/${gh_owner}/${gh_repo}.git ${tag}
+    fi
+  )
+  rm -rf /tmp/repo2tag
 }
 
 # Create a branch in gh_owner/gh_repo
@@ -225,18 +229,16 @@ function create_branch() {
   gh_repo=$2
   gh_user=$3
   gh_token=$4
-  version=$5
+  branch=$5
 
-  # We wand to branch https://developer.github.com/v3/git/refs/#create-a-reference
-  # but we first need the masters sha https://developer.github.com/v3/git/refs/#get-all-references
-  heads="$(curl -v -u $gh_user:$gh_token "https://api.github.com/repos/$gh_owner/$gh_repo/git/refs/heads")"
-  master_sha="$(echo $heads | jq '.[]  | select(.ref == "refs/heads/master") | .object.sha')"
-
-  echo "{
-    \"ref\": \"refs/heads/$version\",
-    \"sha\": $master_sha
-  }" > /tmp/branch.json
-
-  curl -v -X POST -d @/tmp/branch.json --header "Content-Type:application/json" -u $gh_user:$gh_token \
-    "https://api.github.com/repos/$gh_owner/$gh_repo/git/refs"
+  rm -rf /tmp/repo2branch
+  mkdir /tmp/repo2branch
+  (
+    cd /tmp/repo2branch
+    git clone https://github.com/${gh_owner}/${gh_repo}.git
+    cd ${gh_repo}
+    git checkout -b ${branch}
+    git push https://${gh_user}:${gh_token}@github.com/${gh_owner}/${gh_repo}.git --all
+  )
+  rm -rf /tmp/repo2branch
 }
