@@ -1,15 +1,18 @@
 import asyncio
+import json
 import os
 import requests
 import time
 import traceback
 import yaml
 
+from logger import log, log_calls, log_calls_async
 from tempfile import NamedTemporaryFile
 from utils import assert_no_unit_errors, asyncify, wait_for_ready
 from utils import timeout_for_current_task, scp_from, scp_to, is_localhost
 
 
+@log_calls_async
 async def validate_all(model, log_dir):
     validate_status_messages(model)
     await validate_snap_versions(model)
@@ -22,12 +25,14 @@ async def validate_all(model, log_dir):
     await validate_worker_master_removal(model)
     await validate_sans(model)
     if "canal" in model.applications:
-        print("Running canal specific tests")
+        log("Running canal specific tests")
         await validate_network_policies(model)
     await validate_extra_args(model)
+    #await validate_docker_logins(model)
     assert_no_unit_errors(model)
 
 
+@log_calls
 def validate_status_messages(model):
     ''' Validate that the status messages are correct. '''
     expected_messages = {
@@ -40,6 +45,7 @@ def validate_status_messages(model):
             assert unit.workload_status_message == message
 
 
+@log_calls_async
 async def validate_snap_versions(model):
     ''' Validate that the installed snap versions are consistent with channel
     config on the charms.
@@ -65,7 +71,7 @@ async def validate_snap_versions(model):
         if '/' not in channel:
             message = 'validate_snap_versions: skipping %s, channel=%s'
             message = message % (app_name, channel)
-            print(message)
+            log(message)
             continue
         track = channel.split('/')[0]
         for unit in app.units:
@@ -84,6 +90,7 @@ async def validate_snap_versions(model):
                 assert snap_version.startswith(track + '.')
 
 
+@log_calls_async
 async def validate_rbac(model):
     ''' Validate RBAC is actually on '''
     app = model.applications['kubernetes-master']
@@ -101,6 +108,7 @@ async def validate_rbac(model):
     assert "forbidden" not in output.data['results']['Stderr']
 
 
+@log_calls_async
 async def validate_rbac_flag(model):
     ''' Switch between auth modes and check the apiserver follows '''
     master = model.applications['kubernetes-master']
@@ -110,6 +118,7 @@ async def validate_rbac_flag(model):
     await wait_for_process(model, 'AlwaysAllow')
 
 
+@log_calls_async
 async def wait_for_process(model, arg):
     ''' Retry api_server_with_arg <checks> times with a 5 sec interval '''
     checks = 10
@@ -134,6 +143,8 @@ async def api_server_with_arg(model, argument):
         return len(raw_output.splitlines()) == 1
     return False
 
+
+@log_calls_async
 async def validate_microbot(model):
     ''' Validate the microbot action '''
     unit = model.applications['kubernetes-worker'].units[0]
@@ -148,12 +159,13 @@ async def validate_microbot(model):
             if resp.status_code == 200:
                 return
         except requests.exceptions.ConnectionError:
-            print("Caught connection error attempting to hit xip.io, retrying. Error follows:")
+            log("Caught connection error attempting to hit xip.io, retrying. Error follows:")
             traceback.print_exc()
         await asyncio.sleep(1)
     raise MicrobotError('Microbot failed to start.')
 
 
+@log_calls_async
 async def validate_dashboard(model, log_dir):
     ''' Validate that the dashboard is operational '''
     unit = model.applications['kubernetes-master'].units[0]
@@ -176,8 +188,10 @@ async def validate_dashboard(model, log_dir):
         yaml.dump(data, f, default_flow_style=False)
 
 
+@log_calls_async
 async def validate_kubelet_anonymous_auth_disabled(model):
     ''' Validate that kubelet has anonymous auth disabled '''
+    @log_calls_async
     async def validate_unit(unit):
         await unit.run('open-port 10250')
         address = unit.public_address
@@ -188,6 +202,7 @@ async def validate_kubelet_anonymous_auth_disabled(model):
     await asyncio.gather(*(validate_unit(unit) for unit in units))
 
 
+@log_calls_async
 async def validate_e2e_tests(model, log_dir):
     ''' Validate that the e2e tests pass.'''
     masters = model.applications['kubernetes-master']
@@ -217,11 +232,12 @@ async def validate_e2e_tests(model, log_dir):
         if action.status == 'completed':
             break
         else:
-            print("Attempt %d/3 failed." % attempts)
+            log("Attempt %d/3 failed." % attempts)
 
     assert action.status == 'completed'
 
 
+@log_calls_async
 async def validate_network_policies(model):
     ''' Apply network policy and use two busyboxes to validate it. '''
     here = os.path.dirname(os.path.abspath(__file__))
@@ -268,6 +284,7 @@ async def validate_network_policies(model):
     assert cmd.status == 'completed'
 
 
+@log_calls_async
 async def validate_worker_master_removal(model):
     # Add a second master
     masters = model.applications['kubernetes-master']
@@ -288,7 +305,7 @@ async def validate_worker_master_removal(model):
     await workers.units[0].remove()
     while len(workers.units) == unit_count:
         await asyncio.sleep(3)
-        print('Waiting for worker removal.')
+        log('Waiting for worker removal.')
         assert_no_unit_errors(model)
     await wait_for_ready(model)
 
@@ -299,11 +316,12 @@ async def validate_worker_master_removal(model):
             await master.remove()
     while len(masters.units) == unit_count:
         await asyncio.sleep(3)
-        print('Waiting for master removal.')
+        log('Waiting for master removal.')
         assert_no_unit_errors(model)
     await wait_for_ready(model)
 
 
+@log_calls_async
 async def validate_extra_args(model):
     async def get_service_args(app, service):
         results = []
@@ -316,6 +334,7 @@ async def validate_extra_args(model):
             results.append(args)
         return results
 
+    @log_calls_async
     async def run_extra_args_test(app_name, new_config, expected_args):
         app = model.applications[app_name]
         original_config = await app.get_config()
@@ -416,6 +435,7 @@ async def validate_extra_args(model):
     await asyncio.gather(master_task, worker_task)
 
 
+@log_calls_async
 async def validate_sans(model):
     example_domain = "santest.example.com"
     app = model.applications['kubernetes-master']
@@ -478,6 +498,127 @@ async def validate_sans(model):
     await app.set_config({'extra_sans': original_config['extra_sans']['value']})
     if lb is not None and original_lb_config is not None:
         await lb.set_config({'extra_sans': original_lb_config['extra_sans']['value']})
+
+
+@log_calls_async
+async def validate_docker_logins(model):
+    kubectl_cmd = '/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig'
+
+    @log_calls_async
+    async def check_output(unit, cmd):
+        action = await unit.run(cmd)
+        assert action.status == 'completed'
+        if action.data['results']['Code'] != '0':
+            log('Command failed: ' + cmd)
+            log('unit: ' + unit.entity_id)
+            log('code: ' + action.data['results']['Code'])
+            log('stdout: ' + action.data['results']['Stdout'])
+            log('stderr: ' + action.data['results']['Stderr'])
+            raise Exception('Command failed: ' + cmd)
+        assert action.data['results']['Code'] == '0'
+        return action.data['results']['Stdout']
+
+    @log_calls_async
+    async def wait_for_test_pod_state(unit, desired_state, desired_reason=None):
+        cmd = kubectl_cmd + ' get po test-registry-user -o json'
+        while True:
+            output = await check_output(unit, cmd)
+            data = json.loads(output)
+            container_status = data['status']['containerStatuses'][0]
+            state, details = list(container_status['state'].items())[0]
+            if desired_reason:
+                reason = details.get('reason')
+                if state == desired_state and reason == desired_reason:
+                    break
+            elif state == desired_state:
+                break
+
+    @log_calls_async
+    async def cleanup(app, vessel):
+        await app.set_config({'docker-logins': '[]'})
+        cmd = kubectl_cmd + ' delete -f /tmp/test-registry/test-registry-user.yaml'
+        await vessel.run(cmd)
+        cmd = kubectl_cmd + ' delete -f /tmp/test-registry/test-registry.yaml'
+        await vessel.run(cmd)
+        cmd = kubectl_cmd + ' delete secret test-registry'
+        await vessel.run(cmd)
+        cmd = 'rm -rf /tmp/test-registry'
+        await vessel.run(cmd)
+
+    # Choose a worker. He shall be our vessel.
+    app = model.applications['kubernetes-worker']
+    vessel = app.units[0]
+
+    # Start with a clean environment
+    await cleanup(app, vessel)
+    await check_output(vessel, 'mkdir /tmp/test-registry')
+    await check_output(vessel, 'chown ubuntu:ubuntu /tmp/test-registry')
+
+    # Create registry secret
+    await scp_to('templates/test-registry/htpasswd', vessel, '/tmp/test-registry')
+    cmd = 'openssl req -x509 -newkey rsa:4096 -keyout /tmp/test-registry/tls.key -out /tmp/test-registry/tls.crt -days 2 -nodes -subj /CN=localhost'
+    await check_output(vessel, cmd)
+    cmd = 'cd /tmp/test-registry && %s create secret generic test-registry --from-file=htpasswd --from-file=tls.crt --from-file=tls.key' % kubectl_cmd
+    await check_output(vessel, cmd)
+
+    # Create registry
+    await scp_to('templates/test-registry/test-registry.yaml', vessel, '/tmp/test-registry')
+    cmd = kubectl_cmd + ' create -f /tmp/test-registry/test-registry.yaml'
+    await check_output(vessel, cmd)
+    cmd = kubectl_cmd + ' get svc test-registry -o json'
+    output = await check_output(vessel, cmd)
+    data = json.loads(output)
+    registry_port = data['spec']['ports'][0]['nodePort']
+    registry_url = 'localhost:%s' % registry_port
+
+    # Upload test container
+    cmd = 'docker login %s -u test-user -p yyDVinHE' % registry_url
+    await check_output(vessel, cmd)
+    cmd = 'docker pull ubuntu:16.04'
+    await check_output(vessel, cmd)
+    cmd = 'docker tag ubuntu:16.04 %s/ubuntu:16.04' % registry_url
+    await check_output(vessel, cmd)
+    cmd = 'docker push %s/ubuntu:16.04' % registry_url
+    await check_output(vessel, cmd)
+    cmd = 'docker rmi %s/ubuntu:16.04' % registry_url
+    await check_output(vessel, cmd)
+    cmd = 'docker logout %s' % registry_url
+    await check_output(vessel, cmd)
+
+    # Create test pod using our registry
+    pod_def = {
+        'apiVersion': 'v1',
+        'kind': 'Pod',
+        'metadata': {
+            'name': 'test-registry-user'
+        },
+        'spec': {
+            'containers': [{
+                'name': 'ubuntu',
+                'image': registry_url + '/ubuntu:16.04',
+                'command': ['sleep', '3600']
+            }]
+        }
+    }
+    with NamedTemporaryFile('w') as f:
+        json.dump(pod_def, f)
+        f.flush()
+        await scp_to(f.name, vessel, '/tmp/test-registry/test-registry-user.yaml')
+    cmd = kubectl_cmd + ' create -f /tmp/test-registry/test-registry-user.yaml'
+    await check_output(vessel, cmd)
+
+    # Verify pod fails image pull
+    await wait_for_test_pod_state(vessel, 'waiting', 'ImagePullBackOff')
+
+    # Configure docker_logins
+    docker_logins = [{'server': registry_url, 'username': 'test-user', 'password': 'yyDVinHE'}]
+    await app.set_config({'docker-logins': json.dumps(docker_logins)})
+
+    # Verify pod enters running state
+    await wait_for_test_pod_state(vessel, 'running')
+
+    # Restore config and clean up
+    await cleanup(app, vessel)
 
 
 class MicrobotError(Exception):
