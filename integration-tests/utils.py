@@ -67,12 +67,14 @@ async def dump_debug_actions(model, log_dir):
 
 
 @log_calls_async
-async def add_model_via_cli(controller, name, config):
+async def add_model_via_cli(controller, name, config, force_cloud=''):
     ''' Add a Juju model using the CLI.
 
     Workaround for https://github.com/juju/python-libjuju/issues/122
     '''
     cmd = ['juju', 'add-model', name]
+    if not force_cloud == '':
+        cmd += [force_cloud]
     controller_name = controller.controller_name
     if controller_name:
         cmd += ['-c', controller_name]
@@ -135,7 +137,7 @@ def apply_profile(model_name):
 
 
 @async_contextmanager
-async def temporary_model(log_dir, timeout=7200):
+async def temporary_model(log_dir, timeout=7200, force_cloud=''):
     ''' Create and destroy a temporary Juju model named cdk-build-upgrade-*.
 
     This is an async context, to be used within an `async with` statement.
@@ -145,7 +147,7 @@ async def temporary_model(log_dir, timeout=7200):
         await controller.connect_current()
         model_name = 'cdk-build-upgrade-%d' % random.randint(0, 10000)
         model_config = {'test-mode': True}
-        model = await add_model_via_cli(controller, model_name, model_config)
+        model = await add_model_via_cli(controller, model_name, model_config, force_cloud)
         cloud = await controller.get_cloud()
         if cloud == 'localhost':
             await asyncify(apply_profile)(model_name)
@@ -325,8 +327,8 @@ async def upgrade_snaps(model, channel):
 
 
 @log_calls_async
-async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=None):
-    async with temporary_model(log_dir) as model:
+async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=None, force_cloud=''):
+    async with temporary_model(log_dir, force_cloud) as model:
         # fetch bundle
         bundle = 'canonical-kubernetes'
         url = 'cs:~%s/%s' % (namespace, bundle)
