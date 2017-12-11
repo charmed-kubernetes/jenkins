@@ -1,13 +1,10 @@
-import asyncio
 import traceback
 from datetime import datetime
 
 
 def log(msg):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    task = asyncio.Task.current_task()
-    task_id = id(task)
-    print('[%s|%s] %s' % (timestamp, task_id, msg))
+    print('[%s] %s' % (timestamp, msg))
 
 
 def function_call_str(f, args, kwargs):
