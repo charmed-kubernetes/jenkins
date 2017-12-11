@@ -15,7 +15,7 @@ bundles = [bundle.strip() for bundle in bundles_csv.split(',')]
 @pytest.mark.asyncio
 @pytest.mark.parametrize('bundle', bundles)
 async def test_deploy(bundle, log_dir):
-    async with temporary_model(log_dir, test_cloud) as model:
+    async with temporary_model(log_dir, force_cloud=test_cloud) as model:
         # await conjureup(model, namespace, bundle, charm_channel,
         #                 snap_channel)
         await juju_deploy(model, namespace, bundle, charm_channel,
@@ -27,7 +27,7 @@ async def test_deploy(bundle, log_dir):
 @pytest.mark.asyncio
 @pytest.mark.parametrize('bundle', bundles)
 async def test_upgrade(bundle, log_dir):
-    async with temporary_model(log_dir, test_cloud) as model:
+    async with temporary_model(log_dir, force_cloud=test_cloud) as model:
         # await conjureup(model, namespace, bundle, 'stable')
         await juju_deploy(model, namespace, bundle, 'stable')
         await upgrade_charms(model, charm_channel)
