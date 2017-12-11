@@ -328,7 +328,7 @@ async def upgrade_snaps(model, channel):
 
 @log_calls_async
 async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=None, force_cloud=''):
-    async with temporary_model(log_dir, force_cloud) as model:
+    async with temporary_model(log_dir, force_cloud=force_cloud) as model:
         # fetch bundle
         bundle = 'canonical-kubernetes'
         url = 'cs:~%s/%s' % (namespace, bundle)
