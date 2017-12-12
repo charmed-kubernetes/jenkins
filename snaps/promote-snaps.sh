@@ -8,14 +8,17 @@ set -eu
 
 SNAPS="kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet kube-proxy cdk-addons kubeadm kubefed kubernetes-test"
 
+ARCH=${KUBE_ARCH:-"amd64"}
 echo PROMOTE_FROM="$PROMOTE_FROM"
 echo PROMOTE_TO="$PROMOTE_TO"
 echo SNAPS="$SNAPS"
+echo ARCH="$ARCH"
+
 
 . utils/retry.sh
 
 for snap in $SNAPS; do
-  revisions="$(snapcraft revisions $snap | grep " ${PROMOTE_FROM}\*" | cut -d " " -f 1)"
+  revisions="$(snapcraft revisions $snap | grep "${ARCH}" | grep " ${PROMOTE_FROM}\*" | cut -d " " -f 1)"
   for rev in $revisions; do
     for target in $PROMOTE_TO; do
       echo snapcraft release $snap $rev $target
