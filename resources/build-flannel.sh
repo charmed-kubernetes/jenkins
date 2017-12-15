@@ -11,7 +11,7 @@ set -o xtrace  # Print the commands that are executed.
 
 echo "${0} started at `date`."
 
-FLANNEL_VERSION=${FLANNEL_VERSION:-"v0.7.0"}
+FLANNEL_VERSION=${FLANNEL_VERSION:-"v0.9.1"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}
