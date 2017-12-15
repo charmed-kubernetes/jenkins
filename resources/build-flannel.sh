@@ -47,7 +47,7 @@ cp -v flannel/dist/flanneld-${ARCH} ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/flannel
 # Create the flannel resource archive with version, os and architecture.
 FLANNEL_ARCHIVE=${SCRIPT_DIR}/flannel-resource-${FLANNEL_VERSION}-${OS}-${ARCH}.tar.gz
 echo "Creating the ${FLANNEL_ARCHIVE} file."
-FLANNEL_FILES="bridge etcdctl flannel flanneld host-local"
+FLANNEL_FILES="bridge etcdctl flannel flanneld host-local portmap"
 create_archive ${TEMPORARY_DIRECTORY}/${OS}/${ARCH} ${FLANNEL_ARCHIVE} "${FLANNEL_FILES}"
 
 cd ${SCRIPT_DIR}
