@@ -16,6 +16,9 @@ ARCH=${ARCH:-"amd64"}
 
 SCRIPT_DIR=${PWD}
 
+TEMPORARY_DIRECTORY=${TEMPORARY_DIRECTORY:-"$SCRIPT_DIR/temp"}
+mkdir -p $TEMPORARY_DIRECTORY
+
 if [ ! -d etcd ]; then
   # Clone the coreos etcd project.
   git clone https://github.com/coreos/etcd.git etcd

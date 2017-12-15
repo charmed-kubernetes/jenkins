@@ -18,6 +18,9 @@ ARCH=${ARCH:-"amd64"}
 
 SCRIPT_DIR=${PWD}
 
+TEMPORARY_DIRECTORY=${TEMPORARY_DIRECTORY:-"$SCRIPT_DIR/temp"}
+mkdir -p $TEMPORARY_DIRECTORY
+
 # Get the function definition for download.
 source ./utilities.sh
 
