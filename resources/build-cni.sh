@@ -16,6 +16,9 @@ ARCH=${ARCH:-"amd64"}
 
 SCRIPT_DIR=${PWD}
 
+TEMPORARY_DIRECTORY=${TEMPORARY_DIRECTORY:-"$SCRIPT_DIR/temp"}
+mkdir -p $TEMPORARY_DIRECTORY
+
 if [ ! -d cni ]; then
   # Clone the containernetworking cni project.
   git clone https://github.com/containernetworking/plugins.git cni
@@ -40,6 +43,7 @@ docker run \
   /bin/bash -c "cd /cni && ./build.sh && chown -R ${USER_ID}:${GROUP_ID} /cni"
 
 # Copy the binaries to the output directory.
+mkdir -p ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
 cp -v cni/bin/* ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
 
 source ${SCRIPT_DIR}/utilities.sh

@@ -11,12 +11,15 @@ set -o xtrace  # Print the commands that are executed.
 
 echo "${0} started at `date`."
 
-FLANNEL_VERSION=${FLANNEL_VERSION:-"v0.7.0"}
+FLANNEL_VERSION=${FLANNEL_VERSION:-"v0.9.1"}
 
 OS=${OS:-"linux"}
 ARCH=${ARCH:-"amd64"}
 
 SCRIPT_DIR=${PWD}
+
+TEMPORARY_DIRECTORY=${TEMPORARY_DIRECTORY:-"$SCRIPT_DIR/temp"}
+mkdir -p $TEMPORARY_DIRECTORY
 
 # Get the function definition for download.
 source ./utilities.sh
@@ -47,7 +50,7 @@ cp -v flannel/dist/flanneld-${ARCH} ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}/flannel
 # Create the flannel resource archive with version, os and architecture.
 FLANNEL_ARCHIVE=${SCRIPT_DIR}/flannel-resource-${FLANNEL_VERSION}-${OS}-${ARCH}.tar.gz
 echo "Creating the ${FLANNEL_ARCHIVE} file."
-FLANNEL_FILES="bridge etcdctl flannel flanneld host-local"
+FLANNEL_FILES="bridge etcdctl flannel flanneld host-local portmap"
 create_archive ${TEMPORARY_DIRECTORY}/${OS}/${ARCH} ${FLANNEL_ARCHIVE} "${FLANNEL_FILES}"
 
 cd ${SCRIPT_DIR}
