@@ -156,7 +156,7 @@ async def temporary_model(log_dir, timeout=7200, force_cloud=''):
                 await yield_(model)
         finally:
             await model.disconnect()
-            await controller.destroy_model(model.info.uuid)
+            await controller.destroy_model(model_name)
             await controller.disconnect()
 
 
