@@ -179,13 +179,12 @@ async def validate_dashboard(model, log_dir):
     auth = requests.auth.HTTPBasicAuth(user, password)
     resp = await asyncify(requests.get)(url, auth=auth, verify=False)
     assert resp.status_code == 200
-    url = '%s/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/api/v1/workload/default?filterBy=&itemsPerPage=10&page=1&sortBy=d,creationTimestamp'
+    # dashboard will present a login form prompting for login
+    url = '%s/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login'
     url %= config['clusters'][0]['cluster']['server']
     resp = await asyncify(requests.get)(url, auth=auth, verify=False)
     assert resp.status_code == 200
-    data = resp.json()
-    with open(os.path.join(log_dir, 'dashboard.yaml'), 'w') as f:
-        yaml.dump(data, f, default_flow_style=False)
+    assert "Dashboard" in resp.text
 
 
 @log_calls_async
