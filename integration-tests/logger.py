@@ -4,7 +4,7 @@ from datetime import datetime
 
 def log(msg):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print('[%s] %s' % (timestamp, msg))
+    print('[%s] %s' % (timestamp, msg), flush=True)
 
 
 def function_call_str(f, args, kwargs):
