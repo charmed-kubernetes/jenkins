@@ -554,14 +554,17 @@ async def validate_docker_logins(model):
     await check_output(vessel, 'chown ubuntu:ubuntu /tmp/test-registry')
 
     # Create registry secret
-    await scp_to('templates/test-registry/htpasswd', vessel, '/tmp/test-registry')
+    here = os.path.dirname(os.path.abspath(__file__))
+    htpasswd = os.path.join(here, 'templates', 'test-registry', 'htpasswd')
+    await scp_to(htpasswd, vessel, '/tmp/test-registry')
     cmd = 'openssl req -x509 -newkey rsa:4096 -keyout /tmp/test-registry/tls.key -out /tmp/test-registry/tls.crt -days 2 -nodes -subj /CN=localhost'
     await check_output(vessel, cmd)
     cmd = 'cd /tmp/test-registry && %s create secret generic test-registry --from-file=htpasswd --from-file=tls.crt --from-file=tls.key' % kubectl_cmd
     await check_output(vessel, cmd)
 
     # Create registry
-    await scp_to('templates/test-registry/test-registry.yaml', vessel, '/tmp/test-registry')
+    test_registry = os.path.join(here, 'templates', 'test-registry', 'test-registry.yaml')
+    await scp_to(test_registry, vessel, '/tmp/test-registry')
     cmd = kubectl_cmd + ' create -f /tmp/test-registry/test-registry.yaml'
     await check_output(vessel, cmd)
     cmd = kubectl_cmd + ' get svc test-registry -o json'
