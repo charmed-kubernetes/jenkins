@@ -501,27 +501,34 @@ async def validate_sans(model):
 
 @log_calls_async
 async def validate_docker_logins(model):
-    kubectl_cmd = '/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig'
+    # Choose a worker. He shall be our vessel.
+    app = model.applications['kubernetes-worker']
+    vessel = app.units[0]
 
-    @log_calls_async
-    async def check_output(unit, cmd):
-        action = await unit.run(cmd)
-        assert action.status == 'completed'
-        if action.data['results']['Code'] != '0':
-            log('Command failed: ' + cmd)
-            log('unit: ' + unit.entity_id)
-            log('code: ' + action.data['results']['Code'])
-            log('stdout: ' + action.data['results']['Stdout'])
-            log('stderr: ' + action.data['results']['Stderr'])
-            raise Exception('Command failed: ' + cmd)
-        assert action.data['results']['Code'] == '0'
-        return action.data['results']['Stdout']
-
-    @log_calls_async
-    async def wait_for_test_pod_state(unit, desired_state, desired_reason=None):
-        cmd = kubectl_cmd + ' get po test-registry-user -o json'
+    async def run_until_success(cmd):
         while True:
-            output = await check_output(unit, cmd)
+            action = await vessel.run(cmd)
+            assert action.status == 'completed'
+            if action.data['results']['Code'] == '0':
+                return action.data['results']['Stdout']
+            else:
+                log('Command failed on unit ' + vessel.entity_id)
+                log('cmd: ' + cmd)
+                log('code: ' + action.data['results']['Code'])
+                log('stdout:\n' + action.data['results']['Stdout'].strip())
+                log('stderr:\n' + action.data['results']['Stderr'].strip())
+                log('Will retry...')
+                await asyncio.sleep(1)
+
+    async def kubectl(cmd):
+        cmd = '/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig ' + cmd
+        return await run_until_success(cmd)
+
+    @log_calls_async
+    async def wait_for_test_pod_state(desired_state, desired_reason=None):
+        while True:
+            cmd = 'get po test-registry-user -o json'
+            output = await kubectl(cmd)
             data = json.loads(output)
             container_status = data['status']['containerStatuses'][0]
             state, details = list(container_status['state'].items())[0]
@@ -531,61 +538,68 @@ async def validate_docker_logins(model):
                     break
             elif state == desired_state:
                 break
+            await asyncio.sleep(1)
 
     @log_calls_async
-    async def cleanup(app, vessel):
-        await app.set_config({'docker-logins': '[]'})
-        cmd = kubectl_cmd + ' delete -f /tmp/test-registry/test-registry-user.yaml'
-        await vessel.run(cmd)
-        cmd = kubectl_cmd + ' delete -f /tmp/test-registry/test-registry.yaml'
-        await vessel.run(cmd)
-        cmd = kubectl_cmd + ' delete secret test-registry'
-        await vessel.run(cmd)
-        cmd = 'rm -rf /tmp/test-registry'
-        await vessel.run(cmd)
+    async def kubectl_delete(target):
+        cmd = 'delete --ignore-not-found ' + target
+        return await kubectl(cmd)
 
-    # Choose a worker. He shall be our vessel.
-    app = model.applications['kubernetes-worker']
-    vessel = app.units[0]
+    @log_calls_async
+    async def cleanup():
+        await app.set_config({'docker-logins': '[]'})
+        await kubectl_delete('po test-registry-user')
+        await kubectl_delete('po test-registry')
+        await kubectl_delete('svc test-registry')
+        await kubectl_delete('secret test-registry')
+        cmd = 'rm -rf /tmp/test-registry'
+        await run_until_success(cmd)
+        log('Waiting for pods to finish terminating...')
+        while True:
+            output = await kubectl('get po')
+            if 'test-registry' not in output:
+                break
+            await asyncio.sleep(1)
 
     # Start with a clean environment
-    await cleanup(app, vessel)
-    await check_output(vessel, 'mkdir /tmp/test-registry')
-    await check_output(vessel, 'chown ubuntu:ubuntu /tmp/test-registry')
+    await cleanup()
+    await run_until_success('mkdir /tmp/test-registry')
+    await run_until_success('chown ubuntu:ubuntu /tmp/test-registry')
 
     # Create registry secret
     here = os.path.dirname(os.path.abspath(__file__))
     htpasswd = os.path.join(here, 'templates', 'test-registry', 'htpasswd')
     await scp_to(htpasswd, vessel, '/tmp/test-registry')
     cmd = 'openssl req -x509 -newkey rsa:4096 -keyout /tmp/test-registry/tls.key -out /tmp/test-registry/tls.crt -days 2 -nodes -subj /CN=localhost'
-    await check_output(vessel, cmd)
-    cmd = 'cd /tmp/test-registry && %s create secret generic test-registry --from-file=htpasswd --from-file=tls.crt --from-file=tls.key' % kubectl_cmd
-    await check_output(vessel, cmd)
+    await run_until_success(cmd)
+    await kubectl('create secret generic test-registry'
+        + ' --from-file=/tmp/test-registry/htpasswd'
+        + ' --from-file=/tmp/test-registry/tls.crt'
+        + ' --from-file=/tmp/test-registry/tls.key'
+    )
 
     # Create registry
     test_registry = os.path.join(here, 'templates', 'test-registry', 'test-registry.yaml')
     await scp_to(test_registry, vessel, '/tmp/test-registry')
-    cmd = kubectl_cmd + ' create -f /tmp/test-registry/test-registry.yaml'
-    await check_output(vessel, cmd)
-    cmd = kubectl_cmd + ' get svc test-registry -o json'
-    output = await check_output(vessel, cmd)
+    await kubectl('create -f /tmp/test-registry/test-registry.yaml')
+    output = await kubectl('get svc test-registry -o json')
     data = json.loads(output)
     registry_port = data['spec']['ports'][0]['nodePort']
     registry_url = 'localhost:%s' % registry_port
 
     # Upload test container
     cmd = 'docker login %s -u test-user -p yyDVinHE' % registry_url
-    await check_output(vessel, cmd)
+    await run_until_success(cmd)
     cmd = 'docker pull ubuntu:16.04'
-    await check_output(vessel, cmd)
+    await run_until_success(cmd)
     cmd = 'docker tag ubuntu:16.04 %s/ubuntu:16.04' % registry_url
-    await check_output(vessel, cmd)
+    await run_until_success(cmd)
     cmd = 'docker push %s/ubuntu:16.04' % registry_url
-    await check_output(vessel, cmd)
+    await run_until_success(cmd)
     cmd = 'docker rmi %s/ubuntu:16.04' % registry_url
-    await check_output(vessel, cmd)
+    await run_until_success(cmd)
     cmd = 'docker logout %s' % registry_url
-    await check_output(vessel, cmd)
+    await run_until_success(cmd)
 
     # Create test pod using our registry
     pod_def = {
@@ -606,21 +620,20 @@ async def validate_docker_logins(model):
         json.dump(pod_def, f)
         f.flush()
         await scp_to(f.name, vessel, '/tmp/test-registry/test-registry-user.yaml')
-    cmd = kubectl_cmd + ' create -f /tmp/test-registry/test-registry-user.yaml'
-    await check_output(vessel, cmd)
+    await kubectl('create -f /tmp/test-registry/test-registry-user.yaml')
 
     # Verify pod fails image pull
-    await wait_for_test_pod_state(vessel, 'waiting', 'ImagePullBackOff')
+    await wait_for_test_pod_state('waiting', 'ImagePullBackOff')
 
     # Configure docker_logins
     docker_logins = [{'server': registry_url, 'username': 'test-user', 'password': 'yyDVinHE'}]
     await app.set_config({'docker-logins': json.dumps(docker_logins)})
 
     # Verify pod enters running state
-    await wait_for_test_pod_state(vessel, 'running')
+    await wait_for_test_pod_state('running')
 
     # Restore config and clean up
-    await cleanup(app, vessel)
+    await cleanup()
 
 
 class MicrobotError(Exception):
