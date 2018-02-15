@@ -561,6 +561,20 @@ async def validate_docker_logins(model):
                 break
             await asyncio.sleep(1)
 
+    @log_calls_async
+    async def kubectl_get(target):
+        cmd = 'get -o json ' + target
+        output = await kubectl(cmd)
+        return json.loads(output)
+
+    @log_calls_async
+    async def kubectl_create(definition):
+        with NamedTemporaryFile('w') as f:
+            json.dump(definition, f)
+            f.flush()
+            await scp_to(f.name, vessel, '/tmp/test-registry/temp.yaml')
+        await kubectl('create -f /tmp/test-registry/temp.yaml')
+
     # Start with a clean environment
     await cleanup()
     await run_until_success('mkdir /tmp/test-registry')
@@ -579,12 +593,67 @@ async def validate_docker_logins(model):
     )
 
     # Create registry
-    test_registry = os.path.join(here, 'templates', 'test-registry', 'test-registry.yaml')
-    await scp_to(test_registry, vessel, '/tmp/test-registry')
-    await kubectl('create -f /tmp/test-registry/test-registry.yaml')
-    output = await kubectl('get svc test-registry -o json')
-    data = json.loads(output)
-    registry_port = data['spec']['ports'][0]['nodePort']
+    nodes = await kubectl_get('nodes')
+    node_hostname = nodes['items'][0]['metadata']['labels']['kubernetes.io/hostname']
+    await kubectl_create({
+        'apiVersion': 'v1',
+        'kind': 'Pod',
+        'metadata': {
+            'name': 'test-registry',
+            'labels': {
+                'app': 'test-registry'
+            }
+        },
+        'spec': {
+            'containers': [{
+                'name': 'registry',
+                'image': 'registry:2.6.2',
+                'ports': [{
+                    'containerPort': 5000,
+                    'protocol': 'TCP'
+                }],
+                'env': [
+                    {'name': 'REGISTRY_AUTH_HTPASSWD_REALM', 'value': 'test-registry'},
+                    {'name': 'REGISTRY_AUTH_HTPASSWD_PATH', 'value': '/test-registry/htpasswd'},
+                    {'name': 'REGISTRY_HTTP_TLS_KEY', 'value': '/test-registry/tls.key'},
+                    {'name': 'REGISTRY_HTTP_TLS_CERTIFICATE', 'value': '/test-registry/tls.crt'}
+                ],
+                'volumeMounts': [{
+                    'name': 'test-registry',
+                    'mountPath': '/test-registry'
+                }]
+            }],
+            'volumes': [{
+                'name': 'test-registry',
+                'secret': {
+                    'secretName': 'test-registry'
+                }
+            }],
+            'nodeSelector': {
+                'kubernetes.io/hostname': node_hostname
+            }
+        }
+    })
+    await kubectl_create({
+        'apiVersion': 'v1',
+        'kind': 'Service',
+        'metadata': {
+            'name': 'test-registry'
+        },
+        'spec': {
+            'type': 'NodePort',
+            'selector': {
+                'app': 'test-registry'
+            },
+            'ports': [{
+                'protocol': 'TCP',
+                'port': 5000,
+                'targetPort': 5000
+            }]
+        }
+    })
+    registry_service = await kubectl_get('service test-registry')
+    registry_port = registry_service['spec']['ports'][0]['nodePort']
     registry_url = 'localhost:%s' % registry_port
 
     # Upload test container
@@ -602,7 +671,7 @@ async def validate_docker_logins(model):
     await run_until_success(cmd)
 
     # Create test pod using our registry
-    pod_def = {
+    await kubectl_create({
         'apiVersion': 'v1',
         'kind': 'Pod',
         'metadata': {
@@ -615,12 +684,7 @@ async def validate_docker_logins(model):
                 'command': ['sleep', '3600']
             }]
         }
-    }
-    with NamedTemporaryFile('w') as f:
-        json.dump(pod_def, f)
-        f.flush()
-        await scp_to(f.name, vessel, '/tmp/test-registry/test-registry-user.yaml')
-    await kubectl('create -f /tmp/test-registry/test-registry-user.yaml')
+    })
 
     # Verify pod fails image pull
     await wait_for_test_pod_state('waiting', 'ImagePullBackOff')
