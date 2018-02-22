@@ -593,8 +593,6 @@ async def validate_docker_logins(model):
     )
 
     # Create registry
-    nodes = await kubectl_get('nodes')
-    node_hostname = nodes['items'][0]['metadata']['labels']['kubernetes.io/hostname']
     await kubectl_create({
         'apiVersion': 'v1',
         'kind': 'Pod',
@@ -614,24 +612,33 @@ async def validate_docker_logins(model):
                 }],
                 'env': [
                     {'name': 'REGISTRY_AUTH_HTPASSWD_REALM', 'value': 'test-registry'},
-                    {'name': 'REGISTRY_AUTH_HTPASSWD_PATH', 'value': '/test-registry/htpasswd'},
-                    {'name': 'REGISTRY_HTTP_TLS_KEY', 'value': '/test-registry/tls.key'},
-                    {'name': 'REGISTRY_HTTP_TLS_CERTIFICATE', 'value': '/test-registry/tls.crt'}
+                    {'name': 'REGISTRY_AUTH_HTPASSWD_PATH', 'value': '/secret/htpasswd'},
+                    {'name': 'REGISTRY_HTTP_TLS_KEY', 'value': '/secret/tls.key'},
+                    {'name': 'REGISTRY_HTTP_TLS_CERTIFICATE', 'value': '/secret/tls.crt'}
                 ],
-                'volumeMounts': [{
-                    'name': 'test-registry',
-                    'mountPath': '/test-registry'
-                }]
+                'volumeMounts': [
+                    {
+                        'name': 'secret',
+                        'mountPath': '/secret'
+                    },
+                    {
+                        'name': 'data',
+                        'mountPath': '/var/lib/registry'
+                    }
+                ]
             }],
-            'volumes': [{
-                'name': 'test-registry',
-                'secret': {
-                    'secretName': 'test-registry'
+            'volumes': [
+                {
+                    'name': 'secret',
+                    'secret': {
+                        'secretName': 'test-registry'
+                    }
+                },
+                {
+                    'name': 'data',
+                    'emptyDir': {}
                 }
-            }],
-            'nodeSelector': {
-                'kubernetes.io/hostname': node_hostname
-            }
+            ]
         }
     })
     await kubectl_create({
