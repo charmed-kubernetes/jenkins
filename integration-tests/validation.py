@@ -577,7 +577,7 @@ async def validate_docker_logins(model):
 
     # Start with a clean environment
     await cleanup()
-    await run_until_success('mkdir /tmp/test-registry')
+    await run_until_success('mkdir -p /tmp/test-registry')
     await run_until_success('chown ubuntu:ubuntu /tmp/test-registry')
 
     # Create registry secret
