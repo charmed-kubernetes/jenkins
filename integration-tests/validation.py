@@ -527,17 +527,17 @@ async def validate_docker_logins(model):
     @log_calls_async
     async def wait_for_test_pod_state(desired_state, desired_reason=None):
         while True:
-            cmd = 'get po test-registry-user -o json'
-            output = await kubectl(cmd)
-            data = json.loads(output)
-            container_status = data['status']['containerStatuses'][0]
-            state, details = list(container_status['state'].items())[0]
-            if desired_reason:
-                reason = details.get('reason')
-                if state == desired_state and reason == desired_reason:
+            data = await kubectl_get('po test-registry-user')
+            status = data['status']
+            if 'containerStatuses' in status:
+                container_status = status['containerStatuses'][0]
+                state, details = list(container_status['state'].items())[0]
+                if desired_reason:
+                    reason = details.get('reason')
+                    if state == desired_state and reason == desired_reason:
+                        break
+                elif state == desired_state:
                     break
-            elif state == desired_state:
-                break
             await asyncio.sleep(1)
 
     @log_calls_async
