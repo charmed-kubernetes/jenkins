@@ -10,7 +10,7 @@ sudo snap install juju --classic
 sudo snap install conjure-up --classic
 sudo pip2 install 'git+https://github.com/juju/juju-crashdump'
 sudo pip2 install -U pyopenssl bundletester
-sudo pip3 install -U pytest  pytest-asyncio asyncio_extras juju==0.6.1 requests pyyaml kubernetes
+sudo pip3 install -U pytest  pytest-asyncio asyncio_extras juju==0.7.2 requests pyyaml kubernetes
 sudo pip3 install -U 'git+https://github.com/juju/amulet' # we need https://github.com/juju/amulet/pull/183
 
 # Leaving those here in case we need to build a client from bleeding edge
