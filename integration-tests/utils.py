@@ -244,15 +244,20 @@ async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=N
         bundle_dir = os.path.join(temp_dir, 'bundle')
         cmd = ['charm', 'pull', '--channel', channel, url, bundle_dir]
         await asyncify(subprocess.check_call)(cmd)
+        data_path = os.path.join(bundle_dir, 'bundle.yaml')
+        with open(data_path) as f:
+            data = yaml.load(f)
         if snap_channel:
-            data_path = os.path.join(bundle_dir, 'bundle.yaml')
-            with open(data_path) as f:
-                data = yaml.load(f)
             for app in ['kubernetes-master', 'kubernetes-worker']:
                 options = data['services'][app].setdefault('options', {})
                 options['channel'] = snap_channel
-            with open(data_path, 'w') as f:
-                yaml.dump(data, f)
+        if await is_localhost():
+            if 'options' not in data['services']['kubernetes-worker']:
+                data['services']['kubernetes-worker'].setdefault('options', {})
+            options = data['services']['kubernetes-worker']['options']
+            options['proxy-extra-args'] = "proxy-mode=userspace"
+        with open(data_path, 'w') as f:
+            yaml.dump(data, f)
         await model.deploy(bundle_dir)
     await wait_for_ready(model)
 
