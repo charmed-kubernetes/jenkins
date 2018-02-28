@@ -253,8 +253,8 @@ async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=N
                 options['channel'] = snap_channel
         if await is_localhost():
             if 'options' not in data['services']['kubernetes-worker']:
-                data['services'][app].setdefault('options', {})
-            options = data['services'][app]['options']
+                data['services']['kubernetes-worker'].setdefault('options', {})
+            options = data['services']['kubernetes-worker']['options']
             options['proxy-extra-args'] = "proxy-mode=userspace"
         with open(data_path, 'w') as f:
             yaml.dump(data, f)
