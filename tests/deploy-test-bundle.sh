@@ -14,7 +14,7 @@ BUNDLE=${2:-"canonical-kubernetes"}
 # Create a model just for this run of the tests.
 juju add-model ${MODEL}
 # Set test mode on the deployment so we dont bloat charm-store deployment count
-juju model-config -m ${MODEL} test-mode=1
+juju model-config -m ${MODEL} test-mode=true
 
 # Deploy the kubernetes bundle.
 juju deploy ${BUNDLE}

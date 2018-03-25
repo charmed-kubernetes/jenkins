@@ -38,7 +38,7 @@ if [ ${RUN_TESTS} = true ]; then
   # Catch all EXITs from this script and make sure to destroy the model.
   trap "juju destroy-model -y ${MODEL} || true" EXIT
   # Set test mode on the deployment so we dont bloat charm-store deployment count
-  juju model-config -m ${MODEL} test-mode=1
+  juju model-config -m ${MODEL} test-mode=true
   juju switch ${MODEL}
   bundletester -vF -l DEBUG -t ${JUJU_REPOSITORY}/builds/canal -o report.xml -r xml
 fi
