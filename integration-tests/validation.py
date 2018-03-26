@@ -343,7 +343,7 @@ async def validate_extra_args(model):
 
         await app.set_config(new_config)
 
-        with timeout_for_current_task(180):
+        with timeout_for_current_task(600):
             for service, expected_service_args in expected_args.items():
                 while True:
                     args_per_unit = await get_service_args(app, service)
@@ -357,7 +357,7 @@ async def validate_extra_args(model):
         }
         await app.set_config(filtered_original_config)
 
-        with timeout_for_current_task(180):
+        with timeout_for_current_task(600):
             for service, original_service_args in original_args.items():
                 while True:
                     new_args = await get_service_args(app, service)
@@ -469,7 +469,7 @@ async def validate_sans(model):
         await lb.set_config({'extra_sans': example_domain})
 
     # wait for server certs to update
-    deadline = time.time() + 180
+    deadline = time.time() + 600
     while time.time() < deadline:
         certs = await get_server_certs()
         if all(example_domain in cert for cert in certs):
@@ -484,7 +484,7 @@ async def validate_sans(model):
         await lb.set_config({'extra_sans': ''})
 
     # verify it went away
-    deadline = time.time() + 180
+    deadline = time.time() + 600
     while time.time() < deadline:
         certs = await get_server_certs()
         if not any(example_domain in cert for cert in certs):
