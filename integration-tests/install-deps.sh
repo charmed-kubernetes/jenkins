@@ -5,8 +5,9 @@ set -eux
 # Can be run again to upgrade dependencies.
 
 sudo apt update -yq
-sudo apt install -y unzip python3-pip python-pip squashfuse snapd charm-tools
+sudo apt install -y unzip python3-pip python-pip squashfuse snapd
 sudo snap install juju --classic
+sudo snap install charm
 sudo snap install conjure-up --classic
 sudo pip2 install 'git+https://github.com/juju/juju-crashdump'
 sudo pip2 install -U pyopenssl bundletester
