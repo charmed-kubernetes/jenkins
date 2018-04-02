@@ -52,13 +52,15 @@ function wait_for_ready() {
   local cmd='juju status'
   local sleep_seconds=30
   local start_time=`date +"%s"`
-  lines=$(${cmd} | grep  -e "waiting" -e "executing" -e "maintenance" -e "blocked" -e "error" | wc -l)
+  # NB: If lines == 0, grep $? > 0 (wc -l got no lines). This will fail scripts
+  # with set -e, but it's valid for us to have 0 lines here. Use || true to
+  # ensure we don't error out of this function unintentionally.
+  lines=$(${cmd} | grep  -e "waiting" -e "executing" -e "maintenance" -e "blocked" -e "error" | wc -l) || true
   until (( $lines <= 0 )); do
     # Check the time so this does not loop forever.
     check_time ${start_time} ${MAXIMUM_WAIT_SECONDS}
     sleep ${sleep_seconds}
     lines=$(${cmd} | grep  -e "waiting" -e "executing" -e "maintenance" -e "blocked" -e "error" | wc -l) || true
-    # if lines == 0 then $? > 0 because wc -l got no lines. We should not return this code.
   done
 }
 
