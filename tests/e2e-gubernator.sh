@@ -26,7 +26,7 @@ export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/build/charms
 
 mkdir -p ${JUJU_REPOSITORY}
 # Catch all EXITs from this script and make sure to destroy the model.
-trap "sleep 10 && juju destroy-model -m ${CONTROLLER}:${MODEL} -y" EXIT
+trap "sleep 10 && juju destroy-model -y ${CONTROLLER}:${MODEL}" EXIT
 
 # Deploy the bundle and add the kubernetes-e2e charm.
 ${SCRIPT_DIRECTORY}/tests/deploy-test-bundle.sh ${CONTROLLER} ${MODEL} ${BUNDLE}
