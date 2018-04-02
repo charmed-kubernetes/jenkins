@@ -31,7 +31,7 @@ juju status -m ${CONTROLLER}:${MODEL}
 
 # Wait in 10 second increments for "KubeDNS" to show up in cluster-info output.
 run_and_wait \
-  "juju run -m ${CONTROLLER}:${MODEL} --application kubernetes-master '/snap/bin/kubectl cluster-info'" \
+  "juju run -m ${CONTROLLER}:${MODEL} --application kubernetes-master /snap/bin/kubectl cluster-info" \
   "KubeDNS" \
   10
 
