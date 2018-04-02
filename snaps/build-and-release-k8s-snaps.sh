@@ -24,7 +24,7 @@ rm -rf ./release
 git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
 (cd release/snap
   make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
-    targets="kubeadm kube-apiserver kubectl kubefed kubelet kube-proxy kube-scheduler"
+    targets="kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler"
   make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="amd64" \
     targets="kube-controller-manager kubernetes-test"
 )
@@ -51,7 +51,7 @@ for arch in $KUBE_ARCH; do
   (cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH=${arch})
 done
 
-for app in kubeadm kube-apiserver kubectl kubefed kubelet kube-proxy kube-scheduler; do
+for app in kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler; do
   for arch in $KUBE_ARCH; do
     retry snapcraft push release/snap/build/${app}_${KUBE_VERSION:1}_${arch}.snap --release ${MAIN_VERSION}/edge
   done
