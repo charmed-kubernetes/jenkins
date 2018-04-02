@@ -7,23 +7,27 @@ set -o xtrace  # Print the commands that are executed.
 
 echo "${0} started at `date`."
 
-# The first argument is the output directory.
-OUTPUT_DIRECTORY=${1:-"artifacts"}
+# First argument is the controller name for this build.
+CONTROLLER=${1:-"controller-is-undefined"}
+# Second argument is the model name for this build.
+MODEL=${2:-"model-is-undefined"}
+# Third argument is the output directory.
+OUTPUT_DIRECTORY=${3:-"artifacts"}
 
 # Create the output directory.
 mkdir -p ${OUTPUT_DIRECTORY}
 
 # Run the e2e test action.
-ACTION_ID=$(juju run-action kubernetes-e2e/0 test | cut -d " " -f 5)
-# Wait 2 hour for the action to complete.
-juju show-action-output --wait=2h ${ACTION_ID}
-# Print out the action result.
-outcome=`juju show-action-output ${ACTION_ID}`
-echo $outcome
+ACTION_ID=$(juju run-action -m ${CONTROLLER}:${MODEL} kubernetes-e2e/0 test | cut -d " " -f 5)
+# Show the action results (wait up to 2 hours for the action to finish)
+outcome=$(juju show-action-output -m ${CONTROLLER}:${MODEL} --wait=2h ${ACTION_ID})
+echo ${outcome}
 
 # Download results from the charm and move them to the the volume directory.
-juju scp kubernetes-e2e/0:${ACTION_ID}.log.tar.gz e2e.log.tar.gz
-juju scp kubernetes-e2e/0:${ACTION_ID}-junit.tar.gz e2e-junit.tar.gz
+juju scp -m ${CONTROLLER}:${MODEL} kubernetes-e2e/0:${ACTION_ID}.log.tar.gz \
+  e2e.log.tar.gz
+juju scp -m ${CONTROLLER}:${MODEL} kubernetes-e2e/0:${ACTION_ID}-junit.tar.gz \
+  e2e-junit.tar.gz
 
 if [[ "$outcome" == *"failed"* ]]
 then
