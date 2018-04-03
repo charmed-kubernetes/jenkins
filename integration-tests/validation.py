@@ -236,6 +236,32 @@ async def validate_e2e_tests(model, log_dir):
     assert action.status == 'completed'
 
 
+async def verify_deleted(unit, entity_type, name, extra_args=''):
+    cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
+    output = await unit.run(cmd)
+    out_list = json.loads(output.results['Stdout'])
+    for item in out_list['items']:
+        if item['metadata']['name'] == name:
+            return False
+    return True
+
+
+async def verify_ready(unit, entity_type, name_list, extra_args=''):
+    cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
+    output = await unit.run(cmd)
+    out_list = json.loads(output.results['Stdout'])
+    found_names = 0
+    for item in out_list['items']:
+        if item['metadata']['name'] in name_list:
+            if item['status']['phase'] == 'Running' or item['status']['phase'] == 'Active':
+                found_names += 1
+            else:
+                return False
+    if found_names == len(name_list):
+        return True
+    return False
+
+
 @log_calls_async
 async def validate_network_policies(model):
     ''' Apply network policy and use two busyboxes to validate it. '''
@@ -245,13 +271,28 @@ async def validate_network_policies(model):
     # Clean-up namespace from any previous runs.
     cmd = await unit.run('/snap/bin/kubectl delete ns netpolicy')
     assert cmd.status == 'completed'
+    log('Waiting for pods to finish terminating...')
+    deadline = time.time() + 600
+    while time.time() < deadline:
+        if await verify_deleted(unit, 'ns', 'netpolicy'):
+            break
+        await asyncio.sleep(5)
+    else:
+        raise TimeoutError('Unable to remove the namespace netpolicy before timeout')
 
-    # Move menaifests to the master
+    # Move manifests to the master
     await scp_to(os.path.join(here, "templates", "netpolicy-test.yaml"), unit, "netpolicy-test.yaml")
     await scp_to(os.path.join(here, "templates", "restrict.yaml"), unit, "restrict.yaml")
     cmd = await unit.run('/snap/bin/kubectl create -f /home/ubuntu/netpolicy-test.yaml')
-    assert cmd.status == 'completed'
-    await asyncio.sleep(10)
+    assert cmd.status == 'completed' and cmd.results['Code'] == '0'
+    log('Waiting for pods to show up...')
+    deadline = time.time() + 600
+    while time.time() < deadline:
+        if await verify_ready(unit, 'po', ['bboxgood','bboxbad'], '-n netpolicy'):
+            break
+        await asyncio.sleep(5)
+    else:
+        raise TimeoutError('Unable to create pods for network policy test')
 
     # Try to get to nginx from both busyboxes.
     # We expect no failures since we have not applied the policy yet.
