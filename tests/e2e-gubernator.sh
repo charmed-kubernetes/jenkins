@@ -10,6 +10,7 @@ source "utils/retry.sh"
 
 # The cloud is an option for this script, default to gce.
 CLOUD=${CLOUD:-"gce"}
+CONTROLLER=${CONTROLLER:-"jenkins-ci-google"}
 # The directory to use for this script, should be WORKSPACE, but can be PWD.
 SCRIPT_DIRECTORY=${WORKSPACE:-${PWD}}
 
@@ -25,18 +26,18 @@ export JUJU_REPOSITORY=${SCRIPT_DIRECTORY}/build/charms
 
 mkdir -p ${JUJU_REPOSITORY}
 # Catch all EXITs from this script and make sure to destroy the model.
-trap "sleep 10 && juju destroy-model -y ${MODEL}" EXIT
+trap "sleep 10 && juju destroy-model -y ${CONTROLLER}:${MODEL}" EXIT
 
 # Deploy the bundle and add the kubernetes-e2e charm.
-${SCRIPT_DIRECTORY}/tests/deploy-test-bundle.sh ${MODEL} ${BUNDLE}
+${SCRIPT_DIRECTORY}/tests/deploy-test-bundle.sh ${CONTROLLER} ${MODEL} ${BUNDLE}
 
 # Let the deployment complete.
-${SCRIPT_DIRECTORY}/tests/wait-cluster-ready.sh
+${SCRIPT_DIRECTORY}/tests/wait-cluster-ready.sh ${CONTROLLER} ${MODEL}
 
 # Run the end to end tests and copy results to the output directory.
 # Retry 3 times. The second and third retries should be quick since
 # we have any images cached
-retry ${SCRIPT_DIRECTORY}/tests/run-e2e-tests.sh ${OUTPUT_DIRECTORY}
+retry ${SCRIPT_DIRECTORY}/tests/run-e2e-tests.sh ${CONTROLLER} ${MODEL} ${OUTPUT_DIRECTORY}
 
 # Formats the output data and upload to GCE.
 ${SCRIPT_DIRECTORY}/tests/upload-e2e-results-to-gubernator.sh ${OUTPUT_DIRECTORY}

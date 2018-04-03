@@ -40,7 +40,7 @@ function run_and_wait() {
   local sleep_seconds=${3:-5}
   local start_time=`date +"%s"`
   # Run the command in a loop looking for output.
-  until $(${cmd} | grep -q "${match}"); do 
+  until $(${cmd} | grep -q "${match}"); do
     # Check the time so this does not loop forever.
     check_time ${start_time} ${MAXIMUM_WAIT_SECONDS}
     sleep ${sleep_seconds}
@@ -49,7 +49,7 @@ function run_and_wait() {
 
 # Wait for deployment to get ready.
 function wait_for_ready() {
-  local cmd='juju status'
+  local cmd=${1:-"juju status"}
   local sleep_seconds=30
   local start_time=`date +"%s"`
   # NB: If lines == 0, grep $? > 0 (wc -l got no lines). This will fail scripts
