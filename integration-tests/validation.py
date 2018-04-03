@@ -257,9 +257,7 @@ async def verify_ready(unit, entity_type, name_list, extra_args=''):
                 found_names += 1
             else:
                 return False
-    if found_names == len(name_list):
-        return True
-    return False
+    return found_names == len(name_list)
 
 
 @log_calls_async
