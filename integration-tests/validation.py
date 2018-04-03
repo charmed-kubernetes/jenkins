@@ -101,7 +101,7 @@ async def validate_rbac(model):
     worker = model.applications['kubernetes-worker'].units[0]
     output = await worker.run(cmd)
     assert output.status == 'completed'
-    assert "forbidden" in output.data['results']['Stderr']
+    assert "forbidden" in output.data['results']['Stderr'].lower()
     await app.set_config({'authorization-mode': 'AlwaysAllow'})
     await wait_for_process(model, 'AlwaysAllow')
     output = await worker.run(cmd)
