@@ -191,6 +191,16 @@ async def validate_dashboard(model, log_dir):
     else:
         url = '%s/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login'
     url %= config['clusters'][0]['cluster']['server']
+
+    log('Waiting for dashboard to stabilize...')
+    deadline = time.time() + 600
+    while time.time() < deadline:
+        if await verify_ready(unit, 'po', ['kubernetes-dashboard'], '-n kube-system'):
+            break
+        await asyncio.sleep(5)
+    else:
+        raise TimeoutError('Unable to find kubernetes dashboard before timeout')
+    
     resp = await asyncify(requests.get)(url, auth=auth, verify=False)
     assert resp.status_code == 200
     assert "Dashboard" in resp.text
@@ -255,13 +265,17 @@ async def verify_deleted(unit, entity_type, name, extra_args=''):
     return True
 
 
+# note that name_list is a list of entities(pods, services, etc) being searched
+# and that partial matches work. If you have a pod with random characters at the
+# end due to being in a deploymnet, you can add just the name of the deployment
+# and it will still match
 async def verify_ready(unit, entity_type, name_list, extra_args=''):
     cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
     output = await unit.run(cmd)
     out_list = json.loads(output.results['Stdout'])
     found_names = 0
     for item in out_list['items']:
-        if item['metadata']['name'] in name_list:
+        if any(n in item['metadata']['name'] for n in name_list):
             if item['status']['phase'] == 'Running' or item['status']['phase'] == 'Active':
                 found_names += 1
             else:
