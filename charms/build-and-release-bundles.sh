@@ -9,7 +9,7 @@ release-bundle() {
   CS_PATH="$2"
   PUSH_CMD="/usr/bin/charm push $LOCAL_PATH $CS_PATH"
   REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
-  /usr/bin/charm publish --channel edge ${REVISION}
+  /usr/bin/charm release --channel edge ${REVISION}
 }
 
 bundle/bundle -o ./bundles/cdk-flannel -c edge k8s/cdk cni/flannel

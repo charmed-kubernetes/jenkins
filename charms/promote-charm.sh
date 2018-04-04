@@ -26,5 +26,5 @@ for resource in $RESOURCES; do
 done
 
 (set +u # allows expansion of empty RESOURCE_ARGS
-  charm publish "$CHARM_ID" --channel "$TO_CHANNEL" "${RESOURCE_ARGS[@]}"
+  charm release "$CHARM_ID" --channel "$TO_CHANNEL" "${RESOURCE_ARGS[@]}"
 )
