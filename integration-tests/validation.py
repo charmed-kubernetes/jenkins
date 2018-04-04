@@ -200,8 +200,16 @@ async def validate_dashboard(model, log_dir):
         await asyncio.sleep(5)
     else:
         raise TimeoutError('Unable to find kubernetes dashboard before timeout')
-    
-    resp = await asyncify(requests.get)(url, auth=auth, verify=False)
+
+    # retry up to 5 times
+    checks = 5
+    while checks > 0:
+        checks -= 1
+        resp = await asyncify(requests.get)(url, auth=auth, verify=False)
+        if resp.status_code == 200 and "Dashboard" in resp.text:
+            break
+        await asyncio.sleep(5)
+
     assert resp.status_code == 200
     assert "Dashboard" in resp.text
 
