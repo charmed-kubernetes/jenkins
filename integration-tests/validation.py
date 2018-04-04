@@ -313,6 +313,9 @@ async def validate_network_policies(model):
     await scp_to(os.path.join(here, "templates", "netpolicy-test.yaml"), unit, "netpolicy-test.yaml")
     await scp_to(os.path.join(here, "templates", "restrict.yaml"), unit, "restrict.yaml")
     cmd = await unit.run('/snap/bin/kubectl create -f /home/ubuntu/netpolicy-test.yaml')
+    if not cmd.results['Code'] == '0':
+        log('Failed to create netpolicy test!')
+        log(cmd.results)
     assert cmd.status == 'completed' and cmd.results['Code'] == '0'
     log('Waiting for pods to show up...')
     deadline = time.time() + 600
