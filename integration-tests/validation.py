@@ -578,20 +578,22 @@ async def validate_docker_logins(model):
     app = model.applications['kubernetes-worker']
     vessel = app.units[0]
 
-    async def run_until_success(cmd):
+    async def run_until_success(cmd, timeout=None):
         while True:
-            action = await vessel.run(cmd)
-            assert action.status == 'completed'
-            if action.data['results']['Code'] == '0':
+            action = await vessel.run(cmd, timeout=timeout)
+            if (action.status == 'completed' and
+                    'results' in action.data and
+                    action.data['results']['Code'] == '0'):
                 return action.data['results']['Stdout']
             else:
-                log('Command failed on unit ' + vessel.entity_id)
+                log('Action ' + action.status + '. Command failed on unit ' + vessel.entity_id)
                 log('cmd: ' + cmd)
-                log('code: ' + action.data['results']['Code'])
-                log('stdout:\n' + action.data['results']['Stdout'].strip())
-                log('stderr:\n' + action.data['results']['Stderr'].strip())
-                log('Will retry...')
-                await asyncio.sleep(1)
+                if 'results' in action.data:
+                    log('code: ' + action.data['results']['Code'])
+                    log('stdout:\n' + action.data['results']['Stdout'].strip())
+                    log('stderr:\n' + action.data['results']['Stderr'].strip())
+                    log('Will retry...')
+                await asyncio.sleep(5)
 
     async def kubectl(cmd):
         cmd = '/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig ' + cmd
@@ -737,9 +739,18 @@ async def validate_docker_logins(model):
     registry_port = registry_service['spec']['ports'][0]['nodePort']
     registry_url = 'localhost:%s' % registry_port
 
+    log('Waiting for service to come up...')
+    while True:
+        svc_output = await kubectl('get svc')
+        po_output = await kubectl('get po')
+        if 'test-registry' in po_output and 'test-registry' in svc_output:
+            break
+        await asyncio.sleep(10)
+    log('Start testing...')
+
     # Upload test container
     cmd = 'docker login %s -u test-user -p yyDVinHE' % registry_url
-    await run_until_success(cmd)
+    await run_until_success(cmd, 60*1000*1000*1000)
     cmd = 'docker pull ubuntu:16.04'
     await run_until_success(cmd)
     cmd = 'docker tag ubuntu:16.04 %s/ubuntu:16.04' % registry_url
@@ -749,7 +760,7 @@ async def validate_docker_logins(model):
     cmd = 'docker rmi %s/ubuntu:16.04' % registry_url
     await run_until_success(cmd)
     cmd = 'docker logout %s' % registry_url
-    await run_until_success(cmd)
+    await run_until_success(cmd, 60*1000*1000*1000)
 
     # Create test pod using our registry
     await kubectl_create({
