@@ -596,18 +596,19 @@ async def validate_docker_logins(model):
     @log_calls_async
     async def cleanup():
         await app.set_config({'docker-logins': '[]'})
+        await kubectl_delete('svc test-registry')
         await kubectl_delete('po test-registry-user')
         await kubectl_delete('po test-registry')
-        await kubectl_delete('svc test-registry')
-        await kubectl_delete('secret test-registry')
-        cmd = 'rm -rf /tmp/test-registry'
-        await run_until_success(cmd)
+        # wait for the pods to clear before removing the mounted secrets
         log('Waiting for pods to finish terminating...')
         while True:
             output = await kubectl('get po')
             if 'test-registry' not in output:
                 break
             await asyncio.sleep(1)
+        await kubectl_delete('secret test-registry')
+        cmd = 'rm -rf /tmp/test-registry'
+        await run_until_success(cmd)
 
     @log_calls_async
     async def kubectl_get(target):
