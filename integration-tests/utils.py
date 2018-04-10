@@ -132,7 +132,13 @@ def apply_profile(model_name):
     '''
     here = os.path.dirname(os.path.abspath(__file__))
     profile = os.path.join(here, "templates", "lxd-profile.yaml")
-    cmd ='sed "s/##MODEL##/{0}/" "{1}" | lxc profile edit "juju-{0}"'.format(model_name, profile)
+    lxc_aa_profile="lxc.aa_profile"
+    cmd ='lxc --version'
+    version = check_output(['bash', '-c', cmd])
+    if version.decode('utf-8').startswith('3.'):
+        lxc_aa_profile="lxc.apparmor.profile"
+    cmd ='sed -e "s/##MODEL##/{0}/" -e "s/##AA_PROFILE##/{1}/" "{2}" | ' \
+         'lxc profile edit "juju-{0}"'.format(model_name, lxc_aa_profile, profile)
     return check_output(['bash', '-c', cmd])
 
 
