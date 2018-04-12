@@ -328,28 +328,39 @@ async def validate_network_policies(model):
 
     # Try to get to nginx from both busyboxes.
     # We expect no failures since we have not applied the policy yet.
-    query_from_bad="/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=3  nginx.netpolicy"
-    query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=3  nginx.netpolicy"
-    cmd = await unit.run(query_from_good)
-    assert cmd.status == 'completed'
-    assert "index.html" in cmd.data['results']['Stderr']
-    cmd = await unit.run(query_from_bad)
-    assert cmd.status == 'completed'
-    assert "index.html" in cmd.data['results']['Stderr']
+    query_from_bad = "/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy"
+    query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy"
+    for attempt in range(1, 5):
+        log("Reaching out to nginx.netpolicy with no restrictions (attempt {})".format(attempt))
+        cmd_good = await unit.run(query_from_good)
+        cmd_bad = await unit.run(query_from_bad)
+        if (cmd_good.status == 'completed' and
+                cmd_bad.status == 'completed' and
+                "index.html" in cmd_good.data['results']['Stderr'] and
+                "index.html" in cmd_bad.data['results']['Stderr']):
+            break
+    else:
+        raise TimeoutError('Failed to query nginx.netpolicy even before applying restrictions.')
 
     # Apply network policy and retry getting to nginx.
     # This time the policy should block us.
     cmd = await unit.run('/snap/bin/kubectl create -f /home/ubuntu/restrict.yaml')
     assert cmd.status == 'completed'
     await asyncio.sleep(10)
-    query_from_bad="/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=3  nginx.netpolicy -O foo.html"
-    query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=3  nginx.netpolicy -O foo.html"
-    cmd = await unit.run(query_from_good)
-    assert cmd.status == 'completed'
-    assert "foo.html" in cmd.data['results']['Stderr']
-    cmd = await unit.run(query_from_bad)
-    assert cmd.status == 'completed'
-    assert "timed out" in cmd.data['results']['Stderr']
+
+    query_from_bad="/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
+    query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
+    for attempt in range(1, 5):
+        log("Reaching out to nginx.netpolicy with restrictions (attempt {})".format(attempt))
+        cmd_good = await unit.run(query_from_good)
+        cmd_bad = await unit.run(query_from_bad)
+        if (cmd_good.status == 'completed' and
+                cmd_bad.status == 'completed' and
+                "foo.html" in cmd_good.data['results']['Stderr'] and
+                "timed out" in cmd_bad.data['results']['Stderr']):
+            break
+    else:
+        raise TimeoutError('Failed query restricted nginx.netpolicy.')
 
     # Clean-up namespace from next runs.
     cmd = await unit.run('/snap/bin/kubectl delete ns netpolicy')
