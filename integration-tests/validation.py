@@ -2,15 +2,22 @@ import asyncio
 import json
 import os
 import requests
-import time
 import traceback
 import yaml
 import re
 
 from logger import log, log_calls, log_calls_async
 from tempfile import NamedTemporaryFile
-from utils import assert_no_unit_errors, asyncify, wait_for_ready
-from utils import timeout_for_current_task, scp_from, scp_to, is_localhost
+from utils import (
+    assert_no_unit_errors,
+    asyncify,
+    wait_for_ready,
+    timeout_for_current_task,
+    scp_from,
+    scp_to,
+    is_localhost,
+    retry_async_with_timeout,
+)
 
 
 @log_calls_async
@@ -193,25 +200,18 @@ async def validate_dashboard(model, log_dir):
     url %= config['clusters'][0]['cluster']['server']
 
     log('Waiting for dashboard to stabilize...')
-    deadline = time.time() + 600
-    while time.time() < deadline:
-        if await verify_ready(unit, 'po', ['kubernetes-dashboard'], '-n kube-system'):
-            break
-        await asyncio.sleep(5)
-    else:
-        raise TimeoutError('Unable to find kubernetes dashboard before timeout')
-
-    # retry up to 5 times
-    checks = 5
-    while checks > 0:
-        checks -= 1
+    async def dashborad_present(url):
         resp = await asyncify(requests.get)(url, auth=auth, verify=False)
         if resp.status_code == 200 and "Dashboard" in resp.text:
-            break
-        await asyncio.sleep(5)
+            return True
+        return False
 
-    assert resp.status_code == 200
-    assert "Dashboard" in resp.text
+    retry_async_with_timeout(verify_ready,
+                             (unit, 'po', ['kubernetes-dashboard'], '-n kube-system'),
+                             timeout_msg="Unable to find kubernetes dashboard before timeout")
+
+    retry_async_with_timeout(dashborad_present, (url,),
+                             timeout_msg="Unable to reach dashboard")
 
 
 @log_calls_async
@@ -301,13 +301,10 @@ async def validate_network_policies(model):
     cmd = await unit.run('/snap/bin/kubectl delete ns netpolicy')
     assert cmd.status == 'completed'
     log('Waiting for pods to finish terminating...')
-    deadline = time.time() + 600
-    while time.time() < deadline:
-        if await verify_deleted(unit, 'ns', 'netpolicy'):
-            break
-        await asyncio.sleep(5)
-    else:
-        raise TimeoutError('Unable to remove the namespace netpolicy before timeout')
+
+    retry_async_with_timeout(verify_deleted,
+                             (unit, 'ns', 'netpolicy'),
+                             timeout_msg="Unable to remove the namespace netpolicy")
 
     # Move manifests to the master
     await scp_to(os.path.join(here, "templates", "netpolicy-test.yaml"), unit, "netpolicy-test.yaml")
@@ -318,29 +315,28 @@ async def validate_network_policies(model):
         log(cmd.results)
     assert cmd.status == 'completed' and cmd.results['Code'] == '0'
     log('Waiting for pods to show up...')
-    deadline = time.time() + 600
-    while time.time() < deadline:
-        if await verify_ready(unit, 'po', ['bboxgood','bboxbad'], '-n netpolicy'):
-            break
-        await asyncio.sleep(5)
-    else:
-        raise TimeoutError('Unable to create pods for network policy test')
+    retry_async_with_timeout(verify_ready,
+                             (unit, 'po', ['bboxgood', 'bboxbad'], '-n netpolicy'),
+                             timeout_msg="Unable to create pods for network policy test")
 
     # Try to get to nginx from both busyboxes.
     # We expect no failures since we have not applied the policy yet.
-    query_from_bad = "/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy"
-    query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy"
-    for attempt in range(1, 5):
-        log("Reaching out to nginx.netpolicy with no restrictions (attempt {})".format(attempt))
+    async def get_to_networkpolicy_service():
+        log("Reaching out to nginx.netpolicy with no restrictions")
+        query_from_bad = "/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy"
+        query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy"
         cmd_good = await unit.run(query_from_good)
         cmd_bad = await unit.run(query_from_bad)
         if (cmd_good.status == 'completed' and
                 cmd_bad.status == 'completed' and
                 "index.html" in cmd_good.data['results']['Stderr'] and
                 "index.html" in cmd_bad.data['results']['Stderr']):
-            break
-    else:
-        raise TimeoutError('Failed to query nginx.netpolicy even before applying restrictions.')
+            return True
+        return False
+
+    retry_async_with_timeout(get_to_networkpolicy_service, (),
+                             timeout_msg="Failed to query nginx.netpolicy even before applying restrictions")
+
 
     # Apply network policy and retry getting to nginx.
     # This time the policy should block us.
@@ -348,19 +344,21 @@ async def validate_network_policies(model):
     assert cmd.status == 'completed'
     await asyncio.sleep(10)
 
-    query_from_bad="/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
-    query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
-    for attempt in range(1, 5):
+    async def get_to_restricted_networkpolicy_service():
         log("Reaching out to nginx.netpolicy with restrictions (attempt {})".format(attempt))
+        query_from_bad="/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
+        query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
         cmd_good = await unit.run(query_from_good)
         cmd_bad = await unit.run(query_from_bad)
         if (cmd_good.status == 'completed' and
                 cmd_bad.status == 'completed' and
                 "foo.html" in cmd_good.data['results']['Stderr'] and
                 "timed out" in cmd_bad.data['results']['Stderr']):
-            break
-    else:
-        raise TimeoutError('Failed query restricted nginx.netpolicy.')
+            return True
+        return False
+
+    retry_async_with_timeout(get_to_restricted_networkpolicy_service, (),
+                             timeout_msg="Failed query restricted nginx.netpolicy")
 
     # Clean-up namespace from next runs.
     cmd = await unit.run('/snap/bin/kubectl delete ns netpolicy')
@@ -547,20 +545,26 @@ async def validate_sans(model):
 
         return results
 
+    async def all_certs_removed():
+        certs = await get_server_certs()
+        if not any(example_domain in cert for cert in certs):
+            return False
+        return True
+
+    async def all_certs_in_place():
+        certs = await get_server_certs()
+        if all(example_domain in cert for cert in certs):
+            return False
+        return True
+
     # add san to extra san list
     await app.set_config({'extra_sans': example_domain})
     if lb is not None:
         await lb.set_config({'extra_sans': example_domain})
 
     # wait for server certs to update
-    deadline = time.time() + 600
-    while time.time() < deadline:
-        certs = await get_server_certs()
-        if all(example_domain in cert for cert in certs):
-            break
-        await asyncio.sleep(3)
-    else:
-        raise TimeoutError('extra sans config did not propogate to server certs')
+    retry_async_with_timeout(all_certs_in_place, (),
+                             timeout_msg='extra sans config did not propogate to server certs')
 
     # now remove it
     await app.set_config({'extra_sans': ''})
@@ -568,14 +572,8 @@ async def validate_sans(model):
         await lb.set_config({'extra_sans': ''})
 
     # verify it went away
-    deadline = time.time() + 600
-    while time.time() < deadline:
-        certs = await get_server_certs()
-        if not any(example_domain in cert for cert in certs):
-            break
-        await asyncio.sleep(3)
-    else:
-        raise TimeoutError('extra sans config removal did not propogate to server certs')
+    retry_async_with_timeout(all_certs_removed, (),
+                             timeout_msg='extra sans config did not propogate to server certs')
 
     # reset back to what they had before
     await app.set_config({'extra_sans': original_config['extra_sans']['value']})
@@ -589,9 +587,12 @@ async def validate_docker_logins(model):
     app = model.applications['kubernetes-worker']
     vessel = app.units[0]
 
-    async def run_until_success(cmd, timeout=None):
+    async def run_until_success(cmd, timeout_insec=None):
         while True:
-            action = await vessel.run(cmd, timeout=timeout)
+            timeout_innano=None
+            if timeout_insec:
+                timeout_innano = timeout_insec * 1000*1000*1000
+            action = await vessel.run(cmd, timeout=timeout_innano)
             if (action.status == 'completed' and
                     'results' in action.data and
                     action.data['results']['Code'] == '0'):
@@ -761,7 +762,7 @@ async def validate_docker_logins(model):
 
     # Upload test container
     cmd = 'docker login %s -u test-user -p yyDVinHE' % registry_url
-    await run_until_success(cmd, 60*1000*1000*1000)
+    await run_until_success(cmd, timeout_insec=60)
     cmd = 'docker pull ubuntu:16.04'
     await run_until_success(cmd)
     cmd = 'docker tag ubuntu:16.04 %s/ubuntu:16.04' % registry_url
@@ -771,7 +772,7 @@ async def validate_docker_logins(model):
     cmd = 'docker rmi %s/ubuntu:16.04' % registry_url
     await run_until_success(cmd)
     cmd = 'docker logout %s' % registry_url
-    await run_until_success(cmd, 60*1000*1000*1000)
+    await run_until_success(cmd, timeout_insec=60)
 
     # Create test pod using our registry
     await kubectl_create({
