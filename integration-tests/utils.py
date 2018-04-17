@@ -399,3 +399,26 @@ def default_bundles():
         return 'canonical-kubernetes'
     else:
         return 'canonical-kubernetes-canal,kubernetes-core'
+
+
+async def retry_async_with_timeout(func, args, timeout_insec=600,
+                                   timeout_msg="Timeout exceeded",
+                                   retry_interval_insec=5):
+    '''
+    Retry a function until a timeout is exceeded. Function should
+    return either True or Flase
+    Args:
+        func: The function to be retried
+        args: Agruments of the function
+        timeout_insec: What the timeout is (in seconds)
+        timeout_msg: What to show in the timeout exception thrown
+        retry_interval_insec: The interval between two consecutive executions
+
+    '''
+    deadline = time.time() + timeout_insec
+    while time.time() < deadline:
+        if await func(*args):
+            break
+        await asyncio.sleep(retry_interval_insec)
+    else:
+        raise TimeoutError(timeout_msg)
