@@ -200,7 +200,7 @@ async def validate_dashboard(model, log_dir):
     url %= config['clusters'][0]['cluster']['server']
 
     log('Waiting for dashboard to stabilize...')
-    async def dashborad_present(url):
+    async def dashboard_present(url):
         resp = await asyncify(requests.get)(url, auth=auth, verify=False)
         if resp.status_code == 200 and "Dashboard" in resp.text:
             return True
@@ -210,7 +210,7 @@ async def validate_dashboard(model, log_dir):
                              (unit, 'po', ['kubernetes-dashboard'], '-n kube-system'),
                              timeout_msg="Unable to find kubernetes dashboard before timeout")
 
-    retry_async_with_timeout(dashborad_present, (url,),
+    retry_async_with_timeout(dashboard_present, (url,),
                              timeout_msg="Unable to reach dashboard")
 
 
