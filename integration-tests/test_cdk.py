@@ -5,12 +5,12 @@ from utils import juju_deploy, run_bundletester, default_bundles
 from validation import validate_all
 
 namespace = os.environ.get('TEST_CHARM_NAMESPACE', 'containers')
-test_charm_channel = os.environ.get('TEST_CHARM_CHANNEL', 'stable')
-test_snap_channel = os.environ.get('TEST_SNAP_CHANNEL', '1.9/stable')
+test_charm_channel = os.environ.get('TEST_CHARM_CHANNEL', 'edge')
+test_snap_channel = os.environ.get('TEST_SNAP_CHANNEL', 'edge')
 test_cloud = os.environ.get('TEST_CLOUD', '')
 bundles_csv = os.environ.get('TEST_BUNDLES', default_bundles())
 upgrade_from_snap_channel = os.environ.get('UPGRADE_FROM_SNAP_CHANNEL', 'stable')
-upgrade_from_charm_channel = os.environ.get('UPGRADE_FROM_CHARM_CHANNEL', 'edge')
+upgrade_from_charm_channel = os.environ.get('UPGRADE_FROM_CHARM_CHANNEL', 'stable')
 bundles = [bundle.strip() for bundle in bundles_csv.split(',')]
 
 
