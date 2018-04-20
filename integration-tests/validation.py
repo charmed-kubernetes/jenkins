@@ -345,7 +345,7 @@ async def validate_network_policies(model):
     await asyncio.sleep(10)
 
     async def get_to_restricted_networkpolicy_service():
-        log("Reaching out to nginx.netpolicy with restrictions (attempt {})".format(attempt))
+        log("Reaching out to nginx.netpolicy with restrictions")
         query_from_bad="/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
         query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
         cmd_good = await unit.run(query_from_good)
