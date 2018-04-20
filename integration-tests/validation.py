@@ -208,11 +208,11 @@ async def validate_dashboard(model, log_dir):
         return False
 
     await retry_async_with_timeout(verify_ready,
-                             (unit, 'po', ['kubernetes-dashboard'], '-n kube-system'),
-                             timeout_msg="Unable to find kubernetes dashboard before timeout")
+                                   (unit, 'po', ['kubernetes-dashboard'], '-n kube-system'),
+                                   timeout_msg="Unable to find kubernetes dashboard before timeout")
 
     await retry_async_with_timeout(dashboard_present, (url,),
-                             timeout_msg="Unable to reach dashboard")
+                                   timeout_msg="Unable to reach dashboard")
 
 
 @log_calls_async
@@ -306,8 +306,8 @@ async def validate_network_policies(model):
     log('Waiting for pods to finish terminating...')
 
     await retry_async_with_timeout(verify_deleted,
-                             (unit, 'ns', 'netpolicy'),
-                             timeout_msg="Unable to remove the namespace netpolicy")
+                                   (unit, 'ns', 'netpolicy'),
+                                   timeout_msg="Unable to remove the namespace netpolicy")
 
     # Move manifests to the master
     await scp_to(os.path.join(here, "templates", "netpolicy-test.yaml"), unit, "netpolicy-test.yaml")
@@ -319,8 +319,8 @@ async def validate_network_policies(model):
     assert cmd.status == 'completed' and cmd.results['Code'] == '0'
     log('Waiting for pods to show up...')
     await retry_async_with_timeout(verify_ready,
-                             (unit, 'po', ['bboxgood', 'bboxbad'], '-n netpolicy'),
-                             timeout_msg="Unable to create pods for network policy test")
+                                   (unit, 'po', ['bboxgood', 'bboxbad'], '-n netpolicy'),
+                                   timeout_msg="Unable to create pods for network policy test")
 
     # Try to get to nginx from both busyboxes.
     # We expect no failures since we have not applied the policy yet.
@@ -338,7 +338,7 @@ async def validate_network_policies(model):
         return False
 
     await retry_async_with_timeout(get_to_networkpolicy_service, (),
-                             timeout_msg="Failed to query nginx.netpolicy even before applying restrictions")
+                                   timeout_msg="Failed to query nginx.netpolicy even before applying restrictions")
 
 
     # Apply network policy and retry getting to nginx.
@@ -361,7 +361,7 @@ async def validate_network_policies(model):
         return False
 
     await retry_async_with_timeout(get_to_restricted_networkpolicy_service, (),
-                             timeout_msg="Failed query restricted nginx.netpolicy")
+                                   timeout_msg="Failed query restricted nginx.netpolicy")
 
     # Clean-up namespace from next runs.
     cmd = await unit.run('/snap/bin/kubectl delete ns netpolicy')
@@ -622,7 +622,7 @@ async def validate_sans(model):
 
     # wait for server certs to update
     await retry_async_with_timeout(all_certs_in_place, (),
-                             timeout_msg='extra sans config did not propogate to server certs')
+                                   timeout_msg='extra sans config did not propogate to server certs')
 
     # now remove it
     await app.set_config({'extra_sans': ''})
@@ -631,7 +631,7 @@ async def validate_sans(model):
 
     # verify it went away
     await retry_async_with_timeout(all_certs_removed, (),
-                             timeout_msg='extra sans config did not propogate to server certs')
+                                   timeout_msg='extra sans config did not propogate to server certs')
 
     # reset back to what they had before
     await app.set_config({'extra_sans': original_config['extra_sans']['value']})
