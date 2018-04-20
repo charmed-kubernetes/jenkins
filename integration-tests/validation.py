@@ -25,6 +25,7 @@ async def validate_all(model, log_dir):
     validate_status_messages(model)
     await validate_snap_versions(model)
     await validate_microbot(model)
+    await validate_gpu_support(model)
     await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
     await validate_rbac_flag(model)
@@ -284,7 +285,9 @@ async def verify_ready(unit, entity_type, name_list, extra_args=''):
     found_names = 0
     for item in out_list['items']:
         if any(n in item['metadata']['name'] for n in name_list):
-            if item['status']['phase'] == 'Running' or item['status']['phase'] == 'Active':
+            if (item['kind'] == 'DaemonSet' or
+                item['status']['phase'] == 'Running' or
+                item['status']['phase'] == 'Active'):
                 found_names += 1
             else:
                 return False
@@ -400,6 +403,61 @@ async def validate_worker_master_removal(model):
         log('Waiting for master removal.')
         assert_no_unit_errors(model)
     await wait_for_ready(model)
+
+
+@log_calls_async
+async def validate_gpu_support(model):
+    ''' Test gpu support. Should be disabled if hardware
+    is not detected and functional if hardware is fine'''
+
+    # See if the workers have nvidia
+    workers = model.applications['kubernetes-worker']
+    action = await workers.units[0].run('lspci -nnk')
+    nvidia = True if action.results['Stdout'].lower().count("nvidia") > 0 else False
+
+    # See what the runtime is set to
+    config = await workers.get_config()
+    runtime = config['docker_runtime']['value']
+
+    master_unit = model.applications['kubernetes-master'].units[0]
+    if not nvidia or runtime == 'apt' or runtime == 'upstream':
+        # nvidia should not be running
+        await retry_async_with_timeout(verify_deleted,
+                                       (master_unit, 'ds', 'nvidia-device-plugin-daemonset', '-n kube-system'),
+                                       timeout_msg="nvidia-device-plugin-daemonset is setup without nvidia hardware")
+    else:
+        # nvidia should be running
+        await retry_async_with_timeout(verify_ready,
+                                       (master_unit, 'ds', ['nvidia-device-plugin-daemonset'], '-n kube-system'),
+                                       timeout_msg="nvidia-device-plugin-daemonset not running")
+        action = await workers.units[0].run('ps -ef | grep kubelet')
+        log(action.results['Stdout'])
+        gate = True if action.results['Stdout'].count("DevicePlugins=true") > 0 else False
+        assert gate
+
+        # Do an addition on the GPU just be sure.
+        # First clean any previous runs
+        here = os.path.dirname(os.path.abspath(__file__))
+        await scp_to(os.path.join(here, "templates", "cuda-add.yaml"), master_unit, "cuda-add.yaml")
+        await master_unit.run('/snap/bin/kubectl delete -f /home/ubuntu/cuda-add.yaml')
+        await retry_async_with_timeout(verify_deleted,
+                                       (master_unit, 'po', 'cuda-vector-add', '-n default'),
+                                       timeout_msg="Cleaning of cuda-vector-add pod failed")
+        # Run the cuda addition
+        cmd = await master_unit.run('/snap/bin/kubectl create -f /home/ubuntu/cuda-add.yaml')
+        if not cmd.results['Code'] == '0':
+            log('Failed to create cuda-add pod test!')
+            log(cmd.results)
+            assert False
+
+        async def cuda_test(master):
+            action = await master.run('/snap/bin/kubectl log cuda-vector-add')
+            log(action.results['Stdout'])
+            return action.results['Stdout'].count("Test PASSED") > 0
+
+        await retry_async_with_timeout(cuda_test, (master_unit,),
+                                       timeout_msg="Cuda test did not pass",
+                                       timeout_insec=1200)
 
 
 @log_calls_async
