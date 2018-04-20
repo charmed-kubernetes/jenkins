@@ -206,11 +206,11 @@ async def validate_dashboard(model, log_dir):
             return True
         return False
 
-    retry_async_with_timeout(verify_ready,
+    await retry_async_with_timeout(verify_ready,
                              (unit, 'po', ['kubernetes-dashboard'], '-n kube-system'),
                              timeout_msg="Unable to find kubernetes dashboard before timeout")
 
-    retry_async_with_timeout(dashboard_present, (url,),
+    await retry_async_with_timeout(dashboard_present, (url,),
                              timeout_msg="Unable to reach dashboard")
 
 
@@ -302,7 +302,7 @@ async def validate_network_policies(model):
     assert cmd.status == 'completed'
     log('Waiting for pods to finish terminating...')
 
-    retry_async_with_timeout(verify_deleted,
+    await retry_async_with_timeout(verify_deleted,
                              (unit, 'ns', 'netpolicy'),
                              timeout_msg="Unable to remove the namespace netpolicy")
 
@@ -315,7 +315,7 @@ async def validate_network_policies(model):
         log(cmd.results)
     assert cmd.status == 'completed' and cmd.results['Code'] == '0'
     log('Waiting for pods to show up...')
-    retry_async_with_timeout(verify_ready,
+    await retry_async_with_timeout(verify_ready,
                              (unit, 'po', ['bboxgood', 'bboxbad'], '-n netpolicy'),
                              timeout_msg="Unable to create pods for network policy test")
 
@@ -334,7 +334,7 @@ async def validate_network_policies(model):
             return True
         return False
 
-    retry_async_with_timeout(get_to_networkpolicy_service, (),
+    await retry_async_with_timeout(get_to_networkpolicy_service, (),
                              timeout_msg="Failed to query nginx.netpolicy even before applying restrictions")
 
 
@@ -357,7 +357,7 @@ async def validate_network_policies(model):
             return True
         return False
 
-    retry_async_with_timeout(get_to_restricted_networkpolicy_service, (),
+    await retry_async_with_timeout(get_to_restricted_networkpolicy_service, (),
                              timeout_msg="Failed query restricted nginx.netpolicy")
 
     # Clean-up namespace from next runs.
@@ -563,7 +563,7 @@ async def validate_sans(model):
         await lb.set_config({'extra_sans': example_domain})
 
     # wait for server certs to update
-    retry_async_with_timeout(all_certs_in_place, (),
+    await retry_async_with_timeout(all_certs_in_place, (),
                              timeout_msg='extra sans config did not propogate to server certs')
 
     # now remove it
@@ -572,7 +572,7 @@ async def validate_sans(model):
         await lb.set_config({'extra_sans': ''})
 
     # verify it went away
-    retry_async_with_timeout(all_certs_removed, (),
+    await retry_async_with_timeout(all_certs_removed, (),
                              timeout_msg='extra sans config did not propogate to server certs')
 
     # reset back to what they had before
