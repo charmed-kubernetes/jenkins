@@ -190,10 +190,15 @@ async def validate_dashboard(model, log_dir):
     # get k8s version
     app_config = await model.applications['kubernetes-master'].get_config()
     channel = app_config['channel']['value']
-    version_string = channel.split('/')[0]
-    k8s_version = tuple(int(q) for q in re.findall("[0-9]+", version_string)[:2])
+    # if we do not detect the version from the channel eg edge, stable etc
+    # we should default to the latest dashboard url format
+    k8s_version = (2, 0)
+    if '/' in channel:
+        version_string = channel.split('/')[0]
+        k8s_version = tuple(int(q) for q in re.findall("[0-9]+", version_string)[:2])
+
     # dashboard will present a login form prompting for login
-    if (k8s_version < (1, 8)):
+    if k8s_version < (1, 8):
         url = '%s/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/login'
     else:
         url = '%s/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login'
