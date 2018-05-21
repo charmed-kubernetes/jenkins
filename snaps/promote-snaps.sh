@@ -6,7 +6,7 @@ set -eu
 # export PROMOTE_TO="1.6/beta 1.6/candidate edge beta candidate"
 # snaps/promote-snaps.sh
 
-SNAPS="kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet kube-proxy cdk-addons kubeadm kubernetes-test"
+SNAPS="${SNAPS:-kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet kube-proxy cdk-addons kubeadm kubernetes-test}"
 
 ARCH=${KUBE_ARCH:-"amd64"}
 echo PROMOTE_FROM="$PROMOTE_FROM"
