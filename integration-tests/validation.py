@@ -610,13 +610,13 @@ async def validate_sans(model):
 
     async def all_certs_removed():
         certs = await get_server_certs()
-        if not any(example_domain in cert for cert in certs):
+        if any(example_domain in cert for cert in certs):
             return False
         return True
 
     async def all_certs_in_place():
         certs = await get_server_certs()
-        if all(example_domain in cert for cert in certs):
+        if not all(example_domain in cert for cert in certs):
             return False
         return True
 
@@ -627,7 +627,7 @@ async def validate_sans(model):
 
     # wait for server certs to update
     await retry_async_with_timeout(all_certs_in_place, (),
-                                   timeout_msg='extra sans config did not propogate to server certs')
+                                   timeout_msg='extra sans config did not propagate to server certs')
 
     # now remove it
     await app.set_config({'extra_sans': ''})
@@ -636,7 +636,7 @@ async def validate_sans(model):
 
     # verify it went away
     await retry_async_with_timeout(all_certs_removed, (),
-                                   timeout_msg='extra sans config did not propogate to server certs')
+                                   timeout_msg='extra sans config did not propagate to server certs')
 
     # reset back to what they had before
     await app.set_config({'extra_sans': original_config['extra_sans']['value']})
