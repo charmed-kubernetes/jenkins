@@ -29,8 +29,8 @@ if [ "$RUN_TESTS" = "true" ]; then
     export TEST_CHARM_CHANNEL=edge
     pytest --no-print-logs --junit-xml=report.xml test_cdk.py
   )
-fi
 
-export FROM_CHANNEL=edge
-export TO_CHANNEL=beta
-./charms/promote-all-charms-and-bundles.sh
+  export FROM_CHANNEL=edge
+  export TO_CHANNEL=beta
+  ./charms/promote-all-charms-and-bundles.sh
+fi
