@@ -6,19 +6,39 @@ set -eu
 # export PROMOTE_TO="1.10/beta 1.10/candidate edge beta candidate"
 # snaps/promote-snaps.sh
 
+ARCH=${KUBE_ARCH:-"amd64"}
+GH_USER="${GH_USER:-}"
+GH_TOKEN="${GH_TOKEN:-}"
 SNAPS="${SNAPS:-kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet kube-proxy cdk-addons kubeadm kubernetes-test}"
 
-ARCH=${KUBE_ARCH:-"amd64"}
 echo PROMOTE_FROM="$PROMOTE_FROM"
 echo PROMOTE_TO="$PROMOTE_TO"
 echo SNAPS="$SNAPS"
 echo ARCH="$ARCH"
 
-
 . utils/retry.sh
 
-GH_USER="${GH_USER:-}"
-GH_TOKEN="${GH_TOKEN:-}"
+# Set a flag if we're building the EKS variants
+if [[ "${SNAPS}" =~ "-eks" ]]; then
+  build_eks=true
+fi
+
+# Ensure we are the correct user
+if [ "$build_eks" = true ]; then
+  cp -a /var/lib/jenkins/.config/snapcraft/snapcraft-cpc.cfg \
+        /var/lib/jenkins/.config/snapcraft/snapcraft.cfg
+  if ! $(snapcraft whoami | grep -q canonical-cloud-snaps); then
+    echo "Cannot release CPC snaps (wrong user)"
+    exit 1
+  fi
+else
+  cp -a /var/lib/jenkins/.config/snapcraft/snapcraft-cdkbot.cfg \
+        /var/lib/jenkins/.config/snapcraft/snapcraft.cfg
+  if ! $(snapcraft whoami | grep -q cdkbot); then
+    echo "Cannot release cdkbot snaps (wrong user)"
+    exit 1
+  fi
+fi
 
 create_git_branch_if_not_exists () {
   if ! git ls-remote --exit-code --heads https://github.com/juju-solutions/cdk-addons.git release-${1}
@@ -40,6 +60,7 @@ for branch in $PROMOTE_TO; do
   fi
 done
 
+# Release the snaps
 for snap in $SNAPS; do
   revisions="$(snapcraft revisions $snap | grep "${ARCH}" | grep " ${PROMOTE_FROM}\*" | cut -d " " -f 1)"
   for rev in $revisions; do
@@ -49,3 +70,9 @@ for snap in $SNAPS; do
     done
   done
 done
+
+# Set credentials back to our default user
+if [ "$build_eks" = true ]; then
+  cp -a /var/lib/jenkins/.config/snapcraft/snapcraft-cdkbot.cfg \
+        /var/lib/jenkins/.config/snapcraft/snapcraft.cfg
+fi
