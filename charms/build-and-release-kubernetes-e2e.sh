@@ -11,6 +11,9 @@ echo "${0} started at `date`."
 export JUJU_REPOSITORY=${WORKSPACE}/build/charms
 mkdir -p ${JUJU_REPOSITORY}
 
+export TMPDIR=${WORKSPACE}/tmp
+mkdir -p ${TMPDIR}
+
 # The cloud is an option for this script, default to gce.
 CLOUD=${CLOUD:-"google"}
 
@@ -49,7 +52,7 @@ fi
 touch report.xml
 
 if [ ${RELEASE} = true ]; then
-  CHARM=$(/usr/bin/charm push $JUJU_REPOSITORY/builds/kubernetes-e2e cs:~containers/kubernetes-e2e | head -n 1 | awk '{print $2}')
+  CHARM=$(charm push $JUJU_REPOSITORY/builds/kubernetes-e2e cs:~containers/kubernetes-e2e | head -n 1 | awk '{print $2}')
   charm set ${CHARM} commit=${COMMIT_HASH}
   echo "Releasing ${CHARM}"
   CHARM="$CHARM" FROM_CHANNEL=unpublished TO_CHANNEL=edge ./charms/promote-charm.sh

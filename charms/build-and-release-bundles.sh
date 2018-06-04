@@ -7,9 +7,9 @@ git clone ${BUNDLE_REPOSITORY} bundle
 release-bundle() {
   LOCAL_PATH="$1"
   CS_PATH="$2"
-  PUSH_CMD="/usr/bin/charm push $LOCAL_PATH $CS_PATH"
+  PUSH_CMD="charm push $LOCAL_PATH $CS_PATH"
   REVISION=`${PUSH_CMD} | tail -n +1 | head -1 | awk '{print $2}'`
-  /usr/bin/charm release --channel edge ${REVISION}
+  charm release --channel edge ${REVISION}
 }
 
 bundle/bundle -o ./bundles/cdk-flannel -c edge k8s/cdk cni/flannel
@@ -27,7 +27,7 @@ release-bundle ./bundles/cdk-canal cs:~containers/bundle/canonical-kubernetes-ca
 if [ "$RUN_TESTS" = "true" ]; then
   (cd integration-tests
     export TEST_CHARM_CHANNEL=edge
-    pytest --junit-xml=report.xml test_cdk.py
+    pytest --no-print-logs --junit-xml=report.xml test_cdk.py
   )
 
   export FROM_CHANNEL=edge
