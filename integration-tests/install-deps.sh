@@ -4,6 +4,8 @@ set -eux
 # Installs dependencies needed for upgrade tests
 # Can be run again to upgrade dependencies.
 
+sudo add-apt-repository ppa:juju/stable -y
+sudo add-apt-repository ppa:tvansteenburgh/ppa -y
 sudo apt update -yq
 sudo apt install -y unzip python3-pip python-pip squashfuse snapd charm-tools
 sudo snap install juju --classic
