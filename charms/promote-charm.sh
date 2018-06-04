@@ -19,7 +19,7 @@ fi
 CHARM_ID="$(charm show "$CHARM" --channel "$FROM_CHANNEL" id | grep Id: | awk '{print $2}')"
 
 declare -a RESOURCE_ARGS=()
-RESOURCES="$(charm list-resources "$CHARM_ID" --channel "$FROM_CHANNEL" | tail -n +3 | sed -e '/^$/d' -e 's/  */-/g')"
+RESOURCES="$(charm list-resources "$CHARM_ID" --channel "$FROM_CHANNEL" --format=short)"
 for resource in $RESOURCES; do
   RESOURCE_ARGS+=('-r')
   RESOURCE_ARGS+=("$resource")
