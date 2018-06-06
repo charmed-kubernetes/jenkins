@@ -6,6 +6,9 @@ import traceback
 import yaml
 import re
 
+from asyncio_extras import async_contextmanager
+from async_generator import yield_
+from datetime import datetime
 from logger import log, log_calls, log_calls_async
 from tempfile import NamedTemporaryFile
 from utils import (
@@ -38,6 +41,10 @@ async def validate_all(model, log_dir):
         await validate_network_policies(model)
     await validate_extra_args(model)
     await validate_docker_logins(model)
+    await validate_audit_default_config(model)
+    await validate_audit_empty_policy(model)
+    await validate_audit_custom_policy(model)
+    await validate_audit_webhook(model)
     assert_no_unit_errors(model)
 
 
@@ -644,32 +651,33 @@ async def validate_sans(model):
         await lb.set_config({'extra_sans': original_lb_config['extra_sans']['value']})
 
 
+async def run_until_success(unit, cmd, timeout_insec=None):
+    while True:
+        action = await unit.run(cmd, timeout=timeout_insec)
+        if (action.status == 'completed' and
+                'results' in action.data and
+                action.data['results']['Code'] == '0'):
+            return action.data['results']['Stdout']
+        else:
+            log('Action ' + action.status + '. Command failed on unit ' + unit.entity_id)
+            log('cmd: ' + cmd)
+            if 'results' in action.data:
+                log('code: ' + action.data['results']['Code'])
+                log('stdout:\n' + action.data['results']['Stdout'].strip())
+                log('stderr:\n' + action.data['results']['Stderr'].strip())
+                log('Will retry...')
+            await asyncio.sleep(5)
+
+
 @log_calls_async
 async def validate_docker_logins(model):
     # Choose a worker. He shall be our vessel.
     app = model.applications['kubernetes-worker']
     vessel = app.units[0]
 
-    async def run_until_success(cmd, timeout_insec=None):
-        while True:
-            action = await vessel.run(cmd, timeout=timeout_insec)
-            if (action.status == 'completed' and
-                    'results' in action.data and
-                    action.data['results']['Code'] == '0'):
-                return action.data['results']['Stdout']
-            else:
-                log('Action ' + action.status + '. Command failed on unit ' + vessel.entity_id)
-                log('cmd: ' + cmd)
-                if 'results' in action.data:
-                    log('code: ' + action.data['results']['Code'])
-                    log('stdout:\n' + action.data['results']['Stdout'].strip())
-                    log('stderr:\n' + action.data['results']['Stderr'].strip())
-                    log('Will retry...')
-                await asyncio.sleep(5)
-
     async def kubectl(cmd):
         cmd = '/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig ' + cmd
-        return await run_until_success(cmd)
+        return await run_until_success(vessel, cmd)
 
     @log_calls_async
     async def wait_for_test_pod_state(desired_state, desired_reason=None):
@@ -707,7 +715,7 @@ async def validate_docker_logins(model):
             await asyncio.sleep(1)
         await kubectl_delete('secret test-registry')
         cmd = 'rm -rf /tmp/test-registry'
-        await run_until_success(cmd)
+        await run_until_success(vessel, cmd)
 
     @log_calls_async
     async def kubectl_get(target):
@@ -725,15 +733,15 @@ async def validate_docker_logins(model):
 
     # Start with a clean environment
     await cleanup()
-    await run_until_success('mkdir -p /tmp/test-registry')
-    await run_until_success('chown ubuntu:ubuntu /tmp/test-registry')
+    await run_until_success(vessel, 'mkdir -p /tmp/test-registry')
+    await run_until_success(vessel, 'chown ubuntu:ubuntu /tmp/test-registry')
 
     # Create registry secret
     here = os.path.dirname(os.path.abspath(__file__))
     htpasswd = os.path.join(here, 'templates', 'test-registry', 'htpasswd')
     await scp_to(htpasswd, vessel, '/tmp/test-registry')
     cmd = 'openssl req -x509 -newkey rsa:4096 -keyout /tmp/test-registry/tls.key -out /tmp/test-registry/tls.crt -days 2 -nodes -subj /CN=localhost'
-    await run_until_success(cmd)
+    await run_until_success(vessel, cmd)
     await kubectl('create secret generic test-registry'
         + ' --from-file=/tmp/test-registry/htpasswd'
         + ' --from-file=/tmp/test-registry/tls.crt'
@@ -822,17 +830,17 @@ async def validate_docker_logins(model):
 
     # Upload test container
     cmd = 'docker login %s -u test-user -p yyDVinHE' % registry_url
-    await run_until_success(cmd, timeout_insec=60)
+    await run_until_success(vessel, cmd, timeout_insec=60)
     cmd = 'docker pull ubuntu:16.04'
-    await run_until_success(cmd)
+    await run_until_success(vessel, cmd)
     cmd = 'docker tag ubuntu:16.04 %s/ubuntu:16.04' % registry_url
-    await run_until_success(cmd)
+    await run_until_success(vessel, cmd)
     cmd = 'docker push %s/ubuntu:16.04' % registry_url
-    await run_until_success(cmd)
+    await run_until_success(vessel, cmd)
     cmd = 'docker rmi %s/ubuntu:16.04' % registry_url
-    await run_until_success(cmd)
+    await run_until_success(vessel, cmd)
     cmd = 'docker logout %s' % registry_url
-    await run_until_success(cmd, timeout_insec=60)
+    await run_until_success(vessel, cmd, timeout_insec=60)
 
     # Create test pod using our registry
     await kubectl_create({
@@ -862,6 +870,217 @@ async def validate_docker_logins(model):
 
     # Restore config and clean up
     await cleanup()
+
+
+async def get_last_audit_entry_date(unit):
+    cmd = 'cat /root/cdk/audit/audit.log | tail -n 1'
+    raw = await run_until_success(unit, cmd)
+    data = json.loads(raw)
+    timestamp = data['timestamp']
+    time = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+    return time
+
+
+@async_contextmanager
+async def assert_hook_occurs_on_all_units(app, hook):
+    started_units = set()
+    finished_units = set()
+
+    for unit in app.units:
+        @unit.on_change
+        def on_change(delta, old, new, model):
+            unit_id = new.entity_id
+            if new.agent_status_message == 'running ' + hook + ' hook':
+                started_units.add(unit_id)
+            if new.agent_status == 'idle' and unit_id in started_units:
+                finished_units.add(unit_id)
+
+    await yield_()
+
+    log('assert_hook_occurs_on_all_units: waiting for ' + hook + ' hook')
+    while len(finished_units) < len(app.units):
+        await asyncio.sleep(1)
+
+
+@log_calls_async
+async def set_config_and_wait(app, config):
+    current_config = await app.get_config()
+
+    if all(config[key] == current_config[key]['value'] for key in config):
+        log('set_config_and_wait: new config identical to current, skipping')
+        return
+
+    async with assert_hook_occurs_on_all_units(app, 'config-changed'):
+        await app.set_config(config)
+
+
+@log_calls_async
+async def reset_audit_config(master_app):
+    config = await master_app.get_config()
+    await set_config_and_wait(master_app, {
+        'audit-policy': config['audit-policy']['default'],
+        'audit-webhook-config': config['audit-webhook-config']['default'],
+        'api-extra-args': config['api-extra-args']['default']
+    })
+
+
+@log_calls_async
+async def validate_audit_default_config(model):
+    app = model.applications['kubernetes-master']
+
+    # Ensure we're using default configuration
+    await reset_audit_config(app)
+
+    # Verify new entries are being logged
+    unit = app.units[0]
+    before_date = await get_last_audit_entry_date(unit)
+    await asyncio.sleep(1)
+    await run_until_success(unit, '/snap/bin/kubectl get po')
+    after_date = await get_last_audit_entry_date(unit)
+    assert after_date > before_date
+
+    # Verify total log size is less than 1 GB
+    raw = await run_until_success(unit, 'du -bs /root/cdk/audit')
+    size_in_bytes = int(raw.split()[0])
+    log("Audit log size in bytes: %d" % size_in_bytes)
+    max_size_in_bytes = 1000 * 1000 * 1000 * 1.01  # 1 GB, plus some tolerance
+    assert size_in_bytes <= max_size_in_bytes
+
+    # Clean up
+    await reset_audit_config(app)
+
+
+@log_calls_async
+async def validate_audit_empty_policy(model):
+    app = model.applications['kubernetes-master']
+
+    # Set audit-policy to blank
+    await reset_audit_config(app)
+    await set_config_and_wait(app, {'audit-policy': ''})
+
+    # Verify no entries are being logged
+    unit = app.units[0]
+    before_date = await get_last_audit_entry_date(unit)
+    await asyncio.sleep(1)
+    await run_until_success(unit, '/snap/bin/kubectl get po')
+    after_date = await get_last_audit_entry_date(unit)
+    assert after_date == before_date
+
+    # Clean up
+    await reset_audit_config(app)
+
+
+@log_calls_async
+async def validate_audit_custom_policy(model):
+    app = model.applications['kubernetes-master']
+
+    # Set a custom policy that only logs requests to a special namespace
+    namespace = 'validate-audit-custom-policy'
+    policy = {
+        'apiVersion': 'audit.k8s.io/v1beta1',
+        'kind': 'Policy',
+        'rules': [
+            {
+                'level': 'Metadata',
+                'namespaces': [namespace]
+            },
+            {'level': 'None'}
+        ]
+    }
+    await reset_audit_config(app)
+    await set_config_and_wait(app, {'audit-policy': yaml.dump(policy)})
+
+    # Verify no entries are being logged
+    unit = app.units[0]
+    before_date = await get_last_audit_entry_date(unit)
+    await asyncio.sleep(1)
+    await run_until_success(unit, '/snap/bin/kubectl get po')
+    after_date = await get_last_audit_entry_date(unit)
+    assert after_date == before_date
+
+    # Create our special namespace
+    namespace_definition = {
+        'apiVersion': 'v1',
+        'kind': 'Namespace',
+        'metadata': {
+            'name': namespace
+        }
+    }
+    path = '/tmp/validate_audit_custom_policy-namespace.yaml'
+    with NamedTemporaryFile('w') as f:
+        json.dump(namespace_definition, f)
+        f.flush()
+        await scp_to(f.name, unit, path)
+    await run_until_success(unit, '/snap/bin/kubectl create -f ' + path)
+
+    # Verify our very special request gets logged
+    before_date = await get_last_audit_entry_date(unit)
+    await asyncio.sleep(1)
+    await run_until_success(unit, '/snap/bin/kubectl get po -n ' + namespace)
+    after_date = await get_last_audit_entry_date(unit)
+    assert after_date > before_date
+
+    # Clean up
+    await run_until_success(unit, '/snap/bin/kubectl delete ns ' + namespace)
+    await reset_audit_config(app)
+
+
+@log_calls_async
+async def validate_audit_webhook(model):
+    app = model.applications['kubernetes-master']
+    unit = app.units[0]
+
+    async def get_webhook_server_entry_count():
+        cmd = '/snap/bin/kubectl logs test-audit-webhook'
+        raw = await run_until_success(unit, cmd)
+        lines = raw.splitlines()
+        count = len(lines)
+        return count
+
+    # Deploy an nginx target for webhook
+    cmd = '/snap/bin/kubectl delete --ignore-not-found po test-audit-webhook'
+    await run_until_success(unit, cmd)
+    cmd = '/snap/bin/kubectl run test-audit-webhook --image nginx:1.15.0-alpine --restart Never'
+    await run_until_success(unit, cmd)
+    nginx_ip = None
+    while nginx_ip is None:
+        cmd = '/snap/bin/kubectl get po -o json test-audit-webhook'
+        raw = await run_until_success(unit, cmd)
+        pod = json.loads(raw)
+        nginx_ip = pod['status'].get('podIP', None)
+
+    # Set audit config with webhook enabled
+    audit_webhook_config = {
+        'apiVersion': 'v1',
+        'kind': 'Config',
+        'clusters': [{
+            'name': 'test-audit-webhook',
+            'cluster': {
+                'server': 'http://' + nginx_ip
+            }
+        }],
+        'contexts': [{
+            'name': 'test-audit-webhook',
+            'context': {
+                'cluster': 'test-audit-webhook'
+            }
+        }],
+        'current-context': 'test-audit-webhook'
+    }
+    await reset_audit_config(app)
+    await set_config_and_wait(app, {
+        'audit-webhook-config': yaml.dump(audit_webhook_config),
+        'api-extra-args': 'audit-webhook-mode=blocking'
+    })
+
+    # Ensure webhook log is growing
+    before_count = await get_webhook_server_entry_count()
+    await run_until_success(unit, '/snap/bin/kubectl get po')
+    after_count = await get_webhook_server_entry_count()
+    assert after_count > before_count
+
+    # Clean up
+    await reset_audit_config(app)
 
 
 class MicrobotError(Exception):
