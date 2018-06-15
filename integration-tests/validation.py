@@ -652,10 +652,7 @@ async def validate_docker_logins(model):
 
     async def run_until_success(cmd, timeout_insec=None):
         while True:
-            timeout_innano=None
-            if timeout_insec:
-                timeout_innano = timeout_insec * 1000*1000*1000
-            action = await vessel.run(cmd, timeout=timeout_innano)
+            action = await vessel.run(cmd, timeout=timeout_insec)
             if (action.status == 'completed' and
                     'results' in action.data and
                     action.data['results']['Code'] == '0'):
