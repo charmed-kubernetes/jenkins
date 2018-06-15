@@ -23,6 +23,9 @@ PUSH ~/.local/share/juju/credentials.yaml /root/.local/share/juju/
 RUN mkdir -p /var/lib/jenkins/.local/share/juju
 PUSH ~/.local/share/juju/foo.json /var/lib/jenkins/.local/share/juju/
 
+# libjuju needs this
+PUSH ~/.go-cookies /root/.go-cookies
+
 # Allow ssh access
 RUN mkdir -p /root/.ssh
 PUSH ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
