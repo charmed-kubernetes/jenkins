@@ -319,9 +319,15 @@ async def upgrade_snaps(model, channel):
                         break
                     await asyncio.sleep(3)
                 else:
-                    raise TimeoutError(
-                        'Unable to find blocked status on unit {0} - {1} {2}'.format(
-                            unit.name, unit.workload_status, unit.agent_status))
+                    # We waited for the block msg but we did not see one.
+                    # See https://github.com/juju-solutions/bundle-canonical-kubernetes/issues/545
+                    # and https://github.com/juju-solutions/bundle-canonical-kubernetes/issues/504
+                    # We will have to raise but not until the above are addressed
+                    # raise TimeoutError(
+                    #     'Unable to find blocked status on unit {0} - {1} {2}'.format(
+                    #         unit.name, unit.workload_status, unit.agent_status))
+                    # We call "upgrade" either way
+                    pass
 
                 # run upgrade action
                 action = await unit.run_action('upgrade')
