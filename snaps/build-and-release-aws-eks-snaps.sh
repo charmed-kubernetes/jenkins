@@ -19,7 +19,7 @@ git clone https://github.com/juju-solutions/release.git --branch rye/snaps --dep
     targets="kubectl kubelet kube-proxy kubernetes-test"
 )
 
-# Ensure we are the correct user
+# Ensure we are the correct user (jenkins job does a 'snapcraft login $token')
 if ! $(snapcraft whoami | grep -q canonical-cloud-snaps); then
   echo "Cannot release CPC snaps (wrong user)"
   exit 1

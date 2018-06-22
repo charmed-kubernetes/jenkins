@@ -47,7 +47,7 @@ create_git_branch_if_not_exists () {
       echo "GH_USER or GH_TOKEN not set, not creating branch for stable promotion release-${1}."
     else
       echo "Creating new branch for release-${1}."
-      create_branch "juju-solutions" "cdk-addons" ${GH_USER} ${GH_TOKEN  } $1
+      create_branch "juju-solutions" "cdk-addons" ${GH_USER} ${GH_TOKEN} $1
     fi
   fi
 }
