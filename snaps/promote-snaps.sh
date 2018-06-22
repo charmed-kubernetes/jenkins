@@ -18,22 +18,13 @@ echo ARCH="$ARCH"
 
 . utils/retry.sh
 
-# Set a flag if we're building the EKS variants
+# Ensure we are the correct user (jenkins job does a 'snapcraft login $token')
 if [[ "${SNAPS}" =~ "-eks" ]]; then
-  build_eks=true
-fi
-
-# Ensure we are the correct user
-if [ "$build_eks" = true ]; then
-  cp -a /var/lib/jenkins/.config/snapcraft/snapcraft-cpc.cfg \
-        /var/lib/jenkins/.config/snapcraft/snapcraft.cfg
   if ! $(snapcraft whoami | grep -q canonical-cloud-snaps); then
     echo "Cannot release CPC snaps (wrong user)"
     exit 1
   fi
 else
-  cp -a /var/lib/jenkins/.config/snapcraft/snapcraft-cdkbot.cfg \
-        /var/lib/jenkins/.config/snapcraft/snapcraft.cfg
   if ! $(snapcraft whoami | grep -q cdkbot); then
     echo "Cannot release cdkbot snaps (wrong user)"
     exit 1
@@ -70,9 +61,3 @@ for snap in $SNAPS; do
     done
   done
 done
-
-# Set credentials back to our default user
-if [ "$build_eks" = true ]; then
-  cp -a /var/lib/jenkins/.config/snapcraft/snapcraft-cdkbot.cfg \
-        /var/lib/jenkins/.config/snapcraft/snapcraft.cfg
-fi
