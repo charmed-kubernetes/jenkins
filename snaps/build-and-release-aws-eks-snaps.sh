@@ -7,6 +7,9 @@ set -eux
 EKS_RELEASE="${EKS_RELEASE:-edge}"
 KUBE_VERSION="${KUBE_VERSION:-$(curl -L https://dl.k8s.io/release/stable.txt)}"
 KUBE_ARCH="amd64"
+
+# This suffix is used by the snap build script when we run make targets:
+#  https://github.com/juju-solutions/release/blob/rye/snaps/snap/build-scripts/build
 export SNAP_SUFFIX="eks"
 
 source utilities.sh
