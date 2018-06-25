@@ -7,10 +7,9 @@ set -eux
 sudo add-apt-repository ppa:juju/stable -y
 sudo add-apt-repository ppa:tvansteenburgh/ppa -y
 sudo apt update -yq
-sudo apt install -y unzip python3-pip python-pip squashfuse snapd
+sudo apt install -y unzip python3-pip python-pip squashfuse snapd charm-tools
 sudo snap install juju --classic
 sudo snap install conjure-up --classic
-sudo snap install charm
 sudo pip2 install 'git+https://github.com/juju/juju-crashdump'
 sudo pip2 install -U pyopenssl bundletester virtualenv
 sudo pip3 install -U pytest  pytest-asyncio asyncio_extras juju requests pyyaml kubernetes
