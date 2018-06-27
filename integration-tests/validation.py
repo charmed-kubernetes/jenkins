@@ -542,7 +542,7 @@ async def validate_extra_args(model):
                 'watch-cache',
                 'enable-swagger-ui=false'
             },
-            'kube-controller-manager': {
+            'kube-controller': {
                 'v 3',
                 'profiling',
                 'contention-profiling=false'
