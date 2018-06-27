@@ -888,7 +888,7 @@ async def assert_hook_occurs_on_all_units(app, hook):
 
     for unit in app.units:
         @unit.on_change
-        def on_change(delta, old, new, model):
+        async def on_change(delta, old, new, model):
             unit_id = new.entity_id
             if new.agent_status_message == 'running ' + hook + ' hook':
                 started_units.add(unit_id)
