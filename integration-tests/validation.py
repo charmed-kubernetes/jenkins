@@ -36,8 +36,8 @@ async def validate_all(model, log_dir):
     await validate_e2e_tests(model, log_dir)
     await validate_worker_master_removal(model)
     await validate_sans(model)
-    if "canal" in model.applications:
-        log("Running canal specific tests")
+    if any(app in model.applications for app in ('canal', 'calico')):
+        log("Running network policy specific tests")
         await validate_network_policies(model)
     await validate_extra_args(model)
     await validate_docker_logins(model)
