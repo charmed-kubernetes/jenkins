@@ -477,7 +477,7 @@ async def validate_extra_args(model):
     async def get_service_args(app, service):
         results = []
         for unit in app.units:
-            action = await unit.run('pgrep -af ' + service)
+            action = await unit.run('pgrep -a ' + service)
             assert action.status == 'completed'
             raw_output = action.data['results']['Stdout']
             arg_string = raw_output.partition(' ')[2].partition(' ')[2]
@@ -542,7 +542,7 @@ async def validate_extra_args(model):
                 'watch-cache',
                 'enable-swagger-ui=false'
             },
-            'kube-controller-manager': {
+            'kube-controller': {
                 'v 3',
                 'profiling',
                 'contention-profiling=false'
