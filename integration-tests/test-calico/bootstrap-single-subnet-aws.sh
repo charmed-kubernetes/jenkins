@@ -8,7 +8,7 @@ alias aws="aws --output text"
 
 # Pre-deploy: Create a single-subnet VPC
 VPC_ID=$(aws ec2 create-vpc --cidr $VPC_CIDR | cut -f 7)
-SUBNET0_ID=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block $SUBNET0_CIDR --availability-zone us-east-1b | cut -f 9)
+SUBNET0_ID=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block $SUBNET0_CIDR | cut -f 9)
 aws ec2 modify-subnet-attribute --subnet-id $SUBNET0_ID --map-public-ip-on-launch
 GATEWAY_ID=$(aws ec2 create-internet-gateway | cut -f 2)
 aws ec2 attach-internet-gateway --vpc-id $VPC_ID --internet-gateway $GATEWAY_ID
