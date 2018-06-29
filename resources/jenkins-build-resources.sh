@@ -28,15 +28,13 @@ mkdir -p ${TEMPORARY_DIRECTORY}
 ${SCRIPT_DIRECTORY}/resources/repackage-easyrsa.sh ${EASYRSA_VERSION}
 
 export OS=$(get_os)
-export ARCHITECTURES=${ARCHITECTURES:-"amd64"}  #"amd64 arm arm64 ppc64le"
+export ARCHITECTURES=${ARCHITECTURES:-"amd64 arm64 s390x"}  #"amd64 arm arm64 ppc64le"
 for ARCHITECTURE in ${ARCHITECTURES}; do
   export ARCH=${ARCHITECTURE}
   mkdir -p ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
   # Build the CNI, etcd, and flannel resources.
   ${SCRIPT_DIRECTORY}/resources/build-flannel.sh
 done
-# Build the cross platform kubernetes binaries.
-${SCRIPT_DIRECTORY}/resources/build-kubernetes.sh
 
 # Change back to the original directory.
 cd ${SCRIPT_DIRECTORY}

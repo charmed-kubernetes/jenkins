@@ -22,8 +22,8 @@ ARCH=${ARCH:-"amd64"}
 OS=${OS:-"linux"}
 
 # Create a url to the CNI release archive which is linux amd64 right now.
-CNI_URL=https://github.com/containernetworking/cni/releases/download/${CNI_VERSION}/cni-${CNI_VERSION}.tgz
-CNI_ARCHIVE=${TEMPORARY_DIRECTORY}/linux/amd64/cni-${CNI_VERSION}.tgz
+CNI_URL=https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${ARCH}-${CNI_VERSION}.tgz
+CNI_ARCHIVE=${TEMPORARY_DIRECTORY}/linux/${ARCH}/cni-${CNI_VERSION}.tgz
 download ${CNI_URL} ${CNI_ARCHIVE}
 # NOTE The CNI loopback file is required for the kubernetes-worker resource.
 tar -xzvf ${CNI_ARCHIVE} -C ${TEMPORARY_DIRECTORY}/${OS}/${ARCH}
