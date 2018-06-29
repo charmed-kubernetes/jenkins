@@ -260,7 +260,6 @@ async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=N
             with open(data_path, 'w') as f:
                 yaml.dump(data, f)
         await model.deploy(bundle_dir)
-    await wait_for_ready(model)
     # In localhost we need proxy-extra-args="proxy-mode=userspace"
     if is_localhost():
         workers = model.applications['kubernetes-worker']
@@ -268,7 +267,7 @@ async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=N
             'proxy-extra-args': 'proxy-mode=userspace'
         }
         await workers.set_config(new_config)
-        await wait_for_ready(model)
+    await wait_for_ready(model)
 
 
 def asyncify(f):
