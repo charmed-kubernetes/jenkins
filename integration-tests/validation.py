@@ -538,17 +538,17 @@ async def validate_extra_args(model):
         },
         expected_args={
             'kube-apiserver': {
-                'min-request-timeout 314',
+                'min-request-timeout=314',
                 'watch-cache',
                 'enable-swagger-ui=false'
             },
             'kube-controller': {
-                'v 3',
+                'v=3',
                 'profiling',
                 'contention-profiling=false'
             },
             'kube-scheduler': {
-                'v 3',
+                'v=3',
                 'profiling',
                 'contention-profiling=false'
             }
@@ -571,12 +571,12 @@ async def validate_extra_args(model):
         },
         expected_args={
             'kubelet': {
-                'v 1',
+                'v=1',
                 'enable-server',
                 'alsologtostderr=false'
             },
             'kube-proxy': {
-                'v 1',
+                'v=1',
                 'profiling',
                 'alsologtostderr=false'
             }
