@@ -270,6 +270,9 @@ async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=N
             if arch() == 's390x':
                 options = data['services']['etcd'].setdefault('options', {})
                 options['channel'] = "2.3/stable"
+                options = data['services']['kubernetes-master'].setdefault('options', {})
+                options['enable-dashboard-addons'] = "false"
+                options['enable-metrics'] = "false"
             if snap_channel:
                 for app in ['kubernetes-master', 'kubernetes-worker']:
                     options = data['services'][app].setdefault('options', {})
