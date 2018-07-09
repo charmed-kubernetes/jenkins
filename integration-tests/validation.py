@@ -26,16 +26,16 @@ from utils import (
 
 @log_calls_async
 async def validate_all(model, log_dir):
-    arch = arch()
+    cpu_arch = await asyncify(arch)()
     validate_status_messages(model)
     await validate_snap_versions(model)
     await validate_gpu_support(model)
-    if arch != 's390x':
+    if cpu_arch != 's390x':
         await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
     await validate_rbac_flag(model)
     await validate_rbac(model)
-    if arch not in ['s390x', 'arm64']:
+    if cpu_arch not in ['s390x', 'arm64']:
         await validate_microbot(model)
         await validate_e2e_tests(model, log_dir)
         await validate_docker_logins(model)
