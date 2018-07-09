@@ -20,27 +20,31 @@ from utils import (
     scp_to,
     is_localhost,
     retry_async_with_timeout,
+    arch,
 )
 
 
 @log_calls_async
 async def validate_all(model, log_dir):
+    arch = arch()
     validate_status_messages(model)
     await validate_snap_versions(model)
-    await validate_microbot(model)
     await validate_gpu_support(model)
-    await validate_dashboard(model, log_dir)
+    if arch != 's390x':
+        await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
     await validate_rbac_flag(model)
     await validate_rbac(model)
-    await validate_e2e_tests(model, log_dir)
+    if arch not in ['s390x', 'arm64']:
+        await validate_microbot(model)
+        await validate_e2e_tests(model, log_dir)
+        await validate_docker_logins(model)
     await validate_worker_master_removal(model)
     await validate_sans(model)
     if any(app in model.applications for app in ('canal', 'calico')):
         log("Running network policy specific tests")
         await validate_network_policies(model)
     await validate_extra_args(model)
-    await validate_docker_logins(model)
     await validate_audit_default_config(model)
     await validate_audit_empty_policy(model)
     await validate_audit_custom_policy(model)
