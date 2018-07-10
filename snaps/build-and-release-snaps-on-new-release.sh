@@ -112,7 +112,7 @@ function promote_snaps_to_stable {
     if (( right_now >= release_time))
     then
       echo "Promoting mature $kube_version release to stable"
-      # Promote snaps from edge to candidate
+      # Promote snaps from candidate to stable
       scripts_path=$(dirname "$0")
       version=$(get_major_minor $kube_version)
       export PROMOTE_FROM="$version/candidate"
@@ -180,8 +180,6 @@ do
     if [ "$KUBE_VERSION_IS_STABLE" == 'yes' ]
     then
       # Do not promote to stable something it is not stable upstream.
-      # Also do not create cdk addons for something that is not stable because it
-      # may change
       promote_snaps_to_stable "${TRACK}" "${KUBE_VERSION}" "${SNAP_INFO_KUBECTL}"
     fi
   fi
