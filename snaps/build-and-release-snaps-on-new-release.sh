@@ -6,147 +6,183 @@ set -eux
 source utilities.sh
 
 # K8s versions we want to check for new releases
-declare -a VERSIONS=('1.6' '1.7' '1.8' '1.9' '1.10' '1.11' '1.12' '1.13' '1.14' '2.0' 'latest');
+declare -a VERSIONS=('latest' '1.6' '1.7' '1.8' '1.9' '1.10' '1.11' '1.12' '1.13' '1.14' '2.0');
 
 SNAP_INFO_KUBECTL=$(snap info kubectl)
-SNAPCRAFT_REVISIONS_KUBELET=$(snapcraft revisions --arch=amd64 kubelet)
 
-function check_for_release {
-  # Sets $trigger to 'yes' when a new release is available.
-  # Compares snap info on kubectl to find version information
+function is_upstream_newer_than_edge {
+  # Sets $upstream_is_newer to 'yes' when there is a version upstream newer to what we have on edge.
+  # Uses snap info on kubectl to find the snap version information
+  #
+  # Input:
+  # $TRACK eg "latest" or "1.11" to check for release
+  # $KUBE_VERSION k8s version available upstream for $TRACK
+  # $SNAP_INFO_KUBECTL snap command to get the info of kubectl
+  #
+  # Output:
+  # $upstream_is_newer 'yes' when a release upstream is newer that the snap on edge
 
-  if [ "$BRANCH" == "latest" ]
+  local track="$1"
+  local kube_version="$2"
+  local snap_info_kubectl="$3"
+
+  if [ "${track}" == "latest" ]
   then
-    LAST_RELEASE=$(grep ' edge:' <<< "${SNAP_INFO_KUBECTL}"|awk '{print $2}')
+    LAST_RELEASE=$(grep ' edge:' <<< "${snap_info_kubectl}"|awk '{print $2}')
   else
-    MAIN_VERSION=$(get_major_minor $KUBE_VERSION)
-    LAST_RELEASE=$(grep ${MAIN_VERSION}/edge <<< "${SNAP_INFO_KUBECTL}"|awk '{print $2}')
+    MAIN_VERSION=$(get_major_minor $kube_version)
+    LAST_RELEASE=$(grep ${MAIN_VERSION}/edge <<< "${snap_info_kubectl}"|awk '{print $2}')
   fi
-  trigger='no'
-  echo "Last release is ${LAST_RELEASE} and this release is ${KUBE_VERSION}"
-  if [ v$LAST_RELEASE != $KUBE_VERSION ]
+  upstream_is_newer='no'
+  echo "Last snapped release is ${LAST_RELEASE} and the upstrem release is ${kube_version}"
+  if [ v$LAST_RELEASE != $kube_version ]
   then
     echo "New release ($KUBE_VERSION) detected."
-    trigger='yes'
+    upstream_is_newer='yes'
   else
     echo "No new release detected. Latest release is ${LAST_RELEASE}"
   fi
 }
 
 
-function build_promote {
-  # Builds and promotes to edge and candidate the k8s release found in
+function build_and_promote_snaps_to_all_but_stable {
+  # Builds and promotes to edge beta and candidate the k8s release found in
   # $KUBE_VERSION. Calls build-and-release-k8s-snaps.sh and promote-snaps.sh.
+  #
+  # Input:
+  # $TRACK eg "latest" or "1.11" to check for release
+  # $KUBE_VERSION k8s version available upstream for $TRACK
+
+  local track=$1
+  local kube_version=$2
 
   scripts_path=$(dirname "$0")
   # Build the snaps and push to edge
+  export KUBE_VERSION=${kube_version}
   $scripts_path/build-and-release-k8s-snaps.sh
 
   # Promote snaps from edge to candidate
-  version=$(get_major_minor $KUBE_VERSION)
+  version=$(get_major_minor $kube_version)
   export PROMOTE_FROM="$version/edge"
   export PROMOTE_TO="$version/beta $version/candidate"
-  if [ "$BRANCH" == "latest" ]
+  if [ "$track" == "latest" ]
   then
     export PROMOTE_TO="edge beta candidate $PROMOTE_TO"
   fi
   $scripts_path/promote-snaps.sh
 }
 
-function promote_stable {
-  # Promotes to stable the release found in candidate.
+function promote_snaps_to_stable {
+  # Promotes to stable the snap found in candidate.
   # The following conditions should hold:
-  # 1. snap revision should be 7 days old(so no new revisions in 7 days) AND
-  # 2. a) There was not previous release OR
+  # 1. snap revision should be 7 days old (so no new revisions in 7 days) AND
+  # 2. a) There was no previous release OR
   #    b) There is a new release
+  #
+  # Input:
+  # $TRACK eg "latest" or "1.11" to check for release
+  # $KUBE_VERSION k8s version available upstream for $TRACK
+  # $SNAP_INFO_KUBECTL snap command to get the info of kubectl
+  #
 
-  stable_promotion='no'
-  if [ "$BRANCH" == "latest" ]
+  local track="$1"
+  local kube_version="$2"
+  local snap_info_kubectl="$3"
+  local snapcraft_revisions_kubelet=$(snapcraft revisions --arch=amd64 kubelet)
+
+  if [ "$track" == "latest" ]
   then
-    CURRENT_STABLE_RELEASE=$(grep ' stable:' <<< "${SNAP_INFO_KUBECTL}"|awk '{print $2}')
+    CURRENT_STABLE_RELEASE=$(grep ' stable:' <<< "${snap_info_kubectl}"|awk '{print $2}')
   else
-    CURRENT_STABLE_RELEASE=$(grep ${MAIN_VERSION}/stable <<< "${SNAP_INFO_KUBECTL}"|awk '{print $2}')
+    CURRENT_STABLE_RELEASE=$(grep ${MAIN_VERSION}/stable <<< "${snap_info_kubectl}"|awk '{print $2}')
   fi
   if [ v${CURRENT_STABLE_RELEASE} = ${KUBE_VERSION} ]
   then
     echo 'nothing to promote!'
   else
     # ok, we have a new version, how old is it?
-    if [ "$BRANCH" == "latest" ]
+    if [ "$track" == "latest" ]
     then
-      release_time_string=$(grep " edge\*"<<< "${SNAPCRAFT_REVISIONS_KUBELET}"|awk '{print $2}')
+      release_time_string=$(grep " edge\*"<<< "${snapcraft_revisions_kubelet}"|awk '{print $2}')
     else
-      release_time_string=$(grep "${MAIN_VERSION}/edge\*"<<< "${SNAPCRAFT_REVISIONS_KUBELET}"|awk '{print $2}')
+      release_time_string=$(grep "${MAIN_VERSION}/edge\*"<<< "${snapcraft_revisions_kubelet}"|awk '{print $2}')
     fi
     release_time=$(date -d "${release_time_string} + 7 days" +%s)
     right_now=$(date +%s)
     if (( right_now >= release_time))
     then
-      echo "Promoting mature $KUBE_VERSION release to stable"
+      echo "Promoting mature $kube_version release to stable"
       # Promote snaps from edge to candidate
       scripts_path=$(dirname "$0")
-      version=$(get_major_minor $KUBE_VERSION)
+      version=$(get_major_minor $kube_version)
       export PROMOTE_FROM="$version/candidate"
       export PROMOTE_TO="$version/stable"
-      if [ "$BRANCH" == "latest" ]
+      if [ "$track" == "latest" ]
       then
         export PROMOTE_TO="stable $PROMOTE_TO"
       fi
       $scripts_path/promote-snaps.sh
-
-      stable_promotion='yes'
     else
-	echo "Release $KUBE_VERSION too young to promote to stable"
+	echo "Release $kube_version too young to promote to stable"
 	echo "Will promote in $(( (release_time - right_now) / 86400 )) days"
     fi
   fi
 }
 
 
-function find_release {
+function find_upstream_release_for_track {
   # Finds a suitable release for this version(stable/beta/alpha)
-  if [ "$1" == "latest" ]
+  #
+  # Input:
+  # ${TRACK} the track we are looking for (eg 1.11) or "latest"
+  #
+  # Output:
+  # ${KUBE_VERSION} the latest release version for the $TRACK passed in
+  # ${KUBE_VERSION_IS_STABLE} 'yes' if the release is considered stable upstream
+  local track="$1"
+
+  if [ "$track" == "latest" ]
   then
     url="https://dl.k8s.io/release/stable.txt"
   else
-    url="https://dl.k8s.io/release/stable-${BRANCH}.txt"
+    url="https://dl.k8s.io/release/stable-${track}.txt"
   fi
 
   export KUBE_VERSION="$(curl -s -L $url)"
-  export KUBE_VERSION_URL=$url
+  export KUBE_VERSION_IS_STABLE='yes'
 
   if [[ $KUBE_VERSION = *"Error"* ]]
   then
-    if [ "$1" == "latest" ]
-    then
-      url="https://dl.k8s.io/release/latest.txt"
-    else
-      url="https://dl.k8s.io/release/latest-${BRANCH}.txt"
-    fi
-
+    # We did not get a stable release for the track we are looking for
+    # Let's check for unstable ("latest") releases
+    url="https://dl.k8s.io/release/latest-${track}.txt"
     export KUBE_VERSION="$(curl -s -L $url)"
-    export KUBE_VERSION_URL=$url
+    export KUBE_VERSION_IS_STABLE='no'
   fi
 }
 
 
 # Main loop. Go over all versions
-for BRANCH in ${VERSIONS[@]}
+for TRACK in ${VERSIONS[@]}
 do
-  find_release "${BRANCH}"
-
-  export BRANCH
+  find_upstream_release_for_track "${TRACK}"
 
   # Work only on the available branches (eg 2.0 might not be there yet)
   if [[ $KUBE_VERSION != *"Error"* ]]
   then
     echo "Processing $KUBE_VERSION"
-    check_for_release
-    if [ "$trigger" == 'yes' ]
+    is_upstream_newer_than_edge "${TRACK}" "${KUBE_VERSION}" "${SNAP_INFO_KUBECTL}"
+    if [ "$upstream_is_newer" == 'yes' ]
     then
-      build_promote
+      build_and_promote_snaps_to_all_but_stable "${TRACK}" "${KUBE_VERSION}"
     fi
 
-    promote_stable
+    if [ "$KUBE_VERSION_IS_STABLE" == 'yes' ]
+    then
+      # Do not promote to stable something it is not stable upstream.
+      # Also do not create cdk addons for something that is not stable because it
+      # may change
+      promote_snaps_to_stable "${TRACK}" "${KUBE_VERSION}" "${SNAP_INFO_KUBECTL}"
+    fi
   fi
 done
