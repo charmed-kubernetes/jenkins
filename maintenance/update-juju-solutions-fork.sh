@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 # This script will update juju-solutions/kubernetes with content from kubernetes. It will only perform a fast-forward 
 # merge, which should work for us since we should be the only one changing charm code.
