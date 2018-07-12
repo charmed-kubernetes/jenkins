@@ -7,8 +7,10 @@
 
 declare -a TRACKS=('1.14' '1.13' '1.12' '1.11' '1.10' '1.9' '1.8');
 declare -a CHANNELS=('stable' 'candidate' 'beta' 'edge');
+declare -a ARCHS=('amd64' 's390x' 'arm64');
 
-SNAP_INFO=$(snap info kubectl)
+SNAPCRAFT_INFO=$(snapcraft list-revisions kubectl)
+
 
 function find_release {
     # Finds the release k8s version and snap revision in a track/channel
@@ -16,44 +18,38 @@ function find_release {
     # Input:
     # TRACK track to search for
     # CHANNEL channel to search for
+    # ARCH architecture we are interested in
     # Outpu:
     # $RELEASE the release
     if [[ $TRACK == "none" ]]
     then
-      export RELEASE=$(echo "$SNAP_INFO" | grep " $CHANNEL:" | awk '{print $2" "($3)}')
+      export RELEASE=$(echo "$SNAPCRAFT_INFO" | grep " $CHANNEL\*" | grep "$ARCH" | awk '{print $4" ("$1")"}')
     else
-      export RELEASE=$(echo "$SNAP_INFO" | grep "$TRACK/$CHANNEL:" | awk '{print $2" "($3)}')
+      export RELEASE=$(echo "$SNAPCRAFT_INFO" | grep "$TRACK/$CHANNEL\*" | grep "$ARCH" | awk '{print $4" ("$1")"}')
     fi
 }
 
-echo -n "<center><table width=\"100%\">" > results.html
-echo -n "  <tr>" >> results.html
 
-# Print table headers #
-echo -n "    <th align=\"left\">track</th>" >> results.html
-for CHANNEL in ${CHANNELS[@]}
-do
-  echo -n "    <th align=\"left\">$CHANNEL</th>" >> results.html
-done
-echo -n "  </tr>" >> results.html
-echo -n "  <tr>" >> results.html
+function print_table {
+    # print table for an architecture
+    #
+    # Input:
+    # ARCH architecture we are interested in
 
-# Print info for no specific track #
-TRACK="none"
-echo -n "  <td>$TRACK</td>" >> results.html
-for CHANNEL in ${CHANNELS[@]}
-do
-  find_release $TRACK $CHANNEL
-  echo -n "    <td>$RELEASE</td>" >> results.html
-done
-echo -n "  </tr>" >> results.html
+    echo -n "<center><table width=\"100%\">" >> results.html
+    echo -n "  <tr>" >> results.html
 
-# Print info for each track #
-for TRACK in ${TRACKS[@]}
-do
-  echo -n "  <tr>" >> results.html
-  if [[ $SNAP_INFO == *$TRACK/edge* ]]
-  then
+    # Print table headers #
+    echo -n "    <th align=\"left\">track</th>" >> results.html
+    for CHANNEL in ${CHANNELS[@]}
+    do
+      echo -n "    <th align=\"left\">$CHANNEL</th>" >> results.html
+    done
+    echo -n "  </tr>" >> results.html
+    echo -n "  <tr>" >> results.html
+
+    # Print info for no specific track #
+    TRACK="none"
     echo -n "  <td>$TRACK</td>" >> results.html
     for CHANNEL in ${CHANNELS[@]}
     do
@@ -61,9 +57,33 @@ do
       echo -n "    <td>$RELEASE</td>" >> results.html
     done
     echo -n "  </tr>" >> results.html
-  fi
+
+    # Print info for each track #
+    for TRACK in ${TRACKS[@]}
+    do
+      echo -n "  <tr>" >> results.html
+      if [[ $SNAPCRAFT_INFO == *$TRACK/edge* ]]
+      then
+        echo -n "  <td>$TRACK</td>" >> results.html
+        for CHANNEL in ${CHANNELS[@]}
+        do
+          find_release $TRACK $CHANNEL
+          echo -n "    <td>$RELEASE</td>" >> results.html
+        done
+        echo -n "  </tr>" >> results.html
+      fi
+    done
+    echo -n "</table></center>" >> results.html
+}
+
+
+DATE=$(date)
+echo -n "" > results.html
+for ARCH in ${ARCHS[@]}
+do
+  echo -n "<hl> <center>$ARCH at $DATE</center>" >> results.html
+  print_table $ARCH
 done
-echo -n "</table></center>" >> results.html
 
 # The output must be a single line so the job description setter plugin will
 # grab it. The marker -> is what the description plugin setter script will
