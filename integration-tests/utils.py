@@ -253,34 +253,38 @@ async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=N
         data_path = os.path.join(bundle_dir, 'bundle.yaml')
         with open(data_path) as f:
             data = yaml.load(f)
-            if os.getenv('http_proxy') and os.getenv('https_proxy'):
-                # Lets inject proxy settings
-                http_proxy = os.environ.get('http_proxy')
-                https_proxy = os.environ.get('https_proxy')
-                snap_proxy = https_proxy
-                options = data['services']['kubernetes-worker'].setdefault('options', {})
-                options['http_proxy'] = http_proxy
-                options['https_proxy'] = https_proxy
-                # In localhost we need proxy-extra-args="proxy-mode=userspace"
-                if await is_localhost():
-                    options['proxy-extra-args'] = 'proxy-mode=userspace'
-                for app in ['kubernetes-master', 'kubernetes-worker', 'etcd']:
-                    options = data['services'][app].setdefault('options', {})
-                    options['snap_proxy'] = snap_proxy
-            if arch() == 's390x':
-                options = data['services']['etcd'].setdefault('options', {})
-                options['channel'] = "2.3/stable"
-                options = data['services']['kubernetes-master'].setdefault('options', {})
-                options['enable-dashboard-addons'] = "false"
-                options['enable-metrics'] = "false"
-            if snap_channel:
-                for app in ['kubernetes-master', 'kubernetes-worker']:
-                    options = data['services'][app].setdefault('options', {})
-                    options['channel'] = snap_channel
+            await patch_bundle(data, snap_channel)
             with open(data_path, 'w') as f:
                 yaml.dump(data, f)
         await model.deploy(bundle_dir)
     await wait_for_ready(model)
+
+
+async def patch_bundle(bundle, snap_channel):
+    ''' Patch the bundle with snap, procy and arch specific properties. '''
+    if os.getenv('http_proxy') and os.getenv('https_proxy'):
+        # Lets inject proxy settings
+        http_proxy = os.environ.get('http_proxy')
+        https_proxy = os.environ.get('https_proxy')
+        snap_proxy = https_proxy
+        options = bundle['services']['kubernetes-worker'].setdefault('options', {})
+        options['http_proxy'] = http_proxy
+        options['https_proxy'] = https_proxy
+        if await is_localhost():
+            options['proxy-extra-args'] = 'proxy-mode=userspace'
+        for app in ['kubernetes-master', 'kubernetes-worker', 'etcd']:
+            options = bundle['services'][app].setdefault('options', {})
+            options['snap_proxy'] = snap_proxy
+    if arch() == 's390x':
+        options = bundle['services']['etcd'].setdefault('options', {})
+        options['channel'] = "2.3/stable"
+        options = bundle['services']['kubernetes-master'].setdefault('options', {})
+        options['enable-dashboard-addons'] = "false"
+        options['enable-metrics'] = "false"
+    if snap_channel:
+        for app in ['kubernetes-master', 'kubernetes-worker']:
+            options = bundle['services'][app].setdefault('options', {})
+            options['channel'] = snap_channel
 
 
 def asyncify(f):
@@ -361,31 +365,11 @@ async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=No
         bundle_dir = os.path.join(log_dir, bundle)
         cmd = ['charm', 'pull', url, '--channel', channel, bundle_dir]
         await asyncify(subprocess.check_call)(cmd)
-
         # update bundle config
         data_path = os.path.join(bundle_dir, 'bundle.yaml')
         with open(data_path) as f:
             data = yaml.load(f)
-            if os.getenv('http_proxy') and os.getenv('https_proxy'):
-                # Lets inject proxy settings
-                http_proxy = os.environ.get('http_proxy')
-                https_proxy = os.environ.get('https_proxy')
-                snap_proxy = https_proxy
-                options = data['services']['kubernetes-worker'].setdefault('options', {})
-                options['http_proxy'] = http_proxy
-                options['https_proxy'] = https_proxy
-                if await is_localhost():
-                    options['proxy-extra-args'] = 'proxy-mode=userspace'
-                for app in ['kubernetes-master', 'kubernetes-worker', 'etcd']:
-                    options = data['services'][app].setdefault('options', {})
-                    options['snap_proxy'] = snap_proxy
-            if arch() == 's390x':
-                options = data['services']['etcd'].setdefault('options', {})
-                options['channel'] = "2.3/stable"
-            if snap_channel:
-                for app in ['kubernetes-master', 'kubernetes-worker']:
-                    options = data['services'][app].setdefault('options', {})
-                    options['channel'] = snap_channel
+            await patch_bundle(data, snap_channel)
             data['services']['kubernetes-worker'].setdefault('options', {})['labels'] = 'mylabel=thebest'
             yaml.Dumper.ignore_aliases = lambda *args: True
             with open(data_path, 'w') as f:
