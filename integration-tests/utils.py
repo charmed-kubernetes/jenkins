@@ -276,8 +276,6 @@ async def patch_bundle(bundle, snap_channel):
             options = bundle['services'][app].setdefault('options', {})
             options['snap_proxy'] = snap_proxy
     if arch() == 's390x':
-        options = bundle['services']['etcd'].setdefault('options', {})
-        options['channel'] = "2.3/stable"
         options = bundle['services']['kubernetes-master'].setdefault('options', {})
         options['enable-dashboard-addons'] = "false"
         options['enable-metrics'] = "false"
