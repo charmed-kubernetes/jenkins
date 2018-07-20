@@ -3,6 +3,7 @@ import functools
 import json
 import os
 import random
+import requests
 import shutil
 import subprocess
 import tempfile
@@ -20,50 +21,14 @@ from subprocess import check_output, check_call
 
 
 @log_calls
-def dump_model_info(model, log_dir):
-    ''' Dumps information about the model to the log dir '''
-    data = {
-        'applications': {k: v.data for k, v in model.applications.items()},
-        'units': {k: v.data for k, v in model.units.items()},
-        'machines': {k: v.data for k, v in model.machines.items()}
-    }
-    path = os.path.join(log_dir, 'model-info')
-    with open(path, 'w') as f:
-        json.dump(data, f, indent=2)
-        f.write('\n')
-
-
-@log_calls_async
-async def dump_debug_log(model, log_dir):
-    ''' Dumps Juju debug log to the log dir '''
-    path = os.path.join(log_dir, 'debug-log')
-    with open(path, 'w') as f:
-        cmd = ['juju', 'debug-log', '-m', model.info.name, '--replay']
-        await asyncify(subprocess.call)(cmd, stdout=f,
-                                        stderr=subprocess.STDOUT)
-
-@log_calls_async
-async def dump_debug_actions(model, log_dir):
-    ''' Runs debug action on all units, dumping the results to log dir '''
-    result_dir = os.path.join(log_dir, 'debug-actions')
-    os.mkdir(result_dir)
-
-    async def dump_debug_action(unit):
-        try:
-            action = await unit.run_action('debug')
-        except JujuError as e:
-            if 'no actions defined on charm' in str(e) \
-                    or 'not defined on unit' in str(e):
-                return
-            raise
-        await action.wait()
-        remote_path = action.data['results']['path']
-        filename = unit.name.replace('/', '_') + '.tar.gz'
-        local_path = os.path.join(result_dir, filename)
-        await scp_from(unit, remote_path, local_path)
-
-    coroutines = [dump_debug_action(unit) for unit in model.units.values() if unit]
-    await asyncio.wait(coroutines)
+def fetch_field_agent_and_run(log_dir):
+    url = 'https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py'
+    response = requests.get(url)
+    path = log_dir + '/collect.py'
+    with open(path, 'wb') as f:
+        f.write(response.content)
+    os.chmod(path, 0o755)
+    subprocess.check_call(['./collect.py'], cwd=log_dir)
 
 
 @log_calls_async
@@ -109,14 +74,12 @@ def timeout_for_current_task(timeout):
 
 @async_contextmanager
 async def captured_fail_logs(model, log_dir):
-    ''' Create a context that captures model info when any exception is raised.
+    ''' Create a context that captures debug info when any exception is raised.
     '''
     try:
         await yield_()
     except:
-        dump_model_info(model, log_dir)
-        await dump_debug_log(model, log_dir)
-        await dump_debug_actions(model, log_dir)
+        await asyncify(fetch_field_agent_and_run)(log_dir)
         raise
 
 
