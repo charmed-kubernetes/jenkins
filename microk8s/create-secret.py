@@ -3,6 +3,8 @@ from launchpadlib.launchpad import Launchpad
 import configbag
 
 def reach_lp_builders():
+    """Try to login to LP and reach the latest microk8s snap. It will prompt you for
+    authorisation if no credentials file is found."""
     # log in
     launchpad = Launchpad.login_with('Launchpad Snap Build Trigger',
                                      'production', configbag.cachedir,

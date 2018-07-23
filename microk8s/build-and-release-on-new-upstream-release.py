@@ -11,6 +11,7 @@ tracks = ["latest", "1.10", "1.11", "1.12", "1.13", "1.14", "1.15"]
 
 
 def upstream_release(release):
+    """Return the latest stable k8s in the release series"""
     if release == "latest":
         release_url = "https://dl.k8s.io/release/stable.txt"
     else:
@@ -24,6 +25,7 @@ def upstream_release(release):
 
 
 def snapped_release(track):
+    """ Return the version of the microk8s snap in the edge channel and the track provided"""
     snap_details = public_api.get_snap_details('microk8s', 'edge')
     tracks = snap_details['channel_maps_list']
     versions = [c['version'] for t in tracks if t['track'] == track
@@ -33,6 +35,8 @@ def snapped_release(track):
 
 
 def trigger_lp_builders(track):
+    """Trigger the LP builder of the track provided. This method will
+    login using the cached credentials or prompt you for authorization."""
     if track == "latest":
         snap_name = "microk8s"
     else:
