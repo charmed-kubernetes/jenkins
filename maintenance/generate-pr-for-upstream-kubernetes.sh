@@ -4,14 +4,6 @@ set -eu
 # This script will generate a PR for upstream kubernetes(https://github.com/kubernetes/kubernetes) containing the
 # latest commits from the https://github.com/juju-solutions/kubernetes fork.
 
-# build up the PR message
-echo <<EOF
-**What this PR does / why we need it**:
-Juju updates
-
-**Release note**:
-EOF
-
 # grab the commit history
 GIT_HISTORY=$(git log --pretty=format:"%s %b - %aN <%aE> %ad" staging..master > pr_message.txt)
 
