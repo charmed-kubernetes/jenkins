@@ -7,7 +7,7 @@ set -eux
 sudo add-apt-repository ppa:juju/stable -y
 sudo add-apt-repository ppa:tvansteenburgh/ppa -y
 sudo apt update -yq
-sudo apt install -y unzip python3-pip python-pip squashfuse snapd charm-tools
+sudo apt install -y unzip python3-pip python-pip squashfuse snapd charm-tools libffi libffi-dev
 sudo snap install juju --classic
 sudo snap install conjure-up --classic
 sudo pip2 install 'git+https://github.com/juju/juju-crashdump'
