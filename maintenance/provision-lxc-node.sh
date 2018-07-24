@@ -42,6 +42,13 @@ RUN mkdir -p /root/bin
 RUN wget https://ci.kubernetes.juju.solutions/jnlpJars/slave.jar
 RUN mv slave.jar /root/bin
 
+# Add hub command line tool
+URL=$(curl -s https://api.github.com/repos/github/hub/releases/latest | jq -r ".assets[] | select(.name | test(\"linux-amd64\")) | .browser_download_url")
+RUN wget ${URL}
+RUN tar -xzf hub-linux-amd64-*.tgz && rm hub-linux-amd64-*.tgz
+RUN mv hub-linux-amd64-*/bin/hub /usr/local/bin
+RUN rm -rf hub-linux-amd64-*
+
 echo "Your lxc container is ready to be added as jenkins node."
 echo "Go to Manage Jenkins -> Manage Nodes -> New Node and select"
 echo "Launch agent via execution of command on the master and enter the following:"
