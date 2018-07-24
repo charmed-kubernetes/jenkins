@@ -14,6 +14,9 @@ done
 PUSH integration-tests/install-deps.sh /root/
 RUN /root/install-deps.sh
 
+PUSH microk8s/install-deps.sh /root/
+RUN /root/install-deps.sh
+
 RUN mkdir -p /root/.local/share/juju
 
 PUSH ~/.local/share/juju/accounts.yaml /root/.local/share/juju/
