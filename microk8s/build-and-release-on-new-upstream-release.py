@@ -28,8 +28,9 @@ def snapped_release(track):
     """ Return the version of the microk8s snap in the edge channel and the track provided"""
     snap_details = public_api.get_snap_details('microk8s', 'edge')
     tracks = snap_details['channel_maps_list']
+    channel = "{}/edge".format(track) if track != "latest" else "edge"
     versions = [c['version'] for t in tracks if t['track'] == track
-                for c in t['map'] if c['channel'] == 'edge']
+                for c in t['map'] if c['channel'] == channel]
     version = versions[0] if versions else None
     return version
 
