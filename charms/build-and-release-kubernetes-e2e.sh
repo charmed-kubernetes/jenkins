@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eux
 
-export GIT_REPO="${GIT_REPO:-https://github.com/kubernetes/kubernetes.git}"
+export GIT_REPO="${GIT_REPO:-https://github.com/juju-solutions/kubernetes.git}"
 
 source utils/retry.sh
 
