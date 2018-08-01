@@ -22,7 +22,6 @@
 
       Please see https://git.io/fNwXY for more information.
     project-type: pipeline
-    concurrent: true
     pipeline-scm:
       scm:
         - k8s-jenkins-scm

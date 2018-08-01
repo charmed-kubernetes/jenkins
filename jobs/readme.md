@@ -3,6 +3,7 @@ Running JJB
 # Prereqs
 
   - Needs `pipenv` installed
+  - Needs `pyenv` installed
   - Needs Jenkins Job Builder config (**jjb-conf.ini**):
 
 ```ini
