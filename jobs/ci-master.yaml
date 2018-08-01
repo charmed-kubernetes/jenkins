@@ -1,0 +1,8 @@
+# K8s Jenkin GIT repos
+- scm:
+    name: k8s-jenkins-scm
+    scm:
+      - git:
+          url: https://github.com/juju-solutions/kubernetes-jenkins.git
+          branches:
+            - 'master'
