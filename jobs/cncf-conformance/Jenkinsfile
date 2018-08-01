@@ -1,0 +1,63 @@
+/* Handles conformance testing and result gathering for cncf https://github.com/cncf/k8s-conformance */
+pipeline {
+    agent {
+        label 'juju-client'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = '/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin'
+    }
+    stages {
+        stage('Setup') {
+            steps {
+                sh "sudo snap install juju-wait --classic || true"
+                sh "sudo snap install kubectl --classic || true"
+                sh "wget -qO sonobuoy.tar.gz https://github.com/heptio/sonobuoy/releases/download/v${params.sonobuoy_version}/sonobuoy_${params.sonobuoy_version}_linux_amd64.tar.gz"
+                sh "tar xvf sonobuoy.tar.gz"
+            }
+        }
+        stage('Deploy: CDK') {
+            steps {
+                sh "juju add-model -c ${params.controller} ${params.model}"
+                sh "juju deploy -m ${params.controller}:${params.model} canonical-kubernetes-${params.bundle_revision}"
+                sh "juju-wait -e ${params.controller}:${params.model} -w"
+                sh "juju config -m ${params.controller}:${params.model} kubernetes-master allow-privileged=true"
+                sh "juju config -m ${params.controller}:${params.model} kubernetes-worker allow-privileged=true"
+            }
+        }
+        stage('Deploy: sonobuoy') {
+            steps {
+                sh "mkdir -p $HOME/.kube"
+                sh "juju scp -m ${params.controller}:${params.model} kubernetes-master/0:config $HOME/.kube/"
+                sh "export RBAC_ENABLED=\$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)"
+                sh "./sonobuoy run"
+            }
+        }
+        stage('Test') {
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+            steps {
+                waitUntil {
+                    script {
+                        def r = sh script:'./sonobuoy retrieve results/.', returnStatus: true
+                        return (r == 0);
+                    }
+                }
+            }
+        }
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: 'results/*.tar.gz'
+            }
+        }
+    }
+    post {
+        always {
+            sh "rm -rf $HOME/.kube"
+            sh "juju destroy-model -y ${params.controller}:${params.model}"
+        }
+    }
+}

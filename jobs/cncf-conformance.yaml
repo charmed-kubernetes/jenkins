@@ -1,0 +1,56 @@
+# CNCF Conformance Project
+# https://github.com/cncf/k8s-conformance
+#
+# Adding new versions in 'job-group', under jobs:
+# - job-group:
+#     name: '{name}-tests'
+#     jobs:
+#       - '{name}-tests-{k8sver}':
+#           k8sver: 'v1.11.x'
+#           bundle_revision: '218'
+#           cloud: ['aws', 'google']
+#       - '{name}-tests-{k8sver}':
+#           k8sver: 'v1.12.x'
+#           bundle_revision: '2xx'
+#           cloud: ['aws', 'google']
+
+
+- job-template:
+    name: '{name}-tests-{k8sver}-{cloud}'
+    description: |
+      CNCF Conformance testing for Kubernetes {k8sver} on {cloud}
+
+      Please see https://git.io/fNwXY for more information.
+    project-type: pipeline
+    concurrent: true
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-scm
+      script-path: jobs/cncf-conformance/Jenkinsfile
+    parameters:
+      - string:
+          name: bundle_revision
+          default: '{bundle_revision}'
+      - string:
+          name: sonobuoy_version
+          default: '0.11.5'
+      - string:
+          name: model
+          default: '{cloud}-k8s-conformance'
+      - string:
+          name: controller
+          default: 'jenkins-ci-{cloud}'
+
+- job-group:
+    name: '{name}-tests'
+    k8sver:
+      - 'v1.11.x':
+          bundle_revision: '218'
+    jobs:
+      - '{name}-tests-{k8sver}-{cloud}':
+          cloud: ['aws', 'google']
+
+- project:
+    name: k8s-conformance
+    jobs:
+      - '{name}-tests'
