@@ -1,19 +1,6 @@
 # CNCF Conformance Project
 # https://github.com/cncf/k8s-conformance
 #
-# Adding new versions in 'job-group', under jobs:
-# - job-group:
-#     name: '{name}-tests'
-#     jobs:
-#       - '{name}-tests-{k8sver}':
-#           k8sver: 'v1.11.x'
-#           bundle_revision: '218'
-#           cloud: ['aws', 'google']
-#       - '{name}-tests-{k8sver}':
-#           k8sver: 'v1.12.x'
-#           bundle_revision: '2xx'
-#           cloud: ['aws', 'google']
-
 
 - job-template:
     name: '{name}-tests-{k8sver}-{cloud}'

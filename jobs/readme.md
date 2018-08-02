@@ -36,6 +36,14 @@ First setup your python environment:
 > jenkins-jobs --conf jobs/jjb-conf.ini update jobs/
 ```
 
+# Adding new jobs
+
+1. Create the job yaml in this `jobs/` directory.
+2. Create a sub-directory of the same name as job.
+3. Create a `Jenkinsfile` and any additional local libraries required for job to run.
+4. Include a readme.md based on `readme-template.md`
+5. Verify job syntax with `jenkins-jobs --config jobs/jjb-conf.ini test jobs/new-job.yaml`
+
 # References
 
 - https://jenkins.io/doc/book/pipeline/jenkinsfile/
