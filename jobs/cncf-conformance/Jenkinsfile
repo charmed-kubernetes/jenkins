@@ -19,6 +19,9 @@ pipeline {
             }
         }
         stage('Deploy: CDK') {
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
             steps {
                 sh "juju add-model -c ${params.controller} ${params.model}"
                 sh "juju deploy -m ${params.controller}:${params.model} canonical-kubernetes-${params.bundle_revision}"
@@ -42,7 +45,7 @@ pipeline {
             steps {
                 waitUntil {
                     script {
-                        def r = sh script:'./sonobuoy retrieve results/.', returnStatus: true
+                        def r = sh script:'./sonobuoy status|grep -q \'Sonobuoy has completed\'', returnStatus: true
                         return (r == 0);
                     }
                 }
@@ -50,6 +53,12 @@ pipeline {
         }
         stage('Archive') {
             steps {
+                waitUntil {
+                    script {
+                        def r = sh script:'./sonobuoy retrieve results/.', returnStatus: true
+                        return (r == 0);
+                    }
+                }
                 archiveArtifacts artifacts: 'results/*.tar.gz'
             }
         }
