@@ -46,12 +46,12 @@ stage('Testing') {
                 def bundle = bundles[b]
                 def job_name = (cloud+bundle+test).replace('_','').replace('-','')
                 echo "Preparing job for "+test+" on "+bundle+" on "+cloud
-                jobs[job_name] = {
+                // jobs[job_name] = {
                     stage(cloud+" "+bundle+" "+test) {
                         echo "Running "+job_name
                         build job: 'test-cdk', parameters: [string(name: 'TEST_CONTROLLER', value: cloud), string(name: 'TEST_CHARM_CHANNEL', value: TEST_CHARM_CHANNEL), string(name: 'TEST_SNAP_CHANNEL', value: TEST_SNAP_CHANNEL), string(name: 'TEST_BUNDLES', value: bundle), [$class: 'NodeParameterValue', name: 'NODE', labels: [node], nodeEligibility: [$class: 'AllNodeEligibility']], string(name: 'TEST_NAME', value: test)]
                     } 
-                }
+                // }
             }
         }
     }
@@ -67,14 +67,14 @@ stage('Testing') {
             }
             def job_name = (cloud+test).replace('_','').replace('-','')
             echo "Preparing job for "+test+" on "+cloud
-            jobs[job_name] = {
+            // jobs[job_name] = {
                 stage(cloud+" "+test) {
                     echo "Running "+job_name
                     build job: 'test-cdk', parameters: [string(name: 'TEST_CONTROLLER', value: cloud), string(name: 'TEST_CHARM_CHANNEL', value: TEST_CHARM_CHANNEL), string(name: 'TEST_SNAP_CHANNEL', value: TEST_SNAP_CHANNEL), string(name: 'TEST_BUNDLES', value: "kubernetes-core"), [$class: 'NodeParameterValue', name: 'NODE', labels: [node], nodeEligibility: [$class: 'AllNodeEligibility']], string(name: 'TEST_NAME', value: test)]
                 }
-            }
+            // }
         }
     }
 
-    parallel jobs
+    // parallel jobs
 }
