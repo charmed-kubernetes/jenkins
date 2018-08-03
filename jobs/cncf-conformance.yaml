@@ -26,6 +26,9 @@
       - string:
           name: controller
           default: 'jenkins-ci-{cloud}'
+      - string:
+          name: cloud
+          default: '{cloud}'
 
 - job-group:
     name: '{name}-tests'

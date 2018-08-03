@@ -1,3 +1,8 @@
+def cloud_integrator_map = [
+    aws: 'aws-integrator',
+    google: 'gcp-integrator'
+]
+
 /* Handles conformance testing and result gathering for cncf https://github.com/cncf/k8s-conformance */
 pipeline {
     agent {
@@ -7,7 +12,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = '/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin'
+        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin'
     }
     stages {
         stage('Setup') {
@@ -25,9 +30,17 @@ pipeline {
             steps {
                 sh "juju add-model -c ${params.controller} ${params.model}"
                 sh "juju deploy -m ${params.controller}:${params.model} canonical-kubernetes-${params.bundle_revision}"
-                sh "juju-wait -e ${params.controller}:${params.model} -w"
                 sh "juju config -m ${params.controller}:${params.model} kubernetes-master allow-privileged=true"
                 sh "juju config -m ${params.controller}:${params.model} kubernetes-worker allow-privileged=true"
+
+                // Needs better groovy interpolation for maps, put it in script branch for now
+                script {
+                    sh script:"juju deploy -m ${params.controller}:${params.model} cs:~containers/" + cloud_integrator_map[params.cloud]
+                    sh script:"juju add-relation -m ${params.controller}:${params.model} kubernetes-master " + cloud_integrator_map[params.cloud]
+                    sh script:"juju add-relation -m ${params.controller}:${params.model} kubernetes-worker " + cloud_integrator_map[params.cloud]
+                    sh script:"juju trust -m ${params.controller}:${params.model} " + cloud_integrator_map[params.cloud]
+                }
+                sh "juju-wait -e ${params.controller}:${params.model} -w"
             }
         }
         stage('Deploy: sonobuoy') {
@@ -44,6 +57,7 @@ pipeline {
             }
             steps {
                 waitUntil {
+                    sh './sonobuoy status || true'
                     script {
                         def r = sh script:'./sonobuoy status|grep -q \'Sonobuoy has completed\'', returnStatus: true
                         return (r == 0);
