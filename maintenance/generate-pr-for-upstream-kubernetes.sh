@@ -17,5 +17,5 @@ git rebase master
 git push
 
 # now generate the PR - note that this requires GITHUB_TOKEN set to an access token with repo permissions
-hub pull-request --file pr_message.txt -b kubernetes:master
+hub pull-request --file pr_message.txt --reviewer cynerva,ktsakalozos -b kubernetes:master
 rm pr_message.txt
