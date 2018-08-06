@@ -18,6 +18,7 @@ occur.
 - **controller**: Cloud (Or controller model if exists in CI) to run against
 - **k8sver**: List of stable k8s versions to test against
 - **cloud**: List of clouds to test against (ie. `['aws','google']`)
+- **bundle_channel**: Bundle channel to use for deployment
 
 # Usage
 
