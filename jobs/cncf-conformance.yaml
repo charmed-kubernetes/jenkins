@@ -11,7 +11,7 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-bm
+        - k8s-jenkins-scm
       script-path: jobs/cncf-conformance/Jenkinsfile
     parameters:
       - string:
