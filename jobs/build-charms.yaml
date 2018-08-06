@@ -1,0 +1,75 @@
+# Builds and releases latest charm development
+
+- job-template:
+    name: '{name}-{charm}'
+    description: |
+      Builds and releases {charm} to charmstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-scm
+      script-path: jobs/build-charms/Jenkinsfile
+    parameters:
+      - string:
+          name: charm
+          default: '{charm}'
+      - string:
+          name: from_channel
+          default: 'unpublished'
+      - string:
+          name: to_channel
+          default: 'edge'
+      - string:
+          name: model
+          default: '{cloud}-build-charms'
+      - string:
+          name: controller
+          default: 'jenkins-ci-{cloud}'
+      - string:
+          name: cloud
+          default: '{cloud}'
+      - string:
+          name: repo_name
+          default: '{repo_name}'
+      - string:
+          name: git_repo
+          default: '{git_repo}'
+
+- job-group:
+    name: '{name}'
+    cloud: 'aws'
+    charm:
+      - 'calico':
+          repo_name: 'layer-calico'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'canal':
+          repo_name: 'layer-canal'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'easyrsa':
+          repo_name: 'layer-easyrsa'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'etcd':
+          repo_name: 'layer-etcd'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'flannel':
+          repo_name: 'charm-flannel'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeapi-load-balancer':
+          repo_name: 'kubernetes'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubernetes-e2e':
+          repo_name: 'kubernetes'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubernetes-master':
+          repo_name: 'kubernetes'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubernetes-worker':
+          repo_name: 'kubernetes'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    jobs:
+      - '{name}-{charm}'
+
+- project:
+    name: build-release
+    jobs:
+      - '{name}'

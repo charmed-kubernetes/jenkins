@@ -1,0 +1,61 @@
+pipeline {
+    agent {
+        label 'juju-client'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+        JUJU_REPOSITORY = "${env.WORKSPACE}/build/charms"
+        TMPDIR = "${env.WORKSPACE}/tmp"
+        JUJU_MODEL = "${params.model}-${env.BUILD_NUMBER}"
+    }
+    stages {
+        stage('Setup') {
+            steps {
+                sh "sudo snap install bundletester --edge --classic || true"
+                sh "mkdir -p ${env.JUJU_REPOSITORY}"
+                sh "mkdir -p ${env.TMPDIR}"
+            }
+        }
+        stage('Build') {
+            options {
+                timeout(time: 5, unit: 'MINUTES')
+            }
+            steps {
+                sh "git clone -q ${params.git_repo}"
+                retry(5){
+                    sh "cd ${params.repo_name} && charm build -r --no-local-layers --force"
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                sh "juju add-model -c ${params.controller} ${env.JUJU_MODEL}"
+                sh "juju model-config -m ${params.controller}:${env.JUJU_MODEL} test-mode=true"
+                sh "bundletester -e ${params.controller}:${env.JUJU_MODEL} -vF -l DEBUG -t ${JUJU_REPOSITORY}/builds/${params.charm} -o report.xml -r xml"
+            }
+        }
+        stage('Release to Store') {
+            steps {
+                script {
+                    def git_commit = sh script:"cd ${params.repo_name} && git rev-parse HEAD", returnStdout: true
+                    def charm_rev = sh script:"charm push ${env.JUJU_REPOSITORY}/builds/${params.charm} cs:~containers/${params.charm} | head -n 1 | awk '{print \$2}'", returnStdout: true
+                    sh "charm set " + charm_rev.trim() + " commit=" + git_commit.trim()
+                    sh "CHARM=\"" + charm_rev.trim() + "\" FROM_CHANNEL=${params.from_channel} TO_CHANNEL=${params.to_channel} jobs/build-charms/promote-charm.sh"
+                }
+            }
+        }
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: '*.xml'
+            }
+        }
+    }
+    post {
+        always {
+            sh "juju destroy-model -y ${params.controller}:${env.JUJU_MODEL}"
+        }
+    }
+}
