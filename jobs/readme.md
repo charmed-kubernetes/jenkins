@@ -27,13 +27,20 @@ query_plugins_info=False
 First setup your python environment:
 
 ```
+> cd jobs
+> pipenv install
 > pipenv shell
+```
+
+# See a list of available job tasks
+```
+> invoke -l
 ```
 
 # Update jobs in jenkins
 
 ```
-> jenkins-jobs --conf jobs/jjb-conf.ini update jobs/
+> invoke update-jobs --conf jjb-conf.ini
 ```
 
 # Adding new jobs
@@ -42,7 +49,7 @@ First setup your python environment:
 2. Create a sub-directory of the same name as job.
 3. Create a `Jenkinsfile` and any additional local libraries required for job to run.
 4. Include a readme.md based on `readme-template.md`
-5. Verify job syntax with `jenkins-jobs --config jobs/jjb-conf.ini test jobs/new-job.yaml`
+5. Verify job syntax with: `invoke test-jobs --conf jobs/jjb-conf.ini`
 
 # References
 

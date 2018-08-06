@@ -1,0 +1,14 @@
+applications:
+  kubernetes-master:
+    charm: cs:~containers/kubernetes-master
+    constraints: cores=2 mem=4G root-disk=16G
+    num_units: 2
+    options:
+      channel: 1.9/edge
+  kubernetes-worker:
+    charm: cs:~containers/kubernetes-worker
+    constraints: cores=4 mem=4G root-disk=16G
+    expose: true
+    num_units: 3
+    options:
+      channel: 1.9/edge

@@ -24,7 +24,7 @@ pipeline {
             }
             steps {
                 sh "juju add-model -c ${params.controller} ${params.model}"
-                sh "juju deploy -m ${params.controller}:${params.model} canonical-kubernetes-${params.bundle_revision}"
+                sh "juju deploy -m ${params.controller}:${params.model} canonical-kubernetes --overlay jobs/cncf-conformance/${params.version_overlay}"
                 sh "juju config -m ${params.controller}:${params.model} kubernetes-master allow-privileged=true"
                 sh "juju config -m ${params.controller}:${params.model} kubernetes-worker allow-privileged=true"
                 sh "juju-wait -e ${params.controller}:${params.model} -w"

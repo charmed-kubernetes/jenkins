@@ -6,3 +6,11 @@
           url: https://github.com/juju-solutions/kubernetes-jenkins.git
           branches:
             - 'master'
+
+- scm:
+    name: k8s-jenkins-bm
+    scm:
+      - git:
+          url: https://github.com/battlemidget/kubernetes-jenkins.git
+          branches:
+            - 'feature/expand-versions'

@@ -11,12 +11,12 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-bm
       script-path: jobs/cncf-conformance/Jenkinsfile
     parameters:
       - string:
-          name: bundle_revision
-          default: '{bundle_revision}'
+          name: version_overlay
+          default: '{version_overlay}'
       - string:
           name: sonobuoy_version
           default: '0.11.5'
@@ -34,7 +34,11 @@
     name: '{name}-tests'
     k8sver:
       - 'v1.11.x':
-          bundle_revision: '218'
+          version_overlay: '1.11-edge-overlay.yaml'
+      - 'v1.10.x':
+          version_overlay: '1.10-edge-overlay.yaml'
+      - 'v1.9.x':
+          version_overlay: '1.9-edge-overlay.yaml'
     jobs:
       - '{name}-tests-{k8sver}-{cloud}':
           cloud: ['aws', 'google']
