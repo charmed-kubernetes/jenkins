@@ -33,6 +33,8 @@
 - job-group:
     name: '{name}-tests'
     k8sver:
+      - 'v1.12.x':
+          version_overlay: '1.12-edge-overlay.yaml'
       - 'v1.11.x':
           version_overlay: '1.11-edge-overlay.yaml'
       - 'v1.10.x':
