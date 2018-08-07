@@ -1,0 +1,18 @@
+# Builds and releases latest bundles
+
+- job:
+    name: 'build-release-bundles'
+    description: |
+      Builds and releases cdk bundles to charmstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-bm
+      script-path: jobs/build-bundles/Jenkinsfile
+    parameters:
+      - string:
+          name: channel
+          default: 'edge'
+      - string:
+          name: bundle_repo
+          default: 'https://github.com/juju-solutions/bundle-canonical-kubernetes.git'

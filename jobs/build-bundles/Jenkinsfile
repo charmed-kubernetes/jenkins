@@ -1,0 +1,80 @@
+bundle_mapping = [
+    'cdk-flannel': [
+        fragments: 'k8s/cdk cni/flannel',
+        charmstore: 'cs:~containers/bundle/canonical-kubernetes'
+    ],
+    'core-flannel': [
+        fragments: 'k8s/cdk cni/flannel',
+        charmstore: 'cs:~containers/bundle/kubernetes-core'
+    ],
+    'cdk-flannel-elastic': [
+        fragments: 'k8s/cdk cni/flannel monitor/elastic',
+        charmstore: 'cs:~containers/bundle/canonical-kubernetes-elastic'
+    ],
+    'cdk-calico': [
+        fragments: 'k8s/cdk cni/calico',
+        charmstore: 'cs:~containers/bundle/kubernetes-calico'
+    ],
+    'cdk-canal': [
+        fragments: 'k8s/cdk cni/canal',
+        charmstore: 'cs:~containers/bundle/canonical-kubernetes-canal'
+    ]
+]
+
+def releaseBundle(bundle, charmstore) {
+    // Releases bundle to defined charmstore namespace
+    def revision = sh script:String.format("charm push %s %s  | tail -n +1 | head -1 | awk '{print \$2}'", bundle, charmstore), returnStdout: true
+    sh script:String.format("charm release --channel edge %s", revision.trim()), returnStatus: true
+}
+
+pipeline {
+    agent {
+        label 'juju-client'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+        TMPDIR = "${env.WORKSPACE}/tmp"
+        BUNDLES_DIR = "${env.WORKSPACE}/tmp-bundles"
+        STORE_USSO_TOKEN = credentials('3f902246-f0c7-4e60-9c62-f5a2c3d56974')
+    }
+    stages {
+        stage('Setup') {
+            steps {
+                sh "git clone ${params.bundle_repo} ${env.TMPDIR}"
+                sh "mkdir -p $HOME/.local/share/juju $HOME/snap/charm/current/.local/share/juju"
+                sh "cp ${env.STORE_USSO_TOKEN} $HOME/.local/share/juju/store-usso-token"
+                sh "cp ${env.STORE_USSO_TOKEN} $HOME/snap/charm/current/.local/share/juju/store-usso-token"
+            }
+        }
+        stage('Build') {
+            steps {
+                script {
+                    bundle_mapping.each { bundle, options ->
+                        stage(String.format("Build: %s", bundle)) {
+                            sh script:String.format("%s/bundle -o %s/%s -c %s %s",
+                                                    env.TMPDIR,
+                                                    env.BUNDLES_DIR,
+                                                    bundle,
+                                                    params.channel,
+                                                    options.fragments), returnStatus: true
+                        }
+                    }
+                }
+            }
+        }
+        stage('Release') {
+            steps {
+                script {
+                    bundle_mapping.each { bundle, options ->
+                        stage(String.format("Release: %s", bundle)) {
+                            releaseBundle(String.format("%s/%s", env.BUNDLES_DIR, bundle), options.charmstore)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
