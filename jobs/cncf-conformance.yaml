@@ -18,9 +18,6 @@
           name: version_overlay
           default: '{version_overlay}'
       - string:
-          name: sonobuoy_version
-          default: '0.11.5'
-      - string:
           name: model
           default: '{cloud}-k8s-conformance'
       - string:

@@ -1,3 +1,6 @@
+@Library('juju-pipeline@master') _
+
+// List of bundles to release to the charmstore
 bundle_mapping = [
     'cdk-flannel': [
         fragments: 'k8s/cdk cni/flannel',
@@ -40,9 +43,14 @@ pipeline {
         BUNDLES_DIR = "${env.WORKSPACE}/tmp-bundles"
         STORE_USSO_TOKEN = credentials('3f902246-f0c7-4e60-9c62-f5a2c3d56974')
     }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
     stages {
         stage('Setup') {
             steps {
+                installTools()
                 sh "git clone ${params.bundle_repo} ${env.TMPDIR}"
                 sh "mkdir -p $HOME/.local/share/juju $HOME/snap/charm/current/.local/share/juju"
                 sh "cp ${env.STORE_USSO_TOKEN} $HOME/.local/share/juju/store-usso-token"

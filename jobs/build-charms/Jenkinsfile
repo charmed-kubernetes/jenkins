@@ -1,3 +1,4 @@
+@Library('juju-pipeline@master') _
 pipeline {
     agent {
         label 'juju-client'
@@ -6,16 +7,21 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
         JUJU_REPOSITORY = "${env.WORKSPACE}/build/charms"
         TMPDIR = "${env.WORKSPACE}/tmp"
         JUJU_MODEL = "${params.model}-${env.BUILD_NUMBER}"
         STORE_USSO_TOKEN = credentials('3f902246-f0c7-4e60-9c62-f5a2c3d56974')
     }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+
     stages {
         stage('Setup') {
             steps {
-                sh "sudo snap install bundletester --edge --classic || true"
+                installTools()
                 sh "mkdir -p ${env.JUJU_REPOSITORY}"
                 sh "mkdir -p ${env.TMPDIR}"
                 sh "mkdir -p $HOME/.local/share/juju $HOME/snap/charm/current/.local/share/juju"
@@ -59,7 +65,8 @@ pipeline {
     }
     post {
         always {
-            sh "juju destroy-model -y ${params.controller}:${env.JUJU_MODEL}"
+            tearDown(params.controller,
+                     env.JUJU_MODEL)
         }
     }
 }

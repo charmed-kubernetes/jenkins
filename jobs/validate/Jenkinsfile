@@ -15,9 +15,8 @@ pipeline {
         ansiColor('xterm')
         timestamps()
     }
-
     stages {
-        stage('Setup') {
+        stage('Install tools') {
             steps {
                 installTools()
             }
@@ -29,38 +28,18 @@ pipeline {
             steps {
                 deployCDK(params.controller,
                           env.JUJU_MODEL,
-                          params.version_overlay,
-                          params.bundle_channel)
+                          params.version_overlay)
             }
         }
-        stage('Deploy: sonobuoy') {
+
+        stage('Validate CDK') {
             steps {
-                deploySonobuoy(params.controller, env.JUJU_MODEL)
+                sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest --no-print-logs --junit-xml=report.xml validate/test_cdk.py::test_validate"
             }
         }
-        stage('Test') {
-            options {
-                timeout(time: 2, unit: 'HOURS')
-            }
+        stage('Archive Results') {
             steps {
-                waitUntil {
-                    sh './sonobuoy status || true'
-                    script {
-                        def r = sh script:'./sonobuoy status|grep -q \'Sonobuoy has completed\'', returnStatus: true
-                        return (r == 0);
-                    }
-                }
-            }
-        }
-        stage('Archive') {
-            steps {
-                waitUntil {
-                    script {
-                        def r = sh script:'./sonobuoy retrieve results/.', returnStatus: true
-                        return (r == 0);
-                    }
-                }
-                archiveArtifacts artifacts: 'results/*.tar.gz'
+                archiveArtifacts artifacts: 'jobs/report.xml'
             }
         }
     }

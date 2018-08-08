@@ -1,0 +1,42 @@
+# Validates a deployed CDK
+
+- job-template:
+    name: 'validate-{version}-{cloud}'
+    description: |
+      Validates a deployment, including upgrades.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-scm
+      script-path: jobs/validate/Jenkinsfile
+    parameters:
+      - string:
+          name: model
+          default: '{cloud}-validate'
+      - string:
+          name: controller
+          default: 'jenkins-ci-{cloud}'
+      - string:
+          name: cloud
+          default: '{cloud}'
+      - string:
+          name: version_overlay
+          default: '{version_overlay}'
+
+- job-group:
+    name: validate
+    version:
+      - 'v1.9.x':
+          version_overlay: 'jobs/validate/1.9-overlay.yaml'
+      - 'v1.10.x':
+          version_overlay: 'jobs/validate/1.10-overlay.yaml'
+      - 'v1.11.x':
+          version_overlay: 'jobs/validate/1.11-overlay.yaml'
+    jobs:
+      - 'validate-{version}-{cloud}':
+          cloud: ['aws', 'google']
+
+- project:
+    name: validate
+    jobs:
+      - 'validate'
