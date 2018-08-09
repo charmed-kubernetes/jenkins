@@ -57,14 +57,10 @@ pipeline {
                 }
             }
         }
-        stage('Archive') {
-            steps {
-                archiveArtifacts artifacts: '*.xml'
-            }
-        }
     }
     post {
         always {
+            junit 'report.xml'
             tearDown(params.controller,
                      env.JUJU_MODEL)
         }

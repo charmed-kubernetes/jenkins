@@ -1,9 +1,9 @@
-# Validates a deployed CDK
+# Validates upgrading from stable to edge of release
 
 - job-template:
-    name: 'validate-{version}-{cloud}'
+    name: 'validate-upgrade-{version}-{cloud}'
     description: |
-      Validates a deployment on {cloud}
+      Upgrades CDK and validates its deployment on {cloud}.
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -24,25 +24,25 @@
           default: '{version_overlay}'
       - bool:
           name: perform_upgrade
-          default: false
+          default: true
       - string:
           name: bundle_channel
-          default: 'edge'
+          default: 'stable'
 
 - job-group:
-    name: validate
+    name: validate-upgrade
     version:
       - 'v1.9.x':
-          version_overlay: 'jobs/validate/1.9-overlay.yaml'
+          version_overlay: 'jobs/validate/1.9-stable-overlay.yaml'
       - 'v1.10.x':
-          version_overlay: 'jobs/validate/1.10-overlay.yaml'
+          version_overlay: 'jobs/validate/1.10-stable-overlay.yaml'
       - 'v1.11.x':
-          version_overlay: 'jobs/validate/1.11-overlay.yaml'
+          version_overlay: 'jobs/validate/1.11-stable-overlay.yaml'
     jobs:
-      - 'validate-{version}-{cloud}':
+      - 'validate-upgrade-{version}-{cloud}':
           cloud: ['aws', 'google']
 
 - project:
-    name: validate
+    name: validate-upgrade
     jobs:
-      - 'validate'
+      - 'validate-upgrade'

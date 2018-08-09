@@ -34,13 +34,13 @@
     name: '{name}-tests'
     k8sver:
       - 'v1.12.x':
-          version_overlay: '1.12-edge-overlay.yaml'
+          version_overlay: 'jobs/cncf-conformance/1.12-edge-overlay.yaml'
       - 'v1.11.x':
-          version_overlay: '1.11-edge-overlay.yaml'
+          version_overlay: 'jobs/cncf-conformance/1.11-edge-overlay.yaml'
       - 'v1.10.x':
-          version_overlay: '1.10-edge-overlay.yaml'
+          version_overlay: 'jobs/cncf-conformance/1.10-edge-overlay.yaml'
       - 'v1.9.x':
-          version_overlay: '1.9-edge-overlay.yaml'
+          version_overlay: 'jobs/cncf-conformance/1.9-edge-overlay.yaml'
     jobs:
       - '{name}-tests-{k8sver}-{cloud}':
           cloud: ['aws', 'google']
