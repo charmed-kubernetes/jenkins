@@ -13,6 +13,8 @@ Runs `test_cdk` against a deployed CDK.
 - **model**: Juju model to create
 - **cloud**: Cloud to test against
 - **version_overlay**: Bundle overlay defining which k8s versions to test.
+- **perform_upgrade**: Perform charm upgrades from Stable to Edge of same release
+- **bundle_channel**: Default bundle channel to validate from, Set to 'stable' if performing an upgrade test.
 
 # Usage
 

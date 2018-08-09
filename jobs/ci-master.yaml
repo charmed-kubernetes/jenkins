@@ -13,4 +13,4 @@
       - git:
           url: https://github.com/battlemidget/kubernetes-jenkins.git
           branches:
-            - 'feature/test-deploy'
+            - 'feature/full-spec'

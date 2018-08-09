@@ -28,23 +28,41 @@ pipeline {
             steps {
                 deployCDK(params.controller,
                           env.JUJU_MODEL,
-                          params.version_overlay)
+                          params.version_overlay,
+                          params.bundle_channel)
             }
         }
 
         stage('Validate CDK') {
+            when {
+                beforeAgent true
+                expression { return !params.perform_upgrade }
+            }
             steps {
-                sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest --no-print-logs --junit-xml=report.xml validate/test_cdk.py::test_validate"
+                sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml validate/test_cdk.py::test_validate"
             }
         }
-        stage('Archive Results') {
+
+        stage('Validate CDK: Stable -> Edge') {
+            when {
+                beforeAgent true
+                expression { return params.perform_upgrade }
+            }
             steps {
-                archiveArtifacts artifacts: 'jobs/report.xml'
+                sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate-upgrade.xml validate/test_cdk.py::test_upgrade"
             }
         }
+        // TODO: Needs to be broken out into own test as we already have a deployed CDK
+        // stage('Bundletester') {
+        //     steps {
+        //         sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest --no-print-logs --junit-xml=report.xml validate/test_cdk.py::test_bundletester"
+        //     }
+        // }
     }
     post {
         always {
+            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
+            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
             tearDown(params.controller,
                      env.JUJU_MODEL)
         }

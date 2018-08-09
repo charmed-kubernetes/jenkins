@@ -318,33 +318,34 @@ async def upgrade_snaps(model, channel):
 
 
 @log_calls_async
-async def run_bundletester(namespace, log_dir, channel='stable', snap_channel=None, force_cloud=''):
-    async with temporary_model(log_dir, force_cloud=force_cloud) as model:
-        # fetch bundle
-        bundle = 'canonical-kubernetes'
-        url = 'cs:~%s/%s' % (namespace, bundle)
-        bundle_dir = os.path.join(log_dir, bundle)
-        cmd = ['charm', 'pull', url, '--channel', channel, bundle_dir]
-        await asyncify(subprocess.check_call)(cmd)
-        # update bundle config
-        data_path = os.path.join(bundle_dir, 'bundle.yaml')
-        with open(data_path) as f:
-            data = yaml.load(f)
-            await patch_bundle(data, snap_channel)
-            data['services']['kubernetes-worker'].setdefault('options', {})['labels'] = 'mylabel=thebest'
-            yaml.Dumper.ignore_aliases = lambda *args: True
-            with open(data_path, 'w') as f:
-                yaml.dump(data, f, default_flow_style=False)
+async def run_bundletester(namespace, model_name,
+                           log_dir, channel='stable',
+                           snap_channel=None):
+    # fetch bundle
+    bundle = 'canonical-kubernetes'
+    url = 'cs:~%s/%s' % (namespace, bundle)
+    bundle_dir = os.path.join(log_dir, bundle)
+    cmd = ['charm', 'pull', url, '--channel', channel, bundle_dir]
+    await asyncify(subprocess.check_call)(cmd)
+    # update bundle config
+    data_path = os.path.join(bundle_dir, 'bundle.yaml')
+    with open(data_path) as f:
+        data = yaml.load(f)
+        await patch_bundle(data, snap_channel)
+        data['services']['kubernetes-worker'].setdefault('options', {})['labels'] = 'mylabel=thebest'
+        yaml.Dumper.ignore_aliases = lambda *args: True
+        with open(data_path, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False)
 
-        # run bundletester
-        output_file = os.path.join(log_dir, 'bundletester.xml')
-        cmd = [
-            'bundletester',
-            '--no-matrix', '-vF', '-l', 'DEBUG',
-            '-t', bundle_dir,
-            '-r', 'xml', '-o', output_file
-        ]
-        await asyncify(subprocess.check_call)(cmd)
+    # run bundletester
+    output_file = os.path.join(log_dir, 'bundletester.xml')
+    cmd = [
+        'bundletester', '-e', model_name,
+        '--no-matrix', '-vF', '-l', 'DEBUG',
+        '-t', bundle_dir,
+        '-r', 'xml', '-o', output_file
+    ]
+    await asyncify(subprocess.check_call)(cmd)
 
 
 @log_calls_async

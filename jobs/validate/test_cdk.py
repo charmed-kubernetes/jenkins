@@ -45,6 +45,10 @@ async def test_upgrade(log_dir):
 
 @pytest.mark.asyncio
 async def test_bundletester(log_dir):
-    await run_bundletester(namespace, log_dir, channel=test_charm_channel,
-                           snap_channel=test_snap_channel,
-                           force_cloud=test_cloud)
+    model_name = "{}:{}".format(juju_controller,
+                                juju_model)
+    await run_bundletester(namespace,
+                           model_name,
+                           log_dir,
+                           channel=test_charm_channel,
+                           snap_channel=test_snap_channel)
