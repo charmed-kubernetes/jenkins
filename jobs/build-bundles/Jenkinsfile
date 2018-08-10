@@ -1,7 +1,7 @@
 @Library('juju-pipeline@master') _
 
 // List of bundles to release to the charmstore
-bundle_mapping = [
+def bundle_mapping = [
     'cdk-flannel': [
         fragments: 'k8s/cdk cni/flannel',
         charmstore: 'cs:~containers/bundle/canonical-kubernetes'
@@ -22,6 +22,12 @@ bundle_mapping = [
         fragments: 'k8s/cdk cni/canal',
         charmstore: 'cs:~containers/bundle/canonical-kubernetes-canal'
     ]
+]
+
+// List of charms to build and release
+def build_charms = [
+    'calico', 'canal', 'easyrsa', 'etcd', 'flannel', 'kubeapi-load-balancer', 'kubernetes-e2e',
+    'kubernetes-master', 'kubernetes-worker'
 ]
 
 def releaseBundle(bundle, charmstore) {
@@ -57,23 +63,42 @@ pipeline {
                 sh "cp ${env.STORE_USSO_TOKEN} $HOME/snap/charm/current/.local/share/juju/store-usso-token"
             }
         }
-        stage('Build') {
+        stage('Build Charms'){
             steps {
                 script {
-                    bundle_mapping.each { bundle, options ->
-                        stage(String.format("Build: %s", bundle)) {
-                            sh script:String.format("%s/bundle -o %s/%s -c %s %s",
-                                                    env.TMPDIR,
-                                                    env.BUNDLES_DIR,
-                                                    bundle,
-                                                    params.channel,
-                                                    options.fragments), returnStatus: true
+                    def jobs = [:]
+                    build_charms.each { charm ->
+                        jobs[charm] = {
+                            stage(String.format("Build Charms: %s", charm)) {
+                                build job: String.format("build-release-%s", charm)
+                            }
                         }
                     }
+                    parallel jobs
                 }
             }
         }
-        stage('Release') {
+        stage('Build Bundles') {
+            steps {
+                script {
+                    def jobs = [:]
+                    bundle_mapping.each { bundle, options ->
+                        jobs[bundle] = {
+                            stage(String.format("Build: %s", bundle)) {
+                                sh script:String.format("%s/bundle -o %s/%s -c %s %s",
+                                                        env.TMPDIR,
+                                                        env.BUNDLES_DIR,
+                                                        bundle,
+                                                        params.channel,
+                                                        options.fragments), returnStatus: true
+                            }
+                        }
+                    }
+                    parallel jobs
+                }
+            }
+        }
+        stage('Release Bundles') {
             steps {
                 script {
                     bundle_mapping.each { bundle, options ->

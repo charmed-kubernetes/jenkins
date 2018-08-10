@@ -10,7 +10,7 @@ pipeline {
         PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
         JUJU_REPOSITORY = "${env.WORKSPACE}/build/charms"
         TMPDIR = "${env.WORKSPACE}/tmp"
-        JUJU_MODEL = "${params.model}-${env.BUILD_NUMBER}"
+        JUJU_MODEL = "${params.model}-${params.charm}-${env.BUILD_NUMBER}"
         STORE_USSO_TOKEN = credentials('3f902246-f0c7-4e60-9c62-f5a2c3d56974')
     }
     options {
@@ -48,12 +48,15 @@ pipeline {
             }
         }
         stage('Release to Store') {
+            options {
+                timeout(time: 5, unit: 'MINUTES')
+            }
             steps {
                 script {
-                    def git_commit = sh script:"cd ${params.repo_name} && git rev-parse HEAD", returnStdout: true
-                    def charm_rev = sh script:"charm push ${env.JUJU_REPOSITORY}/builds/${params.charm} cs:~containers/${params.charm} | head -n 1 | awk '{print \$2}'", returnStdout: true
-                    sh "charm set " + charm_rev.trim() + " commit=" + git_commit.trim()
-                    sh "CHARM=\"" + charm_rev.trim() + "\" FROM_CHANNEL=${params.from_channel} TO_CHANNEL=${params.to_channel} jobs/build-charms/promote-charm.sh"
+                    def git_commit = sh script:"cd '${params.repo_name}' && git rev-parse HEAD", returnStdout: true
+                    def charm_rev = sh script:"charm push '${env.JUJU_REPOSITORY}/builds/${params.charm}' 'cs:~containers/${params.charm}' | head -n 1 | awk '{print \$2}'", returnStdout: true
+                    sh script:String.format("charm set '%s' commit='%s'", charm_rev.trim(), git_commit.trim())
+                    sh script:String.format("CHARM='%s' FROM_CHANNEL='%s' TO_CHANNEL='%s' jobs/build-charms/promote-charm.sh", charm_rev.trim(),params.from_channel, params.to_channel)
                 }
             }
         }
