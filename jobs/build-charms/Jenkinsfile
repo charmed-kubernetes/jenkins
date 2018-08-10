@@ -40,11 +40,17 @@ pipeline {
                 }
             }
         }
+        // TODO: Figure out why kupeapi-load-balancer bt is failing
         stage('Test') {
             steps {
                 sh "juju add-model -c ${params.controller} ${env.JUJU_MODEL}"
                 sh "juju model-config -m ${params.controller}:${env.JUJU_MODEL} test-mode=true"
-                sh "bundletester -e ${params.controller}:${env.JUJU_MODEL} -vF -l DEBUG -t ${JUJU_REPOSITORY}/builds/${params.charm} -o report.xml -r xml"
+                sh "bundletester -e '${params.controller}:${env.JUJU_MODEL}' -vF -t ${JUJU_REPOSITORY}/builds/${params.charm} -o report.xml -r xml"
+            }
+            post {
+                success {
+                    junit 'report.xml'
+                }
             }
         }
         stage('Release to Store') {
@@ -63,7 +69,6 @@ pipeline {
     }
     post {
         always {
-            junit 'report.xml'
             tearDown(params.controller,
                      env.JUJU_MODEL)
         }

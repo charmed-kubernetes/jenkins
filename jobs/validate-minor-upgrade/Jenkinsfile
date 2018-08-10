@@ -15,9 +15,8 @@ pipeline {
         ansiColor('xterm')
         timestamps()
     }
-
     stages {
-        stage('Setup') {
+        stage('Install tools') {
             steps {
                 installTools()
             }
@@ -31,42 +30,21 @@ pipeline {
                           env.JUJU_MODEL,
                           params.bundle,
                           params.version_overlay,
-                          params.bundle_channel,
-                          true)
+                          params.bundle_channel)
             }
         }
-        stage('Deploy: sonobuoy') {
+
+        stage("Validate Minor Upgrade") {
             steps {
-                deploySonobuoy(params.controller, env.JUJU_MODEL)
-            }
-        }
-        stage('Test') {
-            options {
-                timeout(time: 2, unit: 'HOURS')
-            }
-            steps {
-                waitUntil {
-                    sh './sonobuoy status || true'
-                    script {
-                        def r = sh script:'./sonobuoy status|grep -q \'Sonobuoy has completed\'', returnStatus: true
-                        return (r == 0);
-                    }
-                }
-            }
-        }
-        stage('Archive') {
-            steps {
-                waitUntil {
-                    script {
-                        def r = sh script:'./sonobuoy retrieve results/.', returnStatus: true
-                        return (r == 0);
-                    }
-                }
-                archiveArtifacts artifacts: 'results/*.tar.gz'
+                sh "cd jobs && TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade"
             }
         }
     }
     post {
+        success {
+            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
+            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
+        }
         always {
             tearDown(params.controller,
                      env.JUJU_MODEL)

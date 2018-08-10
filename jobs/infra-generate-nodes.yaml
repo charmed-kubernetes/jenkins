@@ -1,0 +1,18 @@
+# Generates jenkin worker nodes
+
+- job:
+    name: 'infra-generate-nodes'
+    description: |
+      Create jenkins worker nodes
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-bm
+      script-path: jobs/infra/generateNodes.groovy
+    properties:
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - ".*cdk.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'

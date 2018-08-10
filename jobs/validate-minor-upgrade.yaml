@@ -1,0 +1,63 @@
+# Validates upgrading from stable to edge of release
+
+- job-template:
+    name: 'validate-minor-upgrade-{version}-{bundle}-{cloud}'
+    description: |
+      Upgrades CDK {version} for {bundle} and validates its deployment on {cloud}.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-bm
+      script-path: jobs/validate-minor-upgrade/Jenkinsfile
+    parameters:
+      - string:
+          name: model
+          default: 'minor-upgrade-{bundle}'
+      - string:
+          name: controller
+          default: 'jenkins-ci-{cloud}'
+      - string:
+          name: cloud
+          default: '{cloud}'
+      - string:
+          name: version_overlay
+          default: '{version_overlay}'
+      - string:
+          name: upgrade_snap_channel
+          default: '{upgrade_snap_channel}'
+      - string:
+          name: bundle
+          default: '{bundle}'
+      - string:
+          name: bundle_channel
+          default: 'stable'
+
+- job-group:
+    name: validate-minor-upgrade
+    version:
+      - 'v1.9.x-v1.11.x':
+          version_overlay: 'jobs/overlays/1.9-stable-overlay.yaml'
+          upgrade_snap_channel: '1.11/edge'
+      - 'v1.10.x-v1.11.x':
+          version_overlay: 'jobs/overlays/1.10-stable-overlay.yaml'
+          upgrade_snap_channel: '1.11/edge'
+      - 'v1.10.x-v1.12.x':
+          version_overlay: 'jobs/overlays/1.10-stable-overlay.yaml'
+          upgrade_snap_channel: '1.12/edge'
+      - 'v1.11.x-v1.12.x':
+          version_overlay: 'jobs/overlays/1.11-stable-overlay.yaml'
+          upgrade_snap_channel: '1.12/edge'
+    jobs:
+      - 'validate-minor-upgrade-{version}-{bundle}-{cloud}':
+          cloud: ['aws', 'google']
+          bundle:
+            - 'canonical-kubernetes'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
+            - 'kubernetes-core'
+            - 'kubernetes-calico'
+
+- project:
+    name: validate-minor-upgrade
+    jobs:
+      - 'validate-minor-upgrade'

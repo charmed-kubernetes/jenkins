@@ -1,18 +1,18 @@
 # Validates a deployed CDK
 
 - job-template:
-    name: 'validate-{version}-{cloud}'
+    name: 'validate-{version}-{bundle}-{cloud}'
     description: |
-      Validates a deployment on {cloud}
+      Validates k8s {version} using {bundle} deployment on {cloud}
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-bm
       script-path: jobs/validate/Jenkinsfile
     parameters:
       - string:
           name: model
-          default: '{cloud}-validate'
+          default: 'validate-{bundle}'
       - string:
           name: controller
           default: 'jenkins-ci-{cloud}'
@@ -28,19 +28,34 @@
       - string:
           name: bundle_channel
           default: 'edge'
+      - string:
+          name: bundle
+          default: '{bundle}'
+      - string:
+          name: snap_channel
+          default: '{snap_channel}'
 
 - job-group:
     name: validate
     version:
       - 'v1.9.x':
-          version_overlay: 'jobs/validate/1.9-overlay.yaml'
+          version_overlay: 'jobs/overlays/1.9-edge-overlay.yaml'
+          snap_channel: '1.9/edge'
       - 'v1.10.x':
-          version_overlay: 'jobs/validate/1.10-overlay.yaml'
+          version_overlay: 'jobs/overlays/1.10-edge-overlay.yaml'
+          snap_channel: '1.10/edge'
       - 'v1.11.x':
-          version_overlay: 'jobs/validate/1.11-overlay.yaml'
+          version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
+          snap_channel: '1.11/edge'
     jobs:
-      - 'validate-{version}-{cloud}':
+      - 'validate-{version}-{bundle}-{cloud}':
           cloud: ['aws', 'google']
+          bundle:
+            - 'canonical-kubernetes'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
+            - 'kubernetes-core'
+            - 'kubernetes-calico'
 
 - project:
     name: validate

@@ -5,7 +5,7 @@
 
 # Description
 
-Runs `test_cdk` against a deployed CDK.
+Runs `test_cdk::test_validate` against a deployed CDK.
 
 # Parameters
 
@@ -13,41 +13,11 @@ Runs `test_cdk` against a deployed CDK.
 - **model**: Juju model to create
 - **cloud**: Cloud to test against
 - **version_overlay**: Bundle overlay defining which k8s versions to test.
-- **perform_upgrade**: Perform charm upgrades from Stable to Edge of same release
 - **bundle_channel**: Default bundle channel to validate from, Set to 'stable' if performing an upgrade test.
 
 # Usage
 
-Adding a new Kubernetes version to the test matrix:
-
-```
- - job-group:
-    name: validate
-    version:
-      - '1.9':
-          version_overlay: 'jobs/validate/1.9-overlay.yaml'
-      - '1.10':
-          version_overlay: 'jobs/validate/1.10-overlay.yaml'
-      - '1.11':
-          version_overlay: 'jobs/validate/1.11-overlay.yaml'
-      - '1.12':
-          version_overlay: 'jobs/validate/1.12-overlay.yaml'
-    jobs:
-      - '{name}-cloud-{cloud}-v{version}':
-          cloud: ['aws', 'google']
-```
-
-And `jobs/validate/1.12-overlay.yaml` would have the following:
-
-```
-applications:
-  kubernetes-master:
-    options:
-      channel: 1.12/edge
-  kubernetes-worker:
-    options:
-      channel: 1.12/edge
-```
+Typically, the default created jobs handle the bundles, versions, and test validations.
 
 # References
 

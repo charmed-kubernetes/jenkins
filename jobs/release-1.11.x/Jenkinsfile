@@ -1,0 +1,86 @@
+@Library('juju-pipeline@master') _
+
+pipeline {
+    agent {
+        label 'juju-client'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        JUJU_MODEL = "${params.model}-${env.BUILD_NUMBER}"
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Build Report') {
+            steps {
+                // Builds a report of current snap, bundle, and charm revisions
+                echo "Building report"
+            }
+        }
+
+        stage('Validate: Conformance') {
+            parallel {
+                stage('AWS') {
+                    steps {
+                        build job:'conformance-v1.11.x-canonical-kubernetes-aws'
+                    }
+                }
+                stage('Google') {
+                    steps {
+                        build job:'conformance-v1.11.x-canonical-kubernetes-google'
+                    }
+                }
+            }
+        }
+
+        stage('Validate: Minor Upgrades v1.9.x-v1.11.x') {
+            parallel {
+                stage('AWS v1.9.x-v1.11.x') {
+                    steps {
+                        build job:'validate-minor-upgrade-v1.9.x-v1.11.x-canonical-kubernetes-aws'
+                    }
+                }
+                stage('Google v1.9.x-v1.11.x') {
+                    steps {
+                        build job:'validate-minor-upgrade-v1.9.x-v1.11.x-canonical-kubernetes-google'
+                    }
+                }
+            }
+        }
+        stage('Validate: Minor Upgrades v1.10.x-v1.11.x') {
+            parallel {
+                stage('AWS v1.10.x-v1.11.x') {
+                    steps {
+                        build job:'validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-aws'
+                    }
+                }
+                stage('Google v1.10.x-v1.11.x') {
+                    steps {
+                        build job:'validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-google'
+                    }
+                }
+
+            }
+        }
+        stage('Validate: Patch Upgrades') {
+            parallel {
+                stage('AWS') {
+                    steps {
+                        build job: 'validate-v1.11.x-canonical-kubernetes-aws', parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
+                    }
+                }
+                stage('Google') {
+                    steps {
+                        build job: 'validate-v1.11.x-canonical-kubernetes-google', parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
+                    }
+                }
+            }
+        }
+        // stage('Promote to Beta/Candidate') { steps {} }
+    }
+}

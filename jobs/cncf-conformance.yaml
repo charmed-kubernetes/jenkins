@@ -3,15 +3,15 @@
 #
 
 - job-template:
-    name: '{name}-tests-{k8sver}-{cloud}'
+    name: 'conformance-{k8sver}-{bundle}-{cloud}'
     description: |
-      CNCF Conformance testing for Kubernetes {k8sver} on {cloud}
+      CNCF Conformance testing for Kubernetes {k8sver} using {bundle} on {cloud}.
 
       Please see https://git.io/fNwXY for more information.
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-bm
       script-path: jobs/cncf-conformance/Jenkinsfile
     parameters:
       - string:
@@ -19,7 +19,7 @@
           default: '{version_overlay}'
       - string:
           name: model
-          default: '{cloud}-k8s-conformance'
+          default: 'conformance-{bundle}'
       - string:
           name: controller
           default: 'jenkins-ci-{cloud}'
@@ -29,23 +29,33 @@
       - string:
           name: bundle_channel
           default: 'edge'
+      - string:
+          name: bundle
+          default: '{bundle}'
 
 - job-group:
-    name: '{name}-tests'
+    name: 'conformance'
     k8sver:
       - 'v1.12.x':
-          version_overlay: 'jobs/cncf-conformance/1.12-edge-overlay.yaml'
+          version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
       - 'v1.11.x':
-          version_overlay: 'jobs/cncf-conformance/1.11-edge-overlay.yaml'
+          version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
       - 'v1.10.x':
-          version_overlay: 'jobs/cncf-conformance/1.10-edge-overlay.yaml'
+          version_overlay: 'jobs/overlays/1.10-edge-overlay.yaml'
       - 'v1.9.x':
-          version_overlay: 'jobs/cncf-conformance/1.9-edge-overlay.yaml'
+          version_overlay: 'jobs/overlays/1.9-edge-overlay.yaml'
     jobs:
-      - '{name}-tests-{k8sver}-{cloud}':
+      - 'conformance-{k8sver}-{bundle}-{cloud}':
           cloud: ['aws', 'google']
+          bundle:
+            - 'canonical-kubernetes'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
+            - 'kubernetes-core'
+            - 'kubernetes-calico'
+
 
 - project:
-    name: k8s-conformance
+    name: conformance
     jobs:
-      - '{name}-tests'
+      - 'conformance'

@@ -1,0 +1,11 @@
+# Release Job for k8s 1.11.x
+
+- job:
+    name: 'release-1.11.x'
+    description: |
+      Releases 1.11.x to beta/candidate.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-bm
+      script-path: jobs/release-1.11.x/Jenkinsfile

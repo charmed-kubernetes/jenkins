@@ -9,6 +9,8 @@ invoke = "*"
 pytest = "*"
 requests = "*"
 juju = "*"
+python-dotenv = "*"
+ansible = "*"
 
 [dev-packages]
 

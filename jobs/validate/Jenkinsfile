@@ -28,28 +28,26 @@ pipeline {
             steps {
                 deployCDK(params.controller,
                           env.JUJU_MODEL,
+                          params.bundle,
                           params.version_overlay,
                           params.bundle_channel)
             }
         }
 
-        stage('Validate CDK') {
+        stage('Validate') {
             when {
-                beforeAgent true
-                expression { return !params.perform_upgrade }
+                expression { !params.perform_upgrade }
             }
             steps {
-                sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml validate/test_cdk.py::test_validate"
+                sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
             }
         }
-
-        stage('Validate CDK: Stable -> Edge') {
+        stage('Validate') {
             when {
-                beforeAgent true
-                expression { return params.perform_upgrade }
+                expression { params.perform_upgrade }
             }
             steps {
-                sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate-upgrade.xml validate/test_cdk.py::test_upgrade"
+                sh "cd jobs && TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
             }
         }
         // TODO: Needs to be broken out into own test as we already have a deployed CDK
@@ -60,9 +58,11 @@ pipeline {
         // }
     }
     post {
-        always {
+        success {
             junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
             archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
+        }
+        always {
             tearDown(params.controller,
                      env.JUJU_MODEL)
         }
