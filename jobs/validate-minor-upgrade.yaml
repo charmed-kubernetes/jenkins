@@ -7,12 +7,12 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-bm
+        - k8s-jenkins-scm
       script-path: jobs/validate-minor-upgrade/Jenkinsfile
     parameters:
       - string:
           name: model
-          default: 'minor-upgrade-{bundle}'
+          default: 'minor-upgrade'
       - string:
           name: controller
           default: 'jenkins-ci-{cloud}'
@@ -49,7 +49,7 @@
           upgrade_snap_channel: '1.12/edge'
     jobs:
       - 'validate-minor-upgrade-{version}-{bundle}-{cloud}':
-          cloud: ['aws', 'google']
+          cloud: ['aws', 'google', 'azure']
           bundle:
             - 'canonical-kubernetes'
             - 'canonical-kubernetes-elastic'

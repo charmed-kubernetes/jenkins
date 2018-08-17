@@ -1,0 +1,65 @@
+---
+- hosts: jenkins-nodes
+  become: true
+  tasks:
+    - name: install apt deps
+      apt:
+        name:
+          - unzip
+          - python3-pip
+          - python-pip
+          - squashfuse
+          - snapd
+          - libffi6
+          - libffi-dev
+          - libssl-dev
+          - default-jre
+    - name: install snap deps
+      command: "snap install {{item}}"
+      loop:
+        - "juju --classic"
+        - "juju-wait --classic"
+        - "kubectl --classic"
+        - "charm --edge"
+    - name: initialize snap directories
+      command: "/snap/bin/{{item}} version"
+      become: false
+      loop:
+        - juju
+        - charm
+    - name: create charm/snap folders
+      file:
+        path: "/home/ubuntu/{{item}}"
+        state: directory
+      loop:
+        - .local/share/juju
+        - snap/charm/current/.local/share/juju
+    - name: copy data files
+      synchronize:
+        src: /var/lib/jenkins/.local/share/juju
+        dest: /home/ubuntu/.local/share
+        dirs: yes
+        rsync_opts:
+          - "--exclude=jclient"
+          - "--exclude=charmcache"
+          - "--exclude=.deployer-store-cache"
+    - name: copy data files
+      copy:
+        src: /var/lib/jenkins/.go-cookies
+        dest: /home/ubuntu/snap/charm/current/.go-cookies
+        mode: u=r
+    - name: copy store usso token
+      copy:
+        src: /var/lib/jenkins/.local/share/juju/store-usso-token
+        dest: /home/ubuntu/snap/charm/current/.local/share/juju/store-usso-token
+        mode: u=r
+
+    - name: set perms
+      file:
+        path: /home/ubuntu/{{item}}
+        owner: ubuntu
+        group: ubuntu
+        recurse: yes
+      loop:
+        - .local/share/juju
+        - snap

@@ -18,7 +18,7 @@ def update_jobs(c, conf):
 
 
 @task
-def create_nodes(c, apikey, apiuser, node):
+def create_nodes(c, apikey, apiuser, node, labels='runner'):
     """ Creates a jenkins slave node
     """
     j = jenkins.Jenkins('https://ci.kubernetes.juju.solutions',
@@ -32,7 +32,7 @@ def create_nodes(c, apikey, apiuser, node):
         node,
         nodeDescription='juju generated slave node',
         remoteFS='/home/ubuntu',
-        labels='runner',
+        labels=labels,
         exclusive=False,
         numExecutors=1,
         launcher=jenkins.LAUNCHER_COMMAND,
@@ -53,3 +53,18 @@ def delete_nodes(c, apikey, apiuser):
 
     for node in status['applications'].keys():
         j.delete_node(node)
+
+@task
+def set_node_ips(c):
+    """ Returns a list of current nodes ip addresses to populate for ansible
+    """
+    status = c.run('sudo -E sudo -u jenkins -E juju status --format yaml')
+    status = yaml.load(status.stdout)
+    ip_addresses = ['[jenkins-nodes]']
+    if status['applications']:
+        for node, properties in status['applications'].items():
+            addr = properties['units']['{}/0'.format(node)]['public-address']
+            ip_addresses.append(addr)
+    print("Writing {}".format(ip_addresses))
+    with open('infra/hosts', 'w') as hosts_f:
+        hosts_f.write("\n".join(ip_addresses))

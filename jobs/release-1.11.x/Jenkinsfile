@@ -35,33 +35,50 @@ pipeline {
                         build job:'conformance-v1.11.x-canonical-kubernetes-google'
                     }
                 }
+                stage('Azure') {
+                    steps {
+                        build job:'conformance-v1.11.x-canonical-kubernetes-azure'
+                    }
+                }
+
             }
         }
 
         stage('Validate: Minor Upgrades v1.9.x-v1.11.x') {
             parallel {
-                stage('AWS v1.9.x-v1.11.x') {
+                stage('AWS') {
                     steps {
                         build job:'validate-minor-upgrade-v1.9.x-v1.11.x-canonical-kubernetes-aws'
                     }
                 }
-                stage('Google v1.9.x-v1.11.x') {
+                stage('Google') {
                     steps {
                         build job:'validate-minor-upgrade-v1.9.x-v1.11.x-canonical-kubernetes-google'
                     }
                 }
+                stage('Azure') {
+                    steps {
+                        build job:'validate-minor-upgrade-v1.9.x-v1.11.x-canonical-kubernetes-azure'
+                    }
+                }
+
             }
         }
         stage('Validate: Minor Upgrades v1.10.x-v1.11.x') {
             parallel {
-                stage('AWS v1.10.x-v1.11.x') {
+                stage('AWS') {
                     steps {
                         build job:'validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-aws'
                     }
                 }
-                stage('Google v1.10.x-v1.11.x') {
+                stage('Google') {
                     steps {
                         build job:'validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-google'
+                    }
+                }
+                stage('Azure') {
+                    steps {
+                        build job:'validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-azure'
                     }
                 }
 
@@ -79,6 +96,12 @@ pipeline {
                         build job: 'validate-v1.11.x-canonical-kubernetes-google', parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
                     }
                 }
+                stage('Azure') {
+                    steps {
+                        build job: 'validate-v1.11.x-canonical-kubernetes-azure', parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
+                    }
+                }
+
             }
         }
         // stage('Promote to Beta/Candidate') { steps {} }

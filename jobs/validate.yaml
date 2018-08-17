@@ -7,12 +7,12 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-bm
+        - k8s-jenkins-scm
       script-path: jobs/validate/Jenkinsfile
     parameters:
       - string:
           name: model
-          default: 'validate-{bundle}'
+          default: 'validate'
       - string:
           name: controller
           default: 'jenkins-ci-{cloud}'
@@ -49,7 +49,7 @@
           snap_channel: '1.11/edge'
     jobs:
       - 'validate-{version}-{bundle}-{cloud}':
-          cloud: ['aws', 'google']
+          cloud: ['aws', 'google', 'azure']
           bundle:
             - 'canonical-kubernetes'
             - 'canonical-kubernetes-elastic'

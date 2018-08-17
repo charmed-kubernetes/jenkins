@@ -7,12 +7,16 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-bm
+        - k8s-jenkins-scm
       script-path: jobs/infra/generateNodes.groovy
     properties:
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
             - ".*cdk.*"
+            - ".*release.*"
+            - ".*build.*"
+            - ".*validate.*"
+            - ".*conformance.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'

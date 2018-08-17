@@ -38,7 +38,7 @@ def releaseBundle(bundle, charmstore) {
 
 pipeline {
     agent {
-        label 'juju-client-box-2'
+        label 'runner'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -47,7 +47,6 @@ pipeline {
         PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin'
         TMPDIR = "${env.WORKSPACE}/tmp"
         BUNDLES_DIR = "${env.WORKSPACE}/tmp-bundles"
-        STORE_USSO_TOKEN = credentials('3f902246-f0c7-4e60-9c62-f5a2c3d56974')
     }
     options {
         ansiColor('xterm')
@@ -58,9 +57,6 @@ pipeline {
             steps {
                 installTools()
                 sh "git clone ${params.bundle_repo} ${env.TMPDIR}"
-                sh "mkdir -p $HOME/.local/share/juju $HOME/snap/charm/current/.local/share/juju"
-                sh "cp ${env.STORE_USSO_TOKEN} $HOME/.local/share/juju/store-usso-token"
-                sh "cp ${env.STORE_USSO_TOKEN} $HOME/snap/charm/current/.local/share/juju/store-usso-token"
             }
         }
         stage('Build Charms'){

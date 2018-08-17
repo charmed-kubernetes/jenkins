@@ -2,7 +2,7 @@
 
 pipeline {
     agent {
-        label 'juju-client'
+        label 'runner'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -42,7 +42,7 @@ pipeline {
                 sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
             }
         }
-        stage('Validate') {
+        stage('Validate Upgrade') {
             when {
                 expression { params.perform_upgrade }
             }
@@ -50,12 +50,6 @@ pipeline {
                 sh "cd jobs && TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
             }
         }
-        // TODO: Needs to be broken out into own test as we already have a deployed CDK
-        // stage('Bundletester') {
-        //     steps {
-        //         sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest --no-print-logs --junit-xml=report.xml validate/test_cdk.py::test_bundletester"
-        //     }
-        // }
     }
     post {
         success {
