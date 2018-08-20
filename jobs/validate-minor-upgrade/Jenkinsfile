@@ -19,6 +19,7 @@ pipeline {
         stage('Install tools') {
             steps {
                 installTools()
+                sh "cd jobs && pipenv install"
             }
         }
         stage("Deploy") {
