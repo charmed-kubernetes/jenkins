@@ -18,5 +18,8 @@
             - ".*build.*"
             - ".*validate.*"
             - ".*conformance.*"
+            - ".*gubernator.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
+    triggers:
+        - timed: "@hourly"
