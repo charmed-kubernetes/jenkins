@@ -10,6 +10,7 @@
           - python-pip
           - squashfuse
           - snapd
+          - snapcraft
           - libffi6
           - libffi-dev
           - libssl-dev
@@ -63,3 +64,8 @@
       loop:
         - .local/share/juju
         - snap
+    - name: update juju credentials path
+      replace:
+        path: /home/ubuntu/.local/share/juju/credentials.yaml
+        regexp: '.*file:(.*)$'
+        replace: '      file: /home/ubuntu/.local/share/juju/foo.json'

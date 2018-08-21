@@ -31,6 +31,10 @@
       - string:
           name: bundle_channel
           default: 'stable'
+    properties:
+      - build-discarder:
+          days-to-keep: 7
+          num-to-keep: 7
 
 - job-group:
     name: validate-minor-upgrade

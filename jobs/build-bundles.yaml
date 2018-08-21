@@ -16,3 +16,7 @@
       - string:
           name: bundle_repo
           default: 'https://github.com/juju-solutions/bundle-canonical-kubernetes.git'
+    properties:
+      - build-discarder:
+          days-to-keep: 2
+          num-to-keep: 5

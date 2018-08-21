@@ -32,6 +32,10 @@
       - string:
           name: bundle
           default: '{bundle}'
+    properties:
+      - build-discarder:
+          days-to-keep: 7
+          num-to-keep: 2
 
 - job-group:
     name: 'conformance'

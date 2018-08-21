@@ -14,7 +14,7 @@ def test_jobs(c, conf):
 def update_jobs(c, conf):
     """ Uploads the Jenkins Job Builder definitions
     """
-    c.run("jenkins-jobs --conf {} update .".format(conf))
+    c.run("jenkins-jobs --conf {} update . --worker 8".format(conf))
 
 
 @task

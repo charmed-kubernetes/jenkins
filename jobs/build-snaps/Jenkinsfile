@@ -1,0 +1,37 @@
+@Library('juju-pipeline@master') _
+
+pipeline {
+    agent {
+        label 'runner'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+        CDKBOT_TOKEN = credentials('cdkbot')
+        GITHUB_CREDS = credentials('cdkbot_github')
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Setup') {
+            steps {
+                installTools()
+                sh "snapcraft login --with ${env.CDKBOT_TOKEN}"
+            }
+        }
+        stage('Release Snaps'){
+            steps {
+                sh "GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
+            }
+        }
+    }
+    post {
+        always {
+            sh "snapcraft logout"
+        }
+    }
+}

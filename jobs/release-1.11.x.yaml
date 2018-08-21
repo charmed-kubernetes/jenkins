@@ -9,3 +9,7 @@
       scm:
         - k8s-jenkins-scm
       script-path: jobs/release-1.11.x/Jenkinsfile
+    properties:
+      - build-discarder:
+          days-to-keep: 7
+          num-to-keep: 7

@@ -1,0 +1,17 @@
+# Builds and releases latest snaps
+
+- job:
+    name: 'build-release-snaps'
+    description: |
+      Builds, releases and promotes snaps to the snapstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-scm
+      script-path: jobs/build-snaps/Jenkinsfile
+    triggers:
+        - timed: "@hourly"
+    properties:
+      - build-discarder:
+          days-to-keep: 2
+          num-to-keep: 5

@@ -34,6 +34,10 @@
       - string:
           name: snap_channel
           default: '{snap_channel}'
+    properties:
+      - build-discarder:
+          days-to-keep: 7
+          num-to-keep: 7
 
 - job-group:
     name: validate
