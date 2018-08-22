@@ -27,11 +27,19 @@ pipeline {
         stage('Validate: Conformance') {
             parallel {
                 stage('Canonical Kubernetes') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
+
                     steps {
                         build job:"conformance-v1.11.x-canonical-kubernetes-${params.cloud}"
                     }
                 }
                 stage('Kubernetes Core') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
+
                     steps {
                         build job:"conformance-v1.11.x-kubernetes-core-${params.cloud}"
                     }
@@ -42,11 +50,17 @@ pipeline {
         stage('Validate: Minor Upgrades v1.9.x-v1.11.x') {
             parallel {
                 stage('Canonical Kubernetes') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
                     steps {
                         build job:"validate-minor-upgrade-v1.9.x-v1.11.x-canonical-kubernetes-${params.cloud}"
                     }
                 }
                 stage('Kubernetes Core') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
                     steps {
                         build job:"validate-minor-upgrade-v1.9.x-v1.11.x-kubernetes-core-${params.cloud}"
                     }
@@ -56,11 +70,17 @@ pipeline {
         stage('Validate: Minor Upgrades v1.10.x-v1.11.x') {
             parallel {
                 stage('Canonical Kubernetes') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
                     steps {
                         build job:"validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-${params.cloud}"
                     }
                 }
                 stage('Kubernetes Core') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
                     steps {
                         build job:"validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-${params.cloud}"
                     }
@@ -70,11 +90,17 @@ pipeline {
         stage('Validate: Patch Upgrades') {
             parallel {
                 stage('Canonical Kubernetes') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
                     steps {
                         build job: "validate-v1.11.x-canonical-kubernetes-${params.cloud}", parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
                     }
                 }
                 stage('Kubernetes Core') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
                     steps {
                         build job: "validate-v1.11.x-kubernetes-core-${params.cloud}", parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
                     }
