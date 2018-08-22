@@ -1,0 +1,35 @@
+@Library('juju-pipeline@master') _
+
+pipeline {
+    agent {
+        label 'runner'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+        CDKBOT_GH = credentials('cdkbot_github')
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Setup') {
+            steps {
+                installTools()
+            }
+        }
+        stage('Sync Upstream K8s'){
+            steps {
+                git credentialsId: 'cdkbot_github', poll: true, url: 'https://github.com/juju-solutions/kubernetes', branch: 'master'
+                sh "git remote add upstream https://github.com/kubernetes/kubernetes.git"
+                sh "git fetch upstream"
+                sh "git checkout master"
+                sh "git rebase upstream/master"
+                sh "git push https://${CDKBOT_GH}@github.com/juju-solutions/kubernetes master"
+            }
+        }
+    }
+}

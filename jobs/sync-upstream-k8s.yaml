@@ -1,0 +1,19 @@
+# Syncs upstream k8s to our forked repo
+
+- job:
+    name: 'sync-upstream-k8s'
+    description: |
+      Sync upstream Kubernetes github repo with our fork.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-scm
+      script-path: jobs/sync-upstream-k8s/Jenkinsfile
+    properties:
+      - build-discarder:
+          days-to-keep: 1
+          num-to-keep: 2
+    triggers:
+      - pollscm:
+          cron: 'H H/2 * * *'
+          ignore-post-commit-hooks: True

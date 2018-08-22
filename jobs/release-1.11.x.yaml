@@ -21,7 +21,7 @@
           default: '1.11/edge 1.11/candidate edge beta candidate'
     pipeline-scm:
       scm:
-        - k8s-jenkins-bm
+        - k8s-jenkins-scm
       script-path: jobs/release-1.11.x/Jenkinsfile
     triggers:
         - timed: "@daily"
@@ -29,6 +29,7 @@
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
+            - ".*build.*"
             - "test-cdk.*"
             - "e2e-gubernator.*"
           block-level: 'GLOBAL'
@@ -48,7 +49,7 @@
           default: 'azure'
     pipeline-scm:
       scm:
-        - k8s-jenkins-bm
+        - k8s-jenkins-scm
       script-path: jobs/release-1.11.x/Jenkinsfile
     triggers:
         - timed: "@weekly"

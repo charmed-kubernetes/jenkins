@@ -14,3 +14,15 @@
           url: https://github.com/battlemidget/kubernetes-jenkins.git
           branches:
             - 'feature'
+- scm:
+    name: k8s-upstream
+    scm:
+      - git:
+         url: https://github.com/kubernetes/kubernetes
+         basedir: 'kubernetes'
+         skip-tag: true
+         fastpoll: true
+         shallow-clone: true
+         clean: {before: true}
+         branches:
+          - master
