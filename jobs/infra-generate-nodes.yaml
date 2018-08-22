@@ -13,12 +13,12 @@
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
-            - ".*cdk.*"
-            - ".*release.*"
-            - ".*build.*"
-            - ".*validate.*"
-            - ".*conformance.*"
-            - ".*gubernator.*"
+            - "test-.*"
+            - "release.*"
+            - "build.*"
+            - "validate.*"
+            - "conformance.*"
+            - "e2e-gubernator.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
     triggers:

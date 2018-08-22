@@ -1,0 +1,17 @@
+# Builds and releases latest snaps
+
+- job:
+    name: 'snap-info'
+    description: |
+      Generates HTML table shown on the dashboard
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-bm
+      script-path: jobs/snap-info/Jenkinsfile
+    triggers:
+        - timed: "@hourly"
+    properties:
+      - build-discarder:
+          days-to-keep: 0
+          num-to-keep: 2
