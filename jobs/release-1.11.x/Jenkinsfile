@@ -9,7 +9,8 @@ pipeline {
      */
     environment {
         PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
-        JUJU_MODEL = "${params.model}-${env.BUILD_NUMBER}"
+        CDKBOT_TOKEN = credentials('cdkbot')
+        GITHUB_CREDS = credentials('cdkbot_github')
     }
     options {
         ansiColor('xterm')
@@ -25,14 +26,14 @@ pipeline {
 
         stage('Validate: Conformance') {
             parallel {
-                stage('AWS') {
+                stage('Canonical Kubernetes') {
                     steps {
-                        build job:'conformance-v1.11.x-canonical-kubernetes-aws'
+                        build job:"conformance-v1.11.x-canonical-kubernetes-${params.cloud}"
                     }
                 }
-                stage('Google') {
+                stage('Kubernetes Core') {
                     steps {
-                        build job:'conformance-v1.11.x-canonical-kubernetes-google'
+                        build job:"conformance-v1.11.x-kubernetes-core-${params.cloud}"
                     }
                 }
             }
@@ -40,46 +41,79 @@ pipeline {
 
         stage('Validate: Minor Upgrades v1.9.x-v1.11.x') {
             parallel {
-                stage('AWS') {
+                stage('Canonical Kubernetes') {
                     steps {
-                        build job:'validate-minor-upgrade-v1.9.x-v1.11.x-canonical-kubernetes-aws'
+                        build job:"validate-minor-upgrade-v1.9.x-v1.11.x-canonical-kubernetes-${params.cloud}"
                     }
                 }
-                stage('Google') {
+                stage('Kubernetes Core') {
                     steps {
-                        build job:'validate-minor-upgrade-v1.9.x-v1.11.x-canonical-kubernetes-google'
+                        build job:"validate-minor-upgrade-v1.9.x-v1.11.x-kubernetes-core-${params.cloud}"
                     }
                 }
             }
         }
         stage('Validate: Minor Upgrades v1.10.x-v1.11.x') {
             parallel {
-                stage('AWS') {
+                stage('Canonical Kubernetes') {
                     steps {
-                        build job:'validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-aws'
+                        build job:"validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-${params.cloud}"
                     }
                 }
-                stage('Google') {
+                stage('Kubernetes Core') {
                     steps {
-                        build job:'validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-google'
+                        build job:"validate-minor-upgrade-v1.10.x-v1.11.x-canonical-kubernetes-${params.cloud}"
                     }
                 }
             }
         }
         stage('Validate: Patch Upgrades') {
             parallel {
-                stage('AWS') {
+                stage('Canonical Kubernetes') {
                     steps {
-                        build job: 'validate-v1.11.x-canonical-kubernetes-aws', parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
+                        build job: "validate-v1.11.x-canonical-kubernetes-${params.cloud}", parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
                     }
                 }
-                stage('Google') {
+                stage('Kubernetes Core') {
                     steps {
-                        build job: 'validate-v1.11.x-canonical-kubernetes-google', parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
+                        build job: "validate-v1.11.x-kubernetes-core-${params.cloud}", parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'), booleanParam(name:'perform_upgrade', value: true), string(name:'snap_channel', value: '1.11/edge')]
                     }
                 }
             }
         }
-        // stage('Promote to Beta/Candidate') { steps {} }
+        stage('Promote to snap/charm stores') {
+            when {
+                expression { params.promote }
+            }
+
+            steps {
+                sh "snapcraft login --with ${env.CDKBOT_TOKEN}"
+                sh "PROMOTE_FROM=${params.promote_from} PROMOTE_TO=${params.promote_to} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/promote.sh"
+                sh "snapcraft logout"
+                script {
+                    def charms_to_promote = [
+                        "cs:~containers/easyrsa",
+                        "cs:~containers/etcd",
+                        "cs:~containers/flannel",
+                        "cs:~containers/calico",
+                        "cs:~containers/canal",
+                        "cs:~containers/kubernetes-master",
+                        "cs:~containers/kubernetes-worker",
+                        "cs:~containers/kubeapi-load-balancer",
+                        "cs:~containers/kubernetes-e2e",
+                        "cs:~containers/kubernetes-core",
+                        "cs:~containers/canonical-kubernetes",
+                        "cs:~containers/canonical-kubernetes-elastic",
+                        "cs:~containers/kubernetes-calico",
+                        "cs:~containers/canonical-kubernetes-canal"
+                    ]
+
+                    charms_to_promote.each { charm ->
+                        sh script:String.format("CHARM='%s' FROM_CHANNEL='%s' TO_CHANNEL='%s' jobs/build-charms/promote-charm.sh", charm, 'edge', 'beta')
+                        sh script:String.format("CHARM='%s' FROM_CHANNEL='%s' TO_CHANNEL='%s' jobs/build-charms/promote-charm.sh", charm, 'edge', 'candidate')
+                    }
+                }
+            }
+        }
     }
 }

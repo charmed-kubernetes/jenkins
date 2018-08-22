@@ -1,15 +1,81 @@
 # Release Job for k8s 1.11.x
 
-- job:
-    name: 'release-1.11.x'
+- job-template:
+    name: 'release-1.11.x-{cloud}'
     description: |
-      Releases 1.11.x to beta/candidate.
+      Release test on {cloud} and promote 1.11.x to beta/candidate.
     project-type: pipeline
+    parameters:
+      - string:
+          name: cloud
+          default: '{cloud}'
+      - bool:
+          name: promote
+          default: false
+          description: "Only toggle when ready to push to beta/candidate channels"
+      - string:
+          name: promote_from
+          default: '1.11/edge'
+      - string:
+          name: promote_to
+          default: '1.11/edge 1.11/candidate edge beta candidate'
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-bm
       script-path: jobs/release-1.11.x/Jenkinsfile
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "test-cdk.*"
+            - "e2e-gubernator.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+      - build-discarder:
+          days-to-keep: 7
+          num-to-keep: 7
+
+- job-template:
+    name: 'release-1.11.x-azure'
+    description: |
+      Release test on azure and promote 1.11.x to beta/candidate.
+    project-type: pipeline
+    parameters:
+      - string:
+          name: cloud
+          default: 'azure'
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-bm
+      script-path: jobs/release-1.11.x/Jenkinsfile
+    triggers:
+        - timed: "@weekly"
     properties:
       - build-discarder:
           days-to-keep: 7
           num-to-keep: 7
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "test-cdk.*"
+            - "e2e-gubernator.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+
+
+- job-group:
+    name: 'release-1.11.x'
+    jobs:
+      - 'release-1.11.x-{cloud}':
+          cloud: 'google'
+      - 'release-1.11.x-{cloud}':
+          cloud: 'aws'
+      - 'release-1.11.x-azure'
+
+
+- project:
+    name: 'release-1.11.x'
+    jobs:
+      - 'release-1.11.x'
