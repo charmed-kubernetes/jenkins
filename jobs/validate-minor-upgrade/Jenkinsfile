@@ -19,12 +19,11 @@ pipeline {
         stage('Install tools') {
             steps {
                 installTools()
-                sh "cd jobs && pipenv install"
             }
         }
         stage("Deploy") {
             options {
-                timeout(time: 1, unit: 'HOURS')
+                timeout(time: 2, unit: 'HOURS')
             }
             steps {
                 deployCDK(params.controller,
@@ -37,7 +36,9 @@ pipeline {
 
         stage("Validate Minor Upgrade") {
             steps {
-                sh "cd jobs && TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade"
+                dir('jobs') {
+                    sh "TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade"
+                }
             }
         }
     }
@@ -47,6 +48,8 @@ pipeline {
             archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
         }
         always {
+            collectDebug(params.controller,
+                         env.JUJU_MODEL)
             tearDown(params.controller,
                      env.JUJU_MODEL)
         }

@@ -46,19 +46,30 @@ def delete_nodes(c, apikey, apiuser):
     """
     j = jenkins.Jenkins('https://ci.kubernetes.juju.solutions',
                         username=apiuser, password=apikey)
-    status = c.run('sudo -E sudo -u jenkins -E juju status --format yaml')
-    status = yaml.load(status.stdout)
+    try:
+        status = c.run(
+            'sudo -E sudo -u jenkins -E juju status '
+            '-m jenkins-ci:agents --format yaml')
+        status = yaml.load(status.stdout)
+    except:
+        return
+
     if not status['applications']:
         return
 
     for node in status['applications'].keys():
-        j.delete_node(node)
+        try:
+            j.delete_node(node)
+        except jenkins.JenkinsException as e:
+            print(e)
+            continue
 
 @task
 def set_node_ips(c):
     """ Returns a list of current nodes ip addresses to populate for ansible
     """
-    status = c.run('sudo -E sudo -u jenkins -E juju status --format yaml')
+    status = c.run('sudo -E sudo -u jenkins -E juju status '
+                   '-m jenkins-ci:agents --format yaml')
     status = yaml.load(status.stdout)
     ip_addresses = ['[jenkins-nodes]']
     if status['applications']:

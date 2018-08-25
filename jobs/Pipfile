@@ -7,11 +7,14 @@ name = "pypi"
 jenkins-job-builder = "*"
 invoke = "*"
 pytest = "*"
+pytest-asyncio = "*"
 requests = "*"
 juju = "*"
 python-dotenv = "*"
 ansible = "*"
 asyncio-extras = "*"
+sh = "*"
+flake8 = "*"
 
 [dev-packages]
 

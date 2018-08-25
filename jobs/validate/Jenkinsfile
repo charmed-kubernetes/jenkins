@@ -19,10 +19,9 @@ pipeline {
         stage('Install tools') {
             steps {
                 installTools()
-                sh "cd jobs && pipenv install"
             }
         }
-        stage('Deploy: CDK') {
+        stage('Deploy: K8s') {
             options {
                 timeout(time: 1, unit: 'HOURS')
             }
@@ -40,7 +39,9 @@ pipeline {
                 expression { !params.perform_upgrade }
             }
             steps {
-                sh "cd jobs && CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                dir('jobs') {
+                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                }
             }
         }
         stage('Validate Upgrade') {
@@ -48,7 +49,9 @@ pipeline {
                 expression { params.perform_upgrade }
             }
             steps {
-                sh "cd jobs && TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
+                dir('jobs') {
+                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
+                }
             }
         }
     }
@@ -58,6 +61,8 @@ pipeline {
             archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
         }
         always {
+            collectDebug(params.controller,
+                         env.JUJU_MODEL)
             tearDown(params.controller,
                      env.JUJU_MODEL)
         }

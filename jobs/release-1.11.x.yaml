@@ -41,7 +41,7 @@
 - job-template:
     name: 'release-1.11.x-azure'
     description: |
-      Release test on azure and promote 1.11.x to beta/candidate.
+      Release test on azure.
     project-type: pipeline
     parameters:
       - string:
@@ -66,6 +66,34 @@
           queue-scanning: 'ALL'
 
 
+- job-template:
+    name: 'release-1.11.x-bionic-aws'
+    description: |
+      Release test on aws for bionic series.
+    project-type: pipeline
+    parameters:
+      - string:
+          name: cloud
+          default: 'aws'
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-scm
+      script-path: jobs/release-1.11.x/Jenkinsfile.bionic
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          days-to-keep: 1
+          num-to-keep: 2
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "test-cdk.*"
+            - "e2e-gubernator.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+
+
 - job-group:
     name: 'release-1.11.x'
     jobs:
@@ -74,6 +102,7 @@
       - 'release-1.11.x-{cloud}':
           cloud: 'aws'
       - 'release-1.11.x-azure'
+      - 'release-1.11.x-bionic-aws'
 
 
 - project:

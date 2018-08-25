@@ -4,6 +4,7 @@
 
 import java.text.SimpleDateFormat
 def run_as_j = "sudo -E sudo -u jenkins -E"
+def max_jobs = 5
 
 pipeline {
     agent {
@@ -26,9 +27,11 @@ pipeline {
     stages {
         stage('Destroy nodes') {
             steps {
-                sh "cd jobs && pipenv install"
-                sh "cd jobs && pipenv run invoke delete-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER}"
-                sh "${run_as_j} juju destroy-model -y ${env.JUJU_MODEL}"
+                dir('jobs') {
+                    sh "pipenv install"
+                    sh "pipenv run invoke delete-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER}"
+                }
+                sh "${run_as_j} juju destroy-model -y ${env.JUJU_MODEL} || true"
                 sh "${run_as_j} juju add-model -c ${env.JUJU_CONTROLLER} agents"
             }
         }
@@ -36,23 +39,37 @@ pipeline {
             steps {
                 script {
                     // make parallel
-                    for (int t = 0; t < 5; t++) {
-                        def dateFormat = new SimpleDateFormat("yyyyMMddHHmm")
-                        def date = new Date()
-                        def runner_id = String.format("%s%s", env.RUNNER, dateFormat.format(date))
-                        sh "${run_as_j} juju deploy -m ${env.JUJU_MODEL} --series bionic cs:ubuntu ${runner_id}"
-                        sh "${run_as_j} juju-wait -e ${env.JUJU_MODEL} -w"
-                        sh "${run_as_j} juju ssh -m ${env.JUJU_MODEL} ${runner_id}/0 -- wget https://ci.kubernetes.juju.solutions/jnlpJars/slave.jar"
-                        sh "${run_as_j} juju ssh -m ${env.JUJU_MODEL} ${runner_id}/0 -- sudo apt install -qyf python"
-                        sh "cd jobs && pipenv run invoke create-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER} --node ${runner_id}"
+                    def jobs = [:]
+                    for (int t = 0; t < max_jobs; t++) {
+                        jobs[t] = {
+                            def dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS")
+                            def date = new Date()
+                            def runner_id = String.format("%s%s", env.RUNNER, dateFormat.format(date))
+                            stage("Building Node: ${runner_id}") {
+                                sh "${run_as_j} juju deploy -m ${env.JUJU_MODEL} --series bionic cs:ubuntu ${runner_id}"
+                                sh "${run_as_j} juju-wait -e ${env.JUJU_MODEL} -w"
+                                sh "${run_as_j} juju ssh -m ${env.JUJU_MODEL} ${runner_id}/0 -- wget https://ci.kubernetes.juju.solutions/jnlpJars/slave.jar"
+                                // sh "${run_as_j} juju ssh -m ${env.JUJU_MODEL} ${runner_id}/0 -- sudo apt install -qyf python"
+                                dir("jobs") {
+                                    sh "pipenv run invoke create-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER} --node ${runner_id}"
+                                }
+                            }
+                        }
                     }
+                    parallel jobs
                 }
             }
         }
         stage('Configure system') {
             steps {
-                sh "cd jobs && pipenv run invoke set-node-ips"
-                sh "cd jobs/infra && pipenv run ansible-playbook playbook.yml -i hosts --private-key '/var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa'"
+                dir("jobs") {
+                    sh "pipenv run invoke set-node-ips"
+                    // Make sure charmstore creds are updated with future expiration date
+                    sh "charm login"
+                }
+                dir("jobs/infra") {
+                    sh "pipenv run ansible-playbook playbook.yml -i hosts --private-key '/var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa' -e 'ansible_python_interpreter=/usr/bin/python3'"
+                }
             }
         }
     }

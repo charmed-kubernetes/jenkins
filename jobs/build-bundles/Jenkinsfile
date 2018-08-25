@@ -7,7 +7,7 @@ def bundle_mapping = [
         charmstore: 'cs:~containers/bundle/canonical-kubernetes',
     ],
     'core-flannel': [
-        fragments: 'k8s/cdk cni/flannel',
+        fragments: 'k8s/core cni/flannel',
         charmstore: 'cs:~containers/bundle/kubernetes-core'
     ],
     'cdk-flannel-elastic': [
@@ -15,7 +15,7 @@ def bundle_mapping = [
         charmstore: 'cs:~containers/bundle/canonical-kubernetes-elastic'
     ],
     'cdk-calico': [
-        fragments: 'k8s/cdk cni/calico',
+        fragments: 'k8s/core cni/calico',
         charmstore: 'cs:~containers/bundle/kubernetes-calico'
     ],
     'cdk-canal': [
@@ -44,19 +44,24 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-        TMPDIR = "${env.WORKSPACE}/tmp"
+        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
+        REPO_DIR = "${env.WORKSPACE}/bundle-kubernetes"
         BUNDLES_DIR = "${env.WORKSPACE}/tmp-bundles"
     }
     options {
         ansiColor('xterm')
         timestamps()
     }
+    // triggers {
+    //     pollSCM('H/5 * * * *')
+    // }
     stages {
         stage('Setup') {
             steps {
                 installTools()
-                sh "git clone ${params.bundle_repo} ${env.TMPDIR}"
+                dir(env.REPO_DIR) {
+                    git poll: true, url: params.bundle_repo
+                }
             }
         }
         stage('Build Charms'){
@@ -82,7 +87,7 @@ pipeline {
                         jobs[bundle] = {
                             stage(String.format("Build: %s", bundle)) {
                                 sh script:String.format("%s/bundle -o %s/%s -c %s %s",
-                                                        env.TMPDIR,
+                                                        env.REPO_DIR,
                                                         env.BUNDLES_DIR,
                                                         bundle,
                                                         params.channel,

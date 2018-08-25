@@ -16,7 +16,7 @@ from contextlib import contextmanager
 from juju.controller import Controller
 from juju.model import Model
 from juju.errors import JujuError
-from logger import log_calls, log_calls_async
+from .logger import log_calls, log_calls_async
 from subprocess import check_output, check_call
 
 

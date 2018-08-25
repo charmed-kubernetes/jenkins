@@ -9,9 +9,9 @@ import re
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from datetime import datetime
-from logger import log, log_calls, log_calls_async
+from .logger import log, log_calls, log_calls_async
 from tempfile import NamedTemporaryFile
-from utils import (
+from .utils import (
     assert_no_unit_errors,
     asyncify,
     wait_for_ready,
@@ -21,6 +21,7 @@ from utils import (
     retry_async_with_timeout,
     arch,
 )
+from sh import kubectl
 
 
 @log_calls_async
@@ -113,15 +114,14 @@ async def validate_rbac(model):
     app = model.applications['kubernetes-master']
     await app.set_config({'authorization-mode': 'RBAC,Node'})
     await wait_for_process(model, 'RBAC')
-    cmd = (
-        "/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig get clusterroles")
+    cmd = kubectl.bake('--kubeconfig /root/cdk/kubeconfig')
     worker = model.applications['kubernetes-worker'].units[0]
     output = await worker.run(cmd)
     assert output.status == 'completed'
     assert "forbidden" in output.data['results']['Stderr'].lower()
     await app.set_config({'authorization-mode': 'AlwaysAllow'})
     await wait_for_process(model, 'AlwaysAllow')
-    output = await worker.run(cmd)
+    output = await worker.run(cmd('get clusterroles'))
     assert output.status == 'completed'
     assert "forbidden" not in output.data['results']['Stderr']
 

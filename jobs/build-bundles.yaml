@@ -19,4 +19,4 @@
     properties:
       - build-discarder:
           days-to-keep: 2
-          num-to-keep: 5
+          num-to-keep: 2

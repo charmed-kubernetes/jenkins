@@ -1,5 +1,7 @@
 ---
 - hosts: jenkins-nodes
+  strategy: free
+  gather_facts: no
   become: true
   tasks:
     - name: install apt deps
@@ -7,6 +9,7 @@
         name:
           - unzip
           - python3-pip
+          - flake8
           - python-pip
           - squashfuse
           - snapd

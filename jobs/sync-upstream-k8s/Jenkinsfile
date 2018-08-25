@@ -8,7 +8,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
         CDKBOT_GH = credentials('cdkbot_github')
     }
     options {
@@ -23,12 +23,15 @@ pipeline {
         }
         stage('Sync Upstream K8s'){
             steps {
-                git credentialsId: 'cdkbot_github', poll: true, url: 'https://github.com/juju-solutions/kubernetes', branch: 'master'
-                sh "git remote add upstream https://github.com/kubernetes/kubernetes.git"
-                sh "git fetch upstream"
-                sh "git checkout master"
-                sh "git rebase upstream/master"
-                sh "git push https://${CDKBOT_GH}@github.com/juju-solutions/kubernetes master"
+                dir('kubernetes') {
+                    git poll: true, url: 'https://github.com/juju-solutions/kubernetes'
+                    sh "git config user.email 'cdkbot@juju.solutions'"
+                    sh "git config user.name 'cdkbot'"
+                    sh "git remote add upstream https://github.com/kubernetes/kubernetes.git"
+                    sh "git fetch upstream"
+                    sh "git rebase upstream/master"
+                    sh "git push -f https://${CDKBOT_GH}@github.com/juju-solutions/kubernetes master"
+                }
             }
         }
     }
