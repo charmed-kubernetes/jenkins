@@ -1,44 +1,48 @@
+import inspect
 import os
-import asyncio
-from juju.model import Model
+import uuid
+from juju.controller import Controller
 
 
-class TestModel:
-    def __init__(self):
-        self.controller_name = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
-        self.model_name = os.environ.get(
-            'MODEL', 'validate-{}'.format(os.environ['BUILD_NUMBER']))
-
-    async def connect(self):
-        self._model = Model(asyncio.get_event_loop())
-        model_name = "{}:{}".format(self.controller_name,
-                                    self.model_name)
-        await self._model.connect(model_name)
-        return self._model
-
-    async def disconnect(self):
-        await self._model.disconnect()
+test_run_nonce = uuid.uuid4().hex[-4:]
 
 
-class UseModel:
+class CleanModel():
     """
-    Context manager that connects to a controller:model and disconnects
-    automatically.
+    Context manager that automatically connects to the defined
+    controller, adds a fresh model, returns the connection to that model,
+    and automatically disconnects and cleans up the model.
 
-    The controller and model must exist prior to use.
+    The new model is also set as the current default for the controller
+    connection.
     """
     def __init__(self):
-        self._controller_name = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
-        self._model_name = os.environ.get(
-            'MODEL', 'validate-{}'.format(os.environ['BUILD_NUMBER']))
+        self._controller = None
         self._model = None
+        self._model_uuid = None
 
     async def __aenter__(self):
-        self._model = Model(asyncio.get_event_loop())
-        model_name = "{}:{}".format(self._controller_name,
-                                    self._model_name)
-        await self._model.connect(model_name)
+        model_nonce = uuid.uuid4().hex[-4:]
+        frame = inspect.stack()[1]
+        test_name = frame.function.replace('_', '-')
+        controller_name = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
+        self._controller = Controller()
+        await self._controller.connect(controller_name)
+
+        model_name = 'test-{}-{}-{}'.format(
+            test_run_nonce,
+            test_name,
+            model_nonce,
+        )
+        self._model = await self._controller.add_model(model_name)
+        await self._model.set_config({'test-mode': True})
+
+        # save the model UUID in case test closes model
+        self._model_uuid = self._model.info.uuid
+
         return self._model
 
     async def __aexit__(self, exc_type, exc, tb):
         await self._model.disconnect()
+        await self._controller.destroy_model(self._model_uuid)
+        await self._controller.disconnect()

@@ -17,6 +17,7 @@ sh = "*"
 flake8 = "*"
 
 [dev-packages]
+ipdb = "*"
 
 [requires]
 python_version = "3"

@@ -45,8 +45,8 @@ pipeline {
                     script {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
-                            sh "juju add-model -c ${params.controller} ${env.JUJU_MODEL}"
-                            sh "juju model-config -m ${params.controller}:${env.JUJU_MODEL} test-mode=true"
+                            // sh "juju add-model -c ${params.controller} ${env.JUJU_MODEL}"
+                            // sh "juju model-config -m ${params.controller}:${env.JUJU_MODEL} test-mode=true"
                             sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest --tb native -ra -v -s --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }

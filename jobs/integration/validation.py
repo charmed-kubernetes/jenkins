@@ -44,6 +44,7 @@ async def validate_all(model, log_dir):
         log("Running network policy specific tests")
         await validate_network_policies(model)
     await validate_extra_args(model)
+    await validate_kubelet_extra_config(model)
     await validate_audit_default_config(model)
     await validate_audit_empty_policy(model)
     await validate_audit_custom_policy(model)
@@ -555,6 +556,68 @@ async def validate_extra_args(model):
     )
 
     await asyncio.gather(master_task, worker_task)
+
+
+@log_calls_async
+async def validate_kubelet_extra_config(model):
+    worker_app = model.applications['kubernetes-worker']
+    k8s_version_str = worker_app.data['workload-version']
+    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split('.')[:2])
+    if k8s_minor_version < (1, 10):
+        log('skipping, k8s version v' + k8s_version_str)
+        return
+
+    config = await worker_app.get_config()
+    old_extra_config = config['kubelet-extra-config']['value']
+
+    # set the new config
+    new_extra_config = yaml.dump({
+        # maxPods, because it can be observed in the Node object
+        'maxPods': 111,
+        # evictionHard/memory.available, because it has a nested element
+        'evictionHard': {
+            'memory.available': '200Mi'
+        },
+        # authentication/webhook/enabled, so we can confirm that other
+        # items in the authentication section are preserved
+        'authentication': {
+            'webhook': {
+                'enabled': False
+            }
+        }
+    })
+    await set_config_and_wait(worker_app, {'kubelet-extra-config': new_extra_config})
+
+    # wait for and validate new maxPods value
+    log('waiting for nodes to show new pod capacity')
+    master_unit = model.applications['kubernetes-master'].units[0]
+    while True:
+        cmd = '/snap/bin/kubectl -o yaml get node'
+        output = await run_until_success(master_unit, cmd)
+        nodes = yaml.load(output)
+
+        all_nodes_updated = all([
+            node['status']['capacity']['pods'] == '111'
+            for node in nodes['items']
+        ])
+        if all_nodes_updated:
+            break
+
+        await asyncio.sleep(1)
+
+    # validate config.yaml on each worker
+    log('validating generated config.yaml files')
+    for worker_unit in worker_app.units:
+        cmd = 'cat /root/cdk/kubelet/config.yaml'
+        output = await run_until_success(worker_unit, cmd)
+        config = yaml.load(output)
+        assert config['evictionHard']['memory.available'] == '200Mi'
+        assert config['authentication']['webhook']['enabled'] == False
+        assert 'anonymous' in config['authentication']
+        assert 'x509' in config['authentication']
+
+    # clean up
+    await set_config_and_wait(worker_app, {'kubelet-extra-config': old_extra_config})
 
 
 @log_calls_async
