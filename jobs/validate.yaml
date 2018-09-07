@@ -51,6 +51,9 @@
       - 'v1.11.x':
           version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
           snap_channel: '1.11/edge'
+      - 'v1.12.x':
+          version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
+          snap_channel: '1.12/edge'
     jobs:
       - 'validate-{version}-{bundle}-{cloud}':
           cloud: ['aws', 'google', 'azure']
