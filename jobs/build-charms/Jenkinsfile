@@ -36,6 +36,10 @@ pipeline {
             }
         }
         stage('Test') {
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+
             steps {
                 dir("${JUJU_REPOSITORY}/builds/${params.charm}") {
                     sh "charm proof"
@@ -45,9 +49,7 @@ pipeline {
                     script {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
-                            // sh "juju add-model -c ${params.controller} ${env.JUJU_MODEL}"
-                            // sh "juju model-config -m ${params.controller}:${env.JUJU_MODEL} test-mode=true"
-                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest --tb native -ra -v -s --junit-xml=${params.charm}.xml ${test_path}"
+                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest --tb native -ra -v -s -n auto --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }
 
@@ -74,15 +76,15 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-            script {
-                def has_model_running = sh(script: "juju status -m ${params.controller}:${env.JUJU_MODEL}", returnStatus: true)
-                if(has_model_running == 0 ) {
-                    tearDown(params.controller,
-                             env.JUJU_MODEL)
-                }
-            }
-        }
-    }
+    // post {
+    //     always {
+    //         script {
+    //             def has_model_running = sh(script: "juju models -c ${params.controller}| grep -q '^test'", returnStatus: true)
+    //             if(has_model_running == 0 ) {
+    //                 tearDown(params.controller,
+    //                          env.JUJU_MODEL)
+    //             }
+    //         }
+    //     }
+    // }
 }

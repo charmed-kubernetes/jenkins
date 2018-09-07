@@ -32,6 +32,7 @@
             - ".*build.*"
             - "test-cdk.*"
             - "e2e-gubernator.*"
+            - "^release-1.11.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
       - build-discarder:
@@ -62,6 +63,7 @@
           blocking-jobs:
             - "test-cdk.*"
             - "e2e-gubernator.*"
+            - "^release-1.11.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
 
@@ -90,6 +92,7 @@
           blocking-jobs:
             - "test-cdk.*"
             - "e2e-gubernator.*"
+            - "^release-1.11.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
 
