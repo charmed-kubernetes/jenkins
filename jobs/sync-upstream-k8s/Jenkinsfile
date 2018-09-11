@@ -29,8 +29,8 @@ pipeline {
                     sh "git config user.name 'cdkbot'"
                     sh "git remote add upstream https://github.com/kubernetes/kubernetes.git"
                     sh "git fetch upstream"
-                    sh "git rebase upstream/master"
-                    sh "git push -f https://${CDKBOT_GH}@github.com/juju-solutions/kubernetes master"
+                    sh "git merge upstream/master"
+                    sh "git push https://${CDKBOT_GH}@github.com/juju-solutions/kubernetes master"
                 }
             }
         }

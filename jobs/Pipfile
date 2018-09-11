@@ -16,9 +16,12 @@ ansible = "*"
 asyncio-extras = "*"
 sh = "*"
 flake8 = "*"
+launchpadlib = "*"
+"canonicalwebteam.snapstoreapi" = "*"
 
 [dev-packages]
 ipdb = "*"
+"autopep8" = "*"
 
 [requires]
 python_version = "3"

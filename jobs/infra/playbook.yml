@@ -7,6 +7,10 @@
     - name: install apt deps
       apt:
         name:
+          - make
+          - curl
+          - wget
+          - docker.io
           - unzip
           - python3-pip
           - flake8
@@ -18,6 +22,11 @@
           - libffi-dev
           - libssl-dev
           - default-jre
+    - name: update ubuntu ser
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
     - name: install snap deps
       command: "snap install {{item}}"
       loop:

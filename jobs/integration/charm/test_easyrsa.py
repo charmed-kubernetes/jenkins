@@ -11,6 +11,7 @@ pytestmark = pytest.mark.asyncio
 CHARM_PATH = os.getenv('CHARM_PATH')
 
 
+@pytest.mark.skip('Need local resources work')
 async def test_local_deployed(deploy, event_loop):
     """ Verify local easy charm can be deployed """
     controller, model = deploy

@@ -21,7 +21,7 @@
           default: '1.12/edge 1.12/candidate'
     pipeline-scm:
       scm:
-        - k8s-jenkins-bm
+        - k8s-jenkins-scm
       script-path: jobs/release-1.12.x/Jenkinsfile
     triggers:
         - timed: "@daily"
@@ -50,7 +50,7 @@
           default: 'azure'
     pipeline-scm:
       scm:
-        - k8s-jenkins-bm
+        - k8s-jenkins-scm
       script-path: jobs/release-1.12.x/Jenkinsfile
     triggers:
         - timed: "@weekly"
@@ -79,7 +79,7 @@
           default: 'aws'
     pipeline-scm:
       scm:
-        - k8s-jenkins-bm
+        - k8s-jenkins-scm
       script-path: jobs/release-1.12.x/Jenkinsfile.bionic
     triggers:
         - timed: "@daily"

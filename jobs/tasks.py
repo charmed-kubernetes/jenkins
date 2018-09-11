@@ -24,9 +24,10 @@ def create_nodes(c, apikey, apiuser, node, labels='runner'):
     j = jenkins.Jenkins('https://ci.kubernetes.juju.solutions',
                         username=apiuser, password=apikey)
     params = {
-        'command': ('sudo -E sudo -u jenkins -E juju ssh -m jenkins-ci:agents '
-                    '{node}/0 -- "java -jar /home/ubuntu/slave.jar"'.format(
-                        node=node))
+        'command': (
+            'sudo -E sudo -u jenkins -E juju ssh -m jenkins-ci-google:agents '
+            '{node}/0 -- "java -jar /home/ubuntu/slave.jar"'.format(
+                node=node))
     }
     j.create_node(
         node,
@@ -49,7 +50,7 @@ def delete_nodes(c, apikey, apiuser):
     try:
         status = c.run(
             'sudo -E sudo -u jenkins -E juju status '
-            '-m jenkins-ci:agents --format yaml')
+            '-m jenkins-ci-google:agents --format yaml')
         status = yaml.load(status.stdout)
     except:
         return
@@ -69,7 +70,7 @@ def set_node_ips(c):
     """ Returns a list of current nodes ip addresses to populate for ansible
     """
     status = c.run('sudo -E sudo -u jenkins -E juju status '
-                   '-m jenkins-ci:agents --format yaml')
+                   '-m jenkins-ci-google:agents --format yaml')
     status = yaml.load(status.stdout)
     ip_addresses = ['[jenkins-nodes]']
     if status['applications']:

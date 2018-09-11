@@ -115,14 +115,15 @@ async def validate_rbac(model):
     app = model.applications['kubernetes-master']
     await app.set_config({'authorization-mode': 'RBAC,Node'})
     await wait_for_process(model, 'RBAC')
-    cmd = kubectl.bake('--kubeconfig /root/cdk/kubeconfig')
+    cmd = str(kubectl.bake(
+        '--kubeconfig', '/root/cdk/kubeconfig', 'get', 'clusterroles'))
     worker = model.applications['kubernetes-worker'].units[0]
     output = await worker.run(cmd)
     assert output.status == 'completed'
     assert "forbidden" in output.data['results']['Stderr'].lower()
     await app.set_config({'authorization-mode': 'AlwaysAllow'})
     await wait_for_process(model, 'AlwaysAllow')
-    output = await worker.run(cmd('get clusterroles'))
+    output = await worker.run(cmd)
     assert output.status == 'completed'
     assert "forbidden" not in output.data['results']['Stderr']
 
@@ -592,16 +593,18 @@ async def validate_kubelet_extra_config(model):
     log('waiting for nodes to show new pod capacity')
     master_unit = model.applications['kubernetes-master'].units[0]
     while True:
-        cmd = '/snap/bin/kubectl -o yaml get node'
-        output = await run_until_success(master_unit, cmd)
-        nodes = yaml.load(output)
+        cmd = kubectl.bake('-o', 'yaml', 'get', 'node')
+        action = await master_unit.run(str(cmd))
+        print(action.status, action.results)
+        if action.status == 'completed' and action.results['Code'] == '0':
+            nodes = yaml.load(action.results['Stdout'])
 
-        all_nodes_updated = all([
-            node['status']['capacity']['pods'] == '111'
-            for node in nodes['items']
-        ])
-        if all_nodes_updated:
-            break
+            all_nodes_updated = all([
+                node['status']['capacity']['pods'] == '111'
+                for node in nodes['items']
+            ])
+            if all_nodes_updated:
+                break
 
         await asyncio.sleep(1)
 
@@ -609,15 +612,18 @@ async def validate_kubelet_extra_config(model):
     log('validating generated config.yaml files')
     for worker_unit in worker_app.units:
         cmd = 'cat /root/cdk/kubelet/config.yaml'
-        output = await run_until_success(worker_unit, cmd)
-        config = yaml.load(output)
-        assert config['evictionHard']['memory.available'] == '200Mi'
-        assert config['authentication']['webhook']['enabled'] == False
-        assert 'anonymous' in config['authentication']
-        assert 'x509' in config['authentication']
+        action = await worker_unit.run(cmd)
+        if action.status == 'completed' and action.results['Code'] == '0':
+            config = yaml.load(action.results['Stdout'])
+            assert config['evictionHard']['memory.available'] == '200Mi'
+            assert config['authentication']['webhook']['enabled'] == False
+            assert 'anonymous' in config['authentication']
+            assert 'x509' in config['authentication']
 
     # clean up
-    await set_config_and_wait(worker_app, {'kubelet-extra-config': old_extra_config})
+    await set_config_and_wait(
+        worker_app,
+        {'kubelet-extra-config': old_extra_config})
 
 
 @log_calls_async

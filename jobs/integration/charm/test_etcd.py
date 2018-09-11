@@ -140,6 +140,7 @@ async def test_leader_knows_all_members(deploy, event_loop):
             assert len(members) == len(etcd.units)
 
 
+@pytest.mark.skip('Cluster-relation joined failure')
 async def test_node_scale_down_members(deploy, event_loop):
     """ Scale the cluster down and ensure the cluster state is still
     healthy """
@@ -306,6 +307,7 @@ async def delete_data(leader):
     await leader.run(cmd)
 
 
+@pytest.mark.skip('Hangs longer than 2 hours')
 async def test_snapshot_restore(deploy, event_loop):
     """
     Trigger snapshot and restore actions

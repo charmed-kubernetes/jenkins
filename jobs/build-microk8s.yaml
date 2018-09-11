@@ -1,0 +1,17 @@
+# Builds and releases latest microk8s
+
+- job:
+    name: 'build-release-microk8s'
+    description: |
+      Builds, releases and promotes microk8s to the snapstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-scm
+      script-path: jobs/build-microk8s/Jenkinsfile
+    triggers:
+        - timed: "@hourly"
+    properties:
+      - build-discarder:
+          days-to-keep: 2
+          num-to-keep: 2

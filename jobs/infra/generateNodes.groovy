@@ -13,8 +13,8 @@ pipeline {
     // Add environment credentials for pyjenkins script on configuring nodes automagically
     environment {
         PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
-        JUJU_CONTROLLER = "jenkins-ci"
-        JUJU_MODEL = "jenkins-ci:agents"
+        JUJU_CONTROLLER = "jenkins-ci-google"
+        JUJU_MODEL = "jenkins-ci-google:agents"
         RUNNER = "runner"
         APIKEY = credentials('apikey')
         APIUSER = credentials('apiuser')
@@ -46,7 +46,7 @@ pipeline {
                             def date = new Date()
                             def runner_id = String.format("%s%s", env.RUNNER, dateFormat.format(date))
                             stage("Building Node: ${runner_id}") {
-                                sh "${run_as_j} juju deploy -m ${env.JUJU_MODEL} --series bionic cs:ubuntu ${runner_id}"
+                                sh "${run_as_j} juju deploy -m ${env.JUJU_MODEL} --series bionic --constraints 'cores=4 root-disk=50G' cs:ubuntu ${runner_id}"
                                 sh "${run_as_j} juju-wait -e ${env.JUJU_MODEL} -w"
                                 sh "${run_as_j} juju ssh -m ${env.JUJU_MODEL} ${runner_id}/0 -- wget https://ci.kubernetes.juju.solutions/jnlpJars/slave.jar"
                                 // sh "${run_as_j} juju ssh -m ${env.JUJU_MODEL} ${runner_id}/0 -- sudo apt install -qyf python"

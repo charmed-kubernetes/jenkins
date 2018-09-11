@@ -9,8 +9,7 @@ pipeline {
      */
     environment {
         PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
-        CDKBOT_TOKEN = credentials('cdkbot')
-        GITHUB_CREDS = credentials('cdkbot_github')
+        LPCREDS = credentials('LAUNCHPAD_CREDS')
     }
     options {
         ansiColor('xterm')
@@ -20,19 +19,14 @@ pipeline {
         stage('Setup') {
             steps {
                 installTools()
-                sh "snapcraft login --with ${env.CDKBOT_TOKEN}"
             }
         }
-        stage('Release Snaps'){
+        stage('Release microk8s'){
             steps {
-                sh "GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
+                dir('jobs') {
+                    sh "LPCREDS=${env.LPCREDS} pipenv run build-microk8s/build-and-release-on-new-upstream-release.py"
+                }
             }
-        }
-    }
-    post {
-        always {
-            sh "chown -R ubuntu:ubuntu release/snap || true"
-            sh "snapcraft logout"
         }
     }
 }
