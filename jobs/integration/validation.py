@@ -10,6 +10,7 @@ from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from datetime import datetime
 from .logger import log, log_calls, log_calls_async
+from pprint import pformat
 from tempfile import NamedTemporaryFile
 from .utils import (
     assert_no_unit_errors,
@@ -469,12 +470,16 @@ async def validate_extra_args(model):
         await app.set_config(new_config)
 
         with timeout_for_current_task(600):
-            for service, expected_service_args in expected_args.items():
-                while True:
-                    args_per_unit = await get_service_args(app, service)
-                    if all(expected_service_args <= args for args in args_per_unit):
-                        break
-                    await asyncio.sleep(3)
+            try:
+                for service, expected_service_args in expected_args.items():
+                    while True:
+                        args_per_unit = await get_service_args(app, service)
+                        if all(expected_service_args <= args for args in args_per_unit):
+                            break
+                        await asyncio.sleep(3)
+            except asyncio.CancelledError:
+                log('Dumping locals:\n' + pformat(locals()))
+                raise
 
         filtered_original_config = {
             key: original_config[key]['value']
@@ -483,12 +488,16 @@ async def validate_extra_args(model):
         await app.set_config(filtered_original_config)
 
         with timeout_for_current_task(600):
-            for service, original_service_args in original_args.items():
-                while True:
-                    new_args = await get_service_args(app, service)
-                    if new_args == original_service_args:
-                        break
-                    await asyncio.sleep(3)
+            try:
+                for service, original_service_args in original_args.items():
+                    while True:
+                        new_args = await get_service_args(app, service)
+                        if new_args == original_service_args:
+                            break
+                        await asyncio.sleep(3)
+            except asyncio.CancelledError:
+                log('Dumping locals:\n' + pformat(locals()))
+                raise
 
     master_task = run_extra_args_test(
         app_name='kubernetes-master',
