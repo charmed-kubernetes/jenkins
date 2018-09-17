@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "df3e8a7e590f06a338d572af0820e3cd09c92dbcb69bd360f3ba10c0035f165d"
+            "sha256": "acaabcfeca658e864aa779487fc6ce3418ee831857b07839744b3d9dd2f4d350"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -282,10 +282,10 @@
         },
         "juju": {
             "hashes": [
-                "sha256:ea0436f9280516a50856cea90c80c71f6e3f107aa32c989347d8a4eca95366e4"
+                "sha256:b0bd744c61b77e683d7d5a0e262a87decbbc20c0ad0c7bb79c50fb6f054a307d"
             ],
             "index": "pypi",
-            "version": "==0.10.0"
+            "version": "==0.10.1"
         },
         "jujubundlelib": {
             "hashes": [

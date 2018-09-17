@@ -595,7 +595,6 @@ async def validate_kubelet_extra_config(model):
     while True:
         cmd = kubectl.bake('-o', 'yaml', 'get', 'node')
         action = await master_unit.run(str(cmd))
-        print(action.status, action.results)
         if action.status == 'completed' and action.results['Code'] == '0':
             nodes = yaml.load(action.results['Stdout'])
 

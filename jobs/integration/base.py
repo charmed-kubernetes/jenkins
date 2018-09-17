@@ -20,6 +20,14 @@ class UseModel:
             'MODEL', 'validate-{}'.format(os.environ['BUILD_NUMBER']))
         self._model = None
 
+    @property
+    def model_name(self):
+        return self._model_name
+
+    @property
+    def controller_name(self):
+        return self._controller_name
+
     async def __aenter__(self):
         self._model = Model(asyncio.get_event_loop())
         model_name = "{}:{}".format(self._controller_name,

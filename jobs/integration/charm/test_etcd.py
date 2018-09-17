@@ -140,7 +140,6 @@ async def test_leader_knows_all_members(deploy, event_loop):
             assert len(members) == len(etcd.units)
 
 
-@pytest.mark.skip('Cluster-relation joined failure')
 async def test_node_scale_down_members(deploy, event_loop):
     """ Scale the cluster down and ensure the cluster state is still
     healthy """
