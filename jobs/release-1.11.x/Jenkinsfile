@@ -143,6 +143,7 @@ pipeline {
                     charms_to_promote.each { charm ->
                         sh script:String.format("CHARM='%s' FROM_CHANNEL='%s' TO_CHANNEL='%s' jobs/build-charms/promote-charm.sh", charm, 'edge', 'beta')
                         sh script:String.format("CHARM='%s' FROM_CHANNEL='%s' TO_CHANNEL='%s' jobs/build-charms/promote-charm.sh", charm, 'edge', 'candidate')
+                        sh script:String.format("CHARM='%s' FROM_CHANNEL='%s' TO_CHANNEL='%s' jobs/build-charms/promote-charm.sh", charm, 'edge', 'stable')
                     }
                 }
             }

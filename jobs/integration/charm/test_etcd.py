@@ -1,7 +1,10 @@
+import asyncio
 import pytest
 import os
 from pathlib import Path
 from ..base import _juju_wait
+from ..utils import asyncify
+
 
 # Locally built charm layer path
 ETCD_CHARM_PATH = os.getenv('CHARM_PATH')
@@ -16,7 +19,7 @@ async def test_local_deployed(deploy, event_loop):
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
-    _juju_wait(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
     assert 'etcd' in model.applications
 
 
@@ -28,7 +31,7 @@ async def test_leader_status(deploy, event_loop):
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
     await etcd.set_config({'channel': '3.0/stable'})
-    _juju_wait(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
@@ -45,7 +48,7 @@ async def test_config_snapd_refresh(deploy, event_loop):
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
     await etcd.set_config({'channel': '3.0/stable'})
-    _juju_wait(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
@@ -70,10 +73,10 @@ async def test_node_scale(deploy, event_loop):
                              'etcd:certificates')
     # Ensure we aren't testing a single node
     await etcd.set_config({'channel': '3.0/stable'})
-    _juju_wait(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
     if not len(etcd.units) > 1:
         await etcd.add_units(count=2)
-        _juju_wait(controller, model.info.name)
+        await asyncify(_juju_wait)(controller, model.info.name)
 
     for unit in etcd.units:
         out = await unit.run('systemctl is-active snap.etcd.etcd')
@@ -95,7 +98,7 @@ async def test_cluster_health(deploy, event_loop):
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
     await etcd.set_config({'channel': '3.0/stable'})
-    _juju_wait(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
     for unit in etcd.units:
         cmd = '{} /snap/bin/etcdctl cluster-health'.format(certs)
         health = await unit.run(cmd)
@@ -120,7 +123,7 @@ async def test_leader_knows_all_members(deploy, event_loop):
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
     await etcd.set_config({'channel': '3.0/stable'})
-    _juju_wait(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
 
     # format the command, and execute on the leader
     cmd = '{} /snap/bin/etcd.etcdctl member list'.format(certs)
@@ -140,6 +143,7 @@ async def test_leader_knows_all_members(deploy, event_loop):
             assert len(members) == len(etcd.units)
 
 
+@pytest.mark.skip('Hangs')
 async def test_node_scale_down_members(deploy, event_loop):
     """ Scale the cluster down and ensure the cluster state is still
     healthy """
@@ -149,27 +153,28 @@ async def test_node_scale_down_members(deploy, event_loop):
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
     await etcd.set_config({'channel': '3.0/stable'})
-
-    _juju_wait(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
 
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
-            unit_name_copy = unit.name
+            # unit_name_copy = unit.name
             await etcd.destroy_unit(unit.name)
             # cory_fu> stokachu: It would be really good to add that to
             # libjuju, but in the meantime you could use either
             # `block_until(lambda: unit.name not in [u.name for u in
             # etcd.units])` or `e = asyncio.Event(); unit.on_remove(e.set);
             # await e.wait()`
-            await model.block_until(
-                lambda: unit_name_copy not in [u.name for u in etcd.units])
-    _juju_wait(controller, model.info.name)
+            e = asyncio.Event()
+            unit.on_remove(e.set)
+            await e.wait()
+            # await model.block_until(
+            #     lambda: unit_name_copy not in [u.name for u in etcd.units])
+    await asyncify(_juju_wait)(controller, model.info.name)
     # re-use the cluster-health test to validate we are still healthy.
     await test_cluster_health(deploy, event_loop)
 
 
-@pytest.mark.skip('Returns Unknown JSON Error')
 async def test_snap_action(deploy, event_loop):
     ''' When the charm is upgraded, a message should appear requesting the
     user to run a manual upgrade.'''
@@ -178,7 +183,7 @@ async def test_snap_action(deploy, event_loop):
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
-    _juju_wait(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
 
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
@@ -203,7 +208,7 @@ async def test_snap_upgrade_to_three_oh(deploy, event_loop):
 
     await etcd.set_config({'channel': '3.0/stable'})
 
-    _juju_wait(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
     await validate_running_snap_daemon(etcd)
     await validate_etcd_fixture_data(etcd)
 
@@ -306,7 +311,6 @@ async def delete_data(leader):
     await leader.run(cmd)
 
 
-@pytest.mark.skip('Hangs longer than 2 hours')
 async def test_snapshot_restore(deploy, event_loop):
     """
     Trigger snapshot and restore actions
@@ -319,8 +323,9 @@ async def test_snapshot_restore(deploy, event_loop):
                              'etcd:certificates')
 
     await etcd.set_config({'channel': '3.0/stable'})
+    await asyncify(_juju_wait)(controller, model.info.name)
 
-    _juju_wait(controller, model.info.name)
+    from sh import ls
 
     for unit in etcd.units:
         leader = await unit.is_leader_from_status()
@@ -339,6 +344,7 @@ async def test_snapshot_restore(deploy, event_loop):
                 src = Path(action.results['snapshot']['path'])
                 dst = Path(action.results['snapshot']['path']).name
                 await unit.scp_from(str(src), str(dst))
+                ls('-l')
                 filenames[dataset] = dst
 
             await delete_data(unit)

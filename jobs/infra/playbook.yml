@@ -33,7 +33,7 @@
         - "juju --classic"
         - "juju-wait --classic"
         - "kubectl --classic"
-        - "charm --edge"
+        - "charm --edge --classic"
     - name: initialize snap directories
       command: "/snap/bin/{{item}} version"
       become: false

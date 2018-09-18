@@ -4,10 +4,7 @@ import json
 import os
 import random
 import requests
-import shutil
 import subprocess
-import tempfile
-import yaml
 import time
 
 from asyncio_extras import async_contextmanager
@@ -161,93 +158,6 @@ async def wait_for_ready(model):
         await asyncio.sleep(1)
 
 
-@log_calls_async
-async def conjureup(model, namespace, bundle, channel='stable', snap_channel=None):
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        cmd = 'charm pull --channel=%s cs:~%s/%s %s'
-        cmd %= channel, namespace, bundle, os.path.join(tmpdirname, bundle)
-        cmd = cmd.split()
-        await asyncify(check_call)(cmd)
-        shutil.copytree(
-            os.path.join('/snap/conjure-up/current/spells', bundle),
-            os.path.join(tmpdirname, 'spell')
-        )
-        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-01_get-kubectl'))
-        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-01_get-kubectl.yaml'))
-        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-02_cluster-info'))
-        os.remove(os.path.join(tmpdirname, 'spell', 'steps', 'step-02_cluster-info.yaml'))
-        with open(os.path.join(tmpdirname, bundle, 'bundle.yaml')) as f:
-            bundledata = yaml.load(f)
-        appkey = 'services' if 'services' in bundledata else 'applications'
-        master = bundledata[appkey]['kubernetes-master']
-        worker = bundledata[appkey]['kubernetes-worker']
-        if snap_channel is not None:
-            master.setdefault('options', {})['channel'] = snap_channel
-            worker.setdefault('options', {})['channel'] = snap_channel
-        with open(os.path.join(tmpdirname, 'spell', 'bundle.yaml'), 'w') as f:
-            yaml.dump(bundledata, f, default_flow_style=False)
-        with open(os.path.join(tmpdirname, 'spell', 'metadata.yaml')) as f:
-            metadata = yaml.load(f)
-        del metadata['bundle-name']
-        with open(os.path.join(tmpdirname, 'spell', 'metadata.yaml'), 'w') as f:
-            yaml.dump(metadata, f, default_flow_style=False)
-        cmd = 'juju show-controller --format=json'.split()
-        controller_raw = await asyncify(check_output)(cmd)
-        controller_name, controller = list(yaml.load(controller_raw).items())[0]
-        cloud = controller['details']['cloud']
-        cloud += '/' + controller['details']['region']
-        cmd = ('conjure-up %s %s %s %s --debug --notrack --noreport' % (
-            os.path.join(tmpdirname, 'spell'),
-            cloud,
-            controller_name,
-            model.info.name
-        )).split()
-        await asyncify(check_call)(cmd)
-
-
-@log_calls_async
-async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=None):
-    ''' Deploy the requested bundle. '''
-    with tempfile.TemporaryDirectory() as temp_dir:
-        url = 'cs:~%s/%s' % (namespace, bundle)
-        bundle_dir = os.path.join(temp_dir, 'bundle')
-        cmd = ['charm', 'pull', '--channel', channel, url, bundle_dir]
-        await asyncify(subprocess.check_call)(cmd)
-        data_path = os.path.join(bundle_dir, 'bundle.yaml')
-        with open(data_path) as f:
-            data = yaml.load(f)
-            await patch_bundle(data, snap_channel)
-            with open(data_path, 'w') as f:
-                yaml.dump(data, f)
-        await model.deploy(bundle_dir)
-    await wait_for_ready(model)
-
-
-async def patch_bundle(bundle, snap_channel):
-    ''' Patch the bundle with snap, procy and arch specific properties. '''
-    if os.getenv('http_proxy') and os.getenv('https_proxy'):
-        # Lets inject proxy settings
-        http_proxy = os.environ.get('http_proxy')
-        https_proxy = os.environ.get('https_proxy')
-        snap_proxy = https_proxy
-        options = bundle['services']['kubernetes-worker'].setdefault('options', {})
-        options['http_proxy'] = http_proxy
-        options['https_proxy'] = https_proxy
-        if await is_localhost():
-            options['proxy-extra-args'] = 'proxy-mode=userspace'
-        for app in ['kubernetes-master', 'kubernetes-worker', 'etcd']:
-            options = bundle['services'][app].setdefault('options', {})
-            options['snap_proxy'] = snap_proxy
-    if arch() == 's390x':
-        options = bundle['services']['kubernetes-master'].setdefault('options', {})
-        options['enable-dashboard-addons'] = "false"
-        options['enable-metrics'] = "false"
-    if snap_channel:
-        for app in ['kubernetes-master', 'kubernetes-worker']:
-            options = bundle['services'][app].setdefault('options', {})
-            options['channel'] = snap_channel
-
-
 def asyncify(f):
     ''' Convert a blocking function into a coroutine '''
     async def wrapper(*args, **kwargs):
@@ -255,17 +165,6 @@ def asyncify(f):
         partial = functools.partial(f, *args, **kwargs)
         return await loop.run_in_executor(None, partial)
     return wrapper
-
-
-@log_calls_async
-async def deploy_e2e(model, charm_channel='stable', snap_channel=None, namespace='containers'):
-    config = None if snap_channel is None else {'channel': snap_channel}
-    e2e_charm = 'cs:~{}/kubernetes-e2e'.format(namespace)
-    await model.deploy(e2e_charm, channel=charm_channel, config=config)
-    await model.add_relation('kubernetes-e2e', 'easyrsa')
-    await model.add_relation('kubernetes-e2e:kube-control', 'kubernetes-master:kube-control')
-    await model.add_relation('kubernetes-e2e:kubernetes-master', 'kubernetes-master:kube-api-endpoint')
-    await wait_for_ready(model)
 
 
 @log_calls_async
@@ -315,72 +214,6 @@ async def upgrade_snaps(model, channel):
 
     # wait for upgrade to complete
     await wait_for_ready(model)
-
-
-@log_calls_async
-async def run_bundletester(namespace, model_name,
-                           log_dir, channel='stable',
-                           snap_channel=None):
-    # fetch bundle
-    bundle = 'canonical-kubernetes'
-    url = 'cs:~%s/%s' % (namespace, bundle)
-    bundle_dir = os.path.join(log_dir, bundle)
-    cmd = ['charm', 'pull', url, '--channel', channel, bundle_dir]
-    await asyncify(subprocess.check_call)(cmd)
-    # update bundle config
-    data_path = os.path.join(bundle_dir, 'bundle.yaml')
-    with open(data_path) as f:
-        data = yaml.load(f)
-        await patch_bundle(data, snap_channel)
-        data['services']['kubernetes-worker'].setdefault('options', {})['labels'] = 'mylabel=thebest'
-        yaml.Dumper.ignore_aliases = lambda *args: True
-        with open(data_path, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False)
-
-    # run bundletester
-    output_file = os.path.join(log_dir, 'bundletester.xml')
-    cmd = [
-        'bundletester', '-e', model_name,
-        '--no-matrix', '-vF', '-l', 'DEBUG',
-        '-t', bundle_dir,
-        '-r', 'xml', '-o', output_file
-    ]
-    await asyncify(subprocess.check_call)(cmd)
-
-
-@log_calls_async
-async def scp_from(unit, remote_path, local_path):
-    if await is_localhost():
-        cmd = "juju scp {}:{} {}".format(unit.name, remote_path, local_path)
-        await asyncify(subprocess.check_call)(cmd.split())
-    else:
-        await unit.scp_from(remote_path, local_path)
-
-
-@log_calls_async
-async def scp_to(local_path, unit, remote_path):
-    if await is_localhost():
-        cmd = "juju scp {} {}:{}".format(local_path, unit.name, remote_path)
-        await asyncify(subprocess.check_call)(cmd.split())
-    else:
-        await unit.scp_to(local_path, remote_path)
-
-
-async def is_localhost():
-    controller = Controller()
-    await controller.connect_current()
-    cloud = await controller.get_cloud()
-    await controller.disconnect()
-    return cloud == 'localhost'
-
-
-def default_bundles():
-    loop = asyncio.get_event_loop()
-    localhost = loop.run_until_complete(is_localhost())
-    if localhost:
-        return 'canonical-kubernetes'
-    else:
-        return 'canonical-kubernetes-canal,kubernetes-core'
 
 
 async def retry_async_with_timeout(func, args, timeout_insec=600,

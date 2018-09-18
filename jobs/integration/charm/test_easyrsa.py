@@ -4,6 +4,8 @@ import pytest
 import os
 from pathlib import Path
 from ..base import _juju_wait
+from ..utils import asyncify
+from sh import curl, juju
 
 pytestmark = pytest.mark.asyncio
 
@@ -11,20 +13,36 @@ pytestmark = pytest.mark.asyncio
 CHARM_PATH = os.getenv('CHARM_PATH')
 
 
-@pytest.mark.skip('Need local resources work')
+async def easyrsa_resource():
+    URL = ('https://github.com/OpenVPN/easy-rsa/releases/download/'
+           '3.0.1/EasyRSA-3.0.1.tgz')
+    if not Path('/tmp/easyrsa.tgz').exists():
+        await asyncify(curl)('-L', '-k', '-o', '/tmp/easyrsa.tgz', URL)
+    return '/tmp/easyrsa.tgz'
+
+
+async def deploy_easyrsa(controller, model):
+    resource_path = await easyrsa_resource()
+    await asyncify(juju)(
+        'deploy', '-m', '{}:{}'.format(controller, model),
+        str(CHARM_PATH), '--resource', 'easyrsa={}'.format(
+            resource_path))
+
+
 async def test_local_deployed(deploy, event_loop):
     """ Verify local easy charm can be deployed """
     controller, model = deploy
-    await model.deploy(str(CHARM_PATH))
-    _juju_wait(controller, model.info.name)
+    await deploy_easyrsa(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
     assert 'easyrsa' in model.applications
 
 
-@pytest.mark.skip('Need local resources work')
 async def test_easyrsa_installed(deploy, event_loop):
     '''Test that EasyRSA software is installed.'''
     controller, model = deploy
-    easyrsa = await model.deploy(str(CHARM_PATH))
+    await deploy_easyrsa(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
+    easyrsa = model.applications['easyrsa']
     easyrsa = easyrsa.units[0]
     charm_dir = Path('/var/lib/juju/agents/unit-{service}-{unit}/charm'.format(
         service=easyrsa.name, unit=easyrsa.id))
@@ -38,10 +56,11 @@ async def test_easyrsa_installed(deploy, event_loop):
     assert 'Easy-RSA' in output
 
 
-@pytest.mark.skip('Need local resources work')
 async def test_ca(deploy, event_loop):
     controller, model = deploy
-    easyrsa = await model.deploy(str(CHARM_PATH))
+    await deploy_easyrsa(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
+    easyrsa = model.applications['easyrsa']
     easyrsa = easyrsa.units[0]
     '''Test that the ca and key were created.'''
     charm_dir = '/var/lib/juju/agents/unit-{service}-{unit}/charm'.format(
@@ -65,11 +84,12 @@ async def test_ca(deploy, event_loop):
     assert ca_cert == installed_ca
 
 
-@pytest.mark.skip('Need local resources work')
 async def test_client(deploy, event_loop):
     '''Test that the client certificate and key were created.'''
     controller, model = deploy
-    easyrsa = await model.deploy(str(CHARM_PATH))
+    await deploy_easyrsa(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model.info.name)
+    easyrsa = model.applications['easyrsa']
     easyrsa = easyrsa.units[0]
 
     charm_dir = '/var/lib/juju/agents/unit-{service}-{unit}/charm'.format(
