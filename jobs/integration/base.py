@@ -4,7 +4,13 @@ from juju.model import Model
 from sh import juju_wait
 
 
-def _juju_wait(controller, model):
+def _juju_wait(controller=None, model=None):
+    if not controller:
+        controller = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
+    if not model:
+        model = os.environ.get(
+            'MODEL', 'validate-{}'.format(os.environ['BUILD_NUMBER']))
+    print("Settling...")
     juju_wait('-e', "{}:{}".format(controller, model), '-w')
 
 

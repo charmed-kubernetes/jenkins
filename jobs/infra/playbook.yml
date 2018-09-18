@@ -30,16 +30,22 @@
     - name: install snap deps
       command: "snap install {{item}}"
       loop:
+        - "lxd"
         - "juju --classic"
         - "juju-wait --classic"
         - "kubectl --classic"
-        - "charm --edge"
+        - "charm --edge --classic"
     - name: initialize snap directories
       command: "/snap/bin/{{item}} version"
       become: false
       loop:
         - juju
         - charm
+    - name: update ubuntu groups
+      user:
+        name: ubuntu
+        groups: lxd
+        append: yes
     - name: create charm/snap folders
       file:
         path: "/home/ubuntu/{{item}}"
@@ -59,7 +65,7 @@
     - name: copy data files
       copy:
         src: /var/lib/jenkins/.go-cookies
-        dest: /home/ubuntu/snap/charm/current/.go-cookies
+        dest: /home/ubuntu/.go-cookies
         mode: u=r
     - name: copy store usso token
       copy:

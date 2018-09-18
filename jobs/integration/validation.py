@@ -10,18 +10,17 @@ from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from datetime import datetime
 from .logger import log, log_calls, log_calls_async
+from pprint import pformat
 from tempfile import NamedTemporaryFile
 from .utils import (
     assert_no_unit_errors,
     asyncify,
-    wait_for_ready,
     timeout_for_current_task,
-    scp_from,
-    scp_to,
     retry_async_with_timeout,
     arch,
 )
-from sh import kubectl
+
+from .base import _juju_wait
 
 
 @log_calls_async
@@ -115,8 +114,7 @@ async def validate_rbac(model):
     app = model.applications['kubernetes-master']
     await app.set_config({'authorization-mode': 'RBAC,Node'})
     await wait_for_process(model, 'RBAC')
-    cmd = str(kubectl.bake(
-        '--kubeconfig', '/root/cdk/kubeconfig', 'get', 'clusterroles'))
+    cmd = "/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig get clusterroles"
     worker = model.applications['kubernetes-worker'].units[0]
     output = await worker.run(cmd)
     assert output.status == 'completed'
@@ -193,7 +191,7 @@ async def validate_dashboard(model, log_dir):
     ''' Validate that the dashboard is operational '''
     unit = model.applications['kubernetes-master'].units[0]
     with NamedTemporaryFile() as f:
-        await scp_from(unit, 'config', f.name)
+        await unit.scp_from('config', f.name)
         with open(f.name, 'r') as stream:
             config = yaml.load(stream)
     url = config['clusters'][0]['cluster']['server']
@@ -295,8 +293,13 @@ async def validate_network_policies(model):
                                    timeout_msg="Unable to remove the namespace netpolicy")
 
     # Move manifests to the master
-    await scp_to(os.path.join(here, "templates", "netpolicy-test.yaml"), unit, "netpolicy-test.yaml")
-    await scp_to(os.path.join(here, "templates", "restrict.yaml"), unit, "restrict.yaml")
+    await unit.scp_to(
+        os.path.join(here,
+                     "templates", "netpolicy-test.yaml"),
+        "netpolicy-test.yaml")
+    await unit.scp_to(
+        os.path.join(here, "templates", "restrict.yaml"),
+        "restrict.yaml")
     cmd = await unit.run('/snap/bin/kubectl create -f /home/ubuntu/netpolicy-test.yaml')
     if not cmd.results['Code'] == '0':
         log('Failed to create netpolicy test!')
@@ -360,14 +363,14 @@ async def validate_worker_master_removal(model):
     unit_count = len(masters.units)
     if unit_count < 2:
         await masters.add_unit(1)
-    await wait_for_ready(model)
+    await asyncify(_juju_wait)()
 
     # Add a second worker
     workers = model.applications['kubernetes-worker']
     unit_count = len(workers.units)
     if unit_count < 2:
         await workers.add_unit(1)
-    await wait_for_ready(model)
+    await asyncify(_juju_wait)()
     unit_count = len(workers.units)
 
     # Remove a worker to see how the masters handle it
@@ -376,7 +379,7 @@ async def validate_worker_master_removal(model):
         await asyncio.sleep(3)
         log('Waiting for worker removal.')
         assert_no_unit_errors(model)
-    await wait_for_ready(model)
+    await asyncify(_juju_wait)()
 
     # Remove the master leader
     unit_count = len(masters.units)
@@ -387,7 +390,7 @@ async def validate_worker_master_removal(model):
         await asyncio.sleep(3)
         log('Waiting for master removal.')
         assert_no_unit_errors(model)
-    await wait_for_ready(model)
+    await asyncify(_juju_wait)()
 
 
 @log_calls_async
@@ -423,8 +426,10 @@ async def validate_gpu_support(model):
         # Do an addition on the GPU just be sure.
         # First clean any previous runs
         here = os.path.dirname(os.path.abspath(__file__))
-        await scp_to(os.path.join(here, "templates", "cuda-add.yaml"), master_unit, "cuda-add.yaml")
-        await master_unit.run('/snap/bin/kubectl delete -f /home/ubuntu/cuda-add.yaml')
+        await master_unit.scp_to(
+            os.path.join(here, "templates", "cuda-add.yaml"), "cuda-add.yaml")
+        await master_unit.run(
+            '/snap/bin/kubectl delete -f /home/ubuntu/cuda-add.yaml')
         await retry_async_with_timeout(verify_deleted,
                                        (master_unit, 'po', 'cuda-vector-add', '-n default'),
                                        timeout_msg="Cleaning of cuda-vector-add pod failed")
@@ -467,28 +472,38 @@ async def validate_extra_args(model):
             original_args[service] = await get_service_args(app, service)
 
         await app.set_config(new_config)
+        await asyncify(_juju_wait)()
 
         with timeout_for_current_task(600):
-            for service, expected_service_args in expected_args.items():
-                while True:
-                    args_per_unit = await get_service_args(app, service)
-                    if all(expected_service_args <= args for args in args_per_unit):
-                        break
-                    await asyncio.sleep(3)
+            try:
+                for service, expected_service_args in expected_args.items():
+                    while True:
+                        args_per_unit = await get_service_args(app, service)
+                        if all(expected_service_args <= args for args in args_per_unit):
+                            break
+                        await asyncio.sleep(3)
+            except asyncio.CancelledError:
+                log('Dumping locals:\n' + pformat(locals()))
+                raise
 
         filtered_original_config = {
             key: original_config[key]['value']
             for key in new_config
         }
         await app.set_config(filtered_original_config)
+        await asyncify(_juju_wait)()
 
         with timeout_for_current_task(600):
-            for service, original_service_args in original_args.items():
-                while True:
-                    new_args = await get_service_args(app, service)
-                    if new_args == original_service_args:
-                        break
-                    await asyncio.sleep(3)
+            try:
+                for service, original_service_args in original_args.items():
+                    while True:
+                        new_args = await get_service_args(app, service)
+                        if new_args == original_service_args:
+                            break
+                        await asyncio.sleep(3)
+            except asyncio.CancelledError:
+                log('Dumping locals:\n' + pformat(locals()))
+                raise
 
     master_task = run_extra_args_test(
         app_name='kubernetes-master',
@@ -593,7 +608,7 @@ async def validate_kubelet_extra_config(model):
     log('waiting for nodes to show new pod capacity')
     master_unit = model.applications['kubernetes-master'].units[0]
     while True:
-        cmd = kubectl.bake('-o', 'yaml', 'get', 'node')
+        cmd = '/snap/bin/kubectl -o yaml get node'
         action = await master_unit.run(str(cmd))
         if action.status == 'completed' and action.results['Code'] == '0':
             nodes = yaml.load(action.results['Stdout'])
@@ -767,7 +782,7 @@ async def validate_docker_logins(model):
         with NamedTemporaryFile('w') as f:
             json.dump(definition, f)
             f.flush()
-            await scp_to(f.name, vessel, '/tmp/test-registry/temp.yaml')
+            await vessel.scp_to(f.name, '/tmp/test-registry/temp.yaml')
         await kubectl('create -f /tmp/test-registry/temp.yaml')
 
     # Start with a clean environment
@@ -778,7 +793,7 @@ async def validate_docker_logins(model):
     # Create registry secret
     here = os.path.dirname(os.path.abspath(__file__))
     htpasswd = os.path.join(here, 'templates', 'test-registry', 'htpasswd')
-    await scp_to(htpasswd, vessel, '/tmp/test-registry')
+    await vessel.scp_to(htpasswd, '/tmp/test-registry')
     cmd = 'openssl req -x509 -newkey rsa:4096 -keyout /tmp/test-registry/tls.key -out /tmp/test-registry/tls.crt -days 2 -nodes -subj /CN=localhost'
     await run_until_success(vessel, cmd)
     await kubectl('create secret generic test-registry'
@@ -951,6 +966,7 @@ async def set_config_and_wait(app, config):
 
     async with assert_hook_occurs_on_all_units(app, 'config-changed'):
         await app.set_config(config)
+        await asyncify(_juju_wait)()
 
 
 @log_calls_async
@@ -1049,7 +1065,7 @@ async def validate_audit_custom_policy(model):
     with NamedTemporaryFile('w') as f:
         json.dump(namespace_definition, f)
         f.flush()
-        await scp_to(f.name, unit, path)
+        await unit.scp_to(f.name, path)
     await run_until_success(unit, '/snap/bin/kubectl create -f ' + path)
 
     # Verify our very special request gets logged

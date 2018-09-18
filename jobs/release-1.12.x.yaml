@@ -18,7 +18,7 @@
           default: '1.12/edge'
       - string:
           name: promote_to
-          default: '1.12/edge 1.12/candidate'
+          default: '1.12/edge 1.12/beta 1.12/candidate'
     pipeline-scm:
       scm:
         - k8s-jenkins-scm
@@ -58,35 +58,6 @@
       - build-discarder:
           days-to-keep: 7
           num-to-keep: 7
-      - build-blocker:
-          use-build-blocker: true
-          blocking-jobs:
-            - "test-cdk.*"
-            - "e2e-gubernator.*"
-            - "^release-1.11.*"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
-
-
-- job-template:
-    name: 'release-1.12.x-bionic-aws'
-    description: |
-      Release test on aws for bionic series.
-    project-type: pipeline
-    parameters:
-      - string:
-          name: cloud
-          default: 'aws'
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-scm
-      script-path: jobs/release-1.12.x/Jenkinsfile.bionic
-    triggers:
-        - timed: "@daily"
-    properties:
-      - build-discarder:
-          days-to-keep: 1
-          num-to-keep: 2
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
