@@ -30,7 +30,7 @@ async def test_leader_status(deploy, event_loop):
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
-    await etcd.set_config({'channel': '3.0/stable'})
+    await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
@@ -47,7 +47,7 @@ async def test_config_snapd_refresh(deploy, event_loop):
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
-    await etcd.set_config({'channel': '3.0/stable'})
+    await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
@@ -72,7 +72,7 @@ async def test_node_scale(deploy, event_loop):
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
     # Ensure we aren't testing a single node
-    await etcd.set_config({'channel': '3.0/stable'})
+    await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
     if not len(etcd.units) > 1:
         await etcd.add_units(count=2)
@@ -97,7 +97,7 @@ async def test_cluster_health(deploy, event_loop):
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
-    await etcd.set_config({'channel': '3.0/stable'})
+    await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
     for unit in etcd.units:
         cmd = '{} /snap/bin/etcdctl cluster-health'.format(certs)
@@ -122,7 +122,7 @@ async def test_leader_knows_all_members(deploy, event_loop):
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
-    await etcd.set_config({'channel': '3.0/stable'})
+    await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
 
     # format the command, and execute on the leader
@@ -143,7 +143,7 @@ async def test_leader_knows_all_members(deploy, event_loop):
             assert len(members) == len(etcd.units)
 
 
-@pytest.mark.skip('Hangs')
+@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_node_scale_down_members(deploy, event_loop):
     """ Scale the cluster down and ensure the cluster state is still
     healthy """
@@ -152,7 +152,7 @@ async def test_node_scale_down_members(deploy, event_loop):
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
-    await etcd.set_config({'channel': '3.0/stable'})
+    await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
 
     for unit in etcd.units:
@@ -197,8 +197,9 @@ async def test_snap_action(deploy, event_loop):
             await validate_etcd_fixture_data(etcd)
 
 
+@pytest.mark.skip('This is no longer a valid test, default is 3.2/stable')
 async def test_snap_upgrade_to_three_oh(deploy, event_loop):
-    ''' Default configured channel is 2.3/stable. Ensure we can jump to
+    ''' Default configured channel is 3.2/stable. Ensure we can jump to
     3.0 '''
     controller, model = deploy
     etcd = await model.deploy(str(ETCD_CHARM_PATH))
@@ -206,7 +207,7 @@ async def test_snap_upgrade_to_three_oh(deploy, event_loop):
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
 
-    await etcd.set_config({'channel': '3.0/stable'})
+    await etcd.set_config({'channel': '3.2/stable'})
 
     await asyncify(_juju_wait)(controller, model.info.name)
     await validate_running_snap_daemon(etcd)
@@ -311,21 +312,20 @@ async def delete_data(leader):
     await leader.run(cmd)
 
 
+@pytest.mark.skip('Need to manually verify result tarball')
 async def test_snapshot_restore(deploy, event_loop):
     """
     Trigger snapshot and restore actions
     """
-    from sh import juju
+    from sh import juju, ls
     controller, model = deploy
     etcd = await model.deploy(str(ETCD_CHARM_PATH))
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
 
-    await etcd.set_config({'channel': '3.0/stable'})
+    await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
-
-    from sh import ls
 
     for unit in etcd.units:
         leader = await unit.is_leader_from_status()
@@ -344,8 +344,9 @@ async def test_snapshot_restore(deploy, event_loop):
                 src = Path(action.results['snapshot']['path'])
                 dst = Path(action.results['snapshot']['path']).name
                 await unit.scp_from(str(src), str(dst))
-                ls('-l')
-                filenames[dataset] = dst
+                filenames[dataset] = str(dst)
+                out = ls('-l', 'result*')
+                print(out.stdout.decode().strip())
 
             await delete_data(unit)
             for ver in ['v2', 'v3']:
@@ -355,7 +356,7 @@ async def test_snapshot_restore(deploy, event_loop):
             # Note: libjuju does not implement attach yet.
             juju('attach',
                  '-m', "{}:{}".format(controller, model.info.name),
-                 'etcd', "snapshot='{}'".format(str(filenames['v2'])))
+                 'etcd', "snapshot='./{}'".format(str(filenames['v2'])))
             action = await unit.run_action('restore')
             action = await action.wait()
             assert action.status == 'completed'
@@ -365,7 +366,7 @@ async def test_snapshot_restore(deploy, event_loop):
             # Restore v3 data
             juju('attach',
                  '-m', "{}:{}".format(controller, model.info.name),
-                 'etcd', "snapshot='{}'".format(str(filenames['v3'])))
+                 'etcd', "snapshot='./{}'".format(str(filenames['v3'])))
 
             action = await unit.run_action('restore')
             action = await action.wait()

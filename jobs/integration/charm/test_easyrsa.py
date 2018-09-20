@@ -27,31 +27,25 @@ async def deploy_easyrsa(controller, model):
         'deploy', '-m', '{}:{}'.format(controller, model),
         str(CHARM_PATH), '--resource', 'easyrsa={}'.format(
             resource_path))
-
-
-async def test_local_deployed(deploy, event_loop):
-    """ Verify local easy charm can be deployed """
-    controller, model = deploy
-    await deploy_easyrsa(controller, model.info.name)
-    await asyncify(_juju_wait)(controller, model.info.name)
-    assert 'easyrsa' in model.applications
+    await asyncify(_juju_wait)(controller, model)
 
 
 async def test_easyrsa_installed(deploy, event_loop):
     '''Test that EasyRSA software is installed.'''
     controller, model = deploy
     await deploy_easyrsa(controller, model.info.name)
-    await asyncify(_juju_wait)(controller, model.info.name)
     easyrsa = model.applications['easyrsa']
     easyrsa = easyrsa.units[0]
-    charm_dir = Path('/var/lib/juju/agents/unit-{service}-{unit}/charm'.format(
-        service=easyrsa.name, unit=easyrsa.id))
+    charm_dir = Path('/var/lib/juju/agents/{tag}/charm'.format(
+        tag=easyrsa.tag))
     easyrsa_dir = charm_dir / 'EasyRSA'
     # Create a path to the easyrsa schell script.
     easyrsa_path = easyrsa_dir / 'easyrsa'
-    # Get the contents of the easyrsa shell script.
-    easyrsa_fc = await easyrsa.scp_from(str(easyrsa_path), '.')
-    output = easyrsa_fc.read_text()
+    output = await asyncify(juju)(
+        'ssh', '-m', '{}:{}'.format(controller, model.info.name),
+        easyrsa.name,
+        'cat {}'.format(str(easyrsa_path)))
+    output = output.stdout.decode().strip()
     assert output != ''
     assert 'Easy-RSA' in output
 
@@ -59,27 +53,38 @@ async def test_easyrsa_installed(deploy, event_loop):
 async def test_ca(deploy, event_loop):
     controller, model = deploy
     await deploy_easyrsa(controller, model.info.name)
-    await asyncify(_juju_wait)(controller, model.info.name)
     easyrsa = model.applications['easyrsa']
     easyrsa = easyrsa.units[0]
     '''Test that the ca and key were created.'''
-    charm_dir = '/var/lib/juju/agents/unit-{service}-{unit}/charm'.format(
-        service=easyrsa.name, unit=easyrsa.id)
+    charm_dir = Path('/var/lib/juju/agents/{tag}/charm'.format(
+        tag=easyrsa.tag))
     easyrsa_dir = os.path.join(charm_dir, 'EasyRSA')
     # Create an absolute path to the ca.crt file.
     ca_path = os.path.join(easyrsa_dir, 'pki/ca.crt')
     # Get the CA certificiate.
-    ca_cert = easyrsa.scp_from(ca_path, Path('.'))
+    ca_cert = await asyncify(juju)(
+        'ssh', '-m', '{}:{}'.format(controller, model.info.name),
+        easyrsa.name,
+        'sudo cat {}'.format(str(ca_path)))
+    ca_cert = ca_cert.stdout.decode().strip()
     assert validate_certificate(ca_cert)
     # Create an absolute path to the ca.key
     key_path = os.path.join(easyrsa_dir, 'pki/private/ca.key')
     # Get the CA key.
-    ca_key = easyrsa.scp_from(key_path, Path('.'))
+    ca_key = await asyncify(juju)(
+        'ssh', '-m', '{}:{}'.format(controller, model.info.name),
+        easyrsa.name,
+        'sudo cat {}'.format(str(key_path)))
+    ca_key = ca_key.stdout.decode().strip()
     assert validate_key(ca_key)
     # Create an absolute path to the installed location of the ca.
     ca_crt_path = '/usr/local/share/ca-certificates/{service}.crt'.format(
-        service=easyrsa.name)
-    installed_ca = easyrsa.scp_from(ca_crt_path, Path('.'))
+        service=easyrsa.name.split('/')[0])
+    installed_ca = await asyncify(juju)(
+        'ssh', '-m', '{}:{}'.format(controller, model.info.name),
+        easyrsa.name,
+        'sudo cat {}'.format(str(ca_crt_path)))
+    installed_ca = installed_ca.stdout.decode().strip()
     assert validate_certificate(installed_ca)
     assert ca_cert == installed_ca
 
@@ -88,19 +93,25 @@ async def test_client(deploy, event_loop):
     '''Test that the client certificate and key were created.'''
     controller, model = deploy
     await deploy_easyrsa(controller, model.info.name)
-    await asyncify(_juju_wait)(controller, model.info.name)
     easyrsa = model.applications['easyrsa']
     easyrsa = easyrsa.units[0]
-
-    charm_dir = '/var/lib/juju/agents/unit-{service}-{unit}/charm'.format(
-        service=easyrsa.name, unit=easyrsa.id)
+    charm_dir = Path('/var/lib/juju/agents/{tag}/charm'.format(
+        tag=easyrsa.tag))
     easyrsa_dir = os.path.join(charm_dir, 'EasyRSA')
     # Create an absolute path to the client certificate.
     cert_path = os.path.join(easyrsa_dir, 'pki/issued/client.crt')
-    client_cert = easyrsa.scp_from(cert_path, Path('.'))
+    client_cert = await asyncify(juju)(
+        'ssh', '-m', '{}:{}'.format(controller, model.info.name),
+        easyrsa.name,
+        'sudo cat {}'.format(str(cert_path)))
+    client_cert = client_cert.stdout.decode().strip()
     assert validate_certificate(client_cert)
     key_path = os.path.join(easyrsa_dir, 'pki/private/client.key')
-    client_key = easyrsa.scp_from(key_path, Path('.'))
+    client_key = await asyncify(juju)(
+        'ssh', '-m', '{}:{}'.format(controller, model.info.name),
+        easyrsa.name,
+        'sudo cat {}'.format(str(key_path)))
+    client_key = client_key.stdout.decode().strip()
     assert validate_key(client_key)
 
 
