@@ -12,6 +12,9 @@ pipeline {
         CDKBOT_TOKEN = credentials('cdkbot')
         GITHUB_CREDS = credentials('cdkbot_github')
     }
+    parameters {
+        booleanParam(name: 'FORCE_RELEASE', defaultValue: false, description: 'Force a snap release regardless of status')
+    }
     options {
         ansiColor('xterm')
         timestamps()
@@ -25,13 +28,13 @@ pipeline {
         }
         stage('Release Snaps'){
             steps {
-                sh "GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
+                sh "FORCE_RELEASE=${params.FORCE_RELEASE} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
             }
         }
     }
     post {
         always {
-            sh "chown -R ubuntu:ubuntu release/snap || true"
+            sh "sudo chown -R ubuntu:ubuntu release/snap || true"
             sh "snapcraft logout"
         }
     }

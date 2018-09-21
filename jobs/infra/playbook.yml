@@ -22,7 +22,16 @@
           - libffi-dev
           - libssl-dev
           - default-jre
-    - name: update ubuntu ser
+    - name: remove deb lxd
+      apt:
+        name:
+          - lxd
+          - lxd-client
+          - lxcfs
+          - lxc-common
+          - liblxc1
+        state: absent
+    - name: update ubuntu user
       user:
         name: ubuntu
         groups: docker
@@ -35,6 +44,8 @@
         - "juju-wait --classic"
         - "kubectl --classic"
         - "charm --edge --classic"
+    - name: setup lxd network
+      command: "/snap/bin/lxd init --auto"
     - name: initialize snap directories
       command: "/snap/bin/{{item}} version"
       become: false

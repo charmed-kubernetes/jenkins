@@ -7,7 +7,7 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-bm
       script-path: jobs/infra/generateNodes.groovy
     properties:
       - build-blocker:

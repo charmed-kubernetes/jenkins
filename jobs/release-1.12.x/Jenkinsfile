@@ -24,29 +24,28 @@ pipeline {
             }
         }
 
-        // Enable once 1.12 is stable
-        // stage('Validate: Conformance') {
-        //     parallel {
-        //         stage('Canonical Kubernetes') {
-        //             options {
-        //                 timeout(time: 2, unit: 'HOURS')
-        //             }
+        stage('Validate: Conformance') {
+            parallel {
+                stage('Canonical Kubernetes') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
 
-        //             steps {
-        //                 build job:"conformance-v1.12.x-canonical-kubernetes-${params.cloud}"
-        //             }
-        //         }
-        //         stage('Kubernetes Core') {
-        //             options {
-        //                 timeout(time: 2, unit: 'HOURS')
-        //             }
+                    steps {
+                        build job:"conformance-v1.12.x-canonical-kubernetes-${params.cloud}"
+                    }
+                }
+                stage('Kubernetes Core') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
 
-        //             steps {
-        //                 build job:"conformance-v1.12.x-kubernetes-core-${params.cloud}"
-        //             }
-        //         }
-        //     }
-        // }
+                    steps {
+                        build job:"conformance-v1.12.x-kubernetes-core-${params.cloud}"
+                    }
+                }
+            }
+        }
 
         stage('Validate: Minor Upgrades v1.10.x-v1.12.x') {
             parallel {
@@ -96,7 +95,7 @@ pipeline {
                     }
                     steps {
                         build job: "validate-v1.12.x-canonical-kubernetes-${params.cloud}",
-                            parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.12-stable-overlay.yaml'),
+                            parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.12-stable-bionic-overlay.yaml'),
                                          booleanParam(name:'perform_upgrade', value: true),
                                          string(name:'snap_channel', value: '1.12/edge')]
                     }
@@ -107,7 +106,7 @@ pipeline {
                     }
                     steps {
                         build job: "validate-v1.12.x-kubernetes-core-${params.cloud}",
-                            parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.12-stable-overlay.yaml'),
+                            parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.12-stable-bionic-overlay.yaml'),
                                          booleanParam(name:'perform_upgrade', value: true),
                                          string(name:'snap_channel', value: '1.12/edge')]
                     }

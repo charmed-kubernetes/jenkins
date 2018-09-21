@@ -95,7 +95,7 @@ pipeline {
                     }
                     steps {
                         build job: "validate-v1.11.x-canonical-kubernetes-${params.cloud}",
-                            parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'),
+                            parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-bionic-overlay.yaml'),
                                          booleanParam(name:'perform_upgrade', value: true),
                                          string(name:'snap_channel', value: '1.11/edge')]
                     }
@@ -106,7 +106,7 @@ pipeline {
                     }
                     steps {
                         build job: "validate-v1.11.x-kubernetes-core-${params.cloud}",
-                            parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-overlay.yaml'),
+                            parameters: [string(name: 'version_overlay', value:'jobs/overlays/1.11-stable-bionic-overlay.yaml'),
                                          booleanParam(name:'perform_upgrade', value: true),
                                          string(name:'snap_channel', value: '1.11/edge')]
                     }

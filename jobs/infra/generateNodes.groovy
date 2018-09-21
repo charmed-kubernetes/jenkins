@@ -28,7 +28,7 @@ pipeline {
         stage('Destroy nodes') {
             steps {
                 dir('jobs') {
-                    sh "pipenv install"
+                    sh "pipenv install --skip-lock"
                     sh "pipenv run invoke delete-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER}"
                 }
                 sh "${run_as_j} juju destroy-model -y ${env.JUJU_MODEL} || true"

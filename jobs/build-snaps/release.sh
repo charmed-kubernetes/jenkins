@@ -35,8 +35,7 @@ function is_upstream_newer_than_edge {
   fi
   upstream_is_newer='no'
   echo "Last snapped release is ${LAST_RELEASE} and the upstrem release is ${kube_version}"
-  if [ v$LAST_RELEASE != $kube_version ]
-  then
+  if [ v$LAST_RELEASE != $kube_version ] || [ $FORCE_RELEASE = true ]; then
     echo "New release ($KUBE_VERSION) detected."
     upstream_is_newer='yes'
   else

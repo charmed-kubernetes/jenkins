@@ -21,7 +21,7 @@
           default: '1.12/edge 1.12/beta 1.12/candidate'
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-bm
       script-path: jobs/release-1.12.x/Jenkinsfile
     triggers:
         - timed: "@daily"
@@ -32,7 +32,6 @@
             - ".*build.*"
             - "test-cdk.*"
             - "e2e-gubernator.*"
-            - "^release-1.11.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
       - build-discarder:
@@ -50,7 +49,7 @@
           default: 'azure'
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-bm
       script-path: jobs/release-1.12.x/Jenkinsfile
     triggers:
         - timed: "@weekly"
@@ -63,7 +62,6 @@
           blocking-jobs:
             - "test-cdk.*"
             - "e2e-gubernator.*"
-            - "^release-1.11.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
 
@@ -76,7 +74,6 @@
       - 'release-1.12.x-{cloud}':
           cloud: 'aws'
       - 'release-1.12.x-azure'
-      - 'release-1.12.x-bionic-aws'
 
 
 - project:

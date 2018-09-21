@@ -23,7 +23,7 @@ pipeline {
         }
         stage("Deploy") {
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 1, unit: 'HOURS')
             }
             steps {
                 deployCDK(params.controller,
@@ -35,6 +35,9 @@ pipeline {
         }
 
         stage("Validate Minor Upgrade") {
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
             steps {
                 dir('jobs') {
                     sh "TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade"
