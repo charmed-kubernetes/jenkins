@@ -158,8 +158,9 @@ async def api_server_with_arg(model, argument):
         action = await unit.run(search)
         assert action.status == 'completed'
         raw_output = action.data['results']['Stdout']
-        return len(raw_output.splitlines()) == 1
-    return False
+        if len(raw_output.splitlines()) != 1:
+            return False
+    return True
 
 
 @log_calls_async
