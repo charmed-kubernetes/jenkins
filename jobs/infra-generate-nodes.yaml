@@ -1,4 +1,4 @@
-# Generates jenkin worker nodes
+# Generates jenkins worker nodes
 
 - job:
     name: 'infra-generate-nodes'
@@ -23,6 +23,24 @@
           queue-scanning: 'ALL'
     triggers:
         - timed: "@daily"
+    properties:
+      - build-discarder:
+          days-to-keep: 1
+          num-to-keep: 1
+
+
+- job:
+    name: 'infra-maintain-nodes'
+    description: |
+      Keeps jenkins slave nodes configured properly.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-bm
+      script-path: jobs/infra/maintainNodes.groovy
+    properties:
+    triggers:
+        - timed: "@weekly"
     properties:
       - build-discarder:
           days-to-keep: 1

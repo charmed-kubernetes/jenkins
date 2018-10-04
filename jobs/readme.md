@@ -28,7 +28,9 @@ First setup your python environment:
 
 ```
 > cd jobs
-> pipenv install
+> pipenv run pip freeze > requirements.txt ; pip download -r requirements.txt -d wheelhouse
+> pip3 install --no-index -f wheelhouse wheelhouse/pipenv-2018.7.1-py3-none-any.whl
+> pipenv run pip3 install --no-index -f wheelhouse wheelhouse/*
 > pipenv shell
 ```
 

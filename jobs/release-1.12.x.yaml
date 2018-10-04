@@ -21,7 +21,7 @@
           default: '1.12/edge 1.12/beta 1.12/candidate'
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-bm
       script-path: jobs/release-1.12.x/Jenkinsfile
     triggers:
         - timed: "@daily"
