@@ -1,0 +1,102 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: install apt deps
+      apt:
+        name:
+          - strace
+          - make
+          - curl
+          - wget
+          - docker.io
+          - unzip
+          - python3-pip
+          - flake8
+          - squashfuse
+          - snapd
+          - libffi6
+          - libffi-dev
+          - libssl-dev
+          - default-jre
+    - name: remove unused debs
+      apt:
+        name:
+          - python-pip
+          - juju
+          - lxd
+          - lxd-client
+          - lxcfs
+          - lxc-common
+          - liblxc1
+          - snapcraft
+        state: absent
+    - name: install snap deps
+      command: "snap install {{item}}"
+      loop:
+        - "lxd"
+        - "juju --classic"
+        - "juju-wait --classic"
+        - "kubectl --classic"
+        - "charm --classic"
+        - "snapcraft --classic"
+    - name: copy bashrc
+      copy:
+        src: "bashrc"
+        dest: /var/lib/jenkins/.bashrc
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+        force: no
+    - name: copy charm creds
+      copy:
+        src: "{{charm_creds}}"
+        dest: /var/lib/jenkins/.go-cookies
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+        force: no
+    - name: login to charmstore
+      command: "charm login"
+      become: false
+    - name: copy snapcraft creds
+      copy:
+        src: "{{snapcraft_creds}}"
+        dest: /var/lib/jenkins/snapcraft-creds
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+        force: no
+    - name: login to snapstore
+      command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+      become: false
+    - name: copy juju credentials
+      unarchive:
+        src: "{{juju_creds}}"
+        dest: /var/lib/jenkins/.local/share/juju
+    - name: set perms
+      file:
+        path: /var/lib/jenkins/.local/share/juju
+        owner: jenkins
+        group: jenkins
+        recurse: yes
+    - name: update jenkins user
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+    - name: setup lxd network
+      command: "/snap/bin/lxd init --auto"
+    - name: initialize snap directories
+      command: "/snap/bin/{{item}} version"
+      become: false
+      loop:
+        - juju
+        - charm
+    - name: update jenkins groups
+      user:
+        name: jenkins
+        groups: lxd
+        append: yes

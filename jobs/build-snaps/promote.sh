@@ -18,6 +18,7 @@ echo SNAPS="$SNAPS"
 echo ARCH="$ARCH"
 
 . $scripts_path/retry.sh
+. $scripts_path/utilities.sh
 
 # Ensure we are the correct user (jenkins job does a 'snapcraft login $token')
 if [[ "${SNAPS}" =~ "-eks" ]]; then

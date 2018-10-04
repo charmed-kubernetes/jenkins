@@ -1,5 +1,5 @@
 [[source]]
-url = "https://pypi.org/simple"
+url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
@@ -17,7 +17,7 @@ asyncio-extras = "*"
 sh = "*"
 flake8 = "*"
 launchpadlib = "*"
-"canonicalwebteam.snapstoreapi" = "*"
+"canonicalwebteam.snapstoreapi" = "==0.4.4"
 
 [dev-packages]
 ipdb = "*"
