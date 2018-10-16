@@ -34,5 +34,5 @@ chmod +x cleanup-$VPC_ID.sh
 cp cleanup-$VPC_ID.sh cleanup-vpc.sh
 
 # Bootstrap juju controller
-juju bootstrap aws/us-east-1 $CONTROLLER -d $MODEL --config vpc-id=$VPC_ID --to subnet=$SUBNET0_CIDR --config test-mode=true
+juju bootstrap aws/us-east-1 $CONTROLLER --config vpc-id=$VPC_ID --to subnet=$SUBNET0_CIDR --config test-mode=true
 juju model-defaults vpc-id=$VPC_ID test-mode=true
