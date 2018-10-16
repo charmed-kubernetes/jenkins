@@ -29,6 +29,7 @@ pipeline {
             steps {
                 dir('jobs') {
                     sh "pipenv install --skip-lock"
+                    sh "sudo chown jenkins:jenkins -R $HOME/.local/share/juju"
                     sh "pipenv run invoke delete-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER}"
                 }
                 sh "${run_as_j} juju destroy-model -y ${env.JUJU_MODEL} || true"
