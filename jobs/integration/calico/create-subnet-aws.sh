@@ -22,7 +22,7 @@ $awscli ec2 modify-vpc-attribute --vpc-id=$VPC_ID --enable-dns-support
 $awscli ec2 modify-vpc-attribute --vpc-id=$VPC_ID --enable-dns-hostnames
 
 # For convenience, create a cleanup script for this VPC
-cat > cleanup-$VPC_ID.sh << EOF
+cat > integration/calico/cleanup-$VPC_ID.sh << EOF
 #!/bin/bash
 set -ux
 aws ec2 detach-internet-gateway --internet-gateway-id $GATEWAY_ID --vpc-id $VPC_ID
@@ -30,8 +30,8 @@ aws ec2 delete-internet-gateway --internet-gateway-id $GATEWAY_ID
 aws ec2 delete-subnet --subnet-id $SUBNET0_ID
 aws ec2 delete-vpc --vpc-id $VPC_ID
 EOF
-chmod +x cleanup-$VPC_ID.sh
-cp cleanup-$VPC_ID.sh cleanup-vpc.sh
+chmod +x integration/calico/cleanup-$VPC_ID.sh
+cp integration/calico/cleanup-$VPC_ID.sh integration/calico/cleanup-vpc.sh
 
 # Bootstrap juju controller
 juju bootstrap aws/us-east-1 $CONTROLLER --config vpc-id=$VPC_ID --to subnet=$SUBNET0_CIDR --config test-mode=true
