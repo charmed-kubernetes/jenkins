@@ -1,0 +1,61 @@
+@Library('juju-pipeline@master') _
+
+pipeline {
+    agent {
+        label 'runner'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        JUJU_MODEL = "${params.model}-${env.BUILD_NUMBER}"
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Install tools') {
+            steps {
+                installTools()
+            }
+        }
+        stage('Deploy: K8s') {
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
+            steps {
+                deployCDK(params.controller,
+                          env.JUJU_MODEL,
+                          params.bundle,
+                          params.overlay,
+                          params.bundle_channel)
+            }
+        }
+
+        stage('Validate') {
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+
+            steps {
+                dir('jobs') {
+                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                }
+            }
+        }
+    }
+    post {
+        success {
+            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
+            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
+        }
+        always {
+            collectDebug(params.controller,
+                         env.JUJU_MODEL)
+            tearDown(params.controller,
+                     env.JUJU_MODEL)
+        }
+    }
+}
