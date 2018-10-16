@@ -24,7 +24,7 @@
           default: 'edge'
       - string:
           name: bundle
-          default: 'cs:~containers/kubernetes-calico'
+          default: 'kubernetes-calico'
       - string:
           name: snap_channel
           default: '1.12/edge'

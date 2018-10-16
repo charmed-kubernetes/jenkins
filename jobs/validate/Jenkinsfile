@@ -28,7 +28,7 @@ pipeline {
             steps {
                 deployCDK(params.controller,
                           env.JUJU_MODEL,
-                          params.bundle,
+                          "cs:~containers/${params.bundle}",
                           params.version_overlay,
                           params.bundle_channel)
             }

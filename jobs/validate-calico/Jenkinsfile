@@ -33,7 +33,7 @@ pipeline {
                 }
                 deployCDK(params.controller,
                           env.JUJU_MODEL,
-                          params.bundle,
+                          "cs:~containers/${params.bundle}",
                           params.overlay,
                           params.bundle_channel)
             }

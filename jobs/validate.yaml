@@ -60,8 +60,8 @@
           bundle:
             - 'canonical-kubernetes'
             - 'kubernetes-core'
-            - 'cs:~containers/bundle/canonical-kubernetes-elastic'
-            - 'cs:~containers/bundle/canonical-kubernetes-canal'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
 
 - project:
     name: validate
