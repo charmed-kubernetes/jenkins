@@ -74,7 +74,7 @@
           - "--exclude=jclient"
           - "--exclude=charmcache"
           - "--exclude=.deployer-store-cache"
-    - name: copy data files
+    - name: copy aws files
       synchronize:
         src: /var/lib/jenkins/.aws
         dest: /home/ubuntu/

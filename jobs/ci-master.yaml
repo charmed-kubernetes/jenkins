@@ -19,7 +19,7 @@
     name: k8s-jenkins-k8sci
     scm:
       - git:
-          url: https://github.com/battlemidget/kubernetes-jenkins.git
+          url: https://github.com/juju-solutions/kubernetes-jenkins.git
           branches:
             - 'k8sci'
 
