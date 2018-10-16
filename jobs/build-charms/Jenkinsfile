@@ -18,6 +18,7 @@ pipeline {
         stage('Setup') {
             steps {
                 // installTools()
+                sh "env"
                 sh "sudo -E juju kill-controller -y ci-jenkins || true"
                 sh "sudo juju bootstrap aws/us-east-1 ci-jenkins --debug"
                 sh "mkdir -p ${env.JUJU_REPOSITORY}"
