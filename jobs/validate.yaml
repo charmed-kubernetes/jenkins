@@ -59,10 +59,10 @@
           cloud: ['aws', 'google', 'azure']
           bundle:
             - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
-            - 'canonical-kubernetes-canal'
             - 'kubernetes-core'
-            - 'kubernetes-calico'
+            - 'cs:~containers/bundle/canonical-kubernetes-elastic'
+            - 'cs:~containers/bundle/canonical-kubernetes-canal'
+            - 'cs:~containers/bundle/kubernetes-calico'
 
 - project:
     name: validate
