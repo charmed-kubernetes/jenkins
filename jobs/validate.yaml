@@ -62,7 +62,6 @@
             - 'kubernetes-core'
             - 'cs:~containers/bundle/canonical-kubernetes-elastic'
             - 'cs:~containers/bundle/canonical-kubernetes-canal'
-            - 'cs:~containers/bundle/kubernetes-calico'
 
 - project:
     name: validate

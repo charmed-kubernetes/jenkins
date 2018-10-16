@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 jenkins-job-builder = "*"
+awscli = "*"
 invoke = "*"
 pytest = "*"
 pytest-asyncio = "*"
