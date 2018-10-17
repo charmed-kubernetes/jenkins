@@ -74,6 +74,11 @@
     - name: login to snapstore
       command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
       become: false
+    - name: create juju dir
+      file:
+        path: /var/lib/jenkins/.local/share/juju
+        state: directory
+        mode: 0755
     - name: copy juju credentials
       unarchive:
         src: "{{juju_creds}}"
@@ -91,12 +96,6 @@
         append: yes
     - name: setup lxd network
       command: "/snap/bin/lxd init --auto"
-    - name: initialize snap directories
-      command: "/snap/bin/{{item}} version"
-      become: false
-      loop:
-        - juju
-        - charm
     - name: update jenkins groups
       user:
         name: jenkins
