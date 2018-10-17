@@ -2,7 +2,7 @@
 
 pipeline {
     agent {
-        label 'runner-2'
+        label "${params.build_node}"
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -10,9 +10,6 @@ pipeline {
     environment {
         PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
         GITHUB_CREDS = credentials('cdkbot_github')
-    }
-    parameters {
-        booleanParam(name: 'FORCE_RELEASE', defaultValue: false, description: 'Force a snap release regardless of status')
     }
     options {
         ansiColor('xterm')
@@ -27,7 +24,7 @@ pipeline {
         }
         stage('Release Snaps'){
             steps {
-                sh "FORCE_RELEASE=${params.FORCE_RELEASE} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
+                sh "KUBE_ARCH=${params.arch} FORCE_RELEASE=${params.FORCE_RELEASE} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
             }
         }
     }

@@ -1,17 +1,38 @@
 # Builds and releases latest snaps
 
-- job:
-    name: 'build-release-snaps'
+- job-template:
+    name: 'build-release-snaps-{arch}'
     description: |
-      Builds, releases and promotes snaps to the snapstore.
+      Builds, releases and promotes snaps for {arch} to the snapstore.
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/build-snaps/Jenkinsfile
+    parameters:
+      - string:
+          name: arch
+          default: '{arch}'
+      - string:
+          name: build_node
+          default: 'runner-{arch}'
+      - bool:
+          name: FORCE_RELEASE
+          default: false
     triggers:
         - timed: "@hourly"
     properties:
       - build-discarder:
           days-to-keep: 2
           num-to-keep: 5
+
+- job-group:
+    name: 'build-release-snaps'
+    jobs:
+      - 'build-release-snaps-{arch}':
+          arch: ['amd64', 's390x', 'arm64', 'ppc64le']
+
+- project:
+    name: build-release-snaps
+    jobs:
+      - 'build-release-snaps'
