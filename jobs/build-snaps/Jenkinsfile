@@ -2,14 +2,13 @@
 
 pipeline {
     agent {
-        label 'runner'
+        label 'runner-2'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
         PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
-        // CDKBOT_TOKEN = credentials('cdkbot')
         GITHUB_CREDS = credentials('cdkbot_github')
     }
     parameters {
@@ -23,7 +22,7 @@ pipeline {
         stage('Setup') {
             steps {
                 installTools()
-                // sh "snapcraft login --with ${env.CDKBOT_TOKEN}"
+                sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
         stage('Release Snaps'){
@@ -35,7 +34,7 @@ pipeline {
     post {
         always {
             sh "sudo chown -R ubuntu:ubuntu release/snap || true"
-            // sh "snapcraft logout"
+            sh "snapcraft logout"
         }
     }
 }
