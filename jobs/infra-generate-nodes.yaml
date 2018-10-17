@@ -45,3 +45,23 @@
       - build-discarder:
           days-to-keep: 1
           num-to-keep: 1
+
+- job:
+    name: 'infra-cleanup-workspaces'
+    description: |
+      cleans up workspace path
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/infra/cleanupWorkspace.groovy
+    parameters:
+      - string:
+          name: build_node
+          default: 'runner-s390x'
+      - string:
+          name: workspace_path
+          default: '../build-release-snaps-s390x'
+    properties:
+      - build-discarder:
+          num-to-keep: 1
