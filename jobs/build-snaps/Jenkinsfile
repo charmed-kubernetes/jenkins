@@ -18,7 +18,8 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                installToolsJenkaas()
+                // installToolsJenkaas()
+                sh "id"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
