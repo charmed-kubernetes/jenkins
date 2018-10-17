@@ -28,8 +28,8 @@ pipeline {
             steps {
                 deployCDK(params.controller,
                           env.JUJU_MODEL,
-                          "cs:~containers/${params.bundle}",
-                          params.version_overlay,
+                          params.bundle,
+                          params.overlay,
                           params.bundle_channel)
             }
         }
@@ -39,25 +39,9 @@ pipeline {
                 timeout(time: 2, unit: 'HOURS')
             }
 
-            when {
-                expression { !params.perform_upgrade }
-            }
             steps {
                 dir('jobs') {
                     sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
-                }
-            }
-        }
-        stage('Validate Upgrade') {
-            options {
-                timeout(time: 2, unit: 'HOURS')
-            }
-            when {
-                expression { params.perform_upgrade }
-            }
-            steps {
-                dir('jobs') {
-                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
                 }
             }
         }

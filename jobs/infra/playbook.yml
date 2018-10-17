@@ -7,6 +7,7 @@
     - name: install apt deps
       apt:
         name:
+          - jq
           - make
           - curl
           - wget
@@ -73,6 +74,11 @@
           - "--exclude=jclient"
           - "--exclude=charmcache"
           - "--exclude=.deployer-store-cache"
+    - name: copy aws files
+      synchronize:
+        src: /var/lib/jenkins/.aws
+        dest: /home/ubuntu/
+        dirs: yes
     - name: copy data files
       copy:
         src: /var/lib/jenkins/.go-cookies
@@ -93,6 +99,7 @@
       loop:
         - .local/share/juju
         - snap
+        - .aws
     - name: update juju credentials path
       replace:
         path: /home/ubuntu/.local/share/juju/credentials.yaml

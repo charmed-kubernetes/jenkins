@@ -6,7 +6,7 @@ set -eux
 source utilities.sh
 
 # K8s versions we want to check for new releases
-declare -a VERSIONS=('latest' '1.6' '1.7' '1.8' '1.9' '1.10' '1.11' '1.12' '1.13' '1.14' '2.0');
+declare -a VERSIONS=('latest' '1.10' '1.11' '1.12' '1.13' '1.14' '2.0');
 
 SNAP_INFO_KUBECTL=$(snap info kubectl)
 
