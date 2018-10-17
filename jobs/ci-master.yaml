@@ -8,12 +8,12 @@
             - 'master'
 
 - scm:
-    name: k8s-jenkins-bm
+    name: k8s-jenkins-jenkaas
     scm:
       - git:
-          url: https://github.com/battlemidget/kubernetes-jenkins.git
+          url: https://github.com/juju-solutions/kubernetes-jenkins.git
           branches:
-            - 'feature'
+            - 'jenkaas'
 
 - scm:
     name: k8s-jenkins-k8sci
