@@ -1,35 +1,6 @@
 # Generates jenkins worker nodes
 
 - job:
-    name: 'infra-generate-nodes'
-    description: |
-      Create jenkins worker nodes
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-scm
-      script-path: jobs/infra/generateNodes.groovy
-    properties:
-      - build-blocker:
-          use-build-blocker: true
-          blocking-jobs:
-            - "test-.*"
-            - "release.*"
-            - "build.*"
-            - "validate.*"
-            - "conformance.*"
-            - "e2e-gubernator.*"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
-    triggers:
-        - timed: "@daily"
-    properties:
-      - build-discarder:
-          days-to-keep: 1
-          num-to-keep: 1
-
-
-- job:
     name: 'infra-maintain-nodes'
     description: |
       Keeps jenkins slave nodes configured properly.
