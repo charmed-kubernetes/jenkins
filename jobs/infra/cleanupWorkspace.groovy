@@ -2,7 +2,7 @@
 
 pipeline {
     agent {
-        label "${param.build_node}"
+        label "${params.build_node}"
     }
     // Add environment credentials for pyjenkins script on configuring nodes automagically
     environment {
@@ -16,7 +16,7 @@ pipeline {
     stages {
         stage('Cleanup workspaces') {
             steps {
-                sh "sudo rm -rf ${param.workspace_path}"
+                sh "sudo rm -rf ${params.workspace_path}"
             }
         }
     }
