@@ -23,8 +23,8 @@
         - timed: "@hourly"
     properties:
       - build-discarder:
-          days-to-keep: 2
-          num-to-keep: 5
+          days-to-keep: 1
+          num-to-keep: 2
 
 - job-group:
     name: 'build-release-snaps'
