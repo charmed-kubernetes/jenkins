@@ -21,6 +21,7 @@
           - libffi-dev
           - libssl-dev
           - default-jre
+          - snapcraft
     - name: remove unused debs
       apt:
         name:
@@ -31,17 +32,16 @@
           - lxcfs
           - lxc-common
           - liblxc1
-          - snapcraft
         state: absent
     - name: install snap deps
       command: "snap install {{item}}"
+      ignore_errors: yes
       loop:
         - "lxd"
         - "juju --classic"
         - "juju-wait --classic"
         - "kubectl --classic"
         - "charm --classic"
-        - "snapcraft --classic"
     - name: copy bashrc
       copy:
         src: "bashrc"
