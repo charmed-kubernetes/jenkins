@@ -51,6 +51,7 @@
         mode: 0644
         force: no
     - name: copy charm creds
+      when: ansible_architecture == "x86_64"
       copy:
         src: "{{charm_creds}}"
         dest: /var/lib/jenkins/.go-cookies
@@ -59,6 +60,7 @@
         mode: 0644
         force: no
     - name: login to charmstore
+      when: ansible_architecture == "x86_64"
       command: "charm login"
       become: false
     - name: copy snapcraft creds
