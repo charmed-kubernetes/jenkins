@@ -7,6 +7,10 @@
     - name: install apt deps
       apt:
         name:
+          - ubuntu-server
+          - build-essential
+          - ubuntu-dev-tools
+          - gcc
           - strace
           - make
           - curl

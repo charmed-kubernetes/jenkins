@@ -22,14 +22,10 @@ source $scripts_path/retry.sh
 
 sudo rm -rf ./release
 git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
-# (cd release/snap
-#   make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
-#     targets="kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test"
-# )
-
-id
-cd release/snap && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
+(cd release/snap
+  make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
     targets="kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test"
+)
 
 rm -rf ./cdk-addons
 if git ls-remote --exit-code --heads https://github.com/juju-solutions/cdk-addons.git ${ADDONS_BRANCH_VERSION}
