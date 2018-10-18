@@ -18,10 +18,8 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh "env"
-                sh "echo $SHELL"
-                sh "cat /etc/group"
                 installToolsJenkaas()
+                sh "su -c id"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
