@@ -19,12 +19,12 @@ pipeline {
         stage('Setup') {
             steps {
                 installToolsJenkaas()
-                sh "id"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
         stage('Release Snaps'){
             steps {
+                sh "newgrp docker"
                 sh "KUBE_ARCH=${params.arch} FORCE_RELEASE=${params.FORCE_RELEASE} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
             }
         }
