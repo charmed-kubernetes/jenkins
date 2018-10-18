@@ -31,6 +31,7 @@ pipeline {
     post {
         always {
             sh "sudo rm -rf release/snap"
+            sh "sudo rm -rf release/build"
             sh "snapcraft logout"
         }
     }
