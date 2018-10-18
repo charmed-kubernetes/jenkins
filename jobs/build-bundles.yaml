@@ -7,7 +7,7 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-jenkaas
       script-path: jobs/build-bundles/Jenkinsfile
     parameters:
       - string:
