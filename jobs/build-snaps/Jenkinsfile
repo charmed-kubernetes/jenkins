@@ -19,6 +19,8 @@ pipeline {
         stage('Setup') {
             steps {
                 installToolsJenkaas()
+                sh "dpkg -l docker.io"
+                sh "cat /etc/group"
                 sh "id"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
