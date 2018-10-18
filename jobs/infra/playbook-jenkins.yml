@@ -92,7 +92,6 @@
     - name: update jenkins user
       user:
         name: jenkins
-        groups: docker,lxd
-        append: yes
+        groups: jenkins,docker,lxd
     - name: setup lxd network
       command: "/snap/bin/lxd init --auto"
