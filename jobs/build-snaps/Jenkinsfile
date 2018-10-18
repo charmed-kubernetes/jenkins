@@ -24,7 +24,6 @@ pipeline {
         }
         stage('Release Snaps'){
             steps {
-                sh "sudo docker run snapcore/snapcraft:stable apt-get update"
                 sh "KUBE_ARCH=${params.arch} FORCE_RELEASE=${params.FORCE_RELEASE} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
             }
         }
