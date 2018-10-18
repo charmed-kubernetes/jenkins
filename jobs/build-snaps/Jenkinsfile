@@ -18,10 +18,6 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh "curl -vLO https://dl.k8s.io/v1.12.1/bin/linux/s390x/kubeadm"
-                sh "whoami"
-                sh "id"
-                sh "hostname"
                 installToolsJenkaas()
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
