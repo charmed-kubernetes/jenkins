@@ -23,7 +23,7 @@ pipeline {
     }
     post {
         success {
-            archiveArtifacts artifacts: '/tmp/sosreport*.tar.xz', fingerprint: true
+            archiveArtifacts artifacts: '/tmp/sosreport*', fingerprint: true
         }
     }
 }
