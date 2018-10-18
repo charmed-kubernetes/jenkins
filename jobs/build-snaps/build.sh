@@ -22,10 +22,14 @@ source $scripts_path/retry.sh
 
 sudo rm -rf ./release
 git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
-(cd release/snap
-  make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
+# (cd release/snap
+#   make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
+#     targets="kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test"
+# )
+
+id
+cd release/snap && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
     targets="kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test"
-)
 
 rm -rf ./cdk-addons
 if git ls-remote --exit-code --heads https://github.com/juju-solutions/cdk-addons.git ${ADDONS_BRANCH_VERSION}
@@ -42,7 +46,8 @@ else
     tag_release  "juju-solutions" "cdk-addons" "master" ${GH_USER} ${GH_TOKEN} ${KUBE_VERSION}
   fi
 fi
-(cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH=${KUBE_ARCH})
+
+cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH=${KUBE_ARCH}
 
 for app in kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test; do
   retry snapcraft push release/snap/build/${app}_${KUBE_VERSION:1}_${KUBE_ARCH}.snap --release ${VERSION}/edge
