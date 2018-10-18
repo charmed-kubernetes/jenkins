@@ -16,6 +16,7 @@
           - strace
           - make
           - curl
+          - file
           - wget
           - docker.io
           - unzip
