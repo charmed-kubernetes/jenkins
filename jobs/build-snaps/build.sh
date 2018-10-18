@@ -21,7 +21,8 @@ ADDONS_BRANCH_VERSION="release-${VERSION}"
 source $scripts_path/retry.sh
 
 sudo rm -rf ./release
-git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
+#git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
+git clone https://github.com/battlemidget/release.git --branch alt-arch-builds --depth 1
 (cd release/snap
  sudo make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
     targets="kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test"
