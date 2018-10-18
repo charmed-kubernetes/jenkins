@@ -36,3 +36,21 @@
     properties:
       - build-discarder:
           num-to-keep: 1
+
+
+- job:
+    name: 'infra-sosreport'
+    description: |
+      Grab sosreport of jenkins slave
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/infra/getSosreport.groovy
+    parameters:
+      - string:
+          name: build_node
+          default: 'runner-s390x'
+    properties:
+      - build-discarder:
+          num-to-keep: 1
