@@ -8,6 +8,7 @@
       apt:
         name:
           - ubuntu-server
+          - ubuntu-standard
           - build-essential
           - ubuntu-dev-tools
           - gcc
