@@ -17,6 +17,7 @@ pipeline {
         stage('Get sosreport') {
             steps {
                 sh "sudo rm -rf ${env.WORKSPACE}/sosreport"
+                sh "mkdir -p ${env.WORKSPACE}/sosreport"
                 sh "sudo sosreport --batch --tmp-dir ${env.WORKSPACE}/sosreport --name jenkins"
                 sh "sudo chown -R jenkins:jenkins ${env.WORKSPACE}/sosreport"
 
