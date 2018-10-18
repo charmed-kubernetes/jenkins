@@ -23,6 +23,7 @@ pipeline {
     }
     post {
         success {
+            sh "sudo chown jenkins:jenkins /tmp/sosreport*"
             archiveArtifacts artifacts: '/tmp/sosreport*', fingerprint: true
         }
     }
