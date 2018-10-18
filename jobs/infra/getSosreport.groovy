@@ -18,7 +18,7 @@ pipeline {
             steps {
                 sh "sudo rm -rf sosreport"
                 sh "mkdir -p sosreport"
-                sh "sudo sosreport --batch --tmp-dir sosreport --name jenkins"
+                sh "sudo sosreport --batch --tmp-dir sosreport --name jenkins-${params.build_nade}"
                 sh "sudo chown -R jenkins:jenkins sosreport"
 
             }
