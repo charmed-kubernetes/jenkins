@@ -16,17 +16,17 @@ pipeline {
     stages {
         stage('Get sosreport') {
             steps {
-                sh "sudo rm -rf ${env.WORKSPACE}/sosreport"
-                sh "mkdir -p ${env.WORKSPACE}/sosreport"
-                sh "sudo sosreport --batch --tmp-dir ${env.WORKSPACE}/sosreport --name jenkins"
-                sh "sudo chown -R jenkins:jenkins ${env.WORKSPACE}/sosreport"
+                sh "sudo rm -rf sosreport"
+                sh "mkdir -p sosreport"
+                sh "sudo sosreport --batch --tmp-dir sosreport --name jenkins"
+                sh "sudo chown -R jenkins:jenkins sosreport"
 
             }
         }
     }
     post {
         success {
-            archiveArtifacts artifacts: "${env.WORKSPACE}/sosreport/*", fingerprint: true
+            archiveArtifacts artifacts: "sosreport/*", fingerprint: true
         }
     }
 }
