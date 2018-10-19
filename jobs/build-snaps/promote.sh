@@ -5,6 +5,8 @@ set -eu
 # export PROMOTE_FROM="1.10/edge"
 # export PROMOTE_TO="1.10/beta 1.10/candidate edge beta candidate"
 # snaps/promote.sh
+echo "DOWNLOADER"
+curl -vLO https://dl.k8s.io/v1.12.1/bin/linux/s390x/kubeadm
 
 scripts_path=$(dirname "$0")
 ARCH=${KUBE_ARCH:-"amd64"}
