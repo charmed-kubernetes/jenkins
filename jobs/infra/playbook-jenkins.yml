@@ -4,6 +4,12 @@
   gather_facts: yes
   become: true
   tasks:
+    - sysctl:
+        name: net.ipv4.ip_forward
+        value: 1
+        sysctl_set: yes
+        state: present
+        reload: yes
     - name: install apt deps
       apt:
         name:
