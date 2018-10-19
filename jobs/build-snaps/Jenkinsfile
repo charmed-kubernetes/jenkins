@@ -18,7 +18,6 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh "curl -H 'X-Ubuntu-Series: 16' 'https://api.snapcraft.io/api/v1/snaps/details/core' | jq '.'"
                 installToolsJenkaas()
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
