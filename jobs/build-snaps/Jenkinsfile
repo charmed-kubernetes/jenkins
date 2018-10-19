@@ -32,7 +32,7 @@ pipeline {
     }
     post {
         always {
-            sh "sudo rm -rf release"
+            sh "sudo chown -R ubuntu:ubuntu release/snap || true"
             sh "snapcraft logout"
         }
     }
