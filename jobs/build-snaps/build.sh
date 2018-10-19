@@ -47,7 +47,12 @@ fi
 (cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH=${KUBE_ARCH})
 
 for app in kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test; do
-    retry snapcraft push release/snap/build/${app}_${KUBE_VERSION:1}_${KUBE_ARCH}.snap --release ${VERSION}/edge
+    declare -A kube_arch_to_snap_arch=(
+      [ppc64le]=ppc64el
+      [arm]=armhf
+    )
+
+    retry snapcraft push release/snap/build/${app}_${KUBE_VERSION:1}_"${kube_arch_to_snap_arch[$arch]:-$KUBE_ARCH}".snap --release ${VERSION}/edge
 done
 
-retry snapcraft push cdk-addons/cdk-addons_${KUBE_VERSION:1}_${KUBE_ARCH}.snap --release ${VERSION}/edge
+retry snapcraft push cdk-addons/cdk-addons_${KUBE_VERSION:1}_"${kube_arch_to_snap_arch[$arch]:-$KUBE_ARCH}".snap --release ${VERSION}/edge
