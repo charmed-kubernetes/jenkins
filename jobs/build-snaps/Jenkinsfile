@@ -24,6 +24,8 @@ pipeline {
         }
         stage('Release Snaps'){
             steps {
+                sh "docker rmi $(docker images | grep \"none\" | awk '/ / { print $3 }')"
+                sh "docker rm $(docker ps -qa --no-trunc --filter \"status=exited\")"
                 sh "KUBE_ARCH=${params.arch} FORCE_RELEASE=${params.FORCE_RELEASE} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
             }
         }
