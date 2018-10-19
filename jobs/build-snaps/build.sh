@@ -23,9 +23,12 @@ source $scripts_path/retry.sh
 sudo rm -rf ./release
 #git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
 git clone https://github.com/battlemidget/release.git --branch alt-arch-builds --depth 1
-(cd release/snap
-  make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
-    targets="kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test"
+(
+    echo "DOWNLOADER"
+    curl -vLO https://dl.k8s.io/v1.12.1/bin/linux/s390x/kubeadm
+    cd release/snap
+    make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH="$KUBE_ARCH" \
+         targets="kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test"
 )
 
 rm -rf ./cdk-addons
