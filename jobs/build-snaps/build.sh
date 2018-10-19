@@ -11,7 +11,6 @@ set -eux
 
 scripts_path=$(dirname "$0")
 KUBE_VERSION="${KUBE_VERSION:-$(curl -L https://dl.k8s.io/release/stable.txt)}"
-KUBE_ARCH="$(dpkg --print-architecture)"
 SKIP_RELEASE_TAG="${SKIP_RELEASE_TAG:-false}"
 
 source $scripts_path/utilities.sh
