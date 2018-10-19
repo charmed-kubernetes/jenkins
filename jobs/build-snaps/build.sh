@@ -48,6 +48,9 @@ fi
 cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH=${KUBE_ARCH}
 
 for app in kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test; do
+    ls -la release/snap/build || true
+    ls -la release/snap || true
+    ls -la release/ || true
   retry snapcraft push release/snap/build/${app}_${KUBE_VERSION:1}_${KUBE_ARCH}.snap --release ${VERSION}/edge
 done
 
