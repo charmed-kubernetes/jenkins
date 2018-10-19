@@ -8,7 +8,7 @@ source utilities.sh
 # K8s versions we want to check for new releases
 declare -a VERSIONS=('latest' '1.10' '1.11' '1.12' '1.13' '1.14' '2.0');
 
-SNAP_INFO_KUBECTL=$(snap info kubectl)
+SNAP_INFO_KUBECTL=$(snap info kubectl || true)
 
 function is_upstream_newer_than_edge {
   # Sets $upstream_is_newer to 'yes' when there is a version upstream newer to what we have on edge.
