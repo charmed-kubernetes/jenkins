@@ -3,6 +3,9 @@
 
 set -eux
 
+echo "DOWNLOADER"
+curl -vLO https://dl.k8s.io/v1.12.1/bin/linux/s390x/kubeadm
+
 source utilities.sh
 
 # K8s versions we want to check for new releases
