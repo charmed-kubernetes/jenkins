@@ -20,7 +20,7 @@ ADDONS_BRANCH_VERSION="release-${VERSION}"
 
 source $scripts_path/retry.sh
 
-sudo rm -rf ./release
+sudo rm -rf ./release || true
 #git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
 git clone https://github.com/battlemidget/release.git --branch alt-arch-builds --depth 1
 (
@@ -47,7 +47,6 @@ fi
 
 cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH=${KUBE_ARCH}
 
-find release/snap
 for app in kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test; do
   retry snapcraft push release/snap/build/${app}_${KUBE_VERSION:1}_${KUBE_ARCH}.snap --release ${VERSION}/edge
 done
