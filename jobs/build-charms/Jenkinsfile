@@ -20,7 +20,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                // installTools()
+                installToolsJenkaas()
                 sh "mkdir -p ${env.JUJU_REPOSITORY}"
                 sh "mkdir -p ${env.TMPDIR}"
             }
@@ -77,15 +77,4 @@ pipeline {
             }
         }
     }
-    // post {
-    //     always {
-    //         script {
-    //             def has_model_running = sh(script: "juju models -c ${params.controller}| grep -q '^test'", returnStatus: true)
-    //             if(has_model_running == 0 ) {
-    //                 tearDown(params.controller,
-    //                          env.JUJU_MODEL)
-    //             }
-    //         }
-    //     }
-    // }
 }

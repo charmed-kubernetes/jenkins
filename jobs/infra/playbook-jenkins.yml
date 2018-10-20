@@ -55,6 +55,19 @@
         - "juju-wait --classic"
         - "kubectl --classic"
         - "charm --classic --edge"
+    - name: checkout juju-wait source
+      when: ansible_architecture != "x86_64"
+      git:
+        repo: https://git.launchpad.net/juju-wait.git
+        dest: /srv/juju-wait
+    - name: check for existing juju-wait snap
+      command: "snap info juju-wait | grep -q 'installed'"
+      register: juju_wait_out
+    - name: build juju-wait source
+      when: ansible_architecture != "x86_64" or juju_wait_out.status > 0
+      command: "snapcraft build && snap install juju_wait*snap"
+      args:
+        chdir: /srv/juju-wait
     - name: copy bashrc
       copy:
         src: "bashrc"

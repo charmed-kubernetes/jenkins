@@ -47,21 +47,23 @@ pipeline {
         PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
         REPO_DIR = "${env.WORKSPACE}/bundle-kubernetes"
         BUNDLES_DIR = "${env.WORKSPACE}/tmp-bundles"
+        JUJU_CONTROLLER = "${params.controller}-${env.BUILD_NUMBER}"
     }
     options {
         ansiColor('xterm')
         timestamps()
     }
     triggers {
-        pollSCM('H/5 * * * *')
+        pollSCM('H H/2 * * *')
     }
     stages {
         stage('Setup') {
             steps {
-                installTools()
+                installToolsJenkaas()
                 dir(env.REPO_DIR) {
                     git poll: true, url: params.bundle_repo
                 }
+                bootstrap('aws', env.JUJU_CONTROLLER)
             }
         }
         stage('Build Charms'){
@@ -109,6 +111,11 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+    post {
+        always {
+            destroy(env.JUJU_CONTROLLER)
         }
     }
 }
