@@ -24,7 +24,7 @@
           default: '{cloud}-build-charms'
       - string:
           name: controller
-          default: 'jenkins-ci-{cloud}'
+          default: 'charm-runner'
       - string:
           name: cloud
           default: '{cloud}'
