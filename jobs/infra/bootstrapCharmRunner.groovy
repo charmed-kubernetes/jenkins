@@ -17,8 +17,8 @@ pipeline {
         stage('Bootstrap') {
             steps {
                 installToolsJenkaas()
-                destroy('charm-runner')
-                bootstrap('aws', 'charm-runner')
+                sh "juju kill-controller -y charm-runner || true"
+                sh "juju bootstrap aws charm-runner --debug"
             }
         }
     }
