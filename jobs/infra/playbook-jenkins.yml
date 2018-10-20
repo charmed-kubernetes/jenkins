@@ -55,6 +55,9 @@
         - "juju --classic"
         - "kubectl --classic"
         - "charm --classic --edge"
+    - name: juju stable
+      command: "snap refresh juju --stable"
+      ignore_errors: yes
     - name: copy bashrc
       copy:
         src: "bashrc"
