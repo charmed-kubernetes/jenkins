@@ -63,6 +63,7 @@
     - name: check for existing juju-wait snap
       shell: snap info juju-wait | grep -q 'installed'
       register: juju_wait_out
+      ignore_errors: yes
     - name: build juju-wait source
       when: ansible_architecture != "x86_64" or juju_wait_out.rc > 0
       command: "snapcraft build && snap install juju_wait*snap"
