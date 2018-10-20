@@ -70,7 +70,7 @@
         cmd: |
           snapcraft clean
           snapcraft build
-          snap install ./juju-wait*.snap --dangerous --classic"
+          snap install ./juju-wait*.snap --dangerous --classic
       args:
         chdir: /srv/juju-wait
     - name: copy bashrc
