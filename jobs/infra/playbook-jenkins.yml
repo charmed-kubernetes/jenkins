@@ -58,7 +58,7 @@
     - name: checkout juju-wait source
       when: ansible_architecture != "x86_64"
       git:
-        repo: https://git.launchpad.net/juju-wait.git
+        repo: https://git.launchpad.net/juju-wait
         dest: /srv/juju-wait
     - name: check for existing juju-wait snap
       command: "snap info juju-wait | grep -q 'installed'"
