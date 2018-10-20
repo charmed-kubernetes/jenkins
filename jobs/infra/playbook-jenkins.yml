@@ -45,6 +45,7 @@
           - lxcfs
           - lxc-common
           - liblxc1
+          - juju-wait
         state: absent
     - name: install snap deps
       command: "snap install {{item}}"
@@ -52,27 +53,8 @@
       loop:
         - "lxd"
         - "juju --classic"
-        - "juju-wait --classic"
         - "kubectl --classic"
         - "charm --classic --edge"
-    - name: checkout juju-wait source
-      when: ansible_architecture != "x86_64"
-      git:
-        repo: https://git.launchpad.net/juju-wait
-        dest: /srv/juju-wait
-    - name: check for existing juju-wait snap
-      shell: snap info juju-wait | grep -q 'installed'
-      register: juju_wait_out
-      ignore_errors: yes
-    - name: build juju-wait source
-      when: ansible_architecture != "x86_64" or juju_wait_out.rc > 0
-      shell:
-        cmd: |
-          snapcraft clean
-          snapcraft build
-          snap install ./juju-wait*.snap --dangerous --classic
-      args:
-        chdir: /srv/juju-wait
     - name: copy bashrc
       copy:
         src: "bashrc"
