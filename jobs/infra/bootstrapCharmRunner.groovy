@@ -16,6 +16,7 @@ pipeline {
     stages {
         stage('Bootstrap') {
             steps {
+                installToolsJenkaas()
                 destroy('charm-runner')
                 bootstrap('aws', 'charm-runner')
             }
