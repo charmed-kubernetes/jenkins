@@ -13,5 +13,4 @@
         - timed: "@hourly"
     properties:
       - build-discarder:
-          days-to-keep: 2
-          num-to-keep: 2
+          num-to-keep: 1

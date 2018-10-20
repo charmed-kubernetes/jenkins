@@ -22,4 +22,4 @@
           description: 'Controller to bootstrap for charm testing'
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 1
