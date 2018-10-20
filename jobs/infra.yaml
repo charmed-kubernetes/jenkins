@@ -54,3 +54,18 @@
     properties:
       - build-discarder:
           num-to-keep: 1
+
+
+- job:
+    name: 'infra-bootstrap-charm-runner'
+    description: |
+      Bootstraps environment for charm building and testing
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/infra/bootstrapCharmRunner.groovy
+    properties:
+      - build-discarder:
+          num-to-keep: 1
+

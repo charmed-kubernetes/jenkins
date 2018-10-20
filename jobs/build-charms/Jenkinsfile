@@ -1,6 +1,6 @@
 @Library('juju-pipeline@master') _
 pipeline {
-    agent { label 'runner-amd64' }
+    agent { label 'charm-runner' }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
