@@ -17,7 +17,7 @@ pipeline {
         stage('Cleanup workspaces') {
             steps {
                 installToolsJenkaas()
-                // sh "sudo rm -rf ${params.workspace_path}"
+                sh "sudo rm -rf ${params.workspace_path}"
             }
         }
     }
