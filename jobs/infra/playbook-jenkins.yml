@@ -4,6 +4,10 @@
   gather_facts: yes
   become: true
   tasks:
+    - name: set python3.6 as default
+      alternatives:
+        name: python3
+        path: /usr/bin/python3.6
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
