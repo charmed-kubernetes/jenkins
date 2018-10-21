@@ -18,7 +18,7 @@ pipeline {
             steps {
                 // installToolsJenkaas()
                 // sh "sudo rm -rf ${params.workspace_path}"
-                sh "sudo update-alternatives --name python3"
+                sh "sudo update-alternatives --query python3"
             }
         }
     }
