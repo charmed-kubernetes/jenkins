@@ -1,15 +1,9 @@
 ---
 - hosts: localhost
   connection: local
-  gather_facts: no
+  gather_facts: yes
   become: true
   tasks:
-    - name: set python3.5
-      alternatives:
-        name: python3
-        link: /usr/bin/python3
-        path: /usr/bin/python3.5
-        priority: 10
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
@@ -17,42 +11,41 @@
         state: present
         reload: yes
     - name: install apt deps
-      command: "apt-get install -qyf {{item}}"
-      loop:
-        - ubuntu-server
-        - ubuntu-standard
-        - sosreport
-        - build-essential
-        - ubuntu-dev-tools
-        - gcc
-        - strace
-        - make
-        - curl
-        - file
-        - wget
-        - docker.io
-        - unzip
-        - python3-pip
-        - flake8
-        - squashfuse
-        - snapd
-        - libffi6
-        - libffi-dev
-        - libssl-dev
-        - default-jre
-        - snapcraft
+      apt:
+        name:
+          - ubuntu-server
+          - ubuntu-standard
+          - sosreport
+          - build-essential
+          - ubuntu-dev-tools
+          - gcc
+          - strace
+          - make
+          - curl
+          - file
+          - wget
+          - docker.io
+          - unzip
+          - python3-pip
+          - flake8
+          - squashfuse
+          - snapd
+          - libffi6
+          - libffi-dev
+          - libssl-dev
+          - default-jre
+          - snapcraft
     - name: remove unused debs
-      command: "apt-get -qyf remove {{item}}"
-      loop:
-        - python-pip
-        - juju
-        - lxd
-        - lxd-client
-        - lxcfs
-        - lxc-common
-        - liblxc1
-        - juju-wait
-      ignore_errors: true
+      apt:
+        name:
+          - python-pip
+          - juju
+          - lxd
+          - lxd-client
+          - lxcfs
+          - lxc-common
+          - liblxc1
+          - juju-wait
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
