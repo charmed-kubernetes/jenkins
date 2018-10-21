@@ -17,9 +17,9 @@ pipeline {
         stage("Configure systems") {
             steps {
                 installToolsJenkaas()
-                // dir("jobs/infra") {
-                //     sh "/usr/local/bin/pipenv run ansible-playbook playbook-jenkins.yml -e 'ansible_python_interpreter=python3'"
-                // }
+                dir("jobs") {
+                    sh "tox -e py3 -- ansible-playbook infra/playbook-jenkins.yml -e 'ansible_python_interpreter=python3'"
+                }
             }
         }
     }

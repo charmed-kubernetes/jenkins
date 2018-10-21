@@ -24,7 +24,7 @@ pipeline {
         stage('Release microk8s'){
             steps {
                 dir('jobs') {
-                    sh "LPCREDS=${env.LPCREDS} pipenv run build-microk8s/build-and-release-on-new-upstream-release.py"
+                    sh "LPCREDS=${env.LPCREDS} tox -e py3 -- build-microk8s/build-and-release-on-new-upstream-release.py"
                 }
             }
         }

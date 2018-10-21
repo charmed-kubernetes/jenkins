@@ -44,7 +44,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py3 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
                 }
             }
         }
@@ -57,7 +57,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv run pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
+                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py3 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
                 }
             }
         }
