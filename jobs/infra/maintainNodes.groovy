@@ -14,12 +14,12 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Configure systems') {
-            script {
-                nodes.each { node ->
-                    agent {
-                        label node
-                    }
+        script {
+            nodes.each { node ->
+                agent {
+                    label node
+                }
+                stage("Configure systems: ${node}") {
                     steps {
                         installToolsJenkaas()
                         // dir("jobs/infra") {
