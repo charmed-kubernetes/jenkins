@@ -9,7 +9,7 @@
         name: python3
         link: /usr/bin/python3
         path: /usr/bin/python3.6
-        priority: 10
+        priority: -10
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
