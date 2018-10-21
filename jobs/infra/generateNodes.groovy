@@ -28,7 +28,7 @@ pipeline {
         stage('Destroy nodes') {
             steps {
                 dir('jobs') {
-                    sh "tox -e py3 -- invoke delete-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER}"
+                    sh "tox -e py36 -- invoke delete-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER}"
                 }
                 sh "${run_as_j} juju destroy-model -y ${env.JUJU_MODEL} || true"
                 sh "${run_as_j} juju add-model -c ${env.JUJU_CONTROLLER} agents"
@@ -50,7 +50,7 @@ pipeline {
                                 sh "${run_as_j} juju ssh -m ${env.JUJU_MODEL} ${runner_id}/0 -- wget https://ci.kubernetes.juju.solutions/jnlpJars/slave.jar"
                                 // sh "${run_as_j} juju ssh -m ${env.JUJU_MODEL} ${runner_id}/0 -- sudo apt install -qyf python"
                                 dir("jobs") {
-                                    sh "tox -e py3 -- invoke create-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER} --node ${runner_id}"
+                                    sh "tox -e py36 -- invoke create-nodes --apikey ${env.APIKEY} --apiuser ${env.APIUSER} --node ${runner_id}"
                                 }
                             }
                         }
@@ -62,12 +62,12 @@ pipeline {
         stage('Configure system') {
             steps {
                 dir("jobs") {
-                    sh "tox -e py3 -- invoke set-node-ips"
+                    sh "tox -e py36 -- invoke set-node-ips"
                     // Make sure charmstore creds are updated with future expiration date
                     sh "charm login"
                 }
                 dir("jobs/infra") {
-                    sh "tox -e py3 --  ansible-playbook playbook.yml -i hosts --private-key '/var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa' -e 'ansible_python_interpreter=/usr/bin/python3'"
+                    sh "tox -e py36 --  ansible-playbook playbook.yml -i hosts --private-key '/var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa' -e 'ansible_python_interpreter=/usr/bin/python3'"
                 }
             }
         }

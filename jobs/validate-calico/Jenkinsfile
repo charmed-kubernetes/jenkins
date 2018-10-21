@@ -28,7 +28,7 @@ pipeline {
             steps {
                 dir('jobs') {
                 script {
-                        sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py3 -- bash integration/calico/create-subnet-aws.sh"
+                        sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- bash integration/calico/create-subnet-aws.sh"
                     }
                 }
                 deployCDK(params.controller,
@@ -46,8 +46,8 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py3 -- bash integration/calico/disable_source_dest_check.sh"
-                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py3 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- bash integration/calico/disable_source_dest_check.sh"
+                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
                 }
             }
         }
@@ -60,7 +60,7 @@ pipeline {
         always {
             dir('jobs') {
                 script {
-                    sh "tox -e py3 -- bash integration/calico/cleanup-vpc.sh"
+                    sh "tox -e py36 -- bash integration/calico/cleanup-vpc.sh"
                 }
             }
 
