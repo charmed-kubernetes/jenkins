@@ -3,7 +3,7 @@
 def nodes = ['runner-amd64', 'runner-amd64-2', 'runner-s390x', 'runner-arm64', 'runner-ppc64le']
 
 pipeline {
-    agent none
+    agent { label params.build_node }
     // Add environment credentials for pyjenkins script on configuring nodes automagically
     environment {
         PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
@@ -15,9 +15,6 @@ pipeline {
     }
     stages {
         stage("Configure systems") {
-            agent {
-                label 'runner-amd64'
-            }
             steps {
                 installToolsJenkaas()
                 // dir("jobs/infra") {
