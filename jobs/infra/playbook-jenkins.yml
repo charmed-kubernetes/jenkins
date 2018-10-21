@@ -46,6 +46,7 @@
           - lxc-common
           - liblxc1
           - juju-wait
+        state: absent
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
