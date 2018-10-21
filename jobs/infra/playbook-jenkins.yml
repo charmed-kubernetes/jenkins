@@ -4,8 +4,12 @@
   gather_facts: yes
   become: true
   tasks:
-    - name: remove alternatives python
-      shell: update-alternatives --remove python3 /usr/bin/python3.6
+    - name: set python3.5
+      alternatives:
+        name: python3
+        link: /usr/bin/python3
+        path: /usr/bin/python3.5
+        priority: 1
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
