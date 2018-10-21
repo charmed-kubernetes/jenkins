@@ -44,7 +44,7 @@ pipeline {
             steps {
                 dir("${JUJU_REPOSITORY}/builds/${params.charm}") {
                     sh "charm proof"
-                    sh "flake8 --ignore E501,E722,E305,E241,E126,W291,W391,F811,E261"
+                    sh "flake8 --ignore E501,E722,E305,E241,E126,W291,W391,F811,E261,F841"
                 }
                 dir("jobs") {
                     script {
