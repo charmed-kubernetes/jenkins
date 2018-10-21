@@ -50,7 +50,7 @@ pipeline {
                     script {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
-                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} pipenv --python 3.6 run pytest --tb native -ra -v -s -n auto --junit-xml=${params.charm}.xml ${test_path}"
+                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} python3.6 -m pipenv run pytest --tb native -ra -v -s -n auto --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }
 
