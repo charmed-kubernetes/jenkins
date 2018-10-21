@@ -17,41 +17,41 @@
         state: present
         reload: yes
     - name: install apt deps
-      apt:
-        name:
-          - ubuntu-server
-          - ubuntu-standard
-          - sosreport
-          - build-essential
-          - ubuntu-dev-tools
-          - gcc
-          - strace
-          - make
-          - curl
-          - file
-          - wget
-          - docker.io
-          - unzip
-          - python3-pip
-          - flake8
-          - squashfuse
-          - snapd
-          - libffi6
-          - libffi-dev
-          - libssl-dev
-          - default-jre
-          - snapcraft
+      command: "apt-get install -qyf {{item}}"
+      loop:
+        - ubuntu-server
+        - ubuntu-standard
+        - sosreport
+        - build-essential
+        - ubuntu-dev-tools
+        - gcc
+        - strace
+        - make
+        - curl
+        - file
+        - wget
+        - docker.io
+        - unzip
+        - python3-pip
+        - flake8
+        - squashfuse
+        - snapd
+        - libffi6
+        - libffi-dev
+        - libssl-dev
+        - default-jre
+        - snapcraft
     - name: remove unused debs
-      apt:
-        name:
-          - python-pip
-          - juju
-          - lxd
-          - lxd-client
-          - lxcfs
-          - lxc-common
-          - liblxc1
-          - juju-wait
+      command: "apt-get -qyf remove {{item}}"
+      loop:
+        - python-pip
+        - juju
+        - lxd
+        - lxd-client
+        - lxcfs
+        - lxc-common
+        - liblxc1
+        - juju-wait
         state: absent
     - name: install snap deps
       command: "snap install {{item}}"
