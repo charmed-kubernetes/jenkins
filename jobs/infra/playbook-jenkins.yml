@@ -5,7 +5,7 @@
   become: true
   tasks:
     - name: remove alternatives python
-      shell: alternatives --remove python3 /usr/bin/python3.6
+      shell: update-alternatives --remove python3 /usr/bin/python3.6
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
