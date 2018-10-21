@@ -16,9 +16,8 @@ pipeline {
     stages {
         stage('Cleanup workspaces') {
             steps {
-                // installToolsJenkaas()
-                // sh "sudo rm -rf ${params.workspace_path}"
-                sh "sudo update-alternatives --query python3"
+                installToolsJenkaas()
+                sh "sudo rm -rf ${params.workspace_path}"
             }
         }
     }

@@ -60,7 +60,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                installToolsJenkaas()
+                // installToolsJenkaas()
                 dir(env.REPO_DIR) {
                     git poll: true, url: params.bundle_repo
                 }
