@@ -4,6 +4,12 @@
   gather_facts: yes
   become: true
   tasks:
+    - name: set python3.6 as default
+      alternatives:
+        name: python3
+        link: /usr/bin/python3
+        path: /usr/bin/python3.6
+        priority: -10
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
@@ -46,7 +52,7 @@
         - lxc-common
         - liblxc1
         - juju-wait
-      ignore_errors: yes
+      ignore_errors: true
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
