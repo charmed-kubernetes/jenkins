@@ -20,7 +20,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                installToolsJenkaas()
+                // installToolsJenkaas()
                 sh "mkdir -p ${env.JUJU_REPOSITORY}"
                 sh "mkdir -p ${env.TMPDIR}"
             }
