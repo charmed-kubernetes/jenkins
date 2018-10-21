@@ -14,19 +14,15 @@ pipeline {
         timestamps()
     }
     stages {
-        script {
-            nodes.each { node ->
-                agent {
-                    label node
-                }
-                stage("Configure systems: ${node}") {
-                    steps {
-                        installToolsJenkaas()
-                        // dir("jobs/infra") {
-                        //     sh "/usr/local/bin/pipenv run ansible-playbook playbook-jenkins.yml -e 'ansible_python_interpreter=python3'"
-                        // }
-                    }
-                }
+        stage("Configure systems") {
+            agent {
+                label 'runner-amd64'
+            }
+            steps {
+                installToolsJenkaas()
+                // dir("jobs/infra") {
+                //     sh "/usr/local/bin/pipenv run ansible-playbook playbook-jenkins.yml -e 'ansible_python_interpreter=python3'"
+                // }
             }
         }
     }
