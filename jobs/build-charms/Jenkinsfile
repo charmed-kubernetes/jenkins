@@ -31,7 +31,7 @@ pipeline {
                 timeout(time: 15, unit: 'MINUTES')
             }
             steps {
-                sh "git clone --depth 1 -q ${params.git_repo}"
+                git poll: true, url: params.git_repo
                 retry(5){
                     sh "cd ${params.repo_name} && charm build -r --no-local-layers --force"
                 }
