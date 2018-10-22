@@ -45,10 +45,10 @@ def event_loop():
 @pytest.fixture
 async def deploy():
     test_run_nonce = uuid.uuid4().hex[-4:]
-    _model = 'test-{}-{}'.format(MODEL,
-                                 test_run_nonce)
+    _model = '{}-{}'.format(MODEL,
+                            test_run_nonce)
 
-    juju('add-model', '-c', CONTROLLER, _model)
+    print(juju('add-model', '-c', CONTROLLER, _model))
     juju('model-config', '-m',
          '{}:{}'.format(CONTROLLER, _model), 'test-mode=true')
 
