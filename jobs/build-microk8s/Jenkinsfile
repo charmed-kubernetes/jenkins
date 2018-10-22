@@ -16,11 +16,11 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Setup') {
-            steps {
-                installTools()
-            }
-        }
+        // stage('Setup') {
+        //     steps {
+        //         installTools()
+        //     }
+        // }
         stage('Release microk8s'){
             steps {
                 dir('jobs') {
