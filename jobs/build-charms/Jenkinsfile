@@ -9,6 +9,7 @@ pipeline {
         JUJU_REPOSITORY = "${env.WORKSPACE}/build/charms"
         TMPDIR = "${env.WORKSPACE}/tmp"
         JUJU_MODEL = "${params.model}-${params.charm}-${env.BUILD_NUMBER}"
+        JUJU_CONTROLLER = "${params.controller}-${env.BUILD_NUMBER}"
     }
     options {
         ansiColor('xterm')
@@ -21,6 +22,7 @@ pipeline {
         stage('Setup') {
             steps {
                 // installToolsJenkaas()
+                sh "juju bootstrap aws/us-east-1 ${env.JUJU_CONTROLLER}"
                 sh "mkdir -p ${env.JUJU_REPOSITORY}"
                 sh "mkdir -p ${env.TMPDIR}"
             }
@@ -50,7 +52,7 @@ pipeline {
                     script {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
-                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- pytest --tb native -ra -v -s -n auto --junit-xml=${params.charm}.xml ${test_path}"
+                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${env.JUJU_CONTROLLER} MODEL=${env.JUJU_MODEL} tox -e py36 -- pytest --tb native -ra -v -s -n auto --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }
 
@@ -77,4 +79,10 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            sh "juju kill-controller -y ${env.JUJU_CONTROLLER}"
+        }
+    }
+
 }
