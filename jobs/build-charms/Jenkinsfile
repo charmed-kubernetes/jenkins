@@ -52,6 +52,7 @@ pipeline {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
                             // sh "juju bootstrap aws/us-east-1 ${env.JUJU_CONTROLLER}"
+                            sh "juju controllers"
                             sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- pytest --tb native -ra -v -s -n auto --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }
