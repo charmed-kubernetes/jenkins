@@ -9,7 +9,7 @@ pipeline {
      */
     environment {
         PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
-        LPCREDS = credentials('LAUNCHPAD_CREDS')
+        LPCREDS = credentials('launchpad_creds')
     }
     options {
         ansiColor('xterm')
