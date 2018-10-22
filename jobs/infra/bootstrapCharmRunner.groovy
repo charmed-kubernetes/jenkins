@@ -18,7 +18,8 @@ pipeline {
             steps {
                 // installToolsJenkaas()
                 sh "juju kill-controller -y charm-runner || true"
-                sh "juju bootstrap aws charm-runner --debug"
+                sh "juju bootstrap aws/us-east-1 charm-runner"
+                sh "juju status"
             }
         }
     }
