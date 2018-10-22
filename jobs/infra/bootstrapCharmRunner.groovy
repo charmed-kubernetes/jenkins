@@ -17,6 +17,7 @@ pipeline {
         stage('Bootstrap') {
             steps {
                 // installToolsJenkaas()
+                sh "juju controllers"
                 sh "juju kill-controller -y charm-runner || true"
                 sh "juju bootstrap aws/us-east-1 charm-runner"
                 sh "juju status"
