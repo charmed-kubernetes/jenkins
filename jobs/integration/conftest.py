@@ -48,7 +48,6 @@ async def deploy():
     _model = '{}-{}'.format(MODEL,
                             test_run_nonce)
 
-    print(os.getenv('HOME'))
     juju('add-model', '-c', CONTROLLER, _model)
     juju('model-config', '-m',
          '{}:{}'.format(CONTROLLER, _model), 'test-mode=true')
