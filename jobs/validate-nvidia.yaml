@@ -33,8 +33,7 @@
           default: '1.12/edge'
     properties:
       - build-discarder:
-          days-to-keep: 7
-          num-to-keep: 7
+          num-to-keep: 2
 
 - project:
     name: validate-nvidia

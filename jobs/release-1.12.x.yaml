@@ -23,8 +23,6 @@
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/release-1.12.x/Jenkinsfile
-    triggers:
-        - timed: "@daily"
     properties:
       - build-blocker:
           use-build-blocker: true
@@ -51,8 +49,6 @@
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/release-1.12.x/Jenkinsfile
-    triggers:
-        - timed: "@weekly"
     properties:
       - build-discarder:
           days-to-keep: 7

@@ -103,6 +103,19 @@
       unarchive:
         src: "{{ lookup('env', 'JUJUCREDS') }}"
         dest: /var/lib/jenkins/.local/share/juju
+    - name: create jaas dir
+      file:
+        path: /var/lib/jenkins/.local/share/juju/cookies
+        state: directory
+        mode: 0755
+    - name: copy jaas cookie
+      copy:
+        src: "{{ lookup('env', 'JAASCREDS') }}"
+        dest: /var/lib/jenkins/.local/share/juju/cookies/jaas.json
+        owner: jenkins
+        group: jenkins
+        mode: 0600
+        force: no
     - name: set perms
       file:
         path: /var/lib/jenkins/.local/share/juju

@@ -33,15 +33,11 @@
           default: 'stable'
     properties:
       - build-discarder:
-          days-to-keep: 7
-          num-to-keep: 7
+          num-to-keep: 2
 
 - job-group:
     name: validate-minor-upgrade
     version:
-      - 'v1.9.x-v1.11.x':
-          version_overlay: 'jobs/overlays/1.9-stable-overlay.yaml'
-          upgrade_snap_channel: '1.11/edge'
       - 'v1.10.x-v1.11.x':
           version_overlay: 'jobs/overlays/1.10-stable-overlay.yaml'
           upgrade_snap_channel: '1.11/edge'

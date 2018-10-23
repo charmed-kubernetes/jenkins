@@ -30,7 +30,6 @@
           default: '1.12/edge'
     properties:
       - build-discarder:
-          days-to-keep: 2
           num-to-keep: 2
 
 - project:
