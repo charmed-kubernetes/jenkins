@@ -123,7 +123,7 @@
         group: jenkins
         recurse: yes
     - name: login to jaas controller
-      command: "juju login jaas"
+      command: "juju login jaas -u adam-stokes"
       become: false
     - name: update jenkins user
       user:
