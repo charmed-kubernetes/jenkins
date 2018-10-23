@@ -15,7 +15,7 @@
           default: 'validate-nvidia'
       - string:
           name: controller
-          default: 'jenkins-ci-aws'
+          default: 'jaas'
       - string:
           name: overlay
           default: '{version_overlay}'

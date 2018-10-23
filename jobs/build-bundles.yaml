@@ -18,7 +18,7 @@
           default: 'https://github.com/juju-solutions/bundle-canonical-kubernetes.git'
       - string:
           name: controller
-          default: 'ci-bundles'
+          default: 'jaas'
           description: 'Controller to bootstrap for charm testing'
     properties:
       - build-discarder:

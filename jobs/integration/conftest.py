@@ -20,6 +20,7 @@ logging.basicConfig(filename='logs/python-logging', level=logging.DEBUG)
 
 CONTROLLER = os.getenv('CONTROLLER')
 MODEL = os.getenv('MODEL')
+CLOUD = os.getenv('CLOUD')
 
 
 @pytest.fixture
@@ -48,7 +49,7 @@ async def deploy():
     _model = '{}-{}'.format(MODEL,
                             test_run_nonce)
 
-    juju('add-model', '-c', CONTROLLER, _model)
+    juju('add-model', '-c', CONTROLLER, _model, cloud)
     juju('model-config', '-m',
          '{}:{}'.format(CONTROLLER, _model), 'test-mode=true')
 

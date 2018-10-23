@@ -15,7 +15,7 @@
           default: 'minor-upgrade'
       - string:
           name: controller
-          default: 'jenkins-ci-{cloud}'
+          default: 'jaas'
       - string:
           name: cloud
           default: '{cloud}'

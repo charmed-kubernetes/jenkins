@@ -26,11 +26,11 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                deployCDK(params.controller,
-                          env.JUJU_MODEL,
-                          params.bundle,
-                          params.overlay,
-                          params.bundle_channel)
+                deployCDK(controller=params.controller,
+                          model=env.JUJU_MODEL,
+                          bundle=params.bundle,
+                          version_overlay=params.overlay,
+                          bundle_channel=params.bundle_channel)
             }
         }
 

@@ -7,7 +7,7 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-k8sci
+        - k8s-jenkins-jenkaas
       script-path: jobs/validate-calico/Jenkinsfile
     parameters:
       - string:
@@ -15,7 +15,7 @@
           default: 'validate-calico'
       - string:
           name: controller
-          default: 'aws-calico'
+          default: 'jaas'
       - string:
           name: overlay
           default: '{version_overlay}'
