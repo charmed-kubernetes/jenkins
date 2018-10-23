@@ -74,7 +74,7 @@
         force: yes
     - name: copy charm creds
       copy:
-        src: "{{charm_creds}}"
+        src: "{{ lookup('env', 'CHARMCREDS') }}"
         dest: /var/lib/jenkins/.go-cookies
         owner: jenkins
         group: jenkins
@@ -85,7 +85,7 @@
       become: false
     - name: copy snapcraft creds
       copy:
-        src: "{{snapcraft_creds}}"
+        src: "{{ lookup('env', 'SNAPCRAFTCREDS') }}"
         dest: /var/lib/jenkins/snapcraft-creds
         owner: jenkins
         group: jenkins
@@ -101,7 +101,7 @@
         mode: 0755
     - name: copy juju credentials
       unarchive:
-        src: "{{juju_creds}}"
+        src: "{{ lookup('env', 'JUJUCREDS') }}"
         dest: /var/lib/jenkins/.local/share/juju
     - name: set perms
       file:
