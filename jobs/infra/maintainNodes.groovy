@@ -15,9 +15,6 @@ pipeline {
         stage("Configure systems") {
             steps {
                 installToolsJenkaas()
-                dir("jobs") {
-                    sh "tox -e py35 -- ansible-playbook infra/playbook-jenkins.yml -e 'ansible_python_interpreter=python3'"
-                }
             }
         }
     }
