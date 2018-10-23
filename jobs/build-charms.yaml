@@ -24,7 +24,7 @@
           default: '{cloud}-build-charms'
       - string:
           name: controller
-          default: 'charm-runner'
+          default: 'jaas'
       - string:
           name: cloud
           default: '{cloud}'
