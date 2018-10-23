@@ -59,6 +59,7 @@
       loop:
         - "lxd"
         - "juju --classic"
+        - "juju-wait --classic"
         - "kubectl --classic"
         - "charm --classic --edge"
     - name: juju stable
