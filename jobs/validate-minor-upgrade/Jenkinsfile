@@ -36,7 +36,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- pytest -v -s --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade"
+                    sh "TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} CLOUD=${params.cloud} tox -e py36 -- pytest -v -s --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade"
                 }
             }
         }
