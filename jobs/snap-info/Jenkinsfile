@@ -18,7 +18,6 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                installTools()
                 sh "snapcraft login --with ${env.CDKBOT_TOKEN}"
             }
         }

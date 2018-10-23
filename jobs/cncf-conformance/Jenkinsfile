@@ -17,11 +17,6 @@ pipeline {
     }
 
     stages {
-        stage('Setup') {
-            steps {
-                installTools()
-            }
-        }
         stage("Deploy") {
             options {
                 timeout(time: 1, unit: 'HOURS')

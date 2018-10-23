@@ -16,11 +16,6 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Install tools') {
-            steps {
-                installTools()
-            }
-        }
         stage("Deploy") {
             options {
                 timeout(time: 1, unit: 'HOURS')

@@ -16,11 +16,6 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Setup') {
-            steps {
-                installTools()
-            }
-        }
         stage('Sync Upstream K8s'){
             steps {
                 dir('kubernetes') {
