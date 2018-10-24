@@ -26,11 +26,11 @@ pipeline {
                         sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- bash integration/calico/create-subnet-aws.sh"
                     }
                 }
-                deployCDK(params.controller,
-                          env.JUJU_MODEL,
-                          "cs:~containers/${params.bundle}",
-                          params.overlay,
-                          params.bundle_channel)
+                deployCDK(controller: params.controller,
+                          model: env.JUJU_MODEL,
+                          bundle: "cs:~containers/${params.bundle}",
+                          version_overlay: params.overlay,
+                          bundle_channel: params.bundle_channel)
             }
         }
 
