@@ -21,7 +21,7 @@
           default: 'edge'
       - string:
           name: model
-          default: '{cloud}-build-charms'
+          default: 'charms'
       - string:
           name: controller
           default: 'jaas'
