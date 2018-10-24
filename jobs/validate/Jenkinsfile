@@ -1,5 +1,7 @@
 @Library('juju-pipeline@master') _
 
+def juju_model = String.format("%s-%s", params.model, uuid())
+
 pipeline {
     agent {
         label 'runner'
@@ -9,7 +11,6 @@ pipeline {
      */
     environment {
         PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
-        JUJU_MODEL = "${params.model}-${env.BUILD_NUMBER}"
     }
     options {
         ansiColor('xterm')
@@ -22,7 +23,7 @@ pipeline {
             }
             steps {
                 deployCDK(controller: params.controller,
-                          model: env.JUJU_MODEL,
+                          model: juju_model,
                           cloud: params.cloud,
                           bundle: "cs:~containers/${params.bundle}",
                           version_overlay: params.version_overlay,
@@ -40,7 +41,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} CLOUD=${params.cloud} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py37 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
                 }
             }
         }
@@ -53,7 +54,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} CLOUD=${params.cloud} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
+                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py37 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
                 }
             }
         }
