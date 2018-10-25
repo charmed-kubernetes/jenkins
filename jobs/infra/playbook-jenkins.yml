@@ -31,8 +31,6 @@
           - python3-pip
           - python3.6
           - python3.6-dev
-          - python3.7
-          - python3.7-dev
           - snapcraft
           - snapd
           - sosreport
