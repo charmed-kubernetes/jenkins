@@ -20,10 +20,9 @@
           name: FORCE_RELEASE
           default: false
     triggers:
-        - timed: "@hourly"
+        - timed: "@daily"
     properties:
       - build-discarder:
-          days-to-keep: 1
           num-to-keep: 2
 
 - job-group:
