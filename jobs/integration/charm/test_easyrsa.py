@@ -27,7 +27,7 @@ async def deploy_easyrsa(controller, model):
         'deploy', '-m', '{}:{}'.format(controller, model),
         str(CHARM_PATH), '--resource', 'easyrsa={}'.format(
             resource_path))
-    await asyncify(_juju_wait)(controller, model)
+    await asyncify(_juju_wait)()
 
 
 async def test_easyrsa_installed(deploy, event_loop):

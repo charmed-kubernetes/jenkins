@@ -27,10 +27,7 @@
           default: 'jaas'
       - string:
           name: cloud
-          default: '{cloud}'
-      - string:
-          name: region
-          default: '{region}'
+          default: 'google/us-east1'
       - string:
           name: repo_name
           default: '{repo_name}'
@@ -45,8 +42,6 @@
 
 - job-group:
     name: '{name}'
-    cloud: 'google'
-    region: 'us-east1'
     charm:
       - 'calico':
           repo_name: 'layer-calico'

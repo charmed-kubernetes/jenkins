@@ -21,7 +21,6 @@ logging.basicConfig(filename='logs/python-logging', level=logging.DEBUG)
 CONTROLLER = os.getenv('CONTROLLER')
 MODEL = os.getenv('MODEL')
 CLOUD = os.getenv('CLOUD')
-REGION = os.getenv('REGION')
 
 
 @pytest.fixture
@@ -46,16 +45,12 @@ def event_loop():
 
 @pytest.fixture
 async def deploy():
-    test_run_nonce = uuid.uuid4().hex[-4:]
-    _model = '{}-{}'.format(MODEL,
-                            test_run_nonce)
-
-    juju('add-model', '-c', CONTROLLER, _model, '{}/{}'.format(CLOUD, REGION))
+    juju('add-model', '-c', CONTROLLER, _model, CLOUD)
     juju('model-config', '-m',
          '{}:{}'.format(CONTROLLER, _model), 'test-mode=true')
 
     _juju_model = Model()
-    await _juju_model.connect("{}:{}".format(CONTROLLER, _model))
+    await _juju_model.connect("{}:{}".format(CONTROLLER, MODEL))
     yield (CONTROLLER, _juju_model)
     await _juju_model.disconnect()
-    juju('destroy-model', '-y', '{}:{}'.format(CONTROLLER, _model))
+    juju('destroy-model', '-y', '{}:{}'.format(CONTROLLER, MODEL))
