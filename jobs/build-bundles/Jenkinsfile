@@ -53,30 +53,11 @@ pipeline {
         ansiColor('xterm')
         timestamps()
     }
-    triggers {
-        pollSCM('H H/2 * * *')
-        cron('H */2 * * *')
-    }
     stages {
         stage('Setup') {
             steps {
                 dir(env.REPO_DIR) {
                     git poll: true, url: params.bundle_repo
-                }
-            }
-        }
-        stage('Build Charms'){
-            steps {
-                script {
-                    def jobs = [:]
-                    build_charms.each { charm ->
-                        jobs[charm] = {
-                            stage(String.format("Build Charms: %s", charm)) {
-                                build job: String.format("build-release-%s", charm)
-                            }
-                        }
-                    }
-                    parallel jobs
                 }
             }
         }
