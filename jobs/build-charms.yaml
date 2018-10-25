@@ -48,33 +48,33 @@
     cloud: 'google'
     region: 'us-east1'
     charm:
-      # - 'calico':
-      #     repo_name: 'layer-calico'
-      #     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-      # - 'canal':
-      #     repo_name: 'layer-canal'
-      #     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'calico':
+          repo_name: 'layer-calico'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'canal':
+          repo_name: 'layer-canal'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'easyrsa':
           repo_name: 'layer-easyrsa'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-      # - 'etcd':
-      #     repo_name: 'layer-etcd'
-      #     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-      # - 'flannel':
-      #     repo_name: 'charm-flannel'
-      #     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-      # - 'kubeapi-load-balancer':
-      #     repo_name: 'kubernetes/cluster/juju/layers/kubeapi-load-balancer'
-      #     git_repo: 'https://github.com/juju-solutions/kubernetes.git'
-      # - 'kubernetes-e2e':
-      #     repo_name: 'kubernetes/cluster/juju/layers/kubernetes-e2e'
-      #     git_repo: 'https://github.com/juju-solutions/kubernetes.git'
-      # - 'kubernetes-master':
-      #     repo_name: 'kubernetes/cluster/juju/layers/kubernetes-master'
-      #     git_repo: 'https://github.com/juju-solutions/kubernetes.git'
-      # - 'kubernetes-worker':
-      #     repo_name: 'kubernetes/cluster/juju/layers/kubernetes-worker'
-      #     git_repo: 'https://github.com/juju-solutions/kubernetes.git'
+      - 'etcd':
+          repo_name: 'layer-etcd'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'flannel':
+          repo_name: 'charm-flannel'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeapi-load-balancer':
+          repo_name: 'kubernetes/cluster/juju/layers/kubeapi-load-balancer'
+          git_repo: 'https://github.com/juju-solutions/kubernetes.git'
+      - 'kubernetes-e2e':
+          repo_name: 'kubernetes/cluster/juju/layers/kubernetes-e2e'
+          git_repo: 'https://github.com/juju-solutions/kubernetes.git'
+      - 'kubernetes-master':
+          repo_name: 'kubernetes/cluster/juju/layers/kubernetes-master'
+          git_repo: 'https://github.com/juju-solutions/kubernetes.git'
+      - 'kubernetes-worker':
+          repo_name: 'kubernetes/cluster/juju/layers/kubernetes-worker'
+          git_repo: 'https://github.com/juju-solutions/kubernetes.git'
     jobs:
       - '{name}-{charm}'
 
