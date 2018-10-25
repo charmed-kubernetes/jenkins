@@ -1,0 +1,72 @@
+# Validates a deployed CDK
+
+- job-template:
+    name: 'validate-alt-arch-{version}'
+    description: |
+      Validates k8s {version} deployment.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate-alt-arch/Jenkinsfile
+    parameters:
+      - string:
+          name: model
+          default: 'validate'
+      - string:
+          name: controller
+          default: 'arch-tester'
+      - string:
+          name: cloud
+          default: 'localhost'
+      - string:
+          name: version_overlay
+          default: '{version_overlay}'
+      - choice:
+          name: build_node
+          choices:
+            - runner-s390x
+            - runner-arm64
+            - runner-ppc64le
+      - bool:
+          name: perform_upgrade
+          default: false
+      - string:
+          name: bundle_channel
+          default: 'edge'
+      - choice:
+          name: bundle
+          choices:
+            - 'canonical-kubernetes'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
+            - 'kubernetes-core'
+            - 'kubernetes-calico'
+      - string:
+          name: snap_channel
+          default: '{snap_channel}'
+    triggers:
+        - timed: "@weekly"
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
+- job-group:
+    name: validate-alt-arch
+    version:
+      - 'v1.10.x':
+          version_overlay: 'jobs/overlays/1.10-edge-overlay.yaml'
+          snap_channel: '1.10/edge'
+      - 'v1.11.x':
+          version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
+          snap_channel: '1.11/edge'
+      - 'v1.12.x':
+          version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
+          snap_channel: '1.12/edge'
+    jobs:
+      - 'validate-alt-arch-{version}'
+
+- project:
+    name: validate-alt-arch
+    jobs:
+      - 'validate-alt-arch'
