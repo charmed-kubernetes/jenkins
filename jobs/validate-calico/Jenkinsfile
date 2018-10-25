@@ -1,15 +1,16 @@
 @Library('juju-pipeline@master') _
 
+def juju_model = String.format("%s-%s", params.model, uuid())
+
 pipeline {
     agent {
-        label 'runner'
+        label 'runner-amd64'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
         PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
-        JUJU_MODEL = "${params.model}-${env.BUILD_NUMBER}"
     }
     options {
         ansiColor('xterm')
@@ -23,11 +24,11 @@ pipeline {
             steps {
                 dir('jobs') {
                 script {
-                        sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- bash integration/calico/create-subnet-aws.sh"
+                        sh "CONTROLLER=${params.controller} MODEL=${juju_model} tox -e py36 -- bash integration/calico/create-subnet-aws.sh"
                     }
                 }
                 deployCDK(controller: params.controller,
-                          model: env.JUJU_MODEL,
+                          model: juju_model,
                           bundle: "cs:~containers/${params.bundle}",
                           version_overlay: params.overlay,
                           bundle_channel: params.bundle_channel)
@@ -41,8 +42,8 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- bash integration/calico/disable_source_dest_check.sh"
-                    sh "CONTROLLER=${params.controller} MODEL=${env.JUJU_MODEL} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} tox -e py36 -- bash integration/calico/disable_source_dest_check.sh"
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
                 }
             }
         }
@@ -60,8 +61,9 @@ pipeline {
             }
 
             collectDebug(params.controller,
-                         env.JUJU_MODEL)
-            sh "juju kill-controller -y ${params.controller}"
+                         juju_model)
+            tearDown(params.controller,
+                     juju_model)
         }
     }
 }

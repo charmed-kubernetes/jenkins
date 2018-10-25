@@ -15,7 +15,10 @@
           default: 'validate-calico'
       - string:
           name: controller
-          default: 'jaas'
+          default: 'calico-aws'
+      - string:
+          name: cloud
+          default: 'aws/us-east-1'
       - string:
           name: overlay
           default: '{version_overlay}'

@@ -66,9 +66,9 @@ pipeline {
         }
         always {
             collectDebug(params.controller,
-                         env.JUJU_MODEL)
+                         juju_model)
             tearDown(params.controller,
-                     env.JUJU_MODEL)
+                     juju_model)
         }
     }
 }
