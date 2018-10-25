@@ -16,9 +16,6 @@ pipeline {
         ansiColor('xterm')
         timestamps()
     }
-    triggers {
-        pollSCM('H H/2 * * *')
-    }
     stages {
         stage('Setup') {
             steps {
