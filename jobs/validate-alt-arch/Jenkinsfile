@@ -22,7 +22,7 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                sh "juju bootstrap ${params.cloud} ${params.controller}"
+                sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           cloud: params.cloud,
