@@ -3,12 +3,15 @@ import asyncio
 from juju.model import Model
 from sh import juju_wait
 
-CONTROLLER = os.getenv('CONTROLLER')
-MODEL = os.getenv('MODEL')
 
-def _juju_wait():
+def _juju_wait(controller=None, model=None):
+    if not controller:
+        controller = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
+    if not model:
+        model = os.environ.get(
+            'MODEL', 'validate-{}'.format(os.environ['BUILD_NUMBER']))
     print("Settling...")
-    juju_wait('-e', "{}:{}".format(CONTROLLER, MODEL), '-w')
+    juju_wait('-e', "{}:{}".format(controller, model), '-w')
 
 
 class UseModel:
@@ -18,8 +21,9 @@ class UseModel:
     The controller and model must exist prior to use.
     """
     def __init__(self):
-        self._controller_name = CONTROLLER
-        self._model_name = MODEL
+        self._controller_name = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
+        self._model_name = os.environ.get(
+            'MODEL', 'validate-{}'.format(os.environ['BUILD_NUMBER']))
         self._model = None
 
     @property
