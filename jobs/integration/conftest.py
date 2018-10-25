@@ -45,12 +45,16 @@ def event_loop():
 
 @pytest.fixture
 async def deploy():
-    juju('add-model', '-c', CONTROLLER, MODEL, CLOUD)
+    test_run_nonce = uuid.uuid4().hex[-4:]
+    _model = '{}-{}'.format(MODEL,
+                            test_run_nonce)
+
+    juju('add-model', '-c', CONTROLLER, _model, CLOUD)
     juju('model-config', '-m',
-         '{}:{}'.format(CONTROLLER, MODEL), 'test-mode=true')
+         '{}:{}'.format(CONTROLLER, _model), 'test-mode=true')
 
     _juju_model = Model()
-    await _juju_model.connect("{}:{}".format(CONTROLLER, MODEL))
+    await _juju_model.connect("{}:{}".format(CONTROLLER, _model))
     yield (CONTROLLER, _juju_model)
     await _juju_model.disconnect()
-    juju('destroy-model', '-y', '{}:{}'.format(CONTROLLER, MODEL))
+    juju('destroy-model', '-y', '{}:{}'.format(CONTROLLER, _model))
