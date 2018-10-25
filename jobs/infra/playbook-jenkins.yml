@@ -141,3 +141,6 @@
         groups: jenkins,docker,lxd
     - name: setup lxd network
       command: "/snap/bin/lxd init --auto"
+    - name: disable ipv6 in lxd
+      command: lxc network set lxdbr0 ipv6.address none
+      ignore_errors: yes
