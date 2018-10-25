@@ -22,7 +22,6 @@
             - 'aws/us-east-1'
             - 'google/us-east1'
             - 'azure/eastus'
-          default: '{cloud}'
       - string:
           name: version_overlay
           default: '{version_overlay}'
@@ -34,7 +33,6 @@
           default: 'edge'
       - choice:
           name: bundle
-          description: 'Bundle to deploy and validate'
           choices:
             - 'canonical-kubernetes'
             - 'canonical-kubernetes-elastic'
@@ -44,7 +42,6 @@
       - string:
           name: snap_channel
           default: '{snap_channel}'
-      - choice:
     triggers:
         - timed: "@daily"
     properties:
@@ -64,7 +61,7 @@
           version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
           snap_channel: '1.12/edge'
     jobs:
-      - 'validate-{version}':
+      - 'validate-{version}'
 
 - project:
     name: validate

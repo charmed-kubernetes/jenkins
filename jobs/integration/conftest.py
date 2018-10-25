@@ -45,9 +45,9 @@ def event_loop():
 
 @pytest.fixture
 async def deploy():
-    juju('add-model', '-c', CONTROLLER, _model, CLOUD)
+    juju('add-model', '-c', CONTROLLER, MODEL, CLOUD)
     juju('model-config', '-m',
-         '{}:{}'.format(CONTROLLER, _model), 'test-mode=true')
+         '{}:{}'.format(CONTROLLER, MODEL), 'test-mode=true')
 
     _juju_model = Model()
     await _juju_model.connect("{}:{}".format(CONTROLLER, MODEL))
