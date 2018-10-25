@@ -64,6 +64,18 @@
         - "juju-wait --classic"
         - "kubectl --classic"
         - "charm --classic --edge"
+    - name: clone juju-wait script
+      git:
+        repo: 'https://git.launchpad.net/juju-wait'
+        dest: /srv/juju-wait
+      when: ansible_architecture != "x86_64"
+    - name: copy juju-wait to bindir
+      copy:
+        src: /srv/juju-wait/juju_wait/__init__.py
+        dest: /usr/local/bin/juju-wait
+        mode: 0777
+        force: yes
+      when: ansible_architecture != "x86_64"
     - name: juju stable
       command: "snap refresh juju --stable"
       ignore_errors: yes
