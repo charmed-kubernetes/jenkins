@@ -23,6 +23,7 @@ pipeline {
             }
             steps {
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
+                sh 'cat jobs/validate-alt-arch/lxd-profile.yaml | lxc profile edit "juju-controller"'
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           cloud: params.cloud,
