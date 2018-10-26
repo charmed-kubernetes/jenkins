@@ -68,6 +68,7 @@ pipeline {
             archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
         }
         always {
+            sh "sudo lxc profile show default"
             collectDebug(params.controller,
                          juju_model)
             sh "juju kill-controller -y ${params.controller}"
