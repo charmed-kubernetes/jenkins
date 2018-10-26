@@ -93,7 +93,7 @@ function promote_snaps_to_stable {
   local track="$1"
   local kube_version="$2"
   local snap_info_kubectl="$3"
-  local snapcraft_revisions_kubelet=$(snapcraft revisions --arch="${kube_arch_to_snap_arch[$KUBE_ARCH}:-$KUBE_ARCH}" kubelet)
+  local snapcraft_revisions_kubelet=$(snapcraft revisions --arch="${kube_arch_to_snap_arch[$KUBE_ARCH]:-$KUBE_ARCH}" kubelet)
 
   if [ "$track" == "latest" ]
   then
