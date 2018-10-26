@@ -8,6 +8,7 @@ set -eu
 
 scripts_path=$(dirname "$0")
 ARCH=${KUBE_ARCH:-"amd64"}
+
 GH_USER="${GH_USER:-}"
 GH_TOKEN="${GH_TOKEN:-}"
 SNAPS="${SNAPS:-kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet kube-proxy cdk-addons kubeadm kubernetes-test}"
@@ -54,8 +55,12 @@ for branch in $PROMOTE_TO; do
 done
 
 # Release the snaps
+declare -A kube_arch_to_snap_arch=(
+    [ppc64le]=ppc64el
+    [arm]=armhf
+)
 for snap in $SNAPS; do
-  revisions="$(snapcraft revisions $snap | grep "${ARCH}" | grep " ${PROMOTE_FROM}\*" | cut -d " " -f 1)"
+  revisions="$(snapcraft revisions $snap | grep "${kube_arch_to_snap_arch[$ARCH]:-$ARCH}" | grep " ${PROMOTE_FROM}\*" | cut -d " " -f 1)"
   for rev in $revisions; do
     for target in $PROMOTE_TO; do
       echo snapcraft release $snap $rev $target
