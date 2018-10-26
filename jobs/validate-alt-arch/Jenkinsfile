@@ -24,9 +24,6 @@ pipeline {
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
-                sh "sudo lxc profile show juju-controller"
-                sh "sudo lxc profile show default"
-                sh "exit 1"
                 sh 'cat jobs/validate-alt-arch/lxd-profile.yaml | sudo lxc profile edit "juju-controller"'
                 deployCDK(controller: params.controller,
                           model: juju_model,
