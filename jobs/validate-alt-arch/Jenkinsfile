@@ -25,7 +25,7 @@ pipeline {
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 sh "juju add-model -c ${params.controller} ${juju_model}"
-                sh "cat jobs/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | lxc profile edit juju-${juju_model}"
+                sh "cat jobs/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}"
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           cloud: params.cloud,
