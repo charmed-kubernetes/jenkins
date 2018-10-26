@@ -28,6 +28,7 @@
             - runner-s390x
             - runner-arm64
             - runner-ppc64le
+            - runner-amd64
       - bool:
           name: perform_upgrade
           default: false
