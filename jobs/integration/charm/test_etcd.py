@@ -17,7 +17,7 @@ async def test_local_deployed(deploy, event_loop):
     """ Verify local etcd charm can be deployed """
     controller, model = deploy
     await asyncify(juju)(
-        'deploy', '-m', '{}:{}'.format(controller, model),
+        'deploy', '-m', '{}:{}'.format(controller, model.info.name),
         str(ETCD_CHARM_PATH)
     )
     await model.deploy('cs:~containers/easyrsa')
