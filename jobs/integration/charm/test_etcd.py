@@ -13,25 +13,29 @@ ETCD_CHARM_PATH = os.getenv('CHARM_PATH')
 pytestmark = pytest.mark.asyncio
 
 
-async def test_local_deployed(deploy, event_loop):
-    """ Verify local etcd charm can be deployed """
-    controller, model = deploy
+async def deploy_etcd(controller, model):
     await asyncify(juju)(
-        'deploy', '-m', '{}:{}'.format(controller, model.info.name),
+        'deploy', '-m', '{}:{}'.format(controller, model),
         str(ETCD_CHARM_PATH)
     )
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
-    await asyncify(_juju_wait)(controller, model.info.name)
+
+
+async def test_local_deployed(deploy, event_loop):
+    """ Verify local etcd charm can be deployed """
+    controller, model = deploy
+    await deploy_etcd(controller, model.info.name)
+    await asyncify(_juju_wait)(controller, model)
     assert 'etcd' in model.applications
 
 
-@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_leader_status(deploy, event_loop):
     """ Verify our leader is running the etcd daemon """
     controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
+    await deploy_etcd(controller, model.info.name)
+    etcd = model.applications['etcd']
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
