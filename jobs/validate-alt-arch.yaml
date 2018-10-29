@@ -62,7 +62,7 @@
           version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
           snap_channel: '1.11/edge'
       - 'v1.12.x':
-          version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
+          version_overlay: 'jobs/overlays/1.12-edge-localhost-overlay.yaml'
           snap_channel: '1.12/edge'
     jobs:
       - 'validate-alt-arch-{version}'
