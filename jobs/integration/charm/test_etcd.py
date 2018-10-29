@@ -27,7 +27,7 @@ async def test_local_deployed(deploy, event_loop):
     """ Verify local etcd charm can be deployed """
     controller, model = deploy
     await deploy_etcd(controller, model)
-    await asyncify(_juju_wait)(controller, model)
+    await asyncify(_juju_wait)(controller, model.info.name)
     assert 'etcd' in model.applications
 
 
@@ -46,14 +46,11 @@ async def test_leader_status(deploy, event_loop):
             assert "active" in status.results['Stdout'].strip()
 
 
-@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_config_snapd_refresh(deploy, event_loop):
     """ Verify initial snap refresh config is set and can be changed """
     controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
-    await model.deploy('cs:~containers/easyrsa')
-    await model.add_relation('easyrsa:client',
-                             'etcd:certificates')
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
     await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
     for unit in etcd.units:
@@ -70,15 +67,12 @@ async def test_config_snapd_refresh(deploy, event_loop):
             assert timer.results['Stdout'].strip() == 'fri5'
 
 
-@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_node_scale(deploy, event_loop):
     """ Scale beyond 1 node because etcd supports peering as a standalone
     application. """
     controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
-    await model.deploy('cs:~containers/easyrsa')
-    await model.add_relation('easyrsa:client',
-                             'etcd:certificates')
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
     # Ensure we aren't testing a single node
     await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
@@ -93,7 +87,6 @@ async def test_node_scale(deploy, event_loop):
         assert "active" in out.results['Stdout'].strip()
 
 
-@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_cluster_health(deploy, event_loop):
     """ Iterate all the units and verify we have a clean bill of health
     from etcd """
@@ -102,10 +95,8 @@ async def test_cluster_health(deploy, event_loop):
             "ETCDCTL_CA_FILE=/var/snap/etcd/common/ca.crt"
 
     controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
-    await model.deploy('cs:~containers/easyrsa')
-    await model.add_relation('easyrsa:client',
-                             'etcd:certificates')
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
     await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
     for unit in etcd.units:
@@ -115,7 +106,6 @@ async def test_cluster_health(deploy, event_loop):
         assert 'unavailable' not in health.results['Stdout'].strip()
 
 
-@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_leader_knows_all_members(deploy, event_loop):
     """ Test we have the same number of units deployed and reporting in
     the etcd cluster as participating """
@@ -128,10 +118,8 @@ async def test_leader_knows_all_members(deploy, event_loop):
             "ETCDCTL_CA_FILE=/var/snap/etcd/common/ca.crt"
 
     controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
-    await model.deploy('cs:~containers/easyrsa')
-    await model.add_relation('easyrsa:client',
-                             'etcd:certificates')
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
     await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
 
@@ -158,10 +146,8 @@ async def test_node_scale_down_members(deploy, event_loop):
     """ Scale the cluster down and ensure the cluster state is still
     healthy """
     controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
-    await model.deploy('cs:~containers/easyrsa')
-    await model.add_relation('easyrsa:client',
-                             'etcd:certificates')
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
     await etcd.set_config({'channel': '3.2/stable'})
     await asyncify(_juju_wait)(controller, model.info.name)
 
@@ -185,15 +171,12 @@ async def test_node_scale_down_members(deploy, event_loop):
     await test_cluster_health(deploy, event_loop)
 
 
-@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_snap_action(deploy, event_loop):
     ''' When the charm is upgraded, a message should appear requesting the
     user to run a manual upgrade.'''
     controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
-    await model.deploy('cs:~containers/easyrsa')
-    await model.add_relation('easyrsa:client',
-                             'etcd:certificates')
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
     await asyncify(_juju_wait)(controller, model.info.name)
 
     for unit in etcd.units:
@@ -213,11 +196,8 @@ async def test_snap_upgrade_to_three_oh(deploy, event_loop):
     ''' Default configured channel is 3.2/stable. Ensure we can jump to
     3.0 '''
     controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
-    await model.deploy('cs:~containers/easyrsa')
-    await model.add_relation('easyrsa:client',
-                             'etcd:certificates')
-
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
     await etcd.set_config({'channel': '3.2/stable'})
 
     await asyncify(_juju_wait)(controller, model.info.name)
