@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from ..base import _juju_wait
 from ..utils import asyncify
+from sh import juju
 
 
 # Locally built charm layer path
@@ -15,7 +16,10 @@ pytestmark = pytest.mark.asyncio
 async def test_local_deployed(deploy, event_loop):
     """ Verify local etcd charm can be deployed """
     controller, model = deploy
-    await model.deploy(str(ETCD_CHARM_PATH))
+    await asyncify(juju)(
+        'deploy', '-m', '{}:{}'.format(controller, model),
+        str(ETCD_CHARM_PATH)
+    )
     await model.deploy('cs:~containers/easyrsa')
     await model.add_relation('easyrsa:client',
                              'etcd:certificates')
@@ -23,6 +27,7 @@ async def test_local_deployed(deploy, event_loop):
     assert 'etcd' in model.applications
 
 
+@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_leader_status(deploy, event_loop):
     """ Verify our leader is running the etcd daemon """
     controller, model = deploy
@@ -40,6 +45,7 @@ async def test_leader_status(deploy, event_loop):
             assert "active" in status.results['Stdout'].strip()
 
 
+@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_config_snapd_refresh(deploy, event_loop):
     """ Verify initial snap refresh config is set and can be changed """
     controller, model = deploy
@@ -63,6 +69,7 @@ async def test_config_snapd_refresh(deploy, event_loop):
             assert timer.results['Stdout'].strip() == 'fri5'
 
 
+@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_node_scale(deploy, event_loop):
     """ Scale beyond 1 node because etcd supports peering as a standalone
     application. """
@@ -85,6 +92,7 @@ async def test_node_scale(deploy, event_loop):
         assert "active" in out.results['Stdout'].strip()
 
 
+@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_cluster_health(deploy, event_loop):
     """ Iterate all the units and verify we have a clean bill of health
     from etcd """
@@ -106,6 +114,7 @@ async def test_cluster_health(deploy, event_loop):
         assert 'unavailable' not in health.results['Stdout'].strip()
 
 
+@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_leader_knows_all_members(deploy, event_loop):
     """ Test we have the same number of units deployed and reporting in
     the etcd cluster as participating """
@@ -175,6 +184,7 @@ async def test_node_scale_down_members(deploy, event_loop):
     await test_cluster_health(deploy, event_loop)
 
 
+@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_snap_action(deploy, event_loop):
     ''' When the charm is upgraded, a message should appear requesting the
     user to run a manual upgrade.'''
