@@ -27,7 +27,7 @@
           default: 'jaas'
       - string:
           name: cloud
-          default: 'google/us-east1'
+          default: 'aws/us-east-1'
       - string:
           name: repo_name
           default: '{repo_name}'
