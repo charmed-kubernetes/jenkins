@@ -3,8 +3,6 @@ applications:
     options:
       channel: 1.12/edge
       snap_proxy: http://squid.internal:3128
-      http_proxy: http://squid.internal:3128
-      https_proxy: http://squid.internal:3128
   kubernetes-worker:
     options:
       channel: 1.12/edge
