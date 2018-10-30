@@ -17,7 +17,7 @@ pipeline {
         stage('Cleanup workspaces') {
             steps {
                 // sh "sudo rm -rf ${params.workspace_path}"
-                sh "tox -e py36 -- aws s3 --profile s3 ls s3://jujubigdata"
+                sh "cd jobs && tox -e py36 -- aws s3 --profile s3 ls s3://jujubigdata"
             }
         }
     }
