@@ -107,6 +107,21 @@
     - name: login to snapstore
       command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
       become: false
+    - name: create aws dir
+      file:
+        path: /var/lib/jenkins/.aws
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: 0755
+    - name: copy aws creds
+      copy:
+        src: "{{ lookup('env', 'AWSCREDS') }}"
+        dest: /var/lib/jenkins/.aws/credentials
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+        force: no
     - name: create juju dir
       file:
         path: /var/lib/jenkins/.local/share/juju
