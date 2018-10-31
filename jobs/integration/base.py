@@ -4,12 +4,17 @@ from juju.model import Model
 from sh import juju_wait
 
 
+
+def _model_from_env():
+    return os.environ.get('MODEL') or \
+        'validate-{}'.format(os.environ['BUILD_NUMBER'])
+
+
 def _juju_wait(controller=None, model=None):
     if not controller:
         controller = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
     if not model:
-        model = os.environ.get(
-            'MODEL', 'validate-{}'.format(os.environ['BUILD_NUMBER']))
+        model = _model_from_env()
     print("Settling...")
     juju_wait('-e', "{}:{}".format(controller, model), '-w')
 
@@ -22,8 +27,7 @@ class UseModel:
     """
     def __init__(self):
         self._controller_name = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
-        self._model_name = os.environ.get(
-            'MODEL', 'validate-{}'.format(os.environ['BUILD_NUMBER']))
+        self._model_name = _model_from_env()
         self._model = None
 
     @property
