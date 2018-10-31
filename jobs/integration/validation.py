@@ -484,8 +484,9 @@ async def validate_gpu_support(model):
 
 @log_calls_async
 async def validate_extra_args(model):
-    async def get_service_args(app, service):
+    async def get_filtered_service_args(app, service):
         results = []
+
         for unit in app.units:
             action = await unit.run('pgrep -a ' + service)
             assert action.status == 'completed'
@@ -493,6 +494,14 @@ async def validate_extra_args(model):
             arg_string = raw_output.partition(' ')[2].partition(' ')[2]
             args = {arg.strip() for arg in arg_string.split('--')[1:]}
             results.append(args)
+
+        # charms sometimes choose the master randomly, filter out the master
+        # arg so we can do comparisons reliably
+        results = [
+            {arg for arg in args if not arg.startswith('master=')}
+            for args in results
+        ]
+
         return results
 
     @log_calls_async
@@ -501,7 +510,7 @@ async def validate_extra_args(model):
         original_config = await app.get_config()
         original_args = {}
         for service in expected_args:
-            original_args[service] = await get_service_args(app, service)
+            original_args[service] = await get_filtered_service_args(app, service)
 
         await app.set_config(new_config)
         await asyncify(_juju_wait)()
@@ -510,7 +519,7 @@ async def validate_extra_args(model):
             try:
                 for service, expected_service_args in expected_args.items():
                     while True:
-                        args_per_unit = await get_service_args(app, service)
+                        args_per_unit = await get_filtered_service_args(app, service)
                         if all(expected_service_args <= args for args in args_per_unit):
                             break
                         await asyncio.sleep(3)
@@ -529,7 +538,7 @@ async def validate_extra_args(model):
             try:
                 for service, original_service_args in original_args.items():
                     while True:
-                        new_args = await get_service_args(app, service)
+                        new_args = await get_filtered_service_args(app, service)
                         if new_args == original_service_args:
                             break
                         await asyncio.sleep(3)
