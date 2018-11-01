@@ -126,6 +126,7 @@ class Builder:
                             store_name=workingsnap.store_name,
                             store_series=workingsnap.store_series,
                             store_channels="{}/edge/testingbuilders".format(self.track),
+                            processors=['/+processors/amd64', '/+processors/arm64'],
                             auto_build=workingsnap.auto_build,
                             auto_build_archive=workingsnap.auto_build_archive,
                             auto_build_pocket=workingsnap.auto_build_pocket)
