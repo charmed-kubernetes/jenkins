@@ -54,7 +54,7 @@ def gh_branch_exists(branch):
         print("GH branch {} exists.".format(branch))
         return True
     except CalledProcessError:
-        print("GH branch does not {} exist.".format(branch))
+        print("GH branch {} does not exist.".format(branch))
         return False
 
 
