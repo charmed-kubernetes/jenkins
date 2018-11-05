@@ -2,10 +2,10 @@
 
 import requests
 import configbag
-from .snapstore import Microk8sSnap
+from snapstore import Microk8sSnap
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError
-from .configbag import tracks
+from configbag import tracks
 
 
 def upstream_release(release):

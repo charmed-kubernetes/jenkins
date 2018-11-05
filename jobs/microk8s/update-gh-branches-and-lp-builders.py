@@ -5,8 +5,8 @@ import requests
 import configbag
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError
-from .configbag import tracks
-from .subprocess import check_call, CalledProcessError
+from configbag import tracks
+from subprocess import check_call, CalledProcessError
 
 
 gh_user = os.environ.get('GH_USER')
