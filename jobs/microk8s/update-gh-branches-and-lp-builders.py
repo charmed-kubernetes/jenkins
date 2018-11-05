@@ -2,7 +2,7 @@
 
 import os
 import requests
-import .configbag
+from . import configbag
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError
 from .configbag import tracks
