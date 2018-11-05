@@ -7,9 +7,10 @@ from .logger import log, log_calls_async
 
 
 @log_calls_async
-async def enable_proposed_on_model(model, series='bionic'):
-    apt_line = 'deb http://archive.ubuntu.com/ubuntu/ {}-proposed restricted main multiverse universe'.format(series)
-    dest = '/etc/apt/sources.list.d/{}-proposed.list'.format(series)
+async def enable_proposed_on_model(model):
+    archive = '$(lsb_release -cs)-proposed'
+    apt_line = 'deb http://archive.ubuntu.com/ubuntu/ {} restricted main multiverse universe'.format(archive)
+    dest = '/etc/apt/sources.list.d/{}.list'.format(archive)
     cmd = 'echo %s > %s' % (apt_line, dest)
     cloudinit_userdata = {'postruncmd': [cmd]}
     cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
