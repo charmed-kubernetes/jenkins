@@ -1,0 +1,21 @@
+# Validates docker.io from proposed channel
+
+- job:
+    name: 'validate-docker-proposed'
+    description: |
+      Validates latest docker.io from proposed on bionic
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate-docker-proposed/Jenkinsfile
+    parameters:
+      - string:
+          name: model
+          default: 'validate-docker'
+      - string:
+          name: controller
+          default: 'jaas'
+    properties:
+      - build-discarder:
+          num-to-keep: 2

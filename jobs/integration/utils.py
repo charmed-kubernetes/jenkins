@@ -6,6 +6,7 @@ import random
 import requests
 import subprocess
 import time
+import tempfile
 
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
@@ -215,6 +216,49 @@ async def upgrade_snaps(model, channel):
 
     # wait for upgrade to complete
     await wait_for_ready(model)
+
+
+@log_calls_async
+async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=None):
+    ''' Deploy the requested bundle. '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        url = 'cs:~%s/%s' % (namespace, bundle)
+        bundle_dir = os.path.join(temp_dir, 'bundle')
+        cmd = ['charm', 'pull', '--channel', channel, url, bundle_dir]
+        await asyncify(subprocess.check_call)(cmd)
+        data_path = os.path.join(bundle_dir, 'bundle.yaml')
+        with open(data_path) as f:
+            data = yaml.load(f)
+            await patch_bundle(data, snap_channel)
+            with open(data_path, 'w') as f:
+                yaml.dump(data, f)
+        await model.deploy(bundle_dir)
+    await wait_for_ready(model)
+
+
+async def patch_bundle(bundle, snap_channel):
+    ''' Patch the bundle with snap, procy and arch specific properties. '''
+    if os.getenv('http_proxy') and os.getenv('https_proxy'):
+        # Lets inject proxy settings
+        http_proxy = os.environ.get('http_proxy')
+        https_proxy = os.environ.get('https_proxy')
+        snap_proxy = https_proxy
+        options = bundle['services']['kubernetes-worker'].setdefault('options', {})
+        options['http_proxy'] = http_proxy
+        options['https_proxy'] = https_proxy
+        if await is_localhost():
+            options['proxy-extra-args'] = 'proxy-mode=userspace'
+        for app in ['kubernetes-master', 'kubernetes-worker', 'etcd']:
+            options = bundle['services'][app].setdefault('options', {})
+            options['snap_proxy'] = snap_proxy
+    if arch() == 's390x':
+        options = bundle['services']['kubernetes-master'].setdefault('options', {})
+        options['enable-dashboard-addons'] = "false"
+        options['enable-metrics'] = "false"
+    if snap_channel:
+        for app in ['kubernetes-master', 'kubernetes-worker']:
+            options = bundle['services'][app].setdefault('options', {})
+            options['channel'] = snap_channel
 
 
 @log_calls_async
