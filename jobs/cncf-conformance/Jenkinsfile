@@ -1,5 +1,7 @@
 @Library('juju-pipeline@master') _
 
+def juju_model = String.format("%s-%s", params.model, uuid())
+
 pipeline {
     agent {
         label 'runner'
@@ -9,7 +11,6 @@ pipeline {
      */
     environment {
         PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
-        JUJU_MODEL = "${params.model}-${env.BUILD_NUMBER}"
     }
     options {
         ansiColor('xterm')
@@ -23,8 +24,8 @@ pipeline {
             }
             steps {
                 deployCDK(controller: params.controller,
-                          model: env.JUJU_MODEL,
-                          bundle: params.bundle,
+                          model: juju_model,
+                          bundle: "cs:~containers/${params.bundle}",
                           version_overlay: params.version_overlay,
                           cloud: params.cloud,
                           bundle_channel: params.bundle_channel,
@@ -33,7 +34,7 @@ pipeline {
         }
         stage('Deploy: sonobuoy') {
             steps {
-                deploySonobuoy(params.controller, env.JUJU_MODEL)
+                deploySonobuoy(params.controller, juju_model)
             }
         }
         stage('Test') {
@@ -65,9 +66,9 @@ pipeline {
     post {
         always {
             collectDebug(params.controller,
-                         env.JUJU_MODEL)
+                         juju_model)
             tearDown(params.controller,
-                     env.JUJU_MODEL)
+                     juju_model)
         }
     }
 }

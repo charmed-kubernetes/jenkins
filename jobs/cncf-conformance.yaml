@@ -3,9 +3,9 @@
 #
 
 - job-template:
-    name: 'conformance-{k8sver}-{bundle}-{cloud}'
+    name: 'conformance-{k8sver}'
     description: |
-      CNCF Conformance testing for Kubernetes {k8sver} using {bundle} on {cloud}.
+      CNCF Conformance testing for Kubernetes {k8sver}.
 
       Please see https://git.io/fNwXY for more information.
     project-type: pipeline
@@ -23,18 +23,25 @@
       - string:
           name: controller
           default: 'jaas'
-      - string:
+      - choice:
           name: cloud
-          default: '{cloud}'
+          choices:
+            - 'aws/us-east-1'
+            - 'google/us-east1'
+            - 'azure/eastus'
       - string:
           name: bundle_channel
           default: 'edge'
-      - string:
+      - choice:
           name: bundle
-          default: '{bundle}'
+          choices:
+            - 'canonical-kubernetes'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
+            - 'kubernetes-core'
+            - 'kubernetes-calico'
     properties:
       - build-discarder:
-          days-to-keep: 7
           num-to-keep: 2
 
 - job-group:
@@ -46,17 +53,8 @@
           version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
       - 'v1.10.x':
           version_overlay: 'jobs/overlays/1.10-edge-overlay.yaml'
-      - 'v1.9.x':
-          version_overlay: 'jobs/overlays/1.9-edge-overlay.yaml'
     jobs:
-      - 'conformance-{k8sver}-{bundle}-{cloud}':
-          cloud: ['aws', 'google', 'azure']
-          bundle:
-            - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
-            - 'canonical-kubernetes-canal'
-            - 'kubernetes-core'
-            - 'kubernetes-calico'
+      - 'conformance-{k8sver}'
 
 
 - project:
