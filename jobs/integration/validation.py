@@ -19,9 +19,14 @@ from .utils import (
     timeout_for_current_task,
     retry_async_with_timeout,
     arch,
+    scp_to,
+    scp_from
 )
 
-from .base import _juju_wait
+from .base import (
+    _juju_wait,
+    _model_from_env,
+    _controller_from_env)
 
 
 @log_calls_async
@@ -211,7 +216,7 @@ async def validate_dashboard(model, log_dir):
     ''' Validate that the dashboard is operational '''
     unit = model.applications['kubernetes-master'].units[0]
     with NamedTemporaryFile() as f:
-        await unit.scp_from('config', f.name)
+        await scp_from(unit, 'config', f.name)
         with open(f.name, 'r') as stream:
             config = yaml.load(stream)
     url = config['clusters'][0]['cluster']['server']
@@ -317,13 +322,8 @@ async def validate_network_policies(model):
                                    timeout_msg="Unable to remove the namespace netpolicy")
 
     # Move manifests to the master
-    await unit.scp_to(
-        os.path.join(here,
-                     "templates", "netpolicy-test.yaml"),
-        "netpolicy-test.yaml")
-    await unit.scp_to(
-        os.path.join(here, "templates", "restrict.yaml"),
-        "restrict.yaml")
+    await scp_to(os.path.join(here, "templates", "netpolicy-test.yaml"), unit, "netpolicy-test.yaml")
+    await scp_to(os.path.join(here, "templates", "restrict.yaml"), unit, "restrict.yaml")
     cmd = await unit.run('/snap/bin/kubectl create -f /home/ubuntu/netpolicy-test.yaml')
     if not cmd.results['Code'] == '0':
         log('Failed to create netpolicy test!')
@@ -458,8 +458,7 @@ async def validate_gpu_support(model):
         # Do an addition on the GPU just be sure.
         # First clean any previous runs
         here = os.path.dirname(os.path.abspath(__file__))
-        await master_unit.scp_to(
-            os.path.join(here, "templates", "cuda-add.yaml"), "cuda-add.yaml")
+        await scp_to(os.path.join(here, "templates", "cuda-add.yaml"), master_unit, "cuda-add.yaml")
         await master_unit.run(
             '/snap/bin/kubectl delete -f /home/ubuntu/cuda-add.yaml')
         await retry_async_with_timeout(verify_deleted,
@@ -823,7 +822,7 @@ async def validate_docker_logins(model):
         with NamedTemporaryFile('w') as f:
             json.dump(definition, f)
             f.flush()
-            await vessel.scp_to(f.name, '/tmp/test-registry/temp.yaml')
+            await scp_to(f.name, vessel, '/tmp/test-registry/temp.yaml')
         await kubectl('create -f /tmp/test-registry/temp.yaml')
 
     # Start with a clean environment
@@ -834,7 +833,7 @@ async def validate_docker_logins(model):
     # Create registry secret
     here = os.path.dirname(os.path.abspath(__file__))
     htpasswd = os.path.join(here, 'templates', 'test-registry', 'htpasswd')
-    await vessel.scp_to(htpasswd, '/tmp/test-registry')
+    await scp_to(htpasswd, vessel, '/tmp/test-registry')
     cmd = 'openssl req -x509 -newkey rsa:4096 -keyout /tmp/test-registry/tls.key -out /tmp/test-registry/tls.crt -days 2 -nodes -subj /CN=localhost'
     await run_until_success(vessel, cmd)
     await kubectl('create secret generic test-registry'
@@ -1106,7 +1105,7 @@ async def validate_audit_custom_policy(model):
     with NamedTemporaryFile('w') as f:
         json.dump(namespace_definition, f)
         f.flush()
-        await unit.scp_to(f.name, path)
+        await scp_to(f.name, unit, path)
     await run_until_success(unit, '/snap/bin/kubectl create -f ' + path)
 
     # Verify our very special request gets logged

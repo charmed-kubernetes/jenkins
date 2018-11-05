@@ -9,10 +9,13 @@ def _model_from_env():
     return os.environ.get('MODEL') or \
         'validate-{}'.format(os.environ['BUILD_NUMBER'])
 
+def _controller_from_env():
+    return os.environ.get('CONTROLLER', 'jenkins-ci-aws')
+
 
 def _juju_wait(controller=None, model=None):
     if not controller:
-        controller = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
+        controller = _controller_from_env()
     if not model:
         model = _model_from_env()
     print("Settling...")
@@ -26,7 +29,7 @@ class UseModel:
     The controller and model must exist prior to use.
     """
     def __init__(self):
-        self._controller_name = os.environ.get('CONTROLLER', 'jenkins-ci-aws')
+        self._controller_name = _controller_from_env()
         self._model_name = _model_from_env()
         self._model = None
 

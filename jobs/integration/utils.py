@@ -15,6 +15,7 @@ from juju.model import Model
 from juju.errors import JujuError
 from .logger import log_calls, log_calls_async
 from subprocess import check_output, check_call
+from .base import _model_from_env, _controller_from_env
 
 
 @log_calls
@@ -214,6 +215,38 @@ async def upgrade_snaps(model, channel):
 
     # wait for upgrade to complete
     await wait_for_ready(model)
+
+
+@log_calls_async
+async def scp_from(unit, remote_path, local_path):
+    if await is_localhost():
+        cmd = "juju scp -m {}:{} {}:{} {}".format(
+            _controller_from_env(),
+            _model_from_env(),
+            unit.name, remote_path, local_path)
+        await asyncify(subprocess.check_call)(cmd.split())
+    else:
+        await unit.scp_from(remote_path, local_path)
+
+
+@log_calls_async
+async def scp_to(local_path, unit, remote_path):
+    if await is_localhost():
+        cmd = "juju scp -m {}:{} {} {}:{}".format(
+            _controller_from_env(),
+            _model_from_env(),
+            local_path, unit.name, remote_path)
+        await asyncify(subprocess.check_call)(cmd.split())
+    else:
+        await unit.scp_to(local_path, remote_path)
+
+
+async def is_localhost():
+    controller = Controller()
+    await controller.connect(_controller_from_env())
+    cloud = await controller.get_cloud()
+    await controller.disconnect()
+    return cloud == 'localhost'
 
 
 async def retry_async_with_timeout(func, args, timeout_insec=600,
