@@ -7,6 +7,7 @@ import requests
 import subprocess
 import time
 import tempfile
+import yaml
 
 from asyncio_extras import async_contextmanager
 from async_generator import yield_

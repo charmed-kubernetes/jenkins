@@ -50,7 +50,7 @@ async def test_docker_proposed(log_dir):
         # Add worker machine with series enabled
         constraints_str = data['services']['kubernetes-worker']['constraints']
         # I don't feel like writing a constraint parser right now
-        assert constraints_str == 'cores=4 mem=4G', "Test assumption is no longer true"
+        assert constraints_str == 'cores=4 mem=4G root-disk=16G', "Test assumption is no longer true"
         constraints = {'cores': 4, 'mem': 4 * 1024}
         machine = await model.add_machine(constraints=constraints)
         await enable_proposed_on(machine.id)
