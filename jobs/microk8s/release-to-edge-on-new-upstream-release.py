@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import requests
-from . import configbag
+import configbag
 from .snapstore import Microk8sSnap
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError

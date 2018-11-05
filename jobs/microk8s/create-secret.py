@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from launchpadlib.launchpad import Launchpad
-from . import configbag
+import configbag
 
 
 def reach_lp_builders():
