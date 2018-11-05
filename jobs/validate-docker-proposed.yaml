@@ -16,6 +16,10 @@
       - string:
           name: controller
           default: 'jaas'
+      - string:
+          name: cloud
+          default: 'aws/us-east-1'
+
     properties:
       - build-discarder:
           num-to-keep: 2

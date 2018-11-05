@@ -3,10 +3,9 @@ import pytest
 import subprocess
 import yaml
 from .base import UseModel, _model_from_env, _controller_from_env
-from utils import temporary_model, deploy_e2e
-from utils import juju_deploy, asyncify
-from validation import validate_all
-from logger import log
+from .utils import juju_deploy, asyncify
+from .validation import validate_all
+from .logger import log
 
 
 async def enable_proposed_on(target, series='bionic'):
