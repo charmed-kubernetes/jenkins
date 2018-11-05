@@ -18,7 +18,7 @@
           default: 'jaas'
       - string:
           name: cloud
-          default: 'aws/us-east-1'
+          default: 'google/us-east1'
 
     properties:
       - build-discarder:
