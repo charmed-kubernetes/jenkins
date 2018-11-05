@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 import os
-from snapstore import Microk8sSnap
-from configbag import tracks
+from .snapstore import Microk8sSnap
+from .configbag import tracks
 
 
 # Set this to 'no' if you are sure you want to release
