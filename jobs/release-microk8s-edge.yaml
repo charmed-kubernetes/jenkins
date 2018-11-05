@@ -1,14 +1,14 @@
-# Builds and releases latest microk8s
+# Builds and releases latest microk8s to edge
 
 - job:
-    name: 'build-release-microk8s'
+    name: 'release-microk8s-edge'
     description: |
-      Builds, releases and promotes microk8s to the snapstore.
+      Builds, releases and promotes microk8s to the snapstore on the edge channel.
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-scm
-      script-path: jobs/build-microk8s/Jenkinsfile
+      script-path: jobs/release-microk8s-edge/Jenkinsfile
     triggers:
         - timed: "@hourly"
     properties:

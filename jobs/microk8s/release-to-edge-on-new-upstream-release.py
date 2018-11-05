@@ -1,19 +1,11 @@
 #!/usr/bin/env python3
 
-import os
 import requests
-import canonicalwebteam.snapstoreapi.public_api as public_api
+import configbag
+from snapstore import Microk8sSnap
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError
-
-
-tracks = ["latest", "1.10", "1.11", "1.12", "1.13", "1.14", "1.15"]
-
-class Config:
-    snap_name = "microk8s"
-    people_name = "microk8s-dev"
-    cachedir = os.getenv('WORKSPACE') + "/cache"
-    creds = os.getenv('LPCREDS')
+from configbag import tracks
 
 
 def upstream_release(release):
@@ -30,34 +22,22 @@ def upstream_release(release):
         None
 
 
-def snapped_release(track):
-    """ Return the version of the microk8s snap in the edge channel and the track provided"""
-    snap_details = public_api.get_snap_details('microk8s', 'edge')
-    tracks = snap_details['channel_maps_list']
-    channel = "{}/edge".format(track) if track != "latest" else "edge"
-    versions = [c['version'] for t in tracks if t['track'] == track
-                for c in t['map'] if c['channel'] == channel]
-    version = versions[0] if versions else None
-    return version
-
-
 def trigger_lp_builders(track):
     """Trigger the LP builder of the track provided. This method will
     login using the cached credentials or prompt you for authorization."""
     if track == "latest":
-        snap_name = Config.snap_name
+        snap_name = configbag.snap_name
     else:
-        snap_name = "{}-{}".format(Config.snap_name,
-                                   track)
+        snap_name = "{}-{}".format(configbag.snap_name, track)
 
     # log in
     launchpad = Launchpad.login_with('Launchpad Snap Build Trigger',
-                                     'production', Config.cachedir,
-                                     credentials_file=Config.creds,
+                                     'production', configbag.cachedir,
+                                     credentials_file=configbag.creds,
                                      version='devel')
 
     # get launchpad team data and ppa
-    snappydev = launchpad.people[Config.people_name]
+    snappydev = launchpad.people[configbag.people_name]
 
     try:
         # get snap
@@ -70,7 +50,7 @@ def trigger_lp_builders(track):
     # trigger build
     ubuntu = launchpad.distributions["ubuntu"]
     request = microk8s.requestBuilds(archive=ubuntu.main_archive,
-                                     pocket='Updates')
+                                      pocket='Updates')
     return request
 
 
@@ -81,9 +61,20 @@ if __name__ == '__main__':
         upstream = upstream_release(track)
         if not upstream:
             continue
-        snapped = snapped_release(track)
-        print("Upstream has {} and snapped version is at {}".format(upstream, snapped))
-        if upstream != snapped:
+        edge_snap = Microk8sSnap(track, 'edge')
+        if not edge_snap.released:
+            # Nothing released on edge. LP builders are probably not in place
+            continue
+        print("Upstream has {} and snapped version is at {}".format(upstream, edge_snap.version))
+        if upstream != edge_snap.version:
+            if not upstream.startswith("{}.".format(edge_snap.major_minor_version)):
+                # There is a minor version difference.
+                # For example upstream says we are on v1.12.x and the edge snap is on v1.11.y
+                # This should occur only in the "latest" track that follows the latest k8s
+                if track != 'latest':
+                    print("Track {} has an edge snap of {}.".format(track, edge_snap.version))
+                    raise Exception("Tracks should not change releases")
+
             print("Triggering LP builders")
             request = trigger_lp_builders(track)
             if request:

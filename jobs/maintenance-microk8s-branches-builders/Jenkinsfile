@@ -10,6 +10,7 @@ pipeline {
     environment {
         PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
         LPCREDS = credentials('LAUNCHPAD_CREDS')
+        GITHUB_CREDS = credentials('cdkbot_github')
     }
     options {
         ansiColor('xterm')
@@ -24,7 +25,7 @@ pipeline {
         stage('Release microk8s'){
             steps {
                 dir('jobs') {
-                    sh "LPCREDS=${env.LPCREDS} pipenv run build-microk8s/build-and-release-on-new-upstream-release.py"
+                    sh "LPCREDS=${env.LPCREDS} GH_USER='${env.GITHUB_CREDS_USR}' GH_TOKEN='${env.GITHUB_CREDS_PSW}' pipenv run microk8s/update-gh-branches-and-lp-builders.py"
                 }
             }
         }
