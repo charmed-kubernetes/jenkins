@@ -24,7 +24,15 @@ pipeline {
             steps {
                 sh "juju add-model -c ${params.controller} ${juju_model} ${params.cloud}"
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_docker_proposed.py"
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_docker_proposed.py::test_docker_proposed"
+                }
+            }
+            post {
+                always {
+                    collectDebug(params.controller,
+                                 juju_model)
+                    tearDown(params.controller,
+                             juju_model)
                 }
             }
         }
@@ -34,11 +42,11 @@ pipeline {
             junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
             archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
         }
-        always {
-            collectDebug(params.controller,
-                         juju_model)
-            tearDown(params.controller,
-                     juju_model)
-        }
+        // always {
+        //     collectDebug(params.controller,
+        //                  juju_model)
+        //     tearDown(params.controller,
+        //              juju_model)
+        // }
     }
 }
