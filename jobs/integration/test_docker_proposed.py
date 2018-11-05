@@ -2,7 +2,10 @@ import os
 import pytest
 import subprocess
 import yaml
-from .base import UseModel, _model_from_env, _controller_from_env
+from .base import (UseModel,
+                   _model_from_env,
+                   _controller_from_env,
+                   _juju_wait)
 from .utils import juju_deploy, asyncify
 from .validation import validate_all
 from .logger import log
@@ -46,6 +49,7 @@ async def test_docker_proposed(log_dir):
         with open(data_path, 'w') as f:
             yaml.dump(data, f)
         await model.deploy(bundle_dir)
+        await asyncify(_juju_wait)()
 
         # Add worker machine with series enabled
         constraints_str = data['services']['kubernetes-worker']['constraints']
@@ -58,7 +62,7 @@ async def test_docker_proposed(log_dir):
         # Add worker unit to machine
         app = model.applications['kubernetes-worker']
         await app.add_unit(to=machine.id)
-
+        await asyncify(_juju_wait)()
         # Now do the usual.
         await log_docker_versions(model)
         await validate_all(model, log_dir)
@@ -67,7 +71,7 @@ async def test_docker_proposed(log_dir):
 @pytest.mark.asyncio
 async def test_docker_proposed_upgrade(log_dir):
     async with UseModel() as model:
-        await juju_deploy(model, 'containers', 'canonical-kubernetes')
+        # await juju_deploy(model, 'containers', 'canonical-kubernetes')
 
         worker_units = model.applications['kubernetes-worker'].units
         for unit in worker_units:
@@ -75,5 +79,6 @@ async def test_docker_proposed_upgrade(log_dir):
             await enable_proposed_on(unit.name)
             await unit.run('apt install docker.io')
 
+        await asyncify(_juju_wait)()
         await log_docker_versions(model)
         await validate_all(model, log_dir)

@@ -234,7 +234,6 @@ async def juju_deploy(model, namespace, bundle, channel='stable', snap_channel=N
             with open(data_path, 'w') as f:
                 yaml.dump(data, f)
         await model.deploy(bundle_dir)
-    await wait_for_ready(model)
 
 
 async def patch_bundle(bundle, snap_channel):
