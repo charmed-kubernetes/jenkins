@@ -487,12 +487,18 @@ async def validate_extra_args(model):
         results = []
 
         for unit in app.units:
-            action = await unit.run('pgrep -a ' + service)
-            assert action.status == 'completed'
-            raw_output = action.data['results']['Stdout']
-            arg_string = raw_output.partition(' ')[2].partition(' ')[2]
-            args = {arg.strip() for arg in arg_string.split('--')[1:]}
-            results.append(args)
+            while True:
+                action = await unit.run('pgrep -a ' + service)
+                assert action.status == 'completed'
+
+                if action.data['results']['Code'] == '0':
+                    raw_output = action.data['results']['Stdout']
+                    arg_string = raw_output.partition(' ')[2].partition(' ')[2]
+                    args = {arg.strip() for arg in arg_string.split('--')[1:]}
+                    results.append(args)
+                    break
+
+                await asyncio.sleep(1)
 
         # charms sometimes choose the master randomly, filter out the master
         # arg so we can do comparisons reliably
