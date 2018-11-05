@@ -40,7 +40,7 @@ async def test_docker_proposed(log_dir):
         # Deploy bundle with 0 worker units
         url = 'cs:~containers/canonical-kubernetes'
         bundle_dir = os.path.join(log_dir, 'bundle')
-        cmd = ['charm', 'pull', url, bundle_dir]
+        cmd = ['charm', 'pull', url, bundle_dir, '--channel', 'edge']
         await asyncify(subprocess.check_call)(cmd)
         data_path = os.path.join(bundle_dir, 'bundle.yaml')
         with open(data_path) as f:
