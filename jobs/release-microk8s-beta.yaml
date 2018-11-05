@@ -1,0 +1,15 @@
+- job:
+    name: 'release-microk8s-beta'
+    description: |
+      Tests and releases microk8s to beta. Affects all tracks.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-scm
+      script-path: jobs/release-microk8s-beta/Jenkinsfile
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          days-to-keep: 2
+          num-to-keep: 2

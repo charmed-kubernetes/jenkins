@@ -1,6 +1,6 @@
 import os
 from dateutil import parser
-from subprocess import check_output, check_call
+from subprocess import check_output, check_call, CalledProcessError
 
 
 class Microk8sSnap:
@@ -74,7 +74,16 @@ class Microk8sSnap:
             if self.track == 'latest':
                 tests_branch = 'master'
             else:
-                tests_branch = self.track
+                # See if we have tests for the track we are using. If not, we should default to master branch.
+                # This may happen for the tracks that are building from master GH branch.
+                cmd = "git ls-remote --exit-code " \
+                      "--heads git@github.com:ubuntu/microk8s.git {}".format(self.track).split()
+                try:
+                    check_call(cmd)
+                    tests_branch = self.track
+                except CalledProcessError:
+                    print("GH branch {} does not exist.".format(self.track))
+                    tests_branch = 'master'
         print("Tests are taken from branch {}".format(tests_branch))
         cmd = "git checkout {}".format(tests_branch).split()
         check_call(cmd)

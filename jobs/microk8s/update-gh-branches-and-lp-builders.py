@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 import os
 import requests
@@ -54,7 +54,7 @@ def gh_branch_exists(branch):
         print("GH branch {} exists.".format(branch))
         return True
     except CalledProcessError:
-        print("GH branch does not {} exist.".format(branch))
+        print("GH branch {} does not exist.".format(branch))
         return False
 
 
@@ -126,6 +126,7 @@ class Builder:
                             store_name=workingsnap.store_name,
                             store_series=workingsnap.store_series,
                             store_channels="{}/edge/testingbuilders".format(self.track),
+                            processors=['/+processors/amd64', '/+processors/arm64'],
                             auto_build=workingsnap.auto_build,
                             auto_build_archive=workingsnap.auto_build_archive,
                             auto_build_pocket=workingsnap.auto_build_pocket)

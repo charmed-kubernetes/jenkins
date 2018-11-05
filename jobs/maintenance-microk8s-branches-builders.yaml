@@ -1,0 +1,15 @@
+- job:
+    name: 'maintenance-microk8s-branches-builders'
+    description: |
+      On new upstream releases creates code branches and LP builders.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/maintenance-microk8s-branches-builders/Jenkinsfile
+    triggers:
+        - timed: "@hourly"
+    properties:
+      - build-discarder:
+          days-to-keep: 2
+          num-to-keep: 2
