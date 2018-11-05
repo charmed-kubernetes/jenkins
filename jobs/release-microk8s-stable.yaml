@@ -5,7 +5,7 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-scm
+        - k8s-jenkins-jenkaas
       script-path: jobs/release-microk8s-stable/Jenkinsfile
     triggers:
         - timed: "@daily"
