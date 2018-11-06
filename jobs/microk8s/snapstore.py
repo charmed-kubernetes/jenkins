@@ -67,7 +67,7 @@ class Microk8sSnap:
         # that matches the track we are going to release to.
         cmd = "rm -rf microk8s".split()
         check_call(cmd)
-        cmd = "git clone http://www.github.com/ubuntu/microk8s".split()
+        cmd = "git clone https://github.com/ubuntu/microk8s".split()
         check_call(cmd)
         os.chdir("microk8s")
         if not tests_branch:

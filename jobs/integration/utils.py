@@ -101,7 +101,7 @@ def apply_profile(model_name):
     if version.decode('utf-8').startswith('3.'):
         lxc_aa_profile="lxc.apparmor.profile"
     cmd ='sed -e "s/##MODEL##/{0}/" -e "s/##AA_PROFILE##/{1}/" "{2}" | ' \
-         'lxc profile edit "juju-{0}"'.format(model_name, lxc_aa_profile, profile)
+         'sudo lxc profile edit "juju-{0}"'.format(model_name, lxc_aa_profile, profile)
     return check_output(['bash', '-c', cmd])
 
 

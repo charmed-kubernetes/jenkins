@@ -62,7 +62,7 @@ def create_gh_branch(branch, gh_user, gh_token):
     """Create a branch on the repo using the credentials passed"""
     cmd = "rm -rf microk8s".split()
     check_call(cmd)
-    cmd = "git clone http://www.github.com/ubuntu/microk8s".split()
+    cmd = "git clone https://github.com/ubuntu/microk8s".split()
     check_call(cmd)
     os.chdir("microk8s")
     cmd = "git checkout -b {}".format(branch).split()

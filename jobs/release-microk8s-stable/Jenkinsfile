@@ -37,7 +37,7 @@ pipeline {
     /* We assume that there are no other lxc machines on the slave. */
     post {
         always {
-            sh "lxc delete \$(lxc list -c n --format csv) --force || true"
+            sh "sudo lxc delete \$(sudo lxc list -c n --format csv) --force || true"
             sh "snapcraft logout"
         }
     }
