@@ -16,6 +16,11 @@ pipeline {
         timestamps()
     }
     stages {
+       stage('Setup') {
+            steps {
+                sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+            }
+        }
         stage('Release microk8s'){
             steps {
                 dir('jobs') {
@@ -24,4 +29,10 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            sh "snapcraft logout"
+        }
+    }
+
 }
