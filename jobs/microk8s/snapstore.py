@@ -77,7 +77,7 @@ class Microk8sSnap:
                 # See if we have tests for the track we are using. If not, we should default to master branch.
                 # This may happen for the tracks that are building from master GH branch.
                 cmd = "git ls-remote --exit-code " \
-                      "--heads git@github.com:ubuntu/microk8s.git {}".format(self.track).split()
+                      "--heads https://github.com/ubuntu/microk8s.git {}".format(self.track).split()
                 try:
                     check_call(cmd)
                     tests_branch = self.track
