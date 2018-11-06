@@ -21,6 +21,11 @@ pipeline {
         timestamps()
     }
     stages {
+        stage('Setup') {
+            steps {
+                sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+            }
+        }
         stage('Release microk8s'){
             steps {
                 dir('jobs') {
@@ -32,7 +37,8 @@ pipeline {
     /* We assume that there are no other lxc machines on the slave. */
     post {
         always {
-            sh "lxc delete $(lxc list -c n --format csv) --force || true"
+            sh "lxc delete \$(lxc list -c n --format csv) --force || true"
+            sh "snapcraft logout"
         }
     }
 }
