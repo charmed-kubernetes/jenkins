@@ -98,6 +98,6 @@ class Microk8sSnap:
                 track_channel_to_upgrade = "{}/{}".format(self.track, channel_to_upgrade)
                 testing_track_channel = "{}/{}".format(self.track, self.under_testing_channel)
 
-            cmd = "tests/test-distro.sh {} {} {}".format(distro, track_channel_to_upgrade,
-                                                         testing_track_channel).split()
+            cmd = "sudo tests/test-distro.sh {} {} {}".format(distro, track_channel_to_upgrade,
+                                                              testing_track_channel).split()
             check_call(cmd)
