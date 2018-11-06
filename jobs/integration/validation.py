@@ -751,6 +751,7 @@ async def validate_sans(model):
         await lb.set_config({'extra_sans': original_lb_config['extra_sans']['value']})
 
 
+@log_calls_async
 async def run_until_success(unit, cmd, timeout_insec=None):
     while True:
         action = await unit.run(cmd, timeout=timeout_insec)
@@ -972,6 +973,7 @@ async def validate_docker_logins(model):
     await cleanup()
 
 
+@log_calls_async
 async def get_last_audit_entry_date(unit):
     cmd = 'cat /root/cdk/audit/audit.log | tail -n 1'
     raw = await run_until_success(unit, cmd)
