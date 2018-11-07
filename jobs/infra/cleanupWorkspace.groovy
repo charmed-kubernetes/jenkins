@@ -18,6 +18,11 @@ pipeline {
             steps {
                 // sh "sudo rm -rf ${params.workspace_path}"
                 sh "cd jobs && tox -e py36 -- aws s3 --profile s3 ls s3://jujubigdata"
+                script {
+                    if (params.exec_command) {
+                        sh "${params.exec_command}"
+                    }
+                }
             }
         }
     }

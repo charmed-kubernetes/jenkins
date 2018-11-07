@@ -34,12 +34,19 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/infra/cleanupWorkspace.groovy
     parameters:
-      - string:
+      - choice:
           name: build_node
-          default: 'runner-s390x'
+          choices:
+            - runner-amd64-1
+            - runner-amd64-2
+            - runner-ppc64le
+            - runner-s390x
+            - runner-arm64
       - string:
           name: workspace_path
           default: '../build-release-snaps-s390x'
+      - string:
+          name: exec_command
     properties:
       - build-discarder:
           num-to-keep: 1
