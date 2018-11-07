@@ -14,11 +14,13 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Cleanup workspaces') {
+        stage('Running') {
             steps {
-                // sh "sudo rm -rf ${params.workspace_path}"
-                sh "cd jobs && tox -e py36 -- aws s3 --profile s3 ls s3://jujubigdata"
+                // sh "cd jobs && tox -e py36 -- aws s3 --profile s3 ls s3://jujubigdata"
                 script {
+                    if (params.workspace_path) {
+                        sh "sudo rm -rf ${params.workspace_path}"
+                    }
                     if (params.exec_command) {
                         sh "${params.exec_command}"
                     }

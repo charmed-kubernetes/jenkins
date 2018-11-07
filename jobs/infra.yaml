@@ -25,14 +25,14 @@
           num-to-keep: 1
 
 - job:
-    name: 'infra-cleanup-workspaces'
+    name: 'infra-exec-workspace'
     description: |
       cleans up workspace path
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/infra/cleanupWorkspace.groovy
+      script-path: jobs/infra/execWorkspace.groovy
     parameters:
       - choice:
           name: build_node
@@ -44,7 +44,6 @@
             - runner-arm64
       - string:
           name: workspace_path
-          default: '../build-release-snaps-s390x'
       - string:
           name: exec_command
     properties:
