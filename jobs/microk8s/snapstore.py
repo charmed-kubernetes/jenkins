@@ -67,7 +67,7 @@ class Microk8sSnap:
         # that matches the track we are going to release to.
         cmd = "rm -rf microk8s".split()
         check_call(cmd)
-        cmd = "git clone http://www.github.com/ubuntu/microk8s".split()
+        cmd = "git clone https://github.com/ubuntu/microk8s".split()
         check_call(cmd)
         os.chdir("microk8s")
         if not tests_branch:
@@ -77,7 +77,7 @@ class Microk8sSnap:
                 # See if we have tests for the track we are using. If not, we should default to master branch.
                 # This may happen for the tracks that are building from master GH branch.
                 cmd = "git ls-remote --exit-code " \
-                      "--heads git@github.com:ubuntu/microk8s.git {}".format(self.track).split()
+                      "--heads https://github.com/ubuntu/microk8s.git {}".format(self.track).split()
                 try:
                     check_call(cmd)
                     tests_branch = self.track
@@ -98,6 +98,6 @@ class Microk8sSnap:
                 track_channel_to_upgrade = "{}/{}".format(self.track, channel_to_upgrade)
                 testing_track_channel = "{}/{}".format(self.track, self.under_testing_channel)
 
-            cmd = "tests/test-distro.sh {} {} {}".format(distro, track_channel_to_upgrade,
-                                                         testing_track_channel).split()
+            cmd = "sudo tests/test-distro.sh {} {} {}".format(distro, track_channel_to_upgrade,
+                                                              testing_track_channel).split()
             check_call(cmd)

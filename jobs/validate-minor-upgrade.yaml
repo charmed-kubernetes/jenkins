@@ -1,9 +1,9 @@
 # Validates upgrading from stable to edge of release
 
 - job-template:
-    name: 'validate-minor-upgrade-{version}-{bundle}-{cloud}'
+    name: 'validate-minor-upgrade-{version}'
     description: |
-      Upgrades CDK {version} for {bundle} and validates its deployment on {cloud}.
+      Upgrades CDK {version} and validates its deployment.
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -16,18 +16,26 @@
       - string:
           name: controller
           default: 'jaas'
-      - string:
+      - choice:
           name: cloud
-          default: '{cloud}'
+          choices:
+            - 'aws/us-east-1'
+            - 'google/us-east1'
+            - 'azure/eastus'
       - string:
           name: version_overlay
           default: '{version_overlay}'
       - string:
           name: upgrade_snap_channel
           default: '{upgrade_snap_channel}'
-      - string:
+      - choice:
           name: bundle
-          default: '{bundle}'
+          choices:
+            - 'canonical-kubernetes'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
+            - 'kubernetes-core'
+            - 'kubernetes-calico'
       - string:
           name: bundle_channel
           default: 'stable'
@@ -48,14 +56,7 @@
           version_overlay: 'jobs/overlays/1.11-stable-overlay.yaml'
           upgrade_snap_channel: '1.12/edge'
     jobs:
-      - 'validate-minor-upgrade-{version}-{bundle}-{cloud}':
-          cloud: ['aws', 'google', 'azure']
-          bundle:
-            - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
-            - 'canonical-kubernetes-canal'
-            - 'kubernetes-core'
-            - 'kubernetes-calico'
+      - 'validate-minor-upgrade-{version}'
 
 - project:
     name: validate-minor-upgrade
