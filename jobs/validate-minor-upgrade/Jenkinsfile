@@ -26,7 +26,7 @@ pipeline {
                           model: juju_model,
                           cloud: params.cloud,
                           bundle: "cs:~containers/${params.bundle}",
-                          version_overlay: params.overlay,
+                          version_overlay: params.version_overlay,
                           bundle_channel: params.bundle_channel)
             }
         }
