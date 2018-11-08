@@ -41,6 +41,7 @@ pipeline {
         always {
             sh "sudo lxc delete \$(sudo lxc list -c n --format csv) --force || true"
             sh "snapcraft logout"
+            sh "ip link list"
         }
     }
 }
