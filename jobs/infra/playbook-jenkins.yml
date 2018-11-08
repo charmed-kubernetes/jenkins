@@ -159,3 +159,10 @@
     - name: disable ipv6 in lxd
       command: lxc network set lxdbr0 ipv6.address none
       ignore_errors: yes
+    - name: set mtus
+      command: "ip link set dev {{item}} mtu 1458"
+      ignore_errors: yes
+      loop:
+        - 'docker0'
+        - 'lxdbr0'
+        - 'lxdbr1'
