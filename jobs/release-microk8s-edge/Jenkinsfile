@@ -18,6 +18,7 @@ pipeline {
     stages {
        stage('Setup') {
             steps {
+                setNetwork()
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
