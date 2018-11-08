@@ -157,8 +157,11 @@
     - name: setup lxd network
       command: "/snap/bin/lxd init --auto"
     - name: disable ipv6 in lxd
-      command: lxc network set lxdbr0 ipv6.address none
+      command: "lxc network set {{item}} ipv6.address none"
       ignore_errors: yes
+      loop:
+        - 'lxdbr0'
+        - 'lxdbr1'
     - name: set mtus
       command: "ip link set dev {{item}} mtu 1458"
       ignore_errors: yes
