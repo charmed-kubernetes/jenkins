@@ -47,7 +47,6 @@ pipeline {
         PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
         REPO_DIR = "${env.WORKSPACE}/bundle-kubernetes"
         BUNDLES_DIR = "${env.WORKSPACE}/tmp-bundles"
-        JUJU_CONTROLLER = "${params.controller}-${env.BUILD_NUMBER}"
     }
     options {
         ansiColor('xterm')

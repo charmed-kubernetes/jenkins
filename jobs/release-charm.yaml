@@ -15,7 +15,7 @@
           default: 'edge'
       - string:
           name: to_channel
-          default: 'beta'
+          default: 'beta candidate'
       - choice:
           name: charm
           choices:

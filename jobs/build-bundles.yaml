@@ -16,10 +16,6 @@
       - string:
           name: bundle_repo
           default: 'https://github.com/juju-solutions/bundle-canonical-kubernetes.git'
-      - string:
-          name: controller
-          default: 'jaas'
-          description: 'Controller to bootstrap for charm testing'
     triggers:
         - timed: "@daily"
     properties:
