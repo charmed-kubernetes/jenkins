@@ -3,7 +3,7 @@
 - job-template:
     name: '{name}-{charm}'
     description: |
-      Builds and releases {charm} to charmstore.
+      Builds and releases {charm} to charmstore edge channel.
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -13,12 +13,6 @@
       - string:
           name: charm
           default: '{charm}'
-      - string:
-          name: from_channel
-          default: 'unpublished'
-      - string:
-          name: to_channel
-          default: 'edge'
       - string:
           name: model
           default: 'charms'

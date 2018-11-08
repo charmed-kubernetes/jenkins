@@ -67,10 +67,8 @@ pipeline {
                     sh(script: String.format("charm set '%s' commit='%s'",
                                              charm.url.trim(),
                                              git_commit.trim()))
-                    sh(script: String.format("CHARM='%s' FROM_CHANNEL='%s' TO_CHANNEL='%s' jobs/build-charms/promote-charm.sh",
-                                             charm.url.trim(),
-                                             params.from_channel,
-                                             params.to_channel))
+                    sh(script: String.format("CHARM='%s' FROM_CHANNEL='unpublished' TO_CHANNEL='edge' jobs/build-charms/promote-charm.sh",
+                                             charm.url.trim()))
                 }
             }
         }

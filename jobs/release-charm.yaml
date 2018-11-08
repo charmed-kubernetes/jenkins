@@ -1,0 +1,37 @@
+# Releases a charm to other channels
+
+- job:
+    name: 'release-charm'
+    description: |
+      Releases charms/bundles to other channels.
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release-charm/Jenkinsfile
+    parameters:
+      - string:
+          name: from_channel
+          default: 'edge'
+      - string:
+          name: to_channel
+          default: 'beta'
+      - choice:
+          name: charm
+          choices:
+            - 'calico'
+            - 'canal'
+            - 'easyrsa'
+            - 'etcd'
+            - 'flannel'
+            - 'kubeapi-load-balancer'
+            - 'kubernetes-e2e'
+            - 'kubernetes-master'
+            - 'kubernetes-worker'
+            - 'canonical-kubernetes'
+            - 'kubernetes-core'
+            - 'canonical-kubernetes-elastic'
+            - 'kubernetes-calico'
+            - 'canonical-kubernetes-canal'
+    properties:
+      - build-discarder:
+          num-to-keep: 2
