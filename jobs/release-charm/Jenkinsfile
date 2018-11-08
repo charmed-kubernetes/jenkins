@@ -1,6 +1,6 @@
 @Library('juju-pipeline@master') _
 
-def to_channels = params.to_channel.split().trim()
+def to_channels = params.to_channel.split()
 
 pipeline {
     agent {
@@ -21,7 +21,7 @@ pipeline {
             steps {
                 script {
                     to_channels.each { to_channel ->
-                        sh "CHARM='cs:~containers/${params.charm}' FROM_CHANNEL='${params.from_channel}' TO_CHANNEL='${to_channel}' jobs/build-charms/promote-charm.sh"
+                        sh "CHARM='cs:~containers/${params.charm}' FROM_CHANNEL='${params.from_channel}' TO_CHANNEL='${to_channel.trim()}' jobs/build-charms/promote-charm.sh"
                     }
                 }
             }
