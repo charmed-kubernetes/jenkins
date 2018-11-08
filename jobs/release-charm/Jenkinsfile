@@ -17,7 +17,7 @@ pipeline {
     stages {
         stage('Release Charm') {
             steps {
-                sh "CHARM='${params.charm}' FROM_CHANNEL='${params.from_channel}' TO_CHANNEL='${params.to_channel}' jobs/build-charms/promote-charm.sh"
+                sh "CHARM='cs:~containers/${params.charm}' FROM_CHANNEL='${params.from_channel}' TO_CHANNEL='${params.to_channel}' jobs/build-charms/promote-charm.sh"
             }
         }
     }

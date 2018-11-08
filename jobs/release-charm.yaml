@@ -4,6 +4,7 @@
     name: 'release-charm'
     description: |
       Releases charms/bundles to other channels.
+    project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
