@@ -47,6 +47,7 @@ async def test_docker_proposed(log_dir):
     await asyncify(juju.deploy)(
         '-m', '{}:{}'.format(_controller_from_env(), _model_from_env()),
         'cs:~containers/canonical-kubernetes',
+        '--channel', 'edge',
         '--overlay', 'overlays/1.12-edge-{}-overlay.yaml'.format(_series_from_env()))
     await asyncify(_juju_wait)()
 
