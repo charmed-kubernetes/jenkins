@@ -168,6 +168,13 @@
       loop:
         - 'lxdbr0'
         - 'lxdbr1'
+    - name: set docker daemon config
+      copy:
+        src: docker.daemon.json
+        dest: /etc/docker/daemon.json
+        force: yes
+        owner: root
+        group: root
     - name: set docker systemd config
       copy:
         src: docker.service
