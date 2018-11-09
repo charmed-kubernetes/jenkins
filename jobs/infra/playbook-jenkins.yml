@@ -86,13 +86,10 @@
         mode: 0644
         force: yes
     - name: copy charm creds
-      copy:
+      synchronize:
         src: "{{ lookup('env', 'CHARMCREDS') }}"
         dest: /var/lib/jenkins/.go-cookies
-        owner: jenkins
-        group: jenkins
-        mode: 0644
-        force: no
+      become: false
     - name: login to charmstore
       command: "charm login"
       become: false
