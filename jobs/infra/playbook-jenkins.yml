@@ -167,8 +167,8 @@
         src: docker.daemon.json
         dest: /etc/docker/daemon.json
         force: yes
-        owner: docker
-        group: docker
+        owner: root
+        group: root
     - name: restart docker service
       service:
         name: docker
