@@ -50,7 +50,7 @@
         - timed: "@weekly"
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 4
 
 - job-group:
     name: validate-alt-arch
