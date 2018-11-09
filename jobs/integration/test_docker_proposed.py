@@ -36,7 +36,8 @@ async def test_docker_proposed(log_dir):
 
         # Deploy cdk
         await model.deploy('cs:~containers/canonical-kubernetes',
-                           channel='edge')
+                           channel='edge',
+                           series=_series_from_env())
         await asyncify(_juju_wait)()
 
         # Run validation
