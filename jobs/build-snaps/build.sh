@@ -51,7 +51,7 @@ for app in kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube
       [arm]=armhf
     )
 
-    retry snapcraft push release/snap/build/${app}_${KUBE_VERSION:1}_"${kube_arch_to_snap_arch[$arch]:-$KUBE_ARCH}".snap --release ${VERSION}/edge
+    snapcraft push release/snap/build/${app}_${KUBE_VERSION:1}_"${kube_arch_to_snap_arch[$arch]:-$KUBE_ARCH}".snap --release ${VERSION}/edge || true
 done
 
-retry snapcraft push cdk-addons/cdk-addons_${KUBE_VERSION:1}_"${kube_arch_to_snap_arch[$arch]:-$KUBE_ARCH}".snap --release ${VERSION}/edge
+snapcraft push cdk-addons/cdk-addons_${KUBE_VERSION:1}_"${kube_arch_to_snap_arch[$arch]:-$KUBE_ARCH}".snap --release ${VERSION}/edge || true
