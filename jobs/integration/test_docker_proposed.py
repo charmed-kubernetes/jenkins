@@ -1,7 +1,14 @@
 import pytest
 import yaml
 import os
-from .base import UseModel, _juju_wait, _series_from_env
+from sh import juju
+from .base import (
+    UseModel,
+    _juju_wait,
+    _controller_from_env,
+    _model_from_env,
+    _series_from_env
+)
 from .utils import asyncify
 from .validation import validate_all
 from .logger import log, log_calls_async
@@ -16,7 +23,6 @@ async def enable_proposed_on_model(model, series):
     cloudinit_userdata = {'postruncmd': [cmd]}
     cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
     await model.set_config({'cloudinit-userdata': cloudinit_userdata_str})
-    await model.set_config({'default-series': series})
 
 
 async def log_docker_versions(model):
@@ -34,12 +40,16 @@ async def test_docker_proposed(log_dir):
         # Enable <series>-proposed on this model
         await enable_proposed_on_model(model, _series_from_env())
 
-        # Deploy cdk
-        await model.deploy('cs:~containers/canonical-kubernetes',
-                           channel='edge',
-                           series=_series_from_env())
-        await asyncify(_juju_wait)()
+        # # Deploy cdk
+        # await model.deploy('cs:~containers/canonical-kubernetes',
+        #                    channel='edge',
+        #                    series=_series_from_env())
+    await asyncify(juju.deploy)(
+        '-m', '{}:{}'.format(_controller_from_env(), _model_from_env()),
+        'cs:~containers/canonical-kubernetes', '--series', _series_from_env())
+    await asyncify(_juju_wait)()
 
+    async with UseModel() as model:
         # Run validation
         await log_docker_versions(model)  # log before run
         await validate_all(model, log_dir)
