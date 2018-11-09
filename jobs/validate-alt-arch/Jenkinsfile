@@ -22,7 +22,6 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                setNetwork()
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 sh "juju add-model -c ${params.controller} ${juju_model}"

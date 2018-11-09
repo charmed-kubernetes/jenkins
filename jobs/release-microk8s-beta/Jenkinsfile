@@ -23,7 +23,6 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                setNetwork()
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
@@ -41,7 +40,6 @@ pipeline {
         always {
             sh "sudo lxc delete \$(sudo lxc list -c n --format csv) --force || true"
             sh "snapcraft logout"
-            sh "ip link list"
         }
     }
 }
