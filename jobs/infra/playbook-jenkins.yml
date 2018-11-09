@@ -96,6 +96,10 @@
         dest: /var/lib/jenkins/.go-cookies
       become: false
       when: charmstore_login.rc != 0
+    - name: login to charmstorex2
+      command: "charm login"
+      become: false
+      when: charmstore_login.rc != 0
     - name: copy snapcraft creds
       copy:
         src: "{{ lookup('env', 'SNAPCRAFTCREDS') }}"
