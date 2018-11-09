@@ -1,28 +1,34 @@
 # Generates jenkins worker nodes
 
-- job:
-    name: 'infra-maintain-nodes'
+- job-template:
+    name: 'infra-maintain-nodes-{arch}'
     description: |
-      Keeps jenkins slave nodes configured properly.
+      Keeps jenkins slave {arch} nodes configured properly.
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/infra/maintainNodes.groovy
     parameters:
-      - choice:
+      - string:
           name: build_node
-          choices:
-            - runner-amd64-1
-            - runner-amd64-2
-            - runner-ppc64le
-            - runner-s390x
-            - runner-arm64
+          default: 'runner-{arch}'
     triggers:
-        - timed: "@weekly"
+        - timed: "@daily"
     properties:
       - build-discarder:
           num-to-keep: 1
+
+- job-group:
+    name: 'infra-maintain-nodes'
+    jobs:
+      - 'infra-maintain-nodes-{arch}':
+          arch: ['amd64', 's390x', 'arm64', 'ppc64le']
+
+- project:
+    name: infra-maintain-nodes
+    jobs:
+      - 'infra-maintain-nodes'
 
 - job:
     name: 'infra-exec-workspace'
