@@ -46,7 +46,8 @@ async def test_docker_proposed(log_dir):
         #                    series=_series_from_env())
     await asyncify(juju.deploy)(
         '-m', '{}:{}'.format(_controller_from_env(), _model_from_env()),
-        'cs:~containers/canonical-kubernetes', '--series', _series_from_env())
+        'cs:~containers/canonical-kubernetes',
+        '--overlay', 'overlays/1.12-edge-xenial-overlay.yaml')
     await asyncify(_juju_wait)()
 
     async with UseModel() as model:
