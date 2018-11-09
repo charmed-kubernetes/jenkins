@@ -91,9 +91,13 @@
       ignore_errors: yes
       register: charmstore_login
     - name: copy charm creds
-      synchronize:
+      copy:
         src: "{{ lookup('env', 'CHARMCREDS') }}"
         dest: /var/lib/jenkins/.go-cookies
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+        force: yes
       become: false
       when: charmstore_login.rc != 0
     - name: login to charmstorex2
