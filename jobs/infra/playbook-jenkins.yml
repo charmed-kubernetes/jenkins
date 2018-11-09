@@ -162,10 +162,14 @@
       loop:
         - 'lxdbr0'
         - 'lxdbr1'
-    - name: set mtus
-      command: "ip link set dev {{item}} mtu 1458"
-      ignore_errors: yes
-      loop:
-        - 'docker0'
-        - 'lxdbr0'
-        - 'lxdbr1'
+    - name: set docker daemon config
+      copy:
+        src: docker.daemon.json
+        dest: /etc/docker/daemon.json
+        force: yes
+        owner: docker
+        group: docker
+    - name: restart docker service
+      service:
+        name: docker
+        state: restarted
