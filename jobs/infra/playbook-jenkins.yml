@@ -85,14 +85,17 @@
         group: jenkins
         mode: 0644
         force: yes
+    - name: login to charmstore
+      command: "charm login"
+      become: false
+      ignore_errors: yes
+      register: charmstore_login
     - name: copy charm creds
       synchronize:
         src: "{{ lookup('env', 'CHARMCREDS') }}"
         dest: /var/lib/jenkins/.go-cookies
       become: false
-    - name: login to charmstore
-      command: "charm login"
-      become: false
+      when: charmstore_login.rc != 0
     - name: copy snapcraft creds
       copy:
         src: "{{ lookup('env', 'SNAPCRAFTCREDS') }}"
