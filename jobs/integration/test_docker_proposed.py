@@ -1,14 +1,15 @@
 import pytest
 import yaml
-from .base import UseModel, _juju_wait
+import os
+from .base import UseModel, _juju_wait, _series_from_env
 from .utils import asyncify
 from .validation import validate_all
 from .logger import log, log_calls_async
 
 
 @log_calls_async
-async def enable_proposed_on_model(model):
-    archive = '$(lsb_release -cs)-proposed'
+async def enable_proposed_on_model(model, series):
+    archive = '{}-proposed'.format(series)
     apt_line = 'deb http://archive.ubuntu.com/ubuntu/ {} restricted main multiverse universe'.format(archive)
     dest = '/etc/apt/sources.list.d/{}.list'.format(archive)
     cmd = 'echo %s > %s' % (apt_line, dest)
@@ -30,10 +31,12 @@ async def log_docker_versions(model):
 async def test_docker_proposed(log_dir):
     async with UseModel() as model:
         # Enable <series>-proposed on this model
-        await enable_proposed_on_model(model)
+        await enable_proposed_on_model(model, _series_from_env())
 
         # Deploy cdk
-        await model.deploy('cs:~containers/canonical-kubernetes', channel='edge')
+        await model.deploy('cs:~containers/canonical-kubernetes',
+                           channel='edge',
+                           series=_series_from_env())
         await asyncify(_juju_wait)()
 
         # Run validation

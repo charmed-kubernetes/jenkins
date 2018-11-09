@@ -12,6 +12,8 @@ def _model_from_env():
 def _controller_from_env():
     return os.environ.get('CONTROLLER', 'jenkins-ci-aws')
 
+def _series_from_env():
+    return os.environ.get('SERIES', 'bionic')
 
 def _juju_wait(controller=None, model=None):
     if not controller:
