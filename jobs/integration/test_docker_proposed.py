@@ -16,6 +16,7 @@ async def enable_proposed_on_model(model, series):
     cloudinit_userdata = {'postruncmd': [cmd]}
     cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
     await model.set_config({'cloudinit-userdata': cloudinit_userdata_str})
+    await model.set_config({'default-series': series})
 
 
 async def log_docker_versions(model):
@@ -35,8 +36,7 @@ async def test_docker_proposed(log_dir):
 
         # Deploy cdk
         await model.deploy('cs:~containers/canonical-kubernetes',
-                           channel='edge',
-                           series=_series_from_env())
+                           channel='edge')
         await asyncify(_juju_wait)()
 
         # Run validation
