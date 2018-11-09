@@ -13,3 +13,9 @@
       - build-discarder:
           days-to-keep: 2
           num-to-keep: 2
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "infra.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
