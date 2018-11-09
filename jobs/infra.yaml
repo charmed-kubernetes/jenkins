@@ -23,7 +23,7 @@
     name: 'infra-maintain-nodes'
     jobs:
       - 'infra-maintain-nodes-{arch}':
-          arch: ['amd64', 's390x', 'arm64', 'ppc64le']
+          arch: ['amd64-1', 'amd64-2', 's390x', 'arm64', 'ppc64le']
 
 - project:
     name: infra-maintain-nodes
