@@ -175,13 +175,13 @@
         force: yes
         owner: root
         group: root
-    - name: set docker systemd config
-      copy:
-        src: docker.service
-        dest: /lib/systemd/system/docker.service
-        force: yes
-        owner: root
-        group: root
+    # - name: set docker systemd config
+    #   copy:
+    #     src: docker.service
+    #     dest: /lib/systemd/system/docker.service
+    #     force: yes
+    #     owner: root
+    #     group: root
     - name: restart docker service
       service:
         name: docker
