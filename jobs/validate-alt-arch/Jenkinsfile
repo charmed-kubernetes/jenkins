@@ -33,11 +33,9 @@ pipeline {
                     if(bad_arches.contains(arch)) {
                         def data = readYaml file: params.version_overlay
                         data['applications']['kubernetes-worker'].options.ingress = false
-                        echo "${data}"
                         sh "rm ${params.version_overlay}"
                         writeYaml file: params.version_overlay, data: data
-                        sh "cat ${params.version_overlay}"
-                        sh "exit 1"
+                        echo "Updating overlay b/c of ${arch}"
                     }
                     sh "cat ${params.version_overlay}"
                 }
