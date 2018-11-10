@@ -35,12 +35,12 @@ async def validate_all(model, log_dir):
     validate_status_messages(model)
     await validate_snap_versions(model)
     await validate_gpu_support(model)
-    if cpu_arch != 's390x':
+    if cpu_arch not in ['s390x', 'arm64', 'aarch64']:
         await validate_dashboard(model, log_dir)
     await validate_kubelet_anonymous_auth_disabled(model)
     await validate_rbac_flag(model)
     await validate_rbac(model)
-    if cpu_arch not in ['s390x', 'arm64']:
+    if cpu_arch not in ['s390x', 'arm64', 'aarch64']:
         await validate_microbot(model)
         await validate_docker_logins(model)
     await validate_worker_master_removal(model)
