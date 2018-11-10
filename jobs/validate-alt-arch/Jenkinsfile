@@ -22,6 +22,7 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
+                sh "df -h"
                 sh "juju kill-controller -y ${params.controller} || true"
 
                 script {
