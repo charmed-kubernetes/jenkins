@@ -29,15 +29,15 @@ pipeline {
                         script:"arch",
                         returnStdout: true
                     ).trim()
-                    echo "${arch}"
                     def bad_arches = ['s390x', 'aarch64', 'arm64']
-                    echo "${bad_arches.contains(arch)}"
-                    sh "exit 1"
                     if(bad_arches.contains(arch)) {
                         def data = readYaml file: params.version_overlay
                         data['applications']['kubernetes-worker'].options.ingress = false
+                        echo "${data}"
                         sh "rm ${params.version_overlay}"
                         writeYaml file: params.version_overlay, data: data
+                        echo "${params.version_overlay}"
+                        sh "exit 1"
                     }
                     sh "cat ${params.version_overlay}"
                 }
