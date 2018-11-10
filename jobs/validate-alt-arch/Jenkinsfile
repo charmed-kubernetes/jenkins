@@ -26,6 +26,17 @@ pipeline {
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 sh "juju add-model -c ${params.controller} ${juju_model}"
                 sh "cat jobs/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}"
+                script {
+                    def arch = sh script:"uname -m", returnStdout: true
+                    def bad_arches = ['s390x', 'aarch64', 'arm64']
+                    if(bad_arches.contains(arch)) {
+                        def data = readYaml file: params.version_overlay
+                        data['applications']['kubernetes-worker'].options.ingress = false
+                        sh "rm ${params.version_overlay}"
+                        writeYaml file: params.version_overlay, data: data
+                    }
+                    sh "cat ${params.version_overlay}"
+                }
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           cloud: params.cloud,
