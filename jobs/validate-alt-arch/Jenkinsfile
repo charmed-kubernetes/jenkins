@@ -36,7 +36,7 @@ pipeline {
                         echo "${data}"
                         sh "rm ${params.version_overlay}"
                         writeYaml file: params.version_overlay, data: data
-                        echo "${params.version_overlay}"
+                        sh "cat ${params.version_overlay}"
                         sh "exit 1"
                     }
                     sh "cat ${params.version_overlay}"
