@@ -31,9 +31,14 @@
       - string:
           name: bundle_channel
           default: 'edge'
-      - string:
+      - choice:
           name: bundle
-          default: 'kubernetes-core'
+          choices:
+            - 'canonical-kubernetes'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
+            - 'kubernetes-core'
+            - 'kubernetes-calico'
       - string:
           name: snap_channel
           default: '1.12/edge'
