@@ -16,6 +16,12 @@
       - string:
           name: controller
           default: 'jaas'
+      - choice:
+          name: cloud
+          choices:
+            - 'aws/us-east-1'
+            - 'google/us-east1'
+            - 'azure/eastus'
       - string:
           name: overlay
           default: '{version_overlay}'
