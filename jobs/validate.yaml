@@ -42,6 +42,8 @@
       - string:
           name: snap_channel
           default: '{snap_channel}'
+    triggers:
+        - timed: "@daily"
     properties:
       - build-discarder:
           num-to-keep: 2

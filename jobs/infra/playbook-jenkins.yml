@@ -171,7 +171,7 @@
         - 'lxdbr0'
         - 'lxdbr1'
     - name: set lxd mtu
-      command: "lxc network set {{item}} bridge.mtu 1458"
+      command: "lxc network set {{item}} bridge.mtu 1400"
       ignore_errors: yes
       loop:
         - 'lxdbr0'
