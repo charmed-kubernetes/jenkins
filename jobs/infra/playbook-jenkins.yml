@@ -153,7 +153,7 @@
         mode: 0600
         force: yes
     - name: login jaas
-      command: "/snap/bin/juju login"
+      command: "/snap/bin/juju login jaas"
     - name: set perms
       file:
         path: /var/lib/jenkins/.local/share/juju
