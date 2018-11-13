@@ -17,14 +17,17 @@ pipeline {
         timestamps()
     }
     stages {
+        stage("Prep") {
+            steps {
+                sh "juju kill-controller -y ${params.controller} || true"
+                tearDownLxd()
+            }
+        }
         stage('Deploy: K8s') {
             options {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                sh "df -h"
-                sh "juju kill-controller -y ${params.controller} || true"
-
                 script {
                     def arch = sh(
                         script:"arch",
