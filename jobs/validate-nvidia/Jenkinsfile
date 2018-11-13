@@ -28,7 +28,8 @@ pipeline {
                           cloud: params.cloud,
                           bundle: params.bundle,
                           version_overlay: params.overlay,
-                          bundle_channel: params.bundle_channel)
+                          bundle_channel: params.bundle_channel,
+                          allow_privileged: true)
             }
         }
 
