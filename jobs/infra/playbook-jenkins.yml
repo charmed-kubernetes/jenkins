@@ -151,7 +151,9 @@
         owner: jenkins
         group: jenkins
         mode: 0600
-        force: no
+        force: yes
+    - name: login jaas
+      command: "/snap/bin/juju login"
     - name: set perms
       file:
         path: /var/lib/jenkins/.local/share/juju
