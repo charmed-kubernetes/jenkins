@@ -15,6 +15,7 @@ pipeline {
         stage("Configure systems") {
             steps {
                 installToolsJenkaas()
+                tearDownLxd()
             }
         }
     }
