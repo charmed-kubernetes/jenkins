@@ -151,7 +151,7 @@
         owner: jenkins
         group: jenkins
         mode: 0600
-        force: no
+        force: yes
     - name: set perms
       file:
         path: /var/lib/jenkins/.local/share/juju
