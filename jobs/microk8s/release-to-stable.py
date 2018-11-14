@@ -24,6 +24,11 @@ if not tracks_requested or tracks_requested.strip() == '':
 else:
     tracks_requested = tracks_requested.split()
 
+# Set this to the proxy your environment may have
+proxy = os.environ.get('PROXY')
+if not proxy or proxy.strip() == '':
+    proxy = None
+
 
 if __name__ == '__main__':
     '''
@@ -58,7 +63,9 @@ if __name__ == '__main__':
             print("Candidate is at {}, stable at {}, and 'always_release' is {}.".format(
                 candidate_snap.version, stable_snap.version, always_release
             ))
-            candidate_snap.test_cross_distro(channel_to_upgrade='stable', tests_branch=tests_branch)
+            candidate_snap.test_cross_distro(channel_to_upgrade='stable',
+                                             tests_branch=tests_branch,
+                                             proxy=proxy)
         else:
             print("Stable channel is empty. Releasing without any testing.")
 
