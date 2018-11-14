@@ -20,7 +20,8 @@ pipeline {
                 sh "sudo lxc delete --force piptest || true"
                 retry(10){
                     sh "sudo lxc launch ubuntu:16.04 piptest"
-                    sh "sudo lxc exec piptest -- /bin/bash -c 'apt install -qyf python3-pip'"
+                    sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get update'"
+                    sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get install -qyf python3-pip'"
                     sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install requests'"
                     sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install sh'"
                     sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install launchpadlib'"
@@ -34,6 +35,10 @@ pipeline {
                 //         sh "${params.exec_command}"
                 //     }
                 // }
+            }
+        } post {
+            always {
+                sh "sudo lxc delete --force piptest"
             }
         }
     }
