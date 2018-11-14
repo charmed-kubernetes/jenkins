@@ -36,10 +36,6 @@ pipeline {
                 //     }
                 // }
             }
-        } post {
-            always {
-                sh "sudo lxc delete --force piptest"
-            }
-        }
+        } 
     }
 }
