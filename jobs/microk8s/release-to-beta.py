@@ -23,6 +23,11 @@ if not tracks_requested or tracks_requested.strip() == '':
 else:
     tracks_requested = tracks_requested.split()
 
+# Set this to the proxy your environment may have
+proxy = os.environ.get('PROXY')
+if not proxy or proxy.strip() == '':
+    proxy = None
+
 
 if __name__ == '__main__':
     '''
@@ -49,7 +54,9 @@ if __name__ == '__main__':
             print("Beta is at {}, edge at {}, and 'always_release' is {}.".format(
                 beta_snap.version, edge_snap.version, always_release
             ))
-            edge_snap.test_cross_distro(channel_to_upgrade='beta', tests_branch=tests_branch)
+            edge_snap.test_cross_distro(channel_to_upgrade='beta',
+                                        tests_branch=tests_branch,
+                                        proxy=proxy)
         else:
             print("Beta channel is empty. Releasing without any testing.")
 

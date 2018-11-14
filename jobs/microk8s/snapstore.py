@@ -52,7 +52,8 @@ class Microk8sSnap:
 
     def test_cross_distro(self,  channel_to_upgrade='stable',
                           tests_branch=None,
-                          distributions = ["ubuntu:16.04", "ubuntu:18.04"]):
+                          distributions=["ubuntu:16.04", "ubuntu:18.04"],
+                          proxy=None):
         '''
         Test the channel this snap came from and make sure we can upgrade the
         channel_to_upgrade. Tests are run on the distributions distros.
@@ -61,6 +62,7 @@ class Microk8sSnap:
             channel_to_upgrade: what channel to try to upgrade
             tests_branch: the branch where tests live. Normally next to the released code.
             distributions: where to run tests on
+            proxy: Proxy URL to pass to the tests
 
         '''
         # Get the microk8s source where the tests are. Switch to the branch
@@ -100,4 +102,6 @@ class Microk8sSnap:
 
             cmd = "sudo tests/test-distro.sh {} {} {}".format(distro, track_channel_to_upgrade,
                                                               testing_track_channel).split()
+            if proxy:
+                cmd.append(proxy)
             check_call(cmd)
