@@ -17,6 +17,7 @@ pipeline {
         stage('Running') {
             steps {
                 // sh "cd jobs && tox -e py36 -- aws s3 --profile s3 ls s3://jujubigdata"
+                sh "sudo ip link list"
                 sh "sudo lxc delete --force piptest || true"
                 retry(10){
                     sh "sudo lxc launch ubuntu:16.04 piptest"
