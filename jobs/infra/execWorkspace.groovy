@@ -18,17 +18,17 @@ pipeline {
             steps {
                 // sh "cd jobs && tox -e py36 -- aws s3 --profile s3 ls s3://jujubigdata"
                 sh "sudo ip link list"
+                sh "which lxc"
                 sh "sudo lxc delete --force piptest || true"
                 sh "sudo lxc profile show default"
                 retry(10){
                     sh "sudo lxc launch ubuntu:16.04 piptest"
-                    sh "sleep 30"
-                    sh "sudo lxc exec piptest -- /bin/bash -c 'ping -c 1 security.ubuntu.com'"
-                    sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get update'"
-                    sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get install -qyf python3-pip'"
-                    sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install requests'"
-                    sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install sh'"
-                    sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install launchpadlib'"
+                    sh "sleep 45"
+                    sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get update' || true"
+                    sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get install -qyf python3-pip' || true"
+                    sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install requests' || true"
+                    sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install sh' || true"
+                    sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install launchpadlib' || true"
                     sh "sudo lxc delete --force piptest"
                 }
                 // script {
