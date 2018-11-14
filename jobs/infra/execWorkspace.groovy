@@ -20,6 +20,7 @@ pipeline {
                 sh "sudo ip link list"
                 sh "ping -c 1 security.ubuntu.com"
                 sh "sudo lxc delete --force piptest || true"
+                sh "sudo lxc profile show default"
                 retry(10){
                     sh "sudo lxc launch ubuntu:16.04 piptest"
                     sh "sudo lxc exec piptest -- /bin/bash -c 'ping -c 1 security.ubuntu.com'"
