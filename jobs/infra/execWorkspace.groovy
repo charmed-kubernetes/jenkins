@@ -18,7 +18,6 @@ pipeline {
             steps {
                 // sh "cd jobs && tox -e py36 -- aws s3 --profile s3 ls s3://jujubigdata"
                 sh "sudo ip link list"
-                sh "ping -c 1 security.ubuntu.com"
                 sh "sudo lxc delete --force piptest || true"
                 sh "sudo lxc profile show default"
                 retry(10){
