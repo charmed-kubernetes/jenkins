@@ -17,30 +17,30 @@ pipeline {
         stage('Running') {
             steps {
                 // sh "cd jobs && tox -e py36 -- aws s3 --profile s3 ls s3://jujubigdata"
-                sh "sudo ip link list"
-                sh "which lxc"
-                sh "sudo lxc delete --force piptest || true"
-                sh "sudo lxc profile show default"
-                script {
-                    for (int i = 0; i < 15; i++) {
-                        sh "sudo lxc launch ubuntu:16.04 piptest"
-                        sh "sleep 45"
-                        sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get update' || true"
-                        sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get install -qyf python-pip' || true"
-                        sh "sudo lxc exec piptest -- /bin/bash -c 'pip install requests' || true"
-                        sh "sudo lxc exec piptest -- /bin/bash -c 'pip install sh' || true"
-                        sh "sudo lxc exec piptest -- /bin/bash -c 'pip install launchpadlib' || true"
-                        sh "sudo lxc delete --force piptest"
-                    }
-                }
+                // sh "sudo ip link list"
+                // sh "which lxc"
+                // sh "sudo lxc delete --force piptest || true"
+                // sh "sudo lxc profile show default"
                 // script {
-                //     if (params.workspace_path) {
-                //         sh "sudo rm -rf ${params.workspace_path}"
-                //     }
-                //     if (params.exec_command) {
-                //         sh "${params.exec_command}"
+                //     for (int i = 0; i < 15; i++) {
+                //         sh "sudo lxc launch ubuntu:16.04 piptest"
+                //         sh "sleep 45"
+                //         sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get update' || true"
+                //         sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get install -qyf python-pip' || true"
+                //         sh "sudo lxc exec piptest -- /bin/bash -c 'pip install requests' || true"
+                //         sh "sudo lxc exec piptest -- /bin/bash -c 'pip install sh' || true"
+                //         sh "sudo lxc exec piptest -- /bin/bash -c 'pip install launchpadlib' || true"
+                //         sh "sudo lxc delete --force piptest"
                 //     }
                 // }
+                script {
+                    if (params.workspace_path) {
+                        sh "sudo rm -rf ${params.workspace_path}"
+                    }
+                    if (params.exec_command) {
+                        sh "${params.exec_command}"
+                    }
+                }
             }
         }
     }
