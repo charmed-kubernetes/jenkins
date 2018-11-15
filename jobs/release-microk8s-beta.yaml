@@ -8,7 +8,7 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/release-microk8s-beta/Jenkinsfile
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 * * *"
     properties:
       - build-discarder:
           days-to-keep: 2
