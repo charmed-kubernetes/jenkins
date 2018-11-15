@@ -20,11 +20,11 @@ pipeline {
     options {
         ansiColor('xterm')
         timestamps()
+        retry(3)
     }
     stages {
         stage('Setup') {
             steps {
-                tearDownLxd()
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
@@ -40,8 +40,15 @@ pipeline {
     /* We assume that there are no other lxc machines on the slave. */
     post {
         always {
-            tearDownLxd()
             sh "snapcraft logout"
+        }
+        /* tearDownLxd will kill all lxc containers. It will kill any release-microk8s-stable jobs. */
+        /* we make sure we cleanup all containers only when there is a potential of leaving back grabadge. */
+        failure {
+            tearDownLxd()
+        }
+        aborted {
+            tearDownLxd()
         }
     }
 }
