@@ -90,6 +90,9 @@ pipeline {
             archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
         }
         always {
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
             sh "sudo lxc profile show default"
             collectDebug(params.controller,
                          juju_model)
