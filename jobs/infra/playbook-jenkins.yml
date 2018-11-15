@@ -165,9 +165,6 @@
         owner: jenkins
         group: jenkins
         recurse: yes
-    - name: login to jaas
-      command: "juju login"
-      become: false
     - name: update jenkins user
       user:
         name: jenkins
