@@ -25,7 +25,9 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+                retry(3) {
+                    sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+                }
             }
         }
 
