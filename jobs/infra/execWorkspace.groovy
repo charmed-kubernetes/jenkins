@@ -26,10 +26,10 @@ pipeline {
                         sh "sudo lxc launch ubuntu:16.04 piptest"
                         sh "sleep 45"
                         sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get update' || true"
-                        sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get install -qyf python3-pip' || true"
-                        sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install requests' || true"
-                        sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install sh' || true"
-                        sh "sudo lxc exec piptest -- /bin/bash -c 'pip3 install launchpadlib' || true"
+                        sh "sudo lxc exec piptest -- /bin/bash -c 'apt-get install -qyf python-pip' || true"
+                        sh "sudo lxc exec piptest -- /bin/bash -c 'pip install requests' || true"
+                        sh "sudo lxc exec piptest -- /bin/bash -c 'pip install sh' || true"
+                        sh "sudo lxc exec piptest -- /bin/bash -c 'pip install launchpadlib' || true"
                         sh "sudo lxc delete --force piptest"
                     }
                 }
