@@ -42,7 +42,7 @@ pipeline {
             steps {
                 dir("${JUJU_REPOSITORY}/builds/${params.charm}") {
                     sh "charm proof"
-                    sh "flake8"
+                    sh "tox -e py36 -- flake8"
                 }
                 dir("jobs") {
                     script {
