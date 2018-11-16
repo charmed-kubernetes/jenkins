@@ -42,9 +42,9 @@ pipeline {
             steps {
                 dir("${JUJU_REPOSITORY}/builds/${params.charm}") {
                     sh "charm proof"
-                    sh "tox -e py36 -- flake8"
                 }
                 dir("jobs") {
+                    sh "tox -e py36 -- flake8 ${JUJU_REPOSITORY}/builds/${params.charm}"
                     script {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
