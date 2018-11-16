@@ -33,7 +33,9 @@ pipeline {
         stage('Release microk8s'){
             steps {
                 dir('jobs') {
-                    sh "DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} PROXY=${params.PROXY} tox -e py36 -- python3 microk8s/release-to-beta.py"
+                    retry(3) {
+                        sh "DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} PROXY=${params.PROXY} tox -e py36 -- python3 microk8s/release-to-beta.py"
+                    }
                 }
             }
         }
