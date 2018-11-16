@@ -13,6 +13,6 @@ ansible
 asyncio-extras
 sh
 flake8
-launchpadlib
+launchpadlib==1.10.6
 canonicalwebteam.snapstoreapi==0.4.4
 python-dateutil
