@@ -48,13 +48,13 @@ def is_latest(release):
 
 def gh_branch_exists(branch):
     """Return true if the branch is already available on the repository"""
-    cmd = "git ls-remote --exit-code --heads https://github.com/ubuntu/microk8s.git {}".format(branch).split()
+    cmd = "git ls-remote --exit-code --heads git@github.com:ubuntu/microk8s.git {}".format(branch).split()
     try:
         check_call(cmd)
         print("GH branch {} exists.".format(branch))
         return True
     except CalledProcessError:
-        print("GH branch {} does not exist.".format(branch))
+        print("GH branch does not {} exist.".format(branch))
         return False
 
 
@@ -62,7 +62,7 @@ def create_gh_branch(branch, gh_user, gh_token):
     """Create a branch on the repo using the credentials passed"""
     cmd = "rm -rf microk8s".split()
     check_call(cmd)
-    cmd = "git clone https://github.com/ubuntu/microk8s".split()
+    cmd = "git clone http://www.github.com/ubuntu/microk8s".split()
     check_call(cmd)
     os.chdir("microk8s")
     cmd = "git checkout -b {}".format(branch).split()
@@ -126,7 +126,6 @@ class Builder:
                             store_name=workingsnap.store_name,
                             store_series=workingsnap.store_series,
                             store_channels="{}/edge/testingbuilders".format(self.track),
-                            processors=['/+processors/amd64', '/+processors/arm64'],
                             auto_build=workingsnap.auto_build,
                             auto_build_archive=workingsnap.auto_build_archive,
                             auto_build_pocket=workingsnap.auto_build_pocket)
@@ -143,7 +142,7 @@ class Builder:
             # log in
             launchpad = Launchpad.login_with('Launchpad Snap Build Trigger',
                                              'production', configbag.cachedir,
-                                             credentials_file=configbag.creds,
+                                             credentials_file=configbag.creds.decode('utf-8'),
                                              version='devel')
             self.lp = launchpad
 

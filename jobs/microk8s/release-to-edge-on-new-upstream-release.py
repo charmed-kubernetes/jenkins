@@ -26,14 +26,14 @@ def trigger_lp_builders(track):
     """Trigger the LP builder of the track provided. This method will
     login using the cached credentials or prompt you for authorization."""
     if track == "latest":
-        snap_name = configbag.snap_name
+        snap_name = "microk8s"
     else:
-        snap_name = "{}-{}".format(configbag.snap_name, track)
+        snap_name = "microk8s-{}".format(track)
 
     # log in
     launchpad = Launchpad.login_with('Launchpad Snap Build Trigger',
                                      'production', configbag.cachedir,
-                                     credentials_file=configbag.creds,
+                                     credentials_file=configbag.creds.decode('utf-8'),
                                      version='devel')
 
     # get launchpad team data and ppa
