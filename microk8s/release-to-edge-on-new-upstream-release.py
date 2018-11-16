@@ -33,7 +33,7 @@ def trigger_lp_builders(track):
     # log in
     launchpad = Launchpad.login_with('Launchpad Snap Build Trigger',
                                      'production', configbag.cachedir,
-                                     credentials_file=configbag.creds,
+                                     credentials_file=configbag.creds.decode('utf-8'),
                                      version='devel')
 
     # get launchpad team data and ppa
