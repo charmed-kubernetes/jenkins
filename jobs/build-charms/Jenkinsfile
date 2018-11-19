@@ -48,10 +48,18 @@ pipeline {
                     script {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
+                            sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                             sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py36 -- pytest --tb native -ra -v -s -n auto --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }
 
+                }
+            }
+            post {
+                always {
+                    collectDebug(params.controller,
+                                 juju_model)
+                    sh "juju kill-controller -y ${params.controller}"
                 }
             }
         }

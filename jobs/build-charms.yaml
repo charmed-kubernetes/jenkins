@@ -18,7 +18,7 @@
           default: 'charms'
       - string:
           name: controller
-          default: 'jaas'
+          default: 'build-charms'
       - string:
           name: cloud
           default: 'aws/us-east-1'
