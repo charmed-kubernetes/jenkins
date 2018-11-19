@@ -57,8 +57,6 @@ pipeline {
             }
             post {
                 always {
-                    collectDebug(params.controller,
-                                 juju_model)
                     sh "juju kill-controller -y ${params.controller}"
                 }
             }
