@@ -19,6 +19,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
+                sh "juju kill-controller -y ${params.controller} || true"
                 sh "mkdir -p ${env.JUJU_REPOSITORY}"
                 sh "mkdir -p ${env.TMPDIR}"
             }
