@@ -185,7 +185,7 @@ if __name__ == '__main__':
         # Take care of the GH branches
         if not is_latest(track) and not gh_branch_exists(track):
             print("Creating a branch for {}".format(track))
-            create_gh_branch(track)
+            create_gh_branch(track, gh_user, gh_token)
             print("Creating GH branch from master.")
             # it will take at most 5 hours for LP to get the branch so
             # trying to create the LP builders now will fail.
