@@ -60,7 +60,7 @@ pipeline {
             }
             post {
                 always {
-                    sh "juju kill-controller -y ${params.controller}"
+                    sh "juju kill-controller -y ${params.controller} || true"
                 }
             }
         }
