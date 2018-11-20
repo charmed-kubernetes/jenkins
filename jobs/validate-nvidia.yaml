@@ -15,7 +15,7 @@
           default: 'validate-nvidia'
       - string:
           name: controller
-          default: 'jaas'
+          default: 'validate-nvidia'
       - choice:
           name: cloud
           choices:

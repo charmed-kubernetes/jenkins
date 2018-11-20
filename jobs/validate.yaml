@@ -15,7 +15,7 @@
           default: 'validate'
       - string:
           name: controller
-          default: 'jaas'
+          default: 'validate-k8s'
       - choice:
           name: cloud
           choices:

@@ -27,6 +27,8 @@ pipeline {
                         sh "CONTROLLER=${params.controller} MODEL=${juju_model} tox -e py36 -- bash integration/calico/create-subnet-aws.sh"
                     }
                 }
+                sh "juju kill-controller -y ${params.controller} || true"
+                sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           bundle: "cs:~containers/${params.bundle}",
@@ -62,8 +64,7 @@ pipeline {
 
             collectDebug(params.controller,
                          juju_model)
-            tearDown(params.controller,
-                     juju_model)
+            sh "juju kill-controller -y ${params.controller} || true"
         }
     }
 }
