@@ -19,10 +19,10 @@
           default: '{version_overlay}'
       - string:
           name: model
-          default: 'cncf'
+          default: 'conformance'
       - string:
           name: controller
-          default: 'jaas'
+          default: 'cncf'
       - choice:
           name: cloud
           choices:
