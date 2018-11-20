@@ -19,7 +19,7 @@
           default: '{version_overlay}'
       - string:
           name: model
-          default: 'conformance'
+          default: 'cncf'
       - string:
           name: controller
           default: 'jaas'
