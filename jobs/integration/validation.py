@@ -56,6 +56,8 @@ async def validate_all(model, log_dir):
     await validate_audit_webhook(model)
     await validate_keystone(model)
     assert_no_unit_errors(model)
+    if 'vault' in model.applications:
+        await validate_encryption_at_rest(model)
 
 
 @log_calls
@@ -1257,6 +1259,23 @@ async def validate_keystone(model):
     # cleanup
     await model.applications['keystone'].destroy()
     await model.applications['mysql'].destroy()
+
+
+@log_calls_async
+async def validate_encryption_at_rest(model):
+    worker = model.applications['kubernetes-worker'].units[0]
+    output = await worker.run("kubectl create secret generic test-secret "
+                              "--from-literal=username='secret-value'")
+    assert output.status == 'completed'
+    output = await worker.run("kubectl get secret test-secret -o yaml")
+    assert output.status == 'completed'
+    assert 'secret-value' in output.output
+    etcd = model.applications['etcd'].units[0]
+    etcd.run("ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
+             "--endpoints http://127.0.0.1:4001 "
+             "get /registry/secrets/default/test-secret | hexdump -C")
+    assert output.status == 'completed'
+    assert 'secret-value' not in output.output
 
 
 class MicrobotError(Exception):
