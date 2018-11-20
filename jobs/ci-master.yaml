@@ -1,6 +1,6 @@
 # K8s Jenkin GIT repos
 - scm:
-    name: k8s-jenkins-scm
+    name: k8s-jenkins-jenkaas
     scm:
       - git:
           url: https://github.com/juju-solutions/kubernetes-jenkins.git
@@ -8,7 +8,7 @@
             - 'master'
 
 - scm:
-    name: k8s-jenkins-jenkaas
+    name: k8s-jenkins-scm
     scm:
       - git:
           url: https://github.com/juju-solutions/kubernetes-jenkins.git
