@@ -1,4 +1,5 @@
 import os
+import configbag
 from dateutil import parser
 from subprocess import check_output, check_call, CalledProcessError
 
@@ -6,7 +7,8 @@ from subprocess import check_output, check_call, CalledProcessError
 class Microk8sSnap:
 
     def __init__(self, track, channel):
-        cmd = "snapcraft list-revisions microk8s --arch amd64".split()
+        arch = configbag.get_arch()
+        cmd = "snapcraft list-revisions microk8s --arch {}".format(arch).split()
         revisions_list = check_output(cmd).decode("utf-8").split("\n")
         if track == "latest":
             channel_patern = " {}*".format(channel)
