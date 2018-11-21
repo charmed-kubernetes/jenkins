@@ -1,12 +1,18 @@
-- job:
-    name: 'release-microk8s-stable'
+# Tests and releases microk8s to stable
+
+- job-template:
+    name: 'release-microk8s-stable-{arch}'
     description: |
-      Tests and releases microk8s to stable. Affects all tracks.
+      Tests and releases microk8s to stable. Affects all tracks on {arch}.
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/release-microk8s-stable/Jenkinsfile
+    parameters:
+      - string:
+          name: build_node
+          default: 'runner-{arch}'
     triggers:
         - timed: "0 12 * * *"
     properties:
@@ -19,3 +25,14 @@
             - "infra.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
+
+- job-group:
+    name: 'release-microk8s-stable'
+    jobs:
+      - 'release-microk8s-stable-{arch}':
+          arch: ['amd64', 'arm64']
+
+- project:
+    name: release-microk8s-stable
+    jobs:
+      - 'release-microk8s-stable'
