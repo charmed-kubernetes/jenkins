@@ -50,15 +50,15 @@ if __name__ == '__main__':
             print("Not releasing because candidate is {} days old and 'always_release' is {}".format(
                 (datetime.now(timezone.utc) - candidate_snap.release_date).days, always_release
             ))
-            break
+            continue
 
         stable_snap = Microk8sSnap(track, 'stable')
         if stable_snap.released:
             # We already have a snap released on stable. Lets run some tests.
             if candidate_snap.version == stable_snap.version and always_release == 'no':
                 # Candidate and stable are the same version. Nothing to release.
-                print("Beta and edge have the same version {}. We will not release.".format(stable_snap.version))
-                break
+                print("Stable and candidate have the same version {}. We will not release.".format(stable_snap.version))
+                continue
 
             print("Candidate is at {}, stable at {}, and 'always_release' is {}.".format(
                 candidate_snap.version, stable_snap.version, always_release
