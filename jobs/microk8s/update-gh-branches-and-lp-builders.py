@@ -5,7 +5,7 @@ import requests
 import configbag
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError
-from configbag import tracks
+from configbag import get_tracks
 from subprocess import check_call, CalledProcessError
 
 
@@ -176,7 +176,7 @@ class Builder:
 
 if __name__ == '__main__':
     print("Validating GH branches and LP builders of microk8s")
-    for track in tracks:
+    for track in get_tracks(all=True):
         print("Examining track {}".format(track))
         upstream = upstream_release(track)
         if not upstream:

@@ -3,7 +3,7 @@
 import os
 from datetime import datetime, timezone
 from snapstore import Microk8sSnap
-from configbag import tracks
+from configbag import get_tracks
 
 
 # Set this to 'no' if you are sure you want to release
@@ -20,7 +20,7 @@ if tests_branch and tests_branch.strip() == '':
 # If you do not specify TRACKS all tracks will be processes
 tracks_requested = os.environ.get('TRACKS')
 if not tracks_requested or tracks_requested.strip() == '':
-    tracks_requested = tracks
+    tracks_requested = get_tracks()
 else:
     tracks_requested = tracks_requested.split()
 
