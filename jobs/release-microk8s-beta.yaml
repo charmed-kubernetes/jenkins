@@ -1,12 +1,18 @@
-- job:
-    name: 'release-microk8s-beta'
+# Tests and releases microk8s to beta
+
+- job-template:
+    name: 'release-microk8s-beta-{arch}'
     description: |
-      Tests and releases microk8s to beta. Affects all tracks.
+      Tests and releases microk8s to beta. Affects all tracks on {arch}.
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/release-microk8s-beta/Jenkinsfile
+    parameters:
+      - string:
+          name: build_node
+          default: 'runner-{arch}'
     triggers:
         - timed: "0 0 * * *"
     properties:
@@ -19,3 +25,14 @@
             - "infra.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
+
+- job-group:
+    name: 'release-microk8s-beta'
+    jobs:
+      - 'release-microk8s-beta-{arch}':
+          arch: ['amd64', 'arm64']
+
+- project:
+    name: release-microk8s-beta
+    jobs:
+      - 'release-microk8s-beta'
