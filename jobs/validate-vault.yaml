@@ -31,6 +31,8 @@
       - string:
           name: snap_channel
           default: '1.12/edge'
+    triggers:
+        - timed: "@daily"
     properties:
       - build-discarder:
           num-to-keep: 2
