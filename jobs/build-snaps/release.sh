@@ -3,7 +3,8 @@
 
 set -eux
 
-source utilities.sh
+scripts_path=$(dirname "$0")
+. $scripts_path/utilities.sh
 
 # K8s versions we want to check for new releases
 declare -a VERSIONS=('latest' '1.10' '1.11' '1.12' '1.13' '1.14' '2.0');
