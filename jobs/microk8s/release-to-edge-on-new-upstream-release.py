@@ -5,7 +5,7 @@ import configbag
 from snapstore import Microk8sSnap
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError
-from configbag import tracks
+from configbag import get_tracks
 
 
 def upstream_release(release):
@@ -56,7 +56,7 @@ def trigger_lp_builders(track):
 
 if __name__ == '__main__':
     print("Running a build and release of microk8s")
-    for track in tracks:
+    for track in get_tracks(all=True):
         print("Looking at track {}".format(track))
         upstream = upstream_release(track)
         if not upstream:
