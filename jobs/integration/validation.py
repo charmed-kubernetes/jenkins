@@ -1198,11 +1198,16 @@ async def validate_keystone(model):
         return
 
     # add keystone
-    await model.deploy('keystone')
-    await model.deploy('mysql', series='xenial')
+    await model.deploy('keystone', series='bionic',
+                       config={'admin-password': 'testpw',
+                               'preferred-api-version': '3',
+                               'openstack-origin': 'cloud:bionic-rocky'})
+    await model.deploy('percona-cluster',
+                       config={'innodb-buffer-pool-size': '256M',
+                               'max-connections': '1000'})
     await model.add_relation('kubernetes-master:keystone-credentials',
                              'keystone:identity-credentials')
-    await model.add_relation('keystone:shared-db', 'mysql:shared-db')
+    await model.add_relation('keystone:shared-db', 'percona-cluster:shared-db')
     await asyncify(_juju_wait)()
 
     # verify kubectl config file has keystone in it
@@ -1232,11 +1237,22 @@ async def validate_keystone(model):
                                    (one_master, 'po', ['k8s-keystone-auth'], '-n kube-system'),
                                    timeout_msg="Unable to find keystone auth pod before timeout")
 
-    # verify authorization
-    await masters.set_config({'enable-keystone-authorization': 'true'})
+    skip_tests = False
+    action = await one_master.run('cat /snap/cdk-addons/current/templates/keystone-rbac.yaml')
+    if 'kind: Role' in action.results['Stdout']:
+        # we need to skip tests for the old template that incorrectly had a Role instead
+        # of a ClusterRole
+        skip_tests = True
+
+    if skip_tests:
+        await masters.set_config({'enable-keystone-authorization': 'true'})
+    else:
+        # verify authorization
+        await masters.set_config({'enable-keystone-authorization': 'true',
+                                  'authorization-mode': 'Node,Webhook,RBAC'})
     await wait_for_process(model, 'authorization-webhook-config-file')
 
-    # verify auth fail
+    # verify auth fail - bad user
     one_master = random.choice(masters.units)
     await one_master.run('/usr/bin/snap install --edge client-keystone-auth')
 
@@ -1247,18 +1263,90 @@ async def validate_keystone(model):
     assert output.status == 'completed'
     assert "invalid user credentials" in output.data['results']['Stderr'].lower()
 
+    # verify auth fail - bad password
+    cmd = "source /home/ubuntu/kube-keystone.sh && \
+           OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
+           OS_PASSWORD=badpw /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
+    output = await one_master.run(cmd)
+    assert output.status == 'completed'
+    assert "invalid user credentials" in output.data['results']['Stderr'].lower()
+
+    if not skip_tests:
+        # set up read only access to pods only
+        await masters.set_config({'keystone-policy': '''apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-auth-policy
+  namespace: kube-system
+  labels:
+    k8s-app: k8s-keystone-auth
+data:
+  policies: |
+    [
+      {
+        "resource": {
+          "verbs": ["get", "list", "watch"],
+          "resources": ["pods"],
+          "version": "*",
+          "namespace": "default"
+        },
+        "match": [
+          {
+            "type": "user",
+            "values": ["admin"]
+          }
+        ]
+      }
+    ]'''})
+        await asyncify(_juju_wait)()
+
+        # verify auth failure on something not a pod
+        cmd = "source /home/ubuntu/kube-keystone.sh && \
+            OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
+            OS_PASSWORD=testpw /snap/bin/kubectl \
+            --kubeconfig /home/ubuntu/config get clusterroles"
+        output = await one_master.run(cmd)
+        assert output.status == 'completed'
+        assert "error" in output.data['results']['Stderr'].lower()
+
+        # verify auth success on pods
+        cmd = "source /home/ubuntu/kube-keystone.sh && \
+            OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
+            OS_PASSWORD=testpw /snap/bin/kubectl \
+            --kubeconfig /home/ubuntu/config get po"
+        output = await one_master.run(cmd)
+        assert output.status == 'completed'
+        assert "invalid user credentials" not in output.data['results']['Stderr'].lower()
+        assert "error" not in output.data['results']['Stderr'].lower()
+
+        # verify auth failure on pods outside of default namespace
+        cmd = "source /home/ubuntu/kube-keystone.sh && \
+            OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
+            OS_PASSWORD=testpw /snap/bin/kubectl \
+            --kubeconfig /home/ubuntu/config get po -n kube-system"
+        output = await one_master.run(cmd)
+        assert output.status == 'completed'
+        assert "invalid user credentials" not in output.data['results']['Stderr'].lower()
+        assert "forbidden" in output.data['results']['Stderr'].lower()
+
     # verify auth works now that it is off
-    await masters.set_config({'enable-keystone-authorization': 'false'})
+    await masters.set_config({'enable-keystone-authorization': 'false',
+                              'authorization-mode': 'AlwaysAllow'})
     await wait_for_not_process(model, 'authorization-webhook-config-file')
-    cmd = "/snap/bin/kubectl --kubeconfig /home/ubuntu/kubeconfig get clusterroles"
-    worker = model.applications['kubernetes-worker'].units[0]
-    output = await worker.run(cmd)
+    await asyncify(_juju_wait)()
+    cmd = "source /home/ubuntu/kube-keystone.sh && \
+           OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
+           OS_PASSWORD=testpw /snap/bin/kubectl \
+           --kubeconfig /home/ubuntu/config get clusterroles"
+    output = await one_master.run(cmd)
     assert output.status == 'completed'
     assert "invalid user credentials" not in output.data['results']['Stderr'].lower()
+    assert "error" not in output.data['results']['Stderr'].lower()
+    assert "forbidden" not in output.data['results']['Stderr'].lower()
 
     # cleanup
     await model.applications['keystone'].destroy()
-    await model.applications['mysql'].destroy()
+    await model.applications['percona-cluster'].destroy()
 
 
 @log_calls_async
