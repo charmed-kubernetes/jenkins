@@ -2,8 +2,8 @@ Running JJB
 
 # Prereqs
 
-  - Needs `pipenv` installed
-  - Needs `pyenv` installed
+  - Python 3.6 or later
+  - Needs `tox` installed
   - Needs Jenkins Job Builder config (**jjb-conf.ini**):
 
 ```ini
@@ -28,21 +28,17 @@ First setup your python environment:
 
 ```
 > cd jobs
-> pipenv run pip freeze > requirements.txt ; pip download -r requirements.txt -d wheelhouse
-> pip3 install --no-index -f wheelhouse wheelhouse/pipenv-2018.7.1-py3-none-any.whl
-> pipenv run pip3 install --no-index -f wheelhouse wheelhouse/*
-> pipenv shell
 ```
 
 # See a list of available job tasks
 ```
-> invoke -l
+> tox --workdir .tox -e py36 -- invoke -l
 ```
 
 # Update jobs in jenkins
 
 ```
-> invoke update-jobs --conf jjb-conf.ini
+> tox --workdir .tox -e py36 -- invoke update-jobs --conf jjb-conf.ini
 ```
 
 # Adding new jobs
@@ -51,7 +47,7 @@ First setup your python environment:
 2. Create a sub-directory of the same name as job.
 3. Create a `Jenkinsfile` and any additional local libraries required for job to run.
 4. Include a readme.md based on `readme-template.md`
-5. Verify job syntax with: `invoke test-jobs --conf jobs/jjb-conf.ini`
+5. Verify job syntax with: `tox --workdir .tox -e py36 -- invoke test-jobs --conf jobs/jjb-conf.ini`
 
 # References
 
