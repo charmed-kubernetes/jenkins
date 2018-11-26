@@ -980,8 +980,15 @@ async def get_last_audit_entry_date(unit):
     cmd = 'cat /root/cdk/audit/audit.log | tail -n 1'
     raw = await run_until_success(unit, cmd)
     data = json.loads(raw)
-    timestamp = data['timestamp']
-    time = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+    if 'timestamp' in data:
+        timestamp = data['timestamp']
+        time = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+    elif 'requestReceivedTimestamp' in data:
+        timestamp = data['requestReceivedTimestamp']
+        time = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
+    else:
+        raise AuditTimestampError('Unable to find timestamp in {}'.format(data))
+
     return time
 
 
@@ -1367,4 +1374,8 @@ async def validate_encryption_at_rest(model):
 
 
 class MicrobotError(Exception):
+    pass
+
+
+class AuditTimestampError(Exception):
     pass
