@@ -1,12 +1,9 @@
-machines:
-  '0':
-    constraints: cores=2 mem=8G root-disk=16G
-  '1':
-    constraints: instance-type=p2.xlarge
 applications:
   kubernetes-master:
+    constraints: cores=2 mem=8G root-disk=16G
     options:
       channel: 1.12/edge
   kubernetes-worker:
+    constraints: instance-type=p2.xlarge
     options:
       channel: 1.12/edge
