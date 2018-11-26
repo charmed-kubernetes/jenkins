@@ -3,9 +3,9 @@
 #
 
 - job-template:
-    name: 'conformance-{k8sver}'
+    name: 'conformance-{k8sver}-{bundle}'
     description: |
-      CNCF Conformance testing for Kubernetes {k8sver}.
+      CNCF Conformance testing for Kubernetes {k8sver} {bundle}.
 
       Please see https://git.io/fNwXY for more information.
     project-type: pipeline
@@ -32,14 +32,9 @@
       - string:
           name: bundle_channel
           default: 'edge'
-      - choice:
+      - string:
           name: bundle
-          choices:
-            - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
-            - 'canonical-kubernetes-canal'
-            - 'kubernetes-core'
-            - 'kubernetes-calico'
+          default: '{bundle}'
     triggers:
       timed: '@weekly'
     properties:
@@ -56,8 +51,13 @@
       - 'v1.10.x':
           version_overlay: 'jobs/overlays/1.10-edge-overlay.yaml'
     jobs:
-      - 'conformance-{k8sver}'
-
+      - 'conformance-{k8sver}-{bundle}':
+          bundle:
+            - 'canonical-kubernetes'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
+            - 'kubernetes-core'
+            - 'kubernetes-calico'
 
 - project:
     name: conformance
