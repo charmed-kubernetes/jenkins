@@ -1197,6 +1197,9 @@ async def validate_keystone(model):
         log('skipping, k8s version v' + k8s_version_str)
         return
 
+    # save off config
+    config = await model.applications['kubernetes-master'].get_config()
+
     # add keystone
     await model.deploy('keystone', series='bionic',
                        config={'admin-password': 'testpw',
@@ -1330,13 +1333,12 @@ data:
         assert "forbidden" in output.data['results']['Stderr'].lower()
 
     # verify auth works now that it is off
+    original_auth = config['authorization-mode']['value']
     await masters.set_config({'enable-keystone-authorization': 'false',
-                              'authorization-mode': 'AlwaysAllow'})
+                              'authorization-mode': original_auth})
     await wait_for_not_process(model, 'authorization-webhook-config-file')
     await asyncify(_juju_wait)()
-    cmd = "source /home/ubuntu/kube-keystone.sh && \
-           OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
-           OS_PASSWORD=testpw /snap/bin/kubectl \
+    cmd = "/snap/bin/kubectl --context=juju-context \
            --kubeconfig /home/ubuntu/config get clusterroles"
     output = await one_master.run(cmd)
     assert output.status == 'completed'
