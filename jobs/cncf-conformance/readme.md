@@ -36,8 +36,6 @@ In the `job-group` under `jobs` add an additional item with the k8s version, sna
           version_overlay: '1.11-edge-overlay.yaml'
       - 'v1.10.x':
           version_overlay: '1.10-edge-overlay.yaml'
-      - 'v1.9.x':
-          version_overlay: '1.9-edge-overlay.yaml'
     jobs:
       - '{name}-tests-{k8sver}-{cloud}':
           cloud: ['aws', 'google']
