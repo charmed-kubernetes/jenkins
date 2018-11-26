@@ -44,6 +44,10 @@
 - job-group:
     name: 'conformance'
     k8sver:
+      - 'v1.14.x':
+          version_overlay: 'jobs/overlays/1.14-edge-overlay.yaml'
+      - 'v1.13.x':
+          version_overlay: 'jobs/overlays/1.13-edge-overlay.yaml'
       - 'v1.12.x':
           version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
       - 'v1.11.x':
