@@ -8,6 +8,7 @@ applications:
   easyrsa:
     # it's currently not possible to remove an application in an overlay
     num_units: 0
+    to: []
   vault:
     charm: cs:~openstack-charmers-next/vault
     num_units: 1
