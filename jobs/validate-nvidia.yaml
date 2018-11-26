@@ -12,16 +12,13 @@
     parameters:
       - string:
           name: model
-          default: 'validate-nvidia'
+          default: 'nvidia'
       - string:
           name: controller
           default: 'validate-nvidia'
-      - choice:
+      - string:
           name: cloud
-          choices:
-            - 'aws/us-east-1'
-            - 'google/us-east1'
-            - 'azure/eastus'
+          default: 'aws/us-east-1'
       - string:
           name: overlay
           default: '{version_overlay}'
@@ -35,13 +32,9 @@
           name: bundle
           choices:
             - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
-            - 'canonical-kubernetes-canal'
             - 'kubernetes-core'
-            - 'kubernetes-calico'
-      - string:
-          name: snap_channel
-          default: '1.12/edge'
+    triggers:
+      - timed: "@weekly"
     properties:
       - build-discarder:
           num-to-keep: 2
@@ -49,6 +42,8 @@
 - project:
     name: validate-nvidia
     version:
+      - 'v1.13.x':
+          version_overlay: 'jobs/overlays/1.13-edge-nvidia-overlay.yaml'
       - 'v1.12.x':
           version_overlay: 'jobs/overlays/1.12-edge-nvidia-overlay.yaml'
     jobs:
