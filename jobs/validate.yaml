@@ -1,9 +1,9 @@
 # Validates a deployed CDK
 
 - job-template:
-    name: 'validate-{version}'
+    name: 'validate-{version}-{bundle}'
     description: |
-      Validates k8s {version} deployment.
+      Validates k8s {version} {bundle} deployment.
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -31,14 +31,9 @@
       - string:
           name: bundle_channel
           default: 'edge'
-      - choice:
+      - string:
           name: bundle
-          choices:
-            - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
-            - 'canonical-kubernetes-canal'
-            - 'kubernetes-core'
-            - 'kubernetes-calico'
+          default: '{bundle}'
       - string:
           name: snap_channel
           default: '{snap_channel}'
@@ -46,7 +41,7 @@
         - timed: "@daily"
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 3
 
 - job-group:
     name: validate
@@ -67,7 +62,13 @@
           version_overlay: 'jobs/overlays/1.14-edge-overlay.yaml'
           snap_channel: '1.14/edge'
     jobs:
-      - 'validate-{version}'
+      - 'validate-{version}-{bundle}':
+          bundle:
+            - 'canonical-kubernetes'
+            - 'canonical-kubernetes-elastic'
+            - 'canonical-kubernetes-canal'
+            - 'kubernetes-core'
+            - 'kubernetes-calico'
 
 - project:
     name: validate

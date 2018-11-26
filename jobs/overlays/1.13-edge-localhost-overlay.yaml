@@ -1,0 +1,12 @@
+applications:
+  kubernetes-master:
+    options:
+      channel: 1.13/edge
+      snap_proxy: http://squid.internal:3128
+  kubernetes-worker:
+    options:
+      channel: 1.13/edge
+      snap_proxy: http://squid.internal:3128
+  etcd:
+    options:
+      snap_proxy: http://squid.internal:3128

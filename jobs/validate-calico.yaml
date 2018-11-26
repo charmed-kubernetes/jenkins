@@ -31,6 +31,8 @@
       - string:
           name: snap_channel
           default: '1.12/edge'
+    triggers:
+      - timed: "@weekly"
     properties:
       - build-discarder:
           num-to-keep: 2
@@ -40,5 +42,7 @@
     version:
       - 'v1.12.x':
           version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
+      - 'v1.13.x':
+          version_overlay: 'jobs/overlays/1.13-edge-overlay.yaml'
     jobs:
       - 'validate-calico-{version}'

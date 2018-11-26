@@ -24,12 +24,6 @@ def bundle_mapping = [
     ]
 ]
 
-// List of charms to build and release
-def build_charms = [
-    'calico', 'canal', 'easyrsa', 'etcd', 'flannel', 'kubeapi-load-balancer', 'kubernetes-e2e',
-    'kubernetes-master', 'kubernetes-worker'
-]
-
 def releaseBundle(bundle, charmstore) {
     // Releases bundle to defined charmstore namespace
     def revision = sh script:String.format("charm push %s %s  | tail -n +1 | head -1 | awk '{print \$2}'", bundle, charmstore), returnStdout: true

@@ -1,9 +1,9 @@
 # Validates a deployed CDK
 
 - job-template:
-    name: 'validate-alt-arch-{version}'
+    name: 'validate-alt-{arch}-{version}-{bundle}'
     description: |
-      Validates k8s {version} deployment.
+      Validates k8s {arch} {version} {bundle} deployment.
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -22,58 +22,67 @@
       - string:
           name: version_overlay
           default: '{version_overlay}'
-      - choice:
+      - string:
           name: build_node
-          choices:
-            - runner-s390x
-            - runner-arm64
-            - runner-ppc64le
-            - runner-amd64
+          default: 'runner-{arch}'
       - bool:
           name: perform_upgrade
           default: false
       - string:
           name: bundle_channel
           default: 'edge'
-      - choice:
+      - string:
           name: bundle
-          choices:
+          default: '{bundle}'
+      - string:
+          name: snap_channel
+          default: '{snap_channel}'
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+      # - build-blocker:
+      #     use-build-blocker: true
+      #     blocking-jobs:
+      #       - "infra.*"
+      #     block-level: 'GLOBAL'
+      #     queue-scanning: 'ALL'
+
+- job-group:
+    name: validate-alt
+    arch:
+      - s390x
+      - arm64
+      - ppc64le
+      - amd64
+    version:
+      - 'v1.10.x':
+          version_overlay: 'jobs/overlays/1.10-edge-localhost-overlay.yaml'
+          snap_channel: '1.10/edge'
+      - 'v1.11.x':
+          version_overlay: 'jobs/overlays/1.11-edge-localhost-overlay.yaml'
+          snap_channel: '1.11/edge'
+      - 'v1.12.x':
+          version_overlay: 'jobs/overlays/1.12-edge-localhost-overlay.yaml'
+          snap_channel: '1.12/edge'
+      - 'v1.13.x':
+          version_overlay: 'jobs/overlays/1.13-edge-localhost-overlay.yaml'
+          snap_channel: '1.13/edge'
+      - 'v1.14.x':
+          version_overlay: 'jobs/overlays/1.14-edge-localhost-overlay.yaml'
+          snap_channel: '1.14/edge'
+
+    jobs:
+      - 'validate-alt-{arch}-{version}-{bundle}':
+          bundle:
             - 'canonical-kubernetes'
             - 'canonical-kubernetes-elastic'
             - 'canonical-kubernetes-canal'
             - 'kubernetes-core'
             - 'kubernetes-calico'
-      - string:
-          name: snap_channel
-          default: '{snap_channel}'
-    triggers:
-        - timed: "@weekly"
-    properties:
-      - build-discarder:
-          num-to-keep: 4
-      - build-blocker:
-          use-build-blocker: true
-          blocking-jobs:
-            - "infra.*"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
-
-- job-group:
-    name: validate-alt-arch
-    version:
-      - 'v1.10.x':
-          version_overlay: 'jobs/overlays/1.10-edge-overlay.yaml'
-          snap_channel: '1.10/edge'
-      - 'v1.11.x':
-          version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
-          snap_channel: '1.11/edge'
-      - 'v1.12.x':
-          version_overlay: 'jobs/overlays/1.12-edge-localhost-overlay.yaml'
-          snap_channel: '1.12/edge'
-    jobs:
-      - 'validate-alt-arch-{version}'
 
 - project:
-    name: validate-alt-arch
+    name: validate-alt
     jobs:
-      - 'validate-alt-arch'
+      - 'validate-alt'

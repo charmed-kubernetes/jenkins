@@ -40,6 +40,8 @@
             - 'canonical-kubernetes-canal'
             - 'kubernetes-core'
             - 'kubernetes-calico'
+    triggers:
+      timed: '@weekly'
     properties:
       - build-discarder:
           num-to-keep: 2
