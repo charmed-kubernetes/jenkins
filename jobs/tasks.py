@@ -18,6 +18,21 @@ def update_jobs(c, conf):
 
 
 @task
+def list_jobs(c, conf):
+    """ list the Jenkins Job Builder definitions
+    """
+    c.run("jenkins-jobs --conf {} list".format(conf))
+
+@task
+def delete_jobs(c, conf, pattern):
+    """ Delete jobs based on pattern
+    """
+    out = c.run("jenkins-jobs --conf {} list |grep '{}'".format(conf, pattern))
+    for line in out.stdout.splitlines():
+        c.run("jenkins-jobs --conf {} delete {}".format(conf, line.strip()))
+
+
+@task
 def create_nodes(c, apikey, apiuser, node, labels='runner'):
     """ Creates a jenkins slave node
     """

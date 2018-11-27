@@ -1,14 +1,20 @@
 # Validates a deployed CDK
 
-- job-template:
-    name: 'validate-alt-{arch}-{version}-{bundle}'
-    description: |
-      Validates k8s {arch} {version} {bundle} deployment.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/validate-alt-arch/Jenkinsfile
+- alt_core_bundle_defaults: &alt_core_bundle_defaults
+    name: 'core-bundle-defaults'
+    bundle:
+      - 'canonical-kubernetes'
+      - 'kubernetes-core'
+
+- alt_non_core_bundle_defaults: &alt_non_core_bundle_defaults
+    name: 'non-core-bundle-defaults'
+    bundle:
+      - 'canonical-kubernetes-elastic'
+      - 'canonical-kubernetes-canal'
+      - 'kubernetes-calico'
+
+- alt_paramter_defaults: &alt_parameter_defaults
+    name: 'alt-arch-parameter-defaults'
     parameters:
       - string:
           name: model
@@ -37,32 +43,17 @@
       - string:
           name: snap_channel
           default: '{snap_channel}'
-    triggers:
-        - timed: "H 1 * * *"
-    properties:
-      - build-discarder:
-          num-to-keep: 3
-      # - build-blocker:
-      #     use-build-blocker: true
-      #     blocking-jobs:
-      #       - "infra.*"
-      #     block-level: 'GLOBAL'
-      #     queue-scanning: 'ALL'
 
-- job-group:
-    name: validate-alt
+- alt_arch_defaults: &alt_arch_defaults
+    name: 'alt-arch-defaults'
     arch:
       - s390x
       - arm64
       - ppc64le
-      - amd64
+
+- alt_version_defaults: &alt_version_defaults
+    name: 'alt-version-defaults'
     version:
-      - 'v1.10.x':
-          version_overlay: 'jobs/overlays/1.10-edge-localhost-overlay.yaml'
-          snap_channel: '1.10/edge'
-      - 'v1.11.x':
-          version_overlay: 'jobs/overlays/1.11-edge-localhost-overlay.yaml'
-          snap_channel: '1.11/edge'
       - 'v1.12.x':
           version_overlay: 'jobs/overlays/1.12-edge-localhost-overlay.yaml'
           snap_channel: '1.12/edge'
@@ -73,16 +64,48 @@
           version_overlay: 'jobs/overlays/1.14-edge-localhost-overlay.yaml'
           snap_channel: '1.14/edge'
 
-    jobs:
-      - 'validate-alt-{arch}-{version}-{bundle}':
-          bundle:
-            - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
-            - 'canonical-kubernetes-canal'
-            - 'kubernetes-core'
-            - 'kubernetes-calico'
+- job-template:
+    name: 'validate-alt-{arch}-{version}-{bundle}'
+    id: validate-alt-core
+    description: |
+      Validates k8s {arch} {version} {bundle} deployment.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate-alt-arch/Jenkinsfile
+    <<: *alt_parameter_defaults
+    triggers:
+        - timed: 'H 1 * * *'
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
+- job-template:
+    name: 'validate-alt-{arch}-{version}-{bundle}'
+    id: validate-alt-non-core
+    description: |
+      Validates k8s {arch} {version} {bundle} deployment.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate-alt-arch/Jenkinsfile
+    <<: *alt_parameter_defaults
+    triggers:
+        - timed: 'H 0 * * fri'
+    properties:
+      - build-discarder:
+          num-to-keep: 2
 
 - project:
     name: validate-alt
     jobs:
-      - 'validate-alt'
+      - 'validate-alt-core':
+          <<: *alt_arch_defaults
+          <<: *alt_version_defaults
+          <<: *alt_core_bundle_defaults
+      - 'validate-alt-non-core':
+          <<: *alt_arch_defaults
+          <<: *alt_version_defaults
+          <<: *alt_non_core_bundle_defaults

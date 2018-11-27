@@ -1,14 +1,39 @@
 # Validates a deployed CDK
 
-- job-template:
-    name: 'validate-{version}-{bundle}'
-    description: |
-      Validates k8s {version} {bundle} deployment.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/validate/Jenkinsfile
+- core_bundle_defaults: &core_bundle_defaults
+    name: 'core-bundle-defaults'
+    bundle:
+      - 'canonical-kubernetes'
+      - 'kubernetes-core'
+
+- non_core_bundle_defaults: &non_core_bundle_defaults
+    name: 'non-core-bundle-defaults'
+    bundle:
+      - 'canonical-kubernetes-elastic'
+      - 'canonical-kubernetes-canal'
+      - 'kubernetes-calico'
+
+- edge_overlay_defaults: &edge_overlay_defaults
+    name: 'edge-overlay-defaults'
+    version:
+      # - 'v1.10.x':
+      #     version_overlay: 'jobs/overlays/1.10-edge-overlay.yaml'
+      #     snap_channel: '1.10/edge'
+      - 'v1.11.x':
+          version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
+          snap_channel: '1.11/edge'
+      - 'v1.12.x':
+          version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
+          snap_channel: '1.12/edge'
+      - 'v1.13.x':
+          version_overlay: 'jobs/overlays/1.13-edge-overlay.yaml'
+          snap_channel: '1.13/edge'
+      - 'v1.14.x':
+          version_overlay: 'jobs/overlays/1.14-edge-overlay.yaml'
+          snap_channel: '1.14/edge'
+
+- validate_parameter_defaults: &validate_parameter_defaults
+    name: 'validate-parameter-defaults'
     parameters:
       - string:
           name: model
@@ -37,40 +62,49 @@
       - string:
           name: snap_channel
           default: '{snap_channel}'
+
+- job-template:
+    name: 'validate-{version}-{bundle}'
+    id: validate-core
+    description: |
+      Validates k8s {version} {bundle} deployment.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate/Jenkinsfile
+    <<: *validate_parameter_defaults
     triggers:
         - timed: "H 1 * * *"
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 2
 
-- job-group:
-    name: validate
-    version:
-      - 'v1.10.x':
-          version_overlay: 'jobs/overlays/1.10-edge-overlay.yaml'
-          snap_channel: '1.10/edge'
-      - 'v1.11.x':
-          version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
-          snap_channel: '1.11/edge'
-      - 'v1.12.x':
-          version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
-          snap_channel: '1.12/edge'
-      - 'v1.13.x':
-          version_overlay: 'jobs/overlays/1.13-edge-overlay.yaml'
-          snap_channel: '1.13/edge'
-      - 'v1.14.x':
-          version_overlay: 'jobs/overlays/1.14-edge-overlay.yaml'
-          snap_channel: '1.14/edge'
-    jobs:
-      - 'validate-{version}-{bundle}':
-          bundle:
-            - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
-            - 'canonical-kubernetes-canal'
-            - 'kubernetes-core'
-            - 'kubernetes-calico'
+
+- job-template:
+    name: 'validate-{version}-{bundle}'
+    id: validate-non-core
+    description: |
+      Validates k8s {version} {bundle} deployment.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate/Jenkinsfile
+    <<: *validate_parameter_defaults
+    triggers:
+        - timed: "H 0 * * fri"
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
 
 - project:
     name: validate
     jobs:
-      - 'validate'
+      - 'validate-core':
+          <<: *core_bundle_defaults
+          <<: *edge_overlay_defaults
+      - 'validate-non-core':
+          <<: *non_core_bundle_defaults
+          <<: *edge_overlay_defaults
