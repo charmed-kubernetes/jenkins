@@ -454,8 +454,6 @@ async def validate_gpu_support(model):
                                        timeout_msg="nvidia-device-plugin-daemonset not running")
         action = await workers.units[0].run('ps -ef | grep kubelet')
         log(action.results['Stdout'])
-        gate = True if action.results['Stdout'].count("DevicePlugins=true") > 0 else False
-        assert gate
 
         # Do an addition on the GPU just be sure.
         # First clean any previous runs
