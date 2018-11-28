@@ -1,6 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def juju_model = String.format("%s-%s", params.model, uuid())
+def charm_sh = "tox -e py36 -- python3 build-charms/charms.py"
 
 pipeline {
     agent { label 'runner-amd64' }
@@ -30,8 +31,8 @@ pipeline {
             }
             steps {
                 sh "git clone --depth 1 -q ${params.git_repo}"
-                retry(5){
-                    sh "cd ${params.repo_name} && charm build -r --no-local-layers --force"
+                dir('jobs') {
+                    sh "${charm_sh} build --repo-path ${params.repo_name}"
                 }
             }
         }
@@ -41,13 +42,7 @@ pipeline {
             }
 
             steps {
-                dir("${JUJU_REPOSITORY}/builds/${params.charm}") {
-                    sh "charm proof"
-                }
                 dir("jobs") {
-                    /* Disable flake8 until we can handle these better
-                     * sh "tox -e py36 -- flake8 ${JUJU_REPOSITORY}/builds/${params.charm}"
-                     */
                     script {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
@@ -69,15 +64,15 @@ pipeline {
                 timeout(time: 5, unit: 'MINUTES')
             }
             steps {
-                script {
-                    def git_commit = sh script:"git rev-parse HEAD", returnStdout: true
-                    // snap's need to pipe to cat so we can get the output
-                    def charm = readYaml text:sh(script: "charm push ${env.JUJU_REPOSITORY}/builds/${params.charm} cs:~containers/${params.charm} | cat 2>&1", returnStdout: true)
-                    sh(script: String.format("charm set '%s' commit='%s'",
-                                             charm.url.trim(),
-                                             git_commit.trim()))
-                    sh(script: String.format("CHARM='%s' FROM_CHANNEL='unpublished' TO_CHANNEL='edge' jobs/build-charms/promote-charm.sh",
-                                             charm.url.trim()))
+                dir('jobs') {
+                    sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm} --charm-entity cs:~containers/${params.charm}"
+                    script {
+                        if(params.build_resource_sh) {
+                            sh "${charm_sh} resource --charm-entity cs:~containers/${params.charm} --builder ${params.repo_name}/${params.build_resource_sh} --out-path ${env.JUJU_REPOSITORY}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
+                        }
+                    }
+                    sh "${charm_sh} promote --charm-entity cs:~containers/${params.charm} --from-channel unpublished --to-channel edge"
+                    sh "${charm_sh} show --charm-entity cs:~containers/${params.charm} --channel edge"
                 }
             }
         }

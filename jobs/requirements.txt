@@ -1,3 +1,5 @@
+ipdb
+click
 ansible
 pytest-asyncio
 jenkins-job-builder

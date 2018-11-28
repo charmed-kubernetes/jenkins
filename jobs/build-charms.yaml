@@ -2,6 +2,10 @@
 
 - job-template:
     name: '{name}-{charm}'
+
+    # Defaults
+    resource_build_sh: ''
+
     description: |
       Builds and releases {charm} to charmstore edge channel.
     project-type: pipeline
@@ -28,6 +32,9 @@
       - string:
           name: git_repo
           default: '{git_repo}'
+      - string:
+          name: resource_build_sh
+          default: '{resource_build_sh}'
     triggers:
         - timed: "@daily"
     properties:
@@ -40,9 +47,11 @@
       - 'calico':
           repo_name: 'layer-calico'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+          resource_build_sh: 'build-calico-resource.sh'
       - 'canal':
           repo_name: 'layer-canal'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+          resource_build_sh: 'build-canal-resource.sh'
       - 'easyrsa':
           repo_name: 'layer-easyrsa'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
@@ -52,6 +61,7 @@
       - 'flannel':
           repo_name: 'charm-flannel'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+          resource_build_sh: 'build-flannel-resource.sh'
       - 'kubeapi-load-balancer':
           repo_name: 'kubernetes/cluster/juju/layers/kubeapi-load-balancer'
           git_repo: 'https://github.com/juju-solutions/kubernetes.git'
