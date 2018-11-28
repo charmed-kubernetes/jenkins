@@ -75,7 +75,7 @@
       script-path: jobs/validate/Jenkinsfile
     <<: *validate_parameter_defaults
     triggers:
-        - timed: "H 20 * * *"
+        - timed: "H 20 * * 1-5"
     properties:
       - build-discarder:
           num-to-keep: 2
@@ -93,7 +93,7 @@
       script-path: jobs/validate/Jenkinsfile
     <<: *validate_parameter_defaults
     triggers:
-        - timed: "H 0 * * 5"
+        - timed: "H 0 * * 6"
     properties:
       - build-discarder:
           num-to-keep: 2
