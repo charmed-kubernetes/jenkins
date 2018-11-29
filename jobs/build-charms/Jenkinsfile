@@ -61,7 +61,7 @@ pipeline {
         }
         stage('Release to Store') {
             options {
-                timeout(time: 5, unit: 'MINUTES')
+                timeout(time: 45, unit: 'MINUTES')
             }
             steps {
                 dir('jobs') {
