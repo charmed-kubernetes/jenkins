@@ -91,8 +91,8 @@ def resource(charm_entity, channel, builder, out_path, resource_spec):
     resources = yaml.load(resources.stdout.decode())
     builder_sh = Path(builder).absolute()
     click.echo(builder_sh)
-    # for line in sh.bash(str(builder_sh), _cwd=out_path, _iter=True):
-    #     click.echo(line.strip())
+    for line in sh.bash(str(builder_sh), _cwd=out_path, _iter=True):
+        click.echo(line.strip())
     for line in glob('{}/*'.format(out_path)):
         resource_path = Path(line)
         resource_fn = resource_path.parts[-1]
