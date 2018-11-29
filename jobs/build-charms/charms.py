@@ -4,11 +4,7 @@ charms.py - Interface to building and publishing charms
 Usage:
 
   tox -e py36 -- python3 jobs/build-charms/charms.py build \
-     --repo-path ../../layer-canal/
-
-  tox -e py36 -- python3 jobs/build-charms/charms.py resource
-     --builder ../../layer-canal/build-canal-resource.sh --out-path '../../layer-canal/.out' \
-     --glob-pattern 'canal*tar.gz' --kv-pattern '\w-\w'
+     --repo-path ../../layer-canal/ --out-path $HOME/charms/builds/canal
 
   tox -e py36 -- python3 jobs/build-charms/charms.py --help
 """
