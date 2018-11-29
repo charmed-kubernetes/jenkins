@@ -30,8 +30,8 @@ pipeline {
                 timeout(time: 15, unit: 'MINUTES')
             }
             steps {
-                sh "git clone --depth 1 -q ${params.git_repo}"
                 dir('jobs') {
+                    sh "git clone --depth 1 -q ${params.git_repo}"
                     sh "${charm_sh} build --repo-path ${params.repo_name}"
                 }
             }
