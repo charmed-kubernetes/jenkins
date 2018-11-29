@@ -26,12 +26,13 @@ def cli():
 
 @cli.command()
 @click.option('--repo-path', required=True, help='Path of charm vcs repo')
-def build(repo_path):
+@click.option('--out-path', required=True, help='Path of built charm')
+def build(repo_path, out_path):
     for line in sh.charm.build(
             r=True, no_local_layers=True, force=True,
             _cwd=repo_path, _iter=True):
         click.echo(line.strip())
-    sh.charm.proof(_cwd=repo_path)
+    sh.charm.proof(_cwd=out_path)
 
 @cli.command()
 @click.option('--repo-path', required=True, help='Path of charm vcs repo')
