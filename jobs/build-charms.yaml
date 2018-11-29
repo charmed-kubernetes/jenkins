@@ -51,7 +51,7 @@
       - 'canal':
           repo_name: 'layer-canal'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-          resource_build_sh: 'build-canal-resource.sh'
+          resource_build_sh: 'build-canal-resources.sh'
       - 'easyrsa':
           repo_name: 'layer-easyrsa'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
@@ -61,7 +61,7 @@
       - 'flannel':
           repo_name: 'charm-flannel'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-          resource_build_sh: 'build-flannel-resource.sh'
+          resource_build_sh: 'build-flannel-resources.sh'
       - 'kubeapi-load-balancer':
           repo_name: 'kubernetes/cluster/juju/layers/kubeapi-load-balancer'
           git_repo: 'https://github.com/juju-solutions/kubernetes.git'
