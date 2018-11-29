@@ -64,6 +64,7 @@ def promote(charm_entity, from_channel, to_channel):
     charm_id = yaml.load(charm_id.stdout.decode())
     resources = sh.charm('list-resources', charm_id['id']['Id'], channel=from_channel, format='yaml')
     resources = yaml.load(resources.stdout.decode())
+    resources_args = []
     if resources:
         resources_args = [
             ('--resource', '{}-{}'.format(
