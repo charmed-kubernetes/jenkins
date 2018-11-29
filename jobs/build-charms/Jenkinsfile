@@ -67,8 +67,8 @@ pipeline {
                 dir('jobs') {
                     sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm} --charm-entity cs:~containers/${params.charm}"
                     script {
-                        if(params.build_resource_sh) {
-                            sh "${charm_sh} resource --charm-entity cs:~containers/${params.charm} --builder ${params.repo_name}/${params.build_resource_sh} --out-path ${env.JUJU_REPOSITORY}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
+                        if(params.resource_build_sh) {
+                            sh "${charm_sh} resource --charm-entity cs:~containers/${params.charm} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.JUJU_REPOSITORY}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
                         }
                     }
                     sh "${charm_sh} promote --charm-entity cs:~containers/${params.charm} --from-channel unpublished --to-channel edge"
