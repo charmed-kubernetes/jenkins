@@ -452,8 +452,6 @@ async def validate_gpu_support(model):
         await retry_async_with_timeout(verify_ready,
                                        (master_unit, 'ds', ['nvidia-device-plugin-daemonset'], '-n kube-system'),
                                        timeout_msg="nvidia-device-plugin-daemonset not running")
-        action = await workers.units[0].run('ps -ef | grep kubelet')
-        log(action.results['Stdout'])
 
         # Do an addition on the GPU just be sure.
         # First clean any previous runs
