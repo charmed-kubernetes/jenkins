@@ -3,11 +3,9 @@
   calico-arm64.tar.gz: calico-arm64
   flannel-amd64-v0.10.0.tar.gz: flannel
   flannel-arm64-v0.10.0.tar.gz: flannel-arm64
-  flannel-s390x-v0.10.0.tar.gz: flannel-s390x
 'cs:~containers/calico':
   calico-amd64.tar.gz: calico
   calico-arm64.tar.gz: calico-arm64
 'cs:~containers/flannel':
   flannel-amd64-v0.10.0.tar.gz: flannel-amd64
   flannel-arm64-v0.10.0.tar.gz: flannel-arm64
-  flannel-s390x-v0.10.0.tar.gz: flannel-s390x
