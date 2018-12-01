@@ -9,3 +9,7 @@
 'cs:~containers/flannel':
   flannel-amd64.tar.gz: flannel-amd64
   flannel-arm64.tar.gz: flannel-arm64
+'cs:~containers/kubernetes-worker':
+  cni-amd64.tar.gz: cni-amd64
+  cni-arm64.tar.gz: cni-arm64
+  cni-s390x.tar.gz: cni-s390x

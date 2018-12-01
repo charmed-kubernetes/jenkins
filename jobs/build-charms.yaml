@@ -74,6 +74,7 @@
       - 'kubernetes-worker':
           repo_name: 'kubernetes/cluster/juju/layers/kubernetes-worker'
           git_repo: 'https://github.com/juju-solutions/kubernetes.git'
+          resource_build_sh: 'build-cni-resources.sh'
       - 'keepalived':
           repo_name: 'charm-keepalived/src'
           git_repo: 'https://github.com/juju-solutions/charm-keepalived.git'
