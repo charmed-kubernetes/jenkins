@@ -1,6 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def to_channels = params.to_channel.split()
+def charm_sh = "tox -e py36 -- python3 build-charms/charms.py"
 
 pipeline {
     agent {
@@ -19,9 +20,11 @@ pipeline {
     stages {
         stage('Release Charm') {
             steps {
-                script {
-                    to_channels.each { to_channel ->
-                        sh "CHARM='cs:~containers/${params.charm}' FROM_CHANNEL='${params.from_channel}' TO_CHANNEL='${to_channel.trim()}' jobs/build-charms/promote-charm.sh"
+                dir('jobs') {
+                    script {
+                        to_channels.each { to_channel ->
+                            sh "${charm_sh} promote --charm-entity cs:~containers/${params.charm} --from-channel ${params.from_channel} --to-channel ${to_channel.trim()}"
+                        }
                     }
                 }
             }
