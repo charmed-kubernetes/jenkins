@@ -85,7 +85,11 @@ def resource(charm_entity, channel, builder, out_path, resource_spec):
     os.makedirs(str(out_path), exist_ok=True)
     charm_id = sh.charm.show(charm_entity, '--channel', channel, 'id')
     charm_id = yaml.load(charm_id.stdout.decode())
-    resources = sh.charm('list-resources', charm_id['id']['Id'], channel=channel, format='yaml')
+    try:
+        resources = sh.charm('list-resources', charm_id['id']['Id'], channel=channel, format='yaml')
+    except sh.ErrorReturnCode_1:
+        click.echo('No resources found for {}'.format(charm_id))
+        return
     resources = yaml.load(resources.stdout.decode())
     builder_sh = Path(builder).absolute()
     click.echo(builder_sh)
