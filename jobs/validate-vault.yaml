@@ -28,9 +28,6 @@
       - string:
           name: bundle
           default: 'kubernetes-core'
-      - string:
-          name: snap_channel
-          default: '1.12/edge'
     triggers:
         - timed: "@daily"
     properties:
@@ -40,6 +37,8 @@
 - project:
     name: validate-vault
     version:
+      - 'v1.13.x':
+          version_overlay: 'jobs/overlays/1.13-edge-vault-overlay.yaml'
       - 'v1.12.x':
           version_overlay: 'jobs/overlays/1.12-edge-vault-overlay.yaml'
     jobs:
