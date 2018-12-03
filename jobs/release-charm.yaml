@@ -24,6 +24,8 @@
             - 'easyrsa'
             - 'etcd'
             - 'flannel'
+            - 'keepalived'
+            - 'docker-registry'
             - 'kubeapi-load-balancer'
             - 'kubernetes-e2e'
             - 'kubernetes-master'
