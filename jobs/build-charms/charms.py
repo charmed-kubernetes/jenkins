@@ -58,14 +58,17 @@ def show(charm_entity, channel):
 def promote(charm_entity, from_channel, to_channel):
     charm_id = sh.charm.show(charm_entity, '--channel', from_channel, 'id')
     charm_id = yaml.load(charm_id.stdout.decode())
-    resources = sh.charm('list-resources', charm_id['id']['Id'], channel=from_channel, format='yaml')
-    resources = yaml.load(resources.stdout.decode())
     resources_args = []
-    if resources:
-        resources_args = [
-            ('--resource', '{}-{}'.format(
-                resource['name'], resource['revision']))
-            for resource in resources]
+    try:
+        resources = sh.charm('list-resources', charm_id['id']['Id'], channel=from_channel, format='yaml')
+        resources = yaml.load(resources.stdout.decode())
+        if resources:
+            resources_args = [
+                ('--resource', '{}-{}'.format(
+                    resource['name'], resource['revision']))
+                for resource in resources]
+    except sh.ErrorReturnCode_1:
+        click.echo("No resources for {}".format(charm))
     sh.charm.release(charm_id['id']['Id'], '--channel', to_channel, *resources_args)
 
 @cli.command()
@@ -87,7 +90,7 @@ def resource(charm_entity, channel, builder, out_path, resource_spec):
     charm_id = yaml.load(charm_id.stdout.decode())
     try:
         resources = sh.charm('list-resources', charm_id['id']['Id'], channel=channel, format='yaml')
-    except:
+    except sh.ErrorReturnCode_1:
         click.echo('No resources found for {}'.format(charm_id))
         return
     resources = yaml.load(resources.stdout.decode())
