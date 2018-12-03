@@ -10,10 +10,6 @@ def bundle_mapping = [
         fragments: 'k8s/core cni/flannel',
         charmstore: 'cs:~containers/bundle/kubernetes-core'
     ],
-    'cdk-flannel-elastic': [
-        fragments: 'k8s/cdk cni/flannel monitor/elastic',
-        charmstore: 'cs:~containers/bundle/canonical-kubernetes-elastic'
-    ],
     'cdk-calico': [
         fragments: 'k8s/cdk cni/calico',
         charmstore: 'cs:~containers/bundle/kubernetes-calico'
