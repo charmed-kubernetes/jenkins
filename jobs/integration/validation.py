@@ -1208,11 +1208,9 @@ async def validate_keystone(model):
                        config={'admin-password': 'testpw',
                                'preferred-api-version': '3',
                                'openstack-origin': 'cloud:bionic-rocky'})
-    if 'percona-cluster' not in model.applications:
-        # probably already deployed by the Vault test
-        await model.deploy('percona-cluster',
-                           config={'innodb-buffer-pool-size': '256M',
-                                   'max-connections': '1000'})
+    await model.deploy('percona-cluster',
+                       config={'innodb-buffer-pool-size': '256M',
+                               'max-connections': '1000'})
     await model.add_relation('kubernetes-master:keystone-credentials',
                              'keystone:identity-credentials')
     await model.add_relation('keystone:shared-db', 'percona-cluster:shared-db')
@@ -1358,19 +1356,60 @@ data:
 
 @log_calls_async
 async def validate_encryption_at_rest(model):
-    worker = model.applications['kubernetes-worker'].units[0]
-    output = await worker.run("kubectl create secret generic test-secret "
-                              "--from-literal=username='secret-value'")
-    assert output.status == 'completed'
-    output = await worker.run("kubectl get secret test-secret -o yaml")
-    assert output.status == 'completed'
-    assert 'secret-value' in output.output
-    etcd = model.applications['etcd'].units[0]
-    etcd.run("ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
-             "--endpoints http://127.0.0.1:4001 "
-             "get /registry/secrets/default/test-secret | hexdump -C")
-    assert output.status == 'completed'
-    assert 'secret-value' not in output.output
+    try:
+        # setup
+        await model.deploy('cs:~openstack-charmers-next/vault',
+                           config={'auto-generate-root-ca-cert': True,
+                                   'totally-unsecure-auto-unlock': True})
+        await model.deploy('percona-cluster')
+        await model.add_relation('vault:shared-db',
+                                 'percona-cluster:shared-db')
+        await model.remove_relation('easyrsa:client',
+                                    'kubernetes-master:certificates')
+        await model.remove_relation('easyrsa:client',
+                                    'kubernetes-worker:certificates')
+        await model.add_relation('vault:certificates',
+                                 'kubernetes-master:certificates')
+        await model.add_relation('vault:certificates',
+                                 'kubernetes-worker:certificates')
+        await model.add_relation('kubernetes-master:vault-kv',
+                                 'vault:secrets')
+        await asyncify(_juju_wait)()
+        # create secret
+        worker = model.applications['kubernetes-worker'].units[0]
+        output = await worker.run("kubectl create secret generic test-secret "
+                                  "--from-literal=username='secret-value'")
+        assert output.status == 'completed'
+        # read secret
+        output = await worker.run("kubectl get secret test-secret -o yaml")
+        assert output.status == 'completed'
+        assert 'secret-value' in output.output
+        # verify secret is encrypted
+        etcd = model.applications['etcd'].units[0]
+        etcd.run("ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
+                 "--endpoints http://127.0.0.1:4001 "
+                 "get /registry/secrets/default/test-secret | hexdump -C")
+        assert output.status == 'completed'
+        assert 'secret-value' not in output.output
+    finally:
+        # cleanup
+        (done1, pending1) = await asyncio.wait({
+            model.applications['percona-cluster'].destroy(),
+            model.applications['vault'].destroy(),
+        })
+        # wait for vault to go away so we don't have 2 cert providers at once
+        await asyncify(_juju_wait)()
+        (done2, pending2) = await asyncio.wait({
+            model.add_relation('easyrsa:client',
+                               'kubernetes-master:certificates'),
+            model.add_relation('easyrsa:client',
+                               'kubernetes-worker:certificates'),
+        })
+        await asyncify(_juju_wait)()
+        for task in done1 + done2:
+            # read and ignore any exception so that it doesn't get raised
+            # when the task is GC'd
+            task.exception()
 
 
 class MicrobotError(Exception):
