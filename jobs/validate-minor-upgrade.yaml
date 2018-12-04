@@ -46,15 +46,12 @@
 - job-group:
     name: validate-minor-upgrade
     version:
-      - 'v1.10.x-v1.11.x':
-          version_overlay: 'jobs/overlays/1.10-stable-overlay.yaml'
-          upgrade_snap_channel: '1.11/edge'
-      - 'v1.10.x-v1.12.x':
-          version_overlay: 'jobs/overlays/1.10-stable-overlay.yaml'
-          upgrade_snap_channel: '1.12/edge'
-      - 'v1.11.x-v1.12.x':
+      - 'v1.11.x-v1.13.x':
           version_overlay: 'jobs/overlays/1.11-stable-overlay.yaml'
-          upgrade_snap_channel: '1.12/edge'
+          upgrade_snap_channel: '1.13/edge'
+      - 'v1.12.x-v1.13.x':
+          version_overlay: 'jobs/overlays/1.12-stable-overlay.yaml'
+          upgrade_snap_channel: '1.13/edge'
     jobs:
       - 'validate-minor-upgrade-{version}'
 
