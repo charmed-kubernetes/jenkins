@@ -1,5 +1,25 @@
 # Builds and releases latest charm development
 
+- job:
+    name: 'promote-all-charms'
+    description: |
+      Promotes all charms from channel -> to channel
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-charms/promote.groovy
+    parameters:
+      - string:
+          name: from_channel
+          default: 'edge'
+      - string:
+          name: to_channel
+          default: 'beta candidate'
+    properties:
+      - build-discarder:
+          num-to-keep: 1
+
 - job-template:
     name: '{name}-{charm}'
 
