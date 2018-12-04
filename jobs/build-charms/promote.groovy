@@ -4,7 +4,7 @@ def to_channels = params.to_channel.split()
 def charm_sh = "tox -e py36 -- python3 build-charms/charms.py"
 def charms = ['calico', 'canal', 'easyrsa', 'etcd',
               'flannel', 'kubeapi-load-balancer',
-              'kuberenetes-e2e', 'kubernetes-master',
+              'kubernetes-e2e', 'kubernetes-master',
               'kubernetes-worker', 'keepalived', 'docker-registry']
 
 pipeline {
