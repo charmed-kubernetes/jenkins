@@ -115,8 +115,7 @@ function promote_snaps_to_stable {
     fi
     release_time=$(date -d "${release_time_string} + 7 days" +%s)
     right_now=$(date +%s)
-    if (( right_now >= release_time))
-    then
+    if (( right_now >= release_time )) || [ "$FORCE_PROMOTE" = true ]; then
       echo "Promoting mature $kube_version release to stable"
       # Promote snaps from candidate to stable
       scripts_path=$(dirname "$0")

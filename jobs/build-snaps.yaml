@@ -19,6 +19,10 @@
       - bool:
           name: FORCE_RELEASE
           default: false
+      - bool:
+          name: FORCE_PROMOTE
+          default: false
+          description: "Promote snaps to stable regardless of incubation age"
     triggers:
         - timed: "@daily"
     properties:
