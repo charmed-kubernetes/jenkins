@@ -5,7 +5,9 @@ def charm_sh = "tox -e py36 -- python3 build-charms/charms.py"
 def charms = ['calico', 'canal', 'easyrsa', 'etcd',
               'flannel', 'kubeapi-load-balancer',
               'kubernetes-e2e', 'kubernetes-master',
-              'kubernetes-worker', 'keepalived', 'docker-registry']
+              'kubernetes-worker', 'keepalived', 'docker-registry',
+              'bundle/canonical-kubernetes', 'bundle/kubernetes-core',
+              'bundle/kubernetes-calico', 'bundle/canonical-kubernetes-canal']
 
 pipeline {
     agent { label 'runner-amd64' }
