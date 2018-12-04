@@ -28,7 +28,7 @@ pipeline {
                 dir('jobs') {
                     script {
                         charms.each { charm ->
-                            channels.each { channel ->
+                            to_channels.each { channel ->
                                 sh "${charm_sh} promote --charm-entity cs:~containers/${charm} --from-channel ${params.from_channel} --to-channel ${channel}"
                                 sh "${charm_sh} show --charm-entity cs:~containers/${charm} --channel ${channel}"
                             }
