@@ -1208,9 +1208,11 @@ async def validate_keystone(model):
                        config={'admin-password': 'testpw',
                                'preferred-api-version': '3',
                                'openstack-origin': 'cloud:bionic-rocky'})
-    await model.deploy('percona-cluster',
-                       config={'innodb-buffer-pool-size': '256M',
-                               'max-connections': '1000'})
+    if 'percona-cluster' not in model.applications:
+        # probably already deployed by the Vault test
+        await model.deploy('percona-cluster',
+                           config={'innodb-buffer-pool-size': '256M',
+                                   'max-connections': '1000'})
     await model.add_relation('kubernetes-master:keystone-credentials',
                              'keystone:identity-credentials')
     await model.add_relation('keystone:shared-db', 'percona-cluster:shared-db')
