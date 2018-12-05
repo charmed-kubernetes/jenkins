@@ -1317,12 +1317,27 @@ data:
         assert output.status == 'completed'
         assert "error" in output.data['results']['Stderr'].lower()
 
-        # verify auth success on pods
-        cmd = "source /home/ubuntu/kube-keystone.sh && \
-            OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
-            OS_PASSWORD=testpw /snap/bin/kubectl \
-            --kubeconfig /home/ubuntu/config get po"
-        output = await one_master.run(cmd)
+        # the config set writes out a file and updates a configmap, which is then picked up by the
+        # keystone pod and updated. This all takes time and I don't know of a great way to tell
+        # that it is all done. I could compare the configmap to this, but that doesn't mean the
+        # pod has updated. The pod does write a log line about the configmap updating, but
+        # I'd need to watch both in succession and it just seems much easier and just as reliable
+        # to just retry on failure a few times.
+
+        for i in range(5):
+            # verify auth success on pods
+            cmd = "source /home/ubuntu/kube-keystone.sh && \
+                OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
+                OS_PASSWORD=testpw /snap/bin/kubectl \
+                --kubeconfig /home/ubuntu/config get po"
+            output = await one_master.run(cmd)
+            if (output.status == 'completed' and
+                    "invalid user credentials" not in output.data['results']['Stderr'].lower() and
+                    "error" not in output.data['results']['Stderr'].lower()):
+                break
+            log("Unable to verify configmap change, retrying...")
+            await asyncio.sleep(10)
+
         assert output.status == 'completed'
         assert "invalid user credentials" not in output.data['results']['Stderr'].lower()
         assert "error" not in output.data['results']['Stderr'].lower()
