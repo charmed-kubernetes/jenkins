@@ -277,6 +277,10 @@ async def validate_kubelet_anonymous_auth_disabled(model):
 async def verify_deleted(unit, entity_type, name, extra_args=''):
     cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
     output = await unit.run(cmd)
+    if 'error' in output.results['Stdout']:
+        # error resource type not found most likely. This can happen when the api server is
+        # restarting. As such, don't assume this means we've finished the deletion
+        return False
     out_list = json.loads(output.results['Stdout'])
     for item in out_list['items']:
         if item['metadata']['name'] == name:
@@ -291,6 +295,10 @@ async def verify_deleted(unit, entity_type, name, extra_args=''):
 async def verify_ready(unit, entity_type, name_list, extra_args=''):
     cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
     output = await unit.run(cmd)
+    if 'error' in output.results['Stdout']:
+        # error resource type not found most likely. This can happen when the api server is
+        # restarting. As such, don't assume this means ready.
+        return False
     out_list = json.loads(output.results['Stdout'])
 
     for name in name_list:
