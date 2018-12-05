@@ -54,9 +54,11 @@ async def validate_all(model, log_dir):
     await validate_audit_empty_policy(model)
     await validate_audit_custom_policy(model)
     await validate_audit_webhook(model)
-    await validate_keystone(model)
+    if cpu_arch not in ['s390x', 'arm64', 'aarch64']:
+        await validate_keystone(model)
     assert_no_unit_errors(model)
-    if 'vault' in model.applications:
+    if ('vault' in model.applications and
+            cpu_arch not in ['s390x', 'arm64', 'aarch64']):
         await validate_encryption_at_rest(model)
 
 
