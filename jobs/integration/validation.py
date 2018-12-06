@@ -1408,14 +1408,14 @@ async def validate_encryption_at_rest(model):
         # read secret
         output = await worker.run("kubectl get secret test-secret -o yaml")
         assert output.status == 'completed'
-        assert 'secret-value' in output.output
+        assert 'secret-value' in output.results['Stdout']
         # verify secret is encrypted
         etcd = model.applications['etcd'].units[0]
         etcd.run("ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
                  "--endpoints http://127.0.0.1:4001 "
                  "get /registry/secrets/default/test-secret | hexdump -C")
         assert output.status == 'completed'
-        assert 'secret-value' not in output.output
+        assert 'secret-value' not in output.results['Stdout']
     finally:
         # cleanup
         (done1, pending1) = await asyncio.wait({
