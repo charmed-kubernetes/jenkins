@@ -1332,7 +1332,7 @@ data:
         # I'd need to watch both in succession and it just seems much easier and just as reliable
         # to just retry on failure a few times.
 
-        for i in range(5):
+        for i in range(18):  # 3 minutes
             # verify auth success on pods
             cmd = "source /home/ubuntu/kube-keystone.sh && \
                 OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
