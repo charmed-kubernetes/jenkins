@@ -54,9 +54,6 @@
 - alt_version_defaults: &alt_version_defaults
     name: 'alt-version-defaults'
     version:
-      - 'v1.12.x':
-          version_overlay: 'jobs/overlays/1.12-edge-localhost-overlay.yaml'
-          snap_channel: '1.12/edge'
       - 'v1.13.x':
           version_overlay: 'jobs/overlays/1.13-edge-localhost-overlay.yaml'
           snap_channel: '1.13/edge'
