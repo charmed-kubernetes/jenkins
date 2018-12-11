@@ -63,8 +63,6 @@
       - choice:
           name: version
           choices:
-            - '1.10.0'
-            - '1.10.3'
             - '1.10.11'
           description: snap eks version to build/promote
       - string:
