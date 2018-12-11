@@ -15,10 +15,16 @@ def cli():
     pass
 
 @cli.command()
-@click.option('--snap', required=True, help='Snap to build')
+@click.option('--snap', required=True, multiple=True, help='Snaps to build')
 @click.option('--version', required=True, help='Version of k8s to build')
 @click.option('--arch', required=True, default='amd64', help='Architecture to build against')
 def build(snap, version, arch):
+    """ Build snaps
+
+    Usage:
+
+    snaps.py build --snap kubectl --snap kube-proxy --version 1.10.3 --arch amd64
+    """
     if not version.startswith('v'):
         version = f'v{version}'
     env = os.environ.copy()
@@ -26,13 +32,14 @@ def build(snap, version, arch):
     env['KUBE_ARCH'] = arch
     sh.git.clone('https://github.com/juju-solutions/release.git',
                  branch='rye/snaps', depth='1')
-    for line in sh.bash(
-            'build-scripts/docker-build',
-            snap,
-            _env=env,
-            _cwd='release/snap',
-            _iter=True):
-        click.echo(line.strip())
+    for _snap in snap:
+        for line in sh.bash(
+                'build-scripts/docker-build',
+                _snap,
+                _env=env,
+                _cwd='release/snap',
+                _iter=True):
+            click.echo(line.strip())
 
 @cli.command()
 @click.option('--match-re', help='Regex pattern to match files')

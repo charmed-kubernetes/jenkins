@@ -1,7 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def snap_sh = "tox -e py36 -- python3 build-snaps/snaps.py"
-def eks_snaps = ['kubelet', 'kubectl', 'kube-proxy', 'kubernetes-test']
+def eks_snaps = '--snap kubelet --snap kubectl --snap kube-proxy --snap kubernetes-test'
 
 pipeline {
     agent {
@@ -31,9 +31,7 @@ pipeline {
                 sh "docker rm -f \$(docker ps -qa --no-trunc --filter \"status=exited\") || true"
                 dir('jobs'){
                     script {
-                        eks_snaps.each { snap ->
-                            sh "${snap_sh} build --arch amd64 --snap ${snap} --version ${version}"
-                        }
+                        sh "${snap_sh} build --arch amd64 ${eks_snaps} --version ${version}"
                     }
                     sh "${snap_sh} process --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks_\\2\'"
                 }
