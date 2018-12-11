@@ -60,10 +60,9 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/build-snaps/build-release-eks.groovy
     parameters:
-      - choice:
+      - string:
           name: version
-          choices:
-            - '1.10.11'
+          default: '1.10.11'
           description: snap eks version to build/promote
       - string:
           name: channels
