@@ -42,8 +42,8 @@ def build(snap, version, arch):
             click.echo(line.strip())
 
 @cli.command()
-@click.option('--match-re', help='Regex pattern to match files')
-@click.option('--rename-re', help='Regex pattern to rename snap files to')
+@click.option('--match-re', required=True, help='Regex pattern to match files')
+@click.option('--rename-re', required=True, help='Regex pattern to rename snap files to')
 @click.option('--result-dir', required=True, default='release/snap/build',
               help='Path of resulting snap builds')
 def process(match_re, rename_re, result_dir):
@@ -53,17 +53,30 @@ def process(match_re, rename_re, result_dir):
 
       tox -e py36 -- python3 snaps.py process --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks_\\2\'"
     """
-    if match_re and rename_re:
-        for filename in glob.glob(f'{result_dir}/*.snap'):
-            filepath = Path(filename)
-            filename = filepath.parts[-1]
-            click.echo(f'Querying {filename}')
-            new_name = re.sub(match_re, fr'{rename_re}', filename)
-            click.echo(f'Match regex: {match_re}, '
-                       f'Rename regex: {rename_re}, '
-                       f'Output name: {new_name}')
-            sh.sudo.mv(filepath, filepath.parent / new_name)
-    sh.ls('-lh', result_dir)
+    for filename in glob.glob(f'{result_dir}/*.snap'):
+        filepath = Path(filename)
+        filename = filepath.parts[-1]
+        click.echo(f'Querying {filename}')
+        new_name = re.sub(match_re, fr'{rename_re}', filename)
+        click.echo(f'Match regex: {match_re}, '
+                   f'Rename regex: {rename_re}, '
+                   f'Output name: {new_name}')
+        sh.sudo.mv(filepath, filepath.parent / new_name)
+
+@cli.command()
+@click.option('--channel', required=True, help='Snap channel(s)/track(s) to promote too')
+@click.option('--result-dir', required=True, default='release/snap/build',
+              help='Path of resulting snap builds')
+def release(channel, result_dir):
+    """ Promote to a snapstore channel/track
+
+    Usage:
+
+       tox -e py36 -- python3 snaps.py release --channel 1.10.11/edge --result-dir ./release/snap/build
+    """
+    for fname in glob.glob(f'{result_dir}/*.snap'):
+        click.echo(f'snapcraft push {fname} --release {channel}')
+            # click.echo(sh.snapcraft.push(fname, release=ch))
 
 
 if __name__ == "__main__":

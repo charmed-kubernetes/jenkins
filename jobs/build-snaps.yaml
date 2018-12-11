@@ -64,6 +64,9 @@
           name: version
           default: '{version}'
           description: snap eks version to build/promote
+      - string:
+          name: channels
+          default: 'edge beta candidate stable'
     properties:
       - build-discarder:
           num-to-keep: 2

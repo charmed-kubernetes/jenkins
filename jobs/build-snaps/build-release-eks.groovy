@@ -31,6 +31,9 @@ pipeline {
                         sh "${snap_sh} build --arch amd64 ${eks_snaps} --version ${version}"
                     }
                     sh "${snap_sh} process --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks_\\2\'"
+                    params.channels.split().each { channel ->
+                        sh "${snap_sh} release --channel ${version}/${channel}"
+                    }
                 }
             }
         }
