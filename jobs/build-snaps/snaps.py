@@ -75,8 +75,8 @@ def release(channel, result_dir):
        tox -e py36 -- python3 snaps.py release --channel 1.10.11/edge --result-dir ./release/snap/build
     """
     for fname in glob.glob(f'{result_dir}/*.snap'):
-        click.echo(f'snapcraft push {fname} --release {channel}')
-            # click.echo(sh.snapcraft.push(fname, release=ch))
+        click.echo(f'Running: snapcraft push {fname} --release {channel}')
+        sh.snapcraft.push(fname, release=channel)
 
 
 if __name__ == "__main__":
