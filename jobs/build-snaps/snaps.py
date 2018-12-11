@@ -63,6 +63,7 @@ def process(match_re, rename_re, result_dir):
                        f'Rename regex: {rename_re}, '
                        f'Output name: {new_name}')
             sh.sudo.mv(filepath, filepath.parent / new_name)
+    sh.ls('-lh', result_dir)
 
 
 if __name__ == "__main__":
