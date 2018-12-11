@@ -21,7 +21,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh "sudo rm -rf jobs/release || true"
+                sh "sudo rm -rf release || true"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds"
             }
         }
@@ -29,11 +29,9 @@ pipeline {
             steps {
                 sh "docker rmi -f \$(docker images | grep \"none\" | awk '/ / { print \$3 }') || true"
                 sh "docker rm -f \$(docker ps -qa --no-trunc --filter \"status=exited\") || true"
-                dir('jobs') {
-                    script {
-                        eks_snaps.each { snap ->
-                            sh "${snap_sh} build-snaps/snaps.py build --arch amd64 --snap ${snap} --version ${version} --match-re \'(\\w+)_(.*)\' --rename-re \'\\1-eks_\\2\'"
-                        }
+                script {
+                    eks_snaps.each { snap ->
+                        sh "${snap_sh} build --arch amd64 --snap ${snap} --version ${version} --match-re \'(\\w+)_(.*)\' --rename-re \'\\1-eks_\\2\'"
                     }
                 }
             }
