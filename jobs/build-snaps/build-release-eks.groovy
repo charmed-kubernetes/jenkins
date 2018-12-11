@@ -1,6 +1,6 @@
 @Library('juju-pipeline@master') _
 
-def snap_sh = "tox -e py36 -- python3 build-charms/snaps.py"
+def snap_sh = "tox -e py36 -- python3 build-snaps/snaps.py"
 def eks_snaps = ['kubelet', 'kubectl', 'kube-proxy', 'kubernetes-test']
 
 pipeline {
