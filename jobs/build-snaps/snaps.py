@@ -94,9 +94,14 @@ def release(channel, result_dir):
     # TODO: Verify channel is a ver/chan string
     #   re: [\d+\.]+\/(?:edge|stable|candidate|beta)
     for fname in glob.glob(f'{result_dir}/*.snap'):
-        click.echo(f'Running: snapcraft push {fname} --release {channel}')
-        for line in sh.snapcraft.push(fname, release=channel, _iter=True):
-            click.echo(line.strip())
+        try:
+            click.echo(f'Running: snapcraft push {fname} --release {channel}')
+            for line in sh.snapcraft.push(fname, release=channel, _iter=True):
+                click.echo(line.strip())
+        except sh.ErrorReturnCode_2 as e:
+            click.echo('Failed to upload to snap store')
+            click.echo(e.stdout)
+            click.echo(e.stderr)
 
 
 if __name__ == "__main__":
