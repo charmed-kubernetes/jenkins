@@ -8,7 +8,31 @@ import sh
 import os
 import glob
 import re
+import yaml
 from pathlib import Path
+
+
+def _alias(match_re, rename_re, snap):
+    """ Provide any snap substitutions for things like kubectl-eks...snap
+
+    Usage:
+
+      alias = _rename(match_re\'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\',
+                      rename-re=\'\\1-eks_\\2\',
+                      snap=kubectl)
+    """
+    click.echo(f'Setting alias based on {match_re} -> {rename_re}: {snap}')
+    return re.sub(match_re, fr'{rename_re}', snap)
+
+def _set_snap_alias(build_path, alias):
+    click.echo(f'Setting new snap alias: {alias}')
+    if build_path.exists():
+        snapcraft_yml = yaml.load(build_path.read_text())
+        if snapcraft_yml['name'] != alias:
+            snapcraft_yml['name'] = alias
+            build_path.write_text(yaml.dump(snapcraft_yml,
+                                            default_flow_style=False,
+                                            indent=2))
 
 @click.group()
 def cli():
@@ -18,7 +42,9 @@ def cli():
 @click.option('--snap', required=True, multiple=True, help='Snaps to build')
 @click.option('--version', required=True, help='Version of k8s to build')
 @click.option('--arch', required=True, default='amd64', help='Architecture to build against')
-def build(snap, version, arch):
+@click.option('--match-re', help='Regex matcher')
+@click.option('--rename-re', help='Regex renamer')
+def build(snap, version, arch, match_re, rename_re):
     """ Build snaps
 
     Usage:
@@ -32,7 +58,16 @@ def build(snap, version, arch):
     env['KUBE_ARCH'] = arch
     sh.git.clone('https://github.com/juju-solutions/release.git',
                  branch='rye/snaps', depth='1')
+    build_path = Path('release/snap')
+    snap_alias = None
     for _snap in snap:
+        if match_re and rename_re:
+            snap_alias = _alias(match_re, rename_re, _snap)
+
+        if snap_alias:
+            snapcraft_fn = build_path / f'{_snap}.yaml'
+            _set_snap_alias(snapcraft_fn, snap_alias)
+
         for line in sh.bash(
                 'build-scripts/docker-build',
                 _snap,
@@ -40,28 +75,6 @@ def build(snap, version, arch):
                 _cwd='release/snap',
                 _iter=True):
             click.echo(line.strip())
-
-@cli.command()
-@click.option('--match-re', required=True, help='Regex pattern to match files')
-@click.option('--rename-re', required=True, help='Regex pattern to rename snap files to')
-@click.option('--result-dir', required=True, default='release/snap/build',
-              help='Path of resulting snap builds')
-def process(match_re, rename_re, result_dir):
-    """ Provide any filename substitutions for things like kubectl-eks...snap
-
-    Usage:
-
-      tox -e py36 -- python3 snaps.py process --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks_\\2\'"
-    """
-    for filename in glob.glob(f'{result_dir}/*.snap'):
-        filepath = Path(filename)
-        filename = filepath.parts[-1]
-        click.echo(f'Querying {filename}')
-        new_name = re.sub(match_re, fr'{rename_re}', filename)
-        click.echo(f'Match regex: {match_re}, '
-                   f'Rename regex: {rename_re}, '
-                   f'Output name: {new_name}')
-        sh.sudo.mv(filepath, filepath.parent / new_name)
 
 @cli.command()
 @click.option('--channel', required=True, help='Snap channel(s)/track(s) to promote too')
