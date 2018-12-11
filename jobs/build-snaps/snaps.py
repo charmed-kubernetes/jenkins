@@ -42,14 +42,18 @@ def cli():
 @click.option('--snap', required=True, multiple=True, help='Snaps to build')
 @click.option('--version', required=True, help='Version of k8s to build')
 @click.option('--arch', required=True, default='amd64', help='Architecture to build against')
-@click.option('--match-re', help='Regex matcher')
-@click.option('--rename-re', help='Regex renamer')
+@click.option('--match-re', default='(?=\S*[-]*)([a-zA-Z-]+)(.*)', help='Regex matcher')
+@click.option('--rename-re', help='Regex renamer, ie \1-eks')
 def build(snap, version, arch, match_re, rename_re):
     """ Build snaps
 
     Usage:
 
     snaps.py build --snap kubectl --snap kube-proxy --version 1.10.3 --arch amd64 --match-re '(?=\S*[-]*)([a-zA-Z-]+)(.*)' --rename-re '\1-eks'
+
+    Passing --rename-re and --match-re allows you to manipulate the resulting
+    snap file, for example, the above renames kube-proxy_1.10.3_amd64.snap to
+    kube-proxy-eks_1.10.3_amd64.snap
     """
     if not version.startswith('v'):
         version = f'v{version}'
