@@ -32,7 +32,7 @@ pipeline {
                 dir('jobs') {
                     script {
                         eks_snaps.each { snap ->
-                            sh "${snap_sh} build-snaps/snaps.py build --arch amd64 --snap ${snap} --version ${version} --match-re '(\w+)_(.*)' --rename-re '\1-eks_\2'"
+                            sh "${snap_sh} build-snaps/snaps.py build --arch amd64 --snap ${snap} --version ${version} --match-re \'(\w+)_(.*)\' --rename-re \'\1-eks_\2\'"
                         }
                     }
                 }

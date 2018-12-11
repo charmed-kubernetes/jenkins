@@ -84,7 +84,7 @@
 - job-group:
     name: 'build-release-eks-snaps'
     jobs:
-      - 'build-release-snaps-{version}':
+      - 'build-release-eks-snaps-{version}':
           version:
             - '1.10.0'
             - '1.10.3'
