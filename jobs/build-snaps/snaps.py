@@ -62,7 +62,7 @@ def process(match_re, rename_re, result_dir):
             click.echo(f'Match regex: {match_re}, '
                        f'Rename regex: {rename_re}, '
                        f'Output name: {new_name}')
-            sh.contrib.sudo.mv(filepath, filepath.parent / new_name)
+            sh.sudo.mv(filepath, filepath.parent / new_name)
 
 
 if __name__ == "__main__":
