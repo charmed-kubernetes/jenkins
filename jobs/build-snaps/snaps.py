@@ -49,7 +49,7 @@ def build(snap, version, arch, match_re, rename_re):
 
     Usage:
 
-    snaps.py build --snap kubectl --snap kube-proxy --version 1.10.3 --arch amd64
+    snaps.py build --snap kubectl --snap kube-proxy --version 1.10.3 --arch amd64 --match-re '(?=\S*[-]*)([a-zA-Z-]+)(.*)' --rename-re '\1-eks'
     """
     if not version.startswith('v'):
         version = f'v{version}'
