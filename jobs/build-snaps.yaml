@@ -3,7 +3,7 @@
 - job-template:
     name: 'promote-snaps-{arch}'
     description: |
-      Builds, releases and promotes snaps for {arch} to the snapstore.
+      Promotes snaps for {arch} to the snapstore.
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -49,6 +49,26 @@
       - build-discarder:
           num-to-keep: 2
 
+
+- job-template:
+    name: 'build-release-eks-snaps-{version}'
+    description: |
+      Builds, releases and promotes Amazon EKS snaps for {version} to the snapstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-snaps/build-release-eks.groovy
+    parameters:
+      - string:
+          name: version
+          default: '{version}'
+          description: snap eks version to build/promote
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
+
 - job-group:
     name: 'build-release-snaps'
     jobs:
@@ -61,9 +81,18 @@
       - 'promote-snaps-{arch}':
           arch: ['amd64', 's390x', 'arm64', 'ppc64le']
 
+- job-group:
+    name: 'build-release-eks-snaps'
+    jobs:
+      - 'build-release-snaps-{version}':
+          version:
+            - '1.10.0'
+            - '1.10.3'
+            - '1.10.11'
 
 - project:
     name: build-release-snaps
     jobs:
       - 'build-release-snaps'
       - 'promote-snaps'
+      - 'build-release-eks-snaps'
