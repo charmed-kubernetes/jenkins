@@ -102,6 +102,13 @@ def release(channel, result_dir):
             click.echo('Failed to upload to snap store')
             click.echo(e.stdout)
             click.echo(e.stderr)
+        except sh.ErrorReturnCode_1 as e:
+            click.echo('Failed to upload to snap store')
+            click.echo(e.stdout)
+            click.echo(e.stderr)
+        finally:
+            click.echo('Broken with no indication why')
+            raise SystemExit()
 
 
 if __name__ == "__main__":
