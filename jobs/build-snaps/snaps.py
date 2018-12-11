@@ -18,7 +18,7 @@ def cli():
 @click.option('--snap', required=True, help='Snap to build')
 @click.option('--version', required=True, help='Version of k8s to build')
 @click.option('--arch', required=True, default='amd64', help='Architecture to build against')
-def build(snap, version, arch, match_re, rename_re, result_dir):
+def build(snap, version, arch):
     if not version.startswith('v'):
         version = f'v{version}'
     env = os.environ.copy()
