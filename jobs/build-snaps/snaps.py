@@ -18,11 +18,6 @@ def cli():
 @click.option('--snap', required=True, help='Snap to build')
 @click.option('--version', required=True, help='Version of k8s to build')
 @click.option('--arch', required=True, default='amd64', help='Architecture to build against')
-# This provides ability to convert snap built filenames to things like kubectl-eks...snap
-@click.option('--match-re', help='Regex pattern to match files')
-@click.option('--rename-re', help='Regex pattern to rename snap files to')
-@click.option('--result-dir', required=True, default='release/snap/build',
-              help='Path of resulting snap builds')
 def build(snap, version, arch, match_re, rename_re, result_dir):
     if not version.startswith('v'):
         version = f'v{version}'
@@ -38,6 +33,19 @@ def build(snap, version, arch, match_re, rename_re, result_dir):
             _cwd='release/snap',
             _iter=True):
         click.echo(line.strip())
+
+@cli.command()
+@click.option('--match-re', help='Regex pattern to match files')
+@click.option('--rename-re', help='Regex pattern to rename snap files to')
+@click.option('--result-dir', required=True, default='release/snap/build',
+              help='Path of resulting snap builds')
+def process(match_re, rename_re, result_dir):
+    """ Provide any filename substitutions for things like kubectl-eks...snap
+
+    Usage:
+
+      tox -e py36 -- python3 snaps.py process --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks_\\2\'"
+    """
     if match_re and rename_re:
         for filename in glob.glob(f'{result_dir}/*.snap'):
             filepath = Path(filename)
