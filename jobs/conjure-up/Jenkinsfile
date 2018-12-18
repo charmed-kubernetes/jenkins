@@ -28,7 +28,7 @@ pipeline {
 
             steps {
                 dir("jobs") {
-                    sh "conjure-up canonical-kubernetes ${params.cloud} ${params.controller} ${juju_.model} --channel ${params.bundle_channel}"
+                    sh "conjure-up canonical-kubernetes ${params.cloud} ${params.controller} ${juju_model} --channel ${params.bundle_channel}"
                 }
             }
         }
