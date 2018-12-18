@@ -22,6 +22,7 @@
             - 'aws/us-east-1'
             - 'google/us-east1'
             - 'azure/eastus'
+            - 'localhost/localhost'
       - string:
           name: bundle_channel
           default: 'edge'
