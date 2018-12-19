@@ -2,6 +2,7 @@
 """
 import pytest
 import os
+import json
 from pathlib import Path
 from ..base import _juju_wait
 from ..utils import asyncify
@@ -11,6 +12,8 @@ pytestmark = pytest.mark.asyncio
 
 # Locally built charm layer path
 CHARM_PATH = os.getenv('CHARM_PATH')
+
+relation_data = None
 
 
 async def easyrsa_resource():
@@ -28,6 +31,36 @@ async def deploy_easyrsa(controller, model):
         str(CHARM_PATH), '--resource', 'easyrsa={}'.format(
             resource_path))
     await asyncify(_juju_wait)(controller, model)
+
+
+async def deploy_test_app(controller, model):
+    test_app = "etcd"
+
+    await asyncify(juju)(
+        'deploy', '-m', '{}:{}'.format(controller, model),
+        test_app)
+    await asyncify(juju)(
+        'relate', '-m', '{}:{}'.format(controller, model),
+        test_app, 'easyrsa')
+    await asyncify(_juju_wait)(controller, model)
+
+
+async def get_relation_data(controller, model):
+    '''Gets data from the relation specified'''
+    global relation_data
+
+    if relation_data is None:
+        await deploy_easyrsa(controller, model.info.name)
+        await deploy_test_app(controller, model.info.name)
+        easyrsa = model.applications['easyrsa']
+        easyrsa = easyrsa.units[0]
+
+        id = await easyrsa.run('relation-ids client')  # magic :(
+        id = id.results['Stdout'].strip()
+        raw_json = await easyrsa.run('relation-get --format=json -r {} - {}'
+                                     .format(id, easyrsa.name))
+        relation_data = json.loads(raw_json.results['Stdout'])
+    return relation_data
 
 
 async def test_easyrsa_installed(deploy, event_loop):
@@ -90,29 +123,27 @@ async def test_ca(deploy, event_loop):
 
 
 async def test_client(deploy, event_loop):
-    '''Test that the client certificate and key were created.'''
+    '''Test that the client certificate and key can be created.'''
     controller, model = deploy
-    await deploy_easyrsa(controller, model.info.name)
-    easyrsa = model.applications['easyrsa']
-    easyrsa = easyrsa.units[0]
-    charm_dir = Path('/var/lib/juju/agents/{tag}/charm'.format(
-        tag=easyrsa.tag))
-    easyrsa_dir = os.path.join(charm_dir, 'EasyRSA')
-    # Create an absolute path to the client certificate.
-    cert_path = os.path.join(easyrsa_dir, 'pki/issued/client.crt')
-    client_cert = await asyncify(juju)(
-        'ssh', '-m', '{}:{}'.format(controller, model.info.name),
-        easyrsa.name,
-        'sudo cat {}'.format(str(cert_path)))
-    client_cert = client_cert.stdout.decode().strip()
-    assert validate_certificate(client_cert)
-    key_path = os.path.join(easyrsa_dir, 'pki/private/client.key')
-    client_key = await asyncify(juju)(
-        'ssh', '-m', '{}:{}'.format(controller, model.info.name),
-        easyrsa.name,
-        'sudo cat {}'.format(str(key_path)))
-    client_key = client_key.stdout.decode().strip()
-    assert validate_key(client_key)
+    relation_data = await get_relation_data(controller, model)
+    assert validate_certificate(relation_data['client.cert'])
+    assert validate_key(relation_data['client.key'])
+
+
+async def test_server(deploy, event_loop):
+    '''Test that the server certificate and key can be created.'''
+    controller, model = deploy
+    relation_data = await get_relation_data(controller, model)
+    # find server certs and keys
+    server_certs = {key: data for key, data in relation_data.items()
+                    if '.server.cert' in key}
+    server_keys = {key: data for key, data in relation_data.items()
+                   if '.server.key' in key}
+
+    for _, cert in server_certs.items():
+        assert validate_certificate(cert)
+    for _, key in server_keys.items():
+        assert validate_key(key)
 
 
 def validate_certificate(cert):
