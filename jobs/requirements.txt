@@ -6,7 +6,7 @@ jenkins-job-builder
 juju-wait
 awscli
 invoke
-pytest
+pytest==4.0.2
 pytest-xdist
 requests
 juju
