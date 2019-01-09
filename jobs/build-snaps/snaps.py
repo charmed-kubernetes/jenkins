@@ -97,7 +97,7 @@ def push(result_dir):
         try:
             click.echo(f'Running: snapcraft push {fname}')
             for line in sh.snapcraft.push(fname, _iter=True):
-                click.echo(line.srip())
+                click.echo(line.strip())
         except sh.ErrorReturnCode_2 as e:
             click.echo('Failed to upload to snap store')
             click.echo(e.stdout)
