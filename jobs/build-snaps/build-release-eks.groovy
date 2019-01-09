@@ -21,6 +21,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
+                sh "sudo rm -rf jobs/release/snap || true"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds"
             }
         }
