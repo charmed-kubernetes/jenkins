@@ -30,9 +30,7 @@ pipeline {
                     script {
                         sh "${snap_sh} build --arch amd64 ${eks_snaps} --version ${version} --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks'"
                         sh "sudo chown jenkins:jenkins -R release/snap"
-                        params.channels.split().each { channel ->
-                            sh "${snap_sh} release --channels ${channel}"
-                        }
+                        sh "${snap_sh} release --channels ${channel}"
                     }
                 }
             }
