@@ -21,8 +21,6 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh "sudo rm -rf jobs/release/snap || true"
-                sh "sudo rm -rf /var/lib/jenkins/.cache/snapcraft || true"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds"
             }
         }
@@ -33,7 +31,7 @@ pipeline {
                         sh "${snap_sh} build --arch amd64 ${eks_snaps} --version ${version} --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks'"
                         sh "sudo chown jenkins:jenkins -R release/snap"
                         params.channels.split().each { channel ->
-                            sh "${snap_sh} release --channel ${version}/${channel}"
+                            sh "${snap_sh} release --channels ${channel}"
                         }
                     }
                 }

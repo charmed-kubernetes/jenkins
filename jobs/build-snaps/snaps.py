@@ -81,22 +81,22 @@ def build(snap, version, arch, match_re, rename_re):
             click.echo(line.strip())
 
 @cli.command()
-@click.option('--channel', required=True, help='Snap channel(s)/track(s) to promote too')
+@click.option('--channels', required=True, help='Snap channel(s)/track(s) to promote too')
 @click.option('--result-dir', required=True, default='release/snap/build',
               help='Path of resulting snap builds')
-def release(channel, result_dir):
+def release(channels, result_dir):
     """ Promote to a snapstore channel/track
 
     Usage:
 
-       tox -e py36 -- python3 snaps.py release --channel 1.10.11/edge --result-dir ./release/snap/build
+       tox -e py36 -- python3 snaps.py release --channels 1.11.5/edge,1.11.5/beta --result-dir ./release/snap/build
     """
     # TODO: Verify channel is a ver/chan string
     #   re: [\d+\.]+\/(?:edge|stable|candidate|beta)
     for fname in glob.glob(f'{result_dir}/*.snap'):
         try:
             click.echo(f'Running: snapcraft push {fname} --release {channel}')
-            out = sh.snapcraft.push(fname, release=channel, _iter=True)
+            out = sh.snapcraft.push(fname, release=channels, _iter=True)
             click.echo(out.stdout)
             click.echo(out.stderr)
         except sh.ErrorReturnCode_2 as e:
