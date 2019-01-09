@@ -107,9 +107,6 @@ def push(result_dir):
             click.echo('Failed to upload to snap store')
             click.echo(e.stdout)
             click.echo(e.stderr)
-        finally:
-            click.echo('Broken with no indication why')
-            raise SystemExit()
 
 
 if __name__ == "__main__":
