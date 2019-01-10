@@ -9,6 +9,7 @@ import os
 import glob
 import re
 import yaml
+import operator
 from pathlib import Path
 
 
@@ -81,7 +82,6 @@ def build(snap, version, arch, match_re, rename_re):
             click.echo(line.strip())
 
 @cli.command()
-#@click.option('--channels', required=True, help='Snap channel(s)/track(s) to promote too')
 @click.option('--result-dir', required=True, default='release/snap/build',
               help='Path of resulting snap builds')
 def push(result_dir):
@@ -106,6 +106,37 @@ def push(result_dir):
             click.echo('Failed to upload to snap store')
             click.echo(e.stdout)
             click.echo(e.stderr)
+
+@cli.command()
+@click.option('--name', required=True, help='Snap name to release')
+@click.option('--channel', required=True, help='Snapstore channel to release to')
+@click.option('--version', required=True, help='Snap application version to release')
+@click.option('--dry-run', is_flag=True)
+def release(name, channel, version, dry_run):
+    """ Release the most current revision snap to channel
+    """
+    re_comp = re.compile("[ \t+]{2,}")
+    revision_list = sh.snapcraft.revisions(name)
+    revision_list = revision_list.stdout.decode().splitlines()[1:]
+    revision_parsed = {}
+    for line in revision_list:
+        rev, uploaded, arch, upstream_version, channels = re_comp.split(line)
+        if upstream_version != version:
+            continue
+        revision_parsed[rev] = {
+            'rev': rev,
+            'uploaded': uploaded,
+            'arch': arch,
+            'version': upstream_version,
+            'channels': channels
+        }
+    latest_release = max(revision_parsed.items(), key=operator.itemgetter(0))[1]
+    click.echo(latest_release)
+    if dry_run:
+        click.echo("dry-run only:")
+        click.echo(f"  > snapcraft release {name} {latest_release['rev']} {channel}")
+    else:
+        click.echo(sh.snapcraft.release(name, latest_release['rev'], channel))
 
 
 if __name__ == "__main__":

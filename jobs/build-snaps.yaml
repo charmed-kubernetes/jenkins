@@ -67,6 +67,10 @@
       - string:
           name: channel
           default: '1.11.5/edge 1.11.5/beta 1.11.5/candidate 1.11.5/stable'
+      - boolean:
+          name: release_only
+          default: false
+          description: release only, no building or pushing to snapstore.
     properties:
       - build-discarder:
           num-to-keep: 2

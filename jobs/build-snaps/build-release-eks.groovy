@@ -28,11 +28,16 @@ pipeline {
             steps {
                 dir('jobs'){
                     script {
-                        sh "${snap_sh} build --arch amd64 ${eks_snaps} --version ${version} --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks'"
-                        sh "sudo chown jenkins:jenkins -R release/snap"
-                        sh "${snap_sh} push || true"
+                        if(!params.release_only){
+                            sh "${snap_sh} build --arch amd64 ${eks_snaps} --version ${version} --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks'"
+                            sh "sudo chown jenkins:jenkins -R release/snap"
+                            sh "${snap_sh} push || true"
+                        }
                         params.channels.split().each { channel ->
-                            sh "echo need to do something here."
+                            sh "${snap_sh} release --name kubelet-eks --channel ${channel} --version ${version}"
+                            sh "${snap_sh} release --name kubectl-eks --channel ${channel} --version ${version}"
+                            sh "${snap_sh} release --name kube-proxy-eks --channel ${channel} --version ${version}"
+                            sh "${snap_sh} release --name kubernetes-test-eks --channel ${channel} --version ${version}"
                         }
                     }
                 }
