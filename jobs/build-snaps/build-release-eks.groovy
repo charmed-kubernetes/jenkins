@@ -33,11 +33,16 @@ pipeline {
                             sh "sudo chown jenkins:jenkins -R release/snap"
                             sh "${snap_sh} push || true"
                         }
+                        def snaps_to_release = ['kubelet-eks', 'kubectl-eks', 'kube-proxy-eks', 'kubernetes-test-eks']
                         params.channels.split().each { channel ->
-                            sh "${snap_sh} release --name kubelet-eks --channel ${channel} --version ${version}"
-                            sh "${snap_sh} release --name kubectl-eks --channel ${channel} --version ${version}"
-                            sh "${snap_sh} release --name kube-proxy-eks --channel ${channel} --version ${version}"
-                            sh "${snap_sh} release --name kubernetes-test-eks --channel ${channel} --version ${version}"
+                            snaps_to_release.each  { snap ->
+                                if(params.dry_run) {
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${version} --dry-run"
+                                } else {
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${version}"
+                                }
+
+                            }
                         }
                     }
                 }

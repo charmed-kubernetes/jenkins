@@ -45,7 +45,8 @@ def cli():
 @click.option('--arch', required=True, default='amd64', help='Architecture to build against')
 @click.option('--match-re', default='(?=\S*[-]*)([a-zA-Z-]+)(.*)', help='Regex matcher')
 @click.option('--rename-re', help='Regex renamer, ie \1-eks')
-def build(snap, version, arch, match_re, rename_re):
+@click.option('--dry-run', is_flag=True)
+def build(snap, version, arch, match_re, rename_re, dry_run):
     """ Build snaps
 
     Usage:
@@ -73,18 +74,23 @@ def build(snap, version, arch, match_re, rename_re):
             snapcraft_fn = build_path / f'{_snap}.yaml'
             _set_snap_alias(snapcraft_fn, snap_alias)
 
-        for line in sh.bash(
-                'build-scripts/docker-build',
-                _snap,
-                _env=env,
-                _cwd='release/snap',
-                _iter=True):
-            click.echo(line.strip())
+        if dry_run:
+            click.echo("dry-run only:")
+            click.echo(f"  > cd release/snap && bash build-scripts/docker-build {_snap}")
+        else:
+            for line in sh.bash(
+                    'build-scripts/docker-build',
+                    _snap,
+                    _env=env,
+                    _cwd='release/snap',
+                    _iter=True):
+                click.echo(line.strip())
 
 @cli.command()
 @click.option('--result-dir', required=True, default='release/snap/build',
-              help='Path of resulting snap builds')
-def push(result_dir):
+              help='Path of resulting snap builds',
+              '--dry-run', is_flag=True)
+def push(result_dir, dry_run):
     """ Promote to a snapstore channel/track
 
     Usage:
@@ -96,8 +102,12 @@ def push(result_dir):
     for fname in glob.glob(f'{result_dir}/*.snap'):
         try:
             click.echo(f'Running: snapcraft push {fname}')
-            for line in sh.snapcraft.push(fname, _iter=True):
-                click.echo(line.strip())
+            if dry_run:
+                click.echo("dry-run only:")
+                click.echo(f"  > snapcraft push {fname}")
+            else:
+                for line in sh.snapcraft.push(fname, _iter=True):
+                    click.echo(line.strip())
         except sh.ErrorReturnCode_2 as e:
             click.echo('Failed to upload to snap store')
             click.echo(e.stdout)

@@ -71,6 +71,11 @@
           name: release_only
           default: false
           description: release only, no building or pushing to snapstore.
+      - bool:
+          name: dry_run
+          default: false
+          description: dry-run nothing is actually done
+
     properties:
       - build-discarder:
           num-to-keep: 2
