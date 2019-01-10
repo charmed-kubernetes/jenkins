@@ -65,7 +65,7 @@
           default: '1.11.5'
           description: snap eks version to build/promote
       - string:
-          name: channel
+          name: channels
           default: '1.11.5/edge 1.11.5/beta 1.11.5/candidate 1.11.5/stable'
       - bool:
           name: release_only
