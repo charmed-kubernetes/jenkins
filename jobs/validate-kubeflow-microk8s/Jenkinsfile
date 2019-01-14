@@ -1,6 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def juju_model = String.format("%s-%s", params.model, uuid())
+def mnist_image = String.format("mnist-test-%s", uuid())
 
 pipeline {
     agent {
@@ -23,13 +24,17 @@ pipeline {
             }
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
-                sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
+                sh "juju bootstrap localhost ${params.controller} --debug"
 
-                deployCDK(controller: params.controller,
-                          model: juju_model,
-                          bundle: "cs:~juju/${params.bundle}",
-                          version_overlay: params.overlay,
-                          bundle_channel: params.bundle_channel)
+                sh "microk8s.enable dns storage"
+                sh "microk8s.config | juju add-k8s ${cloud}"
+                sh "microk8s.docker build tfjobs/mnist/ -t ${mnist_image}"
+
+                sh "juju add-model ${juju_model} ${cloud}"
+                sh "juju create-storage-pool operator-storage kubernetes storage-class=microk8s-hostpath"
+                sh "juju deploy cs:~juju/kubeflow"
+
+                sh "juju-wait -e ${params.controller}:${juju_model} -w"
             }
         }
 
@@ -40,7 +45,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} MNIST_IMAGE=${mnist_image} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_kubeflow.py::test_validate"
                 }
             }
         }
@@ -51,9 +56,11 @@ pipeline {
             archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
         }
         always {
-            collectDebug(params.controller,
-                         juju_model)
+            collectDebug(params.controller, juju_model)
             sh "juju kill-controller -y ${params.controller} || true"
+            sh "juju remove-cloud ${cloud}"
+            sh "microk8s.kubectl delete ns ${juju_model}"
+            sh "microk8s.docker rmi ${mnist_image}"
         }
     }
 }
