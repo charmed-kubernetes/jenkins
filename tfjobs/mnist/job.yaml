@@ -1,0 +1,22 @@
+apiVersion: "kubeflow.org/v1alpha2"
+kind: "TFJob"
+metadata:
+  name: "kubeflow-mnist-test"
+spec:
+  tfReplicaSpecs:
+    PS:
+      replicas: 1
+      restartPolicy: Never
+      template:
+        spec:
+          containers:
+            - name: tensorflow
+              image: "{mnist_image}"
+    Worker:
+      replicas: 1
+      restartPolicy: Never
+      template:
+        spec:
+          containers:
+            - name: tensorflow
+              image: "{mnist_image}"
