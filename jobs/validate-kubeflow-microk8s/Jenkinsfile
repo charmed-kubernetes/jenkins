@@ -20,9 +20,10 @@ pipeline {
     stages {
         stage('Deploy: K8s') {
             options {
-                timeout(time: 1, unit: 'HOURS')
+                timeout(time: 15, unit: 'MINUTES')
             }
             steps {
+                sh "sudo snap switch juju --edge"
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap localhost ${params.controller} --debug"
 
@@ -40,7 +41,7 @@ pipeline {
 
         stage('Validate') {
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 15, unit: 'MINUTES')
             }
 
             steps {
@@ -61,6 +62,7 @@ pipeline {
             sh "juju remove-cloud ${cloud}"
             sh "microk8s.kubectl delete ns ${juju_model}"
             sh "microk8s.docker rmi ${mnist_image}"
+            sh "sudo snap switch juju --stable"
         }
     }
 }
