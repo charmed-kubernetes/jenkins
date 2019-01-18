@@ -1,0 +1,71 @@
+@Library('juju-pipeline@master') _
+
+def aws_model = String.format("%s-%s", params.model, uuid())
+def k8s_model = String.format("aws-kf-model-%s", uuid())
+def mnist_image = String.format("mnist-test-%s", uuid())
+
+pipeline {
+    agent {
+        label 'runner-amd64'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Deploy: K8s') {
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
+            steps {
+                sh "juju kill-controller -y ${params.controller} || true"
+                sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
+
+                sh "juju deploy cs:bundle/canonical-kubernetes"
+                sh "juju deploy cs:~containers/aws-integrator"
+                sh "juju trust aws-integrator"
+                sh "juju add-relation aws-integrator kubernetes-master"
+                sh "juju add-relation aws-integrator kubernetes-worker"
+
+                sh "juju-wait -e ${params.controller}:${aws_model} -w"
+
+                sh "juju scp kubernetes-master/0:~/config kube_config"
+                sh "juju add-k8s aws-kf-cloud < kube_config"
+                sh "juju add-model ${k8s_model} aws-kf-cloud"
+                sh "juju create-storage-pool operator-storage kubernetes storage-class=juju-operator-storage storage-provisioner=kubernetes.io/aws-ebs parameters.type=gp2"
+                sh "juju create-storage-pool k8s-ebs kubernetes storage-class=juju-ebs storage-provisioner=kubernetes.io/aws-ebs parameters.type=gp2"
+                sh "juju deploy cs:~juju/kubeflow"
+                sh "juju wait -e aws-us-east-1:${k8s_model} -w"
+            }
+        }
+
+        stage('Validate') {
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
+
+            steps {
+                dir('jobs') {
+                    sh "CONTROLLER=${params.controller} MODEL=${k8s_model} MNIST_IMAGE=${mnist_image} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_kubeflow.py::test_validate"
+                }
+            }
+        }
+    }
+    post {
+        success {
+            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
+            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
+        }
+        always {
+            collectDebug(params.controller, aws_model)
+            sh "juju kill-controller -y ${params.controller} || true"
+            sh "juju remove-cloud ${params.cloud}"
+        }
+    }
+}
