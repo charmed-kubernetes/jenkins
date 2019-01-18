@@ -1,0 +1,37 @@
+# Validates Kubeflow on AWS
+
+- job-template:
+    name: 'validate-kubeflow-aws'
+    description: |
+      Validates Kubeflow support on AWS
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate-kubeflow-aws/Jenkinsfile
+    parameters:
+      - string:
+          name: model
+          default: 'validate-kubeflow-aws'
+      - string:
+          name: controller
+          default: 'validate-kubeflow-aws'
+      - string:
+          name: cloud
+          default: 'aws/us-east-1'
+      - string:
+          name: bundle_channel
+          default: 'edge'
+      - string:
+          name: bundle
+          default: 'kubeflow'
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
+- project:
+    name: validate-kubeflow-aws
+    jobs:
+      - 'validate-kubeflow-aws'
