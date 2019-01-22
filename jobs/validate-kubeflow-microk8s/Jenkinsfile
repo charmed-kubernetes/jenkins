@@ -23,7 +23,6 @@ pipeline {
                 timeout(time: 15, unit: 'MINUTES')
             }
             steps {
-                sh "sudo snap switch juju --edge && sudo snap refresh"
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap localhost ${params.controller} --debug"
 
@@ -62,7 +61,6 @@ pipeline {
             sh "juju remove-cloud ${cloud}"
             sh "microk8s.kubectl delete ns ${juju_model}"
             sh "microk8s.docker rmi ${mnist_image}"
-            sh "sudo snap switch juju --stable && sudo snap refresh"
         }
     }
 }
