@@ -8,11 +8,14 @@ Usage:
 
   tox -e py36 -- python3 jobs/build-charms/charms.py --help
 """
+
+import os
+from glob import glob
+from pathlib import Path
+from pprint import pformat
+
 import click
 import sh
-import os
-from pathlib import Path
-from glob import glob
 import yaml
 
 
@@ -38,7 +41,31 @@ def push(repo_path, out_path, charm_entity):
     git_commit = sh.git('rev-parse', 'HEAD', _cwd=repo_path)
     git_commit = git_commit.stdout.decode().strip()
     click.echo("Grabbing git revision {}".format(git_commit))
-    out = sh.charm.push(out_path, charm_entity)
+
+    # Build a list of `oci-image` resources that have `upstream-source` defined,
+    # which is added for this logic to work.
+    resources = yaml.load(Path(out_path).joinpath('metadata.yaml').read_text())['resources']
+    images = {
+        name: details['upstream-source']
+        for name, details in resources.items()
+        if details['type'] == 'oci-image' and details.get('upstream-source')
+    }
+
+    click.echo(f'Found {len(images)} oci-image resources:\n{pformat(images)}\n')
+
+    for image in images.values():
+        click.echo(f'Pulling {image}...')
+        sh.docker.pull(image)
+
+    # Convert the image names and tags to `--resource foo=bar` format
+    # for passing to `charm push`.
+    resource_args = [
+        arg
+        for name, image in images.items()
+        for arg in ('--resource', f'{name}={image}')
+    ]
+
+    out = sh.charm.push(out_path, charm_entity, *resource_args)
     out = yaml.load(out.stdout.decode().strip())
     click.echo("Setting {} metadata: {}".format(out['url'],
                                                 git_commit))
