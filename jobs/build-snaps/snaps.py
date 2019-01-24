@@ -88,8 +88,8 @@ def build(snap, version, arch, match_re, rename_re, dry_run):
 
 @cli.command()
 @click.option('--result-dir', required=True, default='release/snap/build',
-              help='Path of resulting snap builds',
-              '--dry-run', is_flag=True)
+              help='Path of resulting snap builds')
+@click.option('--dry-run', is_flag=True)
 def push(result_dir, dry_run):
     """ Promote to a snapstore channel/track
 
