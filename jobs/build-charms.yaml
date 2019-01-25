@@ -101,6 +101,33 @@
       - 'docker-registry':
           repo_name: 'docker-registry-charm'
           git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
+      - 'kubeflow':
+          repo_name: 'bundle-kubeflow'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeflow-ambassador':
+          repo_name: 'charm-kubeflow-ambassador'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeflow-pytorch-operator':
+          repo_name: 'charm-kubeflow-pytorch-operator'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeflow-seldon-api-frontend':
+          repo_name: 'charm-kubeflow-seldon-api-frontend'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeflow-seldon-cluster-manager':
+          repo_name: 'charm-kubeflow-seldon-cluster-manager'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeflow-tf-hub':
+          repo_name: 'charm-kubeflow-tf-hub'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeflow-tf-job-dashboard':
+          repo_name: 'charm-kubeflow-tf-job-dashboard'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeflow-tf-job-operator':
+          repo_name: 'charm-kubeflow-tf-job-operator'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeflow-tf-serving':
+          repo_name: 'charm-kubeflow-tf-serving'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     jobs:
       - '{name}-{charm}'
 
