@@ -20,7 +20,7 @@ pipeline {
     stages {
         stage('Deploy: K8s') {
             options {
-                timeout(time: 15, unit: 'MINUTES')
+                timeout(time: 1, unit: 'HOURS')
             }
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
@@ -40,7 +40,7 @@ pipeline {
 
         stage('Validate') {
             options {
-                timeout(time: 15, unit: 'MINUTES')
+                timeout(time: 1, unit: 'HOURS')
             }
 
             steps {
