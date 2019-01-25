@@ -2,12 +2,32 @@
 
 def to_channels = params.to_channel.split()
 def charm_sh = "tox -e py36 -- python3 build-charms/charms.py"
-def charms = ['calico', 'canal', 'easyrsa', 'etcd',
-              'flannel', 'kubeapi-load-balancer',
-              'kubernetes-e2e', 'kubernetes-master',
-              'kubernetes-worker', 'keepalived', 'docker-registry',
-              'bundle/canonical-kubernetes', 'bundle/kubernetes-core',
-              'bundle/kubernetes-calico', 'bundle/canonical-kubernetes-canal']
+def charms = [
+    'containers/calico',
+    'containers/canal',
+    'containers/easyrsa',
+    'containers/etcd',
+    'containers/flannel',
+    'containers/kubeapi-load-balancer',
+    'containers/kubernetes-e2e',
+    'containers/kubernetes-master',
+    'containers/kubernetes-worker',
+    'containers/keepalived',
+    'containers/docker-registry',
+    'containers/bundle/canonical-kubernetes',
+    'containers/bundle/kubernetes-core',
+    'containers/bundle/kubernetes-calico',
+    'containers/bundle/canonical-kubernetes-canal',
+    'kubeflow-charmers/kubeflow',
+    'kubeflow-charmers/kubeflow-ambassador',
+    'kubeflow-charmers/kubeflow-pytorch-operator',
+    'kubeflow-charmers/kubeflow-seldon-api-frontend',
+    'kubeflow-charmers/kubeflow-seldon-cluster-manager',
+    'kubeflow-charmers/kubeflow-tf-hub',
+    'kubeflow-charmers/kubeflow-tf-job-dashboard',
+    'kubeflow-charmers/kubeflow-tf-job-operator',
+    'kubeflow-charmers/kubeflow-tf-serving',
+]
 
 pipeline {
     agent { label 'runner-amd64' }
@@ -31,8 +51,8 @@ pipeline {
                     script {
                         charms.each { charm ->
                             to_channels.each { channel ->
-                                sh "${charm_sh} promote --charm-entity cs:~containers/${charm} --from-channel ${params.from_channel} --to-channel ${channel}"
-                                sh "${charm_sh} show --charm-entity cs:~containers/${charm} --channel ${channel}"
+                                sh "${charm_sh} promote --charm-entity cs:~${charm} --from-channel ${params.from_channel} --to-channel ${channel}"
+                                sh "${charm_sh} show --charm-entity cs:~${charm} --channel ${channel}"
                             }
                         }
                     }
