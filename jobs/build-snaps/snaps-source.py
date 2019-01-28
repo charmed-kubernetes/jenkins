@@ -58,7 +58,7 @@ def branch(repo, from_branch, to_branch, dry_run):
     sh.git.config('user.name', 'cdkbot', _cwd=snap_basename)
     sh.git.checkout('-b', to_branch, _cwd=snap_basename)
 
-    snapcraft_fn = Path(snap_basename) / 'snapcraft.yaml.in'
+    snapcraft_fn = Path(snap_basename) / 'snapcraft.yaml'
     snapcraft_fn_tpl = Path(snap_basename) / 'snapcraft.yaml.in'
     if not snapcraft_fn_tpl.exists():
         click.echo(f'{snapcraft_fn_tpl} not found')
