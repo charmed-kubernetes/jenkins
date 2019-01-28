@@ -16,13 +16,11 @@ pipeline {
         stage('Release Kubeflow Bundle') {
             steps {
                 git 'https://github.com/juju-solutions/bundle-kubeflow.git'
-                dir('bundle-kubeflow') {
-                    script {
-                        // Releases bundle to defined charmstore namespace
-                        def push_cmd = "charm push . cs:~kubeflow-charmers/kubeflow | tail -n +1 | head -1 | awk '{print \$2}'"
-                        def revision = sh(script: push_cmd, returnStdout: true).trim()
-                        sh script: "charm release --channel ${params.channel} ${revision}", returnStatus: true
-                    }
+                script {
+                    // Releases bundle to defined charmstore namespace
+                    def push_cmd = "charm push . cs:~kubeflow-charmers/kubeflow | tail -n +1 | head -1 | awk '{print \$2}'"
+                    def revision = sh(script: push_cmd, returnStdout: true).trim()
+                    sh script: "charm release --channel ${params.channel} ${revision}", returnStatus: true
                 }
             }
         }
