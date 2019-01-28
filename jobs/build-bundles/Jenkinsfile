@@ -23,7 +23,7 @@ def bundle_mapping = [
 def releaseBundle(bundle, charmstore) {
     // Releases bundle to defined charmstore namespace
     def revision = sh script:String.format("charm push %s %s  | tail -n +1 | head -1 | awk '{print \$2}'", bundle, charmstore), returnStdout: true
-    sh script:String.format("charm release --channel edge %s", revision.trim()), returnStatus: true
+    sh script:String.format("charm release --channel %s %s", params.channel, revision.trim()), returnStatus: true
 }
 
 pipeline {
