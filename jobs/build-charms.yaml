@@ -101,9 +101,6 @@
       - 'docker-registry':
           repo_name: 'docker-registry-charm'
           git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
-      - 'kubeflow':
-          repo_name: 'bundle-kubeflow'
-          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-ambassador':
           repo_name: 'charm-kubeflow-ambassador'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
