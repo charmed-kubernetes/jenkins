@@ -32,7 +32,7 @@ pipeline {
 
                 sh "juju add-model ${juju_model} ${cloud}"
                 sh "juju create-storage-pool operator-storage kubernetes storage-class=microk8s-hostpath"
-                sh "juju deploy cs:~juju/kubeflow"
+                sh "juju deploy cs:~kubeflow-charmers/kubeflow"
 
                 sh "juju-wait -e ${params.controller}:${juju_model} -w"
             }
