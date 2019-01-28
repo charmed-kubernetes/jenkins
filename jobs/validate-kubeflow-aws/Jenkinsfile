@@ -40,7 +40,7 @@ pipeline {
                 sh "juju add-model ${k8s_model} aws-kf-cloud"
                 sh "juju create-storage-pool operator-storage kubernetes storage-class=juju-operator-storage storage-provisioner=kubernetes.io/aws-ebs parameters.type=gp2"
                 sh "juju create-storage-pool k8s-ebs kubernetes storage-class=juju-ebs storage-provisioner=kubernetes.io/aws-ebs parameters.type=gp2"
-                sh "juju deploy cs:~juju/kubeflow"
+                sh "juju deploy cs:~kubeflow-charmers/kubeflow"
                 sh "juju wait -e aws-us-east-1:${k8s_model} -w"
             }
         }
