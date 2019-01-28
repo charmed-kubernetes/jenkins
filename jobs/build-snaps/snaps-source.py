@@ -17,10 +17,11 @@ from pathlib import Path
 from sdk import lp
 
 
-def _render(tmpl, context):
+def _render(tmpl_file, context):
     """ Renders a jinja template with context
     """
-    template = Template(tmpl)
+    template = Template(tmpl_file.read_text(),
+                        keep_trailing_newline=True)
     return template.render(context)
 
 
@@ -39,7 +40,9 @@ def branch(repo, from_branch, to_branch, dry_run):
 
     Usage:
 
-    snaps-source.py branch --repo git+ssh://$LPCREDS@git.launchpad.net/snap-kubectl --from-branch master --to-branch 1.13.2
+    snaps-source.py branch --repo git+ssh://lp_git_user@git.launchpad.net/snap-kubectl \
+      --from-branch master \
+      --to-branch 1.13.2
     """
     try:
         sh.git('ls-remote', '--exit-code', '--heads', repo, to_branch)
@@ -64,10 +67,9 @@ def branch(repo, from_branch, to_branch, dry_run):
         click.echo(f'{snapcraft_fn_tpl} not found')
         sys.exit(1)
     snapcraft_yml = snapcraft_fn_tpl.read_text()
-    snapcraft_yml = _render(snapcraft_yml, {'K8SVERSION': to_branch})
-    snapcraft_fn.write_text(yaml.dump(snapcraft_yml,
-                                      default_flow_style=False,
-                                      indent=2))
+    snapcraft_yml = _render(snapcraft_fn_tpl, {'snap_version': to_branch})
+    snapcraft_fn.write_text(snapcraft_yml)
+
     if not dry_run:
         sh.git.add('.', _cwd=snap_basename)
         sh.git.commit('-m', f'Creating branch {to_branch}', _cwd=snap_basename)
@@ -75,37 +77,42 @@ def branch(repo, from_branch, to_branch, dry_run):
 
 
 @cli.command()
-@click.option('--snap', required=True, multiple=True, help='Snaps to build')
+@click.option('--snap', required=True, help='Snaps to build')
+@click.option('--repo', help='Git repository for snap to build', required=True)
 @click.option('--version', required=True, help='Version of k8s to build')
+@click.option('--branch', required=True, help='Branch to build from')
 @click.option(
     '--track', required=True,
     help='Snap track to release to, format as: `[<track>/]<risk>[/<branch>]`')
 @click.option('--owner', required=True, default='cdkbot',
               help='LP owner with access to managing the snap builds')
 @click.option('--dry-run', is_flag=True)
-def builder(snap, version, track, owner, dry_run):
+def builder(snap, version, track, owner, branch, repo, dry_run):
     """ Creates an new LP builder for snaps
 
     Usage:
 
-    snaps.py builder --snap kubectl --snap kube-proxy --version 1.13.2
+    snaps.py builder --snap kubectl --version 1.13 --branch 1.13.2 \
+      --track 1.13/edge/hotfix-LP123456 \
+      --repo git+ssh://$LPCREDS@git.launchpad.net/snap-kubectl
     """
     _client = lp.Client(stage='production')
     _client.login()
 
-    has_snaps = _client.snaps.total_size > 0
-    if not has_snaps:
-        click.echo('No snaps accessible from this login.')
-        sys.exit(1)
+    params = {
+        'name': snap,
+        'owner': owner,
+        'version': version,
+        'branch': branch,
+        'repo': repo,
+        'track': track
+    }
 
-    owner = _client.owner(owner)
-    for _snap in snap:
-        params = (_snap, owner, version, track)
-        if dry_run:
-            click.echo("dry-run only:")
-            click.echo(f"  > creating builder for {params}")
-        else:
-            _client.create_snap_builder(*params)
+    if dry_run:
+        click.echo("dry-run only:")
+        click.echo(f"  > creating builder for {params}")
+        sys.exit(0)
+    _client.create_or_update_snap_builder(**params)
 
 
 if __name__ == "__main__":

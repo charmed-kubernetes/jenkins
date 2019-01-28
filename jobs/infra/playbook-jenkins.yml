@@ -113,6 +113,14 @@
         group: jenkins
         mode: 0644
         force: no
+    - name: copy ssh creds
+      copy:
+        src: "{{ lookup('env', 'CDKBOTSSHCREDS') }}"
+        dest: /var/lib/jenkins/.ssh/cdkbot_rsa
+        owner: jenkins
+        group: jenkins
+        mode: 0600
+        force: no
     - name: copy snapcraft creds
       copy:
         src: "{{ lookup('env', 'SNAPCRAFTCPCCREDS') }}"
