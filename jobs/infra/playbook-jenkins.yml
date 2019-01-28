@@ -4,6 +4,13 @@
   gather_facts: yes
   become: true
   tasks:
+    - name: set snap perms
+      file:
+        path: /var/lib/jenkins/snap
+        owner: jenkins
+        group: jenkins
+        recurse: yes
+
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
