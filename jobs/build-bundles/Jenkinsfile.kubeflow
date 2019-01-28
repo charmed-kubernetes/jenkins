@@ -1,0 +1,30 @@
+pipeline {
+    agent {
+        label 'runner-amd64'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = '/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin'
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Release Kubeflow Bundle') {
+            steps {
+                git 'https://github.com/juju-solutions/bundle-kubeflow.git'
+                dir('bundle-kubeflow') {
+                    script {
+                        // Releases bundle to defined charmstore namespace
+                        def push_cmd = "charm push . cs:~kubeflow-charmers/kubeflow | tail -n +1 | head -1 | awk '{print \$2}'"
+                        def revision = sh(script: push_cmd, returnStdout: true).trim()
+                        sh script: "charm release --channel ${params.channel} ${revision}", returnStatus: true
+                    }
+                }
+            }
+        }
+    }
+}
