@@ -44,7 +44,7 @@ def push(repo_path, out_path, charm_entity):
 
     # Build a list of `oci-image` resources that have `upstream-source` defined,
     # which is added for this logic to work.
-    resources = yaml.load(Path(out_path).joinpath('metadata.yaml').read_text())['resources']
+    resources = yaml.load(Path(out_path).joinpath('metadata.yaml').read_text()).get('resources', {})
     images = {
         name: details['upstream-source']
         for name, details in resources.items()
