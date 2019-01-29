@@ -41,6 +41,7 @@
           - ubuntu-standard
           - unzip
           - wget
+          - tree
     - name: remove unused debs
       apt:
         name:
