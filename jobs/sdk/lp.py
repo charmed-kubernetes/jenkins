@@ -80,7 +80,7 @@ class Client:
                 distro_series=self.distro_series(),
                 git_repository=self.snap_git_repo(lp_owner, lp_snap_project_name),
                 git_path=branch,
-                store_upload=False,
+                store_upload=True,
                 store_name=name,
                 store_series=self.snappy_series(),
                 store_channels=track,

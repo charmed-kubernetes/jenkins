@@ -38,6 +38,8 @@ def branch(repo, from_branch, to_branch, dry_run):
     """ Creates a git branch based on the upstream snap repo and a version to branch as. This will also update
     the snapcraft.yaml with the correct version to build the snap from in that particular branch.
 
+    These branches must already exist in https://github.com/juju-solutions/kubernetes, including any hotfix branches.
+
     Usage:
 
     snaps-source.py branch --repo git+ssh://lp_git_user@git.launchpad.net/snap-kubectl \
