@@ -53,6 +53,11 @@ class Client:
         return self._client.git_repositories.getByPath(
             path=f'~{owner.name}/{project}')
 
+    def archive(self, reference='ubuntu'):
+        """ Returns archive for reference
+        """
+        return self._client.archives.getByReference(reference=reference)
+
     def distro_series(self, distribution='ubuntu', series='xenial'):
         """ Returns distributions
         """
@@ -72,9 +77,13 @@ class Client:
         try:
             _current_working_snap = self.snaps.getByName(name=lp_snap_name, owner=lp_owner)
             _current_working_snap.git_path = branch
+            _current_working_snap.auto_build = True
+            _current_working_snap.auto_build_pocket= 'Updates'
+            _current_working_snap.auto_build_archive = self.archive()
+
             _current_working_snap.lp_save()
         except NotFound:
-            self.snaps.new(
+            return self.snaps.new(
                 name=lp_snap_name,
                 owner=lp_owner,
                 distro_series=self.distro_series(),
@@ -87,6 +96,8 @@ class Client:
                 processors=['/+processors/amd64',
                             '/+processors/s390x',
                             '/+processors/ppc64el',
-                            '/+processors/arm64']
+                            '/+processors/arm64'],
+                auto_build=True,
+                auto_build_pocket='Updates',
+                auto_build_archive=self.archive()
             )
-        return
