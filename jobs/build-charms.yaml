@@ -25,6 +25,7 @@
 
     # Defaults
     resource_build_sh: ''
+    namespace: 'containers'
 
     description: |
       Builds and releases {charm} to charmstore edge channel.
@@ -46,6 +47,9 @@
       - string:
           name: cloud
           default: 'aws/us-east-1'
+      - string:
+          name: namespace
+          default: '{namespace}'
       - string:
           name: repo_name
           default: '{repo_name}'
@@ -102,27 +106,35 @@
           repo_name: 'docker-registry-charm'
           git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
       - 'kubeflow-ambassador':
+          namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-ambassador'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-pytorch-operator':
+          namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-pytorch-operator'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-seldon-api-frontend':
+          namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-seldon-api-frontend'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-seldon-cluster-manager':
+          namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-seldon-cluster-manager'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-tf-hub':
+          namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-tf-hub'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-tf-job-dashboard':
+          namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-tf-job-dashboard'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-tf-job-operator':
+          namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-tf-job-operator'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-tf-serving':
+          namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-tf-serving'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     jobs:
