@@ -2,6 +2,7 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def charm_sh = "tox -e py36 -- python3 build-charms/charms.py"
+def cs_url = "cs:~${params.namespace}/${params.charm}"
 
 pipeline {
     agent { label 'runner-amd64' }
@@ -65,14 +66,14 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm} --charm-entity cs:~containers/${params.charm}"
+                    sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm} --charm-entity ${cs_url}"
                     script {
                         if(params.resource_build_sh) {
-                            sh "${charm_sh} resource --charm-entity cs:~containers/${params.charm} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.JUJU_REPOSITORY}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
+                            sh "${charm_sh} resource --charm-entity ${cs_url} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.JUJU_REPOSITORY}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
                         }
                     }
-                    sh "${charm_sh} promote --charm-entity cs:~containers/${params.charm} --from-channel unpublished --to-channel edge"
-                    sh "${charm_sh} show --charm-entity cs:~containers/${params.charm} --channel edge"
+                    sh "${charm_sh} promote --charm-entity ${cs_url} --from-channel unpublished --to-channel edge"
+                    sh "${charm_sh} show --charm-entity ${cs_url} --channel edge"
                 }
             }
         }
