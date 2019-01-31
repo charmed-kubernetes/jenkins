@@ -64,6 +64,9 @@
         - "kubectl --classic"
         - "charm --classic --edge"
         - "microk8s --classic"
+    - name: use snap core candidate
+      command: "snap refresh --candidate core"
+      ignore_errors: yes
     - name: clone juju-wait script
       git:
         repo: 'https://git.launchpad.net/juju-wait'
