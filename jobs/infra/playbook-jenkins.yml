@@ -54,6 +54,9 @@
           - liblxc1
           - juju-wait
         state: absent
+    - name: use snap core candidate
+      command: "snap refresh --candidate core"
+      ignore_errors: yes
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
@@ -67,9 +70,6 @@
       command: "snap install microk8s --classic"
       ignore_errors: yes
       when: ansible_architecture == "x86_64"
-    - name: use snap core candidate
-      command: "snap refresh --candidate core"
-      ignore_errors: yes
     - name: clone juju-wait script
       git:
         repo: 'https://git.launchpad.net/juju-wait'
