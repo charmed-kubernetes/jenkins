@@ -63,7 +63,10 @@
         - "juju-wait --classic"
         - "kubectl --classic"
         - "charm --classic --edge"
-        - "microk8s --classic"
+    - name: install microk8s
+      command: "snap install microk8s --classic"
+      ignore_errors: yes
+      when: ansible_architecture == "x86_64"
     - name: use snap core candidate
       command: "snap refresh --candidate core"
       ignore_errors: yes
