@@ -5,7 +5,13 @@ def juju_model = String.format("%s-%s", params.model, uuid())
 def overlay = params.version_overlay
 if(params.overlay_input){
     overlay = String.format("%s/%s", env.WORKSPACE, 'custom_overlay.yaml')
-    sh "echo '${params.overlay_input}' > ${overlay}"
+    sh "touch ${overylay}"
+    def output = """
+cat > ${overlay} <<EOF
+${params.overlay_input}
+EOF
+"""
+    sh "${output}"
 }
 
 pipeline {
