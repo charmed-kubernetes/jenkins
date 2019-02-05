@@ -2,6 +2,13 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 
+def overlay = params.version_overlay
+if(params.overlay_input){
+    def overlay = String.format("%s/%s", env.WORKSPACE, 'custom_overlay.yaml')
+    def overlay_file = new File(overlay)
+    overlay_file << "${params.overlay_input}"
+}
+
 pipeline {
     agent {
         label 'runner-amd64'
@@ -33,7 +40,7 @@ pipeline {
                           model: juju_model,
                           cloud: params.cloud,
                           bundle: "cs:~containers/${params.bundle}",
-                          version_overlay: params.version_overlay,
+                          version_overlay: overlay,
                           bundle_channel: params.bundle_channel)
             }
         }
