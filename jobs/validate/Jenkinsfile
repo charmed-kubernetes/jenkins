@@ -7,7 +7,7 @@ if(params.overlay_input){
     overlay = String.format("%s/%s", env.WORKSPACE, 'custom_overlay.yaml')
     sh "touch ${overlay}"
     def output = """
-cat > ${overlay} <<EOF
+cat > ${env.WORKSPACE}/custom_overlay.yaml <<EOF
 ${params.overlay_input}
 EOF
 """
