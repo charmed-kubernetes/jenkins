@@ -1,18 +1,8 @@
 @Library('juju-pipeline@master') _
 
 def juju_model = String.format("%s-%s", params.model, uuid())
-
+def validate_sh = "tox -e py36 -- python3 validate/validate.py"
 def overlay = params.version_overlay
-if(params.overlay_input){
-    overlay = String.format("%s/%s", env.WORKSPACE, 'custom_overlay.yaml')
-    sh "touch ${overlay}"
-    def output = """
-cat > ${env.WORKSPACE}/custom_overlay.yaml <<EOF
-${params.overlay_input}
-EOF
-"""
-    sh "${output}"
-}
 
 pipeline {
     agent {
@@ -37,6 +27,14 @@ pipeline {
                 script {
                     if (params.with_beta_snapd){
                         sh "sudo snap refresh core --beta || true"
+                    }
+
+                    dir('jobs'){
+                        if (params.overlay_input) {
+                            overlay = "${env.WORKSPACE}/custom_overlay.yaml"
+                            def overlay_input = readYaml text: params.overlay_input
+                            writeYaml file: overlay, data: overlay_input
+                        }
                     }
                 }
                 sh "juju kill-controller -y ${params.controller} || true"
