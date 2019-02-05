@@ -62,6 +62,10 @@
       - string:
           name: snap_channel
           default: '{snap_channel}'
+      - bool:
+          name: with_beta_snapd
+          description: "Test validation against beta snapd on host system"
+          default: false
 
 - job-template:
     name: 'validate-{version}-{bundle}'
