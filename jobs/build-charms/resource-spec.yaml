@@ -14,3 +14,6 @@
   cni-amd64.tgz: cni-amd64
   cni-arm64.tgz: cni-arm64
   cni-s390x.tgz: cni-s390x
+'cs:~containers/tigera-secure-ee':
+  calico-cni-amd64.tar.gz: calico-cni
+  calico-cni-arm64.tar.gz: calico-cni-arm64
