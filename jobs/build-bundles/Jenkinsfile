@@ -17,6 +17,10 @@ def bundle_mapping = [
     'cdk-canal': [
         fragments: 'k8s/cdk cni/canal',
         charmstore: 'cs:~containers/bundle/canonical-kubernetes-canal'
+    ],
+    'kubernetes-tigera-secure-ee': [
+        fragments: 'k8s/cdk cni/tigera-secure-ee',
+        charmstore: 'cs:~containers/bundle/kubernetes-tigera-secure-ee'
     ]
 ]
 
