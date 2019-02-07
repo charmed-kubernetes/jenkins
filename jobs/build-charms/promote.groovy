@@ -19,6 +19,7 @@ def charms = [
     'containers/bundle/kubernetes-core',
     'containers/bundle/kubernetes-calico',
     'containers/bundle/canonical-kubernetes-canal',
+    'containers/bundle/kubernetes-tigera-secure-ee',
     'kubeflow-charmers/kubeflow',
     'kubeflow-charmers/kubeflow-ambassador',
     'kubeflow-charmers/kubeflow-pytorch-operator',
