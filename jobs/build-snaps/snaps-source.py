@@ -114,7 +114,7 @@ def builder(snap, version, track, owner, branch, repo, dry_run):
         click.echo("dry-run only:")
         click.echo(f"  > creating builder for {params}")
         sys.exit(0)
-    _client.create_or_update_snap_builder(**params)
+    _client.create_or_update_snap_recipe(**params)
 
 
 if __name__ == "__main__":

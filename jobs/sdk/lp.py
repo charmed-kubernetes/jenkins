@@ -68,13 +68,15 @@ class Client:
         """
         return self._client.snappy_serieses.getByName(name=name)
 
-    def create_or_update_snap_builder(self, name, owner, version, repo, branch, track):
-        """ Creates a new LP builder for snap with a specific git branch to build from
+    def create_or_update_snap_recipe(self, name, owner, version, repo, branch, track):
+        """ Creates/update snap recipe
+
+        Note: You can delete snaps with:
+        lp._browser.delete('https://api.launchpad.net/devel/~k8s-jenkaas-admins/+snap/kube-apiserver-1.13')
         """
         lp_snap_name = f'{name}-{version}'
         lp_snap_project_name = f'snap-{name}'
         lp_owner = self.owner(owner)
-
         if not isinstance(track, list):
             track = [track]
 
@@ -88,9 +90,8 @@ class Client:
             _current_working_snap.store_name = name
             _current_working_snap.store_series = self.snappy_series()
             _current_working_snap.store_channels = track
-            _current_working_snap.lp_save()
         except NotFound:
-            return self.snaps.new(
+            snap = self.snaps.new(
                 name=lp_snap_name,
                 owner=lp_owner,
                 distro_series=self.distro_series(),
@@ -108,3 +109,5 @@ class Client:
                 auto_build_pocket='Updates',
                 auto_build_archive=self.archive()
             )
+            snap.lp_save()
+            return snap
