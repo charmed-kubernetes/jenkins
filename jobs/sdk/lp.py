@@ -74,13 +74,20 @@ class Client:
         lp_snap_name = f'{name}-{version}'
         lp_snap_project_name = f'snap-{name}'
         lp_owner = self.owner(owner)
+
+        if not isinstance(track, list):
+            track = [track]
+
         try:
             _current_working_snap = self.snaps.getByName(name=lp_snap_name, owner=lp_owner)
             _current_working_snap.git_path = branch
             _current_working_snap.auto_build = True
             _current_working_snap.auto_build_pocket= 'Updates'
             _current_working_snap.auto_build_archive = self.archive()
-
+            _current_working_snap.store_upload = True
+            _current_working_snap.store_name = name
+            _current_working_snap.store_series = self.snappy_series()
+            _current_working_snap.store_channels = track
             _current_working_snap.lp_save()
         except NotFound:
             return self.snaps.new(

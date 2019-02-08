@@ -107,7 +107,7 @@ def builder(snap, version, track, owner, branch, repo, dry_run):
         'version': version,
         'branch': branch,
         'repo': repo,
-        'track': track
+        'track': [track]
     }
 
     if dry_run:
