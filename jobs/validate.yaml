@@ -103,22 +103,6 @@
           num-to-keep: 2
 
 
-- job:
-    name: 'validate-kubernetes-core-snapd-beta'
-    description: |
-      Verifies a k8s core can be deployed while host system is running snap core from beta channel.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/validate/snapdBeta.groovy
-    triggers:
-      - timed: "H 0 * * 6"
-    properties:
-      - build-discarder:
-          num-to-keep: 1
-
-
 - project:
     name: validate
     jobs:

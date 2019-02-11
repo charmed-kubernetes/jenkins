@@ -7,6 +7,7 @@ from .base import (
     _juju_wait,
     _controller_from_env,
     _model_from_env,
+    _series_from_env
 )
 from .utils import asyncify
 from .validation import validate_all
@@ -15,7 +16,7 @@ from .logger import log, log_calls_async
 
 @log_calls_async
 async def enable_snapd_beta_on_model(model):
-    cmd = 'sudo snap refresh care --beta'
+    cmd = 'sudo snap refresh core --beta'
     cloudinit_userdata = {'postruncmd': [cmd]}
     cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
     await model.set_config({'cloudinit-userdata': cloudinit_userdata_str})
