@@ -81,15 +81,16 @@ class Client:
             track = [track]
 
         try:
-            _current_working_snap = self.snaps.getByName(name=lp_snap_name, owner=lp_owner)
-            _current_working_snap.git_path = branch
-            _current_working_snap.auto_build = True
-            _current_working_snap.auto_build_pocket= 'Updates'
-            _current_working_snap.auto_build_archive = self.archive()
-            _current_working_snap.store_upload = True
-            _current_working_snap.store_name = name
-            _current_working_snap.store_series = self.snappy_series()
-            _current_working_snap.store_channels = track
+            snap = self.snaps.getByName(name=lp_snap_name, owner=lp_owner)
+            snap.git_path = branch
+            snap.auto_build = True
+            snap.auto_build_pocket= 'Updates'
+            snap.auto_build_archive = self.archive()
+            snap.store_upload = True
+            snap.store_name = name
+            snap.store_series = self.snappy_series()
+            snap.store_channels = track
+            snap.lp_save()
         except NotFound:
             snap = self.snaps.new(
                 name=lp_snap_name,
@@ -110,4 +111,4 @@ class Client:
                 auto_build_archive=self.archive()
             )
             snap.lp_save()
-            return snap
+        return snap
