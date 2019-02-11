@@ -23,11 +23,12 @@ async def enable_snapd_beta_on_model(model):
 
 async def log_snap_versions(model):
     log('Logging snap versions')
-    for app in model.applications.values():
-        for unit in app.units:
-            action = await unit.run('snap list')
-            snap_versions = action.data['results']['Stdout'].strip() or 'No snaps found'
-            log(unit.name + ': ' + snap_versions)
+    for unit in model.units.values():
+        if unit.dead():
+            continue
+        action = await unit.run('snap list')
+        snap_versions = action.data['results']['Stdout'].strip() or 'No snaps found'
+        log(unit.name + ': ' + snap_versions)
 
 
 @pytest.mark.asyncio
