@@ -6,8 +6,7 @@ from .base import (
     UseModel,
     _juju_wait,
     _controller_from_env,
-    _model_from_env,
-    _series_from_env
+    _model_from_env
 )
 from .utils import asyncify
 from .validation import validate_all
@@ -44,7 +43,7 @@ async def test_snapd_beta(log_dir):
         '-m', '{}:{}'.format(_controller_from_env(), _model_from_env()),
         'cs:~containers/kubernetes-core',
         '--channel', 'edge',
-        '--overlay', 'overlays/1.13-edge-{}-overlay.yaml'.format(_series_from_env()))
+        '--overlay', 'overlays/1.13-edge-overlay.yaml')
     await asyncify(_juju_wait)()
 
     async with UseModel() as model:

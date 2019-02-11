@@ -19,6 +19,9 @@
       - string:
           name: cloud
           default: 'aws/us-east-1'
+      - string:
+          name: series
+          default: 'bionic'
 
     properties:
       - build-discarder:
