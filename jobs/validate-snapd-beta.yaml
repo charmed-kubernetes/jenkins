@@ -1,0 +1,25 @@
+# Validates snapd beta works for k8s deployments
+
+- job:
+    name: 'validate-snapd-beta'
+    description: |
+      Validates snapd beta works for k8s deployments
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate-snapd-beta/Jenkinsfile
+    parameters:
+      - string:
+          name: model
+          default: 'validate-snapd-beta'
+      - string:
+          name: controller
+          default: 'validate-snapd'
+      - string:
+          name: cloud
+          default: 'aws/us-east-1'
+
+    properties:
+      - build-discarder:
+          num-to-keep: 2

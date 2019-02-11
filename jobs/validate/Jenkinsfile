@@ -25,10 +25,6 @@ pipeline {
             }
             steps {
                 script {
-                    if (params.with_beta_snapd){
-                        sh "sudo snap refresh core --beta || true"
-                    }
-
                     dir('jobs'){
                         if (params.overlay_input) {
                             overlay = "${env.WORKSPACE}/custom_overlay.yaml"
@@ -85,11 +81,6 @@ pipeline {
             collectDebug(params.controller,
                          juju_model)
             sh "juju kill-controller -y ${params.controller} || true"
-            script {
-                if (params.with_beta_snapd) {
-                    sh "sudo snap refresh core --candidate || true"
-                }
-            }
         }
     }
 }
