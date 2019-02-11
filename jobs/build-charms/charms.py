@@ -66,6 +66,7 @@ def push(repo_path, out_path, charm_entity):
     ]
 
     out = sh.charm.push(out_path, charm_entity, *resource_args)
+    click.echo(f'Charm push returned: {out}')
     out = yaml.load(out.stdout.decode().strip())
     click.echo("Setting {} metadata: {}".format(out['url'],
                                                 git_commit))
