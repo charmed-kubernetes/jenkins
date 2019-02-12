@@ -113,6 +113,10 @@
           namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-ambassador'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'kubeflow-jupyterhub':
+          namespace: 'kubeflow-charmers'
+          repo_name: 'charm-kubeflow-jupyterhub'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-pytorch-operator':
           namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-pytorch-operator'
@@ -124,10 +128,6 @@
       - 'kubeflow-seldon-cluster-manager':
           namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-seldon-cluster-manager'
-          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-      - 'kubeflow-tf-hub':
-          namespace: 'kubeflow-charmers'
-          repo_name: 'charm-kubeflow-tf-hub'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
       - 'kubeflow-tf-job-dashboard':
           namespace: 'kubeflow-charmers'
