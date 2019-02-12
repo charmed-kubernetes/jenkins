@@ -67,7 +67,9 @@ def push(repo_path, out_path, charm_entity):
 
     out = sh.charm.push(out_path, charm_entity, *resource_args)
     click.echo(f'Charm push returned: {out}')
-    out = yaml.load(out.stdout.decode().strip())
+    # Output includes lots of ansi escape sequences from the docker push,
+    # and we only care about the first line, which contains the url as yaml.
+    out = yaml.load(out.stdout.decode().strip().splitlines()[0])
     click.echo("Setting {} metadata: {}".format(out['url'],
                                                 git_commit))
     sh.charm.set(out['url'], 'commit={}'.format(git_commit))
