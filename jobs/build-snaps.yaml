@@ -80,6 +80,46 @@
       - build-discarder:
           num-to-keep: 2
 
+- job:
+    name: 'create-snap-recipe'
+    description: |
+      Generates snap recipe for building snaps and promoting to snapstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-snaps/create-snap-recipe.groovy
+    parameters:
+      - choice:
+          name: snap
+          choices:
+            - snap-kube-apiserver
+            - snap-kube-controller-manager
+            - snap-kube-proxy
+            - snap-kube-scheduler
+            - snap-kubeadm
+            - snap-kubectl
+            - snap-kubelet
+          description: snap to create recipe for
+      - string:
+          name: version
+          default: '1.13'
+          description: k8s version to target
+      - string:
+          name: track
+          default: '1.13/edge/test-k8s-source'
+          description: snap version/risk/branch
+      - string:
+          name: owner
+          default: 'k8s-jenkaas-admins'
+      - string:
+          name: branch
+          default: '1.13.2'
+          description: k8s major.minor.patch branch to build from
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
 
 - job-group:
     name: 'build-release-snaps'

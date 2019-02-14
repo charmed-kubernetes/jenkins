@@ -1,0 +1,41 @@
+# Generates a snap recipe in launchpad to be built and published to snapstore.
+
+- job:
+    name: 'create-snap-recipe'
+    description: |
+      Generates a snap recipe in launchpad to be built and published to snapstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-snaps/create-snap-recipe.groovy
+    parameters:
+      - string:
+          name: owner
+          default: 'k8s-jenkaas-admins'
+      - choice:
+          name: version
+          choices:
+            - '1.13'
+            - '1.14'
+            - '1.15'
+          description: 'Minor version of component'
+      - string:
+          name: track
+          description: 'Snap track to publish against'
+      - string:
+          name: branch
+          description: 'Branch of the upstream snap repo to pull from'
+      - choice:
+          name: snap
+          choices:
+            - 'kube-apiserver'
+            - 'kube-controller-manager'
+            - 'kube-proxy'
+            - 'kube-scheduler'
+            - 'kubeadm'
+            - 'kubectl'
+            - 'kubelet'
+    properties:
+      - build-discarder:
+          num-to-keep: 2
