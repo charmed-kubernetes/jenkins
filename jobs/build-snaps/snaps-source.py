@@ -144,7 +144,6 @@ def create_snap_recipe(
     cip = idm.CanonicalIdentityProvider(email=snap_recipe_email,
                                         password=snap_recipe_password)
     discharge_macaroon = cip.get_discharge(caveat_id)
-    click.echo(discharge_macaroon.json())
     snap_recipe.completeAuthorization(
         discharge_macaroon=discharge_macaroon.json())
     snap_recipe.requestBuilds(archive=_client.archive(), pocket='Updates')
