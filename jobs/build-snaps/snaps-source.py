@@ -46,8 +46,10 @@ def branch(repo, from_branch, to_branch, dry_run):
       --from-branch master \
       --to-branch 1.13.2
     """
+    env = os.environ.copy()
+
     try:
-        sh.git('ls-remote', '--exit-code', '--heads', repo, to_branch)
+        sh.git('ls-remote', '--exit-code', '--heads', repo, to_branch, _env=env)
         click.echo(f'{to_branch} already exists, exiting.')
         sys.exit(0)
     except sh.ErrorReturnCode as e:
@@ -58,7 +60,7 @@ def branch(repo, from_branch, to_branch, dry_run):
     if snap_basename.endswith('.git'):
         snap_basename = snap_basename.rstrip('.git')
     sh.rm('-rf', snap_basename)
-    sh.git.clone(repo, branch=from_branch)
+    sh.git.clone(repo, branch=from_branch, _env=env)
     sh.git.config('user.email', 'cdkbot@gmail.com', _cwd=snap_basename)
     sh.git.config('user.name', 'cdkbot', _cwd=snap_basename)
     sh.git.checkout('-b', to_branch, _cwd=snap_basename)
@@ -75,7 +77,7 @@ def branch(repo, from_branch, to_branch, dry_run):
     if not dry_run:
         sh.git.add('.', _cwd=snap_basename)
         sh.git.commit('-m', f'Creating branch {to_branch}', _cwd=snap_basename)
-        sh.git.push(repo, to_branch, _cwd=snap_basename)
+        sh.git.push(repo, to_branch, _cwd=snap_basename, _env=env)
 
 
 @cli.command()
