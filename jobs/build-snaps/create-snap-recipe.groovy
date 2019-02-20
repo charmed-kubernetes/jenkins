@@ -37,7 +37,7 @@ pipeline {
             steps {
                 dir('jobs'){
                     sh "${snap_sh} branch --to-branch ${params.branch} --repo git+ssh://cdkbot@git.launchpad.net/snap-${params.snap}"
-                    sh "LPCREDS=${env.LPCREDS} ${snap_sh} create-snap-recipe --snap ${params.snap} --version ${params.version} --track '${params.track}' --owner ${params.owner} --branch ${params.branch} --repo git+ssh://cdkbot@git.launchpad.net/snap-${params.snap} --snap-recipe-email '${env.K8STEAMCI_USR}' --snap-recipe-password '${env.K8STEAMCI_PWD}'"
+                    sh "LPCREDS=${env.LPCREDS} ${snap_sh} create-snap-recipe --snap ${params.snap} --version ${params.version} --track '${params.track}' --owner ${params.owner} --branch ${params.branch} --repo git+ssh://cdkbot@git.launchpad.net/snap-${params.snap} --snap-recipe-email '${env.K8STEAMCI_USR}' --snap-recipe-password '${env.K8STEAMCI_PSW}'"
                 }
             }
         }
