@@ -17,12 +17,6 @@
 - edge_overlay_defaults: &edge_overlay_defaults
     name: 'edge-overlay-defaults'
     version:
-      # - 'v1.10.x':
-      #     version_overlay: 'jobs/overlays/1.10-edge-overlay.yaml'
-      #     snap_channel: '1.10/edge'
-      - 'v1.11.x':
-          version_overlay: 'jobs/overlays/1.11-edge-overlay.yaml'
-          snap_channel: '1.11/edge'
       - 'v1.12.x':
           version_overlay: 'jobs/overlays/1.12-edge-overlay.yaml'
           snap_channel: '1.12/edge'

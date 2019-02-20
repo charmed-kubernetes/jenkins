@@ -35,7 +35,7 @@ pipeline {
         stage('Create snap recipes'){
             steps {
                 dir('jobs'){
-                    sh "LPCREDS=${env.LPCREDS} ${snap_sh} builder --snap ${params.snap} --version ${params.version} --track '${params.track} --owner ${params.owner} --branch ${params.branch} --repo git+ssh://cdkbot@git.launchpad.net/snap-${params.snap} --snap-recipe-email '${env.K8STEAMCI_USR}' --snap-recipe-password '${env.K8STEAMCI_PWD}'"
+                    sh "LPCREDS=${env.LPCREDS} ${snap_sh} builder --snap ${params.snap} --version ${params.version} --track '${params.track}' --owner ${params.owner} --branch ${params.branch} --repo git+ssh://cdkbot@git.launchpad.net/snap-${params.snap} --snap-recipe-email '${env.K8STEAMCI_USR}' --snap-recipe-password '${env.K8STEAMCI_PWD}'"
                 }
             }
         }
