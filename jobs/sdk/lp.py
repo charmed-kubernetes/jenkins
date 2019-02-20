@@ -110,5 +110,4 @@ class Client:
                 auto_build_archive=self.archive()
             )
         snap.lp_save()
-        snap.requestBuilds(archive=self.archive(), pocket='Updates')
         return snap
