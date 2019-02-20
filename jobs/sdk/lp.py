@@ -90,7 +90,6 @@ class Client:
             snap.store_name = name
             snap.store_series = self.snappy_series()
             snap.store_channels = track
-            snap.lp_save()
         except NotFound:
             snap = self.snaps.new(
                 name=lp_snap_name,
@@ -110,5 +109,6 @@ class Client:
                 auto_build_pocket='Updates',
                 auto_build_archive=self.archive()
             )
-            snap.lp_save()
+        snap.lp_save()
+        snap.requestBuilds(archive=self.archive(), pocket='Updates')
         return snap
