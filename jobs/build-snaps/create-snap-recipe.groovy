@@ -26,7 +26,7 @@ pipeline {
         LPCREDS = credentials('launchpad_creds')
         // This is the user/pass able to publish snaps to the store via launchpad
         K8STEAMCI = credentials('k8s_team_ci_lp')
-        GIT_SSH_COMMAND='ssh -i /var/lib/jenkins/.ssh/id_rsa -o IdentitiesOnly=yes'
+        GIT_SSH_COMMAND='ssh -i /var/lib/jenkins/.ssh/cdkbot_rsa -o IdentitiesOnly=yes'
     }
     options {
         ansiColor('xterm')
