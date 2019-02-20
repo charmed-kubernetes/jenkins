@@ -93,13 +93,13 @@
       - choice:
           name: snap
           choices:
-            - snap-kube-apiserver
-            - snap-kube-controller-manager
-            - snap-kube-proxy
-            - snap-kube-scheduler
-            - snap-kubeadm
-            - snap-kubectl
-            - snap-kubelet
+            - kube-apiserver
+            - kube-controller-manager
+            - kube-proxy
+            - kube-scheduler
+            - kubeadm
+            - kubectl
+            - kubelet
           description: snap to create recipe for
       - string:
           name: version
