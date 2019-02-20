@@ -127,7 +127,7 @@
         owner: jenkins
         group: jenkins
         mode: 0600
-        force: no
+        force: yes
     - name: copy snapcraft creds
       copy:
         src: "{{ lookup('env', 'SNAPCRAFTCPCCREDS') }}"
