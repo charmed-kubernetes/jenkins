@@ -145,7 +145,7 @@ def create_snap_recipe(
                                         password=snap_recipe_password)
     discharge_macaroon = cip.get_discharge(caveat_id)
     snap_recipe.completeAuthorization(
-        discharge_macaroon=discharge_macaroon.json())
+        discharge_macaroon=discharge_macaroon.text)
     snap_recipe.requestBuilds(archive=_client.archive(), pocket='Updates')
 
 
