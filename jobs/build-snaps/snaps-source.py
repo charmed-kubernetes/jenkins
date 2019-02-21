@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 from jinja2 import Template
 from pathlib import Path
 from sdk import lp, idm
-
+from pymacaroons import Macaroon
 
 def _render(tmpl_file, context):
     """ Renders a jinja template with context
@@ -143,9 +143,10 @@ def create_snap_recipe(
     caveat_id = snap_recipe.beginAuthorization()
     cip = idm.CanonicalIdentityProvider(email=snap_recipe_email,
                                         password=snap_recipe_password)
-    discharge_macaroon = cip.get_discharge(caveat_id)
+    discharge_macaroon = cip.get_discharge(caveat_id).json()
+    discharge_macaroon = Macaroon.deserialize(discharge_macaroon['discharge_macaroon'])
     snap_recipe.completeAuthorization(
-        discharge_macaroon=discharge_macaroon.json())
+        discharge_macaroon=discharge_macaroon.serialize())
     snap_recipe.requestBuilds(archive=_client.archive(), pocket='Updates')
 
 

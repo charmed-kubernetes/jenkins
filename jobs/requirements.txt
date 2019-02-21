@@ -19,3 +19,4 @@ jinja2
 launchpadlib==1.10.6
 canonicalwebteam.snapstoreapi==0.4.4
 python-dateutil
+pymacaroons
