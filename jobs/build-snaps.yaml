@@ -93,13 +93,7 @@
       - choice:
           name: snap
           choices:
-            - kube-apiserver
-            - kube-controller-manager
-            - kube-proxy
-            - kube-scheduler
-            - kubeadm
-            - kubectl
-            - kubelet
+            !include: includes/k8s-snap-list.inc
           description: snap to create recipe for
       - string:
           name: version
