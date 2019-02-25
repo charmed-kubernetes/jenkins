@@ -20,6 +20,9 @@
           name: promote_from
       - string:
           name: promote_to
+      - string:
+          name: snaps
+          description: Pass a list of snap names to promote, leaving empty will promote all snaps
     properties:
       - build-discarder:
           num-to-keep: 2
