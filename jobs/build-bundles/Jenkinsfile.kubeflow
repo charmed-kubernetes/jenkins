@@ -18,9 +18,15 @@ pipeline {
                 git 'https://github.com/juju-solutions/bundle-kubeflow.git'
                 script {
                     // Releases bundle to defined charmstore namespace
-                    def push_cmd = "charm push . cs:~kubeflow-charmers/kubeflow | tail -n +1 | head -1 | awk '{print \$2}'"
-                    def revision = sh(script: push_cmd, returnStdout: true).trim()
-                    sh script: "charm release --channel ${params.channel} ${revision}", returnStatus: true
+                    sh '''
+                        charm push . cs:~kubeflow-charmers/kubeflow
+                        | tail -n +1
+                        | head -1
+                        | awk '{print \$2}'
+                        > stdout.txt
+                    '''
+                    def revision = readFile('stdout.txt').trim()
+                    sh "charm release --channel ${params.channel} ${revision}"
                 }
             }
         }
