@@ -14,7 +14,7 @@ def cli():
 
 @cli.command()
 @click.option('--bucket', required=True, help="s3 bucket to use",
-              default="jujubigdata")
+              default="k8sci")
 @click.argument('results-file')
 def push(bucket, results_file):
     """ pushes cdk field agent and sets build result
