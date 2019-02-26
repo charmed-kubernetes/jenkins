@@ -2,6 +2,7 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def validate_sh = "tox -e py36 -- python3 validate/validate.py"
+def collect_debug_sh = "tox -e py36 -- python3 infra/collect-debug.py"
 def overlay = params.version_overlay
 
 pipeline {
@@ -80,6 +81,9 @@ pipeline {
         always {
             collectDebug(params.controller,
                          juju_model)
+            dir("jobs") {
+                sh "$collect_debug_sh results --results-file results*.tar.gz"
+            }
             sh "juju kill-controller -y ${params.controller} || true"
         }
     }
