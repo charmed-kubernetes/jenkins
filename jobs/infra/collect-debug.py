@@ -24,8 +24,8 @@ def push(bucket, results_file):
     results_file = Path(results_file)
     current_date = datetime.now().strftime('%Y-%m-%d')
     env = os.environ.copy()
-    s3_path = f"k8sci/{env['JOB_NAME']}/{current_date}/{env['BUILD_NUMBER']}/{results_file}"
-    s3.upload_file(str(results_file), 'jujubigdata', s3_path)
+    s3_path = f"{env['JOB_NAME']}/{current_date}/{env['BUILD_NUMBER']}/{results_file}"
+    s3.upload_file(str(results_file), bucket, s3_path)
 
 
 if __name__ == "__main__":
