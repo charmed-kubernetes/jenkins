@@ -19,10 +19,10 @@ pipeline {
                 script {
                     // Releases bundle to defined charmstore namespace
                     sh '''
-                        charm push . cs:~kubeflow-charmers/kubeflow
-                        | tail -n +1
-                        | head -1
-                        | awk '{print \$2}'
+                        charm push . cs:~kubeflow-charmers/kubeflow \
+                        | tail -n +1 \
+                        | head -1 \
+                        | awk '{print \$2}' \
                         > stdout.txt
                     '''
                     def revision = readFile('stdout.txt').trim()
