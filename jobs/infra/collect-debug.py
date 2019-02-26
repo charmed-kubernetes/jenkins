@@ -4,7 +4,6 @@
 import click
 import sh
 import os
-import attr
 from datetime import datetime
 from pathlib import Path
 
@@ -16,7 +15,7 @@ def cli():
 
 @cli.command
 @click.option('--bucket', required=True, help="s3 bucket to use",
-              default="jenkaas")
+              default="jujubigdata")
 @click.option('--results-file', required=True,
               help="Path to results file")
 def results(bucket, results_file):
