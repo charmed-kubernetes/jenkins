@@ -26,4 +26,6 @@ def results(bucket, results_file):
     current_date = datetime.now().strftime('%Y-%m-%d')
     env = os.environ.copy()
     s3_path = f"s3://{bucket}/{env['JOB_NAME']}/{current_date}/{env['BUILD_NUMBER']}/{results_file.parent}"
+    click.echo(s3_path)
+    click.echo(s3.cp(str(results_file), s3_path))
     s3.cp(str(results_file), s3_path)
