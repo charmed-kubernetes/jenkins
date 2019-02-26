@@ -39,6 +39,11 @@ pipeline {
                     }
                     if (params.exec_command) {
                         sh "${params.exec_command}"
+                    } else {
+                        dir("jobs") {
+                            sh "touch test.txt"
+                            sh "tox -e py36 -- python3 infra/collect-debug.py push test.txt"
+                        }
                     }
                 }
             }
