@@ -117,6 +117,38 @@
       - build-discarder:
           num-to-keep: 2
 
+- job:
+    name: 'create-all-snap-recipes'
+    description: |
+      Generates snap recipes for all required snaps.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-snaps/create-all-snap-recipes.groovy
+    parameters:
+      - text:
+          name: snaps
+          default: !include: includes/k8s-snap-list.inc
+          description: snaps to create recipe for
+      - string:
+          name: version
+          default: '1.13'
+          description: k8s version to target
+      - string:
+          name: track
+          default: '1.13/edge/test-k8s-source'
+          description: snap version/risk/branch
+      - string:
+          name: owner
+          default: 'k8s-jenkaas-admins'
+      - string:
+          name: branch
+          default: '1.13.2'
+          description: k8s major.minor.patch branch to build from
+    properties:
+      - build-discarder:
+          num-to-keep: 2
 
 - job-group:
     name: 'build-release-snaps'
