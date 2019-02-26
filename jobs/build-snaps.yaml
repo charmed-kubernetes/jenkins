@@ -109,9 +109,9 @@
           name: owner
           default: 'k8s-jenkaas-admins'
       - string:
-          name: branch
-          default: '1.13.2'
-          description: k8s major.minor.patch branch to build from
+          name: tag
+          default: 'v1.13.3'
+          description: k8s major.minor.patch-{HOTFIX} tag to build from
     properties:
       - build-discarder:
           num-to-keep: 2

@@ -71,7 +71,7 @@ def branch(repo, from_branch, to_branch, dry_run):
         click.echo(f'{snapcraft_fn_tpl} not found')
         sys.exit(1)
     snapcraft_yml = snapcraft_fn_tpl.read_text()
-    snapcraft_yml = _render(snapcraft_fn_tpl, {'snap_version': to_branch})
+    snapcraft_yml = _render(snapcraft_fn_tpl, {'snap_version': to_branch.lstrip('v')})
     snapcraft_fn.write_text(snapcraft_yml)
 
     if not dry_run:
@@ -84,7 +84,7 @@ def branch(repo, from_branch, to_branch, dry_run):
 @click.option('--snap', required=True, help='Snaps to build')
 @click.option('--repo', help='Git repository for snap to build', required=True)
 @click.option('--version', required=True, help='Version of k8s to build')
-@click.option('--branch', required=True, help='Branch to build from')
+@click.option('--tag', required=True, help='Tag to build from')
 @click.option(
     '--track', required=True,
     help='Snap track to release to, format as: `[<track>/]<risk>[/<branch>]`')
@@ -98,7 +98,7 @@ def branch(repo, from_branch, to_branch, dry_run):
               help='LP owner with access to managing the snap builds')
 @click.option('--dry-run', is_flag=True)
 def create_snap_recipe(
-        snap, version, track, owner, branch, repo,
+        snap, version, track, owner, tag, repo,
         dry_run, snap_recipe_email, snap_recipe_password):
     """ Creates an new snap recipe in Launchpad
 
@@ -106,7 +106,7 @@ def create_snap_recipe(
     version: snap version channel apply this too (ie, Current patch is 1.13.3 but we want that to go in 1.13 snap channel)
     track: snap store version/risk/branch to publish to (ie, 1.13/edge/hotfix-LP123456)
     owner: launchpad owner of the snap recipe (ie, k8s-jenkaas-admins)
-    branch: launchpad git branch to pull snapcraft instructions from (ie, git.launchpad.net/snap-kubectl)
+    tag: launchpad git tag to pull snapcraft instructions from (ie, git.launchpad.net/snap-kubectl)
     repo: launchpad git repo (git+ssh://$LPCREDS@git.launchpad.net/snap-kubectl)
 
     # Note: this account would need access granted to the snaps it want's to publish from the snapstore dashboard
@@ -115,7 +115,7 @@ def create_snap_recipe(
 
     Usage:
 
-    snaps-source.py builder --snap kubectl --version 1.13 --branch 1.13.2 \
+    snaps-source.py builder --snap kubectl --version 1.13 --tag v1.13.2 \
       --track 1.13/edge/hotfix-LP123456 \
       --repo git+ssh://$LPCREDS@git.launchpad.net/snap-kubectl \
       --owner k8s-jenkaas-admins \
@@ -130,7 +130,7 @@ def create_snap_recipe(
         'name': snap,
         'owner': owner,
         'version': version,
-        'branch': branch,
+        'branch': tag,
         'repo': repo,
         'track': [track]
     }
