@@ -8,7 +8,7 @@ import attr
 from datetime import datetime
 from pathlib import Path
 
-s3 = sh.s3.bake('aws s3 --profile s3', _env=os.environ.copy())
+s3 = sh.aws.bake('s3 --profile s3', _env=os.environ.copy())
 
 @click.group()
 def cli():
