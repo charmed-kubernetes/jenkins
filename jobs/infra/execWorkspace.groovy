@@ -1,5 +1,7 @@
 @Library('juju-pipeline@master') _
 
+def collect_debug_sh = "tox -e py36 -- python3 infra/collect-debug.py"
+
 pipeline {
     agent {
         label "${params.build_node}"
@@ -33,6 +35,15 @@ pipeline {
                 //         sh "sudo lxc delete --force piptest"
                 //     }
                 // }
+                dir("jobs") {
+                    sh "${collect_debug_sh} set-meta"
+                    sh "${collect_debug_sh} starttime"
+                    sh "${collect_debug_sh} test-result --no-fail"
+                    sh "${collect_debug_sh} endtime"
+                    sh "${collect_debug_sh} save-meta"
+                    sh "${collect_debug_sh} push meta.yaml"
+                    sh "${collect_debug_sh} push stats.db"
+                }
                 script {
                     if (params.workspace_path) {
                         sh "sudo rm -rf ${params.workspace_path}"

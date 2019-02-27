@@ -1,16 +1,70 @@
 """ Script for storing build results
 """
 
-import click
-import boto3
-import sh
-import os
 from datetime import datetime
+from kv import KV
 from pathlib import Path
+import boto3
+import click
+import os
+import sh
+import yaml
+
+db = KV('stats.db')
 
 @click.group()
 def cli():
     pass
+
+
+@cli.command()
+def starttime():
+    """ Sets a startime timestamp
+    """
+    db.set('starttime', datetime.now())
+
+@cli.command()
+def endtime():
+    """ Sets a endtime timestamp
+    """
+    db.set('endtime', datetime.now())
+
+@cli.command()
+@click.option('--fail/--no-fail', default=True)
+def test_result(fail):
+    """ Sets test result
+    """
+    result = 'Pass'
+    if fail:
+        result = 'Fail'
+
+    db.set('test-result', result)
+
+
+@cli.command()
+def set_meta():
+    """ Sets metadata information
+    """
+    env = os.environ.copy()
+    db.set('job-name', env['JOB_NAME'])
+    db.set('build-number', env['BUILD_NUMBER'])
+    db.set('node-name', env['NODE_NAME'])
+    db.set('build-tag', env['BUILD_TAG'])
+    db.set('workspace', env['WORKSPACE'])
+    db.set('git-commit', env['GIT_COMMIT'])
+    db.set('git-url', env['GIT_URL'])
+    db.set('git-branch', env['GIT_BRANCH'])
+
+
+@cli.command()
+@click.option('--filename', default='meta.yaml')
+def save_meta(filename):
+    """ Saves metadata to yaml
+    """
+    filename = Path(filename)
+    data = yaml.safe_dump(dict(db))
+    filename.write_text(data, encoding='utf-8')
+
 
 @cli.command()
 @click.option('--bucket', required=True, help="s3 bucket to use",
@@ -24,8 +78,8 @@ def push(bucket, results_file):
     results_file = Path(results_file)
     current_date = datetime.now().strftime('%Y-%m-%d')
     env = os.environ.copy()
-    s3_path = f"{env['JOB_NAME']}/{current_date}/{env['BUILD_NUMBER']}/{results_file}"
-    s3.upload_file(str(results_file), bucket, s3_path)
+    s3_path = Path(env['JOB_NAME']) / current_date / env['BUILD_NUMBER'] / results_file
+    s3.upload_file(str(results_file), bucket, str(s3_path))
 
 
 if __name__ == "__main__":

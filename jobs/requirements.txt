@@ -21,3 +21,4 @@ canonicalwebteam.snapstoreapi==0.4.4
 python-dateutil
 pymacaroons
 boto3
+kv
