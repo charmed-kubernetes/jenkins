@@ -21,13 +21,13 @@ def cli():
 def starttime():
     """ Sets a startime timestamp
     """
-    db.set('starttime', datetime.now())
+    db['starttime'] = datetime.now()
 
 @cli.command()
 def endtime():
     """ Sets a endtime timestamp
     """
-    db.set('endtime', datetime.now())
+    db['endtime'] = datetime.now()
 
 @cli.command()
 @click.option('--fail/--no-fail', default=True)
@@ -38,7 +38,7 @@ def test_result(fail):
     if fail:
         result = 'Fail'
 
-    db.set('test-result', result)
+    db['test-result'] = result
 
 
 @cli.command()
@@ -46,14 +46,14 @@ def set_meta():
     """ Sets metadata information
     """
     env = os.environ.copy()
-    db.set('job-name', env['JOB_NAME'])
-    db.set('build-number', env['BUILD_NUMBER'])
-    db.set('node-name', env['NODE_NAME'])
-    db.set('build-tag', env['BUILD_TAG'])
-    db.set('workspace', env['WORKSPACE'])
-    db.set('git-commit', env['GIT_COMMIT'])
-    db.set('git-url', env['GIT_URL'])
-    db.set('git-branch', env['GIT_BRANCH'])
+    db['job-name'] = env['JOB_NAME']
+    db['build-number'] = env['BUILD_NUMBER']
+    db['node-name'] = env['NODE_NAME']
+    db['build-tag'] = env['BUILD_TAG']
+    db['workspace'] = env['WORKSPACE']
+    db['git-commit'] = env['GIT_COMMIT']
+    db['git-url'] = env['GIT_URL']
+    db['git-branch'] = env['GIT_BRANCH']
 
 
 @cli.command()
