@@ -21,13 +21,13 @@ def cli():
 def starttime():
     """ Sets a startime timestamp
     """
-    db['starttime'] = datetime.now()
+    db['starttime'] = str(datetime.now())
 
 @cli.command()
 def endtime():
     """ Sets a endtime timestamp
     """
-    db['endtime'] = datetime.now()
+    db['endtime'] = str(datetime.now())
 
 @cli.command()
 @click.option('--fail/--no-fail', default=True)
