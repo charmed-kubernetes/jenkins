@@ -1,7 +1,6 @@
 @Library('juju-pipeline@master') _
 
 def juju_model = String.format("%s-%s", params.model, uuid())
-def collect_debug_sh = "tox -e py36 -- python3 infra/collect-debug.py"
 def validate_sh = "tox -e py36 -- python3 validate/validate.py"
 def overlay = params.version_overlay
 
@@ -36,10 +35,6 @@ pipeline {
                 }
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
-                dir("jobs") {
-                    sh "${collect_debug_sh} set-meta"
-                    sh "${collect_debug_sh} starttime"
-                }
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           cloud: params.cloud,
@@ -79,18 +74,14 @@ pipeline {
     }
     post {
         failure {
-            sh "cd jobs && ${collect_debug_sh} test-result --fail"
+            setFail()
         }
         success {
-            sh "cd jobs && ${collect_debug_sh} test-result --no-fail"
+            setPass()
             junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
             archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
         }
         always {
-            sh "cd jobs && ${collect_debug_sh} endtime"
-            sh "cd jobs && ${collect_debug_sh} save-meta"
-            sh "cd jobs && ${collect_debug_sh} push meta.yaml"
-            sh "cd jobs && ${collect_debug_sh} push stats.db"
             collectDebug(params.controller, juju_model)
             sh "juju kill-controller -y ${params.controller} || true"
         }
