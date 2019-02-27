@@ -14,12 +14,12 @@ def cli():
 
 @cli.command()
 @click.option('--bucket', required=True, help="s3 bucket to use",
-              default="k8sci")
+              default="jenkaas")
 @click.argument('results-file')
 def push(bucket, results_file):
     """ pushes cdk field agent and sets build result
     """
-    session = boto3.Session(profile_name='s3')
+    session = boto3.Session(profile_name='default')
     s3 = session.client('s3')
     results_file = Path(results_file)
     current_date = datetime.now().strftime('%Y-%m-%d')
