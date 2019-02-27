@@ -64,10 +64,6 @@ pipeline {
         }
         always {
             collectDebug(params.controller, aws_model)
-            dir("jobs") {
-                sh "$collect_debug_sh push results*.tar.gz"
-                sh "$collect_debug_sh push logs"
-            }
 
             sh "juju kill-controller -y ${params.controller} || true"
             sh "juju remove-cloud ${params.cloud}"

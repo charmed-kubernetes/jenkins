@@ -34,11 +34,6 @@ pipeline {
                 always {
                     collectDebug(params.controller,
                                  juju_model)
-                    dir("jobs") {
-                        sh "$collect_debug_sh push results*.tar.gz"
-                        sh "$collect_debug_sh push logs"
-                    }
-
                     tearDown(params.controller,
                              juju_model)
                 }
