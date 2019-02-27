@@ -62,7 +62,7 @@ def save_meta(filename):
     """ Saves metadata to yaml
     """
     filename = Path(filename)
-    data = yaml.safe_dump(dict(db))
+    data = yaml.dump(dict(db), default_flow_style=False)
     filename.write_text(data, encoding='utf-8')
 
 
