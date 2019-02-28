@@ -42,7 +42,7 @@ async def test_snapd_beta(log_dir):
         #                    series=_series_from_env())
     await asyncify(juju.deploy)(
         '-m', '{}:{}'.format(_controller_from_env(), _model_from_env()),
-        'cs:~containers/kubernetes-core',
+        'cs:~containers/canonincal-kubernetes',
         '--channel', 'edge',
         '--overlay', 'overlays/1.13-edge-overlay.yaml')
     await asyncify(_juju_wait)()
