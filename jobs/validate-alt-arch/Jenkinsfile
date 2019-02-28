@@ -87,7 +87,12 @@ pipeline {
         }
     }
     post {
+        failure {
+            setFail()
+        }
+
         success {
+            setPass()
             junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
             archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
         }
