@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Jenkaas Reports</title>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col p-3">
+          <h3>Jenkaas Reports: <small class="text-muted">{% block subreportname %}Last 30 days{% endblock %}</small></h3>
+        </div>
+      </div>
+    </div>
+    {% block content %}
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col">
+          <div class="table-responsive">
+            <table class="table table-hover table-bordered">
+              <thead class="thead-dark">
+                <tr>
+                  <th scope="col">Job Name</th>
+                  {% for day in headers %}
+                  <th>{{ day }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              {% for row in rows %}
+              <tr>
+                <td>{{ row[0] }}</td>
+                {% for day in row[1:] %}
+                <td class="{{ day['bg-class'] }}"></td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </table>
+          </div>
+        </div>
+        <div class="col">
+        </div>
+      </div>
+    </div>
+    {% endblock %}
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
+</html>

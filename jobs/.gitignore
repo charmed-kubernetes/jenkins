@@ -1,2 +1,3 @@
 jjb-conf*.ini
 .tox
+py36
