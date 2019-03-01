@@ -67,7 +67,6 @@ pipeline {
                 always {
                     sh "cd jobs && ${collect_debug_sh} endtime"
                     sh "cd jobs && ${collect_debug_sh} save-meta"
-                    sh "cd jobs && ${collect_debug_sh} push meta.yaml"
                     sh "juju kill-controller -y ${params.controller} || true"
                 }
             }
@@ -88,6 +87,11 @@ pipeline {
                     sh "${charm_sh} show --charm-entity ${cs_url} --channel edge"
                 }
             }
+        }
+    }
+    post {
+        always {
+            sh "cd jobs && ${collect_debug_sh} push meta.yaml"
         }
     }
 }
