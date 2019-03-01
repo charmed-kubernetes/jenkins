@@ -75,11 +75,11 @@ pipeline {
     post {
         failure {
             setFail()
+            saveMeta()
         }
         success {
             setPass()
-            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
-            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
+            saveMeta()
         }
         always {
             collectDebug(params.controller, juju_model)
