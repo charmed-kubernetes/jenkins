@@ -62,7 +62,7 @@ def _gen_metadata():
             continue
         output['day'] = day
         if 'test-result' not in output:
-            result_bg_class = 'bg-secondary'
+            result_bg_class = ''
         elif output['test-result'] == 'Fail':
             result_bg_class = 'bg-danger'
         else:
@@ -84,10 +84,8 @@ def _gen_rows():
         sub_item = [jobname]
         for day in days:
             for j in job:
-                if j['day'] == day:
+                if j['day'] == day and day not in sub_item:
                     sub_item.append(j)
-                else:
-                    sub_item.append({'bg-class': ''})
         rows.append(sub_item)
     return rows
 
