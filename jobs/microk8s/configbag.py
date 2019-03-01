@@ -23,9 +23,9 @@ def get_tracks(all=False):
     '''
     arch = get_arch()
     if arch == 'arm64' and not all:
-        return ["latest", "1.12", "1.13", "1.14", "1.15"]
+        return ["latest", "1.12", "1.13"]
     else:
-        return ["latest", "1.10", "1.11", "1.12", "1.13", "1.14", "1.15"]
+        return ["latest", "1.10", "1.11", "1.12", "1.13"]
 
 
 snap_name = "microk8s"
