@@ -22,6 +22,7 @@ pipeline {
                 timeout(time: 2, unit: 'HOURS')
             }
             steps {
+                setStartTime()
                 sh "sudo snap refresh core --beta || true"
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
@@ -31,7 +32,14 @@ pipeline {
                 }
             }
             post {
+                success {
+                    setPass()
+                }
+                failure {
+                    setFail()
+                }
                 always {
+                    setEndTime()
                     collectDebug(params.controller,
                                  juju_model)
                     sh "juju kill-controller -y ${params.controller} || true"
@@ -41,9 +49,8 @@ pipeline {
         }
     }
     post {
-        success {
-            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
-            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
+        cleanup {
+            saveMeta()
         }
     }
 }

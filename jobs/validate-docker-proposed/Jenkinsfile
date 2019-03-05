@@ -26,12 +26,20 @@ pipeline {
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
 
                 sh "juju add-model -c ${params.controller} ${juju_model} ${params.cloud}"
+                setStartTime()
                 dir('jobs') {
                     sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} SERIES=${params.series} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_docker_proposed.py::test_docker_proposed"
                 }
             }
             post {
+                success {
+                    setPass()
+                }
+                fail {
+                    setFail()
+                }
                 always {
+                    setEndTime()
                     collectDebug(params.controller,
                                  juju_model)
                     tearDown(params.controller,
@@ -41,9 +49,8 @@ pipeline {
         }
     }
     post {
-        success {
-            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
-            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
+        cleanup {
+            saveMeta()
         }
     }
 }

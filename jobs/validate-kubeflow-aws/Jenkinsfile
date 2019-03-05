@@ -25,6 +25,7 @@ pipeline {
             }
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
+                setStartTime()
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
 
                 sh "juju deploy cs:bundle/canonical-kubernetes"
@@ -59,14 +60,20 @@ pipeline {
     }
     post {
         success {
-            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
-            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
+            setPass()
+        }
+        failure {
+            setFail()
         }
         always {
+            setEndTime()
             collectDebug(params.controller, aws_model)
 
             sh "juju kill-controller -y ${params.controller} || true"
             sh "juju remove-cloud ${params.cloud}"
+        }
+        cleanup {
+            saveMeta()
         }
     }
 }

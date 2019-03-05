@@ -48,6 +48,7 @@ pipeline {
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 sh "juju add-model -c ${params.controller} ${juju_model}"
                 sh "cat jobs/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}"
+                setStartTime()
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           cloud: params.cloud,
@@ -93,16 +94,18 @@ pipeline {
 
         success {
             setPass()
-            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
-            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
         }
         always {
+            setEndTime()
             sh "sudo lxc profile show default"
             collectDebug(params.controller,
                          juju_model)
 
             sh "juju kill-controller -y ${params.controller}"
             tearDownLxd()
+        }
+        cleanup {
+            saveMeta()
         }
     }
 }

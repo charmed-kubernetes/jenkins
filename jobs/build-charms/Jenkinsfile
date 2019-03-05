@@ -3,7 +3,6 @@
 def juju_model = String.format("%s-%s", params.model, uuid())
 def charm_sh = "tox -e py36 -- python3 build-charms/charms.py"
 def cs_url = "cs:~${params.namespace}/${params.charm}"
-def collect_debug_sh = "tox -e py36 -- python3 infra/collect-debug.py"
 
 pipeline {
     agent { label 'runner-amd64' }
@@ -22,8 +21,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh "cd jobs && ${collect_debug_sh} starttime"
-                sh "cd jobs && ${collect_debug_sh} set-meta"
+                setStartTime()
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "mkdir -p ${env.JUJU_REPOSITORY}"
                 sh "mkdir -p ${env.TMPDIR}"
@@ -65,7 +63,7 @@ pipeline {
                     setPass()
                 }
                 always {
-                    sh "cd jobs && ${collect_debug_sh} endtime"
+                    setEndTime()
                     sh "juju kill-controller -y ${params.controller} || true"
                 }
             }
@@ -89,9 +87,8 @@ pipeline {
         }
     }
     post {
-        always {
+        cleanup {
             saveMeta()
-            sh "cd jobs && ${collect_debug_sh} push meta.yaml"
         }
     }
 }

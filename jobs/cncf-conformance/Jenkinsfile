@@ -25,6 +25,7 @@ pipeline {
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
+                setStartTime()
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           bundle: "cs:~containers/${params.bundle}",
@@ -66,10 +67,20 @@ pipeline {
         }
     }
     post {
+        success {
+            setPass()
+        }
+        failure {
+            setFail()
+        }
         always {
+            setEndTime()
             collectDebug(params.controller,
                          juju_model)
             sh "juju kill-controller -y ${params.controller} || true"
+        }
+        cleanup {
+            saveMeta()
         }
     }
 }

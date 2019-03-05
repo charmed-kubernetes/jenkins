@@ -25,6 +25,7 @@ pipeline {
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
+                setStartTime()
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           cloud: params.cloud,
@@ -49,14 +50,20 @@ pipeline {
     }
     post {
         success {
-            junit 'jobs/*.xml, jobs/logs/**/**/*.xml'
-            archiveArtifacts artifacts: 'jobs/logs/*', fingerprint: true
+            setPass()
+        }
+        failure {
+            setFail()
         }
         always {
+            setEndTime()
             collectDebug(params.controller,
                          juju_model)
 
             sh "juju kill-controller -y ${params.controller} || true"
+        }
+        cleanup {
+            saveMeta()
         }
     }
 }
