@@ -81,7 +81,7 @@ def _gen_rows():
     metadata = _gen_metadata()
     rows = []
     for jobname, job in metadata.items():
-        sub_item = [jobname]
+        sub_item = [jobname.lstrip('validate-')]
         for day in days:
             for j in job:
                 if j['day'] == day and day not in sub_item:
