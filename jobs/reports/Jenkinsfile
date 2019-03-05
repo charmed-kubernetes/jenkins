@@ -1,0 +1,27 @@
+@Library('juju-pipeline@master') _
+
+def generate_reports_sh = "tox -e py36 -- python3 reports/generate-reports.py"
+
+pipeline {
+    agent {
+        label "runner"
+    }
+    // Add environment credentials for pyjenkins script on configuring nodes automagically
+    environment {
+        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+    }
+
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Running') {
+            steps {
+                dir("jobs") {
+                    sh "${generate_reports_sh} build"
+                }
+            }
+        }
+    }
+}

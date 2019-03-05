@@ -1,0 +1,16 @@
+# Reporting jobs
+
+- job:
+    name: 'generate-reports-overview'
+    description: |
+      generates a report overview
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/reports/Jenkinsfile
+    properties:
+      - build-discarder:
+          num-to-keep: 1
+    triggers:
+        - timed: "@daily"
