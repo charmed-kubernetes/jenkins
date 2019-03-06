@@ -6,6 +6,7 @@
     <title>Jenkaas Reports</title>
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
     <style>
       .table td, .table th {
       font-size: 12px;
@@ -32,6 +33,7 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col">
+          <small>Last modified: {{ modified.strftime('%Y-%m-%d %H:%M:%S') }}
           <div class="table-responsive">
             <table class="table table-hover table-bordered">
               <thead class="thead-dark">
@@ -44,9 +46,9 @@
               </thead>
               {% for row in rows %}
               <tr>
-                <td>{{ row[0] }}</td>
+                <td class="align-middle">{{ row[0] }}</td>
                 {% for day in row[1:] %}
-                <td class="{{ day['bg-class'] }}"></td>
+                <td class="{{ day['bg-class'] }}"><a href="{{ day['results-file'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download the results for debugging"><i class="fas fa-download"></i> </a></td>
                 {% endfor %}
               </tr>
               {% endfor %}

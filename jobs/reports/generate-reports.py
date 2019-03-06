@@ -34,7 +34,7 @@ def _parent_dirs():
     items = set()
     for obj in OBJECTS:
         if obj.key != 'index.html':
-            items.add(Path(obj.key).parts[0])
+            items.add(obj.key)
     return list(sorted(items))
 
 def _gen_days(numdays=30):
@@ -68,6 +68,9 @@ def _gen_metadata():
         else:
             result_bg_class = 'bg-success'
         output['bg-class'] = result_bg_class
+        for item in _parent_dirs():
+            if 'results' in item:
+                output['results-file'] = item
         if output['job-name'] in metadata:
             metadata[output['job-name']].append(output)
         else:
@@ -100,7 +103,8 @@ def build():
     """
     context = {
         'rows': _gen_rows(),
-        'headers': _gen_days()
+        'headers': _gen_days(),
+        'modified': datetime.now()
     }
     site = Site.make_site(
         contexts=[('index.html', context)],
