@@ -45,12 +45,22 @@ def _gen_days(numdays=30):
         days=x)).strftime('%Y-%m-%d') for x in range(0, numdays)]
     return date_list
 
+def _get_field_agent_path(dir_key):
+    """ Grab cdk field agent file for key
+    """
+    for obj in OBJECTS:
+        path_obj = Path(obj.key)
+        if path_obj.parent == dir_key and 'results' in path_obj.parts[-1]:
+            return obj.key
+    return None
+
 def _gen_metadata():
     """ Generates metadata
     """
     metadata = OrderedDict()
     for obj in OBJECTS:
-        parts = Path(obj.key).parts
+        path_obj = Path(obj.key)
+        parts = path_obj.parts
         if parts[-1] == 'index.html':
             continue
         if parts[-1] != 'meta.yaml':
@@ -68,6 +78,10 @@ def _gen_metadata():
         else:
             result_bg_class = 'bg-success'
         output['bg-class'] = result_bg_class
+
+        cdk_field_agent = _get_field_agent_path(path_obj.parent)
+        if cdk_field_agent:
+            output['cdk-field-agent'] = cdk_field_agent
         if output['job-name'] in metadata:
             metadata[output['job-name']].append(output)
         else:
