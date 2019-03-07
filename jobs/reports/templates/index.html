@@ -48,7 +48,7 @@
               <tr>
                 <td class="align-middle">{{ row[0] }}</td>
                 {% for day in row[1:] %}
-                <td class="{{ day['bg-class'] }}">{% if day['field-agent'] %}<a href="{{ day['field-agent'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download the results for debugging"><i class="fas fa-download"></i> </a>{% endif %}</td>
+                <td class="{{ day['bg-class'] }}">{% if day['resource.field-agent'] %}<a href="{{ day['resource.field-agent'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download the results for debugging"><i class="fas fa-download"></i> </a>{% endif %}</td>
                 {% endfor %}
               </tr>
               {% endfor %}
