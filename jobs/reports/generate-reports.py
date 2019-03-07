@@ -100,7 +100,8 @@ def build():
     """
     context = {
         'rows': _gen_rows(),
-        'headers': _gen_days(),
+        'headers': [datetime.strptime(day, '%Y-%m-%d').strftime('%m-%d')
+                    for day in _gen_days()],
         'modified': datetime.now()
     }
     site = Site.make_site(
