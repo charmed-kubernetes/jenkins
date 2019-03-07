@@ -50,11 +50,11 @@ def _gen_metadata():
     """
     metadata = OrderedDict()
     for obj in OBJECTS:
-        if obj.key == 'index.html':
-            continue
-        if 'meta.yaml' not in obj.key:
-            continue
         parts = Path(obj.key).parts
+        if parts[-1] == 'index.html':
+            continue
+        if parts[-1] != 'meta.yaml':
+            continue
         day = parts[1]
         download_file(obj.key, parts[-1])
         output = yaml.load(Path(parts[-1]).read_text(encoding='utf-8'))
@@ -68,9 +68,6 @@ def _gen_metadata():
         else:
             result_bg_class = 'bg-success'
         output['bg-class'] = result_bg_class
-        for item in _parent_dirs():
-            if 'results' in item:
-                output['results-file'] = item
         if output['job-name'] in metadata:
             metadata[output['job-name']].append(output)
         else:

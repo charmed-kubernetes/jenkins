@@ -69,8 +69,9 @@ def save_meta(filename):
 @cli.command()
 @click.option('--bucket', required=True, help="s3 bucket to use",
               default="jenkaas")
+@click.option('--key-id', default="last_file", help="key to associate with upload")
 @click.argument('results-file')
-def push(bucket, results_file):
+def push(bucket, results_file, key_id):
     """ pushes cdk field agent and sets build result
     """
     session = boto3.Session(profile_name='default')
@@ -80,6 +81,7 @@ def push(bucket, results_file):
     env = os.environ.copy()
     s3_path = Path(env['JOB_NAME']) / current_date / env['BUILD_NUMBER'] / results_file
     s3.upload_file(str(results_file), bucket, str(s3_path))
+    db[f"resource.{key_id}"] = s3_path
 
 
 if __name__ == "__main__":
