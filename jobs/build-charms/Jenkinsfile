@@ -56,12 +56,6 @@ pipeline {
                 }
             }
             post {
-                failure {
-                    setFail()
-                }
-                success {
-                    setPass()
-                }
                 always {
                     setEndTime()
                     sh "juju kill-controller -y ${params.controller} || true"
@@ -87,6 +81,13 @@ pipeline {
         }
     }
     post {
+        failure {
+            setFail()
+        }
+        success {
+            setPass()
+        }
+
         cleanup {
             saveMeta()
         }
