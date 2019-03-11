@@ -1,6 +1,7 @@
 """ Script for generating HTML output
 """
 
+from kv import KV
 from datetime import datetime, timedelta
 from pathlib import Path
 from collections import OrderedDict
@@ -8,7 +9,6 @@ import boto3
 import click
 import os
 import sh
-import yaml
 import mimetypes
 from staticjinja import Site
 
@@ -61,31 +61,27 @@ def _gen_metadata():
     for obj in OBJECTS:
         path_obj = Path(obj.key)
         parts = path_obj.parts
-        if parts[-1] == 'index.html':
-            continue
-        if parts[-1] != 'meta.yaml':
-            continue
-        day = parts[1]
-        download_file(obj.key, parts[-1])
-        output = yaml.load(Path(parts[-1]).read_text(encoding='utf-8'))
-        if 'job-name' not in output:
-            continue
-        output['day'] = day
-        if 'test-result' not in output:
-            result_bg_class = ''
-        elif output['test-result'] == 'Fail':
-            result_bg_class = 'bg-danger'
-        else:
-            result_bg_class = 'bg-success'
-        output['bg-class'] = result_bg_class
-
-        cdk_field_agent = _get_field_agent_path(path_obj.parent)
-        if cdk_field_agent:
-            output['cdk-field-agent'] = cdk_field_agent
-        if output['job-name'] in metadata:
-            metadata[output['job-name']].append(output)
-        else:
-            metadata[output['job-name']] = [output]
+        if parts[-1] == 'stats.db':
+            print(f"Processing {path_obj}")
+            download_file(obj.key, parts[-1])
+            db = KV(parts[-1])
+            db['day'] = parts[1]
+            if 'job-name' not in db:
+                db['job-name'] = parts[0]
+            if 'test-result' not in db:
+                result_bg_class = ''
+            elif db['test-result'] == 'Fail':
+                result_bg_class = 'bg-danger'
+            else:
+                result_bg_class = 'bg-success'
+            db['bg-class'] = result_bg_class
+            cdk_field_agent = _get_field_agent_path(path_obj.parent)
+            if cdk_field_agent:
+                db['cdk-field-agent'] = cdk_field_agent
+            if 'job-name' in db and db['job-name'] in metadata:
+                metadata[db['job-name']].append(db)
+            else:
+                metadata[db['job-name']] = [db]
     return metadata
 
 def _gen_rows():
@@ -94,12 +90,18 @@ def _gen_rows():
     days = _gen_days()
     metadata = _gen_metadata()
     rows = []
-    for jobname, job in metadata.items():
+    for jobname, jobs in metadata.items():
         sub_item = [jobname]
         for day in days:
-            for j in job:
-                if j['day'] == day and day not in sub_item:
-                    sub_item.append(j)
+            _job = [j
+                    for j in jobs
+                    if j['day'] == day]
+            if _job:
+                sub_item.append(_job[0])
+            else:
+                sub_item.append(
+                    {'job-name': jobname,
+                     'bg-class': ''})
         rows.append(sub_item)
     return rows
 
