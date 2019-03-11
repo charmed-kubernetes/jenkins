@@ -101,11 +101,11 @@ pipeline {
             collectDebug(params.controller,
                          juju_model)
 
-            sh "juju kill-controller -y ${params.controller}"
-            tearDownLxd()
         }
         cleanup {
             saveMeta()
+            sh "juju kill-controller -y ${params.controller}"
+            tearDownLxd()
         }
     }
 }

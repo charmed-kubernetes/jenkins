@@ -62,12 +62,13 @@ pipeline {
             setEndTime()
             collectDebug(params.controller, juju_model)
 
-            sh "juju kill-controller -y ${params.controller} || true"
-            sh "juju remove-cloud ${cloud}"
-            sh "microk8s.docker rmi ${mnist_image}"
         }
         cleanup {
             saveMeta()
+            sh "juju kill-controller -y ${params.controller} || true"
+            sh "juju remove-cloud ${cloud}"
+            sh "microk8s.docker rmi ${mnist_image}"
+
         }
     }
 }

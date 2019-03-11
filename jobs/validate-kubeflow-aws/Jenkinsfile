@@ -68,12 +68,11 @@ pipeline {
         always {
             setEndTime()
             collectDebug(params.controller, aws_model)
-
-            sh "juju kill-controller -y ${params.controller} || true"
-            sh "juju remove-cloud ${params.cloud}"
         }
         cleanup {
             saveMeta()
+            sh "juju kill-controller -y ${params.controller} || true"
+            sh "juju remove-cloud ${params.cloud}"
         }
     }
 }

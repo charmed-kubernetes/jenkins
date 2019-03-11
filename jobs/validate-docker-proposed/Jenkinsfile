@@ -32,25 +32,27 @@ pipeline {
                 }
             }
             post {
-                success {
-                    setPass()
-                }
-                fail {
-                    setFail()
-                }
                 always {
                     setEndTime()
                     collectDebug(params.controller,
                                  juju_model)
-                    tearDown(params.controller,
-                             juju_model)
                 }
             }
         }
     }
     post {
+        success {
+            setPass()
+        }
+        fail {
+            setFail()
+        }
+
         cleanup {
             saveMeta()
+            tearDown(params.controller,
+                     juju_model)
+
         }
     }
 }

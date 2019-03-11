@@ -59,20 +59,19 @@ pipeline {
             setPass()
         }
         always {
+            setEndTime()
+            collectDebug(params.controller,
+                         juju_model)
+
+        }
+        cleanup {
+            saveMeta()
             dir('jobs') {
                 script {
                     sh "tox -e py36 -- bash integration/calico/cleanup-vpc.sh"
                 }
             }
-
-            setEndTime()
-            collectDebug(params.controller,
-                         juju_model)
-
             sh "juju kill-controller -y ${params.controller} || true"
-        }
-        cleanup {
-            saveMeta()
         }
     }
 }

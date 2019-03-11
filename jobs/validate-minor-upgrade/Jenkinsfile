@@ -57,10 +57,10 @@ pipeline {
             collectDebug(params.controller,
                          juju_model)
 
-            sh "juju kill-controller -y ${params.controller} || true"
         }
         cleanup {
             saveMeta()
+            sh "juju kill-controller -y ${params.controller} || true"
         }
     }
 }
