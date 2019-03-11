@@ -321,3 +321,12 @@ def arch():
     architecture = check_output(['dpkg', '--print-architecture']).rstrip()
     architecture = architecture.decode('utf-8')
     return architecture
+
+
+@log_calls_async
+async def disable_source_dest_check():
+    path = os.path.dirname(__file__) + '/tigera/disable_source_dest_check.py'
+    controller = _controller_from_env()
+    model = _model_from_env()
+    cmd = [path, '-m', controller + ':' + model]
+    await asyncify(check_call)(cmd)

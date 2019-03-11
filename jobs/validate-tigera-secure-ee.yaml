@@ -1,21 +1,21 @@
 # Validates a deployed CDK
 
 - job-template:
-    name: 'validate-calico-{version}'
+    name: 'validate-tigera-secure-ee-{version}'
     description: |
-      Validates Calico support on {version}
+      Validates Tigera Secure EE support on {version}
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/validate-calico/Jenkinsfile
+      script-path: jobs/validate-tigera-secure-ee/Jenkinsfile
     parameters:
       - string:
           name: model
-          default: 'validate-calico'
+          default: 'validate-tigera-secure-ee'
       - string:
           name: controller
-          default: 'calico-aws'
+          default: 'tigera-secure-ee-aws'
       - string:
           name: cloud
           default: 'aws/us-east-1'
@@ -27,7 +27,7 @@
           default: 'edge'
       - string:
           name: bundle
-          default: 'kubernetes-calico'
+          default: 'kubernetes-tigera-secure-ee'
       - string:
           name: snap_channel
           default: '1.12/edge'
@@ -38,11 +38,11 @@
           num-to-keep: 2
 
 - project:
-    name: validate-calico
+    name: validate-tigera-secure-ee
     version:
       - 'v1.13.x':
           version_overlay: 'jobs/overlays/1.13-edge-overlay.yaml'
       - 'v1.14.x':
           version_overlay: 'jobs/overlays/1.14-edge-overlay.yaml'
     jobs:
-      - 'validate-calico-{version}'
+      - 'validate-tigera-secure-ee-{version}'
