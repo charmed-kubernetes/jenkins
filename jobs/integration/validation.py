@@ -20,7 +20,8 @@ from .utils import (
     retry_async_with_timeout,
     arch,
     scp_to,
-    scp_from
+    scp_from,
+    disable_source_dest_check
 )
 
 from .base import (
@@ -45,7 +46,8 @@ async def validate_all(model, log_dir):
         await validate_docker_logins(model)
     await validate_worker_master_removal(model)
     await validate_sans(model)
-    if any(app in model.applications for app in ('canal', 'calico')):
+    network_policy_apps = ['canal', 'calico', 'tigera-secure-ee']
+    if any(app in model.applications for app in network_policy_apps):
         log("Running network policy specific tests")
         await validate_network_policies(model)
     await validate_extra_args(model)
@@ -297,7 +299,7 @@ async def verify_deleted(unit, entity_type, name, extra_args=''):
 async def verify_ready(unit, entity_type, name_list, extra_args=''):
     cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
     output = await unit.run(cmd)
-    if 'error' in output.results['Stdout']:
+    if output.results['Code'] != '0':
         # error resource type not found most likely. This can happen when the api server is
         # restarting. As such, don't assume this means ready.
         return False
@@ -399,6 +401,7 @@ async def validate_worker_master_removal(model):
     unit_count = len(masters.units)
     if unit_count < 2:
         await masters.add_unit(1)
+        await disable_source_dest_check()
     await asyncify(_juju_wait)()
 
     # Add a second worker
@@ -406,6 +409,7 @@ async def validate_worker_master_removal(model):
     unit_count = len(workers.units)
     if unit_count < 2:
         await workers.add_unit(1)
+        await disable_source_dest_check()
     await asyncify(_juju_wait)()
     unit_count = len(workers.units)
 
@@ -433,6 +437,8 @@ async def validate_worker_master_removal(model):
     # would fail in a multi-master situation
     await workers.add_unit(1)
     await masters.add_unit(1)
+    await disable_source_dest_check()
+    log('Waiting for new master and worker.')
     await asyncify(_juju_wait)()
     assert_no_unit_errors(model)
 
