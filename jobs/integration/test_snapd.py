@@ -38,7 +38,7 @@ async def log_snap_versions(model):
 @pytest.mark.asyncio
 async def test_snapd(log_dir):
     async with UseModel() as model:
-        await enable_snapd_model(model)
+        await enable_snapd_on_model(model)
     await asyncify(juju.deploy)(
         '-m', '{}:{}'.format(_controller_from_env(), _model_from_env()),
         'cs:~containers/canonincal-kubernetes',
