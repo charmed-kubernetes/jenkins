@@ -28,9 +28,6 @@
       - string:
           name: bundle
           default: 'kubernetes-tigera-secure-ee'
-      - string:
-          name: snap_channel
-          default: '1.12/edge'
     triggers:
       - timed: "@weekly"
     properties:
