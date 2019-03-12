@@ -32,24 +32,26 @@ pipeline {
                 }
             }
         }
-        post {
-            success {
-                setPass()
-            }
-            failure {
-                setFail()
-            }
-            always {
-                setEndTime()
-                collectDebug(params.controller,
-                             juju_model)
-            }
+    }
+    post {
+        success {
+            setPass()
+        }
 
-            cleanup {
-                saveMeta()
-                sh "juju kill-controller -y ${params.controller} || true"
-                sh "sudo snap refresh core --candidate || true"
-            }
+        failure {
+            setFail()
+        }
+
+        always {
+            setEndTime()
+            collectDebug(params.controller,
+                         juju_model)
+        }
+
+        cleanup {
+            saveMeta()
+            sh "juju kill-controller -y ${params.controller} || true"
+            sh "sudo snap refresh core --candidate || true"
         }
     }
 }
