@@ -23,6 +23,7 @@ pipeline {
             }
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
+                sh "tox -e py36 -- python3 integration/tigera/cleanup_vpcs.py"
                 dir('jobs') {
                     script {
                         sh "CONTROLLER=${params.controller} tox -e py36 -- python3 integration/tigera/bootstrap_aws_single_subnet.py"
@@ -70,7 +71,8 @@ pipeline {
             saveMeta()
             dir('jobs') {
                 script {
-                    sh "tox -e py36 -- bash integration/tigera/cleanup-vpc.sh"
+                    sh "juju kill-controller -y ${params.controller} || true"
+                    sh "tox -e py36 -- python3 integration/tigera/cleanup_vpcs.py"
                 }
             }
         }

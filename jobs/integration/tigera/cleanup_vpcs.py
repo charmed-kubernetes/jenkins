@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+import json
+from pprint import pprint
+from subprocess import check_output
+
+REGION = "us-east-1"
+
+
+def aws(*args):
+    cmd = ['aws', '--region', REGION, '--output', 'json'] + list(args)
+    print('+ ' + ' '.join(cmd))
+    output = check_output(cmd)
+    try:
+        data = json.loads(output)
+        pprint(data)
+        return data
+    except json.decoder.JSONDecodeError:
+        if output:
+            print(output)
+        return
+
+
+gateways = aws('ec2', 'describe-internet-gateways')['InternetGateways']
+for gateway in gateways:
+    for tag in gateway.get('Tags', []):
+        if tag['Key'] == 'created-by' and tag['Value'] == 'test-calico':
+            gateway_id = gateway['InternetGatewayId']
+            for attachment in gateway['Attachments']:
+                aws(
+                    'ec2', 'detach-internet-gateway',
+                    '--internet-gateway-id', gateway_id,
+                    '--vpc-id', attachment['VpcId']
+                )
+            aws(
+                'ec2', 'delete-internet-gateway',
+                '--internet-gateway-id', gateway_id
+            )
+            break
+
+subnets = aws('ec2', 'describe-subnets')['Subnets']
+for subnet in subnets:
+    for tag in subnet.get('Tags', []):
+        if tag['Key'] == 'created-by' and tag['Value'] == 'test-calico':
+            aws('ec2', 'delete-subnet', '--subnet-id', subnet['SubnetId'])
+            break
+
+vpcs = aws('ec2', 'describe-vpcs')['Vpcs']
+for vpc in vpcs:
+    for tag in vpc.get('Tags', []):
+        if tag['Key'] == 'created-by' and tag['Value'] == 'test-calico':
+            aws('ec2', 'delete-vpc', '--vpc-id', vpc['VpcId'])
+            break
