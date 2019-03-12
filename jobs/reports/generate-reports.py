@@ -57,12 +57,12 @@ def _get_field_agent_path(dir_key):
 def _gen_metadata():
     """ Generates metadata
     """
+    click.echo("Generating metadata...")
     metadata = OrderedDict()
     for obj in OBJECTS:
         path_obj = Path(obj.key)
         parts = path_obj.parts
         if parts[-1] == 'stats.db':
-            print(f"Processing {path_obj}")
             download_file(obj.key, parts[-1])
             db = KV(parts[-1])
             db['day'] = parts[1]
@@ -97,11 +97,12 @@ def _gen_rows():
                     for j in jobs
                     if j['day'] == day]
             if _job:
-                sub_item.append(_job[0])
+                sub_item.append(_job[-1])
             else:
                 sub_item.append(
                     {'job-name': jobname,
                      'bg-class': ''})
+        click.echo(f"Processed: {jobname}")
         rows.append(sub_item)
     return rows
 
@@ -109,6 +110,13 @@ def _gen_rows():
 @click.group()
 def cli():
     pass
+
+@cli.command()
+def list():
+    """ List keys in bucket
+    """
+    for obj in OBJECTS:
+        click.echo(obj)
 
 @cli.command()
 def build():
