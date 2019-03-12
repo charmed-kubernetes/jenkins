@@ -23,12 +23,12 @@ pipeline {
             }
             steps {
                 setStartTime()
-                sh "sudo snap refresh core --beta || true"
+                sh "sudo snap refresh core --${params.snap_channel} || true"
                 sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 sh "juju add-model -c ${params.controller} ${juju_model} ${params.cloud}"
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} SERIES=${params.series} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_snapd_beta.py::test_snapd_beta"
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} SERIES=${params.series} SNAP_CHANNEL=${params.snap_channel} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_snapd.py::test_snapd"
                 }
             }
         }

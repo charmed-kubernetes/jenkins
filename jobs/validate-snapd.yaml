@@ -1,14 +1,14 @@
 # Validates snapd beta works for k8s deployments
 
 - job:
-    name: 'validate-snapd-beta'
+    name: 'validate-snapd'
     description: |
       Validates snapd beta works for k8s deployments
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/validate-snapd-beta/Jenkinsfile
+      script-path: jobs/validate-snapd/Jenkinsfile
     parameters:
       - string:
           name: model
@@ -22,6 +22,12 @@
       - string:
           name: series
           default: 'bionic'
+      - choice:
+          name: snap_channel
+          choices:
+            - beta
+            - candidate
+            - edge
 
     properties:
       - build-discarder:

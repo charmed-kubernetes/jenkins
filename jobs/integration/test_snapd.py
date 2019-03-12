@@ -1,3 +1,6 @@
+""" Tests snapd from a set snap channel to make sure no breakage occurs when they release new snapd versions
+"""
+
 import pytest
 import yaml
 import os
@@ -12,10 +15,11 @@ from .utils import asyncify
 from .validation import validate_all
 from .logger import log, log_calls_async
 
+SNAP_CHANNEL = os.environ.get('SNAP_CHANNEL', 'beta')
 
 @log_calls_async
-async def enable_snapd_beta_on_model(model):
-    cmd = 'sudo snap refresh core --beta'
+async def enable_snapd_on_model(model):
+    cmd = f'sudo snap refresh core --{SNAP_CHANNEL}'
     cloudinit_userdata = {'postruncmd': [cmd]}
     cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
     await model.set_config({'cloudinit-userdata': cloudinit_userdata_str})
@@ -32,14 +36,9 @@ async def log_snap_versions(model):
 
 
 @pytest.mark.asyncio
-async def test_snapd_beta(log_dir):
+async def test_snapd(log_dir):
     async with UseModel() as model:
-        await enable_snapd_beta_on_model(model)
-
-        # # Deploy cdk
-        # await model.deploy('cs:~containers/canonical-kubernetes',
-        #                    channel='edge',
-        #                    series=_series_from_env())
+        await enable_snapd_model(model)
     await asyncify(juju.deploy)(
         '-m', '{}:{}'.format(_controller_from_env(), _model_from_env()),
         'cs:~containers/canonincal-kubernetes',
