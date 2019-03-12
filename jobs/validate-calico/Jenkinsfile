@@ -36,9 +36,9 @@ pipeline {
                           bundle_channel: params.bundle_channel,
                           disable_wait: true)
                 dir('jobs') {
-                    sh "tox -e py36 -- python3 integration/tigera/disable_source_dest_check.py -m ${params.controller}:${params.model}"
+                    sh "tox -e py36 -- python3 integration/tigera/disable_source_dest_check.py -m ${params.controller}:${juju_model}"
                 }
-                sh "juju-wait -e ${params.controller}:${params.model} -w"
+                sh "juju-wait -e ${params.controller}:${juju_model} -w"
             }
         }
 
