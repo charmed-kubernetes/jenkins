@@ -3,7 +3,7 @@
 - job:
     name: 'validate-snapd'
     description: |
-      Validates snapd beta works for k8s deployments
+      Validates a non snapd stable works for k8s deployments
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -12,7 +12,7 @@
     parameters:
       - string:
           name: model
-          default: 'validate-snapd-beta'
+          default: 'validate-snapd'
       - string:
           name: controller
           default: 'validate-snapd'
