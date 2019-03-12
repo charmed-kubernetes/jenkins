@@ -68,15 +68,14 @@ pipeline {
             setEndTime()
             collectDebug(params.controller,
                          juju_model)
-
+        }
+        cleanup {
+            saveMeta()
             dir('jobs') {
                 script {
                     sh "tox -e py36 -- bash integration/tigera/cleanup-vpc.sh"
                 }
             }
-        }
-        cleanup {
-            saveMeta()
         }
     }
 }
