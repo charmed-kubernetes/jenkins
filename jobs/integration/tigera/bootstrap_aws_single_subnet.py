@@ -33,28 +33,9 @@ def tag_resource(resource_id):
     )
 
 
-cleanup_file = os.path.dirname(__file__) + '/cleanup-vpc.sh'
-with open(cleanup_file, 'w') as f:
-    f.write('if [ $? = 0 ]; then rm %s; fi' % cleanup_file)
-os.chmod(cleanup_file, 0o775)
-
-
-def add_cleanup(cmd):
-    with open(cleanup_file) as f:
-        contents = f.read()
-    contents = cmd + '\n' + contents
-    with open(cleanup_file, 'w') as f:
-        f.write(contents)
-
-
-def add_ec2_cleanup(cmd):
-    add_cleanup('aws ec2 --region ' + REGION + ' ' + cmd)
-
-
 # Create VPC
 vpc_id = aws('ec2', 'create-vpc', '--cidr', VPC_CIDR)['Vpc']['VpcId']
 tag_resource(vpc_id)
-add_ec2_cleanup('delete-vpc --vpc-id ' + vpc_id)
 aws('ec2', 'modify-vpc-attribute', '--vpc-id', vpc_id, '--enable-dns-support')
 aws(
     'ec2', 'modify-vpc-attribute',
@@ -70,7 +51,6 @@ subnet_id = aws(
     '--availability-zone', AVAILABILITY_ZONE
 )['Subnet']['SubnetId']
 tag_resource(subnet_id)
-add_ec2_cleanup('delete-subnet --subnet-id ' + subnet_id)
 aws(
     'ec2', 'modify-subnet-attribute',
     '--subnet-id', subnet_id,
@@ -82,16 +62,10 @@ gateway_id = aws(
     'ec2', 'create-internet-gateway'
 )['InternetGateway']['InternetGatewayId']
 tag_resource(gateway_id)
-add_ec2_cleanup('delete-internet-gateway --internet-gateway-id ' + gateway_id)
 aws(
     'ec2', 'attach-internet-gateway',
     '--vpc-id', vpc_id,
     '--internet-gateway', gateway_id
-)
-add_ec2_cleanup(
-    'detach-internet-gateway --internet-gateway-id %s --vpc-id %s' % (
-        gateway_id, vpc_id
-    )
 )
 
 # Create route
@@ -117,5 +91,4 @@ check_call([
     '--to', 'subnet=' + SUBNET0_CIDR,
     '--config', 'test-mode=true'
 ])
-add_cleanup('juju kill-controller -y ' + controller_name)
 check_call(['juju', 'model-defaults', 'vpc-id=' + vpc_id, 'test-mode=true'])
