@@ -66,6 +66,7 @@ def build(snap, version, arch, match_re, rename_re, dry_run):
                  branch='rye/snaps', depth='1')
     build_path = Path('release/snap')
     snap_alias = None
+
     for _snap in snap:
         if match_re and rename_re:
             snap_alias = _alias(match_re, rename_re, _snap)
@@ -83,7 +84,8 @@ def build(snap, version, arch, match_re, rename_re, dry_run):
                     _snap,
                     _env=env,
                     _cwd='release/snap',
-                    _iter=True):
+                    _iter=True,
+                    _err_to_out=True):
                 click.echo(line.strip())
 
 @cli.command()
