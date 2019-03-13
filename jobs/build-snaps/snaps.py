@@ -108,7 +108,7 @@ def push(result_dir, dry_run):
                 click.echo("dry-run only:")
                 click.echo(f"  > snapcraft push {fname}")
             else:
-                for line in sh.snapcraft.push(fname, _iter=True):
+                for line in sh.snapcraft.push(fname, _iter=True, _err_to_out=True):
                     click.echo(line.strip())
         except sh.ErrorReturnCode_2 as e:
             click.echo('Failed to upload to snap store')
