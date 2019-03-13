@@ -38,11 +38,7 @@ pipeline {
                           version_overlay: params.overlay,
                           bundle_channel: params.bundle_channel,
                           disable_wait: true)
-                script {
-                    def license_key_base64 = new File(env.TIGERA_SECURE_EE_LICENSE_KEY_FILE).text.bytes.encodeBase64().toString()
-                    def registry_credentials_base64 = new File(env.TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE).text.bytes.encodeBase64().toString()
-                    sh "juju config -m ${params.controller}:${juju_model} tigera-secure-ee license-key=${license_key_base64} registry-credentials=${registry_credentials_base64}"
-                }
+                sh "juju config -m ${params.controller}:${juju_model} tigera-secure-ee license-key=\$(base64 -w0 ${env.TIGERA_SECURE_EE_LICENSE_KEY_FILE}) registry-credentials=\$(base64 -w0 ${env.TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE})"
                 dir('jobs') {
                     sh "tox -e py36 -- python3 integration/tigera/disable_source_dest_check.py -m ${params.controller}:${juju_model}"
                 }
