@@ -53,8 +53,8 @@ pipeline {
         always {
             sh "sudo rm -rf jobs/release/snap || true"
             sh "snapcraft logout"
-            sh "docker rmi -f \$(docker images | grep \"none\" | awk '/ / { print \$3 }') || true"
-            sh "docker rm -f \$(docker ps -qa --no-trunc --filter \"status=exited\") || true"
+            sh "docker image prune -a --filter \"until=24h\" --force"
+            sh "docker container prune --filter \"until=24h\" --force"
         }
     }
 }

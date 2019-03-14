@@ -23,8 +23,8 @@ pipeline {
         }
         stage('Release Snaps'){
             steps {
-                sh "docker rmi -f \$(docker images | grep \"none\" | awk '/ / { print \$3 }') || true"
-                sh "docker rm -f \$(docker ps -qa --no-trunc --filter \"status=exited\") || true"
+                sh "docker image prune -a --filter \"until=24h\" --force"
+                sh "docker container prune --filter \"until=24h\" --force"
                 sh "KUBE_ARCH=${params.arch} FORCE_RELEASE=${params.FORCE_RELEASE} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
             }
         }
@@ -33,8 +33,8 @@ pipeline {
         always {
             sh "sudo rm -rf release/snap"
             sh "snapcraft logout"
-            sh "docker rmi -f \$(docker images | grep \"none\" | awk '/ / { print \$3 }') || true"
-            sh "docker rm -f \$(docker ps -qa --no-trunc --filter \"status=exited\") || true"
+            sh "docker image prune -a --filter \"until=24h\" --force"
+            sh "docker container prune --filter \"until=24h\" --force"
         }
     }
 }
