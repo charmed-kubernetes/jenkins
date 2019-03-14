@@ -81,9 +81,6 @@ async def validate_jupyterhub_api():
 def submit_tf_job(name: str):
     """Submits a TFJob to the TensorFlow Job service."""
 
-    with open(f"../tfjobs/{name}/job.yaml") as f:
-        job_def = f.read().format(mnist_image=os.environ["MNIST_IMAGE"]).encode("utf-8")
-
     output = check_output(
         [
             "microk8s.kubectl",
@@ -93,9 +90,8 @@ def submit_tf_job(name: str):
             "-n",
             os.environ["MODEL"],
             "-f",
-            "-",
-        ],
-        input=job_def,
+            f"../tfjobs/{name}/job.yaml",
+        ]
     ).strip()
 
     assert output == f"tfjob.kubeflow.org/kubeflow-{name}-test created".encode("utf-8")

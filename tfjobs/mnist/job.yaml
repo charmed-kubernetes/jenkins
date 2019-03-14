@@ -11,7 +11,7 @@ spec:
         spec:
           containers:
             - name: tensorflow
-              image: "{mnist_image}"
+              image: "mnist-test:latest"
     Worker:
       replicas: 1
       restartPolicy: Never
@@ -19,4 +19,4 @@ spec:
         spec:
           containers:
             - name: tensorflow
-              image: "{mnist_image}"
+              image: "mnist-test:latest"
