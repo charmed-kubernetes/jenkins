@@ -1,7 +1,8 @@
 @Library('juju-pipeline@master') _
 
-def juju_model = String.format("%s-%s", params.model, uuid())
-def mnist_image = String.format("mnist-test-%s", uuid())
+def exec(cmd) {
+    sh "sudo lxc exec ${lxc_name} -- bash -c 'cd /project && ${cmd}'"
+}
 
 pipeline {
     agent {
@@ -12,6 +13,8 @@ pipeline {
      */
     environment {
         PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        lxc_name = "validate-microk8s-${uuid()}"
+        storage_name = "validate-microk8s-${uuid()}"
     }
     options {
         ansiColor('xterm')
@@ -23,24 +26,35 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                sh "juju kill-controller -y ${params.controller} || true"
                 setStartTime()
-                sh "juju bootstrap localhost ${params.controller} --debug"
+                sh "sudo lxc profile show microk8s || sudo lxc profile copy default microk8s"
+                sh "curl https://raw.githubusercontent.com/ubuntu/microk8s/master/tests/lxc/microk8s.profile | sudo lxc profile edit microk8s"
+                sh "sudo lxc launch -p default -p microk8s ubuntu:18.04 ${lxc_name}"
+                sh "sudo lxc storage create ${storage_name} dir source=/tmp/${storage_name}"
+                sh "sudo lxc storage volume create ${storage_name} storage"
+                sh "sudo lxc storage volume attach ${storage_name} storage ${lxc_name} /project"
+                exec "sudo snap install charm --classic"
+                exec "sudo snap install jq"
+                exec "sudo snap install juju --classic --channel ${params.juju_channel}"
+                exec "sudo snap install juju-wait --classic"
+                exec "sudo snap install lxd"
+                exec "sudo snap install microk8s --classic --channel ${params.microk8s_channel}"
+                exec "sudo snap install yq"
 
-                sh "microk8s.enable dns storage"
-                sh "microk8s.config | juju add-k8s ${cloud}"
-                sh "microk8s.config > kube_config"
-                sh "microk8s.docker build tfjobs/mnist/ -t ${mnist_image}"
+                exec "microk8s.enable dns storage"
+                exec "juju bootstrap lxd --debug"
+                exec "microk8s.config | juju add-k8s microk8s-cloud"
+                exec "microk8s.docker build tfjobs/mnist/ -t mnist-test:latest"
 
-                sh "juju add-model ${juju_model} ${cloud}"
-                sh "juju create-storage-pool operator-storage kubernetes storage-class=microk8s-hostpath"
-                sh "juju deploy kubeflow --channel ${params.bundle_channel}"
+                exec "juju add-model microk8s-model microk8s-cloud"
+                exec "juju create-storage-pool operator-storage kubernetes storage-class=microk8s-hostpath"
+                exec "juju deploy kubeflow --channel ${params.channel}"
 
-                sh "juju-wait -e ${params.controller}:${juju_model} -w"
+                exec "juju-wait -w"
 
-                sh "juju status | grep 'kubeflow-ambassador ' | awk '{print \$8}' > PUB_IP"
-                sh "juju config kubeflow-ambassador juju-external-hostname=localhost"
-                sh "juju expose kubeflow-ambassador"
+                exec "juju status | grep 'kubeflow-ambassador ' | awk '{print \$8}' > PUB_IP"
+                exec "juju config kubeflow-ambassador juju-external-hostname=localhost"
+                exec "juju expose kubeflow-ambassador"
             }
         }
 
@@ -51,7 +65,19 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} MNIST_IMAGE=${mnist_image} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_kubeflow.py::test_validate"
+                    exec '''
+                        PY_IGNORE_IMPORTMISMATCH=1
+                        CONTROLLER=localhost
+                        MODEL=microk8s-model
+                        tox
+                            -e py36
+                            --
+                            pytest
+                                -v
+                                -s
+                                --junit-xml=validate.xml
+                                integration/test_kubeflow.py::test_validate
+                    '''.replaceAll('\\s+', ' ')
                 }
             }
         }
@@ -66,17 +92,15 @@ pipeline {
         always {
             setEndTime()
             collectDebug(params.controller, juju_model)
-
         }
         cleanup {
             sh "juju status"
             sh "juju list-controllers"
             sh "juju list-models"
             saveMeta()
-            sh "juju kill-controller -y ${params.controller} || true"
-            sh "juju remove-cloud ${cloud}"
-            sh "microk8s.docker rmi ${mnist_image}"
-
+            sh "sudo lxc storage volume detach ${storage_name} storage ${lxc_name} || true"
+            sh "sudo lxc delete --force ${lxc_name} || true"
+            sh "sudo lxc storage delete ${storage_name} || true"
         }
     }
 }

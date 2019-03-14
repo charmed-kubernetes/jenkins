@@ -11,20 +11,14 @@
       script-path: jobs/validate-kubeflow-microk8s/Jenkinsfile
     parameters:
       - string:
-          name: model
-          default: 'validate-kubeflow-microk8s'
+          name: channel
+          default: 'stable'
       - string:
-          name: controller
-          default: 'validate-kubeflow-microk8s'
+          name: juju_channel
+          default: 'stable'
       - string:
-          name: cloud
-          default: 'jenkins-microk8s-cloud'
-      - string:
-          name: bundle_channel
-          default: 'edge'
-      - string:
-          name: bundle
-          default: 'kubeflow'
+          name: microk8s_channel
+          default: '1.13/stable'
     triggers:
         - timed: "@daily"
     properties:
