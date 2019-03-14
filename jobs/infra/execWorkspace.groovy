@@ -51,6 +51,9 @@ pipeline {
                     if (params.exec_command) {
                         sh "${params.exec_command}"
                     }
+                    if (params.calculate_space) {
+                        sh "du -h --max-depth=1 ${params.calculate_space}"
+                    }
                 }
             }
         }
