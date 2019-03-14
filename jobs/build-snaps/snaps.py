@@ -25,6 +25,7 @@ def _alias(match_re, rename_re, snap):
     click.echo(f'Setting alias based on {match_re} -> {rename_re}: {snap}')
     return re.sub(match_re, fr'{rename_re}', snap)
 
+
 def _set_snap_alias(build_path, alias):
     click.echo(f'Setting new snap alias: {alias}')
     if build_path.exists():
@@ -35,9 +36,11 @@ def _set_snap_alias(build_path, alias):
                                             default_flow_style=False,
                                             indent=2))
 
+
 @click.group()
 def cli():
     pass
+
 
 @cli.command()
 @click.option('--snap', required=True, multiple=True, help='Snaps to build')
@@ -77,7 +80,8 @@ def build(snap, version, arch, match_re, rename_re, dry_run):
 
         if dry_run:
             click.echo("dry-run only:")
-            click.echo(f"  > cd release/snap && bash build-scripts/docker-build {_snap}")
+            click.echo(
+                f"  > cd release/snap && bash build-scripts/docker-build {_snap}")
         else:
             for line in sh.bash(
                     'build-scripts/docker-build',
@@ -87,6 +91,7 @@ def build(snap, version, arch, match_re, rename_re, dry_run):
                     _iter=True,
                     _err_to_out=True):
                 click.echo(line.strip())
+
 
 @cli.command()
 @click.option('--result-dir', required=True, default='release/snap/build',
@@ -119,6 +124,7 @@ def push(result_dir, dry_run):
             click.echo(e.stdout)
             click.echo(e.stderr)
 
+
 @cli.command()
 @click.option('--name', required=True, help='Snap name to release')
 @click.option('--channel', required=True, help='Snapstore channel to release to')
@@ -128,11 +134,12 @@ def release(name, channel, version, dry_run):
     """ Release the most current revision snap to channel
     """
     re_comp = re.compile("[ \t+]{2,}")
-    revision_list = sh.snapcraft.revisions(name)
+    revision_list = sh.snapcraft.revisions(name, _err_to_out=True)
     revision_list = revision_list.stdout.decode().splitlines()[1:]
     revision_parsed = {}
     for line in revision_list:
         rev, uploaded, arch, upstream_version, channels = re_comp.split(line)
+        rev = int(rev)
         if upstream_version != version:
             continue
         revision_parsed[rev] = {
@@ -142,13 +149,16 @@ def release(name, channel, version, dry_run):
             'version': upstream_version,
             'channels': channels
         }
-    latest_release = max(revision_parsed.items(), key=operator.itemgetter(0))[1]
+    latest_release = max(revision_parsed.items(),
+                         key=operator.itemgetter(0))[1]
     click.echo(latest_release)
     if dry_run:
         click.echo("dry-run only:")
-        click.echo(f"  > snapcraft release {name} {latest_release['rev']} {channel}")
+        click.echo(
+            f"  > snapcraft release {name} {latest_release['rev']} {channel}")
     else:
-        click.echo(sh.snapcraft.release(name, latest_release['rev'], channel))
+        click.echo(sh.snapcraft.release(
+            name, latest_release['rev'], channel, _err_to_out=True))
 
 
 if __name__ == "__main__":

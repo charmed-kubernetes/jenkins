@@ -1,6 +1,6 @@
 ansible
-ansible
 asyncio-extras
+autopep8
 awscli
 boto3
 canonicalwebteam.snapstoreapi==0.4.4
