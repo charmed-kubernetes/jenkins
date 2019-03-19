@@ -571,7 +571,7 @@ async def validate_extra_args(model):
             'api-extra-args': ' '.join([
                 'min-request-timeout=314',  # int arg, overrides a charm default
                 'watch-cache',              # bool arg, implied true
-                'enable-swagger-ui=false'   # bool arg, explicit false
+                'profiling=false'           # bool arg, explicit false
             ]),
             'controller-manager-extra-args': ' '.join([
                 'v=3',                        # int arg, overrides a charm default
@@ -588,7 +588,7 @@ async def validate_extra_args(model):
             'kube-apiserver': {
                 'min-request-timeout=314',
                 'watch-cache',
-                'enable-swagger-ui=false'
+                'profiling=false'
             },
             'kube-controller': {
                 'v=3',
