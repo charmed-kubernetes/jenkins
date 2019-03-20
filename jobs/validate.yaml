@@ -9,7 +9,6 @@
 - non_core_bundle_defaults: &non_core_bundle_defaults
     name: 'non-core-bundle-defaults'
     bundle:
-      - 'canonical-kubernetes-elastic'
       - 'canonical-kubernetes-canal'
 
 # Overlays
