@@ -33,7 +33,6 @@
             - 'containers/tigera-secure-ee'
             - 'containers/canonical-kubernetes'
             - 'containers/kubernetes-core'
-            - 'containers/canonical-kubernetes-elastic'
             - 'containers/kubernetes-calico'
             - 'containers/canonical-kubernetes-canal'
             - 'containers/kubernetes-tigera-secure-ee'

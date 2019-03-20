@@ -32,7 +32,6 @@
           name: bundle
           choices:
             - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
             - 'canonical-kubernetes-canal'
             - 'kubernetes-core'
             - 'kubernetes-calico'

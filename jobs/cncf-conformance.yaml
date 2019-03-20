@@ -54,10 +54,8 @@
       - 'conformance-{k8sver}-{bundle}':
           bundle:
             - 'canonical-kubernetes'
-            - 'canonical-kubernetes-elastic'
             - 'canonical-kubernetes-canal'
             - 'kubernetes-core'
-            - 'kubernetes-calico'
 
 - project:
     name: conformance
