@@ -119,11 +119,12 @@ async def validate_tf_dashboard():
 
     ambassador_ip = await asyncify(get_pod_ip)("kubeflow-ambassador")
 
-    # await asyncify(submit_tf_job)("mnist")
+    await asyncify(submit_tf_job)("mnist")
 
     expected_jobs = [("PS", 1), ("Worker", 1)]
     expected_conditions = [
-        ("Running", "True", "TFJobRunning", "TFJob kubeflow-mnist-test is running."),
+        ("Created", "True", "TFJobCreated", "TFJob kubeflow-mnist-test is created."),
+        ("Running", "False", "TFJobRunning", "TFJob kubeflow-mnist-test is running."),
         (
             "Succeeded",
             "True",
@@ -131,10 +132,11 @@ async def validate_tf_dashboard():
             "TFJob kubeflow-mnist-test is successfully completed.",
         ),
     ]
-    expected_statuses = {"PS": {"active": 1}, "Worker": {"succeeded": 1}}
+    expected_statuses = {"PS": {}, "Worker": {}, "Chief": {}, "Master": {}}
 
-    # Wait for up to a minute for the job to complete
-    for i in range(12):
+    # Wait for up to 5 minutes for the job to complete,
+    # checking every 5 seconds
+    for i in range(60):
         resp = await asyncify(requests.get)(f"http://{ambassador_ip}/tfjobs/api/tfjob/")
         resp.raise_for_status()
         response = resp.json()["items"][0]
@@ -155,8 +157,9 @@ async def validate_tf_dashboard():
             assert conditions == expected_conditions
             assert expected_statuses == statuses
             break
-        except AssertionError:
+        except AssertionError as err:
             print("Waiting for TFJob to complete...")
+            print(err)
             await asyncio.sleep(5)
     else:
         raise Exception("Waited too long for TFJob to succeed!")
