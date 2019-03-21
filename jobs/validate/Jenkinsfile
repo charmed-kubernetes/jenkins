@@ -32,6 +32,11 @@ pipeline {
                             def overlay_input = readYaml text: params.overlay_input
                             writeYaml file: overlay, data: overlay_input
                         }
+                        if (params.custom_bundle) {
+                            def custom_bundle = "${env.WORKSPACE}/custom_bundle.yaml"
+                            def custom_bundle_input = readYaml text: params.custom_bundle
+                            writeYaml file: custom_bundle, data: custom_bundle_input
+                        }
                     }
                 }
                 sh "juju kill-controller -y ${params.controller} || true"
@@ -42,7 +47,8 @@ pipeline {
                           cloud: params.cloud,
                           bundle: "cs:~containers/${params.bundle}",
                           version_overlay: overlay,
-                          bundle_channel: params.bundle_channel)
+                          bundle_channel: params.bundle_channel,
+                          custom_bundle: custom_bundle)
             }
         }
 

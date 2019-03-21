@@ -57,7 +57,10 @@
           default: '{snap_channel}'
       - text:
           name: overlay_input
-          description: "Paste yaml bundle overlay, which overrides the version_overlay setting"
+          description: "Paste yaml bundle overlay, this will merge on top of any bundles, overlays, defined."
+      - text:
+          name: custom_bundle
+          description: "Paste a custom yaml bundle, this will replace any channels, bundles, or overlays defined."
 
 - job-template:
     name: 'validate-{version}-{bundle}'
