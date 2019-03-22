@@ -38,6 +38,7 @@ pipeline {
 
                 sh "juju-wait -e ${params.controller}:${juju_model} -w"
 
+                sh "juju status | grep 'kubeflow-ambassador ' | awk '{print \$8}' > PUB_IP"
                 sh "juju config kubeflow-ambassador juju-external-hostname=localhost"
                 sh "juju expose kubeflow-ambassador"
             }

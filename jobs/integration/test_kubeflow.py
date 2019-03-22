@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 from subprocess import check_output
 
@@ -11,17 +10,11 @@ from .logger import log_calls, log_calls_async
 from .utils import asyncify
 
 
-def get_pod_ip(name):
-    """Returns the internal IP address for the given pod.
+def get_ambassador_ip():
+    """Returns the Ambassador IP address."""
 
-    Expects there to be exactly one matching pod.
-    """
-
-    return json.loads(
-        check_output(["/snap/bin/juju", "status", "-m", os.environ["MODEL"], "--format", "json"])
-        .strip()
-        .decode("utf-8")
-    )['applications'][name]['address']
+    with open('../PUB_IP') as f:
+        return f.read().strip()
 
 
 @pytest.mark.asyncio
@@ -66,7 +59,7 @@ async def validate_ambassador():
         "/ambassador/v0/check_alive": b"ambassador liveness check OK",
     }
 
-    ambassador_ip = await asyncify(get_pod_ip)("kubeflow-ambassador")
+    ambassador_ip = get_ambassador_ip()
 
     for endpoint, text in checks.items():
         resp = await asyncify(requests.get)(f"http://{ambassador_ip}{endpoint}")
@@ -78,7 +71,7 @@ async def validate_ambassador():
 async def validate_jupyterhub_api():
     """Validates that JupyterHub is up and responding via Ambassador."""
 
-    ambassador_ip = await asyncify(get_pod_ip)("kubeflow-ambassador")
+    ambassador_ip = get_ambassador_ip()
 
     resp = await asyncify(requests.get)(f"http://{ambassador_ip}/hub/api/")
     resp.raise_for_status()
@@ -112,7 +105,7 @@ def submit_tf_job(name: str):
 async def validate_tf_dashboard():
     """Validates that TF Jobs dashboard is up and responding via Ambassador."""
 
-    ambassador_ip = await asyncify(get_pod_ip)("kubeflow-ambassador")
+    ambassador_ip = get_ambassador_ip()
 
     await asyncify(submit_tf_job)("mnist")
 
