@@ -92,7 +92,17 @@ def submit_tf_job(name: str):
         job_def = f.read().format(mnist_image=os.environ["MNIST_IMAGE"]).encode("utf-8")
 
     output = check_output(
-        ["microk8s.kubectl", "create", "-n", os.environ["MODEL"], "-f", "-"], input=job_def
+        [
+            "microk8s.kubectl",
+            "--kubeconfig",
+            "kube_config",
+            "create",
+            "-n",
+            os.environ["MODEL"],
+            "-f",
+            "-",
+        ],
+        input=job_def,
     ).strip()
 
     assert output == f"tfjob.kubeflow.org/kubeflow-{name}-test created".encode("utf-8")

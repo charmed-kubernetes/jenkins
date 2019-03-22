@@ -29,6 +29,7 @@ pipeline {
 
                 sh "microk8s.enable dns storage"
                 sh "microk8s.config | juju add-k8s ${cloud}"
+                sh "microk8s.config > kube_config"
                 sh "microk8s.docker build tfjobs/mnist/ -t ${mnist_image}"
 
                 sh "juju add-model ${juju_model} ${cloud}"
