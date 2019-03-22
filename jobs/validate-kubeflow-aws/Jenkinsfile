@@ -73,6 +73,9 @@ pipeline {
             collectDebug(params.controller, 'default')
         }
         cleanup {
+            sh "juju status"
+            sh "juju list-controllers"
+            sh "juju list-models"
             saveMeta()
             sh "juju kill-controller -y ${params.controller} || true"
             sh "juju remove-cloud ${params.cloud} || true"
