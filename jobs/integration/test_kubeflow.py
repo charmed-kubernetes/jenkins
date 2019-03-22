@@ -95,7 +95,7 @@ def submit_tf_job(name: str):
         [
             "microk8s.kubectl",
             "--kubeconfig",
-            "kube_config",
+            "../kube_config",
             "create",
             "-n",
             os.environ["MODEL"],
