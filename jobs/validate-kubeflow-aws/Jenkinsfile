@@ -1,6 +1,5 @@
 @Library('juju-pipeline@master') _
 
-def aws_model = String.format("%s-%s", params.model, uuid())
 def k8s_model = String.format("aws-kf-model-%s", uuid())
 def mnist_image = String.format("mnist-test-%s", uuid())
 
@@ -34,15 +33,19 @@ pipeline {
                 sh "juju add-relation aws-integrator kubernetes-master"
                 sh "juju add-relation aws-integrator kubernetes-worker"
 
-                sh "juju-wait -e ${params.controller}:${aws_model} -w"
+                sh "juju-wait -e ${params.controller}:default -w"
 
                 sh "juju scp kubernetes-master/0:~/config kube_config"
                 sh "juju add-k8s aws-kf-cloud < kube_config"
                 sh "juju add-model ${k8s_model} aws-kf-cloud"
                 sh "juju create-storage-pool operator-storage kubernetes storage-class=juju-operator-storage storage-provisioner=kubernetes.io/aws-ebs parameters.type=gp2"
                 sh "juju create-storage-pool k8s-ebs kubernetes storage-class=juju-ebs storage-provisioner=kubernetes.io/aws-ebs parameters.type=gp2"
-                sh "juju deploy cs:~kubeflow-charmers/kubeflow"
-                sh "juju wait -e aws-us-east-1:${k8s_model} -w"
+                sh "juju deploy kubeflow"
+                sh "juju wait -e ${params.controller}:${k8s_model} -w"
+
+                sh "juju status -m default | grep 'kubernetes-worker/0' | awk '{print \$5}' > PUB_IP"
+                sh "juju config kubeflow-ambassador juju-external-hostname=\$(<PUB_IP).xip.io"
+                sh "juju expose kubeflow-ambassador"
             }
         }
 
@@ -67,12 +70,12 @@ pipeline {
         }
         always {
             setEndTime()
-            collectDebug(params.controller, aws_model)
+            collectDebug(params.controller, 'default')
         }
         cleanup {
             saveMeta()
             sh "juju kill-controller -y ${params.controller} || true"
-            sh "juju remove-cloud ${params.cloud}"
+            sh "juju remove-cloud ${params.cloud} || true"
         }
     }
 }

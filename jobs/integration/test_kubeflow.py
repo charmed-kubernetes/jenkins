@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 from subprocess import check_output
 
@@ -10,33 +11,17 @@ from .logger import log_calls, log_calls_async
 from .utils import asyncify
 
 
-def get_pod_ip(label):
+def get_pod_ip(name):
     """Returns the internal IP address for the given pod.
-
-    Since this is an IP inside of microk8s, we can connect directly
-    to that IP address, and don't have to do any proxying or port
-    forwarding.
 
     Expects there to be exactly one matching pod.
     """
 
-    return (
-        check_output(
-            [
-                "/snap/bin/microk8s.kubectl",
-                "-n",
-                os.environ["MODEL"],
-                "get",
-                "pods",
-                f"-ljuju-application={label}",
-                "--no-headers",
-                "-o",
-                "custom-columns=:status.podIP",
-            ]
-        )
+    return json.loads(
+        check_output(["/snap/bin/juju", "status", "-m", os.environ["MODEL"], "--format", "json"])
         .strip()
         .decode("utf-8")
-    )
+    )['applications'][name]['address']
 
 
 @pytest.mark.asyncio
@@ -84,7 +69,7 @@ async def validate_ambassador():
     ambassador_ip = await asyncify(get_pod_ip)("kubeflow-ambassador")
 
     for endpoint, text in checks.items():
-        resp = await asyncify(requests.get)(f"http://{ambassador_ip}:8877{endpoint}")
+        resp = await asyncify(requests.get)(f"http://{ambassador_ip}{endpoint}")
         resp.raise_for_status()
         assert resp.content.startswith(text)
 
