@@ -4,7 +4,7 @@ def juju_model = String.format("%s-%s", params.model, uuid())
 def validate_sh = "tox -e py36 -- python3 validate/validate.py"
 def collect_debug_sh = "tox -e py36 -- python3 infra/collect-debug.py"
 def overlay = params.version_overlay
-def custom_bundle_file = "${env.WORKSPACE}/custom_bundle.yaml"
+def custom_bundle_file = ""
 
 pipeline {
     agent {
@@ -34,6 +34,7 @@ pipeline {
                             writeYaml file: overlay, data: overlay_input
                         }
                         if (params.custom_bundle) {
+                            custom_bundle_file = "${env.WORKSPACE}/custom_bundle.yaml"
                             def custom_bundle_input = readYaml text: params.custom_bundle
                             writeYaml file: custom_bundle_file, data: custom_bundle_input
                         }
