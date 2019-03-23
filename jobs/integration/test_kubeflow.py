@@ -14,7 +14,7 @@ def get_ambassador_ip():
     """Returns the Ambassador IP address."""
 
     with open('../PUB_IP') as f:
-        return f.read().strip()
+        return f'{f.read().strip()}.xip.io'
 
 
 @pytest.mark.asyncio
