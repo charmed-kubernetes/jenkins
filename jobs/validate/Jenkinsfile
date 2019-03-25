@@ -2,7 +2,7 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
-def tmpdir = Files.createTempDirectory()
+def tmpdir = env.WORKSPACE
 def tox_sh = "tox -e py36 --workdir ${tmpdir}"
 
 def validate_sh = "${tox_sh} -- python3 validate/validate.py"
@@ -30,6 +30,8 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
+                sh "sudo pip3 install tox"
+                setStartTime()
                 script {
                     dir('jobs'){
                         if (params.overlay_input) {
@@ -46,7 +48,6 @@ pipeline {
                 }
                 sh "juju kill-controller -y ${juju_controller} || true"
                 sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
-                setStartTime()
                 deployCDK(controller: juju_controller,
                           model: juju_model,
                           cloud: params.cloud,
