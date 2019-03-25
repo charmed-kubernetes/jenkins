@@ -1,8 +1,12 @@
 @Library('juju-pipeline@master') _
 
 def juju_model = String.format("%s-%s", params.model, uuid())
-def validate_sh = "tox -e py36 -- python3 validate/validate.py"
-def collect_debug_sh = "tox -e py36 -- python3 infra/collect-debug.py"
+def juju_controller = String.format("%s-%s", params.controller, uuid())
+def tmpdir = Files.createTempDirectory()
+def tox_sh = "tox -e py36 --workdir ${tmpdir}"
+
+def validate_sh = "${tox_sh} -- python3 validate/validate.py"
+def collect_debug_sh = "${tox_sh} -- python3 infra/collect-debug.py"
 def overlay = params.version_overlay
 def custom_bundle_file = ""
 
@@ -40,10 +44,10 @@ pipeline {
                         }
                     }
                 }
-                sh "juju kill-controller -y ${params.controller} || true"
-                sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
+                sh "juju kill-controller -y ${juju_controller} || true"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
                 setStartTime()
-                deployCDK(controller: params.controller,
+                deployCDK(controller: juju_controller,
                           model: juju_model,
                           cloud: params.cloud,
                           bundle: "cs:~containers/${params.bundle}",
@@ -63,7 +67,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${tox_sh} -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
                 }
             }
         }
@@ -76,7 +80,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
+                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${tox_sh} -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
                 }
             }
         }
@@ -94,7 +98,7 @@ pipeline {
         }
         cleanup {
             saveMeta()
-            sh "juju kill-controller -y ${params.controller} || true"
+            sh "juju kill-controller -y ${juju_controller} || true"
         }
     }
 }
