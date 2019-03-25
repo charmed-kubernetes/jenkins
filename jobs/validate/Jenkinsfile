@@ -2,8 +2,7 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
-def tmpdir = env.WORKSPACE
-def tox_sh = "tox -e py36 --workdir ${tmpdir}"
+def tox_sh = "tox -e py36"
 
 def validate_sh = "${tox_sh} -- python3 validate/validate.py"
 def collect_debug_sh = "${tox_sh} -- python3 infra/collect-debug.py"
@@ -30,7 +29,6 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                sh "sudo pip3 install tox"
                 setStartTime()
                 script {
                     dir('jobs'){
