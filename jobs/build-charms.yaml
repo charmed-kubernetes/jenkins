@@ -141,6 +141,10 @@
           namespace: 'kubeflow-charmers'
           repo_name: 'charm-kubeflow-tf-serving'
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+      - 'redis-k8s':
+          namespace: 'kubeflow-charmers'
+          repo_name: 'charm-redis-k8s'
+          git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     jobs:
       - '{name}-{charm}'
 

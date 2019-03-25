@@ -29,6 +29,7 @@ def charms = [
     'kubeflow-charmers/kubeflow-tf-job-dashboard',
     'kubeflow-charmers/kubeflow-tf-job-operator',
     'kubeflow-charmers/kubeflow-tf-serving',
+    'kubeflow-charmers/redis-k8s',
 ]
 
 pipeline {
