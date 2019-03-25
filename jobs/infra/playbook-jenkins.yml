@@ -26,6 +26,7 @@
           - libffi6
           - libssl-dev
           - libxml2-dev
+          - libsodium-dev
           - make
           - python3-dev
           - python3-pip
