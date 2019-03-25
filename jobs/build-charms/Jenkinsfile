@@ -1,11 +1,12 @@
 @Library('juju-pipeline@master') _
 
 def juju_model = String.format("%s-%s", params.model, uuid())
+def juju_controller = String.format("%s-%s", params.controller, uuid())
 def charm_sh = "tox -e py36 -- python3 build-charms/charms.py"
 def cs_url = "cs:~${params.namespace}/${params.charm}"
 
 pipeline {
-    agent { label 'runner-amd64' }
+    agent { label 'runner' }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
@@ -22,7 +23,7 @@ pipeline {
         stage('Setup') {
             steps {
                 setStartTime()
-                sh "juju kill-controller -y ${params.controller} || true"
+                sh "juju kill-controller -y ${juju_controller} || true"
                 sh "mkdir -p ${env.JUJU_REPOSITORY}"
                 sh "mkdir -p ${env.TMPDIR}"
             }
@@ -48,8 +49,8 @@ pipeline {
                     script {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
-                            sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
-                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py36 -- pytest --tb native -ra -v -s -n auto --junit-xml=${params.charm}.xml ${test_path}"
+                            sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
+                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py36 -- pytest --tb native -ra -v -s -n auto --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }
 
@@ -58,7 +59,7 @@ pipeline {
             post {
                 always {
                     setEndTime()
-                    sh "juju kill-controller -y ${params.controller} || true"
+                    sh "juju kill-controller -y ${juju_controller} || true"
                 }
             }
         }
