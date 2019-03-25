@@ -1,0 +1,70 @@
+@Library('juju-pipeline@master') _
+
+def juju_model = String.format("%s-%s", params.model, uuid())
+def mnist_image = String.format("mnist-test-%s", uuid())
+
+pipeline {
+    agent {
+        label 'runner'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Deploy: K8s') {
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+            steps {
+                sh "juju kill-controller -y ${params.controller} || true"
+                setStartTime()
+                sh "juju add-cloud maas /var/lib/jenkins/.scapestack/scapestack-cloud"
+                sh "juju add-credential scapestack -f /var/lib/jenkins/.scapestack/scapestack-creds"
+                sh "juju bootstrap scapestack ${params.controller} --debug"
+
+                deployCDK(controller: params.controller,
+                          model: juju_model,
+                          bundle: "cs:~containers/${params.bundle}",
+                          version_overlay: params.overlay,
+                          bundle_channel: params.bundle_channel)
+            }
+        }
+
+        stage('Validate') {
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
+
+            steps {
+                dir('jobs') {
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} TEST_IPS='${params.test_ips}' tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_hacluster.py"
+                }
+            }
+        }
+    }
+    post {
+        success {
+            setPass()
+        }
+        failure {
+            setFail()
+        }
+        always {
+            setEndTime()
+            collectDebug(params.controller, juju_model)
+
+            sh "juju kill-controller -y ${params.controller} || true"
+            sh "juju remove-cloud scapestack"
+        }
+        cleanup {
+            saveMeta()
+        }
+    }
+}
