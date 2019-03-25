@@ -138,7 +138,7 @@
         mode: 0644
         force: no
     - name: login to snapstore
-      command: "snapcraft login --with /var/lib/jenkins/snapcralocal/share/juju/store-usso-tokenft-creds"
+      command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
       become: false
     - name: create aws dir
       file:
