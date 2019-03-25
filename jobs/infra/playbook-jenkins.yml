@@ -138,7 +138,7 @@
         mode: 0644
         force: no
     - name: login to snapstore
-      command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+      command: "snapcraft login --with /var/lib/jenkins/snapcralocal/share/juju/store-usso-tokenft-creds"
       become: false
     - name: create aws dir
       file:
@@ -219,3 +219,24 @@
       service:
         name: docker
         state: restarted
+    - name: create scapestack dir
+      file:
+        path: /var/lib/jenkins/.scapestack
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: 0755
+    - name: copy scapestack creds
+      copy:
+        src: "{{ lookup('env', 'SCAPESTACKCREDS') }}"
+        dest: /var/lib/jenkins/.scapestack/scapestack-creds
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+    - name: copy scapestack cloud creds
+      copy:
+        src: "{{ lookup('env', 'SCAPESTACKCLOUD') }}"
+        dest: /var/lib/jenkins/.scapestack/scapestack-cloud
+        owner: jenkins
+        group: jenkins
+        mode: 0644
