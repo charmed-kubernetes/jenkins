@@ -17,6 +17,7 @@ def charms = [
     'containers/tigera-secure-ee',
     'containers/bundle/charmed-kubernetes',
     'containers/bundle/canonical-kubernetes',
+    'containers/bundle/charmed-kubernetes',
     'containers/bundle/kubernetes-core',
     'containers/bundle/kubernetes-calico',
     'containers/bundle/canonical-kubernetes-canal',
