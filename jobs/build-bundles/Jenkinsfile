@@ -6,6 +6,10 @@ def bundle_mapping = [
         fragments: 'k8s/cdk cni/flannel',
         charmstore: 'cs:~containers/bundle/canonical-kubernetes',
     ],
+    'charmed-flannel': [
+        fragments: 'k8s/cdk cni/flannel',
+        charmstore: 'cs:~containers/bundle/charmed-kubernetes',
+    ],
     'core-flannel': [
         fragments: 'k8s/core cni/flannel',
         charmstore: 'cs:~containers/bundle/kubernetes-core'
