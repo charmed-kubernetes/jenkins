@@ -62,6 +62,7 @@ async def validate_all(model, log_dir):
     if ('vault' in model.applications and
             cpu_arch not in ['s390x', 'arm64', 'aarch64']):
         await validate_encryption_at_rest(model)
+    await validate_dns_provider(model)
 
 
 @log_calls
@@ -1441,6 +1442,92 @@ async def validate_encryption_at_rest(model):
             # read and ignore any exception so that it doesn't get raised
             # when the task is GC'd
             task.exception()
+
+
+async def validate_dns_provider(model):
+    master_app = model.applications['kubernetes-master']
+    master_unit = master_app.units[0]
+
+    async def cleanup():
+        cmd = '/snap/bin/kubectl delete po validate-dns-provider-ubuntu --ignore-not-found'
+        await run_until_success(master_unit, cmd)
+
+    async def wait_for_pod_removal(prefix):
+        log('Waiting for %s pods to be removed' % prefix)
+        while True:
+            cmd = '/snap/bin/kubectl get po -n kube-system -o json'
+            output = await run_until_success(master_unit, cmd)
+            pods = json.loads(output)
+            exists = False
+            for pod in pods['items']:
+                if pod['metadata']['name'].startswith(prefix):
+                    exists = True
+                    break
+            if not exists:
+                break
+            await asyncio.sleep(1)
+
+    async def verify_dns_resolution():
+        names = ['www.ubuntu.com', 'kubernetes.default.svc.cluster.local']
+        for name in names:
+            cmd = '/snap/bin/kubectl exec validate-dns-provider-ubuntu nslookup ' + name
+            await run_until_success(master_unit, cmd)
+
+    # Only run this test against k8s 1.14+
+    master_config = await master_app.get_config()
+    channel = master_config['channel']['value']
+    if '/' in channel:
+        version_string = channel.split('/')[0]
+        k8s_version = tuple(int(q) for q in re.findall("[0-9]+", version_string)[:2])
+        if k8s_version < (1, 14):
+            log('Skipping validate_dns_provider for k8s version ' + version_string)
+            return
+
+    # Cleanup
+    await cleanup()
+
+    # Set to kube-dns
+    await master_app.set_config({'dns-provider': 'kube-dns'})
+    await wait_for_pod_removal('coredns')
+
+    # Deploy busybox
+    pod_def = {
+        'apiVersion': 'v1',
+        'kind': 'Pod',
+        'metadata': {
+            'name': 'validate-dns-provider-ubuntu',
+            'namespace': 'default'
+        },
+        'spec': {
+            'containers': [{
+                'name': 'ubuntu',
+                'image': 'ubuntu',
+                'command': ['sh', '-c', 'apt update -y && apt install -y dnsutils && sleep 3600'],
+                'imagePullPolicy': 'IfNotPresent'
+            }],
+            'restartPolicy': 'Always'
+        }
+    }
+    with NamedTemporaryFile('w') as f:
+        yaml.dump(pod_def, f)
+        f.flush()
+        remote_path = '/tmp/validate-dns-provider-ubuntu.yaml'
+        await master_unit.scp_to(f.name, remote_path)
+        cmd = '/snap/bin/kubectl apply -f ' + remote_path
+        await run_until_success(master_unit, cmd)
+
+    # Verify DNS resolution
+    await verify_dns_resolution()
+
+    # Set to core-dns
+    await master_app.set_config({'dns-provider': 'core-dns'})
+    await wait_for_pod_removal('kube-dns')
+
+    # Verify DNS resolution
+    await verify_dns_resolution()
+
+    # Cleanup
+    await cleanup()
 
 
 class MicrobotError(Exception):
