@@ -59,7 +59,6 @@ pipeline {
             post {
                 always {
                     setEndTime()
-                    sh "juju kill-controller -y ${juju_controller} || true"
                 }
             }
         }
@@ -91,6 +90,7 @@ pipeline {
 
         cleanup {
             saveMeta()
+            sh "juju kill-controller -y ${juju_controller} || true"
         }
     }
 }
