@@ -31,6 +31,7 @@
             - 'containers/kubernetes-master'
             - 'containers/kubernetes-worker'
             - 'containers/tigera-secure-ee'
+            - 'containers/charmed-kubernetes'
             - 'containers/canonical-kubernetes'
             - 'containers/kubernetes-core'
             - 'containers/kubernetes-calico'
