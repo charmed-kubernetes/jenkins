@@ -15,6 +15,7 @@ def charms = [
     'containers/keepalived',
     'containers/docker-registry',
     'containers/tigera-secure-ee',
+    'containers/bundle/charmed-kubernetes',
     'containers/bundle/canonical-kubernetes',
     'containers/bundle/kubernetes-core',
     'containers/bundle/kubernetes-calico',
