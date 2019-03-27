@@ -83,6 +83,7 @@ def push(bucket, results_file, key_id):
     env = os.environ.copy()
     s3_path = Path(env['JOB_NAME']) / current_date / env['BUILD_NUMBER'] / results_file
     s3.upload_file(str(results_file), bucket, str(s3_path))
+    db['results-file'] = str(s3_path)
 
 
 if __name__ == "__main__":
