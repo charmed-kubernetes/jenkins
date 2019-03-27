@@ -97,6 +97,16 @@
       - build-discarder:
           num-to-keep: 2
 
+- job:
+    name: 'validate-oneoff'
+    description: |
+      Validates a one off deployment, typically using a custom bundle
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate/Jenkinsfile
+    <<: *validate_parameter_defaults
 
 - project:
     name: validate

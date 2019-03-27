@@ -25,3 +25,4 @@ toolz
 setuptools
 sh
 staticjinja
+pyyaml==3.13

@@ -1,6 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def juju_model = String.format("%s-%s", params.model, uuid())
+def juju_controller = String.format("%s-%s", params.controller, uuid())
 
 pipeline {
     agent { label 'runner-amd64' }
@@ -18,7 +19,6 @@ pipeline {
         stage('Setup') {
             steps {
                 sh "sudo snap install conjure-up --classic || true"
-                sh "juju kill-controller -y ${params.controller} || true"
             }
         }
         stage('Deploy') {
@@ -29,7 +29,7 @@ pipeline {
             steps {
                 setStartTime()
                 dir("jobs") {
-                    sh "conjure-up charmed-kubernetes ${params.cloud} ${params.controller} ${juju_model} --channel ${params.bundle_channel}"
+                    sh "conjure-up charmed-kubernetes ${params.cloud} ${juju_controller} ${juju_model} --channel ${params.bundle_channel}"
                 }
             }
         }
@@ -41,7 +41,7 @@ pipeline {
 
             steps {
                 dir("jobs") {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
                 }
             }
         }
@@ -57,10 +57,10 @@ pipeline {
             setEndTime()
             collectDebug(params.controller,
                          juju_model)
-            sh "juju kill-controller -y ${params.controller} || true"
         }
         cleanup {
             saveMeta()
+            sh "juju kill-controller -y ${params.controller} || true"
         }
     }
 }

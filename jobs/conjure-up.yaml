@@ -1,7 +1,7 @@
 # Tests conjure-up cdk
 
-- job:
-    name: 'conjure-up'
+- job-template:
+    name: 'conjure-up-{cloud}'
     description: |
       conjure-up testing
     project-type: pipeline
@@ -16,13 +16,9 @@
       - string:
           name: controller
           default: 'conjure-up'
-      - choice:
+      - string:
           name: cloud
-          choices:
-            - 'aws/us-east-1'
-            - 'google/us-east1'
-            - 'azure/eastus'
-            - 'localhost/localhost'
+          default: '{cloud}/{region}'
       - string:
           name: bundle_channel
           default: 'edge'
@@ -30,3 +26,22 @@
       - build-discarder:
           days-to-keep: 0
           num-to-keep: 2
+
+- job-group:
+    name: 'conjure-up'
+    cloud:
+      - 'aws':
+          region: 'us-east-1'
+      - 'google':
+          region: 'us-east1'
+      - 'azure' :
+          region: 'eastus'
+      - 'localhost':
+          region: 'localhost'
+    jobs:
+      - 'conjure-up-{cloud}'
+
+- project:
+    name: conjure-up
+    jobs:
+      - 'conjure-up'
