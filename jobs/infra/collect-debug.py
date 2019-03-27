@@ -11,6 +11,9 @@ import sh
 import yaml
 
 db = KV('stats.db')
+session = boto3.Session(profile_name='default', region_name='us-east-1')
+dynamodb = session.resource('dynamodb')
+s3 = session.client('s3')
 
 @click.group()
 def cli():
@@ -21,13 +24,13 @@ def cli():
 def starttime():
     """ Sets a startime timestamp
     """
-    db['starttime'] = str(datetime.now())
+    db['build_datetime'] = str(datetime.utcnow().isoformat())
 
 @cli.command()
 def endtime():
     """ Sets a endtime timestamp
     """
-    db['endtime'] = str(datetime.now())
+    db['build_endtime'] = str(datetime.utcnow().isoformat())
 
 @cli.command()
 @click.option('--fail/--no-fail', default=True)
@@ -57,13 +60,14 @@ def set_meta():
 
 
 @cli.command()
-@click.option('--filename', default='meta.yaml')
-def save_meta(filename):
+@click.option('--table', default='CIBuilds')
+def save_meta(table):
     """ Saves metadata to yaml
     """
-    filename = Path(filename)
-    data = yaml.dump(dict(db), default_flow_style=False)
-    filename.write_text(data, encoding='utf-8')
+    table = dynamodb.Table(table)
+    table.put_item(
+        Item=dict(db)
+    )
 
 
 @cli.command()
@@ -74,14 +78,11 @@ def save_meta(filename):
 def push(bucket, results_file, key_id):
     """ pushes cdk field agent and sets build result
     """
-    session = boto3.Session(profile_name='default')
-    s3 = session.client('s3')
     results_file = Path(results_file)
     current_date = datetime.now().strftime('%Y-%m-%d')
     env = os.environ.copy()
     s3_path = Path(env['JOB_NAME']) / current_date / env['BUILD_NUMBER'] / results_file
     s3.upload_file(str(results_file), bucket, str(s3_path))
-    db[f"resource.{key_id}"] = str(s3_path)
 
 
 if __name__ == "__main__":
