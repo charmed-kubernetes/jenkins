@@ -412,13 +412,13 @@ async def validate_worker_master_removal(model):
         await workers.add_unit(1)
         await disable_source_dest_check()
     await asyncify(_juju_wait)()
-    unit_count = len(workers.units)
 
     # Remove a worker to see how the masters handle it
+    unit_count = len(workers.units)
     await workers.units[0].remove()
     while len(workers.units) == unit_count:
         await asyncio.sleep(3)
-        log('Waiting for worker removal.')
+        log('Waiting for worker removal. (%d/%d)' % (len(workers.units), unit_count))
         assert_no_unit_errors(model)
     await asyncify(_juju_wait)()
 
@@ -429,7 +429,7 @@ async def validate_worker_master_removal(model):
             await master.remove()
     while len(masters.units) == unit_count:
         await asyncio.sleep(3)
-        log('Waiting for master removal.')
+        log('Waiting for master removal. (%d/%d)' % (len(masters.units), unit_count))
         assert_no_unit_errors(model)
     await asyncify(_juju_wait)()
 
