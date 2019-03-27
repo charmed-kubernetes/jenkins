@@ -19,7 +19,7 @@ pipeline {
     stages {
         stage("Deploy") {
             options {
-                timeout(time: 1, unit: 'HOURS')
+                timeout(time: 2, unit: 'HOURS')
             }
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
@@ -36,7 +36,7 @@ pipeline {
 
         stage("Validate Minor Upgrade") {
             options {
-                timeout(time: 1, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
             steps {
                 dir('jobs') {
