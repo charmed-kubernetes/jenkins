@@ -58,4 +58,10 @@ pipeline {
             }
         }
     }
+    post {
+        cleanup {
+            sh "env"
+            sh "ls -l"
+        }
+    }
 }
