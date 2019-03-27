@@ -5,6 +5,7 @@ from kv import KV
 from datetime import datetime, timedelta
 from pathlib import Path
 from collections import OrderedDict
+from boto3.dynamodb.conditions import Key
 import boto3
 import click
 import os
@@ -12,7 +13,9 @@ import sh
 import mimetypes
 from staticjinja import Site
 
-s3 = boto3.resource('s3')
+session = boto3.Session(region_name='us-east-1')
+s3 = session.resource('s3')
+dynamodb = session.resource('dynamodb')
 bucket = s3.Bucket('jenkaas')
 
 OBJECTS = bucket.objects.all()
@@ -20,7 +23,7 @@ OBJECTS = bucket.objects.all()
 def upload_html():
     mimetype, _ = mimetypes.guess_type('reports/_build/index.html')
     s3.meta.client.upload_file(
-        'reports/_build/index.html', bucket.name, 'index.html',
+        'reports/_build/index.html', bucket.name, 'index-new.html',
         ExtraArgs={'ContentType': mimetype})
 
 def download_file(key, filename):
@@ -58,30 +61,28 @@ def _gen_metadata():
     """ Generates metadata
     """
     click.echo("Generating metadata...")
+    table = dynamodb.Table('CIBuilds')
+    response = table.scan()
     metadata = OrderedDict()
-    for obj in OBJECTS:
-        path_obj = Path(obj.key)
-        parts = path_obj.parts
-        if parts[-1] == 'stats.db':
-            download_file(obj.key, parts[-1])
-            db = KV(parts[-1])
-            db['day'] = parts[1]
-            if 'job-name' not in db:
-                db['job-name'] = parts[0]
-            if 'test-result' not in db:
-                result_bg_class = ''
-            elif db['test-result'] == 'Fail':
-                result_bg_class = 'bg-danger'
-            else:
-                result_bg_class = 'bg-success'
-            db['bg-class'] = result_bg_class
-            cdk_field_agent = _get_field_agent_path(path_obj.parent)
-            if cdk_field_agent:
-                db['cdk-field-agent'] = cdk_field_agent
-            if 'job-name' in db and db['job-name'] in metadata:
-                metadata[db['job-name']].append(db)
-            else:
-                metadata[db['job-name']] = [db]
+    for obj in response['Items']:
+        db = {}
+        db['day'] = obj['build_endtime']
+        db['day'] = datetime.strptime(db['day'], '%Y-%m-%dT%H:%M:%S.%f').strftime('%m-%d')
+        db['job_name'] = obj['job_name']
+        if 'test_result' not in obj:
+            result_bg_class = ''
+        elif obj['test_result'] == 'Fail':
+            result_bg_class = 'bg-danger'
+        else:
+            result_bg_class = 'bg-success'
+        db['bg_class'] = result_bg_class
+        cdk_field_agent = _get_field_agent_path(path_obj.parent)
+        if cdk_field_agent:
+            db['cdk_field_agent'] = cdk_field_agent
+        if 'job_name' in db and db['job_name'] in metadata:
+            metadata[db['job-name']].append(db)
+        else:
+            metadata[db['job-name']] = [db]
     return metadata
 
 def _gen_rows():
@@ -113,10 +114,11 @@ def cli():
 
 @cli.command()
 def list():
-    """ List keys in bucket
+    """ List keys in dynamodb
     """
-    for obj in OBJECTS:
-        click.echo(obj)
+    table = dynamodb.Table('CIBuilds')
+    response = table.scan()
+    click.echo(response['Items'])
 
 @cli.command()
 def build():

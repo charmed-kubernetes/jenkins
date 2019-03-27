@@ -41,7 +41,7 @@ def test_result(fail):
     if fail:
         result = 'Fail'
 
-    db['test-result'] = result
+    db['test_result'] = result
 
 
 @cli.command()
@@ -49,14 +49,14 @@ def set_meta():
     """ Sets metadata information
     """
     env = os.environ.copy()
-    db['job-name'] = env['JOB_NAME']
-    db['build-number'] = env['BUILD_NUMBER']
-    db['node-name'] = env['NODE_NAME']
-    db['build-tag'] = env['BUILD_TAG']
+    db['job_name'] = env['JOB_NAME']
+    db['build_number'] = env['BUILD_NUMBER']
+    db['node_name'] = env['NODE_NAME']
+    db['build_tag'] = env['BUILD_TAG']
     db['workspace'] = env['WORKSPACE']
-    db['git-commit'] = env['GIT_COMMIT']
-    db['git-url'] = env['GIT_URL']
-    db['git-branch'] = env['GIT_BRANCH']
+    db['git_commit'] = env['GIT_COMMIT']
+    db['git_url'] = env['GIT_URL']
+    db['git_branch'] = env['GIT_BRANCH']
 
 
 @cli.command()
@@ -83,7 +83,7 @@ def push(bucket, results_file, key_id):
     env = os.environ.copy()
     s3_path = Path(env['JOB_NAME']) / current_date / env['BUILD_NUMBER'] / results_file
     s3.upload_file(str(results_file), bucket, str(s3_path))
-    db['results-file'] = str(s3_path)
+    db['results_file'] = str(s3_path)
 
 
 if __name__ == "__main__":
