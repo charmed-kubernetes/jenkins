@@ -2,8 +2,7 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
-def tmpdir = Files.createTempDirectory()
-def tox_sh = "tox -e py36 --workdir ${tmpdir}"
+def tox_sh = "tox -e py36"
 
 pipeline {
     agent {

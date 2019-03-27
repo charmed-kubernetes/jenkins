@@ -66,8 +66,9 @@ def _gen_metadata():
     metadata = OrderedDict()
     for obj in response['Items']:
         db = {}
-        db['day'] = obj['build_endtime']
-        db['day'] = datetime.strptime(db['day'], '%Y-%m-%dT%H:%M:%S.%f').strftime('%m-%d')
+        db['day'] = datetime.strptime(obj['build_endtime'],
+                                      '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%d')
+        click.echo(db['day'])
         db['job_name'] = obj['job_name']
         if 'test_result' not in obj:
             result_bg_class = ''
@@ -76,13 +77,11 @@ def _gen_metadata():
         else:
             result_bg_class = 'bg-success'
         db['bg_class'] = result_bg_class
-        cdk_field_agent = _get_field_agent_path(path_obj.parent)
-        if cdk_field_agent:
-            db['cdk_field_agent'] = cdk_field_agent
+        db['cdk_field_agent'] = obj['results_file'] if 'results_file' in obj else ''
         if 'job_name' in db and db['job_name'] in metadata:
-            metadata[db['job-name']].append(db)
+            metadata[db['job_name']].append(db)
         else:
-            metadata[db['job-name']] = [db]
+            metadata[db['job_name']] = [db]
     return metadata
 
 def _gen_rows():
@@ -98,11 +97,12 @@ def _gen_rows():
                     for j in jobs
                     if j['day'] == day]
             if _job:
+                click.echo(_job)
                 sub_item.append(_job[-1])
             else:
                 sub_item.append(
-                    {'job-name': jobname,
-                     'bg-class': ''})
+                    {'job_name': jobname,
+                     'bg_class': ''})
         click.echo(f"Processed: {jobname}")
         rows.append(sub_item)
     return rows
