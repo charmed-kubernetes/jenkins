@@ -48,15 +48,6 @@ def _gen_days(numdays=30):
         days=x)).strftime('%Y-%m-%d') for x in range(0, numdays)]
     return date_list
 
-def _get_field_agent_path(dir_key):
-    """ Grab cdk field agent file for key
-    """
-    for obj in OBJECTS:
-        path_obj = Path(obj.key)
-        if path_obj.parent == dir_key and 'results' in path_obj.parts[-1]:
-            return obj.key
-    return None
-
 def _gen_metadata():
     """ Generates metadata
     """
@@ -77,7 +68,7 @@ def _gen_metadata():
         else:
             result_bg_class = 'bg-success'
         db['bg_class'] = result_bg_class
-        db['cdk_field_agent'] = obj['results_file'] if 'results_file' in obj else ''
+        db['results_file'] = obj['results_file'] if 'results_file' in obj else ''
         if 'job_name' in db and db['job_name'] in metadata:
             metadata[db['job_name']].append(db)
         else:
@@ -90,7 +81,7 @@ def _gen_rows():
     days = _gen_days()
     metadata = _gen_metadata()
     rows = []
-    for jobname, jobs in metadata.items():
+    for jobname, jobs in sorted(metadata.items()):
         sub_item = [jobname]
         for day in days:
             _job = [j

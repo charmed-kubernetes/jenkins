@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Jenkaas Reports</title>
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Fira+Sans" rel="stylesheet">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
     <style>
+      body {
+          font-family: 'Fira Sans', sans-serif;
+      }
       .table td, .table th {
       font-size: 12px;
       min-width: 56px;
@@ -48,7 +51,7 @@
               <tr>
                 <td class="align-middle">{{ row[0] }}</td>
                 {% for day in row[1:] %}
-                <td class="{{ day['bg-class'] }}">{% if day['cdk-field-agent'] %}<a href="{{ day['cdk-field-agent'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download the results for debugging"><i class="fas fa-download"></i> </a>{% endif %}</td>
+                <td class="{{ day['bg_class'] }}">{% if day['results_file'] %}<a href="{{ day['results_file'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download the results for debugging"><i class="fas fa-download"></i> </a>{% endif %}</td>
                 {% endfor %}
               </tr>
               {% endfor %}

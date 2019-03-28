@@ -58,7 +58,7 @@ pipeline {
 
         stage('Validate') {
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
 
             when {
@@ -72,7 +72,7 @@ pipeline {
         }
         stage('Validate Upgrade') {
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
             when {
                 expression { params.perform_upgrade }
