@@ -53,9 +53,7 @@
 - alt_version_defaults: &alt_version_defaults
     name: 'alt-version-defaults'
     version:
-      - 'v1.14.x':
-          version_overlay: 'jobs/overlays/1.14-edge-localhost-overlay.yaml'
-          snap_channel: '1.14/edge'
+      !include: includes/k8s-support-matrix.inc
 
 - job-template:
     name: 'validate-alt-{arch}-{version}-{bundle}'

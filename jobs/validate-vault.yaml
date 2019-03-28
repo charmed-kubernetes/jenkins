@@ -37,9 +37,6 @@
 - project:
     name: validate-vault
     version:
-      - 'v1.14.x':
-          version_overlay: 'jobs/overlays/1.14-edge-overlay.yaml'
-      - 'v1.13.x':
-          version_overlay: 'jobs/overlays/1.13-edge-overlay.yaml'
+      !include: includes/k8s-support-matrix.inc
     jobs:
       - 'validate-vault-{version}'
