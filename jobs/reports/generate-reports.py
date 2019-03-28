@@ -61,7 +61,7 @@ def _gen_metadata():
                                       '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%d')
         db['job_name'] = obj['job_name']
         if 'test_result' not in obj:
-            result_bg_class = ''
+            result_bg_class = 'bg-light'
         elif obj['test_result'] == 'Fail':
             result_bg_class = 'bg-danger'
         else:

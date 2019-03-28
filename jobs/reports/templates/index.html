@@ -36,7 +36,8 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col">
-          <small>Last modified: {{ modified.strftime('%Y-%m-%d %H:%M:%S') }}
+          <span class="badge badge-primary">Last modified: {{ modified.strftime('%Y-%m-%d %H:%M:%S') }}</span> <span class="badge badge-danger">Fail</span> <span class="badge badge-success">Pass</span> <span class="badge badge-light">Timeout</span>
+
           <div class="table-responsive">
             <table class="table table-hover table-bordered">
               <thead class="thead-dark">
