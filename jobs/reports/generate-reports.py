@@ -23,7 +23,7 @@ OBJECTS = bucket.objects.all()
 def upload_html():
     mimetype, _ = mimetypes.guess_type('reports/_build/index.html')
     s3.meta.client.upload_file(
-        'reports/_build/index.html', bucket.name, 'index-new.html',
+        'reports/_build/index.html', bucket.name, 'index.html',
         ExtraArgs={'ContentType': mimetype})
 
 def download_file(key, filename):
@@ -57,8 +57,13 @@ def _gen_metadata():
     metadata = OrderedDict()
     for obj in response['Items']:
         db = {}
-        db['day'] = datetime.strptime(obj['build_endtime'],
-                                      '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%d')
+        try:
+            db['day'] = datetime.strptime(obj['build_endtime'],
+                                          '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%d')
+        except:
+            db['day'] = datetime.strptime(obj['build_endtime'],
+                                          '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d')
+
         db['job_name'] = obj['job_name']
         if 'test_result' not in obj:
             result_bg_class = 'bg-light'
@@ -108,6 +113,33 @@ def list():
     table = dynamodb.Table('CIBuilds')
     response = table.scan()
     click.echo(response['Items'])
+
+@cli.command()
+def migrate():
+    """ Migrate from older stats.db
+    """
+    table = dynamodb.Table('CIBuilds')
+    for item in OBJECTS:
+        if 'stats.db' in item.key:
+            download_file(item.key, 'stats.db')
+            obj = {}
+            db = KV('stats.db')
+            click.echo(f'Processing {db["build-tag"]}')
+            try:
+                obj['build_datetime'] = db['starttime']
+                obj['build_endtime'] = db['endtime']
+                obj['job_name'] = db['job-name']
+                obj['build_number'] = db['build-number']
+                obj['node_name'] = db['node-name']
+                obj['build_tag'] = db['build-tag']
+                obj['git_commit'] = db['git-commit']
+                obj['git_url'] = db['git-url']
+                obj['git_branch'] = db['git-branch']
+                obj['test_result'] = db['test-result']
+                obj['workspace'] = db['workspace']
+                table.put_item(Item=obj)
+            except:
+                continue
 
 @cli.command()
 def build():
