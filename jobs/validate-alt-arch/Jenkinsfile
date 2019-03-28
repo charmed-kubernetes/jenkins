@@ -98,6 +98,8 @@ pipeline {
         always {
             setEndTime()
             sh "sudo lxc profile show default"
+            sh "sudo iptables -n -L"
+            sh "sudo iptables -n -L -t nat"
             collectDebug(params.controller,
                          juju_model)
 
