@@ -38,6 +38,7 @@ def validate_statuses(model):
     expected_units = {
         "kubeflow-ambassador/0",
         "kubeflow-jupyterhub/0",
+        "kubeflow-pytorch-operator/0",
         "kubeflow-tf-job-dashboard/0",
         "kubeflow-tf-job-operator/0",
     }
