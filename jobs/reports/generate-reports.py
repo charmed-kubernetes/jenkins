@@ -59,7 +59,6 @@ def _gen_metadata():
         db = {}
         db['day'] = datetime.strptime(obj['build_endtime'],
                                       '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%d')
-        click.echo(db['day'])
         db['job_name'] = obj['job_name']
         if 'test_result' not in obj:
             result_bg_class = ''
@@ -88,7 +87,6 @@ def _gen_rows():
                     for j in jobs
                     if j['day'] == day]
             if _job:
-                click.echo(_job)
                 sub_item.append(_job[-1])
             else:
                 sub_item.append(

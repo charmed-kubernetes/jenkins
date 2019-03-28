@@ -23,7 +23,7 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                sh "juju kill-controller -y ${juju_controller} || true"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
                 setStartTime()
                 deployCDK(controller: juju_controller,
                           model: juju_model,
