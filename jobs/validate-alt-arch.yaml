@@ -49,6 +49,7 @@
       - s390x
       - arm64
       - ppc64le
+      - amd64
 
 - alt_version_defaults: &alt_version_defaults
     name: 'alt-version-defaults'
