@@ -25,7 +25,7 @@ pipeline {
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
                 setStartTime()
-                sh "juju add-cloud maas /var/lib/jenkins/.scapestack/scapestack-cloud"
+                sh "juju add-cloud scapestack /var/lib/jenkins/.scapestack/scapestack-cloud"
                 sh "juju add-credential scapestack -f /var/lib/jenkins/.scapestack/scapestack-creds"
                 sh "juju bootstrap scapestack ${params.controller} --debug"
 
