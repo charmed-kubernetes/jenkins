@@ -76,7 +76,7 @@ pipeline {
             when {
                 expression {
                     res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name conformance").trim()
-                    return res != 'pass'
+                    return res != 'pass' && params.gate_conformance
                 }
             }
 
@@ -102,7 +102,7 @@ pipeline {
             when {
                 expression {
                     res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate").trim()
-                    return res != 'pass'
+                    return res != 'pass' && params.gate_validate
                 }
             }
 
@@ -129,7 +129,7 @@ pipeline {
             when {
                 expression {
                     res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-alt").trim()
-                    return res != 'pass'
+                    return res != 'pass' && params.gate_validate_alt
                 }
             }
 
@@ -165,7 +165,7 @@ pipeline {
             when {
                 expression {
                     res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-upgrade").trim()
-                    return res != 'pass'
+                    return res != 'pass' && params.gate_validate_upgrade
                 }
             }
 

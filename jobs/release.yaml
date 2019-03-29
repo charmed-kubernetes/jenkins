@@ -43,7 +43,22 @@
           name: charm_promote_to
           description: |
             In the format of 'beta candidate'
-
+      - bool:
+          name: gate_conformance
+          default: true
+          description: "Block on conformance test failures"
+      - bool:
+          name: gate_validate
+          default: true
+          description: "Block on validation failures"
+      - bool:
+          name: gate_validate_alt
+          default: true
+          description: "Block on localhost and alt arch validation failures"
+      - bool:
+          name: gate_validate_upgrade
+          default: true
+          description: "Block on validation upgrade failures"
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
