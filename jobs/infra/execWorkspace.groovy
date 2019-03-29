@@ -16,7 +16,17 @@ pipeline {
     stages {
         stage('Running') {
             steps {
-                sh "which lxc"
+                script {
+                    if (params.workspace_path) {
+                        sh "sudo rm -rf ${params.workspace_path}"
+                    }
+                    if (params.exec_command) {
+                        sh "${params.exec_command}"
+                    }
+                    if (params.calculate_space) {
+                        sh "du -h --max-depth=1 ${params.calculate_space}"
+                    }
+                }
             }
         }
     }
