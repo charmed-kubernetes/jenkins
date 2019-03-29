@@ -43,16 +43,27 @@ pipeline {
                     }
                     // Localhost specific
                     data['applications']['kubernetes-worker']['options']['proxy-extra-args'] = 'proxy-mode=userspace'
-                    data['applications']['kubernetes-master']['options']['proxy-extra-args'] = 'proxy-mode=userspace'
                     sh "rm ${params.version_overlay}"
                     writeYaml file: params.version_overlay, data: data
                     sh "cat ${params.version_overlay}"
                 }
+                sh '''
+                    echo "Ensure pre-existing K8s iptables rules are removed"
+                    sudo iptables -F
+                    sudo iptables -t mangle -F
+                    sudo iptables -t nat -F
+                    sudo iptables -X
+                    echo "Restarting docker and lxd to recreate required iptables rules"
+                    sudo systemctl restart docker.service
+                    sudo systemctl restart snap.lxd.daemon.service
+                    echo "Listing pre-deployment iptables rules"
+                    sudo iptables -n -L
+                    sudo iptables -n -L -t mangle
+                    sudo iptables -n -L -t nat
+                '''
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 sh "juju add-model -c ${params.controller} ${juju_model}"
                 sh "cat jobs/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}"
-                sh "sudo iptables -n -L"
-                sh "sudo iptables -n -L -t nat"
                 setStartTime()
                 deployCDK(controller: params.controller,
                           model: juju_model,
@@ -103,8 +114,12 @@ pipeline {
         always {
             setEndTime()
             sh "sudo lxc profile show default"
-            sh "sudo iptables -n -L"
-            sh "sudo iptables -n -L -t nat"
+            sh '''
+                echo "Listing post-deployment iptables rules"
+                sudo iptables -n -L
+                sudo iptables -n -L -t mangle
+                sudo iptables -n -L -t nat
+            '''
             collectDebug(params.controller,
                          juju_model)
 
