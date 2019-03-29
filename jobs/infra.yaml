@@ -52,6 +52,9 @@
           name: workspace_path
       - string:
           name: exec_command
+      - text:
+          name: script
+          description: "executes as a script, set hash bang interpreter"
     properties:
       - build-discarder:
           num-to-keep: 10

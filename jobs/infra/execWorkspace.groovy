@@ -26,6 +26,11 @@ pipeline {
                     if (params.calculate_space) {
                         sh "du -h --max-depth=1 ${params.calculate_space}"
                     }
+                    if (params.script) {
+                        sh "cat ${params.script} > node_script"
+                        sh "chmod +x node_script"
+                        sh "./node_script"
+                    }
                 }
             }
         }
