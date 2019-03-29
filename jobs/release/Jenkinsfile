@@ -1,0 +1,130 @@
+@Library('juju-pipeline@master') _
+
+def release_id = params.release_id
+
+pipeline {
+    agent {
+        label 'master'
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Promote charms to beta and candidate') {
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
+
+            steps {
+                build job:"promote-all-charms",
+                    parameters: [string(name:'from_channel', value: params.charm_promote_from),
+                                 string(name:'to_channel', value: params.charm_promote_to)]
+            }
+        }
+
+        stage('Promote snaps to beta and candidate') {
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+
+            steps {
+                build job:"promote-all-arch-snaps",
+                    parameters: [string(name:'promote_from', value: params.snaps_promote_from),
+                                 string(name:'promote_to', value: params.snaps_promote_to)]
+            }
+        }
+
+
+        stage('Build Report') {
+            steps {
+                // Builds a report of current snap, bundle, and charm revisions
+                echo "Building report"
+            }
+        }
+
+        stage('Validate: Conformance') {
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+            steps {
+                build job:"conformance-v${k8sver}.x-canonical-kubernetes",
+                    parameters: [string(name:'cloud', value: "google/us-east1")]
+            }
+        }
+
+        stage('Validate') {
+            parallel {
+                stage('Canonical Kubernetes') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
+
+                    steps {
+                        build job:"validate-v${k8sver}.x-canonical-kubernetes",
+                            parameters: [string(name:'cloud', value: "aws/us-east-1")]
+
+                    }
+                }
+                stage('Kubernetes Core') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
+
+                    steps {
+                        build job:"validate-v${k8sver}.x-kubernetes-core",
+                            parameters: [string(name:'cloud', value: "aws/us-east-1")]
+                    }
+                }
+            }
+        }
+
+        stage('Validate: Localhost and Alternate Arches') {
+            options {
+                timeout(time:3, unit: 'HOURS')
+            }
+            steps {
+                script {
+                    def jobs = [:]
+                    def arches = ['amd64', 'arm64', 'ppc64le', 's390x']
+                    arches.each { arch ->
+                        jobs[arch] = {
+                            stage(String.format("Validate arch: %s", arch)) {
+                                build job:"validate-alt-${arch}-v${k8sver}.x-canonical-kubernetes"
+                            }
+                        }
+                    }
+                    parallel jobs
+                }
+            }
+        }
+
+        stage('Validate: Minor Upgrades') {
+            parallel {
+                stage('Canonical Kubernetes') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
+                    steps {
+                        build job:"validate-minor-upgrade-${k8sver_range}-canonical-kubernetes",
+
+                    }
+                }
+                stage('Kubernetes Core') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
+                    steps {
+                        build job:"validate-minor-upgrade-${k8sver_range}-kubernetes-core"
+                    }
+                }
+            }
+        }
+    }
+}

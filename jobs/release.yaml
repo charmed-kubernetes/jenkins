@@ -1,0 +1,57 @@
+# Release Job for k8s
+
+- job:
+    name: 'release'
+    description: |
+      Promote, Validate, Release to stable. This job will run through all
+      necessary steps to validate a particular version of k8s and make sure the
+      charms and snaps are published accordingly.
+    project-type: pipeline
+    parameters:
+      - string:
+          name: release_id
+          description: |
+            This should be a uniquely identifiable release tag so that
+            subsequent runs can query any previous state if available. This
+            allows passing jobs to be bypassed and only the failed job be run
+            again.
+      - string:
+          name: cloud
+          default: '{cloud}'
+      - choice:
+          name: k8sver
+          choices:
+            - 1.13
+            - 1.14
+            - 1.15
+      - string:
+          name: k8sver_range
+          default: 'v1.13.x-v1.14.x'
+          description: |
+            The previous version to upgrade and test from, format should be
+            'v1.13.x-v1.14.x'
+      - string:
+          name: promote_from
+          description: |
+            In the format of <version>/<channel>, ie 1.12/edge
+      - string:
+          name: promote_to
+          description: |
+            In the format of <version>/<channel> <version>/<other channel>, ie
+            1.12/beta 1.12/candidate
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release/Jenkinsfile
+    properties:
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - ".*build.*"
+            - "test-cdk.*"
+            - "e2e-gubernator.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+      - build-discarder:
+          days-to-keep: 7
+          num-to-keep: 7
