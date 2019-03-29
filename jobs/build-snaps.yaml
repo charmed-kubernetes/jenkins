@@ -84,6 +84,27 @@
           num-to-keep: 2
 
 - job:
+    name: 'promote-all-arch-snaps'
+    description: |
+      Promotes snaps for all architectures to the snapstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-snaps/promote-all-arch.groovy
+    parameters:
+      - string:
+          name: promote_from
+      - string:
+          name: promote_to
+      - string:
+          name: snaps
+          description: Pass a list of snap names to promote, leaving empty will promote all snaps
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
+- job:
     name: 'create-snap-recipes'
     description: |
       Generates snap recipes for all required snaps.
