@@ -2,7 +2,7 @@
 
 pipeline {
     agent {
-        label 'master'
+        label 'runner'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
