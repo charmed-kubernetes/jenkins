@@ -1,10 +1,11 @@
 @Library('juju-pipeline@master') _
 
 def release_id = params.release_id
+def tracker_sh = "cd jobs && tox -e py36 -- python3 release/release-tracker.py --release-id ${release_id}"
 
 pipeline {
     agent {
-        label 'master'
+        label 'runner-s390x'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -18,6 +19,12 @@ pipeline {
     }
     stages {
         stage('Promote charms to beta and candidate') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name promote-charms").trim()
+                    return res != 'pass'
+                }
+            }
             options {
                 timeout(time: 1, unit: 'HOURS')
             }
@@ -27,9 +34,24 @@ pipeline {
                     parameters: [string(name:'from_channel', value: params.charm_promote_from),
                                  string(name:'to_channel', value: params.charm_promote_to)]
             }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name promote-charms --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name promote-charms --result pass"
+                }
+            }
         }
 
         stage('Promote snaps to beta and candidate') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name promote-snaps").trim()
+                    return res != 'pass'
+                }
+            }
+
             options {
                 timeout(time: 2, unit: 'HOURS')
             }
@@ -39,17 +61,25 @@ pipeline {
                     parameters: [string(name:'promote_from', value: params.snaps_promote_from),
                                  string(name:'promote_to', value: params.snaps_promote_to)]
             }
-        }
-
-
-        stage('Build Report') {
-            steps {
-                // Builds a report of current snap, bundle, and charm revisions
-                echo "Building report"
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name promote-snaps --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name promote-snaps --result pass"
+                }
             }
+
         }
 
         stage('Validate: Conformance') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name conformance").trim()
+                    return res != 'pass'
+                }
+            }
+
             options {
                 timeout(time: 2, unit: 'HOURS')
             }
@@ -57,35 +87,52 @@ pipeline {
                 build job:"conformance-v${k8sver}.x-canonical-kubernetes",
                     parameters: [string(name:'cloud', value: "google/us-east1")]
             }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name conformance --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name conformance --result pass"
+                }
+            }
+
         }
 
         stage('Validate') {
-            parallel {
-                stage('Canonical Kubernetes') {
-                    options {
-                        timeout(time: 2, unit: 'HOURS')
-                    }
-
-                    steps {
-                        build job:"validate-v${k8sver}.x-canonical-kubernetes",
-                            parameters: [string(name:'cloud', value: "aws/us-east-1")]
-
-                    }
-                }
-                stage('Kubernetes Core') {
-                    options {
-                        timeout(time: 2, unit: 'HOURS')
-                    }
-
-                    steps {
-                        build job:"validate-v${k8sver}.x-kubernetes-core",
-                            parameters: [string(name:'cloud', value: "aws/us-east-1")]
-                    }
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate").trim()
+                    return res != 'pass'
                 }
             }
+
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+
+            steps {
+                build job:"validate-v${k8sver}.x-canonical-kubernetes",
+                    parameters: [string(name:'cloud', value: "aws/us-east-1")]
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name validate --result pass"
+                }
+            }
+
         }
 
         stage('Validate: Localhost and Alternate Arches') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-alt").trim()
+                    return res != 'pass'
+                }
+            }
+
             options {
                 timeout(time:3, unit: 'HOURS')
             }
@@ -103,26 +150,37 @@ pipeline {
                     parallel jobs
                 }
             }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-alt --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name validate-alt --result pass"
+                }
+            }
+
         }
 
         stage('Validate: Minor Upgrades') {
-            parallel {
-                stage('Canonical Kubernetes') {
-                    options {
-                        timeout(time: 2, unit: 'HOURS')
-                    }
-                    steps {
-                        build job:"validate-minor-upgrade-${k8sver_range}-canonical-kubernetes",
-
-                    }
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-upgrade").trim()
+                    return res != 'pass'
                 }
-                stage('Kubernetes Core') {
-                    options {
-                        timeout(time: 2, unit: 'HOURS')
-                    }
-                    steps {
-                        build job:"validate-minor-upgrade-${k8sver_range}-kubernetes-core"
-                    }
+            }
+
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+            steps {
+                build job:"validate-minor-upgrade-${k8sver_range}-canonical-kubernetes"
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-upgrade --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name validate-upgrade --result pass"
                 }
             }
         }
