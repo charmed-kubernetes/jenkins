@@ -29,20 +29,23 @@ pipeline {
             }
             steps {
                 script {
+                    def data = readYaml file: params.version_overlay
                     def arch = sh(
                         script:"arch",
                         returnStdout: true
                     ).trim()
                     def bad_arches = ['s390x', 'aarch64', 'arm64']
                     if(bad_arches.contains(arch)) {
-                        def data = readYaml file: params.version_overlay
+                        echo "Updating overlay b/c of ${arch}"
                         data['applications']['kubernetes-worker'].options.ingress = false
                         data['applications']['kubernetes-master']['options']['enable-metrics'] = false
                         data['applications']['kubernetes-master']['options']['enable-dashboard-addons'] = false
-                        sh "rm ${params.version_overlay}"
-                        writeYaml file: params.version_overlay, data: data
-                        echo "Updating overlay b/c of ${arch}"
                     }
+                    // Localhost specific
+                    data['applications']['kubernetes-worker']['options']['proxy-extra-args'] = 'proxy-mode=userspace'
+                    data['applications']['kubernetes-master']['options']['proxy-extra-args'] = 'proxy-mode=userspace'
+                    sh "rm ${params.version_overlay}"
+                    writeYaml file: params.version_overlay, data: data
                     sh "cat ${params.version_overlay}"
                 }
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
