@@ -22,7 +22,10 @@
           name: promote_to
       - string:
           name: snaps
-          description: Pass a list of snap names to promote, leaving empty will promote all snaps
+          description: |
+            Pass a list of snap names to promote, leaving empty will promote all snaps 
+            (kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet 
+            kube-proxy cdk-addons kubeadm kubernetes-test).
     properties:
       - build-discarder:
           num-to-keep: 2
