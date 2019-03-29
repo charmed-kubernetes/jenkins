@@ -27,7 +27,7 @@ pipeline {
                         sh "du -h --max-depth=1 ${params.calculate_space}"
                     }
                     if (params.script) {
-                        sh "cat ${params.script} > node_script"
+                        writeFile file: 'node_script', text: params.script
                         sh "chmod +x node_script"
                         sh "./node_script"
                     }
