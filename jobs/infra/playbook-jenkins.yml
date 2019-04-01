@@ -121,6 +121,10 @@
         group: jenkins
         mode: 0644
         force: no
+    - name: Creates ssh dir
+      file:
+        path: /var/lib/jenkins/.ssh
+        state: directory
     - name: copy ssh creds
       copy:
         src: "{{ lookup('env', 'CDKBOTSSHCREDS') }}"
