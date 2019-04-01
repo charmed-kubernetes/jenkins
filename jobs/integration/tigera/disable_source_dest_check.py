@@ -20,7 +20,7 @@ def get_juju_status():
         '--format', 'json',
         '-m', MODEL
     ]
-    output = check_output(cmd)
+    output = check_output(cmd, encoding='UTF-8')
     status = json.loads(output)
     return status
 
