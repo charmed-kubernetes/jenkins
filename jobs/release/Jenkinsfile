@@ -1,7 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def release_id = params.release_id
-def tracker_sh = "cd jobs && tox -e py36 -- python3 release/release-tracker.py --release-id ${release_id}"
+def tracker_sh = "cd jobs && ${utils.cipy} release/release-tracker.py --release-id ${release_id}"
 
 pipeline {
     agent {
@@ -139,7 +139,7 @@ pipeline {
             when {
                 expression {
                     res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-alt").trim()
-                    return res != 'pass' && params.gate_validate_alt
+                    return res != 'pass'
                 }
             }
 
@@ -175,7 +175,7 @@ pipeline {
             when {
                 expression {
                     res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-upgrade").trim()
-                    return res != 'pass' && params.gate_validate_upgrade
+                    return res != 'pass'
                 }
             }
 

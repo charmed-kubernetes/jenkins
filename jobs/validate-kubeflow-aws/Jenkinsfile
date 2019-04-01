@@ -56,7 +56,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${k8s_model} MNIST_IMAGE=${mnist_image} tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_kubeflow.py::test_validate"
+                    sh "CONTROLLER=${params.controller} MODEL=${k8s_model} MNIST_IMAGE=${mnist_image} ${utils.pytest} --junit-xml=validate.xml integration/test_kubeflow.py::test_validate"
                 }
             }
         }

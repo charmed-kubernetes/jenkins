@@ -44,7 +44,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} TEST_IPS='${params.test_ips}' tox -e py36 -- pytest -v -s --junit-xml=validate.xml integration/test_hacluster.py"
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} TEST_IPS='${params.test_ips}' ${utils.pytest} --junit-xml=validate.xml integration/test_hacluster.py"
                 }
             }
         }
@@ -59,12 +59,11 @@ pipeline {
         always {
             setEndTime()
             collectDebug(params.controller, juju_model)
-
-            sh "juju kill-controller -y ${params.controller} || true"
-            sh "juju remove-cloud scapestack"
         }
         cleanup {
             saveMeta()
+            sh "juju kill-controller -y ${params.controller} || true"
+            sh "juju remove-cloud scapestack"
         }
     }
 }

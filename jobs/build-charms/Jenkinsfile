@@ -2,7 +2,7 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
-def charm_sh = "/var/lib/jenkins/venvs/ci/bin/python3 build-charms/charms.py"
+def charm_sh = "${utils.cipy} build-charms/charms.py"
 def cs_url = "cs:~${params.namespace}/${params.charm}"
 
 pipeline {
