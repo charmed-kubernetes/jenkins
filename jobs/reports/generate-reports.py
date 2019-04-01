@@ -57,6 +57,8 @@ def _gen_metadata():
     metadata = OrderedDict()
     for obj in response['Items']:
         db = {}
+        if 'build_endtime' not in obj:
+            continue
         try:
             db['day'] = datetime.strptime(obj['build_endtime'],
                                           '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%d')
