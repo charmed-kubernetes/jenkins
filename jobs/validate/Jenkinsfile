@@ -27,6 +27,7 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
+                sh "${utils.cipy} --version"
                 setStartTime()
                 script {
                     dir('jobs'){
@@ -91,7 +92,7 @@ pipeline {
         }
         always {
             setEndTime()
-            collectDebug(params.controller, juju_model)
+            collectDebug(juju_controller, juju_model)
         }
         cleanup {
             saveMeta()
