@@ -42,6 +42,7 @@
           - unzip
           - wget
           - tree
+          - virtualenv
     - name: remove unused debs
       apt:
         name:

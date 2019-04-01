@@ -1,6 +1,6 @@
 @Library('juju-pipeline@master') _
 
-def generate_reports_sh = "tox -e py36 -- python3 reports/generate-reports.py"
+def generate_reports_sh = "${utils.cipy} reports/generate-reports.py"
 
 pipeline {
     agent {

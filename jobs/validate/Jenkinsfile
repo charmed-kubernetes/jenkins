@@ -2,10 +2,8 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
-def tox_sh = "tox -e py36"
-
-def validate_sh = "${tox_sh} -- python3 validate/validate.py"
-def collect_debug_sh = "${tox_sh} -- python3 infra/collect-debug.py"
+def validate_sh = "${utils.cipy} validate/validate.py"
+def collect_debug_sh = "${utils.cipy} infra/collect-debug.py"
 def overlay = params.version_overlay
 def custom_bundle_file = ""
 
@@ -66,7 +64,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${tox_sh} -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate"
                 }
             }
         }
@@ -79,7 +77,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${tox_sh} -- pytest -v -s --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
+                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
                 }
             }
         }
