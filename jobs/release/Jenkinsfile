@@ -76,7 +76,7 @@ pipeline {
             when {
                 expression {
                     res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name conformance").trim()
-                    return res != 'pass' && params.gate_conformance
+                    return res != 'pass'
                 }
             }
 
@@ -84,8 +84,19 @@ pipeline {
                 timeout(time: 2, unit: 'HOURS')
             }
             steps {
-                build job:"conformance-v${k8sver}.x-canonical-kubernetes",
-                    parameters: [string(name:'cloud', value: "google/us-east1")]
+                script {
+                    try {
+                        build job:"conformance-v${k8sver}.x-canonical-kubernetes",
+                            parameters: [string(name:'cloud', value: "google/us-east1")]
+                    } catch (Exception err) {
+                        if (!params.gate_conformance) {
+                            throw new Exception(err)
+                        } else {
+                            currentBuild.result = "FAILURE"
+                            echo "Conformance is non-gating, continuing on."
+                        }
+                    }
+                }
             }
             post {
                 failure {
@@ -95,14 +106,13 @@ pipeline {
                     sh "${tracker_sh} set-phase --name conformance --result pass"
                 }
             }
-
         }
 
         stage('Validate') {
             when {
                 expression {
                     res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate").trim()
-                    return res != 'pass' && params.gate_validate
+                    return res != 'pass'
                 }
             }
 
