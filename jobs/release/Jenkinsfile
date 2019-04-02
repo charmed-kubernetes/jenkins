@@ -84,20 +84,9 @@ pipeline {
                 timeout(time: 4, unit: 'HOURS')
             }
             steps {
-                script {
-                    try {
-                        build job:"conformance-v${k8sver}.x-canonical-kubernetes",
-                            parameters: [string(name:'cloud', value: "google/us-east1"),
-                                         string(name:'bundle_channel', value: 'candidate')]
-                    } catch (Exception err) {
-                        if (!params.gate_conformance) {
-                            throw new Exception(err)
-                        } else {
-                            currentBuild.result = "FAILURE"
-                            echo "Conformance is non-gating, continuing on."
-                        }
-                    }
-                }
+                build job:"conformance-v${k8sver}.x-canonical-kubernetes",
+                    parameters: [string(name:'cloud', value: "google/us-east1"),
+                                 string(name:'bundle_channel', value: 'candidate')]
             }
             post {
                 failure {
@@ -123,7 +112,9 @@ pipeline {
 
             steps {
                 build job:"validate-v${k8sver}.x-canonical-kubernetes",
-                    parameters: [string(name:'cloud', value: "aws/us-east-1")]
+                    parameters: [string(name:'cloud', value: "aws/us-east-1"),
+                                 string(name:'bundle_channel', value:'candidate'),
+                                 string(name:'snap_channel', value:"${k8sver}/candidate")]
             }
             post {
                 failure {
@@ -154,7 +145,10 @@ pipeline {
                     arches.each { arch ->
                         jobs[arch] = {
                             stage(String.format("Validate arch: %s", arch)) {
-                                build job:"validate-alt-${arch}-v${k8sver}.x-canonical-kubernetes"
+                                build job:"validate-alt-${arch}-v${k8sver}.x-canonical-kubernetes",
+                                    parameters: [string(name:'bundle_channel', value:'candidate'),
+                                                 string(name:'snap_channel', value:"${k8sver}/candidate")]
+
                             }
                         }
                     }
@@ -184,7 +178,10 @@ pipeline {
                 timeout(time: 4, unit: 'HOURS')
             }
             steps {
-                build job:"validate-minor-upgrade-${k8sver_range}-canonical-kubernetes"
+                build job:"validate-minor-upgrade-${k8sver_range}-canonical-kubernetes",
+                    parameters: [string(name:'cloud', value: "aws/us-east-1"),
+                                 string(name:'upgrade_snap_channel', value:"${k8sver}/candidate")]
+
             }
             post {
                 failure {
