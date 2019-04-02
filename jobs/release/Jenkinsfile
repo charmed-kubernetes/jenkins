@@ -86,7 +86,8 @@ pipeline {
             steps {
                 build job:"conformance-v${k8sver}.x-canonical-kubernetes",
                     parameters: [string(name:'cloud', value: "google/us-east1"),
-                                 string(name:'bundle_channel', value: 'candidate')]
+                                 string(name:'bundle_channel', value: 'candidate'),
+                                 string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
             }
             post {
                 failure {
@@ -114,7 +115,8 @@ pipeline {
                 build job:"validate-v${k8sver}.x-canonical-kubernetes",
                     parameters: [string(name:'cloud', value: "aws/us-east-1"),
                                  string(name:'bundle_channel', value:'candidate'),
-                                 string(name:'snap_channel', value:"${k8sver}/candidate")]
+                                 string(name:'snap_channel', value:"${k8sver}/candidate"),
+                                 string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
             }
             post {
                 failure {
@@ -147,7 +149,8 @@ pipeline {
                             stage(String.format("Validate arch: %s", arch)) {
                                 build job:"validate-alt-${arch}-v${k8sver}.x-canonical-kubernetes",
                                     parameters: [string(name:'bundle_channel', value:'candidate'),
-                                                 string(name:'snap_channel', value:"${k8sver}/candidate")]
+                                                 string(name:'snap_channel', value:"${k8sver}/candidate"),
+                                                 string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
                             }
                         }
@@ -192,5 +195,122 @@ pipeline {
                 }
             }
         }
+
+        stage('Validate: Vault') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-vault").trim()
+                    return res != 'pass'
+                }
+            }
+
+            options {
+                timeout(time: 4, unit: 'HOURS')
+            }
+            steps {
+                build job:"validate-vault-v${k8sver}.x",
+                    parameters: [string(name:'cloud', value: "aws/us-east-1"),
+                                 string(name:'bundle_channel', value:"candidate"),
+                                 string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
+
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-vault --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name validate-vault --result pass"
+                }
+            }
+        }
+
+
+        stage('Validate: NVidia') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-nvidia").trim()
+                    return res != 'pass'
+                }
+            }
+
+            options {
+                timeout(time: 4, unit: 'HOURS')
+            }
+            steps {
+                build job:"validate-nvidia-v${k8sver}.x",
+                    parameters: [string(name:'cloud', value: "aws/us-east-1"),
+                                 string(name:'bundle_channel', value:"candidate"),
+                                 string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
+
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-nvidia --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name validate-nvidia --result pass"
+                }
+            }
+        }
+
+
+        stage('Validate: Calico') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-calico").trim()
+                    return res != 'pass'
+                }
+            }
+
+            options {
+                timeout(time: 4, unit: 'HOURS')
+            }
+            steps {
+                build job:"validate-calico-v${k8sver}.x",
+                    parameters: [string(name:'cloud', value: "aws/us-east-1"),
+                                 string(name:'bundle_channel', value:"candidate"),
+                                 string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
+
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-calico --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name validate-calico --result pass"
+                }
+            }
+        }
+
+
+        stage('Validate: Tigera') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-tigera").trim()
+                    return res != 'pass'
+                }
+            }
+
+            options {
+                timeout(time: 4, unit: 'HOURS')
+            }
+            steps {
+                build job:"validate-tigera-secure-ee-v${k8sver}.x",
+                    parameters: [string(name:'cloud', value: "aws/us-east-1"),
+                                 string(name:'bundle_channel', value:"candidate"),
+                                 string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
+
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-tigera --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name validate-tigera --result pass"
+                }
+            }
+        }
+
+
     }
 }
