@@ -5,7 +5,7 @@ def tracker_sh = "cd jobs && ${utils.cipy} release/release-tracker.py --release-
 
 pipeline {
     agent {
-        label 'runner-s390x'
+        label 'runner'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -81,7 +81,7 @@ pipeline {
             }
 
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
             steps {
                 script {
@@ -117,7 +117,7 @@ pipeline {
             }
 
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
 
             steps {
@@ -144,7 +144,7 @@ pipeline {
             }
 
             options {
-                timeout(time:3, unit: 'HOURS')
+                timeout(time: 5, unit: 'HOURS')
             }
             steps {
                 script {
@@ -180,7 +180,7 @@ pipeline {
             }
 
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
             steps {
                 build job:"validate-minor-upgrade-${k8sver_range}-canonical-kubernetes"
