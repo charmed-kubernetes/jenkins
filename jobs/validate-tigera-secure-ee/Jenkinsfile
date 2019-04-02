@@ -10,7 +10,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        PATH = "${utils.cipaths}"
         TIGERA_SECURE_EE_LICENSE_KEY_FILE = credentials('tigera-secure-ee-license-key')
         TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE = credentials('tigera-private-registry-credentials')
     }

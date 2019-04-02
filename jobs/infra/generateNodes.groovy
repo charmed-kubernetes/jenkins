@@ -12,7 +12,7 @@ pipeline {
     }
     // Add environment credentials for pyjenkins script on configuring nodes automagically
     environment {
-        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        PATH = "${utils.cipaths}"
         JUJU_CONTROLLER = "jenkins-ci-google"
         JUJU_MODEL = "jenkins-ci-google:agents"
         RUNNER = "runner"

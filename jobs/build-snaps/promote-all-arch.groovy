@@ -8,7 +8,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        PATH = "${utils.cipaths}"
     }
     options {
         ansiColor('xterm')

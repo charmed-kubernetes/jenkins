@@ -4,7 +4,7 @@ pipeline {
     agent { label params.build_node }
     // Add environment credentials for pyjenkins script on configuring nodes automagically
     environment {
-        PATH = "/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        PATH = "${utils.cipaths}"
     }
 
     options {
