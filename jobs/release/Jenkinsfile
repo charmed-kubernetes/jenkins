@@ -87,7 +87,8 @@ pipeline {
                 script {
                     try {
                         build job:"conformance-v${k8sver}.x-canonical-kubernetes",
-                            parameters: [string(name:'cloud', value: "google/us-east1")]
+                            parameters: [string(name:'cloud', value: "google/us-east1"),
+                                         string(name:'bundle_channel', value: 'candidate')]
                     } catch (Exception err) {
                         if (!params.gate_conformance) {
                             throw new Exception(err)
