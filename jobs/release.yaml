@@ -65,13 +65,10 @@
       script-path: jobs/release/Jenkinsfile
     properties:
       - build-blocker:
-          use-build-blocker: true
+          use-build-blocker: false
           blocking-jobs:
             - ".*build.*"
-            - "test-cdk.*"
-            - "e2e-gubernator.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
       - build-discarder:
-          days-to-keep: 7
           num-to-keep: 7
