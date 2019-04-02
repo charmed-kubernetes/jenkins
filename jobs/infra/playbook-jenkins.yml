@@ -68,10 +68,16 @@
         - "juju-wait --classic"
         - "kubectl --classic"
         - "charm --classic --edge"
-    - name: install microk8s
-      command: "snap install microk8s --classic"
+    - name: remove unneeded snaps
+      command: "snap remove {{item}}"
       ignore_errors: yes
-      when: ansible_architecture == "x86_64"
+      loop:
+        - "microk8s"
+        - "bundletester"
+    # - name: install microk8s
+    #   command: "snap install microk8s --classic"
+    #   ignore_errors: yes
+    #   when: ansible_architecture == "x86_64"
     - name: clone juju-wait script
       git:
         repo: 'https://git.launchpad.net/juju-wait'
