@@ -26,3 +26,4 @@ setuptools
 sh
 staticjinja
 pyyaml==3.13
+pynacl==1.1.2
