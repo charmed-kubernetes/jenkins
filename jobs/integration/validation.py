@@ -1512,7 +1512,7 @@ async def validate_dns_provider(model):
         yaml.dump(pod_def, f)
         f.flush()
         remote_path = '/tmp/validate-dns-provider-ubuntu.yaml'
-        await master_unit.scp_to(f.name, remote_path)
+        await scp_to(f.name, master_unit, remote_path)
         cmd = '/snap/bin/kubectl apply -f ' + remote_path
         await run_until_success(master_unit, cmd)
 
