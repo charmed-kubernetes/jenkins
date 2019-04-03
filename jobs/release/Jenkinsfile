@@ -178,7 +178,7 @@ pipeline {
                     }
                     steps {
                         build job:"validate-vault-v${k8sver}.x",
-                            parameters: [string(name:'cloud', value: "aws/us-east-1"),
+                            parameters: [string(name:'cloud', value: "google/us-east1"),
                                          string(name:'bundle_channel', value:"candidate"),
                                          string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
@@ -208,7 +208,7 @@ pipeline {
                     }
                     steps {
                         build job:"validate-nvidia-v${k8sver}.x",
-                            parameters: [string(name:'cloud', value: "google/us-east1"),
+                            parameters: [string(name:'cloud', value: "aws/us-east-1"),
                                          string(name:'bundle_channel', value:"candidate"),
                                          string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
