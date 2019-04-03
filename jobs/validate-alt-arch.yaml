@@ -54,7 +54,7 @@
 - alt_version_defaults: &alt_version_defaults
     name: 'alt-version-defaults'
     version:
-      !include: includes/k8s-support-matrix.inc
+      !include: includes/k8s-localhost-support-matrix.inc
 
 - job-template:
     name: 'validate-alt-{arch}-{version}-{bundle}'
