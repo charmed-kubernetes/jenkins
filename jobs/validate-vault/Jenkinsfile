@@ -26,6 +26,7 @@ pipeline {
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 setStartTime()
                 deployCDK(controller: params.controller,
+                          cloud: params.cloud,
                           model: juju_model,
                           bundle: "cs:~containers/${params.bundle}",
                           version_overlay: params.overlay,

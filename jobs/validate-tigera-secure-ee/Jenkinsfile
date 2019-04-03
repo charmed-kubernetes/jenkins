@@ -26,7 +26,7 @@ pipeline {
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
                 dir('jobs') {
-                    sh "tox -e py36 -- python3 integration/tigera/cleanup_vpcs.py"
+                    sh "${utils.cipy} integration/tigera/cleanup_vpcs.py"
                     script {
                         sh "CONTROLLER=${params.controller} ${utils.cipy} integration/tigera/bootstrap_aws_single_subnet.py"
                     }
@@ -34,6 +34,7 @@ pipeline {
                 setStartTime()
                 deployCDK(controller: params.controller,
                           model: juju_model,
+                          cloud: params.cloud,
                           bundle: "cs:~containers/${params.bundle}",
                           version_overlay: params.overlay,
                           bundle_channel: params.bundle_channel,
