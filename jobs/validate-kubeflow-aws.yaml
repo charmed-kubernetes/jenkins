@@ -11,20 +11,11 @@
       script-path: jobs/validate-kubeflow-aws/Jenkinsfile
     parameters:
       - string:
-          name: model
-          default: 'validate-kubeflow-aws'
+          name: juju_channel
+          default: 'stable'
       - string:
-          name: controller
-          default: 'validate-kubeflow-aws'
-      - string:
-          name: cloud
-          default: 'aws/us-east-1'
-      - string:
-          name: bundle_channel
-          default: 'edge'
-      - string:
-          name: bundle
-          default: 'kubeflow'
+          name: channel
+          default: 'stable'
     triggers:
         - timed: "@daily"
     properties:

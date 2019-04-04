@@ -1,63 +1,86 @@
 @Library('juju-pipeline@master') _
 
-def k8s_model = String.format("aws-kf-model-%s", uuid())
-def mnist_image = String.format("mnist-test-%s", uuid())
+def exec(cmd) {
+    sh "sudo lxc exec ${CONTAINER} -- bash -c 'cd /project && ${cmd}'"
+}
 
 pipeline {
     agent {
-        label 'runner'
+        label 'runner-amd64'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
         PATH = "${utils.cipaths}"
+        CONTAINER = "validate-aws-${uuid()}"
+        STORAGE = "validate-aws-${uuid()}"
     }
     options {
         ansiColor('xterm')
         timestamps()
+        timeout(time: 1, unit: 'HOURS')
     }
     stages {
-        stage('Deploy: K8s') {
-            options {
-                timeout(time: 1, unit: 'HOURS')
-            }
+        stage('Set Start Time') {
             steps {
-                sh "juju kill-controller -y ${params.controller} || true"
                 setStartTime()
-                sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
-
-                sh "juju deploy cs:bundle/canonical-kubernetes"
-                sh "juju deploy cs:~containers/aws-integrator"
-                sh "juju trust aws-integrator"
-                sh "juju add-relation aws-integrator kubernetes-master"
-                sh "juju add-relation aws-integrator kubernetes-worker"
-
-                sh "juju-wait -e ${params.controller}:default -w"
-
-                sh "juju scp kubernetes-master/0:~/config kube_config"
-                sh "juju add-k8s aws-kf-cloud < kube_config"
-                sh "juju add-model ${k8s_model} aws-kf-cloud"
-                sh "juju create-storage-pool operator-storage kubernetes storage-class=juju-operator-storage storage-provisioner=kubernetes.io/aws-ebs parameters.type=gp2"
-                sh "juju create-storage-pool k8s-ebs kubernetes storage-class=juju-ebs storage-provisioner=kubernetes.io/aws-ebs parameters.type=gp2"
-                sh "juju deploy kubeflow"
-                sh "juju wait -e ${params.controller}:${k8s_model} -w"
-
-                sh "juju status -m default | grep 'kubernetes-worker/0' | awk '{print \$5}' > PUB_IP"
-                sh "juju config kubeflow-ambassador juju-external-hostname=\$(<PUB_IP).xip.io"
-                sh "juju expose kubeflow-ambassador"
             }
         }
-
-        stage('Validate') {
-            options {
-                timeout(time: 1, unit: 'HOURS')
-            }
-
+        stage('Setup LXC') {
             steps {
-                dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${k8s_model} MNIST_IMAGE=${mnist_image} ${utils.pytest} --junit-xml=validate.xml integration/test_kubeflow.py::test_validate"
-                }
+                sh "sudo lxc profile show aws || sudo lxc profile copy default aws"
+                sh "curl https://raw.githubusercontent.com/ubuntu/microk8s/master/tests/lxc/microk8s.profile | sudo lxc profile edit aws"
+                sh "sudo lxc launch -p default -p aws ubuntu:18.04 ${CONTAINER}"
+                sh "sudo lxc storage create ${STORAGE} dir source=/tmp/${STORAGE}"
+                sh "sudo lxc storage volume create ${STORAGE} storage"
+                sh "sudo lxc storage volume attach ${STORAGE} storage ${CONTAINER} /project"
+                sh "sudo cp -r ./* /tmp/${STORAGE}/custom/storage/"
+                sh "sudo lxc file push -p ~/.local/share/juju/credentials.yaml ${CONTAINER}/root/.local/share/juju/credentials.yaml"
+            }
+        }
+        stage('Wait for snap') {
+            options {
+                retry(10)
+            }
+            steps {
+                exec "sudo snap install core"
+            }
+        }
+        stage('Install dependencies') {
+            steps {
+                exec "sudo snap install charm --classic"
+                exec "sudo snap install jq"
+                exec "sudo snap install juju --classic --channel ${params.juju_channel}"
+                exec "sudo snap install juju-wait --classic"
+                exec "sudo snap install yq"
+                exec "sudo snap install kubectl --classic"
+                exec "sudo apt update && sudo apt install -y python-tox"
+            }
+        }
+        stage('Deploy kubeflow') {
+            steps {
+                exec "git clone https://github.com/juju-solutions/bundle-kubeflow.git"
+                exec "cd bundle-kubeflow && ./scripts/deploy-aws.sh"
+                exec 'juju status -m default | grep "kubernetes-worker/0" | awk "{print \\$5}" > PUB_IP'
+            }
+        }
+        stage('Validate') {
+            steps {
+                exec '''
+                    cd jobs/ && \
+                    PY_IGNORE_IMPORTMISMATCH=1
+                    CONTROLLER=aws-kf-controller
+                    MODEL=aws-kf-model
+                    tox
+                        -e py36
+                        --
+                        pytest
+                            -v
+                            -s
+                            --junit-xml=validate.xml
+                            integration/test_kubeflow.py::test_validate
+            '''.replaceAll('\\s+', ' ')
             }
         }
     }
@@ -70,15 +93,18 @@ pipeline {
         }
         always {
             setEndTime()
-            collectDebug(params.controller, 'default')
+            //collectDebug(params.controller, 'default')
         }
         cleanup {
-            sh "juju status"
-            sh "juju list-controllers"
-            sh "juju list-models"
             saveMeta()
-            sh "juju kill-controller -y ${params.controller} || true"
-            sh "juju remove-cloud ${params.cloud} || true"
+            exec "juju status || true"
+            exec "juju list-controllers || true"
+            exec "juju list-models || true"
+            exec "juju kill-controller -y -t0 aws-kf-controller || true"
+            sh "sudo lxc storage volume detach ${STORAGE} storage ${CONTAINER} || true"
+            sh "sudo lxc delete --force ${CONTAINER} || true"
+            sh "sudo lxc storage volume delete ${STORAGE} storage || true"
+            sh "sudo lxc storage delete ${STORAGE} || true"
         }
     }
 }
