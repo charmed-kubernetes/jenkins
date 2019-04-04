@@ -17,7 +17,7 @@ launchpadlib==1.10.6
 pymacaroons
 pytest-asyncio
 pytest-xdist
-pytest==4.0.2
+pytest==4.4.0
 python-dateutil
 python-dotenv
 requests
