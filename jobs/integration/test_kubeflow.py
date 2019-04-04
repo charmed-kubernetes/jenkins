@@ -82,18 +82,20 @@ async def validate_jupyterhub_api():
 def submit_tf_job(name: str):
     """Submits a TFJob to the TensorFlow Job service."""
 
-    output = check_output(
-        [
-            "microk8s.kubectl",
-            "--kubeconfig",
-            "../kube_config",
-            "create",
-            "-n",
-            os.environ["MODEL"],
-            "-f",
-            f"../tfjobs/{name}/job.yaml",
-        ]
-    ).strip()
+    args = [
+        "--kubeconfig",
+        "../kube_config",
+        "create",
+        "-n",
+        os.environ["MODEL"],
+        "-f",
+        f"../tfjobs/{name}/job.yaml",
+    ]
+
+    try:
+        output = check_output(["kubectl"] + args).strip()
+    except FileNotFoundError:
+        output = check_output(["microk8s.kubectl"] + args).strip()
 
     assert output == f"tfjob.kubeflow.org/kubeflow-{name}-test created".encode("utf-8")
 
