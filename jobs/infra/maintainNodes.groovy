@@ -13,6 +13,10 @@ pipeline {
     }
     stages {
         stage("Configure systems") {
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
+
             steps {
                 installToolsJenkaas()
                 tearDownLxd()
