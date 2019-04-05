@@ -3,6 +3,46 @@
 #
 
 - job-template:
+    name: 'conformance-{k8sver}-{bundle}-s390x'
+    description: |
+      CNCF Conformance testing for Kubernetes {k8sver} {bundle} on s390x.
+
+      Please see https://git.io/fNwXY for more information.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/cncf-conformance/Jenkinsfile
+    parameters:
+      - string:
+          name: build_node
+          default: 'runner-s390x'
+      - string:
+          name: version_overlay
+          default: 'jobs/overlays/{normalized_ver}-edge-localhost-overlay.yaml'
+      - string:
+          name: model
+          default: 'conformance'
+      - string:
+          name: controller
+          default: 'cncf'
+      - string:
+          name: cloud
+          default: 'localhost/localhost'
+      - string:
+          name: bundle_channel
+          default: 'edge'
+      - string:
+          name: bundle
+          default: '{bundle}'
+    triggers:
+      timed: '@weekly'
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
+
+- job-template:
     name: 'conformance-{k8sver}-{bundle}'
     description: |
       CNCF Conformance testing for Kubernetes {k8sver} {bundle}.
@@ -14,6 +54,9 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/cncf-conformance/Jenkinsfile
     parameters:
+      - string:
+          name: build_node
+          default: 'runner-amd64'
       - string:
           name: version_overlay
           default: '{version_overlay}'
@@ -51,6 +94,9 @@
             - 'canonical-kubernetes'
             - 'canonical-kubernetes-canal'
             - 'kubernetes-core'
+      - 'conformance-{k8sver}-{bundle}-s390x':
+          bundle:
+            - 'canonical-kubernetes'
 
 - project:
     name: conformance
