@@ -3,7 +3,6 @@
 import sys
 sys.path.insert(0, '.')
 
-
 import sh
 import os
 import uuid
@@ -57,20 +56,22 @@ new_env = os.environ.copy()
 def sync():
     """ Syncs all repos
     """
-    print("Syncing repos...")
+    sys.stdout.write("Syncing repos...\n")
     for downstream, upstream in repos:
-        print(f"\t{upstream} -> {downstream}")
+        downstream = f"https://{new_env['CDKBOT_GH']}@github.com/{downstream}"
+        sys.stdout.write(f"\t{upstream} -> {downstream}\n")
         identifier = str(uuid.uuid4())
         os.makedirs(identifier)
-        with utils.cd(identifier):
-            sh.git("config user.email 'cdkbot@juju.solutions'")
-            sh.git("config user.name 'cdkbot'")
-            sh.git(f"remote add upstream {upstream}")
-            sh.git("fetch upstream")
-            sh.git("checkout master")
-            sh.git("merge upstream/master")
-            sh.git("pull --tags upstream master")
-            sh.git(f"push --tags https://{new_env['CDKBOT_GH']}@github.com/{downstream} master")
+        sh.git.clone(downstream, identifier, _err_to_out=True)
+        sh.ls('-l', identifier)
+        sh.git.config("user.email", 'cdkbot@juju.solutions', _cwd=identifier)
+        sh.git.config("user.name", 'cdkbot', _cwd=identifier)
+        sh.git.config("--global", "push.default", "simple")
+        sh.git.remote("add", "upstream", upstream, _cwd=identifier)
+        sh.git.fetch("upstream", _cwd=identifier)
+        sh.git.checkout("master", _cwd=identifier)
+        sh.git.merge("upstream/master", _cwd=identifier)
+        sh.git.push("origin master", _cwd=identifier)
 
 if __name__ == "__main__":
     sync()
