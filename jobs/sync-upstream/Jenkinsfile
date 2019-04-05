@@ -15,7 +15,9 @@ pipeline {
     stages {
         stage('Sync Repos'){
             steps {
-                sh "CDKBOT_GH=${CDKBOT_GH} ${utils.cipy} jobs/sync-upstream/sync.py"
+                dir("jobs") {
+                    sh "CDKBOT_GH=${CDKBOT_GH} ${utils.cipy} sync-upstream/sync.py"
+                }
             }
         }
     }
