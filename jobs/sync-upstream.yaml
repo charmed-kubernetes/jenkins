@@ -1,14 +1,14 @@
-# Syncs upstream k8s to our forked repo
+# Syncs upstream charms, layers, whatevs
 
 - job:
-    name: 'sync-upstream-k8s'
+    name: 'sync-upstream'
     description: |
-      Sync upstream Kubernetes github repo with our fork.
+      Sync all upstream charms, layers, used for building cdk.
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/sync-upstream-k8s/Jenkinsfile
+      script-path: jobs/sync-upstream/Jenkinsfile
     properties:
       - build-discarder:
           days-to-keep: 1
