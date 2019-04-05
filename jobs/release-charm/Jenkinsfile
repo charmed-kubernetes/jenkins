@@ -1,7 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def to_channels = params.to_channel.split()
-def charm_sh = "tox -e py36 -- python3 build-charms/charms.py"
+def charm_sh = "${utils.cipy} build-charms/charms.py"
 
 pipeline {
     agent {

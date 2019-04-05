@@ -4,7 +4,7 @@ import sh
 import os
 import uuid
 from pathlib import Path
-from sdk import utils
+from .sdk import utils
 
 repos = [
     ["charmed-kubernetes/interface-aws-integration.git", "https://github.com/juju-solutions/interface-aws-integration.git"],
