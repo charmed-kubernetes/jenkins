@@ -30,7 +30,7 @@ pipeline {
         stage('Setup LXC') {
             steps {
                 sh "sudo lxc profile show aws || sudo lxc profile copy default aws"
-                sh "curl https://raw.githubusercontent.com/ubuntu/microk8s/master/tests/lxc/microk8s.profile | sudo lxc profile edit aws"
+                sh "sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile"
                 sh "sudo lxc launch -p default -p aws ubuntu:18.04 ${CONTAINER}"
                 sh "sudo lxc storage create ${STORAGE} dir source=/tmp/${STORAGE}"
                 sh "sudo lxc storage volume create ${STORAGE} storage"
@@ -63,6 +63,7 @@ pipeline {
                 exec "git clone https://github.com/juju-solutions/bundle-kubeflow.git"
                 exec "cd bundle-kubeflow && ./scripts/deploy-aws.sh"
                 exec 'juju status -m default | grep "kubernetes-worker/0" | awk "{print \\$5}" > PUB_IP'
+                exec 'juju scp -m default kubernetes-master/0:~/config > ../kube_config'
             }
         }
         stage('Validate') {
