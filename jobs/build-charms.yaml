@@ -87,17 +87,17 @@
           git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
           resource_build_sh: 'build-flannel-resources.sh'
       - 'kubeapi-load-balancer':
-          repo_name: 'kubernetes/cluster/juju/layers/kubeapi-load-balancer'
-          git_repo: 'https://github.com/juju-solutions/kubernetes.git'
+          repo_name: 'charm-kubeapi-load-balancer'
+          git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
       - 'kubernetes-e2e':
-          repo_name: 'kubernetes/cluster/juju/layers/kubernetes-e2e'
-          git_repo: 'https://github.com/juju-solutions/kubernetes.git'
+          repo_name: 'charm-kubernetes-e2e'
+          git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
       - 'kubernetes-master':
-          repo_name: 'kubernetes/cluster/juju/layers/kubernetes-master'
-          git_repo: 'https://github.com/juju-solutions/kubernetes.git'
+          repo_name: 'charm-kubernetes-master'
+          git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
       - 'kubernetes-worker':
-          repo_name: 'kubernetes/cluster/juju/layers/kubernetes-worker'
-          git_repo: 'https://github.com/juju-solutions/kubernetes.git'
+          repo_name: 'charm-kubernetes-worker'
+          git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
           resource_build_sh: 'build-cni-resources.sh'
       - 'keepalived':
           repo_name: 'charm-keepalived/src'
