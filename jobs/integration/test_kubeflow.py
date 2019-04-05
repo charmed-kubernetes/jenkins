@@ -1,6 +1,6 @@
 import asyncio
 import os
-from subprocess import check_output
+from subprocess import check_output, CalledProcessError
 
 import pytest
 import requests
@@ -94,7 +94,7 @@ def submit_tf_job(name: str):
 
     try:
         output = check_output(["kubectl"] + args).strip()
-    except FileNotFoundError:
+    except CalledProcessError:
         output = check_output(["microk8s.kubectl"] + args).strip()
 
     assert output == f"tfjob.kubeflow.org/kubeflow-{name}-test created".encode("utf-8")
