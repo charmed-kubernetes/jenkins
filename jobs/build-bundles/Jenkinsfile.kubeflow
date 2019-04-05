@@ -1,3 +1,5 @@
+@Library('juju-pipeline@master') _
+
 pipeline {
     agent {
         label 'runner-amd64'
