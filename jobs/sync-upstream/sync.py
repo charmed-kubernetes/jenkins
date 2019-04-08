@@ -56,22 +56,25 @@ new_env = os.environ.copy()
 def sync():
     """ Syncs all repos
     """
-    sys.stdout.write("Syncing repos...\n")
+    print("Syncing repos...\n")
     for downstream, upstream in repos:
         downstream = f"https://{new_env['CDKBOT_GH']}@github.com/{downstream}"
         sys.stdout.write(f"\t{upstream} -> {downstream}\n")
         identifier = str(uuid.uuid4())
         os.makedirs(identifier)
-        sh.git.clone(downstream, identifier, _err_to_out=True)
-        sh.ls('-l', identifier)
+        for line in sh.git.clone(downstream, identifier, _iter=True):
+            print(line)
         sh.git.config("user.email", 'cdkbot@juju.solutions', _cwd=identifier)
         sh.git.config("user.name", 'cdkbot', _cwd=identifier)
         sh.git.config("--global", "push.default", "simple")
         sh.git.remote("add", "upstream", upstream, _cwd=identifier)
-        sh.git.fetch("upstream", _cwd=identifier)
+        for line in sh.git.fetch("upstream", _cwd=identifier, _iter=True):
+            print(line)
         sh.git.checkout("master", _cwd=identifier)
-        sh.git.merge("upstream/master", _cwd=identifier)
-        sh.git.push("origin master", _cwd=identifier)
+        for line in sh.git.merge("upstream/master", _cwd=identifier, _iter=True):
+            print(line)
+        for line in sh.git.push("origin", _cwd=identifier, _iter=True):
+            print(line)
 
 if __name__ == "__main__":
     sync()
