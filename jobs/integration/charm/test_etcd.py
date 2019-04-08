@@ -171,6 +171,9 @@ async def test_node_scale_down_members(deploy, event_loop):
     await test_cluster_health(deploy, event_loop)
 
 
+# The snap-upgrade action is for upgrading from etcd charm revisions released
+# before March 2017. It's pretty much irrelevant today.
+@pytest.mark.skip('https://bugs.launchpad.net/snapd/+bug/1823768')
 async def test_snap_action(deploy, event_loop):
     ''' When the charm is upgraded, a message should appear requesting the
     user to run a manual upgrade.'''
