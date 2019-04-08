@@ -72,7 +72,8 @@ pipeline {
                           version_overlay: params.version_overlay,
                           cloud: params.cloud,
                           bundle_channel: params.bundle_channel,
-                          allow_privileged: true)
+                          allow_privileged: true,
+                          disable_add_model: true)
             }
         }
         stage('Deploy: sonobuoy') {
