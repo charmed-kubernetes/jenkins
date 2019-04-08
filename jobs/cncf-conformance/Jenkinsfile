@@ -29,6 +29,10 @@ pipeline {
                 timeout(time: 4, unit: 'HOURS')
             }
             steps {
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
+                sh "juju add-model -c ${juju_controller} ${juju_model}"
+                setStartTime()
+
                 script {
                     def arch = sh(
                         script:"arch",
@@ -62,9 +66,6 @@ pipeline {
                     sh "cat ${params.version_overlay}"
                 }
 
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
-                sh "juju add-model -c ${juju_controller} ${juju_model}"
-                setStartTime()
                 deployCDK(controller: juju_controller,
                           model: juju_model,
                           bundle: "cs:~containers/${params.bundle}",
