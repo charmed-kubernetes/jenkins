@@ -60,7 +60,7 @@
           name: resource_build_sh
           default: '{resource_build_sh}'
     triggers:
-        - timed: "@daily"
+        - timed: "0 */12 * * *"
     properties:
       - build-discarder:
           num-to-keep: 2
