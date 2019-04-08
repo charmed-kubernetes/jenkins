@@ -21,7 +21,7 @@ pipeline {
     stages {
         stage("Deploy") {
             options {
-                timeout(time: 1, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
             steps {
                 sh "juju kill-controller -y ${juju_controller} || true"
@@ -43,7 +43,7 @@ pipeline {
         }
         stage('Test') {
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 3, unit: 'HOURS')
             }
             steps {
                 waitUntil {
