@@ -63,7 +63,7 @@ pipeline {
                 exec "git clone https://github.com/juju-solutions/bundle-kubeflow.git"
                 exec "cd bundle-kubeflow && ./scripts/deploy-aws.sh"
                 exec 'juju status -m default | grep "kubernetes-worker/0" | awk "{print \\$5}" > PUB_IP'
-                exec 'juju scp -m default kubernetes-master/0:~/config > ../kube_config'
+                exec 'juju scp -m default kubernetes-master/0:~/config kube_config'
             }
         }
         stage('Validate') {

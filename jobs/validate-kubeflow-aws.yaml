@@ -5,6 +5,7 @@
     description: |
       Validates Kubeflow support on AWS
     project-type: pipeline
+    concurrent: true
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas

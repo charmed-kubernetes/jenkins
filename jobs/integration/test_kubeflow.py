@@ -82,20 +82,17 @@ async def validate_jupyterhub_api():
 def submit_tf_job(name: str):
     """Submits a TFJob to the TensorFlow Job service."""
 
-    args = [
+    # Expects `kubectl` to be installed, even when microk8s is also available
+    output = check_output([
+        "kubectl",
         "--kubeconfig",
         "../kube_config",
         "create",
         "-n",
         os.environ["MODEL"],
         "-f",
-        f"../tfjobs/{name}/job.yaml",
-    ]
-
-    try:
-        output = check_output(["kubectl"] + args).strip()
-    except CalledProcessError:
-        output = check_output(["microk8s.kubectl"] + args).strip()
+        f"https://raw.githubusercontent.com/juju-solutions/charm-kubeflow-tf-job-operator/master/files/{name}.yaml",
+    ]).strip()
 
     assert output == f"tfjob.kubeflow.org/kubeflow-{name}-test created".encode("utf-8")
 

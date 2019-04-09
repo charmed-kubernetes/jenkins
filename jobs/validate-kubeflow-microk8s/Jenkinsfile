@@ -6,7 +6,7 @@ def exec(cmd) {
 
 pipeline {
     agent {
-        label 'runner-amd64'
+        label 'runner-amd64-1'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -40,7 +40,7 @@ pipeline {
         }
         stage('Wait for snap') {
             options {
-                retry(10)
+                retry(20)
             }
             steps {
                 exec "sudo snap install core"
@@ -52,6 +52,7 @@ pipeline {
                 exec "sudo snap install jq"
                 exec "sudo snap install juju --classic --channel ${params.juju_channel}"
                 exec "sudo snap install juju-wait --classic"
+                exec "sudo snap install kubectl --classic"
                 exec "sudo snap install lxd"
                 exec "sudo snap install microk8s --classic --channel ${params.microk8s_channel}"
                 exec "sudo snap install yq"
@@ -66,7 +67,6 @@ pipeline {
                 exec "microk8s.config > kube_config"
                 exec "juju bootstrap lxd --debug"
                 exec "microk8s.config | juju add-k8s microk8s-cloud"
-                exec "docker build /project/tfjobs/mnist/ -t localhost:32000/mnist-test:1.0"
 
                 exec "juju add-model microk8s-model microk8s-cloud"
                 exec "juju create-storage-pool operator-storage kubernetes storage-class=microk8s-hostpath"
