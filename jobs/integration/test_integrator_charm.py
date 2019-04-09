@@ -4,6 +4,7 @@ import sh
 from .logger import log, log_calls, log_calls_async
 import pytest
 import requests
+import yaml
 from .utils import asyncify
 
 env = os.environ.copy()
@@ -29,6 +30,7 @@ def setup_storage_elb_resource(request):
 
     pv_claim_yml = template_path() / 'pv-claim.yaml'
     sh.kubectl.create(f=str(pv_claim_yml))
+    request.addfinalizer(setup_storage_elb_resource_teardown)
 
     # bbox_yml = template_path() / 'bbox.yaml'
     # sh.kubectl.create(f=str(bbox_yml))
