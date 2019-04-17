@@ -37,5 +37,10 @@ pipeline {
                 build job:"build-kubeflow-bundles"
             }
         }
+        stage('Report') {
+            steps {
+                build job:"generate-reports-overview"
+            }
+        }
     }
 }
