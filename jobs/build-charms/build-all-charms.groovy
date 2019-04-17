@@ -2,6 +2,7 @@
 
 
 pipeline {
+    agent { label 'runner-amd64' }
     environment {
         PATH = "${utils.cipaths}"
     }
@@ -11,20 +12,23 @@ pipeline {
     }
     stages {
         stage('Charms') {
-            script {
-                def jobs = [:]
-                def charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
-                charms.each { charm, meta ->
-                    jobs[charm] = {
-                        stage("Validate: ${charm}") {
-                            agent {
-                                label 'runner-amd64'
+            steps {
+                script {
+                    def jobs = [:]
+                    // returns a LinkedHashMap
+                    def charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
+                    charms.each { k ->
+                        // Each item is a LinkedHashSet, so we pull the first item from the set
+                        // since there is only 1 key per charm
+                        def charm = k.keySet().first()
+                        jobs[charm] = {
+                            stage("Validate: ${charm}") {
+                                build job:"build-release-${charm}"
                             }
-                            build job:"build-release-${charm}"
                         }
                     }
+                    parallel jobs
                 }
-                parallel jobs
             }
         }
     }
