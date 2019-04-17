@@ -109,7 +109,7 @@
         - timed: "0 */12 * * *"
     properties:
       - build-blocker:
-          use-build-blocker: false
+          use-build-blocker: true
           blocking-jobs:
             - "release"
             - "build-all-charms"
