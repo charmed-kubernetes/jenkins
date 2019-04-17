@@ -40,15 +40,16 @@ pipeline {
                     /*
                      * Need to push cdk-addons here even though we dont build
                      * it, otherwise the hotfix/non main travks validation will
-                     * fail
+                     * fail.
+                     * This is only needed for testing hotfixes and not regular releases.
                      */
-                    sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
-                    script {
-                        // Drop the 'v' from tag
-                        def ver_from_tag = params.tag.drop(1)
-                        sh "${utils.cipy} build-snaps/snaps.py release --name cdk-addons --channel '${params.track}' --version ${ver_from_tag}"
-                    }
-                    sh "snapcraft logout"
+                    // sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+                    // script {
+                    //     // Drop the 'v' from tag
+                    //     def ver_from_tag = params.tag.drop(1)
+                    //     sh "${utils.cipy} build-snaps/snaps.py release --name cdk-addons --channel '${params.track}' --version ${ver_from_tag}"
+                    // }
+                    // sh "snapcraft logout"
                 }
             }
         }
