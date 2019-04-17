@@ -3,6 +3,7 @@
 // Performs parallel job builds for validating cdk
 
 pipeline {
+    agent { label 'runner-cloud' }
     environment {
         PATH = "${utils.cipaths}"
     }
@@ -12,21 +13,22 @@ pipeline {
     }
     stages {
         stage('Validate') {
-            script {
-                def jobs = [:]
-                def releases = readYaml file: 'jobs/includes/k8s-support-matrix.inc'
-                releases.each { version, release ->
-                    jobs[release.normalized_ver] = {
-                        stage("Validate: ${release.normalized_ver}") {
-                            agent {
-                                label 'runner-cloud'
+            steps {
+                script {
+                    def jobs = [:]
+                    def releases = readYaml file: 'jobs/includes/k8s-support-matrix.inc'
+                    releases.each { k ->
+                        def release = k.keySet().first()
+                        def options = k.values()
+                        jobs[release] = {
+                            stage("Validate: ${options.normalized_ver}") {
+                                build job:"validate-${release}-canonical-kubernetes",
+                                    parameters: [string(name:'cloud', value: 'google/us-east1')]
                             }
-                            build job:"validate-${version}-canonical-kubernetes",
-                                parameters: [string(name:'cloud', value: 'google/us-east1')]
                         }
                     }
+                    parallel jobs
                 }
-                parallel jobs
             }
         }
     }
