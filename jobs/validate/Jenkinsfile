@@ -9,7 +9,7 @@ def custom_bundle_file = ""
 
 pipeline {
     agent {
-        label 'runner-amd64'
+        label 'runner-cloud'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -44,7 +44,7 @@ pipeline {
                     }
                 }
                 sh "juju kill-controller -y ${juju_controller} || true"
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints 'arch=amd64' --debug"
                 deployCDK(controller: juju_controller,
                           model: juju_model,
                           cloud: params.cloud,

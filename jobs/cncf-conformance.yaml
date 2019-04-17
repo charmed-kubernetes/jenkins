@@ -35,8 +35,6 @@
       - string:
           name: bundle
           default: '{bundle}'
-    triggers:
-      timed: '@weekly'
     properties:
       - build-discarder:
           num-to-keep: 2
@@ -78,8 +76,6 @@
       - string:
           name: bundle
           default: '{bundle}'
-    triggers:
-      timed: '@weekly'
     properties:
       - build-discarder:
           num-to-keep: 2

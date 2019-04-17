@@ -29,7 +29,7 @@
           name: bundle
           default: 'kubernetes-calico'
     triggers:
-      - timed: "@weekly"
+        - timed: 'H 0 * * 6-7'
     properties:
       - build-discarder:
           num-to-keep: 2

@@ -65,8 +65,6 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/validate/Jenkinsfile
     <<: *validate_parameter_defaults
-    triggers:
-        - timed: "H 0 * * 1-5"
     properties:
       - build-discarder:
           num-to-keep: 2
@@ -83,8 +81,6 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/validate/Jenkinsfile
     <<: *validate_parameter_defaults
-    triggers:
-        - timed: "H 0 * * 6"
     properties:
       - build-discarder:
           num-to-keep: 2
@@ -99,6 +95,28 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/validate/Jenkinsfile
     <<: *validate_parameter_defaults
+
+- job:
+    name: 'validate-nightly-charmed-kubernetes'
+    description: |
+      Validates CDK edge nightly, supports last three recent releases.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate/validate-nightly-cdk.groovy
+    triggers:
+        - timed: "0 */12 * * *"
+    properties:
+      - build-blocker:
+          use-build-blocker: false
+          blocking-jobs:
+            - "release"
+            - "build-all-charms"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+      - build-discarder:
+          num-to-keep: 2
 
 - project:
     name: validate

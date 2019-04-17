@@ -68,7 +68,7 @@
       script-path: jobs/validate-alt-arch/Jenkinsfile
     <<: *alt_parameter_defaults
     triggers:
-        - timed: 'H 0 * * 1-5'
+        - timed: 'H 0 * * 6-7'
     properties:
       - build-discarder:
           num-to-keep: 2
@@ -85,7 +85,7 @@
       script-path: jobs/validate-alt-arch/Jenkinsfile
     <<: *alt_parameter_defaults
     triggers:
-        - timed: 'H 0 * * 6'
+        - timed: 'H 0 * * 6-7'
     properties:
       - build-discarder:
           num-to-keep: 2
