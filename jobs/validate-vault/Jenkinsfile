@@ -24,7 +24,7 @@ pipeline {
             }
             steps {
                 sh "juju kill-controller -y ${juju_controller} || true"
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints arch=amd64 --debug"
                 setStartTime()
                 deployCDK(controller: juju_controller,
                           cloud: params.cloud,
