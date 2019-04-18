@@ -43,7 +43,37 @@ else
   fi
 fi
 
-(cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION KUBE_ARCH=${KUBE_ARCH})
+# build cdk-addons and track images used by this release
+pushd cdk-addons
+echo "Building cdk-addons for ${KUBE_VERSION}."
+make KUBE_VERSION=${KUBE_VERSION} KUBE_ARCH=${KUBE_ARCH}
+
+echo "Getting list of images that may be used by CDK ${KUBE_VERSION}."
+# NB: refactor if we decide to commit directly to master
+IMAGES_BRANCH="images-${KUBE_VERSION}"
+create_branch "charmed-kubernetes" "bundle" ${GH_USER} ${GH_TOKEN} ${IMAGES_BRANCH}
+
+git clone -b ${IMAGES_BRANCH} https://github.com/charmed-kubernetes/bundle.git
+IMAGES_FILE="./bundle/images.txt"
+STATIC_KEY=${KUBE_VERSION}-static
+STATIC_LINE=$(grep "^${STATIC_KEY}" ${IMAGES_FILE} 2>/dev/null || echo "")
+UPSTREAM_KEY=${KUBE_VERSION}-upstream
+UPSTREAM_LINE=$(make KUBE_VERSION=${KUBE_VERSION} KUBE_ARCH=${KUBE_ARCH} upstream-images 2>/dev/null | grep "^${UPSTREAM_KEY}")
+
+echo "Modifying image list in the bundle repository with upstream images."
+sed -i -e "s|^${UPSTREAM_KEY}.*|${UPSTREAM_LINE}|g" ${IMAGES_FILE}
+(
+    cd bundle
+    git commit -am "Updating ${UPSTREAM_KEY} images"
+    git push https://${GH_USER}:${GH_TOKEN}@github.com/charmed-kubernetes/bundle.git ${IMAGES_BRANCH}
+)
+
+echo "Pushing images to the Canonical registry"
+ALL_IMAGES=$(echo ${STATIC_LINE} ${UPSTREAM_LINE} | sed -e "s|${STATIC_KEY}:||g" -e "s|${UPSTREAM_KEY}:||g")
+for i in ${ALL_IMAGES}; do
+    echo "Pushing ${i}"
+done
+popd
 
 for app in kubeadm kube-apiserver kubectl kubelet kube-proxy kube-scheduler kube-controller-manager kubernetes-test; do
     declare -A kube_arch_to_snap_arch=(
