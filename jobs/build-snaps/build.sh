@@ -28,18 +28,18 @@ git clone https://github.com/juju-solutions/release.git --branch rye/snaps --dep
 )
 
 rm -rf ./cdk-addons
-if git ls-remote --exit-code --heads https://github.com/juju-solutions/cdk-addons.git ${ADDONS_BRANCH_VERSION}
+if git ls-remote --exit-code --heads https://github.com/charmed-kubernetes/cdk-addons.git ${ADDONS_BRANCH_VERSION}
 then
   echo "Getting cdk-addons from ${ADDONS_BRANCH_VERSION} branch."
-  git clone https://github.com/juju-solutions/cdk-addons.git --branch ${ADDONS_BRANCH_VERSION} --depth 1
+  git clone https://github.com/charmed-kubernetes/cdk-addons.git --branch ${ADDONS_BRANCH_VERSION} --depth 1
   if [ "$SKIP_RELEASE_TAG" != "true" ]; then
-    tag_release  "juju-solutions" "cdk-addons" ${ADDONS_BRANCH_VERSION} ${GH_USER} ${GH_TOKEN} ${KUBE_VERSION}
+    tag_release  "charmed-kubernetes" "cdk-addons" ${ADDONS_BRANCH_VERSION} ${GH_USER} ${GH_TOKEN} ${KUBE_VERSION}
   fi
 else
   echo "Branch for ${ADDONS_BRANCH_VERSION} does not exist. Getting cdk-addons from master head."
-  git clone https://github.com/juju-solutions/cdk-addons.git --depth 1
+  git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
   if [ "$SKIP_RELEASE_TAG" != "true" ]; then
-    tag_release  "juju-solutions" "cdk-addons" "master" ${GH_USER} ${GH_TOKEN} ${KUBE_VERSION}
+    tag_release  "charmed-kubernetes" "cdk-addons" "master" ${GH_USER} ${GH_TOKEN} ${KUBE_VERSION}
   fi
 fi
 
