@@ -56,6 +56,8 @@ new_env = os.environ.copy()
 def sync():
     """ Syncs all repos
     """
+    # Try auto-merge; if conflict: update_readme.py && git add README.md && git commit.  If that fails, too, then it was a JSON conflict that will have to be handled manually.
+
     print("Syncing repos...\n")
     for downstream, upstream in repos:
         downstream = f"https://{new_env['CDKBOT_GH']}@github.com/{downstream}"
@@ -71,8 +73,15 @@ def sync():
         for line in sh.git.fetch("upstream", _cwd=identifier, _iter=True):
             print(line)
         sh.git.checkout("master", _cwd=identifier)
-        for line in sh.git.merge("upstream/master", _cwd=identifier, _iter=True):
-            print(line)
+        try:
+            for line in sh.git.merge("upstream/master", _cwd=identifier, _iter=True):
+                print(line)
+        except sh.ErrorReturnCode_1:
+            # So far this exception only occurs with layer-index repo
+            if 'layer-index' in downstream:
+                sh.python3('update_readme.py', _cwd=identifier)
+                sh.git.add('README.md')
+                sh.git.commit('-asm', 'Fix merge conflict')
         for line in sh.git.push("origin", _cwd=identifier, _iter=True):
             print(line)
 
