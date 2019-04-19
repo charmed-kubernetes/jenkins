@@ -75,8 +75,6 @@ def sync():
         sh.git.checkout("master", _cwd=identifier)
         if 'layer-index' in downstream:
             sh.python3('update_readme.py', _cwd=identifier)
-            sh.git.add('README.md', _cwd=identifier)
-            sh.git.commit('-asm', 'Fix merge conflict', _cwd=identifier)
         for line in sh.git.merge("upstream/master", _cwd=identifier, _iter=True):
             print(line)
         for line in sh.git.push("origin", _cwd=identifier, _iter=True):
