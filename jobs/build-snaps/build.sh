@@ -54,14 +54,19 @@ IMAGES_BRANCH="images-${KUBE_VERSION}"
 create_branch "charmed-kubernetes" "bundle" ${GH_USER} ${GH_TOKEN} ${IMAGES_BRANCH}
 
 git clone -b ${IMAGES_BRANCH} https://github.com/charmed-kubernetes/bundle.git
-IMAGES_FILE="./bundle/images.txt"
-STATIC_KEY=${KUBE_VERSION}-static
+IMAGES_FILE="./bundle/container-images.txt"
+STATIC_KEY="${KUBE_VERSION}-static:"
 STATIC_LINE=$(grep "^${STATIC_KEY}" ${IMAGES_FILE} 2>/dev/null || echo "")
-UPSTREAM_KEY=${KUBE_VERSION}-upstream
+UPSTREAM_KEY="${KUBE_VERSION}-upstream:"
 UPSTREAM_LINE=$(make KUBE_VERSION=${KUBE_VERSION} KUBE_ARCH=${KUBE_ARCH} upstream-images 2>/dev/null | grep "^${UPSTREAM_KEY}")
 
-echo "Modifying image list in the bundle repository with upstream images."
-sed -i -e "s|^${UPSTREAM_KEY}.*|${UPSTREAM_LINE}|g" ${IMAGES_FILE}
+echo "Updating image list with upstream images."
+if grep -q "^${UPSTREAM_KEY}" ${IMAGES_FILE}
+then
+    sed -i -e "s|^${UPSTREAM_KEY}.*|${UPSTREAM_LINE}|g" ${IMAGES_FILE}
+else
+    echo ${UPSTREAM_LINE} >> ${IMAGES_FILE}
+fi
 (
     cd bundle
     git commit -am "Updating ${UPSTREAM_KEY} images"
@@ -69,8 +74,9 @@ sed -i -e "s|^${UPSTREAM_KEY}.*|${UPSTREAM_LINE}|g" ${IMAGES_FILE}
 )
 
 echo "Pushing images to the Canonical registry"
-ALL_IMAGES=$(echo ${STATIC_LINE} ${UPSTREAM_LINE} | sed -e "s|${STATIC_KEY}:||g" -e "s|${UPSTREAM_KEY}:||g")
-for i in ${ALL_IMAGES}; do
+ALL_IMAGES=$(echo ${STATIC_LINE} ${UPSTREAM_LINE} | sed -e "s|${STATIC_KEY}||g" -e "s|${UPSTREAM_KEY}||g")
+for i in ${ALL_IMAGES}
+do
     echo "Pushing ${i}"
 done
 popd
