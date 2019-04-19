@@ -52,9 +52,13 @@ make KUBE_VERSION=${KUBE_VERSION} KUBE_ARCH=${KUBE_ARCH}
 echo "Getting list of images that may be used by CDK ${KUBE_VERSION}."
 # NB: refactor if we decide to commit directly to master
 IMAGES_BRANCH="images-${KUBE_VERSION}"
-create_branch "charmed-kubernetes" "bundle" ${GH_USER} ${GH_TOKEN} ${IMAGES_BRANCH}
-
+if ! git ls-remote --exit-code --heads https://github.com/charmed-kubernetes/bundle.git ${IMAGES_BRANCH}
+then
+    create_branch "charmed-kubernetes" "bundle" ${GH_USER} ${GH_TOKEN} ${IMAGES_BRANCH}
+fi
+rm -rf ./bundle
 git clone -b ${IMAGES_BRANCH} https://github.com/charmed-kubernetes/bundle.git
+
 IMAGES_FILE="./bundle/container-images.txt"
 STATIC_KEY="${KUBE_VERSION}-static:"
 STATIC_LINE=$(grep "^${STATIC_KEY}" ${IMAGES_FILE} 2>/dev/null || echo "")
@@ -68,6 +72,7 @@ then
 else
     echo ${UPSTREAM_LINE} >> ${IMAGES_FILE}
 fi
+sort -o ${IMAGES_FILE} ${IMAGES_FILE}
 (
     cd bundle
     git commit -am "Updating ${UPSTREAM_KEY} images"
