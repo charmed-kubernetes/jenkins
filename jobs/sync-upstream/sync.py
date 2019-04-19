@@ -73,15 +73,12 @@ def sync():
         for line in sh.git.fetch("upstream", _cwd=identifier, _iter=True):
             print(line)
         sh.git.checkout("master", _cwd=identifier)
-        try:
-            for line in sh.git.merge("upstream/master", _cwd=identifier, _iter=True):
-                print(line)
-        except sh.ErrorReturnCode_1:
-            # So far this exception only occurs with layer-index repo
-            if 'layer-index' in downstream:
-                sh.python3('update_readme.py', _cwd=identifier)
-                sh.git.add('README.md', _cwd=identifier)
-                sh.git.commit('-asm', 'Fix merge conflict', _cwd=identifier)
+        if 'layer-index' in downstream:
+            sh.python3('update_readme.py', _cwd=identifier)
+            sh.git.add('README.md', _cwd=identifier)
+            sh.git.commit('-asm', 'Fix merge conflict', _cwd=identifier)
+        for line in sh.git.merge("upstream/master", _cwd=identifier, _iter=True):
+            print(line)
         for line in sh.git.push("origin", _cwd=identifier, _iter=True):
             print(line)
 
