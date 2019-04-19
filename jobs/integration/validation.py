@@ -1657,8 +1657,8 @@ spec:
         log('deploying ceph mon')
         await model.deploy('ceph-mon', num_units=3)
         cs = {
-               'osd-devices': {'size': 8 * 1024, 'pool': 'ebs', 'count': 1},
-               'osd-journals': {'size': 8 * 1024, 'pool': 'ebs', 'count': 1}
+               'osd-devices': {'size': 8 * 1024, 'count': 1},
+               'osd-journals': {'size': 8 * 1024, 'count': 1}
              }
         log('deploying ceph osd')
         await model.deploy('ceph-osd', storage=cs, num_units=3)
