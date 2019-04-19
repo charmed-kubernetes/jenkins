@@ -23,7 +23,7 @@ pipeline {
                         jobs[release] = {
                             stage("Validate: ${options.normalized_ver}") {
                                 build job:"validate-${release}-canonical-kubernetes",
-                                    parameters: [string(name:'cloud', value: 'google/us-east1')]
+                                    parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
                     }
