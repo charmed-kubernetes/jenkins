@@ -10,6 +10,7 @@
 set -eux
 
 scripts_path=$(dirname "$0")
+KUBE_ARCH="${KUBE_ARCH:-amd64}"
 KUBE_VERSION="${KUBE_VERSION:-$(curl -L https://dl.k8s.io/release/stable.txt)}"
 SKIP_RELEASE_TAG="${SKIP_RELEASE_TAG:-false}"
 
@@ -19,7 +20,7 @@ ADDONS_BRANCH_VERSION="release-${VERSION}"
 
 source $scripts_path/retry.sh
 
-sudo rm -rf ./release
+rm -rf ./release
 git clone https://github.com/juju-solutions/release.git --branch rye/snaps --depth 1
 (
     cd release/snap
