@@ -7,7 +7,7 @@ scripts_path=$(dirname "$0")
 . $scripts_path/utilities.sh
 
 # K8s versions we want to check for new releases
-declare -a VERSIONS=('latest' '1.12' '1.13' '1.14' '1.15' '2.0');
+declare -a VERSIONS=('latest' '1.12' '1.13' '1.14');
 
 SNAP_INFO_KUBECTL=$(snap info kubectl || true)
 
