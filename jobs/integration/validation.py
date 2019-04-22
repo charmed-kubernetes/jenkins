@@ -1688,8 +1688,6 @@ spec:
             model.applications['ceph-mon'].destroy(),
             model.applications['ceph-osd'].destroy(),
         })
-        # read and ignore any exception so that it doesn't get raised
-        # when the task is GC'd
         for task in done1:
             # read and ignore any exception so that it doesn't get raised
             # when the task is GC'd
