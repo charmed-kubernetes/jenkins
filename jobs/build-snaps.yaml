@@ -127,18 +127,18 @@
           description: YAML list of snaps to create recipe for
       - string:
           name: version
-          default: '1.14'
+          default: '1.15'
           description: k8s version to target
       - string:
           name: track
-          default: '1.14/edge/test-k8s-source'
+          default: '1.15/edge'
           description: snap version/risk/branch
       - string:
           name: owner
           default: 'k8s-jenkaas-admins'
       - string:
           name: tag
-          default: 'v1.14.1'
+          default: 'v1.15.0-alpha.1'
           description: k8s major.minor.patch-{HOTFIX} tag to build from
     properties:
       - build-discarder:
