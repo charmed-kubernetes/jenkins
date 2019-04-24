@@ -75,6 +75,8 @@ fi
 sort -o ${IMAGES_FILE} ${IMAGES_FILE}
 (
     cd bundle
+    git config --global user.email "cdkbot@juju.solutions"
+    git config --global user.name "cdkbot"
     git commit -am "Updating ${UPSTREAM_KEY} images"
     git push https://${GH_USER}:${GH_TOKEN}@github.com/charmed-kubernetes/bundle.git ${IMAGES_BRANCH}
 )
