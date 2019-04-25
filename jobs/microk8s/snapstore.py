@@ -6,7 +6,7 @@ from subprocess import check_output, check_call, CalledProcessError
 
 class Microk8sSnap:
 
-    def __init__(self, track, channel):
+    def __init__(self, track, channel, juju_unit=None, juju_controller=None):
         arch = configbag.get_arch()
         cmd = "snapcraft list-revisions microk8s --arch {}".format(arch).split()
         revisions_list = check_output(cmd).decode("utf-8").split("\n")
@@ -15,6 +15,8 @@ class Microk8sSnap:
         else:
             channel_patern = " {}/{}*".format(track, channel)
 
+        self.juju_unit = juju_unit
+        self.juju_controller = juju_controller
         revision_info_str = None
         for revision in revisions_list:
             if channel_patern in revision:
@@ -69,11 +71,14 @@ class Microk8sSnap:
         '''
         # Get the microk8s source where the tests are. Switch to the branch
         # that matches the track we are going to release to.
-        cmd = "rm -rf microk8s".split()
-        check_call(cmd)
-        cmd = "git clone https://github.com/ubuntu/microk8s".split()
-        check_call(cmd)
-        os.chdir("microk8s")
+        cmd = "rm -rf microk8s"
+        cmd_array = self.cmd_array_to_run(cmd)
+        check_call(cmd_array)
+
+        cmd = "git clone https://github.com/ubuntu/microk8s"
+        cmd_array = self.cmd_array_to_run(cmd)
+        check_call(cmd_array)
+
         if not tests_branch:
             if self.track == 'latest':
                 tests_branch = 'master'
@@ -89,8 +94,9 @@ class Microk8sSnap:
                     print("GH branch {} does not exist.".format(self.track))
                     tests_branch = 'master'
         print("Tests are taken from branch {}".format(tests_branch))
-        cmd = "git checkout {}".format(tests_branch).split()
-        check_call(cmd)
+        cmd = "(cd microk8s; git checkout {})".format(tests_branch)
+        cmd_array = self.cmd_array_to_run(cmd)
+        check_call(cmd_array)
 
         if "under-testing" in self.under_testing_channel:
             self.release_to(self.under_testing_channel)
@@ -103,7 +109,25 @@ class Microk8sSnap:
                 testing_track_channel = "{}/{}".format(self.track, self.under_testing_channel)
 
             cmd = "sudo tests/test-distro.sh {} {} {}".format(distro, track_channel_to_upgrade,
-                                                              testing_track_channel).split()
+                                                              testing_track_channel)
             if proxy:
-                cmd.append(proxy)
-            check_call(cmd)
+                cmd = "{} {}".format(cmd, proxy)
+            cmd = "(cd microk8s; {} )".format(cmd)
+            cmd_array = self.cmd_array_to_run(cmd)
+            check_call(cmd_array)
+
+    def cmd_array_to_run(self, cmd):
+        '''
+        Return the cmd array needed to execute the command provided.
+        The returned array should be applicable for running the command with juju run.
+
+        Args:
+            cmd: the command we wish to execute
+
+        '''
+        if self.juju_unit:
+            cmd_array = "juju run -m {} --timeout=60m0s --unit {}".format(self.juju_controller, self.juju_unit).split()
+            cmd_array.append(cmd)
+        else:
+            cmd_array = cmd.split()
+        return cmd_array

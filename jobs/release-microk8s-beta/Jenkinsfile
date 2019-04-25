@@ -22,7 +22,27 @@ pipeline {
         timestamps()
         timeout(time: 4, unit: 'HOURS')
     }
+
     stages {
+        stage('Provision VM') {
+            steps {
+                sh "juju kill-controller -y ${params.controller} --destroy-all-models || true"
+                sh "juju bootstrap ${params.cloud} ${params.controller} --bootstrap-constraints arch={arch} --debug"
+                sh "juju deploy ubuntu --constraints 'cores=4 mem=16G root-disk=40G'"
+                /* g3s.xlarge and p2.xlarge are for gpu
+                   a1.2xlarge for arm, t2.xlarge for amd64
+                */
+                sh "while ! juju show-status -m ${params.controller}:default --format short ubuntu/0 | grep active ; do sleep 10 ; echo waiting... ; done"
+            }
+        }
+        stage('Prepare VM') {
+            steps {
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo apt-get purge lxc* -y'"
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo apt-get purge lxd* -y'"
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo snap install lxd'"
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo lxd init --auto'"
+            }
+        }
         stage('Setup') {
             steps {
                 retry(3) {
@@ -30,29 +50,20 @@ pipeline {
                 }
             }
         }
-
-        stage('Release microk8s'){
+        stage('Test and Release'){
             steps {
                 dir('jobs') {
                     retry(3) {
-                        sh "DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} PROXY=${params.PROXY} tox -e py36 -- python3 microk8s/release-to-beta.py"
+                        sh "DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0 JUJU_CONTROLLER=${params.controller}:default  tox -e py36 -- python3 microk8s/release-to-beta.py"
                     }
                 }
             }
         }
     }
-    /* We assume that there are no other lxc machines on the slave. */
     post {
         always {
             sh "snapcraft logout"
-        }
-        /* tearDownLxd will kill all lxc containers. It will kill any release-microk8s-stable jobs. */
-        /* we make sure we cleanup all containers only when there is a potential of leaving back grabadge. */
-        failure {
-            tearDownLxd()
-        }
-        aborted {
-            tearDownLxd()
+            sh "juju kill-controller -y ${params.controller} --destroy-all-models || true"
         }
     }
 }
