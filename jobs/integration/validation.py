@@ -24,10 +24,8 @@ from .utils import (
     disable_source_dest_check
 )
 
-from .base import (
-    _juju_wait,
-    _model_from_env,
-    _controller_from_env)
+from .base import _juju_wait
+from juju.controller import Controller
 
 
 @log_calls_async
@@ -62,7 +60,11 @@ async def validate_all(model, log_dir):
             cpu_arch not in ['s390x', 'arm64', 'aarch64']):
         await validate_encryption_at_rest(model)
     await validate_dns_provider(model)
-    await validate_ceph(model)
+    controller = Controller()
+    await controller.connect_current()
+    cloud = await controller.get_cloud()
+    if cloud is not 'localhost':
+        await validate_ceph(model)
 
 
 @log_calls
