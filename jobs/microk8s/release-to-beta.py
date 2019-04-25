@@ -28,6 +28,15 @@ proxy = os.environ.get('PROXY')
 if not proxy or proxy.strip() == '':
     proxy = None
 
+# If JUJU_UNIT is not set the tests will be run in local LXC containers
+juju_unit = os.environ.get('JUJU_UNIT')
+if juju_unit and juju_unit.strip() == '':
+    juju_unit = None
+
+juju_controller = os.environ.get('JUJU_CONTROLLER')
+if juju_controller and juju_controller.strip() == '':
+    juju_controller = None
+
 
 if __name__ == '__main__':
     '''
@@ -38,12 +47,12 @@ if __name__ == '__main__':
     print("Dry run is set to '{}'.".format(dry_run))
     for track in tracks_requested:
         print("Looking at track {}".format(track))
-        edge_snap = Microk8sSnap(track, 'edge')
+        edge_snap = Microk8sSnap(track, 'edge', juju_unit, juju_controller)
         if not edge_snap.released:
             print("Nothing released on {} edge.".format(track))
             break
 
-        beta_snap = Microk8sSnap(track, 'beta')
+        beta_snap = Microk8sSnap(track, 'beta', juju_unit, juju_controller)
         if beta_snap.released:
             # We already have a snap on beta. Let's see if we have to push a new release.
             if beta_snap.version == edge_snap.version and always_release == 'no':

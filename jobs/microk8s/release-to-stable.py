@@ -29,6 +29,15 @@ proxy = os.environ.get('PROXY')
 if not proxy or proxy.strip() == '':
     proxy = None
 
+# If JUJU_UNIT is not set the tests will be run in local LXC containers
+juju_unit = os.environ.get('JUJU_UNIT')
+if juju_unit and juju_unit.strip() == '':
+    juju_unit = None
+
+juju_controller = os.environ.get('JUJU_CONTROLLER')
+if juju_controller and juju_controller.strip() == '':
+    juju_controller = None
+
 
 if __name__ == '__main__':
     '''
@@ -39,7 +48,7 @@ if __name__ == '__main__':
     print("Dry run is set to '{}'.".format(dry_run))
     for track in tracks_requested:
         print("Looking at track {}".format(track))
-        candidate_snap = Microk8sSnap(track, 'candidate')
+        candidate_snap = Microk8sSnap(track, 'candidate', juju_unit, juju_controller)
         if not candidate_snap.released:
             # Nothing to release
             print("Nothing on candidate. Nothing to release.")
@@ -52,7 +61,7 @@ if __name__ == '__main__':
             ))
             continue
 
-        stable_snap = Microk8sSnap(track, 'stable')
+        stable_snap = Microk8sSnap(track, 'stable', juju_unit, juju_controller)
         if stable_snap.released:
             # We already have a snap released on stable. Lets run some tests.
             if candidate_snap.version == stable_snap.version and always_release == 'no':

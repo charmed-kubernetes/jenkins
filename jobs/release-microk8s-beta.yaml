@@ -13,9 +13,27 @@
       - string:
           name: build_node
           default: 'runner-{arch}'
+      - string:
+          name: controller
+          default: 'microk8s-release-to-beta-{arch}'
+      - string:
+          name: cloud
+          default: 'aws/us-east-1'
+      - string:
+          name: arch
+          default: '{arch}'
+
     triggers:
         - timed: "0 0 * * *"
     properties:
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - ".*build.*"
+            - ".*snap-info.*"
+            - ".*release-microk8s.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
       - build-discarder:
           num-to-keep: 2
 
