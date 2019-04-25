@@ -6,8 +6,16 @@ machines:
 applications:
   kubernetes-master:
     num_units: 3
+    config:
+      snap_proxy: http://squid.internal:3128
+      http_proxy: http://squid.internal:3128
+      https_proxy: http://squid.internal:3128
   kubernetes-worker:
     num_units: 1
+    config:
+      snap_proxy: http://squid.internal:3128
+      http_proxy: http://squid.internal:3128
+      https_proxy: http://squid.internal:3128
     to:
     - '1'
   easyrsa:
@@ -15,6 +23,8 @@ applications:
     - '0'
   etcd:
     num_units: 1
+    config:
+      snap_proxy: http://squid.internal:3128
     to:
     - lxd:1
 
