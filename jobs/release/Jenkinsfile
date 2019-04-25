@@ -240,8 +240,7 @@ pipeline {
                     }
                     steps {
                         build job:"validate-calico-v${k8sver}.x",
-                            parameters: [string(name:'cloud', value: "google/us-east4"),
-                                         string(name:'controller', value:"release-calico"),
+                            parameters: [string(name:'controller', value:"release-calico"),
                                          string(name:'bundle_channel', value:"candidate"),
                                          string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
@@ -271,8 +270,7 @@ pipeline {
                     }
                     steps {
                         build job:"validate-tigera-secure-ee-v${k8sver}.x",
-                            parameters: [string(name:'cloud', value: "aws/us-east-2"),
-                                         string(name:'bundle_channel', value:"candidate"),
+                            parameters: [string(name:'bundle_channel', value:"candidate"),
                                          string(name:'controller', value:'release-tigera'),
                                          string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 

@@ -16,8 +16,6 @@
       - string:
           name: bundle_repo
           default: 'https://github.com/juju-solutions/bundle-canonical-kubernetes.git'
-    triggers:
-        - timed: "@daily"
     properties:
       - build-discarder:
           num-to-keep: 1
@@ -35,8 +33,6 @@
       - string:
           name: channel
           default: 'edge'
-    triggers:
-        - timed: "@daily"
     properties:
       - build-discarder:
           num-to-keep: 1

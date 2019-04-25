@@ -1,10 +1,11 @@
 @Library('juju-pipeline@master') _
 
 def juju_model = String.format("%s-%s", params.model, uuid())
+def juju_controller = String.format("%s-%s", params.controller, uuid())
 
 pipeline {
     agent {
-        label 'runner-amd64'
+        label params.build_node
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -18,31 +19,71 @@ pipeline {
     }
 
     stages {
+        stage("Prep") {
+            steps {
+                sh "juju kill-controller -y ${juju_controller} || true"
+            }
+        }
         stage("Deploy") {
             options {
-                timeout(time: 1, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
             steps {
-                sh "juju kill-controller -y ${params.controller} || true"
-                sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
+                sh "juju add-model -c ${juju_controller} ${juju_model}"
                 setStartTime()
-                deployCDK(controller: params.controller,
+
+                script {
+                    def arch = sh(
+                        script:"arch",
+                        returnStdout: true
+                    ).trim()
+                    def bad_arches = ['s390x', 'aarch64', 'arm64']
+                    if(bad_arches.contains(arch)) {
+                        echo "Updating overlay b/c of ${arch}"
+                        def data = readYaml file: params.version_overlay
+                        data['applications']['kubernetes-worker'].options.ingress = false
+                        data['applications']['kubernetes-master']['options']['enable-metrics'] = false
+                        data['applications']['kubernetes-master']['options']['enable-dashboard-addons'] = false
+                        sh "rm ${params.version_overlay}"
+                        writeYaml file: params.version_overlay, data: data
+                        sh '''
+                            echo "Ensure pre-existing K8s iptables rules are removed"
+                            sudo iptables -F
+                            sudo iptables -t mangle -F
+                            sudo iptables -t nat -F
+                            sudo iptables -X
+                            echo "Restarting docker and lxd to recreate required iptables rules"
+                            sudo systemctl restart docker.service
+                            sudo systemctl restart snap.lxd.daemon.service
+                            echo "Listing pre-deployment iptables rules"
+                            sudo iptables -n -L
+                            sudo iptables -n -L -t mangle
+                            sudo iptables -n -L -t nat
+                        '''
+                        sh "cat jobs/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}"
+                    }
+                    sh "cat ${params.version_overlay}"
+                }
+
+                deployCDK(controller: juju_controller,
                           model: juju_model,
                           bundle: "cs:~containers/${params.bundle}",
                           version_overlay: params.version_overlay,
                           cloud: params.cloud,
                           bundle_channel: params.bundle_channel,
-                          allow_privileged: true)
+                          allow_privileged: true,
+                          disable_add_model: true)
             }
         }
         stage('Deploy: sonobuoy') {
             steps {
-                deploySonobuoy(params.controller, juju_model)
+                deploySonobuoy(juju_controller, juju_model)
             }
         }
         stage('Test') {
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 3, unit: 'HOURS')
             }
             steps {
                 waitUntil {
@@ -75,12 +116,18 @@ pipeline {
         }
         always {
             setEndTime()
-            collectDebug(params.controller,
+            sh '''
+                echo "Listing post-deployment iptables rules"
+                sudo iptables -n -L
+                sudo iptables -n -L -t mangle
+                sudo iptables -n -L -t nat
+            '''
+            collectDebug(juju_controller,
                          juju_model)
-            sh "juju kill-controller -y ${params.controller} || true"
         }
         cleanup {
             saveMeta()
+            sh "juju kill-controller -y ${juju_controller} || true"
         }
     }
 }

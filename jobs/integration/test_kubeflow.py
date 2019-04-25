@@ -10,11 +10,33 @@ from .logger import log_calls, log_calls_async
 from .utils import asyncify
 
 
+TFJOB = "https://raw.githubusercontent.com/juju-solutions/charm-kubeflow-tf-job-operator/master/files/mnist.yaml"
+SELDONJOB = 'https://raw.githubusercontent.com/juju-solutions/charm-kubeflow-seldon-cluster-manager/master/files/serve-simple-v1alpha2.yml'
+
+
 def get_ambassador_ip():
     """Returns the Ambassador IP address."""
 
     with open('../PUB_IP') as f:
         return f'{f.read().strip()}.xip.io'
+
+
+def kubectl_create(path: str):
+    """Creates a Kubernetes resource from the given path."""
+
+    # Expects `kubectl` to be installed, even when microk8s is also available
+    return check_output(
+        [
+            "kubectl",
+            "--kubeconfig",
+            "../kube_config",
+            "-n",
+            os.environ["MODEL"],
+            "create",
+            "-f",
+            path,
+        ]
+    ).strip()
 
 
 @pytest.mark.asyncio
@@ -27,7 +49,10 @@ async def test_validate(log_dir):
 
         # Asynchronously check everything else concurrently
         await asyncio.gather(
-            validate_ambassador(), validate_jupyterhub_api(), validate_tf_dashboard()
+            validate_ambassador(),
+            validate_jupyterhub_api(),
+            validate_seldon(),
+            validate_tf_dashboard(),
         )
 
 
@@ -39,8 +64,11 @@ def validate_statuses(model):
         "kubeflow-ambassador/0",
         "kubeflow-jupyterhub/0",
         "kubeflow-pytorch-operator/0",
+        "kubeflow-seldon-api-frontend/0",
+        "kubeflow-seldon-cluster-manager/0",
         "kubeflow-tf-job-dashboard/0",
         "kubeflow-tf-job-operator/0",
+        "redis/0",
     }
 
     assert set(model.units.keys()) == expected_units
@@ -79,32 +107,15 @@ async def validate_jupyterhub_api():
     assert list(resp.json().keys()) == ["version"]
 
 
-def submit_tf_job(name: str):
-    """Submits a TFJob to the TensorFlow Job service."""
-
-    output = check_output(
-        [
-            "microk8s.kubectl",
-            "--kubeconfig",
-            "../kube_config",
-            "create",
-            "-n",
-            os.environ["MODEL"],
-            "-f",
-            f"../tfjobs/{name}/job.yaml",
-        ]
-    ).strip()
-
-    assert output == f"tfjob.kubeflow.org/kubeflow-{name}-test created".encode("utf-8")
-
-
 @log_calls_async
 async def validate_tf_dashboard():
     """Validates that TF Jobs dashboard is up and responding via Ambassador."""
 
     ambassador_ip = get_ambassador_ip()
 
-    await asyncify(submit_tf_job)("mnist")
+    output = await asyncify(kubectl_create)(TFJOB)
+
+    assert output == b"tfjob.kubeflow.org/kubeflow-mnist-test created"
 
     expected_jobs = [("PS", 1), ("Worker", 1)]
     expected_conditions = [
@@ -147,4 +158,25 @@ async def validate_tf_dashboard():
             print(err)
             await asyncio.sleep(5)
     else:
-        raise Exception("Waited too long for TFJob to succeed!")
+        pytest.fail("Waited too long for TFJob to succeed!")
+
+
+@log_calls_async
+async def validate_seldon():
+    ambassador_ip = get_ambassador_ip()
+
+    output = await asyncify(kubectl_create)(SELDONJOB)
+    assert output == b"seldondeployment.machinelearning.seldon.io/mock-classifier created"
+
+    for i in range(60):
+        try:
+            resp = await asyncify(requests.get)(f"http://{ambassador_ip}/seldon/mock-classifier/")
+            resp.raise_for_status()
+            assert resp.text == 'Hello World!!'
+            break
+        except (AssertionError, requests.HTTPError) as err:
+            print("Waiting for SeldonDeployment to start...")
+            print(err)
+            await asyncio.sleep(5)
+    else:
+        pytest.fail("Waited too long for SeldonDeployment to start!")

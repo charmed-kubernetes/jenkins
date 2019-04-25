@@ -2,6 +2,8 @@
 snaps-source.py - Building snaps from source and promoting them to snapstore
 
 """
+import sys
+sys.path.insert(0, '.')
 
 import click
 import sh
@@ -10,7 +12,6 @@ import glob
 import re
 import yaml
 import operator
-import sys
 from urllib.parse import urlparse
 from jinja2 import Template
 from pathlib import Path

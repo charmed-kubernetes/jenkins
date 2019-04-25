@@ -44,12 +44,14 @@ def cli():
 
 @cli.command()
 @click.option('--snap', required=True, multiple=True, help='Snaps to build')
+@click.option('--build-path', required=True, default='release/snap',
+              help='Path of snap builds')
 @click.option('--version', required=True, help='Version of k8s to build')
 @click.option('--arch', required=True, default='amd64', help='Architecture to build against')
 @click.option('--match-re', default='(?=\S*[-]*)([a-zA-Z-]+)(.*)', help='Regex matcher')
 @click.option('--rename-re', help='Regex renamer, ie \1-eks')
 @click.option('--dry-run', is_flag=True)
-def build(snap, version, arch, match_re, rename_re, dry_run):
+def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
     """ Build snaps
 
     Usage:
@@ -65,9 +67,9 @@ def build(snap, version, arch, match_re, rename_re, dry_run):
     env = os.environ.copy()
     env['KUBE_VERSION'] = version
     env['KUBE_ARCH'] = arch
-    sh.git.clone('https://github.com/juju-solutions/release.git',
+    sh.git.clone('https://github.com/juju-solutions/release.git', build_path,
                  branch='rye/snaps', depth='1')
-    build_path = Path('release/snap')
+    build_path = Path(build_path) / 'snap'
     snap_alias = None
 
     for _snap in snap:
@@ -87,7 +89,7 @@ def build(snap, version, arch, match_re, rename_re, dry_run):
                     'build-scripts/docker-build',
                     _snap,
                     _env=env,
-                    _cwd='release/snap',
+                    _cwd=str(build_path),
                     _iter=True,
                     _err_to_out=True):
                 click.echo(line.strip())

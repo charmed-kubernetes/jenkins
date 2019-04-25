@@ -30,6 +30,7 @@ pipeline {
                 sh "juju bootstrap scapestack ${params.controller} --debug"
 
                 deployCDK(controller: params.controller,
+                          cloud: params.cloud,
                           model: juju_model,
                           bundle: "cs:~containers/${params.bundle}",
                           version_overlay: params.overlay,

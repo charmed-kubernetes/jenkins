@@ -5,6 +5,7 @@
     description: |
       Validates Kubeflow support on microk8s
     project-type: pipeline
+    concurrent: true
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
@@ -18,12 +19,12 @@
           default: 'stable'
       - string:
           name: microk8s_channel
-          default: '1.13/stable'
+          default: 'stable'
     triggers:
         - timed: "@daily"
     properties:
       - build-discarder:
-          num-to-keep: 2
+          days-to-keep: 7
 
 - project:
     name: validate-kubeflow-microk8s

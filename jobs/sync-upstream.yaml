@@ -1,0 +1,17 @@
+# Syncs upstream charms, layers, whatevs
+
+- job:
+    name: 'sync-upstream'
+    description: |
+      Sync all upstream charms, layers, used for building cdk.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/sync-upstream/Jenkinsfile
+    properties:
+      - build-discarder:
+          days-to-keep: 1
+          num-to-keep: 2
+    triggers:
+        - timed: "@hourly"

@@ -18,7 +18,7 @@
           default: 'pause-resume-aws'
       - string:
           name: cloud
-          default: 'aws/us-east-1'
+          default: 'google/us-east1'
       - string:
           name: overlay
           default: '{version_overlay}'
@@ -31,7 +31,7 @@
             - 'canonical-kubernetes'
             - 'kubernetes-core'
     triggers:
-      - timed: "@weekly"
+        - timed: 'H 0 * * 6-7'
     properties:
       - build-discarder:
           num-to-keep: 2

@@ -18,6 +18,14 @@
     properties:
       - build-discarder:
           num-to-keep: 1
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "release"
+            - "build-all-charms"
+            - "validate.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
 
 - job-group:
     name: 'infra-maintain-nodes'

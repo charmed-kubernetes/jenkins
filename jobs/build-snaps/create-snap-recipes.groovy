@@ -4,7 +4,7 @@
  automatically built and pushed to snap store
  */
 
-def snap_sh = "tox -e py36 -- python3 build-snaps/snaps-source.py"
+def snap_sh = "${utils.cipy} build-snaps/snaps-source.py"
 def snaps = readYaml text: params.snaps
 
 
@@ -37,6 +37,19 @@ pipeline {
                             sh "LPCREDS=${env.LPCREDS} ${snap_sh} create-snap-recipe --snap ${snap} --version ${params.version} --track '${params.track}' --owner ${params.owner} --tag ${params.tag} --repo git+ssh://cdkbot@git.launchpad.net/snap-${snap} --snap-recipe-email '${env.K8STEAMCI_USR}' --snap-recipe-password '${env.K8STEAMCI_PSW}'"
                         }
                     }
+                    /*
+                     * Need to push cdk-addons here even though we dont build
+                     * it, otherwise the hotfix/non main travks validation will
+                     * fail.
+                     * This is only needed for testing hotfixes and not regular releases.
+                     */
+                    // sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+                    // script {
+                    //     // Drop the 'v' from tag
+                    //     def ver_from_tag = params.tag.drop(1)
+                    //     sh "${utils.cipy} build-snaps/snaps.py release --name cdk-addons --channel '${params.track}' --version ${ver_from_tag}"
+                    // }
+                    // sh "snapcraft logout"
                 }
             }
         }

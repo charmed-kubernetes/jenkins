@@ -23,6 +23,136 @@ async def deploy_etcd(controller, model):
                              'etcd:certificates')
 
 
+@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
+async def test_node_scale_down_members(deploy, event_loop):
+    """ Scale the cluster down and ensure the cluster state is still
+    healthy """
+    controller, model = deploy
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
+    await etcd.set_config({'channel': '3.2/stable'})
+    await asyncify(_juju_wait)(controller, model.info.name)
+
+    for unit in etcd.units:
+        is_leader = await unit.is_leader_from_status()
+        if is_leader:
+            # unit_name_copy = unit.name
+            await etcd.destroy_unit(unit.name)
+            # cory_fu> stokachu: It would be really good to add that to
+            # libjuju, but in the meantime you could use either
+            # `block_until(lambda: unit.name not in [u.name for u in
+            # etcd.units])` or `e = asyncio.Event(); unit.on_remove(e.set);
+            # await e.wait()`
+            e = asyncio.Event()
+            unit.on_remove(e.set)
+            await e.wait()
+            # await model.block_until(
+            #     lambda: unit_name_copy not in [u.name for u in etcd.units])
+    await asyncify(_juju_wait)(controller, model.info.name)
+    # re-use the cluster-health test to validate we are still healthy.
+    await test_cluster_health(deploy, event_loop)
+
+
+# The snap-upgrade action is for upgrading from etcd charm revisions released
+# before March 2017. It's pretty much irrelevant today.
+@pytest.mark.skip('https://bugs.launchpad.net/snapd/+bug/1823768')
+async def test_snap_action(deploy, event_loop):
+    ''' When the charm is upgraded, a message should appear requesting the
+    user to run a manual upgrade.'''
+    controller, model = deploy
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
+    await asyncify(_juju_wait)(controller, model.info.name)
+
+    for unit in etcd.units:
+        is_leader = await unit.is_leader_from_status()
+        if is_leader:
+            action = await unit.run_action('snap-upgrade')
+            action = await action.wait()
+
+            # This will fail if the upgrade didnt work
+            assert 'completed' in action.status
+            await validate_running_snap_daemon(etcd)
+            await validate_etcd_fixture_data(etcd)
+
+
+@pytest.mark.skip('This is no longer a valid test, default is 3.2/stable')
+async def test_snap_upgrade_to_three_oh(deploy, event_loop):
+    ''' Default configured channel is 3.2/stable. Ensure we can jump to
+    3.0 '''
+    controller, model = deploy
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd']
+    await etcd.set_config({'channel': '3.2/stable'})
+
+    await asyncify(_juju_wait)(controller, model.info.name)
+    await validate_running_snap_daemon(etcd)
+    await validate_etcd_fixture_data(etcd)
+
+
+@pytest.mark.skip('Need to manually verify result tarball')
+async def test_snapshot_restore(deploy, event_loop):
+    """
+    Trigger snapshot and restore actions
+    """
+    from sh import juju, ls
+    controller, model = deploy
+    etcd = await model.deploy(str(ETCD_CHARM_PATH))
+    await model.deploy('cs:~containers/easyrsa')
+    await model.add_relation('easyrsa:client',
+                             'etcd:certificates')
+
+    await etcd.set_config({'channel': '3.2/stable'})
+    await asyncify(_juju_wait)(controller, model.info.name)
+
+    for unit in etcd.units:
+        leader = await unit.is_leader_from_status()
+        if leader:
+            # Load dummy data
+            await load_data(unit)
+            for ver in ['v2', 'v3']:
+                assert await is_data_present(unit, ver)
+            filenames = {}
+            for dataset in ['v2', 'v3']:
+                # Take snapshot of data
+                action = await unit.run_action(
+                    'snapshot', **{'keys-version': dataset})
+                action = await action.wait()
+                assert action.status == 'completed'
+                src = Path(action.results['snapshot']['path'])
+                dst = Path(action.results['snapshot']['path']).name
+                await unit.scp_from(str(src), str(dst))
+                filenames[dataset] = str(dst)
+                out = ls('-l', 'result*')
+                print(out.stdout.decode().strip())
+
+            await delete_data(unit)
+            for ver in ['v2', 'v3']:
+                assert await is_data_present(unit, ver) is False
+
+            # Restore v2 data
+            # Note: libjuju does not implement attach yet.
+            juju('attach',
+                 '-m', "{}:{}".format(controller, model.info.name),
+                 'etcd', "snapshot='./{}'".format(str(filenames['v2'])))
+            action = await unit.run_action('restore')
+            action = await action.wait()
+            assert action.status == 'completed'
+            for ver in ['v2', 'v3']:
+                assert await is_data_present(unit, ver) is True
+
+            # Restore v3 data
+            juju('attach',
+                 '-m', "{}:{}".format(controller, model.info.name),
+                 'etcd', "snapshot='./{}'".format(str(filenames['v3'])))
+
+            action = await unit.run_action('restore')
+            action = await action.wait()
+            await action.status == 'completed'
+            for ver in ['v2', 'v3']:
+                assert await is_data_present(unit, ver) is True
+
+
 async def test_local_deployed(deploy, event_loop):
     """ Verify local etcd charm can be deployed """
     controller, model = deploy
@@ -141,70 +271,6 @@ async def test_leader_knows_all_members(deploy, event_loop):
             assert len(members) == len(etcd.units)
 
 
-@pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
-async def test_node_scale_down_members(deploy, event_loop):
-    """ Scale the cluster down and ensure the cluster state is still
-    healthy """
-    controller, model = deploy
-    await deploy_etcd(controller, model)
-    etcd = model.applications['etcd']
-    await etcd.set_config({'channel': '3.2/stable'})
-    await asyncify(_juju_wait)(controller, model.info.name)
-
-    for unit in etcd.units:
-        is_leader = await unit.is_leader_from_status()
-        if is_leader:
-            # unit_name_copy = unit.name
-            await etcd.destroy_unit(unit.name)
-            # cory_fu> stokachu: It would be really good to add that to
-            # libjuju, but in the meantime you could use either
-            # `block_until(lambda: unit.name not in [u.name for u in
-            # etcd.units])` or `e = asyncio.Event(); unit.on_remove(e.set);
-            # await e.wait()`
-            e = asyncio.Event()
-            unit.on_remove(e.set)
-            await e.wait()
-            # await model.block_until(
-            #     lambda: unit_name_copy not in [u.name for u in etcd.units])
-    await asyncify(_juju_wait)(controller, model.info.name)
-    # re-use the cluster-health test to validate we are still healthy.
-    await test_cluster_health(deploy, event_loop)
-
-
-async def test_snap_action(deploy, event_loop):
-    ''' When the charm is upgraded, a message should appear requesting the
-    user to run a manual upgrade.'''
-    controller, model = deploy
-    await deploy_etcd(controller, model)
-    etcd = model.applications['etcd']
-    await asyncify(_juju_wait)(controller, model.info.name)
-
-    for unit in etcd.units:
-        is_leader = await unit.is_leader_from_status()
-        if is_leader:
-            action = await unit.run_action('snap-upgrade')
-            action = await action.wait()
-
-            # This will fail if the upgrade didnt work
-            assert 'completed' in action.status
-            await validate_running_snap_daemon(etcd)
-            await validate_etcd_fixture_data(etcd)
-
-
-@pytest.mark.skip('This is no longer a valid test, default is 3.2/stable')
-async def test_snap_upgrade_to_three_oh(deploy, event_loop):
-    ''' Default configured channel is 3.2/stable. Ensure we can jump to
-    3.0 '''
-    controller, model = deploy
-    await deploy_etcd(controller, model)
-    etcd = model.applications['etcd']
-    await etcd.set_config({'channel': '3.2/stable'})
-
-    await asyncify(_juju_wait)(controller, model.info.name)
-    await validate_running_snap_daemon(etcd)
-    await validate_etcd_fixture_data(etcd)
-
-
 async def validate_etcd_fixture_data(etcd):
     ''' Recall data set by set_etcd_fixture_data to ensure it persisted
     through the upgrade '''
@@ -301,66 +367,3 @@ async def delete_data(leader):
     cmd = '{} ETCDCTL_API=3 /snap/bin/etcdctl --endpoints=http://localhost:4001 ' \
           'del etcd3key'.format(certs)
     await leader.run(cmd)
-
-
-@pytest.mark.skip('Need to manually verify result tarball')
-async def test_snapshot_restore(deploy, event_loop):
-    """
-    Trigger snapshot and restore actions
-    """
-    from sh import juju, ls
-    controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
-    await model.deploy('cs:~containers/easyrsa')
-    await model.add_relation('easyrsa:client',
-                             'etcd:certificates')
-
-    await etcd.set_config({'channel': '3.2/stable'})
-    await asyncify(_juju_wait)(controller, model.info.name)
-
-    for unit in etcd.units:
-        leader = await unit.is_leader_from_status()
-        if leader:
-            # Load dummy data
-            await load_data(unit)
-            for ver in ['v2', 'v3']:
-                assert await is_data_present(unit, ver)
-            filenames = {}
-            for dataset in ['v2', 'v3']:
-                # Take snapshot of data
-                action = await unit.run_action(
-                    'snapshot', **{'keys-version': dataset})
-                action = await action.wait()
-                assert action.status == 'completed'
-                src = Path(action.results['snapshot']['path'])
-                dst = Path(action.results['snapshot']['path']).name
-                await unit.scp_from(str(src), str(dst))
-                filenames[dataset] = str(dst)
-                out = ls('-l', 'result*')
-                print(out.stdout.decode().strip())
-
-            await delete_data(unit)
-            for ver in ['v2', 'v3']:
-                assert await is_data_present(unit, ver) is False
-
-            # Restore v2 data
-            # Note: libjuju does not implement attach yet.
-            juju('attach',
-                 '-m', "{}:{}".format(controller, model.info.name),
-                 'etcd', "snapshot='./{}'".format(str(filenames['v2'])))
-            action = await unit.run_action('restore')
-            action = await action.wait()
-            assert action.status == 'completed'
-            for ver in ['v2', 'v3']:
-                assert await is_data_present(unit, ver) is True
-
-            # Restore v3 data
-            juju('attach',
-                 '-m', "{}:{}".format(controller, model.info.name),
-                 'etcd', "snapshot='./{}'".format(str(filenames['v3'])))
-
-            action = await unit.run_action('restore')
-            action = await action.wait()
-            await action.status == 'completed'
-            for ver in ['v2', 'v3']:
-                assert await is_data_present(unit, ver) is True

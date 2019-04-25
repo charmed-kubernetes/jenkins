@@ -2,6 +2,7 @@
 
 def snap_sh = "${utils.cipy} build-snaps/snaps.py"
 def eks_snaps = '--snap kubelet --snap kubectl --snap kube-proxy --snap kubernetes-test'
+def path_id = "release-${uuid()}"
 
 pipeline {
     agent {
@@ -29,9 +30,9 @@ pipeline {
                 dir('jobs'){
                     script {
                         if(!params.release_only){
-                            sh "${snap_sh} build --arch amd64 ${eks_snaps} --version ${version} --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks'"
-                            sh "sudo chown jenkins:jenkins -R release/snap"
-                            sh "${snap_sh} push || true"
+                            sh "${snap_sh} build --build-path ${path_id} --arch amd64 ${eks_snaps} --version ${version} --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks'"
+                            sh "sudo chown jenkins:jenkins -R ${path_id}/snap"
+                            sh "${snap_sh} push --result-dir '${path_id}/snap/build' || true"
                         }
                         def snaps_to_release = ['kubelet-eks', 'kubectl-eks', 'kube-proxy-eks', 'kubernetes-test-eks']
                         params.channels.split().each { channel ->
@@ -50,8 +51,8 @@ pipeline {
         }
     }
     post {
-        always {
-            sh "sudo rm -rf jobs/release/snap || true"
+        cleanup {
+            sh "sudo rm -rf jobs/${path_id} || true"
             sh "snapcraft logout"
             sh "docker image prune -a --filter \"until=24h\" --force"
             sh "docker container prune --filter \"until=24h\" --force"

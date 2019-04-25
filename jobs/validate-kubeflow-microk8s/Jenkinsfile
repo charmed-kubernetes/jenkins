@@ -6,7 +6,7 @@ def exec(cmd) {
 
 pipeline {
     agent {
-        label 'runner-amd64'
+        label 'runner-amd64-1'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -30,7 +30,7 @@ pipeline {
         stage('Setup LXC') {
             steps {
                 sh "sudo lxc profile show microk8s || sudo lxc profile copy default microk8s"
-                sh "curl https://raw.githubusercontent.com/ubuntu/microk8s/master/tests/lxc/microk8s.profile | sudo lxc profile edit microk8s"
+                sh "sudo lxc profile edit microk8s < jobs/validate-kubeflow-microk8s/lxc.profile"
                 sh "sudo lxc launch -p default -p microk8s ubuntu:18.04 ${CONTAINER}"
                 sh "sudo lxc storage create ${STORAGE} dir source=/tmp/${STORAGE}"
                 sh "sudo lxc storage volume create ${STORAGE} storage"
@@ -40,7 +40,7 @@ pipeline {
         }
         stage('Wait for snap') {
             options {
-                retry(10)
+                retry(20)
             }
             steps {
                 exec "sudo snap install core"
@@ -52,27 +52,29 @@ pipeline {
                 exec "sudo snap install jq"
                 exec "sudo snap install juju --classic --channel ${params.juju_channel}"
                 exec "sudo snap install juju-wait --classic"
+                exec "sudo snap install kubectl --classic"
                 exec "sudo snap install lxd"
                 exec "sudo snap install microk8s --classic --channel ${params.microk8s_channel}"
                 exec "sudo snap install yq"
-                exec "sudo apt update && sudo apt install -y python-tox"
+                exec "sudo apt update && sudo apt install -y python-tox docker.io"
             }
         }
         stage('Deploy kubeflow') {
             steps {
-                exec "microk8s.status --wait-ready"
+                exec "microk8s.status --wait-ready --timeout 300"
                 exec "microk8s.enable dns storage registry"
+                exec 'microk8s.kubectl patch configmap -n kube-system kube-dns -p "$(<jobs/validate-kubeflow-microk8s/nameservers.json)"'
+                exec "microk8s.config > kube_config"
                 exec "juju bootstrap lxd --debug"
                 exec "microk8s.config | juju add-k8s microk8s-cloud"
-                exec "microk8s.docker build /project/tfjobs/mnist/ -t mnist-test:1.0"
 
                 exec "juju add-model microk8s-model microk8s-cloud"
                 exec "juju create-storage-pool operator-storage kubernetes storage-class=microk8s-hostpath"
                 exec "juju deploy kubeflow --channel ${params.channel}"
 
-                exec "juju-wait -w"
+                exec "juju-wait -wvt 900"
 
-                exec "juju status | grep 'kubeflow-ambassador ' | awk '{print \$8}' > PUB_IP"
+                exec 'juju status | grep "kubeflow-ambassador " | awk "{print \\$8}" > PUB_IP'
                 exec "juju config kubeflow-ambassador juju-external-hostname=localhost"
                 exec "juju expose kubeflow-ambassador"
             }
