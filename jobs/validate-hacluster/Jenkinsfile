@@ -28,9 +28,9 @@ pipeline {
                 sh "juju add-cloud scapestack /var/lib/jenkins/.scapestack/scapestack-cloud"
                 sh "juju add-credential scapestack -f /var/lib/jenkins/.scapestack/scapestack-creds"
                 sh "juju bootstrap scapestack ${params.controller} --debug"
-                sh "juju model-defaults juju-http-proxy=http://squid.internal:3128"
-                sh "juju model-defaults juju-https-proxy=http://squid.internal:3128"
-                sh "juju model-defaults juju-no-proxy=127.0.0.1,localhost,::1,10.96.0.0/17"
+                sh "juju model-defaults -c ${params.controller} juju-http-proxy=http://squid.internal:3128"
+                sh "juju model-defaults -c ${params.controller} juju-https-proxy=http://squid.internal:3128"
+                sh "juju model-defaults -c ${params.controller} juju-no-proxy=127.0.0.1,localhost,::1,10.96.0.0/17"
 
                 deployCDK(controller: params.controller,
                           cloud: params.cloud,
