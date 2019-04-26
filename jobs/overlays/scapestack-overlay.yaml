@@ -8,7 +8,7 @@ applications:
     num_units: 3
   kubernetes-master:
     num_units: 1
-    config:
+    options:
       snap_proxy: http://squid.internal:3128
       http_proxy: http://squid.internal:3128
       https_proxy: http://squid.internal:3128
@@ -16,7 +16,7 @@ applications:
     - '0'
   kubernetes-worker:
     num_units: 1
-    config:
+    options:
       snap_proxy: http://squid.internal:3128
       http_proxy: http://squid.internal:3128
       https_proxy: http://squid.internal:3128
@@ -27,7 +27,7 @@ applications:
     - lxd:0
   etcd:
     num_units: 1
-    config:
+    options:
       snap_proxy: http://squid.internal:3128
     to:
     - lxd:1
