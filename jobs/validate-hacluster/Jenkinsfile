@@ -25,7 +25,7 @@ pipeline {
             steps {
                 sh "juju kill-controller -y ${params.controller} || true"
                 setStartTime()
-                sh "juju add-cloud scapestack /var/lib/jenkins/.scapestack/scapestack-cloud"
+                sh "juju add-cloud scapestack /var/lib/jenkins/.scapestack/scapestack-cloud || true"
                 sh "juju add-credential scapestack -f /var/lib/jenkins/.scapestack/scapestack-creds || true"
                 sh "juju bootstrap scapestack ${params.controller} --debug"
                 sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-http-proxy=http://squid.internal:3128"
