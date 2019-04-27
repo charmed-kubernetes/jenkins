@@ -32,6 +32,7 @@ from juju.controller import Controller
 async def validate_all(model, log_dir):
     cpu_arch = await asyncify(arch)()
     validate_status_messages(model)
+    await validate_auth_file_propagation(model)
     await validate_snap_versions(model)
     await validate_gpu_support(model)
     if cpu_arch not in ['s390x', 'arm64', 'aarch64']:
@@ -65,6 +66,33 @@ async def validate_all(model, log_dir):
     cloud = await controller.get_cloud()
     if cloud is not 'localhost':
         await validate_ceph(model)
+
+
+@log_calls_async
+async def validate_auth_file_propagation(model):
+    """Validate that changes to /root/cdk/basic_auth.csv on the leader master
+    unit are propagated to the other master units.
+
+    """
+    # Get a leader and non-leader unit to test with
+    masters = model.applications['kubernetes-master']
+    for master in masters.units:
+        if await master.is_leader_from_status():
+            leader = master
+        else:
+            follower = master
+
+    # Change basic_auth.csv on the leader, and get its md5sum
+    leader_md5 = await run_until_success(leader,
+            'echo test,test,test >> /root/cdk/basic_auth.csv && '
+            'md5sum /root/cdk/basic_auth.csv')
+
+    # Check that md5sum on non-leader matches
+    await run_until_success(follower,
+            'md5sum /root/cdk/basic_auth.csv | grep "{}"'.format(leader_md5))
+
+    # Cleanup (remove the line we added)
+    await run_until_success(leader, "sed -i '$d' /root/cdk/basic_auth.csv")
 
 
 @log_calls
