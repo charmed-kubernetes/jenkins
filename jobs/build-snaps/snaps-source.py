@@ -82,7 +82,7 @@ def _sync_upstream(snap_list, starting_ver):
     "--starting-ver",
     help="Oldest k8s release to start from",
     required=True,
-    default="1.15.0-alpha.0",
+    default="1.15.0-alpha.1",
 )
 def sync_upstream(snap_list, starting_ver):
     return _sync_upstream(snap_list, starting_ver)
