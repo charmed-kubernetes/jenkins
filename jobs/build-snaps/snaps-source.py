@@ -198,7 +198,7 @@ def _create_snap_recipe(
         "track": [track],
     }
 
-    click.echo(f"  > creating builder for {params}")
+    click.echo(f"  > creating recipe for {params}")
     if dry_run:
         click.echo("dry-run only, exiting.")
         sys.exit(0)
