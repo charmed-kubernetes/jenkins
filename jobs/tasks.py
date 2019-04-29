@@ -4,6 +4,12 @@ import yaml
 
 
 @task
+def format(c):
+    """ Formats py code
+    """
+    c.run("black -t py36  build*/*.py validate/*.py")
+
+@task
 def test_jobs(c, conf):
     """ Tests the Jenkins Job Builder definitions
     """
