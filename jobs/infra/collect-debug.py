@@ -76,14 +76,14 @@ def save_meta(table):
 @click.option('--key-id', default="last_file", help="key to associate with upload")
 @click.argument('results-file')
 def push(bucket, results_file, key_id):
-    """ pushes cdk field agent and sets build result
+    """ pushes files to s3
     """
     results_file = Path(results_file)
     current_date = datetime.now().strftime('%Y-%m-%d')
     env = os.environ.copy()
     s3_path = Path(env['JOB_NAME']) / current_date / env['BUILD_NUMBER'] / results_file
     s3.upload_file(str(results_file), bucket, str(s3_path))
-    db['results_file'] = str(s3_path)
+    db[key_id] = str(s3_path)
 
 
 if __name__ == "__main__":

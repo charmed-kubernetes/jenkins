@@ -24,7 +24,7 @@ pipeline {
             }
             steps {
                 sh "juju kill-controller -y ${juju_controller} || true"
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints arch=amd64 --debug"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints arch=amd64 --debug ${utils.debug_out}"
                 setStartTime()
                 deployCDK(controller: juju_controller,
                           model: juju_model,
@@ -41,7 +41,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade"
+                    sh "TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade ${utils.debug_out}"
                 }
             }
         }

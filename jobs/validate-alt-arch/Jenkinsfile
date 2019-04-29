@@ -60,8 +60,8 @@ pipeline {
                     sudo iptables -n -L -t mangle
                     sudo iptables -n -L -t nat
                 '''
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
-                sh "juju add-model -c ${juju_controller} ${juju_model}"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug ${utils.debug_out}"
+                sh "juju add-model -c ${juju_controller} ${juju_model} ${utils.debug_out}"
                 sh "cat jobs/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}"
                 setStartTime()
                 deployCDK(controller: juju_controller,
@@ -84,7 +84,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate ${utils.debug_out}"
                 }
             }
         }
@@ -97,7 +97,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
+                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_upgrade ${utils.debug_out}"
                 }
             }
         }

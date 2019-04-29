@@ -25,7 +25,7 @@ pipeline {
             steps {
                 sh "docker image prune -a --filter \"until=24h\" --force"
                 sh "docker container prune --filter \"until=24h\" --force"
-                sh "KUBE_ARCH=${params.arch} FORCE_RELEASE=${params.FORCE_RELEASE} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh"
+                sh "KUBE_ARCH=${params.arch} FORCE_RELEASE=${params.FORCE_RELEASE} GH_USER=${env.GITHUB_CREDS_USR} GH_TOKEN=${env.GITHUB_CREDS_PSW} bash jobs/build-snaps/release.sh ${utils.debug_out}"
             }
         }
     }

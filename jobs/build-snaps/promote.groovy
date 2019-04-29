@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Promote Snaps'){
             steps {
-                sh "SNAPS=${params.snaps} PROMOTE_FROM='${params.promote_from}' PROMOTE_TO='${params.promote_to}' KUBE_ARCH='${params.arch}' GH_USER='${env.GITHUB_CREDS_USR}' GH_TOKEN='${env.GITHUB_CREDS_PSW}' bash jobs/build-snaps/promote.sh"
+                sh "SNAPS=${params.snaps} PROMOTE_FROM='${params.promote_from}' PROMOTE_TO='${params.promote_to}' KUBE_ARCH='${params.arch}' GH_USER='${env.GITHUB_CREDS_USR}' GH_TOKEN='${env.GITHUB_CREDS_PSW}' bash jobs/build-snaps/promote.sh ${utils.debug_out}"
             }
         }
     }

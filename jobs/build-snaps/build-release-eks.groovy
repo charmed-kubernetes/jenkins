@@ -30,7 +30,7 @@ pipeline {
                 dir('jobs'){
                     script {
                         if(!params.release_only){
-                            sh "${snap_sh} build --build-path ${path_id} --arch amd64 ${eks_snaps} --version ${version} --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks'"
+                            sh "${snap_sh} build --build-path ${path_id} --arch amd64 ${eks_snaps} --version ${version} --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' --rename-re \'\\1-eks' ${utils.debug_out}"
                             sh "sudo chown jenkins:jenkins -R ${path_id}/snap"
                             sh "${snap_sh} push --result-dir '${path_id}/snap/build' || true"
                         }
@@ -38,9 +38,9 @@ pipeline {
                         params.channels.split().each { channel ->
                             snaps_to_release.each  { snap ->
                                 if(params.dry_run) {
-                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${version} --dry-run"
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${version} --dry-run ${utils.debug_out}"
                                 } else {
-                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${version}"
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${version} ${utils.debug_out}"
                                 }
 
                             }
