@@ -112,6 +112,15 @@
           num-to-keep: 2
 
 - job:
+    name: 'sync-release-tags'
+    description: Grabs upstream k8s release tags
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-snaps/sync-release-tags.groovy
+
+- job:
     name: 'create-snap-recipes'
     description: |
       Generates snap recipes for all required snaps.
