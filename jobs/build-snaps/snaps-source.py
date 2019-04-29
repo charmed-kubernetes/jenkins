@@ -59,7 +59,7 @@ def _sync_upstream(snap_list, starting_ver):
         if not set(snap_releases).issubset(set(supported_releases)):
             for snap_rel in supported_releases:
                 click.echo(f"Creating branch for {snap}-{snap_rel}")
-                _create_branch(git_repo, "master", snap_rel)
+                _create_branch(git_repo, "master", snap_rel, dry_run=False)
                 _fmt_version = semver.parse(snap_rel[1:])
                 _fmt_version = f'{_fmt_version["major"]}.{_fmt_version["minor"]}'
                 click.echo(f"Generating recipe for {snap}-{_fmt_version}")
