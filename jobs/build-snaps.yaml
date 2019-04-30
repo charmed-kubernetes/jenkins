@@ -106,7 +106,6 @@
             Pass a list of snap names to promote, leaving empty will promote all snaps
             (kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet
             kube-proxy cdk-addons kubeadm kubernetes-test).
-
     properties:
       - build-discarder:
           num-to-keep: 2
@@ -119,6 +118,8 @@
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/build-snaps/sync-release-tags.groovy
+    triggers:
+        - timed: "@daily"
 
 - job:
     name: 'create-snap-recipes'
@@ -147,7 +148,7 @@
           default: 'k8s-jenkaas-admins'
       - string:
           name: tag
-          default: 'v1.15.0-alpha.1'
+          default: 'v1.15.0-alpha.2'
           description: k8s major.minor.patch-{HOTFIX} tag to build from
     properties:
       - build-discarder:
