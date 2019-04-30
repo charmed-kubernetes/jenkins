@@ -15,7 +15,7 @@
           default: 'runner-{arch}'
       - string:
           name: controller
-          default: 'microk8s-release-to-beta-{arch}'
+          default: 'microk8s-release-to-stable-{arch}'
       - string:
           name: cloud
           default: 'aws/us-east-1'
@@ -31,7 +31,6 @@
           blocking-jobs:
             - ".*build.*"
             - ".*snap-info.*"
-            - ".*release-microk8s.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
       - build-discarder:

@@ -62,10 +62,8 @@ pipeline {
 
     /* We assume that there are no other lxc machines on the slave. */
     post {
-    post {
         always {
-            sh "snapcraft logout"
-            sh "juju kill-controller -y ${params.controller} --destroy-all-models || true"
+            sh "juju destroy-controller -y ${params.controller} --destroy-all-models || true"
         }
     }
 }
