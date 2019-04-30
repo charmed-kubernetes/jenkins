@@ -31,7 +31,6 @@
           blocking-jobs:
             - ".*build.*"
             - ".*snap-info.*"
-            - ".*release-microk8s.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
       - build-discarder:
