@@ -1,6 +1,8 @@
 'cs:~containers/canal':
   calico-amd64.tar.gz: calico
   calico-arm64.tar.gz: calico-arm64
+  calico-upgrade-amd64.tar.gz: calico-upgrade
+  calico-upgrade-arm64.tar.gz: calico-upgrade-arm64
   flannel-amd64.tar.gz: flannel
   flannel-arm64.tar.gz: flannel-arm64
 'cs:~containers/calico':
