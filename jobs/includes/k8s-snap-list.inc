@@ -6,3 +6,4 @@
 - kubeadm
 - kubectl
 - kubelet
+- kubernetes-test
