@@ -469,7 +469,7 @@ async def validate_worker_master_removal(model):
     unit_count = len(workers.units)
     await workers.units[0].remove()
     while len(workers.units) == unit_count:
-        await asyncio.sleep(3)
+        await asyncio.sleep(15)
         log('Waiting for worker removal. (%d/%d)' % (len(workers.units), unit_count))
         assert_no_unit_errors(model)
     await asyncify(_juju_wait)()
@@ -480,7 +480,7 @@ async def validate_worker_master_removal(model):
         if await master.is_leader_from_status():
             await master.remove()
     while len(masters.units) == unit_count:
-        await asyncio.sleep(3)
+        await asyncio.sleep(15)
         log('Waiting for master removal. (%d/%d)' % (len(masters.units), unit_count))
         assert_no_unit_errors(model)
     await asyncify(_juju_wait)()
