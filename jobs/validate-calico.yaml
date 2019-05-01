@@ -49,4 +49,4 @@
     version:
       !include: includes/k8s-support-matrix.inc
     jobs:
-      - '{name}-{version}
+      - '{name}-{version}'
