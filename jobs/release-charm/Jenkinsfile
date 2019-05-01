@@ -23,7 +23,7 @@ pipeline {
                 dir('jobs') {
                     script {
                         to_channels.each { to_channel ->
-                            sh "${charm_sh} promote --charm-entity cs:~${params.charm} --from-channel ${params.from_channel} --to-channel ${to_channel.trim()} ${utils.debug_out}"
+                            sh "${charm_sh} promote --charm-entity cs:~${params.charm} --from-channel ${params.from_channel} --to-channel ${to_channel.trim()}"
                         }
                     }
                 }

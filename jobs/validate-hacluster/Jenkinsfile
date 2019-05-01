@@ -27,10 +27,10 @@ pipeline {
                 setStartTime()
                 sh "juju add-cloud scapestack /var/lib/jenkins/.scapestack/scapestack-cloud || true"
                 sh "juju add-credential scapestack -f /var/lib/jenkins/.scapestack/scapestack-creds || true"
-                sh "juju bootstrap scapestack ${params.controller} --debug ${utils.debug_out}"
-                sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-http-proxy=http://squid.internal:3128 ${utils.debug_out}"
-                sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-https-proxy=http://squid.internal:3128 ${utils.debug_out}"
-                sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-no-proxy=127.0.0.1,localhost,::1,10.96.0.0/17 ${utils.debug_out}"
+                sh "juju bootstrap scapestack ${params.controller} --debug"
+                sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-http-proxy=http://squid.internal:3128"
+                sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-https-proxy=http://squid.internal:3128"
+                sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-no-proxy=127.0.0.1,localhost,::1,10.96.0.0/17"
 
                 deployCDK(controller: params.controller,
                           cloud: params.cloud,
@@ -48,7 +48,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} TEST_IPS='${params.test_ips}' ${utils.pytest} --junit-xml=validate.xml integration/test_hacluster.py ${utils.debug_out}"
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} TEST_IPS='${params.test_ips}' ${utils.pytest} --junit-xml=validate.xml integration/test_hacluster.py"
                 }
             }
         }

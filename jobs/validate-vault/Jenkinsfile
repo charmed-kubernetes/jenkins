@@ -23,7 +23,7 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints arch=amd64 --debug ${utils.debug_out}"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints arch=amd64 --debug"
                 setStartTime()
                 deployCDK(controller: juju_controller,
                           cloud: params.cloud,
@@ -41,7 +41,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate ${utils.debug_out}"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate"
                 }
             }
         }

@@ -33,8 +33,8 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "git clone --depth 1 -q ${params.git_repo} ${utils.debug_out}"
-                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm} ${utils.debug_out}"
+                    sh "git clone --depth 1 -q ${params.git_repo}"
+                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm}"
                 }
             }
         }
@@ -48,8 +48,8 @@ pipeline {
                     script {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
-                            sh "juju bootstrap ${params.cloud} ${juju_controller} --debug ${utils.debug_out}"
-                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --tb native -ra -n auto --junit-xml=${params.charm}.xml ${test_path} ${utils.debug_out}"
+                            sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
+                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --tb native -ra -n auto --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }
 
@@ -67,14 +67,14 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm} --charm-entity ${cs_url} ${utils.debug_out}"
+                    sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm} --charm-entity ${cs_url}"
                     script {
                         if(params.resource_build_sh) {
-                            sh "${charm_sh} resource --charm-entity ${cs_url} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.JUJU_REPOSITORY}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml ${utils.debug_out}"
+                            sh "${charm_sh} resource --charm-entity ${cs_url} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.JUJU_REPOSITORY}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
                         }
                     }
-                    sh "${charm_sh} promote --charm-entity ${cs_url} --from-channel unpublished --to-channel edge ${utils.debug_out}"
-                    sh "${charm_sh} show --charm-entity ${cs_url} --channel edge ${utils.debug_out}"
+                    sh "${charm_sh} promote --charm-entity ${cs_url} --from-channel unpublished --to-channel edge"
+                    sh "${charm_sh} show --charm-entity ${cs_url} --channel edge"
                 }
             }
         }

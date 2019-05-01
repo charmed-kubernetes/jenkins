@@ -24,7 +24,7 @@ pipeline {
             steps {
                 setStartTime()
                 dir("jobs") {
-                    sh "conjure-up charmed-kubernetes ${params.cloud} ${juju_controller} ${juju_model} --channel ${params.bundle_channel} ${utils.debug_out}"
+                    sh "conjure-up charmed-kubernetes ${params.cloud} ${juju_controller} ${juju_model} --channel ${params.bundle_channel}"
                 }
             }
         }
