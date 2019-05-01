@@ -79,6 +79,8 @@ def push(bucket, results_file, key_id):
     """ pushes files to s3
     """
     results_file = Path(results_file)
+    if not results_file.exists():
+        return
     current_date = datetime.now().strftime('%Y-%m-%d')
     env = os.environ.copy()
     s3_path = Path(env['JOB_NAME']) / current_date / env['BUILD_NUMBER'] / results_file
