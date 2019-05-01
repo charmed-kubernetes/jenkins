@@ -33,8 +33,6 @@
           choices:
             - 'canonical-kubernetes'
             - 'kubernetes-core'
-    triggers:
-        - timed: 'H 0 * * 6-7'
     properties:
       - build-discarder:
           num-to-keep: 2

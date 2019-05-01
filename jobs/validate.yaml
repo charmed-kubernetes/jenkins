@@ -106,7 +106,7 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/validate/validate-nightly-cdk.groovy
     triggers:
-        - timed: "0 */12 * * *"
+        - timed: "H 0 0 * *"
     properties:
       - build-blocker:
           use-build-blocker: true

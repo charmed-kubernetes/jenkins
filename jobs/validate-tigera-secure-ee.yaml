@@ -28,8 +28,6 @@
       - string:
           name: bundle
           default: 'kubernetes-tigera-secure-ee'
-    triggers:
-        - timed: 'H 0 * * 6-7'
     properties:
       - build-discarder:
           num-to-keep: 2
