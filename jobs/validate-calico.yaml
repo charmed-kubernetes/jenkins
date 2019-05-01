@@ -1,7 +1,7 @@
 # Validates a deployed CDK
 
 - job-template:
-    name: 'validate-calico-{version}'
+    name: '{name}-{version}'
     description: |
       Validates Calico support on {version}
     project-type: pipeline
@@ -28,13 +28,25 @@
       - string:
           name: bundle
           default: 'kubernetes-calico'
+      - string:
+          name: upgrade_from_bundle_channel
+          default: '{upgrade_from_bundle_channel}'
     properties:
       - build-discarder:
           num-to-keep: 2
 
 - project:
     name: validate-calico
+    upgrade_from_bundle_channel: ''
     version:
       !include: includes/k8s-support-matrix.inc
     jobs:
-      - 'validate-calico-{version}'
+      - '{name}-{version}'
+
+- project:
+    name: validate-calico-upgrade
+    upgrade_from_bundle_channel: stable
+    version:
+      !include: includes/k8s-support-matrix.inc
+    jobs:
+      - '{name}-{version}

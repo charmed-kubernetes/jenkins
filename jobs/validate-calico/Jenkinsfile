@@ -2,6 +2,9 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
+def upgrade = params.upgrade_from_bundle_channel != ''
+def deploy_channel = upgrade ? params.upgrade_from_bundle_channel : params.bundle_channel
+def test = upgrade ? 'test_upgrade' : 'test_validate'
 
 pipeline {
     agent {
@@ -36,7 +39,7 @@ pipeline {
                           cloud: params.cloud,
                           bundle: "cs:~containers/${params.bundle}",
                           version_overlay: params.overlay,
-                          bundle_channel: params.bundle_channel,
+                          bundle_channel: deploy_channel,
                           disable_wait: true)
                 dir('jobs') {
                     sh "${utils.cipy} integration/tigera/disable_source_dest_check.py -m ${juju_controller}:${juju_model}"
@@ -52,7 +55,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} TEST_CHARM_CHANNEL=${params.bundle_channel} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::${test}"
                 }
             }
         }
