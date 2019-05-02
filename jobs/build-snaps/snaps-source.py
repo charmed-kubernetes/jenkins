@@ -104,8 +104,8 @@ def _create_branch(repo, from_branch, to_branch, dry_run):
 
     try:
         sh.git("ls-remote", "--exit-code", "--heads", repo, to_branch, _env=env)
-        click.echo(f"{to_branch} already exists, exiting.")
-        sys.exit(0)
+        click.echo(f"{to_branch} already exists, skipping...")
+        return
     except sh.ErrorReturnCode as e:
         click.echo(f"{to_branch} does not exist, continuing...")
 
