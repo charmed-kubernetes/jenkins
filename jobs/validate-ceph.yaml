@@ -1,0 +1,57 @@
+# Validates ceph on a deployed CDK
+- job-template:
+    name: 'validate-ceph-{target}'
+    description: |
+      Validates Ceph support on {target}
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate-ceph/Jenkinsfile
+    parameters:
+      - string:
+          name: model
+          default: 'validate-ceph'
+      - string:
+          name: controller
+          default: 'validate-ceph'
+      - choice:
+          name: cloud
+          choices:
+            - 'aws/us-east-1'
+            - 'google/us-east1'
+            - 'azure/eastus'
+      - string:
+          name: version_overlay
+          default: '{version_overlay}'
+      - bool:
+          name: perform_upgrade
+          default: false
+      - string:
+          name: bundle_channel
+          default: 'edge'
+      - string:
+          name: bundle
+          default: '{bundle}'
+      - string:
+          name: snap_channel
+          default: '{snap_channel}'
+      - text:
+          name: overlay_input
+          description: "Paste yaml bundle overlay, this will merge on top of any bundles, overlays, defined."
+      - text:
+          name: custom_bundle
+          description: "Paste a custom yaml bundle, this will replace any channels, bundles, or overlays defined."
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
+- project:
+    name: validate-ceph
+    target:
+      - 'validate-ceph':
+          bundle: 'kubernetes-core'
+    jobs:
+      - 'validate-hacluster-{target}'
