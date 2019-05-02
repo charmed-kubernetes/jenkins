@@ -2,10 +2,6 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
-def validate_sh = "${utils.cipy} validate/validate.py"
-def collect_debug_sh = "${utils.cipy} infra/collect-debug.py"
-def overlay = params.version_overlay
-def custom_bundle_file = ""
 
 pipeline {
     agent {
@@ -27,30 +23,14 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                sh "${utils.cipy} --version"
                 setStartTime()
-                script {
-                    dir('jobs'){
-                        if (params.overlay_input) {
-                            overlay = "${env.WORKSPACE}/custom_overlay.yaml"
-                            def overlay_input = readYaml text: params.overlay_input
-                            writeYaml file: overlay, data: overlay_input
-                        }
-                        if (params.custom_bundle) {
-                            custom_bundle_file = "${env.WORKSPACE}/custom_bundle.yaml"
-                            def custom_bundle_input = readYaml text: params.custom_bundle
-                            writeYaml file: custom_bundle_file, data: custom_bundle_input
-                        }
-                    }
-                }
                 sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints 'arch=amd64' --debug"
                 deployCDK(controller: juju_controller,
                           model: juju_model,
                           cloud: params.cloud,
                           bundle: "cs:~containers/${params.bundle}",
-                          version_overlay: overlay,
-                          bundle_channel: params.bundle_channel,
-                          custom_bundle: custom_bundle_file)
+                          version_overlay: params.version_overlay,
+                          bundle_channel: params.bundle_channel)
             }
         }
 
