@@ -1,4 +1,3 @@
-import os
 import configbag
 from dateutil import parser
 from subprocess import check_output, check_call, CalledProcessError
