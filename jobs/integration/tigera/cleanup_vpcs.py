@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.6
 
 import json
+import os
 from pprint import pprint
 from subprocess import check_output, CalledProcessError
 
@@ -28,10 +29,11 @@ def aws(*args, ignore_errors=False):
         return
 
 
+owner = os.environ.get('JOB_NAME', 'test-calico')
 gateways = aws('ec2', 'describe-internet-gateways')['InternetGateways']
 for gateway in gateways:
     for tag in gateway.get('Tags', []):
-        if tag['Key'] == 'created-by' and tag['Value'] == 'test-calico':
+        if tag['Key'] == 'created-by' and tag['Value'] == owner:
             gateway_id = gateway['InternetGatewayId']
             for attachment in gateway['Attachments']:
                 aws(
@@ -50,7 +52,7 @@ for gateway in gateways:
 subnets = aws('ec2', 'describe-subnets')['Subnets']
 for subnet in subnets:
     for tag in subnet.get('Tags', []):
-        if tag['Key'] == 'created-by' and tag['Value'] == 'test-calico':
+        if tag['Key'] == 'created-by' and tag['Value'] == owner:
             aws(
                 'ec2', 'delete-subnet',
                 '--subnet-id', subnet['SubnetId'],
@@ -61,7 +63,7 @@ for subnet in subnets:
 vpcs = aws('ec2', 'describe-vpcs')['Vpcs']
 for vpc in vpcs:
     for tag in vpc.get('Tags', []):
-        if tag['Key'] == 'created-by' and tag['Value'] == 'test-calico':
+        if tag['Key'] == 'created-by' and tag['Value'] == owner:
             aws(
                 'ec2', 'delete-vpc',
                 '--vpc-id', vpc['VpcId'],

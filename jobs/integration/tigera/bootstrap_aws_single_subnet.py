@@ -26,10 +26,11 @@ def aws(*args):
 
 
 def tag_resource(resource_id):
+    owner = os.environ.get('JOB_NAME', 'test-calico')
     aws(
         'ec2', 'create-tags',
         '--resource', resource_id,
-        '--tags', 'Key=created-by,Value=test-calico'
+        '--tags', 'Key=created-by,Value=' + owner
     )
 
 
