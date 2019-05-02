@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 from snapstore import Microk8sSnap
 from configbag import get_tracks
+from utils import upstream_release
 
 
 # Set this to 'no' if you are sure you want to release
@@ -48,6 +49,11 @@ if __name__ == '__main__':
     print("Dry run is set to '{}'.".format(dry_run))
     for track in tracks_requested:
         print("Looking at track {}".format(track))
+        upstream = upstream_release(track)
+        if not upstream:
+            print("No stable upstream release yet.")
+            continue
+
         candidate_snap = Microk8sSnap(track, 'candidate', juju_unit, juju_controller)
         if not candidate_snap.released:
             # Nothing to release

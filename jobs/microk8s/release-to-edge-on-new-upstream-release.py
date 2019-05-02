@@ -1,25 +1,11 @@
 #!/usr/bin/python3
 
-import requests
 import configbag
 from snapstore import Microk8sSnap
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError
 from configbag import get_tracks
-
-
-def upstream_release(release):
-    """Return the latest stable k8s in the release series"""
-    if release == "latest":
-        release_url = "https://dl.k8s.io/release/stable.txt"
-    else:
-        release_url = "https://dl.k8s.io/release/stable-{}.txt".format(release)
-
-    r = requests.get(release_url)
-    if r.status_code == 200:
-        return r.content.decode().strip()
-    else:
-        None
+from utils import upstream_release
 
 
 def trigger_lp_builders(track):
