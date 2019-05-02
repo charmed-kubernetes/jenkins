@@ -35,9 +35,6 @@
       - string:
           name: version_overlay
           default: '{version_overlay}'
-      - bool:
-          name: perform_upgrade
-          default: false
       - string:
           name: bundle_channel
           default: 'edge'
@@ -53,9 +50,13 @@
       - text:
           name: custom_bundle
           description: "Paste a custom yaml bundle, this will replace any channels, bundles, or overlays defined."
+      - string:
+          name: upgrade_from_bundle_channel
+          default: '{upgrade_from_bundle_channel}'
+
 
 - job-template:
-    name: 'validate-{version}-{bundle}'
+    name: '{name}-{version}-{bundle}'
     id: validate-core
     description: |
       Validates k8s {version} {bundle} deployment.
@@ -71,7 +72,7 @@
 
 
 - job-template:
-    name: 'validate-{version}-{bundle}'
+    name: '{name}-{version}-{bundle}'
     id: validate-non-core
     description: |
       Validates non core k8s {version} {bundle} deployment.
@@ -120,6 +121,18 @@
 
 - project:
     name: validate
+    upgrade_from_bundle_channel: ''
+    jobs:
+      - 'validate-core':
+          <<: *core_bundle_defaults
+          <<: *edge_overlay_defaults
+      - 'validate-non-core':
+          <<: *non_core_bundle_defaults
+          <<: *edge_overlay_defaults
+
+- project:
+    name: validate-upgrade
+    upgrade_from_bundle_channel: 'stable'
     jobs:
       - 'validate-core':
           <<: *core_bundle_defaults
