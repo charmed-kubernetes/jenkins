@@ -330,3 +330,67 @@ async def disable_source_dest_check():
     model = _model_from_env()
     cmd = [path, '-m', controller + ':' + model]
     await asyncify(check_call)(cmd)
+
+
+async def verify_deleted(unit, entity_type, name, extra_args=''):
+    cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
+    output = await unit.run(cmd)
+    if 'error' in output.results['Stdout']:
+        # error resource type not found most likely. This can happen when the api server is
+        # restarting. As such, don't assume this means we've finished the deletion
+        return False
+    out_list = json.loads(output.results['Stdout'])
+    for item in out_list['items']:
+        if item['metadata']['name'] == name:
+            return False
+    return True
+
+
+async def find_entities(unit, entity_type, name_list, extra_args=''):
+    cmd = "/snap/bin/kubectl {} --output json get {}"
+    cmd = cmd.format(extra_args, entity_type)
+    output = await unit.run(cmd)
+    if output.results['Code'] != '0':
+        # error resource type not found most likely. This can happen when the api server is
+        # restarting. As such, don't assume this means ready.
+        return False
+    out_list = json.loads(output.results['Stdout'])
+    matches = []
+    for name in name_list:
+        # find all entries that match this
+        [matches.append(n) for n in out_list['items']
+         if name in n['metadata']['name']]
+    return matches
+
+
+# note that name_list is a list of entities(pods, services, etc) being searched
+# and that partial matches work. If you have a pod with random characters at
+# the end due to being in a deploymnet, you can add just the name of the
+# deployment and it will still match
+async def verify_ready(unit, entity_type, name_list, extra_args=''):
+    matches = await find_entities(unit, entity_type, name_list, extra_args)
+    if not matches:
+        return False
+
+    # now verify they are ALL ready, it isn't cool if just one is ready now
+    ready = [n for n in matches if n['kind'] == 'DaemonSet' or
+             n['status']['phase'] == 'Running' or
+             n['status']['phase'] == 'Active']
+    if len(ready) != len(matches):
+        return False
+
+    # made it here then all the matches are ready
+    return True
+
+
+# note that name_list is a list of entities(pods, services, etc) being searched
+# and that partial matches work. If you have a pod with random characters at
+# the end due to being in a deploymnet, you can add just the name of the
+# deployment and it will still match
+async def verify_completed(unit, entity_type, name_list, extra_args=''):
+    matches = await find_entities(unit, entity_type, name_list, extra_args)
+    if not matches or len(matches) == 0:
+        return False
+
+    # now verify they are ALL completed - note that is in the phase 'Succeeded'
+    return all([n['status']['phase'] == 'Succeeded' for n in matches])
