@@ -59,9 +59,6 @@ def _sync_upstream(snap_list, starting_ver):
         snap_releases = git.remote_branches(git_repo)
         if not set(supported_releases).issubset(set(snap_releases)):
             for snap_rel in supported_releases:
-                if git.branch_exists(git_repo, snap_rel, env):
-                   click.echo(f"Branch {snap}-{snap_rel} exists, skipping...")
-                   continue
                 click.echo(f"Creating branch for {snap}-{snap_rel}")
                 _create_branch(git_repo, "master", snap_rel, dry_run=False)
                 _fmt_version = semver.parse(snap_rel[1:])
