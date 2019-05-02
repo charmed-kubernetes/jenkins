@@ -39,6 +39,7 @@ def _sync_upstream(snap_list, starting_ver):
     Usage:
     snaps-source.py sync-upstream --snap-list includes/k8s-snap-list.inc
     """
+    env = os.environ.copy()
     supported_releases = []
     upstream_releases = git.remote_tags("https://github.com/kubernetes/kubernetes")
 
@@ -56,8 +57,11 @@ def _sync_upstream(snap_list, starting_ver):
         click.echo(f"Checking: git+ssh://cdkbot@git.launchpad.net/snap-{snap}")
         git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
         snap_releases = git.remote_branches(git_repo)
-        if not set(snap_releases).issubset(set(supported_releases)):
+        if not set(supported_releases).issubset(set(snap_releases)):
             for snap_rel in supported_releases:
+                if git.branch_exists(git_repo, snap_rel, env):
+                   click.echo(f"Branch {snap}-{snap_rel} exists, skipping...")
+                   continue
                 click.echo(f"Creating branch for {snap}-{snap_rel}")
                 _create_branch(git_repo, "master", snap_rel, dry_run=False)
                 _fmt_version = semver.parse(snap_rel[1:])
@@ -102,12 +106,9 @@ def _create_branch(repo, from_branch, to_branch, dry_run):
     """
     env = os.environ.copy()
 
-    try:
-        sh.git("ls-remote", "--exit-code", "--heads", repo, to_branch, _env=env)
+    if git.branch_exists(repo, to_branch, env):
         click.echo(f"{to_branch} already exists, skipping...")
-        return
-    except sh.ErrorReturnCode as e:
-        click.echo(f"{to_branch} does not exist, continuing...")
+        sys.exit(0)
 
     snap_basename = urlparse(repo)
     snap_basename = Path(snap_basename.path).name
@@ -132,7 +133,6 @@ def _create_branch(repo, from_branch, to_branch, dry_run):
         sh.git.add(".", _cwd=snap_basename)
         sh.git.commit("-m", f"Creating branch {to_branch}", _cwd=snap_basename)
         sh.git.push(repo, to_branch, _cwd=snap_basename, _env=env)
-
 
 @cli.command()
 @click.option("--repo", help="Git repository to create a new branch on", required=True)

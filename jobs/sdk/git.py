@@ -24,3 +24,13 @@ def remote_branches(url):
         "s/^[[:xdigit:]]+[[:space:]]+refs\\/heads\\/(.+)/\\1/g",
     ).stdout.decode()
     return _tags.split("\n")[:-1]
+
+
+def branch_exists(repo, branch, env):
+    """ Checks if a branch exists
+    """
+    try:
+        sh.git("ls-remote", "--exit-code", "--heads", repo, branch, env=env)
+        return False
+    except sh.ErrorReturnCode as e:
+        return True
