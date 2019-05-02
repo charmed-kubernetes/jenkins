@@ -6,6 +6,9 @@ def validate_sh = "${utils.cipy} validate/validate.py"
 def collect_debug_sh = "${utils.cipy} infra/collect-debug.py"
 def overlay = params.version_overlay
 def custom_bundle_file = ""
+def upgrade = params.upgrade_from_bundle_channel != ''
+def deploy_bundle_channel = upgrade ? params.upgrade_from_bundle_channel : params.bundle_channel
+def test = upgrade ? 'test_upgrade' : 'test_validate'
 
 pipeline {
     agent {
@@ -49,7 +52,7 @@ pipeline {
                           cloud: params.cloud,
                           bundle: "cs:~containers/${params.bundle}",
                           version_overlay: overlay,
-                          bundle_channel: params.bundle_channel,
+                          bundle_channel: deploy_bundle_channel,
                           custom_bundle: custom_bundle_file)
             }
         }
@@ -59,25 +62,9 @@ pipeline {
                 timeout(time: 4, unit: 'HOURS')
             }
 
-            when {
-                expression { !params.perform_upgrade }
-            }
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate"
-                }
-            }
-        }
-        stage('Validate Upgrade') {
-            options {
-                timeout(time: 4, unit: 'HOURS')
-            }
-            when {
-                expression { params.perform_upgrade }
-            }
-            steps {
-                dir('jobs') {
-                    sh "TEST_SNAP_CHANNEL=${params.snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_upgrade"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} TEST_CHARM_CHANNEL=${params.bundle_channel} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::${test}"
                 }
             }
         }
