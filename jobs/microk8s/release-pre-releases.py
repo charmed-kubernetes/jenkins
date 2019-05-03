@@ -12,22 +12,12 @@ dry_run = os.environ.get('DRY_RUN', 'yes')
 # Set this to 'yes' to bypass any check such as new version present.
 always_release = os.environ.get('ALWAYS_RELEASE', 'no')
 
-# If TESTS_BRANCH is not set the tests branch will be the one matching the track
-tests_branch = os.environ.get('TESTS_BRANCH')
-if tests_branch and tests_branch.strip() == '':
-    tests_branch = None
-
 # If you do not specify TRACKS all tracks will be processes
 tracks_requested = os.environ.get('TRACKS')
 if not tracks_requested or tracks_requested.strip() == '':
     tracks_requested = get_tracks()
 else:
     tracks_requested = tracks_requested.split()
-
-# Set this to the proxy your environment may have
-proxy = os.environ.get('PROXY')
-if not proxy or proxy.strip() == '':
-    proxy = None
 
 # If JUJU_UNIT is not set the tests will be run in local LXC containers
 juju_unit = os.environ.get('JUJU_UNIT')
