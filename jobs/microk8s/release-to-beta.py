@@ -58,8 +58,8 @@ if __name__ == '__main__':
             break
 
         beta_snap = Microk8sSnap(track, 'beta', juju_unit, juju_controller)
-        if beta_snap.released:
-            # We already have a snap on beta. Let's see if we have to push a new release.
+        if beta_snap.released and not beta_snap.is_prerelease:
+            # We already have a snap on beta that is not a pre-release. Let's see if we have to push a new release.
             if beta_snap.version == edge_snap.version and always_release == 'no':
                 # Beta and edge are the same version. Nothing to release on this track.
                 print("Beta and edge have the same version {}. We will not release.".format(beta_snap.version))
@@ -72,7 +72,13 @@ if __name__ == '__main__':
                                         tests_branch=tests_branch,
                                         proxy=proxy)
         else:
-            print("Beta channel is empty. Releasing without any testing.")
+            if not beta_snap.released:
+                print("Beta channel is empty. Releasing without any testing.")
+            elif beta_snap.is_prerelease:
+                print("Beta channel holds a prerelease. Releasing without any testing.")
+            else:
+                print("Beta channel holds a release that is not a prerelease. We should be testing that.")
+                assert False
 
         # The following will raise exceptions in case of a failure
         edge_snap.release_to('beta', dry_run=dry_run)

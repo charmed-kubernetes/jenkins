@@ -68,8 +68,8 @@ if __name__ == '__main__':
             continue
 
         stable_snap = Microk8sSnap(track, 'stable', juju_unit, juju_controller)
-        if stable_snap.released:
-            # We already have a snap released on stable. Lets run some tests.
+        if stable_snap.released and not stable_snap.is_prerelease:
+            # We already have a snap released on stable that is not a pre-release. Lets run some tests.
             if candidate_snap.version == stable_snap.version and always_release == 'no':
                 # Candidate and stable are the same version. Nothing to release.
                 print("Stable and candidate have the same version {}. We will not release.".format(stable_snap.version))
@@ -82,7 +82,13 @@ if __name__ == '__main__':
                                              tests_branch=tests_branch,
                                              proxy=proxy)
         else:
-            print("Stable channel is empty. Releasing without any testing.")
+            if not stable_snap.released:
+                print("Stable channel is empty. Releasing without any testing.")
+            elif stable_snap.is_prerelease:
+                print("Stable channel holds a prerelease. Releasing without any testing.")
+            else:
+                print("Stable channel holds a release that is not a prerelease. We should be testing that.")
+                assert False
 
         # The following will raise an exception if it fails
         candidate_snap.release_to('stable', dry_run=dry_run)
