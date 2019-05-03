@@ -99,7 +99,7 @@
 
 
 - job-template:
-    name: 'validate-{name}-{version}-{bundle}'
+    name: 'validate-{version}-{bundle}'
     id: validate-non-core
     description: |
       Validates non core k8s {version} {bundle} deployment.
