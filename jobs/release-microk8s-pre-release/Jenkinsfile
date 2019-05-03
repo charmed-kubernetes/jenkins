@@ -1,0 +1,63 @@
+@Library('juju-pipeline@master') _
+
+pipeline {
+    agent {
+        label "${params.build_node}"
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = "${utils.cipaths}"
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+        timeout(time: 4, unit: 'HOURS')
+    }
+    stages {
+        stage('Provision VM') {
+            steps {
+                sh "juju kill-controller -y ${params.controller} --destroy-all-models || true"
+                sh "juju bootstrap ${params.cloud} ${params.controller} --bootstrap-constraints arch=${params.arch} --debug"
+                sh "juju deploy ubuntu --constraints 'cores=4 mem=16G root-disk=40G'"
+                /* g3s.xlarge and p2.xlarge are for gpu
+                   a1.2xlarge for arm, t2.xlarge for amd64
+                */
+                sh "while ! juju show-status -m ${params.controller}:default --format short ubuntu/0 | grep active ; do sleep 10 ; echo waiting... ; done"
+            }
+        }
+        stage('Prepare VM') {
+            steps {
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo apt-get purge lxc* -y'"
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo apt-get purge lxd* -y'"
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo snap install lxd'"
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo lxd init --auto'"
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo snap install snapcraft --classic'"
+            }
+        }
+        stage('Setup') {
+            steps {
+                retry(3) {
+                    sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+                }
+            }
+        }
+        stage('Build and Release'){
+            steps {
+                dir('jobs') {
+                    retry(3) {
+                        sh "DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} TRACKS=${params.TRACKS} JUJU_UNIT=ubuntu/0 JUJU_CONTROLLER=${params.controller}:default  tox -e py36 -- python3 microk8s/release-pre-releases.py"
+                    }
+                }
+            }
+        }
+    }
+
+    /* We assume that there are no other lxc machines on the slave. */
+    post {
+        always {
+            sh "juju destroy-controller -y ${params.controller} --destroy-all-models || true"
+        }
+    }
+}
