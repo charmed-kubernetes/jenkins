@@ -16,6 +16,7 @@ class Microk8sSnap:
 
         self.juju_unit = juju_unit
         self.juju_controller = juju_controller
+        self.channel = channel
         revision_info_str = None
         for revision in revisions_list:
             if channel_patern in revision:
@@ -26,7 +27,6 @@ class Microk8sSnap:
             revision_info = revision_info_str.split()
 
             self.track = track
-            self.channel = channel
             self.under_testing_channel = channel
             if "edge" in self.under_testing_channel:
                 self.under_testing_channel = "{}/under-testing".format(self.under_testing_channel)
@@ -120,6 +120,56 @@ class Microk8sSnap:
             cmd = "(cd microk8s; {} )".format(cmd)
             cmd_array = self.cmd_array_to_run(cmd)
             check_call(cmd_array)
+
+    def build_and_release(self,  release=None, dry_run="no"):
+        '''
+        Build and release the snap from release.
+
+        Args:
+            release: what k8s version to package
+            dry_run: if "no" do the actual release
+        '''
+        cmd = "rm -rf microk8s"
+        cmd_array = self.cmd_array_to_run(cmd)
+        check_call(cmd_array)
+
+        cmd = "git clone https://github.com/ubuntu/microk8s"
+        cmd_array = self.cmd_array_to_run(cmd)
+        check_call(cmd_array)
+
+        if release:
+            if not release.startswith('v'):
+                release = "v{}".format(release)
+            cmd = "sed -i '/^set.*/a export KUBE_VERSION={}' microk8s/build-scripts/prepare-env.sh".format(release)
+            if self.juju_controller:
+                cmd_array = self.cmd_array_to_run(cmd)
+            else:
+                cmd_array = ["sed", "-i", "/^set.*/a export KUBE_VERSION={}".format(release), "microk8s/build-scripts/prepare-env.sh"]
+            check_call(cmd_array)
+
+        cmd = "(cd microk8s; sudo /snap/bin/snapcraft cleanbuild)"
+        cmd_array = self.cmd_array_to_run(cmd)
+        check_call(cmd_array)
+
+        cmd = "rm -rf microk8s_latest_amd64.snap"
+        check_call(cmd.split())
+        if self.juju_controller:
+            cmd = "juju  scp -m {} {}:/var/lib/juju/agents/unit-ubuntu-0/charm/microk8s/microk8s_latest_amd64.snap ."\
+                .format(self.juju_controller, self.juju_unit)
+            check_call(cmd.split())
+        else:
+            cmd = "mv microk8s/microk8s_latest_amd64.snap ."
+            check_call(cmd.split())
+
+        target = "{}/{}".format(self.track, self.channel)
+        cmd = "snapcraft push microk8s_latest_amd64.snap --release {}".format(target)
+        if dry_run == "no":
+            check_call(cmd.split())
+        else:
+            print("DRY RUN - calling: {}".format(cmd))
+
+        cmd = "rm -rf microk8s_latest_amd64.snap"
+        check_call(cmd.split())
 
     def cmd_array_to_run(self, cmd):
         '''

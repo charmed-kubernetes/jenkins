@@ -1,5 +1,6 @@
 import requests
 import json
+from snapstore import Microk8sSnap
 
 
 def upstream_release(release):
@@ -199,11 +200,14 @@ if __name__ == "__main__":
             print("{} and {} are equal".format(pair[0], pair[1]))
             assert pair[2] == 0
 
-    releases = get_latest_pre_release("1","15","alpha")
+    releases = get_latest_pre_release("1.15","alpha")
     print(releases)
 
-    releases = get_latest_pre_release("1","14","rc")
+    releases = get_latest_pre_release("1.14","rc")
     print(releases)
 
-    releases = get_latest_pre_release("1","12","rc")
+    releases = get_latest_pre_release("1.12","rc")
     print(releases)
+
+    snap = Microk8sSnap("1.15", "edge", juju_controller="aws-us-east-1:default", juju_unit="ubuntu/0")
+    snap.build_and_release("1.15.0-alpha.2")
