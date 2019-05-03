@@ -78,10 +78,5 @@ if __name__ == '__main__':
                 print("Nothing to do because snapstore has {} and pre-release is {} and always-release is {}"
                       .format(snap.released, pre_release, always_release))
                 continue
-            print("Building {}".format(pre_release))
-            # TODO Build the snap
-            if dry_run == "no":
-                print("Releasing {} to {}".format(pre_release, channel[0]))
-                # TODO release the snap
-            else:
-                print("DRY RUN - Releasing {} to {}".format(pre_release, channel[0]))
+            print("Building and releasing {}".format(pre_release))
+            snap.build_and_release(pre_release, dry_run)
