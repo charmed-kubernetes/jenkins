@@ -50,8 +50,8 @@ class Microk8sSnap:
 
         '''
         if self.is_prerelease:
-            print("This is a prerelease {}. Cannot release to other channels.".format(self.revision))
-            raise Exception("Cannot release prereleases.")
+            print("This is a pre-release {}. Cannot release to other channels.".format(self.revision))
+            raise Exception("Cannot release pre-releases.")
         target = channel if self.track == "latest" else "{}/{}".format(self.track, channel)
         cmd = "snapcraft release microk8s {} {}".format(self.revision, target)
         if dry_run == "no":

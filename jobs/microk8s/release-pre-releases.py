@@ -1,158 +1,87 @@
-import requests
+#!/usr/bin/python3
+
+import os
+from configbag import get_tracks
+from utils import upstream_release, get_latest_pre_release, compare_releases
+from snapstore import Microk8sSnap
 
 
-def compare_patch_with_alpha(a, b):
-    """Compares two patch number string. The patch strings are of the form:
-    0-alpha, 1-beta, 2-rc, 0
+# Set this to 'no' if you are sure you want to release
+dry_run = os.environ.get('DRY_RUN', 'yes')
 
-    Returns: 1 if a > b, 0 if a==b, -1 if a < b
-    Raises ValueError if string is not correctly formated """
-    if a == b:
-        return 0
+# Set this to 'yes' to bypass any check such as new version present.
+always_release = os.environ.get('ALWAYS_RELEASE', 'no')
 
-    aparts = a.split('-')
-    bparts = b.split('-')
+# If TESTS_BRANCH is not set the tests branch will be the one matching the track
+tests_branch = os.environ.get('TESTS_BRANCH')
+if tests_branch and tests_branch.strip() == '':
+    tests_branch = None
 
-    # Comparing 0[-X] to 1[-Y]
-    if aparts[0] != bparts[0]:
-        arelease = int(aparts[0])
-        brelease = int(bparts[0])
-        if arelease > brelease:
-            return 1
-        if arelease < brelease:
-            return -1
-    else: # We are now at 1[-X] == 1[-Y]
-        # Comparing 14 to 14-{whatever}
-        if len(aparts) < len(bparts):
-            return 1
-        # Comparing 14-{whatever} to 14
-        if len(aparts) > len(bparts):
-            return -1
+# If you do not specify TRACKS all tracks will be processes
+tracks_requested = os.environ.get('TRACKS')
+if not tracks_requested or tracks_requested.strip() == '':
+    tracks_requested = get_tracks()
+else:
+    tracks_requested = tracks_requested.split()
 
-        # We are now at 1-{something} == 1-{somethingelse}
-        # Comparing 14-{alpha} to 14-{beta,rc}
-        if "alpha" in aparts[1] and any(r in bparts[1] for r in ['beta', 'rc']):
-            return -1
-        # Comparing 14-{alpha,beta} to 14-rc
-        if any(r in aparts[1] for r in ['beta', 'alpha']) and "rc" in bparts[1]:
-            return -1
+# Set this to the proxy your environment may have
+proxy = os.environ.get('PROXY')
+if not proxy or proxy.strip() == '':
+    proxy = None
 
-        # We are now at 1-{something} == 1-{somethingelse}
-        # were something > somethingelse
-        return 1
+# If JUJU_UNIT is not set the tests will be run in local LXC containers
+juju_unit = os.environ.get('JUJU_UNIT')
+if juju_unit and juju_unit.strip() == '':
+    juju_unit = None
+
+juju_controller = os.environ.get('JUJU_CONTROLLER')
+if juju_controller and juju_controller.strip() == '':
+    juju_controller = None
 
 
-def compare_releases(a, b):
-    """Compares two version string.
+if __name__ == '__main__':
+    '''
+    Releases pre-releases to channels in the tracks provided in $TRACKS.
+    '''
+    print("Check GH for a pre-release and release to the right channel.")
+    print("Dry run is set to '{}'.".format(dry_run))
+    for track in tracks_requested:
+        if track == 'latest':
+            print("Skipping latest track")
+            continue
 
-    Returns: 1 if a > b, 0 if a==b, -1 if a < b
-    Raises ValueError if string is not correctly formatted """
+        print("Looking at track {}".format(track))
+        upstream = upstream_release(track)
+        if upstream:
+            print("There is already an upstream stable release. We do not release pre-releases.")
+            continue
 
-    major = 0
-    minor = 1
-    patch = 2
-    revision = 3
+        # Make sure the track is clear from stable releases.
+        track_has_stable_release = False
+        for channel in ['edge', 'beta', 'candidate', 'stable']:
+            snap = Microk8sSnap(track, channel)
+            if snap.released and not snap.is_prerelease:
+                track_has_stable_release = True
+                break
 
-    a = a.strip()
-    b = b.strip()
-    if a.startswith('v'):
-        a = a[1:]
-    if b.startswith('v'):
-        b = b[1:]
+        if track_has_stable_release:
+            print("There is already an non-pre-release snap in the store. We do not release pre-releases.")
+            continue
 
-    if a == b:
-        return 0
-
-    aparts = a.split('.')
-    bparts = b.split('.')
-
-    # Major part of a and b have to be digits
-    amajor = int(aparts[major])
-    bmajor = int(bparts[major])
-
-    # Comparing 1.x to 2.y
-    if amajor != bmajor:
-        if amajor > bmajor:
-            return 1
-        elif amajor < bmajor:
-            return -1
-
-    # Since we reached this spot we have major sections equal
-
-    # Minor part of a and b have to be digits
-    aminor = int(aparts[minor])
-    bminor = int(bparts[minor])
-
-    # Comparing X.1 to X.12
-    if aminor != bminor:
-        if aminor > bminor:
-            return 1
-        elif aminor < bminor:
-            return -1
-
-    # Since we reached this spot we have major and minor sections equal
-    patch_compare = compare_patch_with_alpha(aparts[patch], bparts[patch])
-    if patch_compare != 0:
-        return patch_compare
-
-    # Since we reached this spot we have major, minor and patch sections equal
-    # We know revision numbers exist because we have unequal version strings
-    arevision = int(aparts[revision])
-    brevision = int(bparts[revision])
-    if arevision != brevision:
-        if arevision > brevision:
-            return 1
-        elif arevision < brevision:
-            return -1
-
-    # Since we reached this spot we have major, minor, patch and revision sections equal
-    # This should have been caught at the very beginning.
-    assert False
-
-
-def upstream_release(release):
-    """Return the latest stable k8s in the release series"""
-    if release == "latest":
-        release_url = "https://dl.k8s.io/release/stable.txt"
-    else:
-        release_url = "https://dl.k8s.io/release/stable-{}.txt".format(release)
-
-    r = requests.get(release_url)
-    if r.status_code == 200:
-        return r.content.decode().strip()
-    else:
-        None
-
-
-if __name__ == "__main__":
-    """Tests for version comparing"""
-    versions = [
-        ('1.5.3', '1.3.4', 1),
-        ('1.5.3', '1.6.4', 2),
-        ('1.5.3', '1.5.3', 0),
-        ('1.15.3', '1.15.4', 2),
-        ('1.15.3', '1.15.2', 1),
-        ('2.5.3', '3.3.4', 2),
-        ('4.5.3', '3.3.4', 1),
-        ('1.15.0-alpha.0', '1.15.0-alpha.0', 0),
-        ('1.15.0-alpha.0', '1.15.0-alpha.1', 2),
-        ('1.15.0-alpha.2', '1.15.0-alpha.1', 1),
-        ('1.15.2-alpha.2', '1.15.0-alpha.1', 1),
-        ('1.15.0-alpha.2', '1.15.2-alpha.1', 2),
-        ('1.15.0-alpha.2', '1.15.2-alpha.2', 2),
-        ('1.15.2-alpha.2', '1.15.0-beta.1', 1),
-        ('1.15.0-alpha.2', '1.15.2-rc.1', 2),
-        ('1.15.0-alpha.2', '1.15.2', 2),
-        ('4.5.3', '3.3.0-alpha.2', 1),
-    ]
-    for pair in versions:
-        res = compare_releases(pair[0], pair[1])
-        if res > 0:
-            print("{} newer than {}".format(pair[0], pair[1]))
-            assert pair[2] == 1
-        elif res < 0:
-            print("{} older than {}".format(pair[0], pair[1]))
-            assert pair[2] == 2
-        else:
-            print("{} and {} are equal".format(pair[0], pair[1]))
-            assert pair[2] == 0
+        for channel in [('edge', 'alpha'), ('beta', 'beta'), ('candidate', 'rc')]:
+            pre_release = get_latest_pre_release(track, channel[1])
+            if not pre_release:
+                print("No {} pre-release".format(channel[1]))
+                continue
+            snap = Microk8sSnap(track, channel[0])
+            if snap.released and compare_releases(snap.version, pre_release) >= 0 and always_release == 'no':
+                print("Nothing to do because snapstore has {} and pre-release is {} and always-release is {}"
+                      .format(snap.released, pre_release, always_release))
+                continue
+            print("Building {}".format(pre_release))
+            # TODO Build the snap
+            if dry_run == "no":
+                print("Releasing {} to {}".format(pre_release, channel[0]))
+                # TODO release the snap
+            else:
+                print("DRY RUN - Releasing {} to {}".format(pre_release, channel[0]))
