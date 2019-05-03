@@ -125,6 +125,7 @@ def upstream_release(release):
 
 
 if __name__ == "__main__":
+    """Tests for version comparing"""
     versions = [
         ('1.5.3', '1.3.4', 1),
         ('1.5.3', '1.6.4', 2),

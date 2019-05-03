@@ -33,6 +33,9 @@ class Microk8sSnap:
             self.revision = revision_info[0]
             self.version = revision_info[3]
             version_parts = self.version.split('.')
+            self.is_prerelease = False
+            if not version_parts[2].isdigit():
+                self.is_prerelease = True
             self.major_minor_version = "{}.{}".format(version_parts[0], version_parts[1])
             self.release_date = parser.parse(revision_info[1])
             self.released = True
@@ -46,6 +49,9 @@ class Microk8sSnap:
             channel: The channel to release to
 
         '''
+        if self.is_prerelease:
+            print("This is a prerelease {}. Cannot release to other channels.".format(self.revision))
+            raise Exception("Cannot release prereleases.")
         target = channel if self.track == "latest" else "{}/{}".format(self.track, channel)
         cmd = "snapcraft release microk8s {} {}".format(self.revision, target)
         if dry_run == "no":
