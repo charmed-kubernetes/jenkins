@@ -68,11 +68,11 @@
     parameters:
       - string:
           name: version
-          default: '1.11.5'
+          default: '1.12.7'
           description: snap eks version to build/promote
       - string:
           name: channels
-          default: '1.11.5/edge 1.11.5/beta 1.11.5/candidate 1.11.5/stable'
+          default: '1.12.7/edge'
       - bool:
           name: release_only
           default: false
