@@ -11,7 +11,7 @@ ARCH=${KUBE_ARCH:-"amd64"}
 
 GH_USER="${GH_USER:-}"
 GH_TOKEN="${GH_TOKEN:-}"
-SNAPS="${SNAPS:-kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet kube-proxy cdk-addons kubeadm kubernetes-test}"
+SNAPS="${SNAPS:-kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet kube-proxy kubeadm kubernetes-test}"
 
 echo PROMOTE_FROM="$PROMOTE_FROM"
 echo PROMOTE_TO="$PROMOTE_TO"

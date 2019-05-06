@@ -59,7 +59,7 @@
 - job:
     name: 'build-release-cdk-addons'
     description: |
-      Builds, releases and promotes cdk-addons for {version} to the snapstore.
+      Builds, releases and promotes cdk-addons for supported k8s versions to the snapstore.
       Pushes CNI images used by CDK to the Canonical image registry.
     project-type: pipeline
     pipeline-scm:
