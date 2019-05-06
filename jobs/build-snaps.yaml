@@ -57,6 +57,33 @@
 
 
 - job:
+    name: 'build-release-cdk-addons'
+    description: |
+      Builds, releases and promotes cdk-addons for {version} to the snapstore.
+      Pushes CNI images used by CDK to the Canonical image registry.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-snaps/build-release-cdk-addons.groovy
+    parameters:
+      - string:
+          name: version
+          default: 'v1.14'
+          description: kubernetes version (v$major.$minor)
+      - string:
+          name: channels
+          default: '1.14.2/edge 1.14.2/beta 1.14.2/candidate 1.14.2/stable'
+      - bool:
+          name: dry_run
+          default: false
+          description: only report what would be pushed to github / snapstore / image registry
+
+    properties:
+      - build-discarder:
+          num-to-keep: 2
+
+- job:
     name: 'build-release-eks-snaps'
     description: |
       Builds, releases and promotes Amazon EKS snaps for {version} to the snapstore.
