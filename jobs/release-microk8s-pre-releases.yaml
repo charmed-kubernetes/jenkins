@@ -1,7 +1,7 @@
 # Tests and releases microk8s pre-releases
 
 - job-template:
-    name: 'release-microk8s-pre-releases-{arch}'
+    name: 'release-microk8s-pre-release-{arch}'
     description: |
       Tests and releases microk8s pre-releases. Affects all tracks on {arch}.
     project-type: pipeline
