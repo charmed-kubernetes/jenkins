@@ -210,3 +210,4 @@
     jobs:
       - 'build-release-snaps'
       - 'promote-snaps'
+      - 'build-release-cdk-addons'
