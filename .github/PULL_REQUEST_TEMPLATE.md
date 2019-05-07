@@ -7,3 +7,5 @@ Please make sure to open PR's against the correct code:
 - For charm builds, `jobs/build-charms`
 - For bundle builds, `jobs/build-bundles`
 
+# IF YOUR PR DEPENDS ON SOME OTHER CODE THATS NOT YET MERGED PREFIX YOUR PR WITH `WIP:`
+
