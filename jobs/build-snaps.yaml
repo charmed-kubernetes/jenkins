@@ -56,10 +56,10 @@
           num-to-keep: 2
 
 
-- job:
-    name: 'build-release-cdk-addons'
+- job-template:
+    name: 'build-release-cdk-addons-{arch}'
     description: |
-      Builds, releases and promotes cdk-addons for supported k8s versions to the snapstore.
+      Builds, releases and promotes cdk-addons for supported k8s versions on {arch} to the snapstore.
       Pushes CNI images used by CDK to the Canonical image registry.
     project-type: pipeline
     pipeline-scm:
@@ -67,6 +67,12 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/build-snaps/build-release-cdk-addons.groovy
     parameters:
+      - string:
+          name: arch
+          default: '{arch}'
+      - string:
+          name: build_node
+          default: 'runner-{arch}'
       - string:
           name: version
           default: 'v1.14'
@@ -185,6 +191,12 @@
     name: 'build-release-snaps'
     jobs:
       - 'build-release-snaps-{arch}':
+          arch: ['amd64', 's390x', 'arm64', 'ppc64le']
+
+- job-group:
+    name: 'build-release-cdk-addons'
+    jobs:
+      - 'build-release-cdk-addons-{arch}':
           arch: ['amd64', 's390x', 'arm64', 'ppc64le']
 
 - job-group:

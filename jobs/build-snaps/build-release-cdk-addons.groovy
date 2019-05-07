@@ -4,7 +4,7 @@ def snap_sh = "${utils.cipy} build-snaps/snaps.py"
 
 pipeline {
     agent {
-        label "runner-amd64"
+        label "${params.build_node}"
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
