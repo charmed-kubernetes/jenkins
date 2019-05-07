@@ -34,6 +34,7 @@ async def validate_all(model, log_dir):
     cpu_arch = await asyncify(arch)()
     validate_status_messages(model)
     await validate_auth_file_propagation(model)
+    await validate_etcd_actions(model)
     await validate_snap_versions(model)
     await validate_gpu_support(model)
     if cpu_arch not in ['s390x', 'arm64', 'aarch64']:
@@ -63,6 +64,41 @@ async def validate_all(model, log_dir):
         await validate_encryption_at_rest(model)
     await validate_dns_provider(model)
     await validate_docker_opts(model)
+
+
+@log_calls_async
+async def validate_etcd_actions(model):
+    """Test etcd charm actions
+
+    """
+    async def assert_action(unit, action, output_regex=None, **action_params):
+        action = await unit.run_action(action, **action_params)
+        await action.wait()
+        assert action.status == "completed"
+        if output_regex:
+            output = action.data["results"]["output"]
+            assert re.search(output_regex, output)
+
+    etcd = model.applications['etcd'].units[0]
+
+    # set db size limit to 16MB so we can fill it quickly
+    await etcd.run("sed -i 's/^quota-backend-bytes:.*$/quota-backend-bytes: 16777216/' /var/snap/etcd/common/etcd.conf.yml")
+    await etcd.run("sudo systemctl restart snap.etcd.etcd.service")
+    # fill the db to cause an alarm
+    await etcd.run("while [ 1 ]; do dd if=/dev/urandom bs=1024 count=1024 | ETCDCTL_API=3 /snap/bin/etcd.etcdctl --endpoints :4001 put key || break; done")
+
+    # confirm alarm is raised
+    await assert_action(etcd, "alarm-list", r"alarm:NOSPACE")
+    # compact and defrag db, then disarm alarm
+    await assert_action(etcd, "compact", r"compacted revision", physical=True)
+    await assert_action(etcd, "defrag", r"Finished defragmenting")
+    await assert_action(etcd, "alarm-disarm")
+    # confirm alarm is gone
+    await assert_action(etcd, "alarm-list", r"^$")
+
+    # reset db size to unlimited (default)
+    await etcd.run("sed -i 's/^quota-backend-bytes:.*$/quota-backend-bytes: 0/' /var/snap/etcd/common/etcd.conf.yml")
+    await etcd.run("sudo systemctl restart snap.etcd.etcd.service")
 
 
 @log_calls_async
