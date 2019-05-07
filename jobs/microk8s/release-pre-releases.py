@@ -63,7 +63,7 @@ if __name__ == '__main__':
             if not pre_release:
                 print("No {} pre-release".format(channel[1]))
                 continue
-            snap = Microk8sSnap(track, channel[0])
+            snap = Microk8sSnap(track, channel[0], juju_unit=juju_unit, juju_controller=juju_controller)
             if snap.released and compare_releases(snap.version, pre_release) >= 0 and always_release == 'no':
                 print("Nothing to do because snapstore has {} and pre-release is {} and always-release is {}"
                       .format(snap.released, pre_release, always_release))

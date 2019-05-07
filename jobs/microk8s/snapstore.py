@@ -16,6 +16,7 @@ class Microk8sSnap:
 
         self.juju_unit = juju_unit
         self.juju_controller = juju_controller
+        self.track = track
         self.channel = channel
         revision_info_str = None
         for revision in revisions_list:
@@ -26,7 +27,6 @@ class Microk8sSnap:
             # "180     2018-09-12T15:51:33Z  amd64   v1.11.3    1.11/edge*"
             revision_info = revision_info_str.split()
 
-            self.track = track
             self.under_testing_channel = channel
             if "edge" in self.under_testing_channel:
                 self.under_testing_channel = "{}/under-testing".format(self.under_testing_channel)
