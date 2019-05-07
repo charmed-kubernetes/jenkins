@@ -39,7 +39,7 @@ pipeline {
                     else
                         echo "Creating \$ADDONS_BRANCH for cdk-addons."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
-                        pushd cdk-addons
+                        cd cdk-addons
                         git checkout -b \$ADDONS_BRANCH
                         if ${params.dry_run}
                         then
@@ -47,7 +47,7 @@ pipeline {
                         else
                             git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/cdk-addons.git --all
                         fi
-                        popd
+                        cd -
                     fi
                 """
                 sh "git clone https://github.com/charmed-kubernetes/bundle.git"
@@ -55,7 +55,7 @@ pipeline {
         }
         stage('Build cdk-addons'){
             steps {
-                sh "pushd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${params.version} default; popd"
+                sh "cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${params.version} default; cd -"
             }
         }
         stage('Push Images'){
@@ -65,7 +65,7 @@ pipeline {
                     STATIC_KEY=${params.version}-static:
                     STATIC_LINE=\$(grep ^\${STATIC_KEY} \${IMAGES_FILE} 2>/dev/null || echo '')
                     UPSTREAM_KEY=${params.version}-upstream:
-                    UPSTREAM_LINE=\$(pushd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${params.version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY}; popd)
+                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${params.version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY}; cd -)
 
                     echo "Updating bundle images with upstream list."
                     if grep -q ^\${UPSTREAM_KEY} \${IMAGES_FILE}
@@ -75,7 +75,7 @@ pipeline {
                         echo \${UPSTREAM_LINE} >> \${IMAGES_FILE}
                     fi
                     sort -o \${IMAGES_FILE} \${IMAGES_FILE}
-                    pushd bundle
+                    cd bundle
                     git commit -am "Updating \${UPSTREAM_KEY} images"
                     if ${params.dry_run}
                     then
@@ -83,7 +83,7 @@ pipeline {
                     else
                         git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
                     fi
-                    popd
+                    cd -
 
                     echo "Pushing images to the Canonical registry"
                     ALL_IMAGES=\$(echo \${STATIC_LINE} \${UPSTREAM_LINE} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g")
