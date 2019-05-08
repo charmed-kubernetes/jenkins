@@ -31,6 +31,6 @@ def branch_exists(repo, branch, env):
     """
     try:
         sh.git("ls-remote", "--exit-code", "--heads", repo, branch, env=env)
+    except sh.ErrorReturnCode_2 as e:
         return False
-    except sh.ErrorReturnCode as e:
-        return True
+    return True
