@@ -89,7 +89,6 @@ pipeline {
                     if ${params.dry_run}
                     then
                         echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
-                        exit 1
                     else
                         git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
                     fi
@@ -110,16 +109,25 @@ pipeline {
                     for i in \${ALL_IMAGES}
                     do
                         docker pull \${i}
-                        for r in \${TAG_REPLACE}
+                        for repl in \${TAG_REPLACE}
                         do
-                            RAW_IMAGE=\$(echo \${i} | sed -e "s|\${r}||g")
+                            RAW_IMAGE=\${i}
+                            if echo \${RAW_IMAGE} | grep -q \${repl}
+                            then
+                                RAW_IMAGE=\$(echo \${RAW_IMAGE} | sed -e "s|\${repl}||g")
+                                break
+                            fi
                         done
                         docker tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
+                        else
+                            docker push \${TAG_PREFIX}/\${RAW_IMAGE}
                         fi
                     done
+
+                    docker images
                 """
             }
         }
