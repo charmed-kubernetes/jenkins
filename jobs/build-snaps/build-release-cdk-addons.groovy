@@ -1,6 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def bundle_image_file = "./bundle/container-images.txt"
+def kube_version = params.k8s_tag
 def snap_sh = "${utils.cipy} build-snaps/snaps.py"
 
 pipeline {
@@ -54,18 +55,22 @@ pipeline {
                 sh "git clone https://github.com/charmed-kubernetes/bundle.git"
             }
         }
+        stage('Ensure valid K8s version'){
+            when {
+                expression { kube_version == "" }
+            }
+            steps {
+                script {
+                    kube_version = sh(returnStdout: true, script: "curl -L https://dl.k8s.io/release/stable-${params.version}.txt")
+                }
+            }
+        }
         stage('Build cdk-addons and image list'){
             steps {
                 sh """
-                    if [ -z "${params.k8s_tag}" ]
-                    then
-                        KUBE_VERSION=\$(curl -L https://dl.k8s.io/release/stable-${params.version}.txt)
-                    else
-                        KUBE_VERSION=${params.k8s_tag}
-                    fi
-
                     echo "Building cdk-addons snap."
-                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=\${KUBE_VERSION} default; cd -
+                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} default; cd -
+                    exit 1
 
                     echo "Processing upstream images."
                     UPSTREAM_KEY=\${KUBE_VERSION}-upstream:
