@@ -15,7 +15,7 @@ pipeline {
             script: 'if "${params.k8s_tag}"; then echo "${params.k8s_tag}"; else echo $(curl -L https://dl.k8s.io/release/stable-${params.version}.txt); fi'
         )}"""
 
-        PATH = "${utils.cipaths}"
+        TESTPATH = "${utils.cipaths}"
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.image-registry.canonical.com:5000'
