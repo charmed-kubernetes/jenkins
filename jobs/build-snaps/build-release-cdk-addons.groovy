@@ -1,7 +1,5 @@
 @Library('juju-pipeline@master') _
 
-def curl_version = ["curl", "-L", "https://dl.k8s.io/release/stable-${params.version}.txt"].execute().text
-def kube_version = params.k8s_tag ? params.k8s_tag : "${curl_version}"
 def snap_sh = "${utils.cipy} build-snaps/snaps.py"
 
 pipeline {
@@ -12,6 +10,11 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
+        KUBE_VERSION = """${sh(
+            returnStdout: true,
+            script: 'if "${params.k8s_tag}"; then echo "${params.k8s_tag}"; else echo $(curl -L https://dl.k8s.io/release/stable-${params.version}.txt); fi'
+        )}"""
+
         PATH = "${utils.cipaths}"
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
