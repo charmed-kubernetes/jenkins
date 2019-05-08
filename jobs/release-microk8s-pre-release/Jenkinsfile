@@ -18,7 +18,7 @@ pipeline {
     stages {
         stage('Provision VM') {
             steps {
-                sh "juju kill-controller -y ${params.controller} --destroy-all-models || true"
+                sh "juju destroy-controller -y ${params.controller} --destroy-all-models || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --constraints arch=${params.arch} --debug"
                 sh "juju deploy -m ${params.controller}:default ubuntu --constraints 'cores=4 mem=16G root-disk=40G'"
                 /* g3s.xlarge and p2.xlarge are for gpu

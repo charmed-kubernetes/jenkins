@@ -129,6 +129,7 @@ class Microk8sSnap:
             release: what k8s version to package
             dry_run: if "no" do the actual release
         '''
+        arch = configbag.get_arch()
         cmd = "rm -rf microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
         check_call(cmd_array)
@@ -151,24 +152,24 @@ class Microk8sSnap:
         cmd_array = self.cmd_array_to_run(cmd)
         check_call(cmd_array)
 
-        cmd = "rm -rf microk8s_latest_amd64.snap"
+        cmd = "rm -rf microk8s_latest_{}.snap".format(arch)
         check_call(cmd.split())
         if self.juju_controller:
-            cmd = "juju  scp -m {} {}:/var/lib/juju/agents/unit-ubuntu-0/charm/microk8s/microk8s_latest_amd64.snap ."\
-                .format(self.juju_controller, self.juju_unit)
+            cmd = "juju  scp -m {} {}:/var/lib/juju/agents/unit-ubuntu-0/charm/microk8s/microk8s_latest_{}.snap ."\
+                .format(self.juju_controller, self.juju_unit, arch)
             check_call(cmd.split())
         else:
-            cmd = "mv microk8s/microk8s_latest_amd64.snap ."
+            cmd = "mv microk8s/microk8s_latest_{}.snap .".format(arch)
             check_call(cmd.split())
 
         target = "{}/{}".format(self.track, self.channel)
-        cmd = "snapcraft push microk8s_latest_amd64.snap --release {}".format(target)
+        cmd = "snapcraft push microk8s_latest_{}.snap --release {}".format(arch, target)
         if dry_run == "no":
             check_call(cmd.split())
         else:
             print("DRY RUN - calling: {}".format(cmd))
 
-        cmd = "rm -rf microk8s_latest_amd64.snap"
+        cmd = "rm -rf microk8s_latest_{}.snap".format(arch)
         check_call(cmd.split())
 
     def cmd_array_to_run(self, cmd):
