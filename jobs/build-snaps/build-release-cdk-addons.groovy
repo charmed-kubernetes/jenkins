@@ -15,14 +15,10 @@ pipeline {
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.image-registry.canonical.com:5000'
 
-        if (${params.k8s_tag}) {
-            KUBE_VERSION = ${params.k8s_tag}
-        } else {
-            KUBE_VERSION = """${sh(
-                returnStdout: true,
-                script: "curl -L https://dl.k8s.io/release/stable-${params.version}.txt"
-            )}"""
-        }
+        KUBE_VERSION = """${sh(
+            returnStdout: true,
+            script: 'if "${params.k8s_tag}"; then echo "${params.k8s_tag}"; else echo $(curl -L https://dl.k8s.io/release/stable-${params.version}.txt); fi'
+        )}"""
     }
     options {
         ansiColor('xterm')
