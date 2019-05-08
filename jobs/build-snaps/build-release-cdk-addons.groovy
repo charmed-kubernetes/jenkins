@@ -14,6 +14,15 @@ pipeline {
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.image-registry.canonical.com:5000'
+
+        if (${params.k8s_tag}) {
+            KUBE_VERSION = ${params.k8s_tag}
+        } else {
+            KUBE_VERSION = """${sh(
+                returnStdout: true,
+                script: "curl -L https://dl.k8s.io/release/stable-${params.version}.txt"
+            )}"""
+        }
     }
     options {
         ansiColor('xterm')
@@ -53,21 +62,18 @@ pipeline {
                 sh "git clone https://github.com/charmed-kubernetes/bundle.git"
             }
         }
-        stage('Build cdk-addons'){
-            steps {
-                sh "cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${params.version} default; cd -"
-            }
-        }
-        stage('Push Images'){
+        stage('Build cdk-addons and image list'){
             steps {
                 sh """
-                    IMAGES_FILE=./bundle/container-images.txt
-                    STATIC_KEY=${params.version}-static:
-                    STATIC_LINE=\$(grep ^\${STATIC_KEY} \${IMAGES_FILE} 2>/dev/null || echo '')
-                    UPSTREAM_KEY=${params.version}-upstream:
-                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${params.version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY}; cd -)
+                    echo "Building cdk-addons snap."
+                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${env.KUBE_VERSION} default; cd -
 
-                    echo "Updating bundle images with upstream list."
+                    echo "Processing upstream images."
+                    IMAGES_FILE=./bundle/container-images.txt
+                    UPSTREAM_KEY=${env.KUBE_VERSION}-upstream:
+                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${env.KUBE_VERSION} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY}; cd -)
+
+                    echo "Updating bundle with upstream images."
                     if grep -q ^\${UPSTREAM_KEY} \${IMAGES_FILE}
                     then
                         sed -i -e "s|^\${UPSTREAM_KEY}.*|\${UPSTREAM_LINE}|g" \${IMAGES_FILE}
@@ -84,9 +90,18 @@ pipeline {
                         git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
                     fi
                     cd -
+                """
+            }
+        }
+        stage('Push Images'){
+            steps {
+                sh """
+                    IMAGES_FILE=./bundle/container-images.txt
+                    STATIC_KEY=v${params.version}-static:
+                    UPSTREAM_KEY=${env.KUBE_VERSION}-upstream:
 
                     echo "Pushing images to the Canonical registry"
-                    ALL_IMAGES=\$(echo \${STATIC_LINE} \${UPSTREAM_LINE} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g")
+                    ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} \${IMAGES_FILE} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g")
                     for i in \${ALL_IMAGES}
                     do
                         if ${params.dry_run}
