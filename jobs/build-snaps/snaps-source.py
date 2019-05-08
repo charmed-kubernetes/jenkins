@@ -58,7 +58,7 @@ def _sync_upstream(snap_list, starting_ver):
         git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
         snap_releases = git.remote_branches(git_repo)
         if not set(supported_releases).issubset(set(snap_releases)):
-            for snap_rel in supported_releases:
+            for snap_rel in set(supported_releases).difference(set(snap_releases)):
                 click.echo(f"Creating branch for {snap}-{snap_rel}")
                 _create_branch(git_repo, "master", snap_rel, dry_run=False)
                 _fmt_version = semver.parse(snap_rel[1:])
