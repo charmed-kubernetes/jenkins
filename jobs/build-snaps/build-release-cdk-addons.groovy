@@ -10,7 +10,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "${utils.cipaths}"
+        PATH+EXTRA = "${utils.cipaths}"
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.image-registry.canonical.com:5000'
