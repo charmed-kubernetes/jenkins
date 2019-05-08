@@ -1,6 +1,6 @@
 @Library('juju-pipeline@master') _
 
-def curl_version = sh 'curl -L https://dl.k8s.io/release/stable-${params.version}.txt', returnStdout: true
+def curl_version = sh(script: 'curl -L https://dl.k8s.io/release/stable-${params.version}.txt', returnStdout: true)
 def kube_version = params.k8s_tag ? params.k8s_tag : "${curl_version}"
 def snap_sh = "${utils.cipy} build-snaps/snaps.py"
 
