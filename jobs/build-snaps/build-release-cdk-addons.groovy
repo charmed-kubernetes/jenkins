@@ -61,7 +61,7 @@ pipeline {
             }
             steps {
                 script {
-                    kube_version = sh(returnStdout: true, script: "curl -L https://dl.k8s.io/release/stable-${params.version}.txt")
+                    kube_version = sh(returnStdout: true, script: "curl -L https://dl.k8s.io/release/stable-${params.version}.txt").trim()
                 }
                 echo "Set K8s version to: ${kube_version}a"
             }
