@@ -10,14 +10,14 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH+EXTRA = "${utils.cipaths}"
+        PATH = "${utils.cipaths}"
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.image-registry.canonical.com:5000'
 
-        KUBE_VERSION = """${sh(
+        KUBE_VERSION = """${/bin/sh(
             returnStdout: true,
-            script: 'if "${params.k8s_tag}"; then echo "${params.k8s_tag}"; else echo $(curl -L https://dl.k8s.io/release/stable-${params.version}.txt); fi'
+            script: 'if "${params.k8s_tag}"; then echo "${params.k8s_tag}"; else echo $(/usr/bin/curl -L https://dl.k8s.io/release/stable-${params.version}.txt); fi'
         )}"""
     }
     options {
