@@ -85,7 +85,7 @@
           default: ''
           description: |
             Source tag from https://github.com/kubernetes/kubernetes. If not specified,
-            the tag will be set to https://dl.k8s.io/release/stable-{version}.txt
+            the tag will be set to https://dl.k8s.io/release/stable-`version`.txt
       - string:
           name: channels
           default: '1.14.2/edge 1.14.2/beta 1.14.2/candidate 1.14.2/stable'
