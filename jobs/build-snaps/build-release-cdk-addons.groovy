@@ -103,7 +103,7 @@ pipeline {
                 sh """
                     STATIC_KEY=v${params.version}-static:
                     UPSTREAM_KEY=${kube_version}-upstream:
-                    ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g")
+                    ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|${params.arch}|g")
 
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
                     TAG_REPLACE='k8s.gcr.io/ quay.io/'
