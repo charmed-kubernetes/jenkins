@@ -63,18 +63,20 @@ pipeline {
                 script {
                     kube_version = sh(returnStdout: true, script: "curl -L https://dl.k8s.io/release/stable-${params.version}.txt").trim()
                 }
-                echo "Set K8s version to: ${kube_version}a"
+                echo "Set K8s version to: ${kube_version}"
             }
         }
         stage('Build cdk-addons and image list'){
             steps {
                 sh """
                     echo "Building cdk-addons snap."
-                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} default; cd -
+                    cd cdk-addons
+                    make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} default
+                    cd -
 
                     echo "Processing upstream images."
                     UPSTREAM_KEY=${kube_version}-upstream:
-                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY}; cd -)
+                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY})
 
                     echo "Updating bundle with upstream images."
                     if grep -q ^\${UPSTREAM_KEY} ${bundle_image_file}
