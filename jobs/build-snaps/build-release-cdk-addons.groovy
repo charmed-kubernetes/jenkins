@@ -83,7 +83,7 @@ pipeline {
                     git commit -am "Updating \${UPSTREAM_KEY} images"
                     if ${params.dry_run}
                     then
-                        echo "Dry run; would have pushed: \${UPSTREAM_LINE}"
+                        echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
                     else
                         git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
                     fi
@@ -91,7 +91,7 @@ pipeline {
                 """
             }
         }
-        stage('Push Images'){
+        stage('Process Images'){
             steps {
                 sh """
                     if [ -z "${params.k8s_tag}" ]
@@ -103,20 +103,28 @@ pipeline {
 
                     STATIC_KEY=v${params.version}-static:
                     UPSTREAM_KEY=\${KUBE_VERSION}-upstream:
-
-                    echo "Pushing images to the Canonical registry"
                     ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g")
+
+                    TAG_PREFIX=${env.REGISTRY_URL}/cdk
+                    TAG_REPLACE='k8s.gcr.io/ quay.io/'
+
                     for i in \${ALL_IMAGES}
                     do
+                        docker pull \${i}
+                        for r in \${TAG_REPLACE}
+                        do
+                            RAW_IMAGE=\$(echo \${i} | sed -e "s|\${r}||g")
+                        done
+                        docker tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         if ${params.dry_run}
                         then
-                            echo "Dry run; would have pushed: \${i}"
+                            echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
                         fi
                     done
                 """
             }
         }
-        stage('Pushing cdk-addons'){
+        stage('Push cdk-addons snap'){
             steps {
                 script {
                     if(params.dry_run) {
@@ -127,16 +135,18 @@ pipeline {
                 }
             }
         }
-        stage('Promoting cdk-addons'){
+        stage('Promote cdk-addons snap'){
             steps {
-                script {
-                    def snaps_to_release = ['cdk-addons']
-                    params.channels.split().each { channel ->
-                        snaps_to_release.each  { snap ->
-                            if(params.dry_run) {
-                                sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${params.version} --dry-run"
-                            } else {
-                                sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${params.version}"
+                dir('jobs'){
+                    script {
+                        def snaps_to_release = ['cdk-addons']
+                        params.channels.split().each { channel ->
+                            snaps_to_release.each  { snap ->
+                                if(params.dry_run) {
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${params.version} --dry-run"
+                                } else {
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${params.version}"
+                                }
                             }
                         }
                     }
