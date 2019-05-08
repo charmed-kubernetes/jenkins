@@ -129,6 +129,7 @@ pipeline {
                         fi
                     done
 
+                    echo "All images known to this builder:"
                     docker images
                 """
             }
@@ -148,13 +149,14 @@ pipeline {
             steps {
                 dir('jobs'){
                     script {
+                        def kube_ersion = kube_version.substring(1)
                         def snaps_to_release = ['cdk-addons']
                         params.channels.split().each { channel ->
                             snaps_to_release.each  { snap ->
                                 if(params.dry_run) {
-                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_version} --dry-run"
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion} --dry-run"
                                 } else {
-                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_version}"
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion}"
                                 }
                             }
                         }
