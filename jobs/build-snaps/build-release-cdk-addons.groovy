@@ -57,12 +57,19 @@ pipeline {
         stage('Build cdk-addons and image list'){
             steps {
                 sh """
+                    if ${params.k8s_tag}
+                    then
+                        KUBE_VERSION=${params.k8s_tag}
+                    else
+                        KUBE_VERSION=\$(curl -L https://dl.k8s.io/release/stable-${params.version}.txt)
+                    fi
+
                     echo "Building cdk-addons snap."
-                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} default; cd -
+                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=\${KUBE_VERSION} default; cd -
 
                     echo "Processing upstream images."
-                    UPSTREAM_KEY=${kube_version}-upstream:
-                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY}; cd -)
+                    UPSTREAM_KEY=\${KUBE_VERSION}-upstream:
+                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=\${KUBE_VERSION} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY}; cd -)
 
                     echo "Updating bundle with upstream images."
                     if grep -q ^\${UPSTREAM_KEY} ${bundle_image_file}
@@ -87,8 +94,15 @@ pipeline {
         stage('Push Images'){
             steps {
                 sh """
+                    if ${params.k8s_tag}
+                    then
+                        KUBE_VERSION=${params.k8s_tag}
+                    else
+                        KUBE_VERSION=\$(curl -L https://dl.k8s.io/release/stable-${params.version}.txt)
+                    fi
+
                     STATIC_KEY=v${params.version}-static:
-                    UPSTREAM_KEY=${kube_version}-upstream:
+                    UPSTREAM_KEY=\${KUBE_VERSION}-upstream:
 
                     echo "Pushing images to the Canonical registry"
                     ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g")
