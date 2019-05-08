@@ -70,7 +70,7 @@ pipeline {
             steps {
                 sh """
                     echo "Building cdk-addons snap."
-                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version}; cd -
+                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} default; cd -
 
                     echo "Processing upstream images."
                     UPSTREAM_KEY=${kube_version}-upstream:
