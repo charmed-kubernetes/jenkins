@@ -63,18 +63,18 @@ pipeline {
                 script {
                     kube_version = sh(returnStdout: true, script: "curl -L https://dl.k8s.io/release/stable-${params.version}.txt")
                 }
+                echo "Set K8s version to: ${kube_version}a"
             }
         }
         stage('Build cdk-addons and image list'){
             steps {
                 sh """
                     echo "Building cdk-addons snap."
-                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} default; cd -
-                    exit 1
+                    cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version}; cd -
 
                     echo "Processing upstream images."
-                    UPSTREAM_KEY=\${KUBE_VERSION}-upstream:
-                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=\${KUBE_VERSION} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY}; cd -)
+                    UPSTREAM_KEY=${kube_version}-upstream:
+                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY}; cd -)
 
                     echo "Updating bundle with upstream images."
                     if grep -q ^\${UPSTREAM_KEY} ${bundle_image_file}
@@ -89,6 +89,7 @@ pipeline {
                     if ${params.dry_run}
                     then
                         echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
+                        exit 1
                     else
                         git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
                     fi
@@ -99,15 +100,8 @@ pipeline {
         stage('Process Images'){
             steps {
                 sh """
-                    if [ -z "${params.k8s_tag}" ]
-                    then
-                        KUBE_VERSION=\$(curl -L https://dl.k8s.io/release/stable-${params.version}.txt)
-                    else
-                        KUBE_VERSION=${params.k8s_tag}
-                    fi
-
                     STATIC_KEY=v${params.version}-static:
-                    UPSTREAM_KEY=\${KUBE_VERSION}-upstream:
+                    UPSTREAM_KEY=${kube_version}-upstream:
                     ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g")
 
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
@@ -148,9 +142,9 @@ pipeline {
                         params.channels.split().each { channel ->
                             snaps_to_release.each  { snap ->
                                 if(params.dry_run) {
-                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${params.version} --dry-run"
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_version} --dry-run"
                                 } else {
-                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${params.version}"
+                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_version}"
                                 }
                             }
                         }
