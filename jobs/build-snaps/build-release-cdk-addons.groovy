@@ -57,11 +57,11 @@ pipeline {
         stage('Build cdk-addons and image list'){
             steps {
                 sh """
-                    if ${params.k8s_tag}
+                    if [ -z "${params.k8s_tag}" ]
                     then
-                        KUBE_VERSION=${params.k8s_tag}
-                    else
                         KUBE_VERSION=\$(curl -L https://dl.k8s.io/release/stable-${params.version}.txt)
+                    else
+                        KUBE_VERSION=${params.k8s_tag}
                     fi
 
                     echo "Building cdk-addons snap."
@@ -94,11 +94,11 @@ pipeline {
         stage('Push Images'){
             steps {
                 sh """
-                    if ${params.k8s_tag}
+                    if [ -z "${params.k8s_tag}" ]
                     then
-                        KUBE_VERSION=${params.k8s_tag}
-                    else
                         KUBE_VERSION=\$(curl -L https://dl.k8s.io/release/stable-${params.version}.txt)
+                    else
+                        KUBE_VERSION=${params.k8s_tag}
                     fi
 
                     STATIC_KEY=v${params.version}-static:
