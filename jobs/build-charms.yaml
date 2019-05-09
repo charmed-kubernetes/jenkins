@@ -73,8 +73,18 @@
           name: git_repo
           default: '{git_repo}'
       - string:
+          name: git_branch
+          default: 'master'
+      - string:
           name: resource_build_sh
           default: '{resource_build_sh}'
+      - string:
+          name: layer_index
+          default: 'https://charmed-kubernetes.github.io/layer-index/'
+      - string:
+          name: to_channel
+          default: 'edge'
+          description: Channel to publish charm to
     properties:
       - build-discarder:
           num-to-keep: 2

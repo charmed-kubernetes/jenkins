@@ -12,7 +12,9 @@ pipeline {
      */
     environment {
         PATH = "${utils.cipaths}"
-        JUJU_REPOSITORY = "${env.WORKSPACE}/build/charms"
+        CHARM_BUILD_DIR = "${env.WORKSPACE}/build/charms"
+        CHARM_LAYERS_DIR = "${env.WORKSPACE}/build/layers"
+        CHARM_INTERFACES_DIR = "${env.WORKSPACE}/build/interfaces"
         TMPDIR = "${env.WORKSPACE}/tmp"
     }
     options {
@@ -23,8 +25,15 @@ pipeline {
         stage('Setup') {
             steps {
                 setStartTime()
-                sh "mkdir -p ${env.JUJU_REPOSITORY}"
+                sh "mkdir -p ${env.CHARM_BUILD_DIR}"
+                sh "mkdir -p ${env.CHARM_LAYERS_DIR}"
+                sh "mkdir -p ${env.CHARM_INTERFACES_DIR}"
                 sh "mkdir -p ${env.TMPDIR}"
+            }
+        }
+        stage('Prep Layers') {
+            steps {
+                sh "${charm_sh} pull-source --layer-index ${params.layer_index} --layers jobs/includes/charm-layer-list.inc --git-branch ${params.git_branch}"
             }
         }
         stage('Build') {
@@ -33,8 +42,8 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "git clone --depth 1 -q ${params.git_repo}"
-                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm}"
+                    sh "git clone --branch ${params.git_branch} --depth 1 -q ${params.git_repo}"
+                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build --repo-path ${params.repo_name} --out-path ${env.CHARM_BUILD_DIR}/${params.charm} --git-branch ${params.git_branch}"
                 }
             }
         }
@@ -49,7 +58,7 @@ pipeline {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
                             sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
-                            sh "CHARM_PATH=${env.JUJU_REPOSITORY}/builds/${params.charm} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --tb native -ra -n auto --junit-xml=${params.charm}.xml ${test_path}"
+                            sh "CHARM_PATH=${env.CHARM_BUILD_DIR}/${params.charm} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --tb native -ra -n auto --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }
 
@@ -67,14 +76,14 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.JUJU_REPOSITORY}/builds/${params.charm} --charm-entity ${cs_url}"
+                    sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.CHARM_BUILD_DIR}/${params.charm} --charm-entity ${cs_url}"
                     script {
                         if(params.resource_build_sh) {
-                            sh "${charm_sh} resource --charm-entity ${cs_url} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.JUJU_REPOSITORY}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
+                            sh "${charm_sh} resource --charm-entity ${cs_url} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.CHARM_BUILD_DIR}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
                         }
                     }
-                    sh "${charm_sh} promote --charm-entity ${cs_url} --from-channel unpublished --to-channel edge"
-                    sh "${charm_sh} show --charm-entity ${cs_url} --channel edge"
+                    sh "${charm_sh} promote --charm-entity ${cs_url} --from-channel unpublished --to-channel ${params.to_channel}"
+                    sh "${charm_sh} show --charm-entity ${cs_url} --channel ${params.to_channel}"
                 }
             }
         }
@@ -90,7 +99,7 @@ pipeline {
         cleanup {
             saveMeta()
             collectDebug(juju_controller, juju_model)
-            sh "juju kill-controller -y ${juju_controller} || true"
+            tearDown(juju_controller)
         }
     }
 }
