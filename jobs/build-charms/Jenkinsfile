@@ -100,9 +100,10 @@ pipeline {
         success {
             setPass()
         }
-
-        cleanup {
+        always {
             saveMeta()
+        }
+        cleanup {
             collectDebug(juju_controller, juju_model)
             tearDown(juju_controller)
         }

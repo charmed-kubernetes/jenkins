@@ -56,7 +56,7 @@ def set_meta():
     db['workspace'] = env['WORKSPACE']
     db['git_commit'] = env['GIT_COMMIT']
     db['git_url'] = env['GIT_URL']
-    db['git_branch'] = env['GIT_BRANCH']
+    db['git_branch'] = env.get('GIT_BRANCH', 'master')
 
 
 @cli.command()
