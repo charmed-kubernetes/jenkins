@@ -33,7 +33,9 @@ pipeline {
         }
         stage('Prep Layers') {
             steps {
-                sh "${charm_sh} pull-source --layer-index ${params.layer_index} --layers jobs/includes/charm-layer-list.inc --git-branch ${params.git_branch}"
+                dir('jobs') {
+                    sh "${charm_sh} pull-source --layer-index ${params.layer_index} --layers includes/charm-layer-list.inc --git-branch ${params.git_branch}"
+                }
             }
         }
         stage('Build') {
