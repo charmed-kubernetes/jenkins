@@ -74,10 +74,6 @@
       loop:
         - "microk8s"
         - "bundletester"
-    # - name: install microk8s
-    #   command: "snap install microk8s --classic"
-    #   ignore_errors: yes
-    #   when: ansible_architecture == "x86_64"
     - name: clone juju-wait script
       git:
         repo: 'https://git.launchpad.net/juju-wait'
@@ -90,9 +86,6 @@
         mode: 0777
         force: yes
       when: ansible_architecture != "x86_64"
-    - name: juju stable
-      command: "snap refresh juju --stable"
-      ignore_errors: yes
     - name: copy bashrc
       copy:
         src: "bashrc"
