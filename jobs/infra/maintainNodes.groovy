@@ -20,6 +20,7 @@ pipeline {
             steps {
                 installToolsJenkaas()
                 tearDownLxd()
+                tearDownAllJuju()
             }
         }
     }
