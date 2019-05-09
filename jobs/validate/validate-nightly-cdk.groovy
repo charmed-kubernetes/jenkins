@@ -4,9 +4,6 @@
 
 pipeline {
     agent { label 'runner-cloud' }
-    triggers {
-        cron('@daily')
-    }
     environment {
         PATH = "${utils.cipaths}"
     }
