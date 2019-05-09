@@ -82,7 +82,7 @@ pipeline {
         }
         cleanup {
             saveMeta()
-            sh "juju kill-controller -y ${juju_controller} || true"
+            tearDown(juju_controller)
         }
     }
 }
