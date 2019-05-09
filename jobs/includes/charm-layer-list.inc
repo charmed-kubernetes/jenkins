@@ -39,4 +39,4 @@
 - layer:status
 - layer:tls-client
 - layer:vault-kv
-- layer-vaultlocker
+- layer:vaultlocker

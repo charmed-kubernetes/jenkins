@@ -32,6 +32,9 @@ pipeline {
             }
         }
         stage('Prep Layers') {
+            when {
+                expression { params.git_branch == "stable" }
+            }
             steps {
                 dir('jobs') {
                     sh "${charm_sh} pull-source --layer-index ${params.layer_index} --layers includes/charm-layer-list.inc --git-branch ${params.git_branch}"
