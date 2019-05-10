@@ -22,6 +22,9 @@
 - interface:tls-certificates
 - interface:vault-kv
 - interface:vsphere-integration
+- interface:ceph-admin
+- interface:ceph-client
+- interface:keystone-credentials
 - layer:apt
 - layer:basic
 - layer:cdk-service-kicker
