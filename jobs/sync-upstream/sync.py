@@ -48,7 +48,10 @@ repos = [
     ("charmed-kubernetes/layer-leadership.git", "https://git.launchpad.net/layer-leadership"),
     ("charmed-kubernetes/layer-nagios.git", "https://git.launchpad.net/nagios-layer"),
     ("charmed-kubernetes/layer-snap.git", "https://git.launchpad.net/layer-snap"),
-    ("charmed-kubernetes/layer-index.git", "https://github.com/juju/layer-index.git")
+    ("charmed-kubernetes/layer-index.git", "https://github.com/juju/layer-index.git"),
+    ("charmed-kubernetes/juju-interface-ceph-admin.git", "https://github.com/cholcombe973/juju-interface-ceph-admin"),
+    ("charmed-kubernetes/charm-interface-ceph-client.git", "https://github.com/openstack/charm-interface-ceph-client"),
+    ("charmed-kubernetes/charm-interface-keystone-credentials.git", "https://github.com/openstack/charm-interface-keystone-credentials")
 ]
 
 new_env = os.environ.copy()
