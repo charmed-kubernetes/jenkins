@@ -102,12 +102,12 @@
             'v1.13.x-v1.14.x'
       - string:
           name: charm_promote_from
-          default: candidate
+          default: 'candidate'
           description: |
             In the format of 'edge'
       - string:
           name: charm_promote_to
-          default: stable
+          default: 'stable'
           description: |
             In the format of 'beta candidate'
     pipeline-scm:
