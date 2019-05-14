@@ -1,3 +1,6 @@
+- 'keepalived':
+    repo_name: 'charm-keepalived/src'
+    git_repo: 'https://github.com/juju-solutions/charm-keepalived.git'
 - 'kubeflow-ambassador':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-ambassador'

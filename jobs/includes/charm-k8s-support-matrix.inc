@@ -29,9 +29,6 @@
     repo_name: 'charm-kubernetes-worker'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     resource_build_sh: 'build-cni-resources.sh'
-- 'keepalived':
-    repo_name: 'charm-keepalived/src'
-    git_repo: 'https://github.com/juju-solutions/charm-keepalived.git'
 - 'docker-registry':
     repo_name: 'docker-registry-charm'
     git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
