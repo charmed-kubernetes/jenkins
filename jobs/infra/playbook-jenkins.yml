@@ -246,5 +246,11 @@
         group: jenkins
         mode: 0644
     - name: install sonobuoy
-      command: "/snap/bin/go get -u -v github.com/heptio/sonobuoy"
-      ignore_errors: yes
+      shell: |
+        mkdir -p /var/lib/jenkins/go/bin || true
+        git clone https://github.com/heptio/sonobuoy
+        cd sonobuoy
+        git checkout v0.14.2
+        /snap/bin/go build -v .
+        /snap/bin/go install -i .
+        /var/lib/jenkins/go/bin/sonobuoy version
