@@ -29,9 +29,6 @@
     repo_name: 'charm-kubernetes-worker'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     resource_build_sh: 'build-cni-resources.sh'
-- 'docker-registry':
-    repo_name: 'docker-registry-charm'
-    git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
 - 'tigera-secure-ee':
     repo_name: 'layer-tigera-secure-ee'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'

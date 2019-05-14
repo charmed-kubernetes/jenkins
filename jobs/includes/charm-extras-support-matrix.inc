@@ -1,3 +1,6 @@
+- 'docker-registry':
+    repo_name: 'docker-registry-charm'
+    git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
 - 'keepalived':
     repo_name: 'charm-keepalived/src'
     git_repo: 'https://github.com/juju-solutions/charm-keepalived.git'
