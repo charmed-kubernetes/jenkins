@@ -1,0 +1,41 @@
+- 'calico':
+    repo_name: 'layer-calico'
+    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    resource_build_sh: 'build-calico-resource.sh'
+- 'canal':
+    repo_name: 'layer-canal'
+    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    resource_build_sh: 'build-canal-resources.sh'
+- 'easyrsa':
+    repo_name: 'layer-easyrsa'
+    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+- 'etcd':
+    repo_name: 'layer-etcd'
+    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+- 'flannel':
+    repo_name: 'charm-flannel'
+    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    resource_build_sh: 'build-flannel-resources.sh'
+- 'kubeapi-load-balancer':
+    repo_name: 'charm-kubeapi-load-balancer'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
+- 'kubernetes-e2e':
+    repo_name: 'charm-kubernetes-e2e'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
+- 'kubernetes-master':
+    repo_name: 'charm-kubernetes-master'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
+- 'kubernetes-worker':
+    repo_name: 'charm-kubernetes-worker'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
+    resource_build_sh: 'build-cni-resources.sh'
+- 'keepalived':
+    repo_name: 'charm-keepalived/src'
+    git_repo: 'https://github.com/juju-solutions/charm-keepalived.git'
+- 'docker-registry':
+    repo_name: 'docker-registry-charm'
+    git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
+- 'tigera-secure-ee':
+    repo_name: 'layer-tigera-secure-ee'
+    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    resource_build_sh: 'build-resources.sh'
