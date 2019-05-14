@@ -101,13 +101,8 @@
             The previous version to upgrade and test from, format should be
             'v1.13.x-v1.14.x'
       - string:
-          name: charm_promote_from
-          default: 'candidate'
-          description: |
-            In the format of 'edge'
-      - string:
           name: charm_promote_to
-          default: 'stable'
+          default: 'candidate'
           description: |
             In the format of 'beta candidate'
     pipeline-scm:
