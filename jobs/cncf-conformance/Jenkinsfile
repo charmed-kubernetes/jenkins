@@ -87,9 +87,9 @@ pipeline {
             }
             steps {
                 waitUntil {
-                    sh '/var/lib/jenkins/bin/sonobuoy status || true'
+                    sh '/var/lib/jenkins/go/bin/sonobuoy status || true'
                     script {
-                        def r = sh script:'./sonobuoy status|grep -q \'Sonobuoy has completed\'', returnStatus: true
+                        def r = sh script:'/var/lib/jenkins/go/bin/sonobuoy status|grep -q \'Sonobuoy has completed\'', returnStatus: true
                         return (r == 0);
                     }
                 }
@@ -99,7 +99,7 @@ pipeline {
             steps {
                 waitUntil {
                     script {
-                        def r = sh script:'./sonobuoy retrieve results/.', returnStatus: true
+                        def r = sh script:'/var/lib/jenkins/go/bin/sonobuoy retrieve results/.', returnStatus: true
                         return (r == 0);
                     }
                 }
