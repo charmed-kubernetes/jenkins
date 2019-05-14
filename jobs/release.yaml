@@ -72,3 +72,62 @@
           queue-scanning: 'ALL'
       - build-discarder:
           num-to-keep: 7
+
+
+- job:
+    name: 'release-charm-bugfix'
+    description: |
+      Validates charms from their stable branch/channels in order to release a
+      bug/hotfix to stable.
+    project-type: pipeline
+    parameters:
+      - string:
+          name: release_id
+          description: |
+            This should be a uniquely identifiable release tag so that
+            subsequent runs can query any previous state if available. This
+            allows passing jobs to be bypassed and only the failed job be run
+            again.
+      - choice:
+          name: k8sver
+          choices:
+            - '1.13'
+            - '1.14'
+            - '1.15'
+      - string:
+          name: k8sver_range
+          default: 'v1.13.x-v1.14.x'
+          description: |
+            The previous version to upgrade and test from, format should be
+            'v1.13.x-v1.14.x'
+      - string:
+          name: snaps_promote_from
+          default: 1.14/candidate
+          description: |
+            In the format of 1.12/edge
+      - string:
+          name: snaps_promote_to
+          default: 1.14/stable
+          description: |
+            In the format of 1.12/beta 1.12/candidate
+      - string:
+          name: charm_promote_from
+          description: |
+            In the format of 'edge'
+      - string:
+          name: charm_promote_to
+          description: |
+            In the format of 'beta candidate'
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release/charmBugfix.groovy
+    properties:
+      - build-blocker:
+          use-build-blocker: false
+          blocking-jobs:
+            - ".*build.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+      - build-discarder:
+          num-to-keep: 7
