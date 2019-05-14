@@ -101,21 +101,13 @@
             The previous version to upgrade and test from, format should be
             'v1.13.x-v1.14.x'
       - string:
-          name: snaps_promote_from
-          default: 1.14/candidate
-          description: |
-            In the format of 1.12/edge
-      - string:
-          name: snaps_promote_to
-          default: 1.14/stable
-          description: |
-            In the format of 1.12/beta 1.12/candidate
-      - string:
           name: charm_promote_from
+          default: candidate
           description: |
             In the format of 'edge'
       - string:
           name: charm_promote_to
+          default: stable
           description: |
             In the format of 'beta candidate'
     pipeline-scm:
