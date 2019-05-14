@@ -68,6 +68,7 @@
         - "juju-wait --classic"
         - "kubectl --classic"
         - "charm --classic --edge"
+        - "go --classic --channel 1.12/stable"
     - name: remove unneeded snaps
       command: "snap remove {{item}}"
       ignore_errors: yes
@@ -244,3 +245,6 @@
         owner: jenkins
         group: jenkins
         mode: 0644
+    - name: install sonobuoy
+      command: "/snap/bin/go get -u -v github.com/heptio/sonobuoy"
+      ignore_errors: yes

@@ -117,4 +117,6 @@ if ! shopt -oq posix; then
 fi
 
 export EDITOR=vim
+export GOBIN=/var/lib/jenkins/bin
+export GOPATH=/var/lib/jenkins/go
 export PATH=$PATH:/usr/local/go/bin

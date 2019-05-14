@@ -76,18 +76,18 @@ pipeline {
                           disable_add_model: true)
             }
         }
-        stage('Deploy: sonobuoy') {
-            steps {
-                deploySonobuoy(juju_controller, juju_model)
-            }
-        }
+        // stage('Deploy: sonobuoy') {
+        //     steps {
+        //         deploySonobuoy(juju_controller, juju_model)
+        //     }
+        // }
         stage('Test') {
             options {
                 timeout(time: 3, unit: 'HOURS')
             }
             steps {
                 waitUntil {
-                    sh './sonobuoy status || true'
+                    sh '/var/lib/jenkins/bin/sonobuoy status || true'
                     script {
                         def r = sh script:'./sonobuoy status|grep -q \'Sonobuoy has completed\'', returnStatus: true
                         return (r == 0);
