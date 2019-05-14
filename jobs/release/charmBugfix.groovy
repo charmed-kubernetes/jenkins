@@ -39,7 +39,7 @@ pipeline {
                             stage("Validate: ${charm}") {
                                 build job:"build-release-${charm}",
                                     parameters: [string(name:'git_branch', value: 'stable'),
-                                                 string(name:'to_channel', value: params.charms_promote_to)]
+                                                 string(name:'to_channel', value: params.charm_promote_to)]
                             }
                         }
                     }
