@@ -2,40 +2,9 @@
 
 def to_channels = params.to_channel.split()
 def charm_sh = "${utils.cipy} build-charms/charms.py"
-def charms = [
-    'containers/calico',
-    'containers/canal',
-    'containers/easyrsa',
-    'containers/etcd',
-    'containers/flannel',
-    'containers/kubeapi-load-balancer',
-    'containers/kubernetes-e2e',
-    'containers/kubernetes-master',
-    'containers/kubernetes-worker',
-    'containers/keepalived',
-    'containers/docker-registry',
-    'containers/tigera-secure-ee',
-    'containers/bundle/charmed-kubernetes',
-    'containers/bundle/canonical-kubernetes',
-    'containers/bundle/charmed-kubernetes',
-    'containers/bundle/kubernetes-core',
-    'containers/bundle/kubernetes-calico',
-    'containers/bundle/canonical-kubernetes-canal',
-    'containers/bundle/kubernetes-tigera-secure-ee',
-    'kubeflow-charmers/kubeflow',
-    'kubeflow-charmers/kubeflow-ambassador',
-    'kubeflow-charmers/kubeflow-jupyterhub',
-    'kubeflow-charmers/kubeflow-pytorch-operator',
-    'kubeflow-charmers/kubeflow-seldon-api-frontend',
-    'kubeflow-charmers/kubeflow-seldon-cluster-manager',
-    'kubeflow-charmers/kubeflow-tf-job-dashboard',
-    'kubeflow-charmers/kubeflow-tf-job-operator',
-    'kubeflow-charmers/kubeflow-tf-serving',
-    'kubeflow-charmers/redis-k8s',
-]
 
 pipeline {
-    agent { label 'runner-amd64' }
+    agent { label 'runner' }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
@@ -54,12 +23,21 @@ pipeline {
             steps {
                 dir('jobs') {
                     script {
-                        charms.each { charm ->
-                            to_channels.each { channel ->
-                                sh "${charm_sh} promote --charm-entity cs:~${charm} --from-channel ${params.from_channel} --to-channel ${channel}"
-                                sh "${charm_sh} show --charm-entity cs:~${charm} --channel ${channel}"
+                        def jobs = [:]
+                        // returns a LinkedHashMap
+                        def charms = readYaml file: 'jobs/includes/charm-k8s-support-matrix.inc'
+                        charms.each { k ->
+                            // Each item is a LinkedHashSet, so we pull the first item from the set
+                            // since there is only 1 key per charm
+                            def charm = k.keySet().first()
+                            jobs[charm] = {
+                                to_channels.each { channel ->
+                                    sh "${charm_sh} promote --charm-entity cs:~${charm} --from-channel ${params.from_channel} --to-channel ${channel}"
+                                    sh "${charm_sh} show --charm-entity cs:~${charm} --channel ${channel}"
+                                }
                             }
                         }
+                        parallel jobs
                     }
                 }
             }
