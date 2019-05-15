@@ -79,9 +79,9 @@ pipeline {
         always {
             setEndTime()
             collectDebug(juju_controller, juju_model)
-            saveMeta()
         }
         cleanup {
+            saveMeta()
             tearDown(juju_controller)
         }
     }
