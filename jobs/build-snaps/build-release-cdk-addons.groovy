@@ -1,6 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def bundle_image_file = "./bundle/container-images.txt"
+def kube_status = "stable"
 def kube_version = params.k8s_tag
 def snap_sh = "${utils.cipy} build-snaps/snaps.py"
 
@@ -30,6 +31,24 @@ pipeline {
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
+        stage('Ensure valid K8s version'){
+            when {
+                expression { kube_version == "" }
+            }
+            steps {
+                script {
+                    kube_version = sh(returnStdout: true, script: "curl -L https://dl.k8s.io/release/stable-${params.version}.txt").trim()
+                    if(kube_version.indexOf('Error') > 0) {
+                        kube_status = "latest"
+                        kube_version = sh(returnStdout: true, script: "curl -L https://dl.k8s.io/release/latest-${params.version}.txt").trim()
+                    }
+                    if(kube_version.indexOf('Error') > 0) {
+                        error("Could not determine K8s version for ${params.version}")
+                    }
+                }
+                echo "Set K8s version to: ${kube_version}"
+            }
+        }
         stage('Setup Source') {
             steps {
                 sh """
@@ -39,34 +58,24 @@ pipeline {
                         echo "Getting cdk-addons from \$ADDONS_BRANCH branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --branch \$ADDONS_BRANCH --depth 1
                     else
-                        echo "Creating \$ADDONS_BRANCH for cdk-addons."
+                        echo "Getting cdk-addons from master branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
-                        cd cdk-addons
-                        git checkout -b \$ADDONS_BRANCH
-                        if ${params.dry_run}
+                        if [ "${kube_status}" == "stable" ]
                         then
-                            echo "Dry run; would have pushed: \$ADDONS_BRANCH"
-                        else
-                            git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/cdk-addons.git --all
+                            echo "Creating \$ADDONS_BRANCH for cdk-addons."
+                            cd cdk-addons
+                            git checkout -b \$ADDONS_BRANCH
+                            if ${params.dry_run}
+                            then
+                                echo "Dry run; would have pushed: \$ADDONS_BRANCH"
+                            else
+                                git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/cdk-addons.git --all
+                            fi
+                            cd -
                         fi
-                        cd -
                     fi
                 """
                 sh "git clone https://github.com/charmed-kubernetes/bundle.git"
-            }
-        }
-        stage('Ensure valid K8s version'){
-            when {
-                expression { kube_version == "" }
-            }
-            steps {
-                script {
-                    kube_version = sh(returnStdout: true, script: "curl -L https://dl.k8s.io/release/stable-${params.version}.txt").trim()
-                    if(kube_version.indexOf('Error') > 0) {
-                        kube_version = sh(returnStdout: true, script: "curl -L https://dl.k8s.io/release/latest-${params.version}.txt").trim()
-                    }
-                }
-                echo "Set K8s version to: ${kube_version}"
             }
         }
         stage('Build cdk-addons and image list'){
