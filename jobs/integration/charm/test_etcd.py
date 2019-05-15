@@ -23,6 +23,44 @@ async def deploy_etcd(controller, model):
                              'etcd:certificates')
 
 
+async def test_etcd_actions(model):
+    """Test etcd charm actions
+
+    """
+    async def assert_action(unit, action, output_regex=None, **action_params):
+        action = await unit.run_action(action, **action_params)
+        await action.wait()
+        assert action.status == "completed"
+        if output_regex:
+            output = action.data["results"]["output"]
+            assert re.search(output_regex, output)
+
+    controller, model = deploy
+    await deploy_etcd(controller, model)
+    etcd = model.applications['etcd'].units[0]
+    await etcd.set_config({'channel': '3.2/stable'})
+    await asyncify(_juju_wait)(controller, model.info.name)
+
+    # set db size limit to 16MB so we can fill it quickly
+    await etcd.run("sed -i 's/^quota-backend-bytes:.*$/quota-backend-bytes: 16777216/' /var/snap/etcd/common/etcd.conf.yml")
+    await etcd.run("sudo systemctl restart snap.etcd.etcd.service")
+    # fill the db to cause an alarm
+    await etcd.run("while [ 1 ]; do dd if=/dev/urandom bs=1024 count=1024 | ETCDCTL_API=3 /snap/bin/etcd.etcdctl --endpoints :4001 put key || break; done")
+
+    # confirm alarm is raised
+    await assert_action(etcd, "alarm-list", r"alarm:NOSPACE")
+    # compact and defrag db, then disarm alarm
+    await assert_action(etcd, "compact", r"compacted revision", physical=True)
+    await assert_action(etcd, "defrag", r"Finished defragmenting")
+    await assert_action(etcd, "alarm-disarm")
+    # confirm alarm is gone
+    await assert_action(etcd, "alarm-list", r"^$")
+
+    # reset db size to unlimited (default)
+    await etcd.run("sed -i 's/^quota-backend-bytes:.*$/quota-backend-bytes: 0/' /var/snap/etcd/common/etcd.conf.yml")
+    await etcd.run("sudo systemctl restart snap.etcd.etcd.service")
+
+
 @pytest.mark.skip('https://github.com/juju-solutions/layer-etcd/issues/138')
 async def test_node_scale_down_members(deploy, event_loop):
     """ Scale the cluster down and ensure the cluster state is still
