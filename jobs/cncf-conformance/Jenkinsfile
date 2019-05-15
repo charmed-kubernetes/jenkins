@@ -76,11 +76,11 @@ pipeline {
                           disable_add_model: true)
             }
         }
-        // stage('Deploy: sonobuoy') {
-        //     steps {
-        //         deploySonobuoy(juju_controller, juju_model)
-        //     }
-        // }
+        stage('Run: sonobuoy') {
+            steps {
+                runSonobuoy(juju_controller, juju_model)
+            }
+        }
         stage('Test') {
             options {
                 timeout(time: 3, unit: 'HOURS')
