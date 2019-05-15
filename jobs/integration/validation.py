@@ -31,6 +31,7 @@ from .base import _juju_wait
 
 @log_calls_async
 async def validate_all(model, log_dir):
+    env = os.environ.copy()
     cpu_arch = await asyncify(arch)()
     validate_status_messages(model)
     await validate_auth_file_propagation(model)
@@ -62,7 +63,8 @@ async def validate_all(model, log_dir):
             cpu_arch not in ['s390x', 'arm64', 'aarch64']):
         await validate_encryption_at_rest(model)
     await validate_dns_provider(model)
-    await validate_docker_opts(model)
+    if env['GIT_BRANCH'] != 'stable':
+        await validate_docker_opts(model)
 
 
 
