@@ -248,9 +248,14 @@
     - name: install sonobuoy
       shell: |
         mkdir -p /var/lib/jenkins/go/bin || true
+        WORK_DIR=`mktemp -d`
+        pushd
         git clone https://github.com/heptio/sonobuoy
         cd sonobuoy
         git checkout v0.14.2
         /snap/bin/go build -v .
         /snap/bin/go install -i .
         /var/lib/jenkins/go/bin/sonobuoy version
+        popd
+      args:
+        executable: /bin/bash
