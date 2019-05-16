@@ -62,7 +62,7 @@ def pull_source(layer_index, layers, git_branch, retries, timeout):
         except sh.ErrorReturnCode_1 as e:
             click.echo(f"Problem: {e}, retrying [{num_runs}/{retries}]")
             if num_runs == retries:
-                raise SystemExit(f"Could not download charm af {retries} retries.")
+                raise SystemExit(f"Could not download charm after {retries} retries.")
             time.sleep(timeout)
             download()
         ltype, name = layer.split(":")
