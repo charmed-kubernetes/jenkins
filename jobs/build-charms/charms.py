@@ -22,6 +22,7 @@ from pprint import pformat
 import click
 import sh
 import yaml
+import time
 
 
 try:
@@ -45,12 +46,25 @@ def cli():
 @click.option(
     "--git-branch", required=True, help="Branch of layer to reference", default="master"
 )
-def pull_source(layer_index, layers, git_branch):
+@click.option("--retries", default=5, required=True, help="how many retries to perform")
+@click.option("--timeout", default=60, required=True, help="timeout between retries in seconds")
+def pull_source(layer_index, layers, git_branch, retries, timeout):
     layers = Path(layers)
     layers = yaml.safe_load(layers.read_text("utf8"))
+    num_runs = 0
     for layer in layers:
-        for line in sh.charm("pull-source", "-v", "-i", layer_index, layer, _iter=True):
-            click.echo(line.strip())
+        def download():
+            for line in sh.charm("pull-source", "-v", "-i", layer_index, layer, _iter=True):
+                click.echo(line.strip())
+        try:
+            num_runs += 1
+            download()
+        except sh.ErrorReturnCode_1 as e:
+            click.echo(f"Problem: {e}, retrying [{num_runs}/{retries}]")
+            if num_runs == retries:
+                raise SystemExit(f"Could not download charm af {retries} retries.")
+            time.sleep(timeout)
+            download()
         ltype, name = layer.split(":")
         if ltype == "layer":
             sh.git.checkout(git_branch, _cwd=str(CHARM_LAYERS_DIR / name))
