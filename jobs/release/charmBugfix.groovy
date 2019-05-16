@@ -45,6 +45,8 @@ pipeline {
                     }
                     parallel jobs
                 }
+                build job:"build-release-bundles",
+                    parameters: [string(name:'channel', value: 'candidate')]
             }
             post {
                 failure {
