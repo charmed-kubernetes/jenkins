@@ -63,8 +63,7 @@ async def validate_all(model, log_dir):
             cpu_arch not in ['s390x', 'arm64', 'aarch64']):
         await validate_encryption_at_rest(model)
     await validate_dns_provider(model)
-    if env['GIT_BRANCH'] != 'stable':
-        await validate_docker_opts(model)
+    await validate_docker_opts(model)
 
 
 
