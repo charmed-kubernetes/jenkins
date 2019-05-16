@@ -46,7 +46,7 @@ def cli():
 @click.option(
     "--git-branch", required=True, help="Branch of layer to reference", default="master"
 )
-@click.option("--retries", default=5, required=True, help="how many retries to perform")
+@click.option("--retries", default=15, required=True, help="how many retries to perform")
 @click.option("--timeout", default=60, required=True, help="timeout between retries in seconds")
 def pull_source(layer_index, layers, git_branch, retries, timeout):
     layers = Path(layers)
