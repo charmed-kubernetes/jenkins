@@ -255,7 +255,6 @@
         git checkout v0.14.2
         /snap/bin/go build -v .
         /snap/bin/go install -i .
-        /var/lib/jenkins/go/bin/sonobuoy version
         popd
       args:
         executable: /bin/bash
