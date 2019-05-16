@@ -37,8 +37,9 @@ async def test_etcd_actions(deploy, event_loop):
 
     controller, model = deploy
     await deploy_etcd(controller, model)
-    etcd = model.applications['etcd'].units[0]
+    etcd = model.applications['etcd']
     await etcd.set_config({'channel': '3.2/stable'})
+    etcd = model.applications['etcd'].units[0]
     await asyncify(_juju_wait)(controller, model.info.name)
 
     # set db size limit to 16MB so we can fill it quickly
