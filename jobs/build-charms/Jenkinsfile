@@ -6,7 +6,7 @@ def charm_sh = "${utils.cipy} build-charms/charms.py"
 def cs_url = "cs:~${params.namespace}/${params.charm}"
 
 pipeline {
-    agent { label 'runner-amd64' }
+    agent { label 'runner-s390x' }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
