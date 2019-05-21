@@ -63,7 +63,7 @@ pipeline {
                         def test_path = "integration/charm/test_${params.charm}.py"
                         if (fileExists(test_path)) {
                             sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
-                            sh "CHARM_PATH=${env.CHARM_BUILD_DIR}/${params.charm} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=${params.charm}.xml ${test_path}"
+                            sh "CHARM_PATH=${env.CHARM_BUILD_DIR}/${params.charm} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} -n auto --junit-xml=${params.charm}.xml ${test_path}"
                         }
                     }
 
