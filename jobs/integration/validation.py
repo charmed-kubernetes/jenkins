@@ -1064,7 +1064,10 @@ async def validate_keystone(model):
            OS_PASSWORD=bad /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
     output = await one_master.run(cmd)
     assert output.status == 'completed'
-    assert "invalid user credentials" in output.data['results']['Stderr'].lower()
+    if "invalid user credentials" not in output.data['results']['Stderr'].lower():
+        log('Failing, auth did not fail as expected')
+        log(pformat(output.data['results']))
+        assert False
 
     # verify auth fail - bad password
     cmd = "source /home/ubuntu/kube-keystone.sh && \
@@ -1072,7 +1075,10 @@ async def validate_keystone(model):
            OS_PASSWORD=badpw /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
     output = await one_master.run(cmd)
     assert output.status == 'completed'
-    assert "invalid user credentials" in output.data['results']['Stderr'].lower()
+    if "invalid user credentials" not in output.data['results']['Stderr'].lower():
+        log('Failing, auth did not fail as expected')
+        log(pformat(output.data['results']))
+        assert False
 
     if not skip_tests:
         # set up read only access to pods only
