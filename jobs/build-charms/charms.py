@@ -224,12 +224,16 @@ def resource(charm_entity, channel, builder, out_path, resource_spec):
         resource_fn = resource_path.parts[-1]
         resource_key = resource_spec_fragment.get(resource_fn, None)
         if resource_key:
-            out = sh.charm.attach(
-                charm_entity,
-                "--channel",
-                channel,
-                "{}={}".format(resource_key, resource_path),
-            )
+            try:
+                out = sh.charm.attach(
+                    charm_entity,
+                    "--channel",
+                    channel,
+                    "{}={}".format(resource_key, resource_path),
+                    _err_to_out=True
+                )
+            except sh.ErrorReturnCode_1 as e:
+                raise SystemExit(f"Problem attaching resources: {e}")
             click.echo(out)
 
 
