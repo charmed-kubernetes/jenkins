@@ -69,6 +69,7 @@
         - "kubectl --classic"
         - "charm --classic --edge"
         - "go --classic --channel 1.12/stable"
+        - "multipass"
     - name: remove unneeded snaps
       command: "snap remove {{item}}"
       ignore_errors: yes
