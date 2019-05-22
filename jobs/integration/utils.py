@@ -7,6 +7,7 @@ import requests
 import subprocess
 import time
 import tempfile
+import traceback
 import yaml
 
 from asyncio_extras import async_contextmanager
@@ -15,7 +16,7 @@ from contextlib import contextmanager
 from juju.controller import Controller
 from juju.model import Model
 from juju.errors import JujuError
-from .logger import log_calls, log_calls_async
+from .logger import log, log_calls, log_calls_async
 from subprocess import check_output, check_call
 from .base import _model_from_env, _controller_from_env
 
@@ -339,7 +340,13 @@ async def verify_deleted(unit, entity_type, name, extra_args=''):
         # error resource type not found most likely. This can happen when the api server is
         # restarting. As such, don't assume this means we've finished the deletion
         return False
-    out_list = json.loads(output.results['Stdout'])
+    try:
+        out_list = json.loads(output.results['Stdout'])
+    except json.JSONDecodeError:
+        log(traceback.format_exc())
+        log('WARNING: Expected json, got non-json output:')
+        log(output.results['Stdout'])
+        return False
     for item in out_list['items']:
         if item['metadata']['name'] == name:
             return False
