@@ -22,6 +22,7 @@ pipeline {
                 timeout(time: 2, unit: 'HOURS')
             }
             steps {
+                tearDown(params.controller)
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
 
                 sh "juju add-model -c ${params.controller} ${juju_model} ${params.cloud}"
@@ -49,8 +50,7 @@ pipeline {
 
         cleanup {
             saveMeta()
-            tearDown(params.controller,
-                     juju_model)
+            tearDown(params.controller)
 
         }
     }
