@@ -69,7 +69,7 @@ pipeline {
         }
         always {
             setEndTime()
-            collectDebug(params.controller,
+            collectDebug(juju_controller,
                          juju_model)
         }
         cleanup {
