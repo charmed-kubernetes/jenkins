@@ -170,6 +170,7 @@ pipeline {
                             parameters: [string(name:'cloud', value: "google/us-east1"),
                                          string(name:'controller', value: "release-vault"),
                                          string(name:'bundle_channel', value:"candidate"),
+                                         string(name:'bundle', value:"canonical-kubernetes"),
                                          string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
                     }

@@ -27,7 +27,7 @@
           default: 'edge'
       - string:
           name: bundle
-          default: 'kubernetes-core'
+          default: 'canonical-kubernetes'
     properties:
       - build-discarder:
           num-to-keep: 2
