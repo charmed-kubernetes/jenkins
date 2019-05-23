@@ -55,7 +55,7 @@ pipeline {
         stage('Bundles') {
             steps {
                 build job:"build-release-bundles"
-                build job:"build-kubeflow-bundles"
+                // build job:"build-kubeflow-bundles"
             }
         }
         stage('Report') {
