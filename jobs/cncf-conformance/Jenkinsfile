@@ -19,11 +19,6 @@ pipeline {
     }
 
     stages {
-        stage("Prep") {
-            steps {
-                sh "juju kill-controller -y ${juju_controller} || true"
-            }
-        }
         stage("Deploy") {
             options {
                 timeout(time: 4, unit: 'HOURS')
@@ -77,6 +72,9 @@ pipeline {
             }
         }
         stage('Run: sonobuoy') {
+            options {
+                timeout(time: 3, unit: 'HOURS')
+            }
             steps {
                 runSonobuoy(juju_controller, juju_model)
             }
@@ -127,7 +125,7 @@ pipeline {
         }
         cleanup {
             saveMeta()
-            sh "juju kill-controller -y ${juju_controller} || true"
+            tearDown(juju_controller)
         }
     }
 }
