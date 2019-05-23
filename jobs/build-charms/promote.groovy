@@ -16,7 +16,7 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Release to Store') {
+        stage('Release K8S charms to Store') {
             options {
                 timeout(time: 45, unit: 'MINUTES')
             }
@@ -25,15 +25,19 @@ pipeline {
                     script {
                         def jobs = [:]
                         // returns a LinkedHashMap
-                        def charms = readYaml file: 'includes/charm-k8s-support-matrix.inc'
+                        def charms = readYaml file: 'includes/charm-support-matrix.inc'
                         charms.each { k ->
                             // Each item is a LinkedHashSet, so we pull the first item from the set
                             // since there is only 1 key per charm
                             def charm = k.keySet().first()
+                            if (k[charm].namespace != 'containers') {
+                                return
+                            }
+
                             jobs[charm] = {
                                 to_channels.each { channel ->
-                                    sh "${charm_sh} promote --charm-entity cs:~${charm} --from-channel ${params.from_channel} --to-channel ${channel}"
-                                    sh "${charm_sh} show --charm-entity cs:~${charm} --channel ${channel}"
+                                    sh "${charm_sh} promote --charm-entity cs:~${k[charm].namespace}/${charm} --from-channel ${params.from_channel} --to-channel ${channel}"
+                                    sh "${charm_sh} show --charm-entity cs:~${k[charm].namespace}/${charm} --channel ${channel}"
                                 }
                             }
                         }
@@ -42,5 +46,37 @@ pipeline {
                 }
             }
         }
+        stage('Release K8S extras to Store') {
+            options {
+                timeout(time: 45, unit: 'MINUTES')
+            }
+            steps {
+                dir('jobs') {
+                    script {
+                        def jobs = [:]
+                        // returns a LinkedHashMap
+                        def charms = readYaml file: 'includes/charm-support-matrix.inc'
+                        charms.each { k ->
+                            // Each item is a LinkedHashSet, so we pull the first item from the set
+                            // since there is only 1 key per charm
+                            def charm = k.keySet().first()
+
+                            if(k[charm].namespace != 'kubeflow') {
+                                return
+                            }
+
+                            jobs[charm] = {
+                                to_channels.each { channel ->
+                                    sh "${charm_sh} promote --charm-entity cs:~${k[charm].namespace}/${charm} --from-channel ${params.from_channel} --to-channel ${channel}"
+                                    sh "${charm_sh} show --charm-entity cs:~${k[charm].namespace}/${charm} --channel ${channel}"
+                                }
+                            }
+                        }
+                        parallel jobs
+                    }
+                }
+            }
+        }
+
     }
 }

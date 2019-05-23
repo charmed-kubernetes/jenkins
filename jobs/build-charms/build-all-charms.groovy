@@ -16,11 +16,18 @@ pipeline {
                 script {
                     def jobs = [:]
                     // returns a LinkedHashMap
-                    def charms = readYaml file: 'jobs/includes/charm-k8s-support-matrix.inc'
+                    def charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
                     charms.each { k ->
+                        if (k.namespace != 'containers') {
+                            return
+                        }
                         // Each item is a LinkedHashSet, so we pull the first item from the set
                         // since there is only 1 key per charm
                         def charm = k.keySet().first()
+                        if (k[charm].namespace != 'containers') {
+                            return
+                        }
+
                         jobs[charm] = {
                             stage("Validate: ${charm}") {
                                 build job:"build-release-${charm}"
@@ -36,11 +43,17 @@ pipeline {
                 script {
                     def jobs = [:]
                     // returns a LinkedHashMap
-                    def charms = readYaml file: 'jobs/includes/charm-extras-support-matrix.inc'
+                    def charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
                     charms.each { k ->
+                        if(k.namespace != 'kubeflow') {
+                            return
+                        }
                         // Each item is a LinkedHashSet, so we pull the first item from the set
                         // since there is only 1 key per charm
                         def charm = k.keySet().first()
+                        if(k[charm].namespace != 'kubeflow') {
+                            return
+                        }
                         jobs[charm] = {
                             stage("Validate: ${charm}") {
                                 build job:"build-release-${charm}"

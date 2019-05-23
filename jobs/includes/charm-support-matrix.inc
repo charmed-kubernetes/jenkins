@@ -1,77 +1,99 @@
+# -*- yaml:mode; -*-
 - 'calico':
     repo_name: 'layer-calico'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     resource_build_sh: 'build-calico-resource.sh'
+    namespace: 'containers'
 - 'canal':
     repo_name: 'layer-canal'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     resource_build_sh: 'build-canal-resources.sh'
+    namespace: 'containers'
 - 'easyrsa':
     repo_name: 'layer-easyrsa'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'containers'
 - 'etcd':
     repo_name: 'layer-etcd'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'containers'
 - 'flannel':
     repo_name: 'charm-flannel'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     resource_build_sh: 'build-flannel-resources.sh'
+    namespace: 'containers'
 - 'kubeapi-load-balancer':
     repo_name: 'charm-kubeapi-load-balancer'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
+    namespace: 'containers'
 - 'kubernetes-e2e':
     repo_name: 'charm-kubernetes-e2e'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
+    namespace: 'containers'
 - 'kubernetes-master':
     repo_name: 'charm-kubernetes-master'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
+    namespace: 'containers'
 - 'kubernetes-worker':
     repo_name: 'charm-kubernetes-worker'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     resource_build_sh: 'build-cni-resources.sh'
+    namespace: 'containers'
 - 'keepalived':
     repo_name: 'charm-keepalived/src'
     git_repo: 'https://github.com/juju-solutions/charm-keepalived.git'
+    namespace: 'containers'
 - 'docker-registry':
     repo_name: 'docker-registry-charm'
     git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
+    namespace: 'containers'
 - 'tigera-secure-ee':
     repo_name: 'layer-tigera-secure-ee'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     resource_build_sh: 'build-resources.sh'
+    namespace: 'containers'
 - 'kubeflow-ambassador':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-ambassador'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'kubeflow'
 - 'kubeflow-jupyterhub':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-jupyterhub'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'kubeflow'
 - 'kubeflow-pytorch-operator':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-pytorch-operator'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'kubeflow'
 - 'kubeflow-seldon-api-frontend':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-seldon-api-frontend'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'kubeflow'
 - 'kubeflow-seldon-cluster-manager':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-seldon-cluster-manager'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'kubeflow'
 - 'kubeflow-tf-job-dashboard':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-tf-job-dashboard'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'kubeflow'
 - 'kubeflow-tf-job-operator':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-tf-job-operator'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'kubeflow'
 - 'kubeflow-tf-serving':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-tf-serving'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'kubeflow'
 - 'redis-k8s':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-redis-k8s'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    namespace: 'kubeflow'
