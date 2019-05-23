@@ -174,7 +174,7 @@ def promote(charm_entity, from_channel, to_channel):
             ]
     except sh.ErrorReturnCode_1:
         click.echo("No resources for {}".format(charm_id))
-    print(sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args))
+    sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
 
 
 @cli.command()

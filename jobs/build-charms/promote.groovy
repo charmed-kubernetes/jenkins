@@ -17,6 +17,9 @@ pipeline {
     }
     stages {
         stage('Release K8S charms to Store') {
+            expression {
+                return params.only_namespace == 'containers' || params.only_namespace == 'all'
+            }
             options {
                 timeout(time: 45, unit: 'MINUTES')
             }
@@ -47,6 +50,10 @@ pipeline {
             }
         }
         stage('Release K8S extras to Store') {
+            expression {
+                return params.only_namespace == 'kubeflow' || params.only_namespace == 'all'
+            }
+
             options {
                 timeout(time: 45, unit: 'MINUTES')
             }

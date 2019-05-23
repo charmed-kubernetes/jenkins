@@ -16,6 +16,12 @@
       - string:
           name: to_channel
           default: 'beta candidate'
+      - choice:
+          name: only_namespace
+          choices:
+            - all
+            - containers
+            - kubeflow
     properties:
       - build-discarder:
           num-to-keep: 1
