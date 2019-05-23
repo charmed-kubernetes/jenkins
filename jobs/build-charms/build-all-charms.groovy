@@ -18,9 +18,6 @@ pipeline {
                     // returns a LinkedHashMap
                     def charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
                     charms.each { k ->
-                        if (k.namespace != 'containers') {
-                            return
-                        }
                         // Each item is a LinkedHashSet, so we pull the first item from the set
                         // since there is only 1 key per charm
                         def charm = k.keySet().first()
@@ -45,13 +42,10 @@ pipeline {
                     // returns a LinkedHashMap
                     def charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
                     charms.each { k ->
-                        if(k.namespace != 'kubeflow') {
-                            return
-                        }
                         // Each item is a LinkedHashSet, so we pull the first item from the set
                         // since there is only 1 key per charm
                         def charm = k.keySet().first()
-                        if(k[charm].namespace != 'kubeflow') {
+                        if(k[charm].namespace != 'kubeflow-charmers') {
                             return
                         }
                         jobs[charm] = {

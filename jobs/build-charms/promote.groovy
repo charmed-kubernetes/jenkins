@@ -71,7 +71,7 @@ pipeline {
                             // since there is only 1 key per charm
                             def charm = k.keySet().first()
 
-                            if(k[charm].namespace != 'kubeflow') {
+                            if(k[charm].namespace != 'kubeflow-charmers') {
                                 return
                             }
 
