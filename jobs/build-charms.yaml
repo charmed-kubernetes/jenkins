@@ -21,7 +21,7 @@
           choices:
             - all
             - containers
-            - kubeflow
+            - kubeflow-charmers
     properties:
       - build-discarder:
           num-to-keep: 1

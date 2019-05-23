@@ -56,44 +56,35 @@
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-ambassador'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-    namespace: 'kubeflow'
 - 'kubeflow-jupyterhub':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-jupyterhub'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-    namespace: 'kubeflow'
 - 'kubeflow-pytorch-operator':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-pytorch-operator'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-    namespace: 'kubeflow'
 - 'kubeflow-seldon-api-frontend':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-seldon-api-frontend'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-    namespace: 'kubeflow'
 - 'kubeflow-seldon-cluster-manager':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-seldon-cluster-manager'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-    namespace: 'kubeflow'
 - 'kubeflow-tf-job-dashboard':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-tf-job-dashboard'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-    namespace: 'kubeflow'
 - 'kubeflow-tf-job-operator':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-tf-job-operator'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-    namespace: 'kubeflow'
 - 'kubeflow-tf-serving':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-tf-serving'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-    namespace: 'kubeflow'
 - 'redis-k8s':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-redis-k8s'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
-    namespace: 'kubeflow'

@@ -21,6 +21,33 @@
           num-to-keep: 1
 
 - job:
+    name: 'promote-all-bundles'
+    description: |
+      Promotes all bundles from channel -> to channel
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-bundles/promote.groovy
+    parameters:
+      - string:
+          name: from_channel
+          default: 'edge'
+      - string:
+          name: to_channel
+          default: 'beta candidate'
+      - choice:
+          name: only_namespace
+          choices:
+            - all
+            - containers
+            - kubeflow-charmers
+    properties:
+      - build-discarder:
+          num-to-keep: 1
+
+
+- job:
     name: 'build-kubeflow-bundles'
     description: |
       Builds and releases Kubeflow bundles to charmstore.
