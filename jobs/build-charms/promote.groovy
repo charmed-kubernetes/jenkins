@@ -25,7 +25,7 @@ pipeline {
                     script {
                         def jobs = [:]
                         // returns a LinkedHashMap
-                        def charms = readYaml file: 'jobs/includes/charm-k8s-support-matrix.inc'
+                        def charms = readYaml file: 'includes/charm-k8s-support-matrix.inc'
                         charms.each { k ->
                             // Each item is a LinkedHashSet, so we pull the first item from the set
                             // since there is only 1 key per charm
