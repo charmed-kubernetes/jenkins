@@ -23,9 +23,8 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                sh "juju kill-controller -y ${params.controller} || true"
-                sh "juju bootstrap ${params.cloud} ${params.controller} --bootstrap-constraints arch=amd64 --debug"
                 setStartTime()
+                sh "juju bootstrap ${params.cloud} ${params.controller} --bootstrap-constraints arch=amd64 --debug"
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           cloud: params.cloud,
@@ -63,7 +62,7 @@ pipeline {
         }
         cleanup {
             saveMeta()
-            sh "juju kill-controller -y ${params.controller} || true"
+            tearDown(params.controller)
         }
     }
 }

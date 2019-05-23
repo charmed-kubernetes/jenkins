@@ -20,7 +20,6 @@ pipeline {
     stages {
         stage("Prep") {
             steps {
-                sh "juju kill-controller -y ${juju_controller} || true"
                 tearDownLxd()
             }
         }
@@ -29,6 +28,7 @@ pipeline {
                 timeout(time: 4, unit: 'HOURS')
             }
             steps {
+                setStartTime()
                 script {
                     def arch = sh(
                         script:"arch",
@@ -63,7 +63,6 @@ pipeline {
                 sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
                 sh "juju add-model -c ${juju_controller} ${juju_model}"
                 sh "cat jobs/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}"
-                setStartTime()
                 deployCDK(controller: juju_controller,
                           model: juju_model,
                           cloud: params.cloud,
@@ -125,7 +124,7 @@ pipeline {
         }
         cleanup {
             saveMeta()
-            sh "juju kill-controller -y ${juju_controller}"
+            tearDown(juju_controller)
             tearDownLxd()
         }
     }

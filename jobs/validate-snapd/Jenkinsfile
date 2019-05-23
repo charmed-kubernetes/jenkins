@@ -24,7 +24,6 @@ pipeline {
             steps {
                 setStartTime()
                 sh "sudo snap refresh core --${params.snap_channel} || true"
-                sh "juju kill-controller -y ${params.controller} || true"
                 sh "juju bootstrap ${params.cloud} ${params.controller} --debug"
                 sh "juju add-model -c ${params.controller} ${juju_model} ${params.cloud}"
                 dir('jobs') {
@@ -50,7 +49,7 @@ pipeline {
 
         cleanup {
             saveMeta()
-            sh "juju kill-controller -y ${params.controller} || true"
+            tearDown(params.controller)
             sh "sudo snap refresh core --candidate || true"
         }
     }

@@ -24,14 +24,13 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                sh "juju kill-controller -y ${params.controller} || true"
+                setStartTime()
                 dir('jobs') {
                     sh "${utils.cipy} integration/tigera/cleanup_vpcs.py"
                     script {
                         sh "CONTROLLER=${params.controller} ${utils.cipy} integration/tigera/bootstrap_aws_single_subnet.py"
                     }
                 }
-                setStartTime()
                 deployCDK(controller: params.controller,
                           model: juju_model,
                           cloud: params.cloud,
@@ -75,7 +74,7 @@ pipeline {
             saveMeta()
             dir('jobs') {
                 script {
-                    sh "juju kill-controller -y ${params.controller} || true"
+                    tearDown(params.controller)
                     sh "${utils.cipy} integration/tigera/cleanup_vpcs.py"
                 }
             }
