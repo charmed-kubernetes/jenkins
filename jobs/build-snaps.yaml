@@ -28,7 +28,7 @@
             kube-proxy cdk-addons kubeadm kubernetes-test).
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job-template:
     name: 'build-release-snaps-{arch}'
@@ -53,7 +53,7 @@
         - timed: "@daily"
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 
 - job-template:
@@ -103,7 +103,7 @@
 
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job:
     name: 'build-release-eks-snaps'
@@ -133,7 +133,7 @@
 
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job:
     name: 'promote-all-arch-snaps'
@@ -201,7 +201,7 @@
           description: k8s major.minor.patch-{HOTFIX} tag to build from
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job-group:
     name: 'build-release-snaps'

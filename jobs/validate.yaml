@@ -80,7 +80,7 @@
     <<: *validate_parameter_defaults
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job-template:
     name: 'validate-upgrade-{version}-{bundle}'
@@ -95,7 +95,7 @@
     <<: *validate_parameter_defaults
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 
 - job-template:
@@ -111,7 +111,7 @@
     <<: *validate_parameter_defaults
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job-template:
     name: 'validate-upgrade-{version}-{bundle}'
@@ -126,7 +126,7 @@
     <<: *validate_parameter_defaults
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job:
     name: 'validate-oneoff'
@@ -159,7 +159,7 @@
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - project:
     name: validate

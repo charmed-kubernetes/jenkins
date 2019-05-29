@@ -18,7 +18,7 @@
           default: 'https://github.com/juju-solutions/bundle-canonical-kubernetes.git'
     properties:
       - build-discarder:
-          num-to-keep: 1
+          num-to-keep: 7
 
 - job:
     name: 'promote-all-bundles'
@@ -44,7 +44,7 @@
             - kubeflow-charmers
     properties:
       - build-discarder:
-          num-to-keep: 1
+          num-to-keep: 7
 
 
 - job:
@@ -62,4 +62,4 @@
           default: 'edge'
     properties:
       - build-discarder:
-          num-to-keep: 1
+          num-to-keep: 7

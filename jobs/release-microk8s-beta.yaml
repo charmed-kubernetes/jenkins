@@ -34,7 +34,7 @@
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job-group:
     name: 'release-microk8s-beta'

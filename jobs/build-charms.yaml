@@ -24,7 +24,7 @@
             - kubeflow-charmers
     properties:
       - build-discarder:
-          num-to-keep: 1
+          num-to-keep: 7
 
 - job:
     name: 'build-all-charms'
@@ -39,7 +39,7 @@
         - timed: "0 */10 * * *"
     properties:
       - build-discarder:
-          num-to-keep: 1
+          num-to-keep: 7
 
 
 - job-template:
@@ -93,7 +93,7 @@
           description: Channel to publish charm to
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job-group:
     name: '{name}'

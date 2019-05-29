@@ -71,7 +71,7 @@
         - timed: 'H 0 * * 6-7'
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job-template:
     name: 'validate-alt-{arch}-{version}-{bundle}'
@@ -88,7 +88,7 @@
         - timed: 'H 0 * * 6-7'
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - project:
     name: validate-alt

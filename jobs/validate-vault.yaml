@@ -30,7 +30,7 @@
           default: 'canonical-kubernetes'
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - project:
     name: validate-vault

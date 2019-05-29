@@ -24,8 +24,7 @@
           default: 'edge'
     properties:
       - build-discarder:
-          days-to-keep: 0
-          num-to-keep: 2
+          num-to-keep: 7
 
 - job-group:
     name: 'conjure-up'
