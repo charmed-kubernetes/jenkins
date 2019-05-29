@@ -44,7 +44,9 @@ class UseModel:
         return self._controller_name
 
     async def __aenter__(self):
-        self._model = Model(asyncio.get_event_loop())
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(lambda l, _: l.stop())
+        self._model = Model(loop)
         model_name = "{}:{}".format(self._controller_name,
                                     self._model_name)
         await self._model.connect(model_name)
