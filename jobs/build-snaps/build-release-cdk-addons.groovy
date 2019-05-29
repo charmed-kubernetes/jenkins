@@ -17,6 +17,7 @@ pipeline {
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.image-registry.canonical.com:5000'
+        REGISTRY_REPLACE = 'docker.io/ k8s.gcr.io/ quay.io/'
     }
     options {
         ansiColor('xterm')
@@ -98,13 +99,19 @@ pipeline {
                         echo \${UPSTREAM_LINE} >> ${bundle_image_file}
                     fi
                     sort -o ${bundle_image_file} ${bundle_image_file}
+
                     cd bundle
-                    git commit -am "Updating \${UPSTREAM_KEY} images"
-                    if ${params.dry_run}
+                    if git status | grep -q "nothing to commit"
                     then
-                        echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
+                        echo "No image changes; nothing to commit"
                     else
-                        git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
+                        git commit -am "Updating \${UPSTREAM_KEY} images"
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
+                        else
+                            git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
+                        fi
                     fi
                     cd -
                 """
@@ -115,15 +122,14 @@ pipeline {
                 sh """
                     STATIC_KEY=v${params.version}-static:
                     UPSTREAM_KEY=${kube_version}-upstream:
-                    ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|${params.arch}|g")
 
+                    ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|${params.arch}|g")
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
-                    TAG_REPLACE='k8s.gcr.io/ quay.io/'
 
                     for i in \${ALL_IMAGES}
                     do
                         docker pull \${i}
-                        for repl in \${TAG_REPLACE}
+                        for repl in ${env.REGISTRY_REPLACE}
                         do
                             RAW_IMAGE=\${i}
                             if echo \${RAW_IMAGE} | grep -q \${repl}
