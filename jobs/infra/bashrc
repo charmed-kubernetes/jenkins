@@ -119,3 +119,7 @@ fi
 export EDITOR=vim
 export GOPATH=/var/lib/jenkins/go
 export PATH=$PATH:/var/lib/jenkins/go/bin:/usr/local/go/bin
+
+# Addition machines for testing
+export ARM64=ubuntu@$NEADER
+export S390X=ubuntu@$S3LP3
