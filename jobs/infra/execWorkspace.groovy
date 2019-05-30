@@ -16,8 +16,6 @@ pipeline {
     stages {
         stage('Running') {
             steps {
-                ssh(env.ARM64, "uname")
-                ssh(env.S390X, "uname")
                 script {
                     if (params.workspace_path) {
                         sh "sudo rm -rf ${params.workspace_path}"
@@ -34,6 +32,9 @@ pipeline {
                         sh "./node_script"
                     }
                 }
+                ssh(env.ARM64, "uname")
+                ssh(env.S390X, "uname")
+
             }
         }
     }
