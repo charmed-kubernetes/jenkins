@@ -22,16 +22,18 @@ def get_ambassador_ip():
 
 
 def kubectl_create(path: str):
-    """Creates a Kubernetes resource from the given path."""
+    """Creates a Kubernetes resource from the given path.
+
+    Uses juju-kubectl plugin that introspects model and divines the proper
+    kubeconfig.
+    """
 
     # Expects `kubectl` to be installed, even when microk8s is also available
     return check_output(
         [
+            "juju",
             "kubectl",
-            "--kubeconfig",
-            "../kube_config",
-            "-n",
-            os.environ["MODEL"],
+            "--",
             "create",
             "-f",
             path,
@@ -61,22 +63,36 @@ def validate_statuses(model):
     """Validates that a known set of units have booted up into the correct state."""
 
     expected_units = {
-        "kubeflow-ambassador/0",
-        "kubeflow-jupyterhub/0",
-        "kubeflow-pytorch-operator/0",
-        "kubeflow-seldon-api-frontend/0",
-        "kubeflow-seldon-cluster-manager/0",
-        "kubeflow-tf-job-dashboard/0",
-        "kubeflow-tf-job-operator/0",
+        "ambassador-auth/0",
+        "ambassador/0",
+        "argo-controller/0",
+        "argo-ui/0",
+        "jupyter-controller/0",
+        "jupyter-web/0",
+        "jupyterhub/0",
+        "mariadb/0",
+        "minio/0",
+        "pipelines-api/0",
+        "pipelines-dashboard/0",
+        "pipelines-persistence/0",
+        "pipelines-scheduledworkflow/0",
+        "pipelines-ui/0",
+        "pipelines-viewer/0",
+        "pytorch-operator/0",
         "redis/0",
+        "seldon-api-frontend/0",
+        "seldon-cluster-manager/0",
+        "tensorboard/0",
+        "tf-job-dashboard/0",
+        "tf-job-operator/0",
     }
 
     assert set(model.units.keys()) == expected_units
 
-    for unit in model.units.values():
+    for name, unit in model.units.items():
         assert unit.agent_status == "idle"
         assert unit.workload_status == "active"
-        assert unit.workload_status_message == ""
+        assert unit.workload_status_message == ('ready' if name == 'mariadb/0' else '')
 
 
 @log_calls_async
