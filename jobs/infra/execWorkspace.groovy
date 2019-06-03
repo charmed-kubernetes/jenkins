@@ -33,8 +33,8 @@ pipeline {
                     }
                 }
                 sh "printenv"
-                ssh(env.S390X, "uname")
-                ssh(env.ARM64, "uname")
+                ssh('s3lp3', "uname")
+                ssh('neader', "uname")
 
             }
         }

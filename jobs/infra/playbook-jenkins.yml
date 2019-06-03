@@ -92,9 +92,17 @@
         force: yes
       when: ansible_architecture != "x86_64"
     - name: copy bashrc
-      template:
+      copy:
         src: "bashrc"
         dest: /var/lib/jenkins/.bashrc
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+        force: yes
+    - name: ssh config
+      template:
+        src: "ssh_config"
+        dest: /var/lib/jenkins/.ssh/config
         owner: jenkins
         group: jenkins
         mode: 0644
