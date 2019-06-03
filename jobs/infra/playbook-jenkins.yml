@@ -110,6 +110,7 @@
         dest: /usr/local/bin/juju-wait
         mode: 0777
         force: yes
+        remote_src: yes
       tags:
         - adhoc
       when: ansible_architecture != "x86_64"
