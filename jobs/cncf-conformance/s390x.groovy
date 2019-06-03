@@ -28,13 +28,10 @@ pipeline {
                 setStartTime()
                 ssh("s3lp3", "mkdir -p /home/ubuntu/jenkins || true")
                 ssh("s3lp3", "git clone https://git.launchpad.net/juju-wait /home/ubuntu/jenkins/juju-wait || true")
-                ssh("s3lp3", "sudo mv /home/ubuntu/jenkins/juju-wait/juju_wait/__init__.py /usr/local/bin/juju-wait && chmod 0777 /usr/local/bin/juju-wait")
+                ssh("s3lp3", "sudo mv /home/ubuntu/jenkins/juju-wait/juju_wait/__init__.py /usr/local/bin/juju-wait && chmod 0777 /usr/local/bin/juju-wait || true")
                 scp("s3lp3", "jobs/validate-alt-arch/lxd-profile.yaml", "/home/ubuntu/jenkins/lxd-profile.yaml")
                 ssh("s3lp3", "${juju_sh} bootstrap ${params.cloud} ${juju_controller} --debug")
                 ssh("s3lp3", "${juju_sh} add-model -c ${juju_controller} ${juju_model}")
-                ssh("s3lp3", "${juju_sh} config -m ${juju_controller}:${juju_model} kubernetes-master allow-privileged=true")
-                ssh("s3lp3", "${juju_sh} config -m ${juju_controller}:${juju_model} kubernetes-worker allow-privileged=true")
-
                 script {
                     def data = readYaml file: params.version_overlay
                     data['applications']['kubernetes-worker'].options.ingress = false
@@ -49,6 +46,8 @@ pipeline {
                 scp("s3lp3", "./bundle-to-test", "/home/ubuntu/jenkins/bundle-to-test")
 
                 ssh("s3lp3", "${juju_sh} deploy -m ${juju_controller}:${juju_model} /home/ubuntu/jenkins/bundle-to-test --overlay /home/ubuntu/jenkins/overlay.yaml --channel ${params.bundle_channel}")
+                ssh("s3lp3", "${juju_sh} config -m ${juju_controller}:${juju_model} kubernetes-master allow-privileged=true")
+                ssh("s3lp3", "${juju_sh} config -m ${juju_controller}:${juju_model} kubernetes-worker allow-privileged=true")
                 ssh("s3lp3", "juju-wait -e ${juju_.controller}:${juju_model} -w -r3 -t14400")
             }
         }
@@ -94,7 +93,7 @@ pipeline {
             setFail()
         }
         cleanup {
-            ssh("juju destroy-controller --destroy-all-models --destroy-storage -y ${juju_controller} || true")
+            ssh("s3lp3", "${juju_sh} destroy-controller --destroy-all-models --destroy-storage -y ${juju_controller} || true")
         }
     }
 }
