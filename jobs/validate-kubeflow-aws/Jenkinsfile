@@ -53,8 +53,6 @@ pipeline {
                 exec "sudo snap install jq"
                 exec "sudo snap install juju --classic --channel ${params.juju_channel}"
                 exec "sudo snap install juju-helpers --classic --edge"
-                exec "sudo snap alias juju-helpers.juju-bundle juju-bundle"
-                exec "sudo snap alias juju-helpers.juju-kubectl juju-kubectl"
                 exec "sudo snap install juju-wait --classic"
                 exec "sudo snap install yq"
                 exec "sudo snap install kubectl --classic"
@@ -68,22 +66,17 @@ pipeline {
                 exec 'juju status -m default | grep "kubernetes-worker/0" | awk "{print \\$5}" > PUB_IP'
             }
         }
-        stage('Wait for endpoint') {
-            options {
-                retry(60)
-            }
-            steps {
-                sleep 5
-                exec 'curl -vf http://`cat PUB_IP`.xip.io/hub/'
-            }
-        }
         stage('Validate') {
             steps {
-                exec '''
-                    cd jobs/ && \
+                exec """
+                    git clone https://github.com/charmed-kubernetes/jenkins.git &&
+                    cd jenkins &&
+                    git checkout ${env.GIT_COMMIT} &&
+                    cd jobs/ &&
                     PY_IGNORE_IMPORTMISMATCH=1
                     CONTROLLER=cdkkf
                     MODEL=kubeflow
+                    TOX_WORK_DIR=.tox
                     tox
                         -e py36
                         --
@@ -92,7 +85,7 @@ pipeline {
                             -s
                             --junit-xml=validate.xml
                             integration/test_kubeflow.py::test_validate
-            '''.replaceAll('\\s+', ' ')
+            """.replaceAll('\\s+', ' ')
             }
         }
     }
@@ -112,7 +105,7 @@ pipeline {
             exec "juju status || true"
             exec "juju list-controllers || true"
             exec "juju list-models || true"
-            exec "juju destroy-controller --destroy-all-models --destroy-storage -yt0 aws-kf-controller || true"
+            exec "juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true"
             sh "sudo lxc storage volume detach ${STORAGE} storage ${CONTAINER} || true"
             sh "sudo lxc delete --force ${CONTAINER} || true"
             sh "sudo lxc storage volume delete ${STORAGE} storage || true"
