@@ -12,7 +12,7 @@
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/cncf-conformance/Jenkinsfile
+      script-path: jobs/cncf-conformance/s390x.groovy
     parameters:
       - string:
           name: build_node
