@@ -3,14 +3,6 @@
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
 
-def ssh(cmd) {
-    utils.ssh(env.S390X, cmd)
-}
-
-def scp(src, dst) {
-    utils.scp(env.S390X, src, dst)
-}
-
 pipeline {
     agent {
         label 'runner-amd64'
@@ -33,12 +25,12 @@ pipeline {
             }
             steps {
                 setStartTime()
-                ssh("mkdir -p /home/ubuntu/jenkins || true")
-                scp("jobs/validate-alt-arch/lxd-profile.yaml", "/home/ubuntu/jenkins/lxd-profile.yaml")
-                ssh("juju bootstrap ${params.cloud} ${juju_controller} --debug")
-                ssh("juju add-model -c ${juju_controller} ${juju_model}")
-                ssh("juju config -m ${juju_controller}:${juju_model} kubernetes-master allow-privileged=true")
-                ssh("juju config -m ${juju_controller}:${juju_model} kubernetes-worker allow-privileged=true")
+                ssh(env.S390X, "mkdir -p /home/ubuntu/jenkins || true")
+                scp(env.S390X, "jobs/validate-alt-arch/lxd-profile.yaml", "/home/ubuntu/jenkins/lxd-profile.yaml")
+                ssh(env.S390X, "juju bootstrap ${params.cloud} ${juju_controller} --debug")
+                ssh(env.S390X, "juju add-model -c ${juju_controller} ${juju_model}")
+                ssh(env.S390X, "juju config -m ${juju_controller}:${juju_model} kubernetes-master allow-privileged=true")
+                ssh(env.S390X, "juju config -m ${juju_controller}:${juju_model} kubernetes-worker allow-privileged=true")
 
                 script {
                     def data = readYaml file: params.version_overlay
@@ -48,13 +40,13 @@ pipeline {
                     sh "rm ${params.version_overlay}"
                     writeYaml file: params.version_overlay, data: data
                     scp(params.version_overlay, "/home/ubuntu/jenkins/overlay.yaml")
-                    ssh("cat /home/ubuntu/jenkins/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}")
+                    ssh(env.S390X, "cat /home/ubuntu/jenkins/validate-alt-arch/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}")
                 }
                 sh "charm pull cs:~containers/${params.bundle} --channel ${params.bundle_channel} ./bundle-to-test"
-                scp("./bundle-to-test", "/home/ubuntu/jenkins/bundle-to-test")
+                scp(env.S390X, "./bundle-to-test", "/home/ubuntu/jenkins/bundle-to-test")
 
-                ssh("juju deploy -m ${juju_controller}:${juju_model} /home/ubuntu/jenkins/bundle-to-test --overlay /home/ubuntu/jenkins/overlay.yaml --channel ${params.bundle_channel}")
-                ssh("juju-wait -e ${juju_.controller}:${juju_model} -w -r3 -t14400")
+                ssh(env.S390X, "juju deploy -m ${juju_controller}:${juju_model} /home/ubuntu/jenkins/bundle-to-test --overlay /home/ubuntu/jenkins/overlay.yaml --channel ${params.bundle_channel}")
+                ssh(env.S390X, "juju-wait -e ${juju_.controller}:${juju_model} -w -r3 -t14400")
             }
         }
         // stage('Run: sonobuoy') {

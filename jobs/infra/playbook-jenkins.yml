@@ -3,6 +3,9 @@
   connection: local
   gather_facts: yes
   become: true
+  vars:
+    s390x: "{{ lookup('env', 'S3LP3') }}"
+    arm64: "{{ lookup('env', 'NEADER') }}"
   tasks:
     - sysctl:
         name: net.ipv4.ip_forward
@@ -89,7 +92,7 @@
         force: yes
       when: ansible_architecture != "x86_64"
     - name: copy bashrc
-      copy:
+      template:
         src: "bashrc"
         dest: /var/lib/jenkins/.bashrc
         owner: jenkins

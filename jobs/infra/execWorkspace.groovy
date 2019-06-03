@@ -32,8 +32,9 @@ pipeline {
                         sh "./node_script"
                     }
                 }
-                ssh(env.ARM64, "uname")
+                sh "printenv"
                 ssh(env.S390X, "uname")
+                ssh(env.ARM64, "uname")
 
             }
         }
