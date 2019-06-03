@@ -39,7 +39,7 @@ pipeline {
                     data['applications']['kubernetes-master']['options']['enable-dashboard-addons'] = false
                     writeYaml file: "${params.version_overlay}-new", data: data
                 }
-                scp("${params.version_overlay}-new", "/home/ubuntu/jenkins/overlay.yaml")
+                scp("s3lp3", "${params.version_overlay}-new", "/home/ubuntu/jenkins/overlay.yaml")
                 ssh("s3lp3", "cat /home/ubuntu/jenkins/lxd-profile.yaml | sed -e \"s/##MODEL##/${juju_model}/\" | sudo lxc profile edit juju-${juju_model}")
 
                 sh "charm pull cs:~containers/${params.bundle} --channel ${params.bundle_channel} ./bundle-to-test"
