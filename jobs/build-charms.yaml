@@ -36,7 +36,7 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/build-charms/build-all-charms.groovy
     triggers:
-        - timed: "0 */10 * * *"
+        - timed: "0 */18 * * *"
     properties:
       - build-discarder:
           num-to-keep: 7
