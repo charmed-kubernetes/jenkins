@@ -32,10 +32,6 @@ pipeline {
                         sh "./node_script"
                     }
                 }
-                sh "printenv"
-                ssh('s3lp3', "uname")
-                ssh('neader', "uname")
-
             }
         }
     }
