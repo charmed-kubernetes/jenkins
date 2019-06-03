@@ -15,9 +15,6 @@
       script-path: jobs/cncf-conformance/s390x.groovy
     parameters:
       - string:
-          name: build_node
-          default: 'runner-s390x'
-      - string:
           name: version_overlay
           default: 'jobs/overlays/{normalized_ver}-edge-localhost-overlay.yaml'
       - string:
