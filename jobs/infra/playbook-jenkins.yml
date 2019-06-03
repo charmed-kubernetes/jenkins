@@ -7,6 +7,16 @@
     s390x: "{{ lookup('env', 'S3LP3') }}"
     arm64: "{{ lookup('env', 'NEADER') }}"
   tasks:
+    - name: update /etc/environment
+      copy:
+        src: "proxy_env"
+        dest: /etc/environment
+        owner: root
+        group: root
+        mode: 0644
+        force: yes
+      tags:
+        - adhoc
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
