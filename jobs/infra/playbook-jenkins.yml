@@ -252,6 +252,10 @@
         - 'lxdbr1'
       tags:
         - adhoc
+    - name: restart lxd
+      command: "systemctl restart lxd"
+      tags:
+        - adhoc
     - name: set docker daemon config
       copy:
         src: docker.daemon.json
