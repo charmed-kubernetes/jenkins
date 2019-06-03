@@ -46,9 +46,9 @@ pipeline {
                 scp("s3lp3", "./bundle-to-test", "/home/ubuntu/jenkins/bundle-to-test")
 
                 ssh("s3lp3", "${juju_sh} deploy -m ${juju_controller}:${juju_model} /home/ubuntu/jenkins/bundle-to-test --overlay /home/ubuntu/jenkins/overlay.yaml --channel ${params.bundle_channel}")
-                ssh("s3lp3", "${juju_sh} config -m ${juju_controller}:${juju_model} kubernetes-master allow-privileged=true")
-                ssh("s3lp3", "${juju_sh} config -m ${juju_controller}:${juju_model} kubernetes-worker allow-privileged=true")
-                ssh("s3lp3", "juju-wait -e ${juju_.controller}:${juju_model} -w -r3 -t14400")
+                ssh("s3lp3", "${juju_sh} config -m ${juju_controller}:${juju_model} kubernetes-master allow-privileged=true || true")
+                ssh("s3lp3", "${juju_sh} config -m ${juju_controller}:${juju_model} kubernetes-worker allow-privileged=true || true")
+                ssh("s3lp3", "PATH=$PATH:/snap/bin /usr/local/bin/juju-wait -e ${juju_controller}:${juju_model} -w -r3 -t14400")
             }
         }
         // stage('Run: sonobuoy') {
