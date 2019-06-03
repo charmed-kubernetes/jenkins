@@ -17,6 +17,10 @@
         force: yes
       tags:
         - adhoc
+    - name: restart snapd
+      command: systemctl restart snapd.service
+      tags:
+        - adhoc
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
