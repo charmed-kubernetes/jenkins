@@ -32,8 +32,6 @@ pipeline {
             steps {
                 setStartTime()
                 ssh("s3lp3", "mkdir -p /home/ubuntu/jenkins || true")
-                ssh("s3lp3", "git clone https://git.launchpad.net/juju-wait /home/ubuntu/jenkins/juju-wait || true")
-                ssh("s3lp3", "sudo mv /home/ubuntu/jenkins/juju-wait/juju_wait/__init__.py /usr/local/bin/juju-wait && chmod 0777 /usr/local/bin/juju-wait || true")
                 scp("s3lp3", "jobs/validate-alt-arch/lxd-profile.yaml", "/home/ubuntu/jenkins/lxd-profile.yaml")
                 ssh("s3lp3", "${juju_sh} bootstrap ${params.cloud} ${juju_controller} --debug")
                 ssh("s3lp3", "${juju_sh} add-model -c ${juju_controller} ${juju_model}")
@@ -56,33 +54,36 @@ pipeline {
                 ssh("s3lp3", "PATH=$PATH:/snap/bin /usr/local/bin/juju-wait -e ${juju_controller}:${juju_model} -w -r3 -t14400")
             }
         }
-        // stage('Run: sonobuoy') {
-        //     options {
-        //         timeout(time: 3, unit: 'HOURS')
-        //     }
-        //     steps {
-        //         runSonobuoy(juju_controller, juju_model)
-        //     }
-        // }
-        // stage('Test') {
-        //     options {
-        //         timeout(time: 3, unit: 'HOURS')
-        //     }
-        //     steps {
-        //         waitUntil {
-        //             sh '/var/lib/jenkins/go/bin/sonobuoy status || true'
-        //             script {
-        //                 def r = sh script:'/var/lib/jenkins/go/bin/sonobuoy status|grep -q \'Sonobuoy has completed\'', returnStatus: true
-        //                 return (r == 0);
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Run: sonobuoy') {
+            options {
+                timeout(time: 3, unit: 'HOURS')
+            }
+            steps {
+                ssh("s3lp3", "mkdir -p /home/ubuntu/.kube || true")
+                ssh("s3lp3", "juju scp -m ${juju_controller}:${juju_model} kubernetes-master/0:config /home/ubuntu/.kube/")
+                ssh("s3lp3", "export RBAC_ENABLED=\$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)")
+                ssh("s3lp3", "/var/lib/jenkins/go/bin/sonobuoy run")
+            }
+        }
+        stage('Test') {
+            options {
+                timeout(time: 3, unit: 'HOURS')
+            }
+            steps {
+                waitUntil {
+                    ssh("s3lp3", "/var/lib/jenkins/go/bin/sonobuoy status || true")
+                    script {
+                        def r = sh script:ssh("s3lp3", '/var/lib/jenkins/go/bin/sonobuoy status|grep -q \'Sonobuoy has completed\''), returnStatus: true
+                        return (r == 0);
+                    }
+                }
+            }
+        }
         // stage('Archive') {
         //     steps {
         //         waitUntil {
         //             script {
-        //                 def r = sh script:'/var/lib/jenkins/go/bin/sonobuoy retrieve results/.', returnStatus: true
+        //                 def r = sh script:ssh("s3lp3", '/var/lib/jenkins/go/bin/sonobuoy retrieve results/.'), returnStatus: true
         //                 return (r == 0);
         //             }
         //         }

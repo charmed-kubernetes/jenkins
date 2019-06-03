@@ -9,7 +9,7 @@
   tasks:
     - name: update /etc/environment
       copy:
-        src: "proxy_env"
+        src: "environment"
         dest: /etc/environment
         owner: root
         group: root
@@ -17,8 +17,10 @@
         force: yes
       tags:
         - adhoc
-    - name: restart snapd
-      command: systemctl restart snapd.service
+    - name: set snap proxies
+      shell: |
+        snap set system proxy.http="http://squid.internal:3128"
+        snap set system proxy.https="http://squid.internal:3128"
       tags:
         - adhoc
     - sysctl:
@@ -27,6 +29,8 @@
         sysctl_set: yes
         state: present
         reload: yes
+      tags:
+        - jenkins
     - name: install apt deps
       apt:
         name:
@@ -60,6 +64,8 @@
           - wget
           - tree
           - virtualenv
+      tags:
+        - jenkins
     - name: remove unused debs
       apt:
         name:
@@ -73,11 +79,14 @@
           - juju-wait
           - libsodium-dev
         state: absent
+      tags:
+        - jenkins
     - name: use snap core candidate
       command: "snap refresh --candidate core"
       ignore_errors: yes
       tags:
         - adhoc
+        - jenkins
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
@@ -90,6 +99,7 @@
         - "go --classic --channel 1.12/stable"
         - "multipass"
       tags:
+        - jenkins
         - adhoc
     - name: remove unneeded snaps
       command: "snap remove {{item}}"
@@ -97,6 +107,8 @@
       loop:
         - "microk8s"
         - "bundletester"
+      tags:
+        - jenkins
     - name: clone juju-wait script
       git:
         repo: 'https://git.launchpad.net/juju-wait'
@@ -104,6 +116,7 @@
       when: ansible_architecture != "x86_64"
       tags:
         - adhoc
+        - jenkins
     - name: copy juju-wait to bindir
       copy:
         src: /srv/juju-wait/juju_wait/__init__.py
@@ -113,6 +126,7 @@
         remote_src: yes
       tags:
         - adhoc
+        - jenkins
       when: ansible_architecture != "x86_64"
     - name: copy bashrc
       copy:
@@ -122,6 +136,8 @@
         group: jenkins
         mode: 0644
         force: yes
+      tags:
+        - jenkins
     - name: ssh config
       template:
         src: "ssh_config"
@@ -130,11 +146,15 @@
         group: jenkins
         mode: 0644
         force: yes
+      tags:
+        - jenkins
     - name: login to charmstore
       command: "charm login"
       become: false
       ignore_errors: yes
       register: charmstore_login
+      tags:
+        - jenkins
     - name: copy charm creds
       copy:
         src: "{{ lookup('env', 'CHARMCREDS') }}"
@@ -145,10 +165,15 @@
         force: yes
       become: false
       when: charmstore_login.rc != 0
+      tags:
+        - jenkins
+
     - name: login to charmstorex2
       command: "charm login"
       become: false
       when: charmstore_login.rc != 0
+      tags:
+        - jenkins
     - name: copy snapcraft creds
       copy:
         src: "{{ lookup('env', 'SNAPCRAFTCREDS') }}"
@@ -157,10 +182,14 @@
         group: jenkins
         mode: 0644
         force: no
+      tags:
+        - jenkins
     - name: Creates ssh dir
       file:
         path: /var/lib/jenkins/.ssh
         state: directory
+      tags:
+        - jenkins
     - name: copy ssh creds
       copy:
         src: "{{ lookup('env', 'CDKBOTSSHCREDS') }}"
@@ -169,6 +198,8 @@
         group: jenkins
         mode: 0600
         force: yes
+      tags:
+        - jenkins
     - name: copy snapcraft creds
       copy:
         src: "{{ lookup('env', 'SNAPCRAFTCPCCREDS') }}"
@@ -177,9 +208,13 @@
         group: jenkins
         mode: 0644
         force: no
+      tags:
+        - jenkins
     - name: login to snapstore
       command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
       become: false
+      tags:
+        - jenkins
     - name: create aws dir
       file:
         path: /var/lib/jenkins/.aws
@@ -187,6 +222,8 @@
         owner: jenkins
         group: jenkins
         mode: 0755
+      tags:
+        - jenkins
     - name: copy aws creds
       copy:
         src: "{{ lookup('env', 'AWSCREDS') }}"
@@ -195,15 +232,21 @@
         group: jenkins
         mode: 0644
         force: no
+      tags:
+        - jenkins
     - name: create juju dir
       file:
         path: /var/lib/jenkins/.local/share/juju
         state: directory
         mode: 0755
+      tags:
+        - jenkins
     - name: copy juju credentials
       unarchive:
         src: "{{ lookup('env', 'JUJUCREDS') }}"
         dest: /var/lib/jenkins/.local/share/juju
+      tags:
+        - jenkins
     - name: copy sso creds
       copy:
         src: "{{ lookup('env', 'SSOCREDS') }}"
@@ -211,11 +254,15 @@
         owner: jenkins
         group: jenkins
         mode: 0644
+      tags:
+        - jenkins
     - name: create jaas dir
       file:
         path: /var/lib/jenkins/.local/share/juju/cookies
         state: directory
         mode: 0755
+      tags:
+        - jenkins
     - name: copy jaas cookie
       copy:
         src: "{{ lookup('env', 'JAASCREDS') }}"
@@ -224,18 +271,26 @@
         group: jenkins
         mode: 0600
         force: no
+      tags:
+        - jenkins
     - name: set perms
       file:
         path: /var/lib/jenkins/.local/share/juju
         owner: jenkins
         group: jenkins
         recurse: yes
+      tags:
+        - jenkins
     - name: update jenkins user
       user:
         name: jenkins
         groups: jenkins,docker,lxd
+      tags:
+        - jenkins
     - name: setup lxd network
       command: "/snap/bin/lxd init --auto"
+      tags:
+        - jenkins
     - name: disable ipv6 in lxd
       command: "lxc network set {{item}} ipv6.address none"
       ignore_errors: yes
@@ -244,6 +299,7 @@
         - 'lxdbr1'
       tags:
         - adhoc
+        - jenkins
     - name: set lxd mtu
       command: "lxc network set {{item}} bridge.mtu 1458"
       ignore_errors: yes
@@ -252,8 +308,12 @@
         - 'lxdbr1'
       tags:
         - adhoc
-    - name: restart lxd
-      command: "systemctl restart lxd"
+        - jenkins
+    - name: set lxd proxy
+      shell: |
+        lxc config set core.proxy_http http://squid.internal:3128
+        lxc config set core.proxy_https http://squid.internal:3128
+        lxc config set core.proxy_ignore_hosts localhost
       tags:
         - adhoc
     - name: set docker daemon config
@@ -265,12 +325,14 @@
         group: root
       tags:
         - adhoc
+        - jenkins
     - name: restart docker service
       service:
         name: docker
         state: restarted
       tags:
         - adhoc
+        - jenkins
     - name: create scapestack dir
       file:
         path: /var/lib/jenkins/.scapestack
@@ -278,6 +340,8 @@
         owner: jenkins
         group: jenkins
         mode: 0755
+      tags:
+        - jenkins
     - name: copy scapestack creds
       copy:
         src: "{{ lookup('env', 'SCAPESTACKCREDS') }}"
@@ -285,6 +349,8 @@
         owner: jenkins
         group: jenkins
         mode: 0644
+      tags:
+        - jenkins
     - name: copy scapestack cloud creds
       copy:
         src: "{{ lookup('env', 'SCAPESTACKCLOUD') }}"
@@ -292,9 +358,12 @@
         owner: jenkins
         group: jenkins
         mode: 0644
+      tags:
+        - jenkins
     - name: install sonobuoy
       tags:
         - adhoc
+        - jenkins
       become: false
       shell: |
         mkdir -p /var/lib/jenkins/go/bin || true
