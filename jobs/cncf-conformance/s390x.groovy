@@ -22,7 +22,7 @@ pipeline {
     stages {
         stage("Setup system") {
             steps {
-                sh "cd jobs && /var/lib/jenkins/venvs/ansible/bin/ansible-playbook infra/playbook-jenkins.yml -e 'ansible_python_interpreter=/usr/bin/python3.5' --limit s390x --tags 'adhoc'"
+                sh "cd jobs && /var/lib/jenkins/venvs/ansible/bin/ansible-playbook infra/playbook-jenkins.yml -e 'ansible_python_interpreter=/usr/bin/python3.5' --limit s390x --tags 'adhoc' -i infra/hosts"
             }
         }
         stage("Deploy") {
