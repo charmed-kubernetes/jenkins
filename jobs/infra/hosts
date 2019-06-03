@@ -1,1 +1,8 @@
+[localhost]
 localhost ansible_host=localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+
+[s390x]
+s3lp3 ansible_python_interpreter=/usr/bin/python3
+
+[arm64]
+neader ansible_python_interpreter=/usr/bin/python3

@@ -1,6 +1,6 @@
 ---
-- hosts: localhost
-  connection: local
+- hosts: all
+#  connection: local
   gather_facts: yes
   become: true
   vars:
@@ -62,6 +62,8 @@
     - name: use snap core candidate
       command: "snap refresh --candidate core"
       ignore_errors: yes
+      tags:
+        - adhoc
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
@@ -73,6 +75,8 @@
         - "charm --classic --edge"
         - "go --classic --channel 1.12/stable"
         - "multipass"
+      tags:
+        - adhoc
     - name: remove unneeded snaps
       command: "snap remove {{item}}"
       ignore_errors: yes
@@ -84,12 +88,16 @@
         repo: 'https://git.launchpad.net/juju-wait'
         dest: /srv/juju-wait
       when: ansible_architecture != "x86_64"
+      tags:
+        - adhoc
     - name: copy juju-wait to bindir
       copy:
         src: /srv/juju-wait/juju_wait/__init__.py
         dest: /usr/local/bin/juju-wait
         mode: 0777
         force: yes
+      tags:
+        - adhoc
       when: ansible_architecture != "x86_64"
     - name: copy bashrc
       copy:
@@ -219,12 +227,16 @@
       loop:
         - 'lxdbr0'
         - 'lxdbr1'
+      tags:
+        - adhoc
     - name: set lxd mtu
       command: "lxc network set {{item}} bridge.mtu 1458"
       ignore_errors: yes
       loop:
         - 'lxdbr0'
         - 'lxdbr1'
+      tags:
+        - adhoc
     - name: set docker daemon config
       copy:
         src: docker.daemon.json
@@ -232,10 +244,14 @@
         force: yes
         owner: root
         group: root
+      tags:
+        - adhoc
     - name: restart docker service
       service:
         name: docker
         state: restarted
+      tags:
+        - adhoc
     - name: create scapestack dir
       file:
         path: /var/lib/jenkins/.scapestack
@@ -258,6 +274,8 @@
         group: jenkins
         mode: 0644
     - name: install sonobuoy
+      tags:
+        - adhoc
       become: false
       shell: |
         mkdir -p /var/lib/jenkins/go/bin || true
