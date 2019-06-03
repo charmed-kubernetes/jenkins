@@ -2,7 +2,7 @@
 localhost ansible_host=localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
 
 [s390x]
-s3lp3 ansible_python_interpreter=/usr/bin/python3
+s3lp3 ansible_python_interpreter=/usr/bin/python3 ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/cdkbot_rsa
 
 [arm64]
-neader ansible_python_interpreter=/usr/bin/python3
+neader ansible_python_interpreter=/usr/bin/python3 ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/cdkbot_rsa
