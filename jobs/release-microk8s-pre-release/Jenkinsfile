@@ -29,10 +29,8 @@ pipeline {
         }
         stage('Prepare VM') {
             steps {
-                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo apt-get purge lxc* -y'"
-                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo apt-get purge lxd* -y'"
                 sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo snap install lxd'"
-                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo lxd init --auto'"
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'"
                 sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo snap install snapcraft --classic'"
             }
         }
