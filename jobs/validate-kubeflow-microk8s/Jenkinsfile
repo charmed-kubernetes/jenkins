@@ -6,7 +6,7 @@ def exec(cmd) {
 
 pipeline {
     agent {
-        label 'runner-amd64-1'
+        label 'runner-amd64'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -49,7 +49,6 @@ pipeline {
                 exec "sudo snap install jq"
                 exec "sudo snap install juju --classic --channel ${params.juju_channel}"
                 exec "sudo snap install juju-helpers --classic --edge"
-                exec "sudo snap alias juju-helpers.juju-bundle juju-bundle"
                 exec "sudo snap install juju-wait --classic"
                 exec "sudo snap install kubectl --classic"
                 exec "sudo snap install microk8s --classic --channel ${params.microk8s_channel}"
@@ -68,11 +67,16 @@ pipeline {
         }
         stage('Validate') {
             steps {
-                exec '''
-                    cd jobs/ && \
+                exec """
+                    git clone https://github.com/charmed-kubernetes/jenkins.git &&
+                    cd jenkins &&
+                    juju status --format yaml | yq r - applications.ambassador.address > PUB_IP &&
+                    git checkout ${env.GIT_COMMIT} &&
+                    cd jobs/ &&
                     PY_IGNORE_IMPORTMISMATCH=1
                     CONTROLLER=uk8s
                     MODEL=kubeflow
+                    TOX_WORK_DIR=.tox
                     tox
                         -e py36
                         --
@@ -81,7 +85,7 @@ pipeline {
                             -s
                             --junit-xml=validate.xml
                             integration/test_kubeflow.py::test_validate
-                '''.replaceAll('\\s+', ' ')
+                """.replaceAll('\\s+', ' ')
             }
         }
     }
@@ -98,7 +102,8 @@ pipeline {
         }
         cleanup {
             saveMeta()
-            sh "juju destroy-controller --destroy-all-models --destroy-storage ${CONTROLLER} -yt0"
+            exec "juju status --format yaml"
+            sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${CONTROLLER}"
         }
     }
 }
