@@ -1,4 +1,3 @@
-# -*- yaml:mode; -*-
 - 'calico':
     repo_name: 'layer-calico'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
