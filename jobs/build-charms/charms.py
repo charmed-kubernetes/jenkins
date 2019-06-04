@@ -25,19 +25,19 @@ import yaml
 import time
 
 
-def check_env():
-    """ Verifies charm environment variables are set when performing some charm actions
+class CharmEnv:
+    """ Charm environment
     """
-    try:
-        CHARM_BUILD_DIR = Path(os.environ.get("CHARM_BUILD_DIR"))
-        CHARM_LAYERS_DIR = Path(os.environ.get("CHARM_LAYERS_DIR"))
-        CHARM_INTERFACES_DIR = Path(os.environ.get("CHARM_INTERFACES_DIR"))
-    except TypeError:
-        raise SystemExit(
-            "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR: "
-            "Unable to find some or all of these charm build environment variables."
-        )
-
+    def __init__(self):
+        try:
+            self.build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
+            self.layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
+            self.interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
+        except TypeError:
+            raise SystemExit(
+                "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR: "
+                "Unable to find some or all of these charm build environment variables."
+            )
 
 @click.group()
 def cli():
@@ -57,7 +57,7 @@ def cli():
     "--timeout", default=60, required=True, help="timeout between retries in seconds"
 )
 def pull_source(layer_index, layers, git_branch, retries, timeout):
-    check_env()
+    charm_env = CharmEnv()
     layers = Path(layers)
     layers = yaml.safe_load(layers.read_text("utf8"))
     num_runs = 0
@@ -80,9 +80,9 @@ def pull_source(layer_index, layers, git_branch, retries, timeout):
             download()
         ltype, name = layer.split(":")
         if ltype == "layer":
-            sh.git.checkout(git_branch, _cwd=str(CHARM_LAYERS_DIR / name))
+            sh.git.checkout(git_branch, _cwd=str(charm_env.layers_dir / name))
         elif ltype == "interface":
-            sh.git.checkout(git_branch, _cwd=str(CHARM_INTERFACES_DIR / name))
+            sh.git.checkout(git_branch, _cwd=str(charm_env.interfaces_dir / name))
         else:
             raise SystemExit(f"Unknown layer/interface: {layer}")
 
@@ -97,7 +97,6 @@ def pull_source(layer_index, layers, git_branch, retries, timeout):
     default="master",
 )
 def build(repo_path, out_path, git_branch):
-    check_env()
     for line in sh.charm.build(
         r=True, force=True, _cwd=repo_path, _iter=True, _err_to_out=True
     ):
@@ -114,7 +113,6 @@ def build(repo_path, out_path, git_branch):
     help="Charm entity path (ie. cs~containers/flannel)",
 )
 def push(repo_path, out_path, charm_entity):
-    check_env()
     git_commit = sh.git("rev-parse", "HEAD", _cwd=repo_path)
     git_commit = git_commit.stdout.decode().strip()
     click.echo("Grabbing git revision {}".format(git_commit))
@@ -212,7 +210,6 @@ def promote(charm_entity, from_channel, to_channel):
     "--resource-spec", required=True, help="YAML Spec of resource keys and filenames"
 )
 def resource(charm_entity, channel, builder, out_path, resource_spec):
-    check_env()
     out_path = Path(out_path)
     resource_spec = yaml.safe_load(Path(resource_spec).read_text())
     resource_spec_fragment = resource_spec.get(charm_entity, None)
