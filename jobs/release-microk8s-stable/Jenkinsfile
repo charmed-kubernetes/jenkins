@@ -38,6 +38,7 @@ pipeline {
             steps {
                 sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo snap install lxd'"
                 sh "juju run -m ${params.controller}:default --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'"
+                sh "juju run -m ${params.controller}:default --unit ubuntu/0 --timeout=60m0s 'sudo lxd init --auto'"
             }
         }
         stage('Setup') {
