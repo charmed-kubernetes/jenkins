@@ -23,7 +23,7 @@ pipeline {
     stages {
         stage('Deploy: K8s') {
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
             steps {
                 setStartTime()
