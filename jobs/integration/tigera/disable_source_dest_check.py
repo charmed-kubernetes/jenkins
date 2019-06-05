@@ -29,7 +29,11 @@ def get_instance_id(machine_id):
     log('Getting instance ID for machine ' + machine_id)
     while True:
         status = get_juju_status()
-        machine = status['machines'][machine_id]
+        machines = status['machines']
+        if machine_id not in machines:
+            log('WARNING: machine %s disappeared' % machine_id)
+            return None
+        machine = machines[machine_id]
         if machine['instance-id'] == 'pending':
             time.sleep(1)
             continue
@@ -52,7 +56,8 @@ def disable_source_dest_check():
     status = get_juju_status()
     for machine_id in status['machines']:
         instance_id = get_instance_id(machine_id)
-        disable_source_dest_check_on_instance(instance_id)
+        if instance_id:
+            disable_source_dest_check_on_instance(instance_id)
 
 
 def main():
