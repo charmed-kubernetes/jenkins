@@ -137,7 +137,8 @@ pipeline {
                         build job:"validate-minor-upgrade-${k8sver_range}",
                             parameters: [string(name:'cloud', value: "google/us-east1"),
                                          string(name:'upgrade_snap_channel', value:"${k8sver}/candidate"),
-                                         string(name:'bundle_channel', value:"candidate")]
+                                         string(name:'bundle_channel', value:"candidate"),
+                                         string(name:'upgrade_charm_channel', value:"candidate")]
 
                     }
                     post {

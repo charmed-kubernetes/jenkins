@@ -38,6 +38,9 @@
       - string:
           name: bundle_channel
           default: 'stable'
+      - string:
+          name: upgrade_charm_channel
+          default: 'edge'
     properties:
       - build-discarder:
           num-to-keep: 7
