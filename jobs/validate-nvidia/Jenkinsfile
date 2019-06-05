@@ -1,7 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def juju_model = String.format("%s-%s", params.model, uuid())
-
+def juju_controller = String.format("%s-%s", params.controller, uuid())
 pipeline {
     agent {
         label 'runner-cloud'
@@ -24,8 +24,8 @@ pipeline {
             }
             steps {
                 setStartTime()
-                sh "juju bootstrap ${params.cloud} ${params.controller} --bootstrap-constraints arch=amd64 --debug"
-                deployCDK(controller: params.controller,
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints arch=amd64 --debug"
+                deployCDK(controller: juju_controller,
                           model: juju_model,
                           cloud: params.cloud,
                           bundle: params.bundle,
@@ -42,7 +42,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate"
                 }
             }
         }
@@ -56,13 +56,13 @@ pipeline {
         }
         always {
             setEndTime()
-            collectDebug(params.controller,
+            collectDebug(juju_controller,
                          juju_model)
 
         }
         cleanup {
             saveMeta()
-            tearDown(params.controller)
+            tearDown(juju_controller)
         }
     }
 }
