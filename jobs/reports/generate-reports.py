@@ -7,7 +7,7 @@ import box
 from datetime import datetime, timedelta
 from pathlib import Path
 from collections import OrderedDict
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 import boto3
 import click
 import os
@@ -55,11 +55,21 @@ def _gen_metadata():
     """ Generates metadata
     """
     click.echo("Generating metadata...")
+    items = []
     table = dynamodb.Table('CIBuilds')
+
+    # Required because only 1MB are returned
+    # See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.04.html
     response = table.scan()
+    for item in response['Items']:
+        items.append(item)
+    while 'LastEvaluatedKey' in response:
+        response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+        for item in response['Items']:
+            items.append(item)
     metadata = OrderedDict()
     db = {}
-    for obj in response['Items']:
+    for obj in items:
         obj = box.Box(obj)
         if obj.job_name not in db:
             db[obj.job_name] = {}
