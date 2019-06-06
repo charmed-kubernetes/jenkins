@@ -81,17 +81,14 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    waitUntil {
-                        sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.CHARM_BUILD_DIR}/${params.charm} --charm-entity ${cs_url}"
-                        script {
-                            if(params.resource_build_sh) {
-                                sh "${charm_sh} resource --charm-entity ${cs_url} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.CHARM_BUILD_DIR}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
-                            }
+                    sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.CHARM_BUILD_DIR}/${params.charm} --charm-entity ${cs_url}"
+                    script {
+                        if(params.resource_build_sh) {
+                            sh "${charm_sh} resource --charm-entity ${cs_url} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.CHARM_BUILD_DIR}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
                         }
-                        sh "${charm_sh} promote --charm-entity ${cs_url} --from-channel unpublished --to-channel ${params.to_channel}"
-                        sh "${charm_sh} show --charm-entity ${cs_url} --channel ${params.to_channel}"
                     }
-
+                    sh "${charm_sh} promote --charm-entity ${cs_url} --from-channel unpublished --to-channel ${params.to_channel}"
+                    sh "${charm_sh} show --charm-entity ${cs_url} --channel ${params.to_channel}"
                 }
             }
         }
