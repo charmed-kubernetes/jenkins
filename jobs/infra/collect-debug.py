@@ -9,6 +9,7 @@ import click
 import os
 import sh
 import yaml
+from pprint import pformat
 
 db = KV('stats.db')
 session = boto3.Session(profile_name='default', region_name='us-east-1')
@@ -64,6 +65,8 @@ def set_meta():
 def save_meta(table):
     """ Saves metadata to yaml
     """
+    click.echo("Saving build to database")
+    click.echo("Build Data:\n{}\n".format(pformat(dict(db))))
     table = dynamodb.Table(table)
     table.put_item(
         Item=dict(db)
