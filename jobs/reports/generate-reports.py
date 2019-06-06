@@ -68,7 +68,7 @@ def _gen_metadata():
         for item in response['Items']:
             items.append(item)
     metadata = OrderedDict()
-    db = {}
+    db = OrderedDict()
     for obj in items:
         obj = box.Box(obj)
         if obj.job_name not in db:
@@ -94,11 +94,9 @@ def _gen_metadata():
                                     '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d')
 
         if day not in db[obj.job_name]:
-            db[obj.job_name][day] = [obj]
-        else:
-            db[obj.job_name][day].append(obj)
-    metadata = db
-    return metadata
+            db[obj.job_name][day] = []
+        db[obj.job_name][day].append(obj)
+    return db
 
 def _gen_rows():
     """ Generates reports
@@ -110,7 +108,11 @@ def _gen_rows():
         sub_item = [jobname]
         for day in days:
             if day in jobdays:
-                sub_item.append(jobdays[day][-1])
+                max_build_number = max(
+                    int(item['build_number']) for item in jobdays[day])
+                for job in jobdays[day]:
+                    if job['build_number'] == str(max_build_number):
+                        sub_item.append(job)
             else:
                 sub_item.append(
                     {'job_name': jobname,
