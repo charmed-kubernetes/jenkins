@@ -31,17 +31,8 @@ pipeline {
                             }
                         }
                     }
-                    parallel jobs
-                }
-            }
-        }
-        stage('K8s Extras Charms') {
-            steps {
-                script {
-                    def jobs = [:]
-                    // returns a LinkedHashMap
-                    def charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
-                    charms.each { k ->
+                    kubeflow_charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
+                    kubeflow_charms.each { k ->
                         // Each item is a LinkedHashSet, so we pull the first item from the set
                         // since there is only 1 key per charm
                         def charm = k.keySet().first()
@@ -58,7 +49,6 @@ pipeline {
                 }
             }
         }
-
         stage('Bundles') {
             steps {
                 build job:"build-release-bundles"
