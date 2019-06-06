@@ -59,7 +59,7 @@ pipeline {
         }
         cleanup {
             saveMeta()
-            tearDown(params.controller)
+            tearDown(juju_controller)
         }
     }
 }
