@@ -2,6 +2,8 @@
 """
 
 from kv import KV
+import attr
+import box
 from datetime import datetime, timedelta
 from pathlib import Path
 from collections import OrderedDict
@@ -19,6 +21,7 @@ dynamodb = session.resource('dynamodb')
 bucket = s3.Bucket('jenkaas')
 
 OBJECTS = bucket.objects.all()
+
 
 def upload_html():
     mimetype, _ = mimetypes.guess_type('reports/_build/index.html')
@@ -55,30 +58,36 @@ def _gen_metadata():
     table = dynamodb.Table('CIBuilds')
     response = table.scan()
     metadata = OrderedDict()
+    db = {}
     for obj in response['Items']:
-        db = {}
+        obj = box.Box(obj)
+        if obj.job_name not in db:
+            db[obj.job_name] = {}
+
         if 'build_endtime' not in obj:
             continue
-        try:
-            db['day'] = datetime.strptime(obj['build_endtime'],
-                                          '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%d')
-        except:
-            db['day'] = datetime.strptime(obj['build_endtime'],
-                                          '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d')
 
-        db['job_name'] = obj['job_name']
         if 'test_result' not in obj:
             result_bg_class = 'bg-light'
         elif obj['test_result'] == 'Fail':
             result_bg_class = 'bg-danger'
         else:
             result_bg_class = 'bg-success'
-        db['bg_class'] = result_bg_class
-        db['results_file'] = obj['results_file'] if 'results_file' in obj else ''
-        if 'job_name' in db and db['job_name'] in metadata:
-            metadata[db['job_name']].append(db)
+
+        obj.bg_class = result_bg_class
+
+        try:
+            day = datetime.strptime(obj['build_endtime'],
+                                    '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%d')
+        except:
+            day = datetime.strptime(obj['build_endtime'],
+                                    '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d')
+
+        if day not in db[obj.job_name]:
+            db[obj.job_name][day] = [obj]
         else:
-            metadata[db['job_name']] = [db]
+            db[obj.job_name][day].append(obj)
+    metadata = db
     return metadata
 
 def _gen_rows():
@@ -87,19 +96,15 @@ def _gen_rows():
     days = _gen_days()
     metadata = _gen_metadata()
     rows = []
-    for jobname, jobs in sorted(metadata.items()):
+    for jobname, jobdays in sorted(metadata.items()):
         sub_item = [jobname]
         for day in days:
-            _job = [j
-                    for j in jobs
-                    if j['day'] == day]
-            if _job:
-                sub_item.append(_job[-1])
+            if day in jobdays:
+                sub_item.append(jobdays[day][-1])
             else:
                 sub_item.append(
                     {'job_name': jobname,
                      'bg_class': ''})
-        click.echo(f"Processed: {jobname}")
         rows.append(sub_item)
     return rows
 
