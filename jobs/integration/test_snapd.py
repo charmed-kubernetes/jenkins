@@ -41,9 +41,7 @@ async def test_snapd(log_dir):
         await enable_snapd_on_model(model)
     await asyncify(juju.deploy)(
         '-m', '{}:{}'.format(_controller_from_env(), _model_from_env()),
-        'cs:~containers/canonical-kubernetes',
-        '--channel', 'edge',
-        '--overlay', 'overlays/1.13-edge-overlay.yaml')
+        'cs:~containers/charmed-kubernetes')
     await asyncify(_juju_wait)()
 
     async with UseModel() as model:
