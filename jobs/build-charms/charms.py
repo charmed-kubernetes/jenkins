@@ -28,6 +28,7 @@ import time
 class CharmEnv:
     """ Charm environment
     """
+
     def __init__(self):
         try:
             self.build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
@@ -38,6 +39,7 @@ class CharmEnv:
                 "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR: "
                 "Unable to find some or all of these charm build environment variables."
             )
+
 
 @click.group()
 def cli():
@@ -237,16 +239,25 @@ def resource(charm_entity, channel, builder, out_path, resource_spec):
         resource_fn = resource_path.parts[-1]
         resource_key = resource_spec_fragment.get(resource_fn, None)
         if resource_key:
-            try:
-                out = sh.charm.attach(
-                    charm_entity,
-                    "--channel",
-                    channel,
-                    "{}={}".format(resource_key, resource_path),
-                    _err_to_out=True,
-                )
-            except sh.ErrorReturnCode_1 as e:
-                raise SystemExit(f"Problem attaching resources: {e}")
+            is_attached = False
+            is_attached_count = 0
+            while not is_attached:
+                try:
+                    out = sh.charm.attach(
+                        charm_entity,
+                        "--channel",
+                        channel,
+                        f"{resource_key}={resource_path}",
+                        _err_to_out=True,
+                    )
+                    is_attached = True
+                except sh.ErrorReturnCode_1 as e:
+                    click.echo(f"Problem attaching resources, retrying: {e}")
+                    is_attached_count += 1
+                    if is_attached_count > 10:
+                        raise SystemExit(
+                            "Could not attach resource and max retry count reached."
+                        )
             click.echo(out)
 
 
