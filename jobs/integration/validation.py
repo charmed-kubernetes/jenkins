@@ -1230,6 +1230,7 @@ async def validate_encryption_at_rest(model):
             task.exception()
 
 
+@log_calls_async
 async def validate_dns_provider(model):
     master_app = model.applications['kubernetes-master']
     master_unit = master_app.units[0]
