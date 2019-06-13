@@ -50,16 +50,12 @@
 - job:
     name: 'build-kubeflow-bundles'
     description: |
-      Builds and releases Kubeflow bundles to charmstore.
+      Builds and releases Kubeflow bundle to charmstore.
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/build-bundles/Jenkinsfile.kubeflow
-    parameters:
-      - string:
-          name: channel
-          default: 'edge'
     properties:
       - build-discarder:
-          num-to-keep: 7
+          days-to-keep: 7
