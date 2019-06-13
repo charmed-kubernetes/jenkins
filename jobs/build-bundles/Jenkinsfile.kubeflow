@@ -1,5 +1,11 @@
 @Library('juju-pipeline@master') _
 
+def exec(cmd) {
+    sh "sudo lxc exec ${CONTAINER} -- bash -c '${cmd}'"
+}
+
+boolean ゴゴゴ = false
+
 pipeline {
     agent {
         label 'runner-amd64'
@@ -9,28 +15,77 @@ pipeline {
      */
     environment {
         PATH = "${utils.cipaths}"
+        CONTAINER = "kubeflow-release-${uuid()}"
     }
     options {
         ansiColor('xterm')
         timestamps()
     }
+    triggers {
+        pollSCM('*/10 * * * *')
+    }
     stages {
+        stage('Set Start Time') {
+            steps {
+                setStartTime()
+            }
+        }
+        stage('Check for new commits') {
+            steps {
+                sh 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
+                script {
+                    ゴゴゴ = sh(script: 'python3 jobs/build-bundles/check_commit.py', returnStdout: true).trim() == 'GO'
+                }
+
+            }
+        }
+        stage('Setup LXC') {
+            steps {
+                sh 'sudo lxc profile show kfpush || sudo lxc profile copy default kfpush'
+                sh 'sudo lxc profile edit kfpush < jobs/build-bundles/lxc.profile'
+                sh "sudo lxc launch -p default -p kfpush ubuntu:18.04 ${CONTAINER}"
+                sh "sudo lxc file push -p ~/.local/share/juju/credentials.yaml ${CONTAINER}/root/.local/share/juju/credentials.yaml"
+            }
+            when { expression { ゴゴゴ } }
+        }
+        stage('Wait for snap') {
+            options {
+                retry(10)
+            }
+            steps {
+                exec 'sudo snap install core'
+            }
+            when { expression { ゴゴゴ } }
+        }
+        stage('Install dependencies') {
+            steps {
+                exec 'sudo snap install charm --classic'
+                exec 'sudo snap install juju --classic'
+                exec 'sudo snap install juju-helpers --classic --edge'
+            }
+            when { expression { ゴゴゴ } }
+        }
         stage('Release Kubeflow Bundle') {
             steps {
-                git 'https://github.com/juju-solutions/bundle-kubeflow.git'
-                script {
-                    // Releases bundle to defined charmstore namespace
-                    sh '''
-                        charm push . cs:~kubeflow-charmers/kubeflow \
-                        | tail -n +1 \
-                        | head -1 \
-                        | awk '{print \$2}' \
-                        > stdout.txt
-                    '''
-                    def revision = readFile('stdout.txt').trim()
-                    sh "charm release --channel ${params.channel} ${revision}"
-                }
+                exec 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
+                exec 'cd bundle-kubeflow && juju bundle publish --url cs:kubeflow'
             }
+            when { expression { ゴゴゴ } }
+        }
+    }
+    post {
+        success {
+            setPass()
+        }
+        failure {
+            setFail()
+        }
+        always {
+            setEndTime()
+        }
+        cleanup {
+            saveMeta()
+            sh "sudo lxc info ${CONTAINER} || true && sudo lxc delete --force ${CONTAINER}"
         }
     }
 }
