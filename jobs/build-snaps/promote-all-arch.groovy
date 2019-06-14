@@ -28,7 +28,8 @@ pipeline {
                             stage(String.format("Promoting: %s", arch)) {
                                 build job:"promote-snaps-${arch}",
                                     parameters: [string(name:'promote_from', value: params.promote_from),
-                                                 string(name:'promote_to', value: params.promote_to)]
+                                                 string(name:'promote_to', value: params.promote_to),
+                                                 string(name:'snaps', value: params.snaps)]
                             }
                         }
                     }
