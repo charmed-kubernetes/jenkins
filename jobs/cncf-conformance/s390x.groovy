@@ -79,17 +79,17 @@ pipeline {
                 }
             }
         }
-        // stage('Archive') {
-        //     steps {
-        //         waitUntil {
-        //             script {
-        //                 def r = sh script:ssh("s3lp3", '/var/lib/jenkins/go/bin/sonobuoy retrieve results/.'), returnStatus: true
-        //                 return (r == 0);
-        //             }
-        //         }
-        //         archiveArtifacts artifacts: 'results/*.tar.gz'
-        //     }
-        // }
+        stage('Archive') {
+            steps {
+                waitUntil {
+                    script {
+                        def r = sh script:ssh("s3lp3", '/var/lib/jenkins/go/bin/sonobuoy retrieve results/.'), returnStatus: true
+                        return (r == 0);
+                    }
+                }
+                // archiveArtifacts artifacts: 'results/*.tar.gz'
+            }
+        }
     }
     post {
         success {
