@@ -366,7 +366,8 @@
         - jenkins
       become: false
       shell: |
-        mkdir -p /var/lib/jenkins/go/bin || true
+        export GOPATH=/srv/go
+        mkdir -p $GOPATH/bin || true
         mkdir -p $GOPATH/src
         ( cd $GOPATH/src
           git clone https://github.com/heptio/sonobuoy
