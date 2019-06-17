@@ -58,4 +58,4 @@
       script-path: jobs/build-bundles/Jenkinsfile.kubeflow
     properties:
       - build-discarder:
-          days-to-keep: 7
+          num-to-keep: 36
