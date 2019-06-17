@@ -101,7 +101,6 @@ pipeline {
                         return (r == 0);
                     }
                 }
-                archiveArtifacts artifacts: 'results/*.tar.gz'
             }
         }
     }

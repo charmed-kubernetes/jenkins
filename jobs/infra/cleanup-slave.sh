@@ -17,3 +17,5 @@ sudo du -h --max-depth=1 /var/lib
 
 echo "####### FS Usage (Finish)"
 df -h
+
+lxc query /1.0/storage-pools | jq -r '. | map(. | sub("/1.0/storage-pools/"; "")) | join("\n")' | grep -v default
