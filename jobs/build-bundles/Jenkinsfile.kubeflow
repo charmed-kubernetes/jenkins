@@ -93,7 +93,7 @@ pipeline {
         }
         cleanup {
             saveMeta()
-            sh "sudo lxc info ${CONTAINER} && sudo lxc delete --force ${CONTAINER} || true"
+            sh "[[ sudo lxc info ${CONTAINER} ]] && sudo lxc delete --force ${CONTAINER}"
         }
     }
 }
