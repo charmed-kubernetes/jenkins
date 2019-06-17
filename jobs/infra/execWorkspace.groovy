@@ -17,6 +17,8 @@ pipeline {
         stage('Running') {
             steps {
                 script {
+                    ssh('s3lp3', "ls -lah /srv/go")
+                    ssh('s3lp3', "tree /srv/go")
                     if (params.workspace_path) {
                         sh "sudo rm -rf ${params.workspace_path}"
                     }
