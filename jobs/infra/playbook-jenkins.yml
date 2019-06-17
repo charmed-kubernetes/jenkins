@@ -64,6 +64,7 @@
           - wget
           - tree
           - virtualenv
+          - jq
       tags:
         - jenkins
     - name: remove unused debs
