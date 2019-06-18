@@ -292,6 +292,7 @@
       command: "/snap/bin/lxd init --auto"
       tags:
         - jenkins
+      ignore_errors: yes
     - name: disable ipv6 in lxd
       command: "lxc network set {{item}} ipv6.address none"
       ignore_errors: yes
@@ -311,6 +312,7 @@
         - adhoc
         - jenkins
     - name: set lxd proxy
+      ignore_errors: yes
       shell: |
         lxc config set core.proxy_http http://squid.internal:3128
         lxc config set core.proxy_https http://squid.internal:3128
