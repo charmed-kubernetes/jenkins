@@ -38,6 +38,9 @@ pipeline {
                         if (k[charm].namespace != 'containers') {
                             return
                         }
+                        if (!k[charm].tags.contains('k8s')) {
+                            return
+                        }
                         jobs[charm] = {
                             stage("Validate: ${charm}") {
                                 build job:"build-release-${charm}",

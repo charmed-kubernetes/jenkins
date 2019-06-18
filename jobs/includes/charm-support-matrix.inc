@@ -3,87 +3,108 @@
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     resource_build_sh: 'build-calico-resource.sh'
     namespace: 'containers'
+    tags: ['k8s']
 - 'canal':
     repo_name: 'layer-canal'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     resource_build_sh: 'build-canal-resources.sh'
     namespace: 'containers'
+    tags: ['k8s']
 - 'easyrsa':
     repo_name: 'layer-easyrsa'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     namespace: 'containers'
+    tags: ['k8s']
 - 'etcd':
     repo_name: 'layer-etcd'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     namespace: 'containers'
+    tags: ['k8s']
 - 'flannel':
     repo_name: 'charm-flannel'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     resource_build_sh: 'build-flannel-resources.sh'
     namespace: 'containers'
+    tags: ['k8s']
 - 'kubeapi-load-balancer':
     repo_name: 'charm-kubeapi-load-balancer'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     namespace: 'containers'
+    tags: ['k8s']
 - 'kubernetes-e2e':
     repo_name: 'charm-kubernetes-e2e'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     namespace: 'containers'
+    tags: ['k8s']
 - 'kubernetes-master':
     repo_name: 'charm-kubernetes-master'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     namespace: 'containers'
+    tags: ['k8s']
 - 'kubernetes-worker':
     repo_name: 'charm-kubernetes-worker'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     resource_build_sh: 'build-cni-resources.sh'
     namespace: 'containers'
+    tags: ['k8s']
 - 'keepalived':
     repo_name: 'charm-keepalived/src'
     git_repo: 'https://github.com/juju-solutions/charm-keepalived.git'
     namespace: 'containers'
+    tags: ['general']
 - 'docker-registry':
     repo_name: 'docker-registry-charm'
     git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
     namespace: 'containers'
+    tags: ['general']
 - 'tigera-secure-ee':
     repo_name: 'layer-tigera-secure-ee'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
     resource_build_sh: 'build-resources.sh'
     namespace: 'containers'
+    tags: ['k8s']
 - 'kubeflow-ambassador':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-ambassador'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    tags: ['general']
 - 'kubeflow-jupyterhub':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-jupyterhub'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    tags: ['general']
 - 'kubeflow-pytorch-operator':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-pytorch-operator'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    tags: ['general']
 - 'kubeflow-seldon-api-frontend':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-seldon-api-frontend'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    tags: ['general']
 - 'kubeflow-seldon-cluster-manager':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-seldon-cluster-manager'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    tags: ['general']
 - 'kubeflow-tf-job-dashboard':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-tf-job-dashboard'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    tags: ['general']
 - 'kubeflow-tf-job-operator':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-tf-job-operator'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    tags: ['general']
 - 'kubeflow-tf-serving':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-kubeflow-tf-serving'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    tags: ['general']
 - 'redis-k8s':
     namespace: 'kubeflow-charmers'
     repo_name: 'charm-redis-k8s'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    tags: ['general']
