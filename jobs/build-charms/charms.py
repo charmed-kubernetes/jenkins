@@ -82,9 +82,9 @@ def pull_source(layer_index, layers, git_branch, retries, timeout):
             download()
         ltype, name = layer.split(":")
         if ltype == "layer":
-            sh.git.checkout(f=True, git_branch, _cwd=str(charm_env.layers_dir / name))
+            sh.git.checkout('-f', git_branch, _cwd=str(charm_env.layers_dir / name))
         elif ltype == "interface":
-            sh.git.checkout(f=True, git_branch, _cwd=str(charm_env.interfaces_dir / name))
+            sh.git.checkout('-f', git_branch, _cwd=str(charm_env.interfaces_dir / name))
         else:
             raise SystemExit(f"Unknown layer/interface: {layer}")
 
