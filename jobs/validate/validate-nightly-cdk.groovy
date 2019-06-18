@@ -31,25 +31,6 @@ pipeline {
                 }
             }
         }
-        stage('Validate NVidia') {
-            steps {
-                script {
-                    def jobs = [:]
-                    def releases = readYaml file: 'jobs/includes/k8s-support-matrix.inc'
-                    releases.each { k ->
-                        def release = k.keySet().first()
-                        def options = k.values()
-                        jobs[release] = {
-                            stage("Validate NVidia: ${options.normalized_ver}") {
-                                build job:"validate-nvidia-${release}",
-                                    parameters: [string(name:'cloud', value: 'aws/us-east-1')]
-                            }
-                        }
-                    }
-                    parallel jobs
-                }
-            }
-        }
         stage('Validate Calico') {
             steps {
                 script {
@@ -107,6 +88,21 @@ pipeline {
                 }
             }
         }
-
+        stage('Validate NVidia') {
+            steps {
+                script {
+                    def jobs = [:]
+                    def releases = readYaml file: 'jobs/includes/k8s-support-matrix.inc'
+                    releases.each { k ->
+                        def release = k.keySet().first()
+                        def options = k.values()
+                        stage("Validate NVidia: ${options.normalized_ver}") {
+                            build job:"validate-nvidia-${release}",
+                                parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                        }
+                    }
+                }
+            }
+        }
     }
 }
