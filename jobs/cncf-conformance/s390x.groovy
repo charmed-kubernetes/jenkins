@@ -62,7 +62,7 @@ pipeline {
                 ssh("s3lp3", "mkdir -p /home/ubuntu/.kube || true")
                 ssh("s3lp3", "juju scp -m ${juju_controller}:${juju_model} kubernetes-master/0:config /home/ubuntu/.kube/")
                 ssh("s3lp3", "export RBAC_ENABLED=\$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)")
-                ssh("s3lp3", "/srv/go/bin/sonobuoy run")
+                ssh("s3lp3", "/home/ubuntu/go/bin/sonobuoy run")
             }
         }
         stage('Test') {
@@ -71,9 +71,9 @@ pipeline {
             }
             steps {
                 waitUntil {
-                    ssh("s3lp3", "/srv/go/bin/sonobuoy status || true")
+                    ssh("s3lp3", "/home/ubuntu/go/bin/sonobuoy status || true")
                     script {
-                        def r = sh script:ssh("s3lp3", '/srv/go/bin/sonobuoy status|grep -q \'Sonobuoy has completed\''), returnStatus: true
+                        def r = sh script:ssh("s3lp3", '/home/ubuntu/go/bin/sonobuoy status|grep -q \'Sonobuoy has completed\''), returnStatus: true
                         return (r == 0);
                     }
                 }
@@ -83,7 +83,7 @@ pipeline {
             steps {
                 waitUntil {
                     script {
-                        def r = sh script:ssh("s3lp3", '/srv/go/bin/sonobuoy retrieve results/.'), returnStatus: true
+                        def r = sh script:ssh("s3lp3", '/home/ubuntu/go/bin/sonobuoy retrieve results/.'), returnStatus: true
                         return (r == 0);
                     }
                 }
