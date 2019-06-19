@@ -1,7 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def exec(cmd) {
-    sh "sudo lxc exec ${CONTAINER} -- bash -c 'cd /project && ${cmd}'"
+    sh "sudo lxc exec ${CONTAINER} -- bash -c '${cmd}'"
 }
 
 pipeline {
@@ -32,10 +32,6 @@ pipeline {
                 sh "sudo lxc profile show aws || sudo lxc profile copy default aws"
                 sh "sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile"
                 sh "sudo lxc launch -p default -p aws ubuntu:18.04 ${CONTAINER}"
-                sh "sudo lxc storage create ${STORAGE} dir source=/tmp/${STORAGE}"
-                sh "sudo lxc storage volume create ${STORAGE} storage"
-                sh "sudo lxc storage volume attach ${STORAGE} storage ${CONTAINER} /project"
-                sh "sudo cp -r ./* /tmp/${STORAGE}/custom/storage/"
                 sh "sudo lxc file push -p ~/.local/share/juju/credentials.yaml ${CONTAINER}/root/.local/share/juju/credentials.yaml"
             }
         }
@@ -106,10 +102,7 @@ pipeline {
             exec "juju list-controllers || true"
             exec "juju list-models || true"
             exec "juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true"
-            sh "sudo lxc storage volume detach ${STORAGE} storage ${CONTAINER} || true"
             sh "sudo lxc delete --force ${CONTAINER} || true"
-            sh "sudo lxc storage volume delete ${STORAGE} storage || true"
-            sh "sudo lxc storage delete ${STORAGE} || true"
         }
     }
 }
