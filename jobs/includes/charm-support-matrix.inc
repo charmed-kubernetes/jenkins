@@ -10,6 +10,11 @@
     resource_build_sh: 'build-canal-resources.sh'
     namespace: 'containers'
     tags: ['k8s']
+- 'containerd':
+    repo_name: 'charm-containerd'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
+    namespace: 'containers'
+    tags: ['general']
 - 'docker':
     repo_name: 'charm-docker'
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
