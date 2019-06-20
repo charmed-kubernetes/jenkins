@@ -21,3 +21,5 @@
 'cs:~containers/tigera-secure-ee':
   calico-cni-amd64.tar.gz: calico-cni
   calico-cni-arm64.tar.gz: calico-cni-arm64
+  calicoctl-image.tar.gz: calicoctl-image
+  calico-node-image.tar.gz: calico-node-image
