@@ -15,6 +15,11 @@
     git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     namespace: 'containers'
     tags: ['general']
+- 'docker':
+    repo_name: 'charm-docker'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
+    namespace: 'containers'
+    tags: ['general']
 - 'easyrsa':
     repo_name: 'layer-easyrsa'
     git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
