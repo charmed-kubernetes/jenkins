@@ -3,27 +3,27 @@
 // List of bundles to release to the charmstore
 def bundle_mapping = [
     'cdk-flannel': [
-        fragments: 'k8s/cdk cni/flannel',
+        fragments: 'k8s/cdk cni/flannel cri/containerd',
         charmstore: 'cs:~containers/bundle/canonical-kubernetes',
     ],
     'charmed-flannel': [
-        fragments: 'k8s/cdk cni/flannel',
+        fragments: 'k8s/cdk cni/flannel cri/containerd',
         charmstore: 'cs:~containers/bundle/charmed-kubernetes',
     ],
     'core-flannel': [
-        fragments: 'k8s/core cni/flannel',
+        fragments: 'k8s/core cni/flannel cri/containerd',
         charmstore: 'cs:~containers/bundle/kubernetes-core'
     ],
     'cdk-calico': [
-        fragments: 'k8s/cdk cni/calico',
+        fragments: 'k8s/cdk cni/calico cri/containerd',
         charmstore: 'cs:~containers/bundle/kubernetes-calico'
     ],
     'cdk-canal': [
-        fragments: 'k8s/cdk cni/canal',
+        fragments: 'k8s/cdk cni/canal cri/docker',
         charmstore: 'cs:~containers/bundle/canonical-kubernetes-canal'
     ],
     'kubernetes-tigera-secure-ee': [
-        fragments: 'k8s/cdk cni/tigera-secure-ee',
+        fragments: 'k8s/cdk cni/tigera-secure-ee cri/containerd',
         charmstore: 'cs:~containers/bundle/kubernetes-tigera-secure-ee'
     ]
 ]
