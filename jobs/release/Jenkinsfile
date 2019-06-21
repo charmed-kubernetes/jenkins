@@ -2,6 +2,7 @@
 
 def release_id = params.release_id
 def tracker_sh = "cd jobs && ${utils.cipy} release/release-tracker.py --release-id ${release_id}"
+def upgrade_ranges = params.k8sver_range.split()
 
 pipeline {
     agent {
@@ -142,10 +143,15 @@ pipeline {
                         timeout(time: 4, unit: 'HOURS')
                     }
                     steps {
-                        build job:"validate-minor-upgrade-${k8sver_range}",
-                            parameters: [string(name:'cloud', value: "google/us-east1"),
-                                         string(name:'upgrade_snap_channel', value:"${k8sver}/candidate"),
-                                         string(name:'bundle_channel', value:"candidate")]
+                        script {
+                            upgrade_ranges.each { k8srange ->
+                                build job:"validate-minor-upgrade-${k8srange}",
+                                    parameters: [string(name:'cloud', value: "google/us-east1"),
+                                                 string(name:'upgrade_snap_channel', value:"${k8sver}/candidate"),
+                                                 string(name:'bundle_channel', value:"candidate")]
+
+                            }
+                        }
 
                     }
                     post {
@@ -289,44 +295,45 @@ pipeline {
             }
         }
 
-        stage('Validate: Localhost and Alternate Arches') {
-            when {
-                expression {
-                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-alt").trim()
-                    return res != 'pass'
-                }
-            }
+        // cdk-addons does not support alt-arch yet
+        // stage('Validate: Localhost and Alternate Arches') {
+        //     when {
+        //         expression {
+        //             res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-alt").trim()
+        //             return res != 'pass'
+        //         }
+        //     }
 
-            options {
-                timeout(time: 5, unit: 'HOURS')
-            }
-            steps {
-                script {
-                    def jobs = [:]
-                    def arches = ['amd64', 'arm64', 'ppc64le', 's390x']
-                    arches.each { arch ->
-                        jobs[arch] = {
-                            stage(String.format("Validate arch: %s", arch)) {
-                                build job:"validate-alt-${arch}-v${k8sver}.x-canonical-kubernetes",
-                                    parameters: [string(name:'bundle_channel', value:'candidate'),
-                                                 string(name:'snap_channel', value:"${k8sver}/candidate"),
-                                                 string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
+        //     options {
+        //         timeout(time: 5, unit: 'HOURS')
+        //     }
+        //     steps {
+        //         script {
+        //             def jobs = [:]
+        //             def arches = ['amd64', 'arm64', 'ppc64le', 's390x']
+        //             arches.each { arch ->
+        //                 jobs[arch] = {
+        //                     stage(String.format("Validate arch: %s", arch)) {
+        //                         build job:"validate-alt-${arch}-v${k8sver}.x-canonical-kubernetes",
+        //                             parameters: [string(name:'bundle_channel', value:'candidate'),
+        //                                          string(name:'snap_channel', value:"${k8sver}/candidate"),
+        //                                          string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
-                            }
-                        }
-                    }
-                    parallel jobs
-                }
-            }
-            post {
-                failure {
-                    sh "${tracker_sh} set-phase --name validate-alt --result fail"
-                }
-                success {
-                    sh "${tracker_sh} set-phase --name validate-alt --result pass"
-                }
-            }
+        //                     }
+        //                 }
+        //             }
+        //             parallel jobs
+        //         }
+        //     }
+        //     post {
+        //         failure {
+        //             sh "${tracker_sh} set-phase --name validate-alt --result fail"
+        //         }
+        //         success {
+        //             sh "${tracker_sh} set-phase --name validate-alt --result pass"
+        //         }
+        //     }
 
-        }
+        // }
     }
 }
