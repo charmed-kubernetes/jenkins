@@ -1,7 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def exec(cmd) {
-    sh "juju ssh -m ${CONTROLLER}:default ubuntu/0 -- bash -c '${cmd}'"
+    sh "juju ssh -m ${CONTROLLER}:default ubuntu/0 -- bash -c 'cd . && ${cmd}'"
 }
 
 pipeline {
