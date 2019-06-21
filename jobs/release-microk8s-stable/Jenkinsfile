@@ -27,7 +27,7 @@ pipeline {
             steps {
                 tearDown(params.controller)
                 sh "juju bootstrap ${params.cloud} ${params.controller} --bootstrap-constraints arch=${params.arch} --debug"
-                sh "juju deploy -m ${params.controller}:default ubuntu --constraints 'cores=4 mem=16G root-disk=40G'"
+                sh "juju deploy -m ${params.controller}:default ubuntu --constraints 'cores=8 mem=32G root-disk=80G'"
                 /* g3s.xlarge and p2.xlarge are for gpu
                    a1.2xlarge for arm, t2.xlarge for amd64
                 */
