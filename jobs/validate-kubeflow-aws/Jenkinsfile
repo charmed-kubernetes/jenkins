@@ -1,7 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def exec(cmd) {
-    sh "sudo lxc exec ${CONTAINER} -- bash -c '${cmd}'"
+    sh "sudo lxc exec ${CONTAINER} -- bash -c 'cd . && ${cmd}'"
 }
 
 pipeline {
