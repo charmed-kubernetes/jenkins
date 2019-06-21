@@ -19,6 +19,7 @@ pipeline {
         stage('Running') {
             steps {
                 dir("jobs") {
+                    sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
                     sh "${generate_reports_sh} build"
                 }
             }
