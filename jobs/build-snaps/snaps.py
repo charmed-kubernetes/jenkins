@@ -13,7 +13,7 @@ import glob
 import re
 import yaml
 import operator
-import sdk
+from sdk import snap as snapapi
 from pathlib import Path
 
 
@@ -152,7 +152,7 @@ def push(result_dir, dry_run):
 def release(name, channel, version, dry_run):
     """ Release the most current revision snap to channel
     """
-    latest_release = sdk.latest(name, version)
+    latest_release = snapapi.latest(name, version)
     click.echo(latest_release)
     if dry_run:
         click.echo("dry-run only:")
