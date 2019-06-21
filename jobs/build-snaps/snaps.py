@@ -4,7 +4,7 @@ snaps.py - Interface for building and publishing snaps
 """
 
 import sys
-sys.path.insert('.', 0)
+sys.path.insert(0, '.')
 
 import click
 import sh
