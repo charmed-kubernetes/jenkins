@@ -38,7 +38,9 @@ pipeline {
                             if (k[charm].namespace != 'containers') {
                                 return
                             }
-
+                            if (!k[charm].tags.contains('k8s')) {
+                                return
+                            }
                             jobs[charm] = {
                                 to_channels.each { channel ->
                                     sh "${charm_sh} promote --charm-entity cs:~${k[charm].namespace}/${charm} --from-channel ${params.from_channel} --to-channel ${channel}"

@@ -1,87 +1,40 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Jenkaas Reports</title>
-    <link href="https://fonts.googleapis.com/css?family=Fira+Sans" rel="stylesheet">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-    <style>
-      body {
-          font-family: 'Ubuntu', sans-serif;
-      }
-      .table td, .table th {
-      font-size: 12px;
-      min-width: 56px;
-      }
-      .table td:first-child, .table th:first-child {
-      font-size: 12px;
-      padding: 3px;
-      min-width: 310px;
-      word-break: break-all;
-      }
-      .badge {
-          border-radius: 0!important;
-          font-size: 100%!important;
-      }
-      .bg-success, .badge-success {
-          background-color: #90EE90!important;
-          color: #000000;
-      }
-      .bg-danger, .badge-danger {
-          background-color: #ff0018!important;
-          color: #000000;
-      }
-      .bg-light, .badge-light {
-          background-color: #d4dee8!important;
-          color: #000000;
-      }
-
-    </style>
-  </head>
-  <body>
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col p-3">
-          <h3>Jenkaas Reports: <small class="text-muted">{% block subreportname %}Last 30 days{% endblock %}</small></h3>
-        </div>
-      </div>
+{% extends "_base.html" %}
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col p-3">
+      <h3>Jenkaas Reports: <small class="text-muted">{% block subreportname %}Last 30 days{% endblock %}</small></h3>
     </div>
-    {% block content %}
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col">
-          <span class="badge badge-primary">Last modified: {{ modified.strftime('%Y-%m-%d %H:%M:%S') }}</span> <span class="badge badge-danger">Fail</span> <span class="badge badge-success">Pass</span> <span class="badge badge-light">Timeout</span>
+  </div>
+</div>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col">
+      <span class="badge badge-primary">Last modified: {{ modified.strftime('%Y-%m-%d %H:%M:%S') }}</span> <span class="badge badge-danger">Fail</span> <span class="badge badge-success">Pass</span> <span class="badge badge-light">Timeout</span>
 
-          <div class="table-responsive">
-            <table class="table table-hover table-bordered">
-              <thead class="thead-dark">
-                <tr>
-                  <th class="align-middle">Job Name</th>
-                  {% for day in headers %}
-                  <th class="align-middle text-center" style="min-width: 70px;">{{ day }}</th>
-                  {% endfor %}
-                </tr>
-              </thead>
-              {% for row in rows %}
-              <tr>
-                <td class="align-middle">{{ row[0] }}</td>
-                {% for day in row[1:] %}
-                <td class="{{ day['bg_class'] }} text-center align-middle" style="height: 50px;"><strong>{{ day.build_number }}</strong> {% if day['results_file'] %}<a href="{{ day['results_file'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download the results for debugging"><i class="fas fa-download"></i> </a>{% endif %}</td>
-                {% endfor %}
-              </tr>
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+          <thead class="thead-dark">
+            <tr>
+              <th class="align-middle">Job Name</th>
+              {% for day in headers %}
+              <th class="align-middle text-center" style="min-width: 70px;">{{ day }}</th>
               {% endfor %}
-            </table>
-          </div>
-        </div>
-        <div class="col">
-        </div>
+            </tr>
+          </thead>
+          {% for row in rows %}
+          <tr>
+            <td class="align-middle">{{ row[0] }}</td>
+            {% for day in row[1:] %}
+            <td class="{{ day['bg_class'] }} text-center align-middle" style="height: 50px;"><strong>{{ day.build_number }}</strong> {% if day['results_file'] %}<a href="{{ day['results_file'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download the results for debugging"><i class="fas fa-download"></i> </a>{% endif %}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </table>
       </div>
     </div>
-    {% endblock %}
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-  </body>
-</html>
+    <div class="col">
+    </div>
+  </div>
+</div>
+{% endblock %}

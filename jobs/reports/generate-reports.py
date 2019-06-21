@@ -1,6 +1,9 @@
 """ Script for generating HTML output
 """
 
+import sys
+sys.path.insert(0, '.')
+
 from kv import KV
 import attr
 import box
@@ -12,7 +15,8 @@ import boto3
 import click
 import os
 import sh
-import mimetypes
+import yaml
+from sdk import snap
 from staticjinja import Site
 
 session = boto3.Session(region_name='us-east-1')
@@ -22,12 +26,8 @@ bucket = s3.Bucket('jenkaas')
 
 OBJECTS = bucket.objects.all()
 
-
 def upload_html():
-    mimetype, _ = mimetypes.guess_type('reports/_build/index.html')
-    s3.meta.client.upload_file(
-        'reports/_build/index.html', bucket.name, 'index.html',
-        ExtraArgs={'ContentType': mimetype})
+    sh.aws.s3.sync('reports/_build', 's3://jenkaas')
 
 def download_file(key, filename):
     """ Downloads file
@@ -160,18 +160,36 @@ def migrate():
             except:
                 continue
 
+def get_snap_info():
+    snaps_to_query = yaml.safe_load(Path('includes/k8s-snap-list.inc').read_text('utf8'))
+    return [
+        {_snap: snap.revisions(_snap)}
+        for _snap in snaps_to_query
+    ]
+
 @cli.command()
 def build():
     """ Generate a report
     """
-    context = {
+    ci_results_context = {
         'rows': _gen_rows(),
         'headers': [datetime.strptime(day, '%Y-%m-%d').strftime('%m-%d')
                     for day in _gen_days()],
         'modified': datetime.now()
     }
+
+    snap_revision_context = {
+        'data': get_snap_info()
+    }
+    charm_revision_context = {
+        'data': {}
+    }
     site = Site.make_site(
-        contexts=[('index.html', context)],
+        contexts=[
+            ('index.html', ci_results_context),
+            ('snap_info.html', snap_revision_context),
+            ('charm_info.html', snap_revision_context)
+        ],
         outpath='reports/_build')
     site.render()
     upload_html()

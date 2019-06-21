@@ -3,7 +3,6 @@ snaps-source.py - Building snaps from source and promoting them to snapstore
 
 """
 import sys
-
 sys.path.insert(0, ".")
 
 import click
@@ -83,7 +82,7 @@ def _sync_upstream(snap_list, starting_ver):
     "--starting-ver",
     help="Oldest k8s release to start from",
     required=True,
-    default="1.15.0-alpha.1",
+    default="1.13.7",
 )
 def sync_upstream(snap_list, starting_ver):
     return _sync_upstream(snap_list, starting_ver)

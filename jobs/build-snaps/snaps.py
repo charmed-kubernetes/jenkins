@@ -3,6 +3,9 @@ snaps.py - Interface for building and publishing snaps
 
 """
 
+import sys
+sys.path.insert('.', 0)
+
 import click
 import sh
 import os
@@ -10,6 +13,7 @@ import glob
 import re
 import yaml
 import operator
+import sdk
 from pathlib import Path
 
 
@@ -148,23 +152,7 @@ def push(result_dir, dry_run):
 def release(name, channel, version, dry_run):
     """ Release the most current revision snap to channel
     """
-    re_comp = re.compile("[ \t+]{2,}")
-    revision_list = sh.snapcraft.revisions(name, _err_to_out=True)
-    revision_list = revision_list.stdout.decode().splitlines()[1:]
-    revision_parsed = {}
-    for line in revision_list:
-        rev, uploaded, arch, upstream_version, channels = re_comp.split(line)
-        rev = int(rev)
-        if upstream_version != version:
-            continue
-        revision_parsed[rev] = {
-            "rev": rev,
-            "uploaded": uploaded,
-            "arch": arch,
-            "version": upstream_version,
-            "channels": channels,
-        }
-    latest_release = max(revision_parsed.items(), key=operator.itemgetter(0))[1]
+    latest_release = sdk.latest(name, version)
     click.echo(latest_release)
     if dry_run:
         click.echo("dry-run only:")

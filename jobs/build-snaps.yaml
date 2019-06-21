@@ -49,8 +49,6 @@
       - bool:
           name: FORCE_RELEASE
           default: false
-    triggers:
-        - timed: "@daily"
     properties:
       - build-discarder:
           num-to-keep: 7
@@ -197,7 +195,7 @@
           default: 'k8s-jenkaas-admins'
       - string:
           name: tag
-          default: 'v1.15.0-alpha.2'
+          default: 'v1.15.0'
           description: k8s major.minor.patch-{HOTFIX} tag to build from
     properties:
       - build-discarder:
