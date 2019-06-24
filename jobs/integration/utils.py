@@ -182,11 +182,11 @@ async def upgrade_charms(model,
             if "already running charm" not in str(e):
                 raise
     if include_containerd:
-        model.deploy('cs:~containers/containerd')
-        model.add_relation(
+        await model.deploy('cs:~containers/containerd')
+        await model.add_relation(
             'containerd:containerd',
             'kubernetes-worker:container-runtime')
-        model.add_relation(
+        await model.add_relation(
             'containerd:containerd',
             'kubernetes-master:container-runtime')
     await wait_for_ready(model)
