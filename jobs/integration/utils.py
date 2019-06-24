@@ -172,13 +172,23 @@ def asyncify(f):
 
 
 @log_calls_async
-async def upgrade_charms(model, channel):
+async def upgrade_charms(model,
+                         channel,
+                         include_containerd=None):
     for app in model.applications.values():
         try:
             await app.upgrade_charm(channel=channel)
         except JujuError as e:
             if "already running charm" not in str(e):
                 raise
+    if include_containerd:
+        model.deploy('cs:~containers/containerd')
+        model.add_relation(
+            'containerd:containerd',
+            'kubernetes-worker:container-runtime')
+        model.add_relation(
+            'containerd:containerd',
+            'kubernetes-master:container-runtime')
     await wait_for_ready(model)
 
 

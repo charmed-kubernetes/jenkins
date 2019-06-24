@@ -41,6 +41,10 @@
       - string:
           name: upgrade_charm_channel
           default: 'edge'
+      - bool:
+          name: include_containerd
+          default: true
+          description: "add containerd to upgrade test"
     properties:
       - build-discarder:
           num-to-keep: 7
@@ -51,9 +55,6 @@
       - 'v1.14.x-v1.15.x':
           version_overlay: 'jobs/overlays/1.14-stable-overlay.yaml'
           upgrade_snap_channel: '1.15/edge'
-      - 'v1.13.x-v1.14.x':
-          version_overlay: 'jobs/overlays/1.13-stable-overlay.yaml'
-          upgrade_snap_channel: '1.14/edge'
       - 'v1.13.x-v1.15.x':
           version_overlay: 'jobs/overlays/1.13-stable-overlay.yaml'
           upgrade_snap_channel: '1.15/edge'
