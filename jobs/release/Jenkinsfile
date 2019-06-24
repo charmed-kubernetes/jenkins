@@ -147,6 +147,7 @@ pipeline {
                             upgrade_ranges.each { k8srange ->
                                 build job:"validate-minor-upgrade-${k8srange}",
                                     parameters: [string(name:'cloud', value: "google/us-east1"),
+                                                 booleanParam(name:'include_containerd', value: true),
                                                  string(name:'upgrade_snap_channel', value:"${k8sver}/candidate"),
                                                  string(name:'bundle_channel', value:"candidate")]
 
