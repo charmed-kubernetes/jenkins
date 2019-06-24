@@ -2,7 +2,6 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
-def include_containerd = '1' ? params.include_containerd : ''
 
 pipeline {
     agent {
@@ -41,7 +40,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "INCLUDE_CONTAINERD=${include_containerd} TEST_CHARM_CHANNEL=${params.upgrade_charm_channel} TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade"
+                    sh "INCLUDE_CONTAINERD=${params.include_containerd} TEST_CHARM_CHANNEL=${params.upgrade_charm_channel} TEST_SNAP_CHANNEL=${params.upgrade_snap_channel} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} --junit-xml=validate-upgrade.xml integration/test_cdk.py::test_upgrade"
                 }
             }
         }
