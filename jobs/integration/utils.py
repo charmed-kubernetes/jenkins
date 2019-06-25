@@ -177,7 +177,7 @@ async def upgrade_charms(model,
                          include_containerd=None):
 
     # Only keep here until 1.13/1.14 go out of support scope
-    await model.deploy('cs:~containers/containerd')
+    await model.deploy('cs:~containers/containerd', num_units=0)
     await model.add_relation(
         'containerd:containerd',
         'kubernetes-worker:container-runtime')
