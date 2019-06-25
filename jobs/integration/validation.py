@@ -59,7 +59,7 @@ async def validate_all(model, log_dir):
     if cpu_arch not in ['s390x', 'arm64', 'aarch64']:
         await validate_keystone(model)
     assert_no_unit_errors(model)
-    if ('validate-vault' == model.name and
+    if ('validate-vault' == model.info.name and
             cpu_arch not in ['s390x', 'arm64', 'aarch64']):
         await validate_encryption_at_rest(model)
     await validate_dns_provider(model)
