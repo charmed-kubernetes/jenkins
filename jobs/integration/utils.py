@@ -18,7 +18,7 @@ from juju.model import Model
 from juju.errors import JujuError
 from .logger import log, log_calls, log_calls_async
 from subprocess import check_output, check_call
-from .base import _model_from_env, _controller_from_env
+from .base import _model_from_env, _controller_from_env, _juju_wait
 
 
 @log_calls
@@ -173,17 +173,39 @@ def asyncify(f):
 
 @log_calls_async
 async def upgrade_charms(model,
-                         channel,
-                         include_containerd=None):
+                         channel):
 
-    # Only keep here until 1.13/1.14 go out of support scope
-    await model.deploy('cs:~containers/containerd', num_units=0)
     for app in model.applications.values():
         try:
             await app.upgrade_charm(channel=channel)
         except JujuError as e:
             if "already running charm" not in str(e):
                 raise
+    # Only keep here until 1.13/1.14 go out of support scope
+    await model.deploy('cs:~containers/docker', num_units=0)
+
+    await model.add_relation(
+        'docker:docker',
+        'kubernetes-worker:container-runtime')
+
+    await model.add_relation(
+        'docker:docker',
+        'kubernetes-master:container-runtime')
+
+    await asyncify(_juju_wait)()
+
+    await model.remove_relation(
+        'docker:docker',
+        'kubernetes-master:container-runtime')
+
+    await model.remove_relation(
+        'docker:docker',
+        'kubernetes-worker:container-runtime')
+
+    await model.applications['docker'].remove()
+
+    await model.deploy('cs:~containers/containerd', num_units=0)
+
     await model.add_relation(
         'containerd:containerd',
         'kubernetes-worker:container-runtime')
@@ -191,7 +213,7 @@ async def upgrade_charms(model,
         'containerd:containerd',
         'kubernetes-master:container-runtime')
 
-    await wait_for_ready(model)
+    await asyncify(_juju_wait)()
 
 
 @log_calls_async
