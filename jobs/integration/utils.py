@@ -184,32 +184,32 @@ async def upgrade_charms(model,
     # Only keep here until 1.13/1.14 go out of support scope
     await model.deploy('cs:~containers/docker', num_units=0)
 
-    await model.add_relation(
+    await model.applications['docker'].add_relation(
         'docker:docker',
         'kubernetes-worker:container-runtime')
 
-    await model.add_relation(
+    await model.applications['docker'].add_relation(
         'docker:docker',
         'kubernetes-master:container-runtime')
 
     await asyncify(_juju_wait)()
 
-    await model.remove_relation(
+    await model.applications['docker'].remove_relation(
         'docker:docker',
         'kubernetes-master:container-runtime')
 
-    await model.remove_relation(
+    await model.applications['docker'].remove_relation(
         'docker:docker',
         'kubernetes-worker:container-runtime')
 
-    await model.applications['docker'].remove()
+    await model.applications['docker'].destroy()
 
     await model.deploy('cs:~containers/containerd', num_units=0)
 
-    await model.add_relation(
+    await model.applications['containerd'].add_relation(
         'containerd:containerd',
         'kubernetes-worker:container-runtime')
-    await model.add_relation(
+    await model.applications['containerd'].add_relation(
         'containerd:containerd',
         'kubernetes-master:container-runtime')
 
