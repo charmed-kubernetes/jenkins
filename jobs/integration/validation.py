@@ -1180,10 +1180,12 @@ async def validate_encryption_at_rest(model):
         await model.deploy('percona-cluster')
         await model.add_relation('vault:shared-db',
                                  'percona-cluster:shared-db')
-        await model.remove_relation('easyrsa:client',
-                                    'kubernetes-master:certificates')
-        await model.remove_relation('easyrsa:client',
-                                    'kubernetes-worker:certificates')
+        await model.applications['kubernetes-master'].remove_relation(
+            'easyrsa:client',
+            'kubernetes-master:certificates')
+        await model.applications['kubernetes-master'].remove_relation(
+            'easyrsa:client',
+            'kubernetes-worker:certificates')
         await model.add_relation('vault:certificates',
                                  'kubernetes-master:certificates')
         await model.add_relation('vault:certificates',
