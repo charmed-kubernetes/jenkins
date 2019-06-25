@@ -7,11 +7,6 @@ from .base import UseModel
 test_charm_channel = os.environ.get('TEST_CHARM_CHANNEL', 'edge')
 test_snap_channel = os.environ.get('TEST_SNAP_CHANNEL')
 
-# Keep until we get out of support of 1.13/1.14 as containerd becomes the
-# default
-include_containerd = os.environ.get('INCLUDE_CONTAINERD', None)
-
-
 @pytest.mark.asyncio
 async def test_validate(log_dir):
     """ Validates and existing CDK deployment
@@ -24,8 +19,7 @@ async def test_validate(log_dir):
 async def test_upgrade(log_dir):
     async with UseModel() as model:
         await upgrade_charms(model,
-                             test_charm_channel,
-                             include_containerd)
+                             test_charm_channel)
         if test_snap_channel:
             await upgrade_snaps(model, test_snap_channel)
         await validate_all(model, log_dir)

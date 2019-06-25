@@ -41,10 +41,6 @@
       - string:
           name: upgrade_charm_channel
           default: 'edge'
-      - bool:
-          name: include_containerd
-          default: true
-          description: "add containerd to upgrade test"
     properties:
       - build-discarder:
           num-to-keep: 7
