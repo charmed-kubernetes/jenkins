@@ -13,10 +13,10 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Sync Repos'){
+        stage('Tag stable branches'){
             steps {
                 dir("jobs") {
-                    sh "CDKBOT_GH=${CDKBOT_GH} ${utils.cipy} sync-upstream/sync.py forks --layer-list includes/charm-layer-list.inc"
+                    sh "CDKBOT_GH=${CDKBOT_GH} ${utils.cipy} sync-upstream/sync.py tag-stable --layer-list includes/charm-layer-list.inc --bundle-revision ${params.bundle_rev}"
                 }
             }
         }

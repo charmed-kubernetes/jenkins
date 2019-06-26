@@ -16,6 +16,32 @@ pipeline {
         timestamps()
     }
     stages {
+        stage('Tag current stable branches') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name tag-current-stable").trim()
+                    return res != 'pass'
+                }
+            }
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
+
+            steps {
+                build job:"sync-stable-tag-bundle-rev",
+                    parameters: [string(name:'bundle_rev', value: params.current_stable_bundle_rev)]
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name tag-current-stable --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name tag-current-stable --result pass"
+                }
+            }
+        }
+
+
         stage('Promote charms to beta and candidate') {
             when {
                 expression {

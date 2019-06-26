@@ -15,3 +15,21 @@
           num-to-keep: 2
     triggers:
         - timed: "@hourly"
+
+- job:
+    name: 'sync-stable-tag-bundle-rev'
+    description: |
+      Tags all downstream stable branches with bundle revision
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/sync-upstream/tag-stable-branches.groovy
+    properties:
+      - build-discarder:
+          days-to-keep: 1
+          num-to-keep: 2
+    parameters:
+      - string:
+          name: bundle_rev
+          description: bundle revision to tag stable branches with
