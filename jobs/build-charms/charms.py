@@ -64,6 +64,9 @@ def pull_source(layer_index, layers, git_branch, retries, timeout):
     num_runs = 0
     for layer_map in layer_list:
         layer_name = list(layer_map.keys())[0]
+        if layer_name == 'layer:index':
+            continue
+
         def download():
             for line in sh.charm(
                 "pull-source", "-v", "-i", layer_index, layer_name, _iter=True
