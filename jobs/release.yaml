@@ -43,15 +43,17 @@
           description: |
             In the format of 1.12/beta 1.12/candidate
       - string:
-          name: charm_promote_from
-          description: |
-            In the format of 'edge'
-      - string:
           name: charm_promote_to
           default: 'beta'
           description: |
             In the format of 'beta candidate'. Until charmstore supports tracks
             this should usually be the 'beta' channel to promote to.
+      - string:
+          name: test_bundle_channel
+          default: 'beta'
+          description: |
+            Bundle channel to test from, with major releases this is typically
+            the beta channel as to not overwrite any hotfix releases happening.
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas

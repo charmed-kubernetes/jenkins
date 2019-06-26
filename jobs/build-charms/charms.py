@@ -60,14 +60,13 @@ def cli():
 )
 def pull_source(layer_index, layers, git_branch, retries, timeout):
     charm_env = CharmEnv()
-    layers = Path(layers)
-    layers = yaml.safe_load(layers.read_text("utf8"))
+    layer_list = yaml.safe_load(Path(layers).read_text(encoding="utf8"))
     num_runs = 0
-    for layer in layers:
-
+    for layer_map in layer_list:
+        layer_name = list(layer_map.keys())[0]
         def download():
             for line in sh.charm(
-                "pull-source", "-v", "-i", layer_index, layer, _iter=True
+                "pull-source", "-v", "-i", layer_index, layer_name, _iter=True
             ):
                 click.echo(line.strip())
 
@@ -80,13 +79,13 @@ def pull_source(layer_index, layers, git_branch, retries, timeout):
                 raise SystemExit(f"Could not download charm after {retries} retries.")
             time.sleep(timeout)
             download()
-        ltype, name = layer.split(":")
+        ltype, name = layer_name.split(":")
         if ltype == "layer":
             sh.git.checkout('-f', git_branch, _cwd=str(charm_env.layers_dir / name))
         elif ltype == "interface":
             sh.git.checkout('-f', git_branch, _cwd=str(charm_env.interfaces_dir / name))
         else:
-            raise SystemExit(f"Unknown layer/interface: {layer}")
+            raise SystemExit(f"Unknown layer/interface: {layer_name}")
 
 
 @cli.command()

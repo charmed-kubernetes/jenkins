@@ -162,7 +162,7 @@ pipeline {
             steps {
                 build job:"conformance-v${k8sver}.x-canonical-kubernetes",
                     parameters: [string(name:'cloud', value: "google/us-east1"),
-                                 string(name:'bundle_channel', value: 'candidate'),
+                                 string(name:'bundle_channel', value: params.test_bundle_channel),
                                  string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
             }
             post {
@@ -193,7 +193,7 @@ pipeline {
                     steps {
                         build job:"validate-v${k8sver}.x-canonical-kubernetes",
                             parameters: [string(name:'cloud', value: "aws/us-east-1"),
-                                         string(name:'bundle_channel', value:'candidate'),
+                                         string(name:'bundle_channel', value: params.test_bundle_channel),
                                          string(name:'snap_channel', value:"${k8sver}/candidate"),
                                          string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
                     }
@@ -262,7 +262,7 @@ pipeline {
                         build job:"validate-vault-v${k8sver}.x",
                             parameters: [string(name:'cloud', value: "google/us-east1"),
                                          string(name:'controller', value: "release-vault"),
-                                         string(name:'bundle_channel', value:"candidate"),
+                                         string(name:'bundle_channel', value: params.test_bundle_channel),
                                          string(name:'bundle', value:"canonical-kubernetes"),
                                          string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
@@ -293,7 +293,7 @@ pipeline {
                     steps {
                         build job:"validate-nvidia-v${k8sver}.x",
                             parameters: [string(name:'cloud', value: "aws/us-east-1"),
-                                         string(name:'bundle_channel', value:"candidate"),
+                                         string(name:'bundle_channel', value: params.test_bundle_channel),
                                          string(name:'controller', value:"release-nvidia"),
                                          string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
@@ -324,7 +324,7 @@ pipeline {
                     steps {
                         build job:"validate-calico-v${k8sver}.x",
                             parameters: [string(name:'controller', value:"release-calico"),
-                                         string(name:'bundle_channel', value:"candidate"),
+                                         string(name:'bundle_channel', value: params.test_bundle_channel),
                                          string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
                     }
@@ -353,7 +353,7 @@ pipeline {
                     }
                     steps {
                         build job:"validate-tigera-secure-ee-v${k8sver}.x",
-                            parameters: [string(name:'bundle_channel', value:"candidate"),
+                            parameters: [string(name:'bundle_channel', value:params.test_bundle_channel),
                                          string(name:'controller', value:'release-tigera'),
                                          string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
 
