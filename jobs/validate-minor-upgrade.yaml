@@ -23,24 +23,14 @@
             - 'google/us-east1'
             - 'azure/eastus'
       - string:
-          name: version_overlay
-          default: '{version_overlay}'
-      - string:
           name: upgrade_snap_channel
           default: '{upgrade_snap_channel}'
-      - choice:
-          name: bundle
-          choices:
-            - 'canonical-kubernetes'
-            - 'canonical-kubernetes-canal'
-            - 'kubernetes-core'
-            - 'kubernetes-calico'
       - string:
-          name: bundle_channel
-          default: 'stable'
+          name: bundle
+          string: '{initial_bundle}'
       - string:
           name: upgrade_charm_channel
-          default: 'edge'
+          default: '{upgrade_charm_channel}'
     properties:
       - build-discarder:
           num-to-keep: 7
@@ -50,10 +40,14 @@
     version:
       - 'v1.14.x-v1.15.x':
           version_overlay: 'jobs/overlays/1.14-stable-overlay.yaml'
-          upgrade_snap_channel: '1.15/edge'
+          upgrade_charm_channel: 'candidate'
+          upgrade_snap_channel: '1.15/candidate'
+          initial_bundle: 'cs:~containers/canonical-kubernetes-594'
       - 'v1.13.x-v1.15.x':
           version_overlay: 'jobs/overlays/1.13-stable-overlay.yaml'
-          upgrade_snap_channel: '1.15/edge'
+          upgrade_snap_channel: '1.15/candidate'
+          upgrade_charm_channel: 'candidate'
+          initial_bundle: 'cs:~containers/canonical-kubernetes-465'
     jobs:
       - 'validate-minor-upgrade-{version}'
 
