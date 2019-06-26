@@ -19,6 +19,45 @@ def cli():
     pass
 
 
+def _cut_stable_release(layer_list, dry_run):
+    """ This will force push each layers master onto the stable branches.
+
+    PLEASE NOTE: This step should come after each stable branch has been tagged
+    and references a current stable bundle revision.
+
+    layer_list: YAML spec containing git repos and their upstream/downstream properties
+    """
+    layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
+    new_env = os.environ.copy()
+    for layer_map in layer_list:
+        for layer_name, repos in layer_map.items():
+            downstream = repos["downstream"]
+            if not repos.get("needs_stable", True):
+                click.echo(f"Skipping {layer_name} :: no stable branch")
+                continue
+
+            click.echo(f"Releasing {layer_name} master -> stable :: {repos['downstream']}")
+            if not dry_run:
+                downstream = f"https://{new_env['CDKBOT_GH']}@github.com/{downstream}"
+                identifier = str(uuid.uuid4())
+                os.makedirs(identifier)
+                for line in sh.git.clone(downstream, identifier, _iter=True):
+                    click.echo(line)
+                sh.git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
+                sh.git.config("user.name", "cdkbot", _cwd=identifier)
+                sh.git.config("--global", "push.default", "simple")
+                sh.git.branch("-f", "stable", "master", _cwd=identifier)
+                for line in sh.git.push("-f", "origin", "stable", _cwd=identifier, _iter=True):
+                    click.echo(line)
+
+
+@cli.command()
+@click.option("--layer-list", required=True, help="Path to supported layer list")
+@click.option("--dry-run", is_flag=True)
+def cut_stable_release(layer_list, dry_run):
+    return _cut_stable_release(layer_list, dry_run)
+
+
 def _tag_stable_forks(layer_list, bundle_rev, dry_run):
     """ Tags stable forks to a certain bundle revision for a k8s version
 

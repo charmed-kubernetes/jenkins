@@ -18,9 +18,9 @@ pipeline {
                 dir("jobs") {
                     script {
                         if(params.dry_run) {
-                            sh "CDKBOT_GH=${CDKBOT_GH} ${utils.cipy} sync-upstream/sync.py tag-stable --layer-list includes/charm-layer-list.inc --bundle-revision ${params.bundle_rev} --dry-run"
+                            sh "CDKBOT_GH=${CDKBOT_GH} ${utils.cipy} sync-upstream/sync.py cut-stable-release --layer-list includes/charm-layer-list.inc --dry-run"
                         } else {
-                            sh "CDKBOT_GH=${CDKBOT_GH} ${utils.cipy} sync-upstream/sync.py tag-stable --layer-list includes/charm-layer-list.inc --bundle-revision ${params.bundle_rev}"
+                            sh "CDKBOT_GH=${CDKBOT_GH} ${utils.cipy} sync-upstream/sync.py cut-stable-release --layer-list includes/charm-layer-list.inc"
                         }
                     }
                 }

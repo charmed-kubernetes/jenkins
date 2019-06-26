@@ -33,3 +33,26 @@
       - string:
           name: bundle_rev
           description: bundle revision to tag stable branches with
+      - bool:
+          name: dry_run
+          default: false
+          description: dry-run nothing is actually done
+
+- job:
+    name: 'cut-stable-release'
+    description: |
+      Refreshes all layer stable branches on top of master.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/sync-upstream/cut-stable-release.groovy
+    properties:
+      - build-discarder:
+          days-to-keep: 1
+          num-to-keep: 2
+    parameters:
+      - bool:
+          name: dry_run
+          default: false
+          description: dry-run nothing is actually done
