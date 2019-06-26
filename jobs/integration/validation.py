@@ -1177,7 +1177,8 @@ async def validate_encryption_at_rest(model):
         await model.deploy('cs:~openstack-charmers-next/vault',
                            config={'auto-generate-root-ca-cert': True,
                                    'totally-unsecure-auto-unlock': True})
-        await model.deploy('percona-cluster')
+        # @cory_fu This apparently is deployed already.
+        # await model.deploy('percona-cluster')
         await model.add_relation('vault:shared-db',
                                  'percona-cluster:shared-db')
         await model.applications['kubernetes-master'].remove_relation(
