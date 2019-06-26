@@ -1,12 +1,12 @@
 - 'calico':
     repo_name: 'layer-calico'
-    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     resource_build_sh: 'build-calico-resource.sh'
     namespace: 'containers'
     tags: ['k8s']
 - 'canal':
     repo_name: 'layer-canal'
-    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     resource_build_sh: 'build-canal-resources.sh'
     namespace: 'containers'
     tags: ['k8s']
@@ -22,17 +22,17 @@
     tags: ['k8s']
 - 'easyrsa':
     repo_name: 'layer-easyrsa'
-    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     namespace: 'containers'
     tags: ['k8s']
 - 'etcd':
     repo_name: 'layer-etcd'
-    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     namespace: 'containers'
     tags: ['k8s']
 - 'flannel':
     repo_name: 'charm-flannel'
-    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     resource_build_sh: 'build-flannel-resources.sh'
     namespace: 'containers'
     tags: ['k8s']
@@ -69,7 +69,7 @@
     tags: ['general']
 - 'tigera-secure-ee':
     repo_name: 'layer-tigera-secure-ee'
-    git_repo: 'https://github.com/juju-solutions/{repo_name}.git'
+    git_repo: 'https://github.com/charmed-kubernetes/{repo_name}.git'
     resource_build_sh: 'build-resources.sh'
     namespace: 'containers'
     tags: ['k8s']

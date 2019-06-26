@@ -19,15 +19,17 @@ def cli():
     pass
 
 
-def _cut_stable_release(layer_list, dry_run):
+def _cut_stable_release(layer_list, charm_list, dry_run):
     """ This will force push each layers master onto the stable branches.
 
     PLEASE NOTE: This step should come after each stable branch has been tagged
     and references a current stable bundle revision.
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
+    charm_list: YAML spec containing git repos and their upstream/downstream properties
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
+    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
     for layer_map in layer_list:
         for layer_name, repos in layer_map.items():
@@ -53,12 +55,13 @@ def _cut_stable_release(layer_list, dry_run):
 
 @cli.command()
 @click.option("--layer-list", required=True, help="Path to supported layer list")
+@click.option("--charm-list", required=True, help="Path to supported charm list")
 @click.option("--dry-run", is_flag=True)
-def cut_stable_release(layer_list, dry_run):
+def cut_stable_release(layer_list, charm_list, dry_run):
     return _cut_stable_release(layer_list, dry_run)
 
 
-def _tag_stable_forks(layer_list, bundle_rev, dry_run):
+def _tag_stable_forks(layer_list, charm_list, bundle_rev, dry_run):
     """ Tags stable forks to a certain bundle revision for a k8s version
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
@@ -69,6 +72,7 @@ def _tag_stable_forks(layer_list, bundle_rev, dry_run):
     of {bundle_rev}
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
+    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
     for layer_map in layer_list:
         for layer_name, repos in layer_map.items():
@@ -96,12 +100,13 @@ def _tag_stable_forks(layer_list, bundle_rev, dry_run):
 
 @cli.command()
 @click.option("--layer-list", required=True, help="Path to supported layer list")
+@click.option("--charm-list", required=True, help="Path to supported charm list")
 @click.option(
     "--bundle-revision", required=True, help="Bundle revision to tag stable against"
 )
 @click.option("--dry-run", is_flag=True)
-def tag_stable(layer_list, bundle_revision, dry_run):
-    return _tag_stable_forks(layer_list, bundle_revision, dry_run)
+def tag_stable(layer_list, charm_list, bundle_revision, dry_run):
+    return _tag_stable_forks(layer_list, charm_list, bundle_revision, dry_run)
 
 
 def _sync_upstream(layer_list, dry_run):
