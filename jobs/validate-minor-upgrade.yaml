@@ -27,7 +27,7 @@
           default: '{upgrade_snap_channel}'
       - string:
           name: bundle
-          string: '{initial_bundle}'
+          default: '{bundle}'
       - string:
           name: upgrade_charm_channel
           default: '{upgrade_charm_channel}'
@@ -42,12 +42,12 @@
           version_overlay: 'jobs/overlays/1.14-stable-overlay.yaml'
           upgrade_charm_channel: 'candidate'
           upgrade_snap_channel: '1.15/candidate'
-          initial_bundle: 'cs:~containers/canonical-kubernetes-594'
+          bundle: 'cs:~containers/canonical-kubernetes-594'
       - 'v1.13.x-v1.15.x':
           version_overlay: 'jobs/overlays/1.13-stable-overlay.yaml'
           upgrade_snap_channel: '1.15/candidate'
           upgrade_charm_channel: 'candidate'
-          initial_bundle: 'cs:~containers/canonical-kubernetes-465'
+          bundle: 'cs:~containers/canonical-kubernetes-465'
     jobs:
       - 'validate-minor-upgrade-{version}'
 

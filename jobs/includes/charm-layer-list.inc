@@ -1,7 +1,7 @@
 # K8s layers
 - interface:aws-integration
 - interface:azure-integration
-# - interface:container-runtime
+- interface:container-runtime
 - interface:dockerhost
 - interface:docker-registry
 - interface:etcd
@@ -28,6 +28,7 @@
 - layer:apt
 - layer:basic
 - layer:cdk-service-kicker
+- layer:container-runtime-common
 - layer:debug
 - layer:docker
 - layer:hacluster
