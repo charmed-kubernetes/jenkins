@@ -21,6 +21,8 @@
           choices:
             - 'containers/calico'
             - 'containers/canal'
+            - 'containers/containerd'
+            - 'containers/docker'
             - 'containers/easyrsa'
             - 'containers/etcd'
             - 'containers/flannel'
