@@ -42,7 +42,36 @@ pipeline {
         }
 
 
-        stage('Promote charms to beta and candidate') {
+        stage('Cut new stable branches') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name cut-stable-release").trim()
+                    return res != 'pass'
+                }
+            }
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
+
+            steps {
+                build job:"cut-stable-release"
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name cut-stable-release --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name cut-stable-release --result pass"
+                }
+            }
+        }
+
+
+        stage('Build and Promote charms') {
+            /* NOTE: We must always cut these charms releases to the beta
+             * channel as to not interfere with any concurrently running hotfix
+             * builds/promotions. This can go away once charmstore supports tracks.
+             */
             when {
                 expression {
                     res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name promote-charms").trim()
@@ -54,9 +83,32 @@ pipeline {
             }
 
             steps {
-                build job:"promote-all-charms",
-                    parameters: [string(name:'from_channel', value: params.charm_promote_from),
-                                 string(name:'to_channel', value: params.charm_promote_to)]
+                script {
+                    def jobs = [:]
+                    // returns a LinkedHashMap
+                    def charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
+                    charms.each { k ->
+                        // Each item is a LinkedHashSet, so we pull the first item from the set
+                        // since there is only 1 key per charm
+                        def charm = k.keySet().first()
+                        if (k[charm].namespace != 'containers') {
+                            return
+                        }
+                        if (!k[charm].tags.contains('k8s')) {
+                            return
+                        }
+                        jobs[charm] = {
+                            stage("Validate: ${charm}") {
+                                build job:"build-release-${charm}",
+                                    parameters: [string(name:'git_branch', value: 'stable'),
+                                                 string(name:'to_channel', value: params.charm_promote_to)]
+                            }
+                        }
+                    }
+                    parallel jobs
+                }
+                build job:"build-release-bundles",
+                    parameters: [string(name:'channel', value: params.charm_promote_to)]
             }
             post {
                 failure {
