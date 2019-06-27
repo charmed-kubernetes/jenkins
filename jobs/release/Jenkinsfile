@@ -86,30 +86,7 @@ pipeline {
                 build job:"build-release-charms",
                     parameters: [string(name:'layer_branch', value: 'stable'),
                                  string(name:'charm_branch', value: 'stable'),
-                                 string(name:'to_channel', value: 'beta')]
-                script {
-                    def jobs = [:]
-                    // returns a LinkedHashMap
-                    def charms = readYaml file: 'jobs/includes/charm-support-matrix.inc'
-                    charms.each { k ->
-                        // Each item is a LinkedHashSet, so we pull the first item from the set
-                        // since there is only 1 key per charm
-                        def charm = k.keySet().first()
-                        if (k[charm].namespace != 'containers') {
-                            return
-                        }
-                        if (!k[charm].tags.contains('k8s')) {
-                            return
-                        }
-                        jobs[charm] = {
-                            stage("Validate: ${charm}") {
-                                build job:"build-release-${charm}",
-                                    parameters: 
-                            }
-                        }
-                    }
-                    parallel jobs
-                }
+                                 string(name:'to_channel', value: params.charm_promote_to)]
                 build job:"build-release-bundles",
                     parameters: [string(name:'channel', value: params.charm_promote_to)]
             }
