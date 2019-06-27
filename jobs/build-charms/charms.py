@@ -224,39 +224,46 @@ def build(
                     f"{dst_path}/tmp",
                     resource_spec,
                 )
-            _promote(charm_entity, to_channel)
-            sh.charm.show(charm_entity, channel=to_channel)
+    _promote(charm_list, to_channel)
 
+
+
+def _promote(charm_list, from_channel="unpublished", to_channel="edge"):
+    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+
+    for charm_map in charm_list:
+        for charm_name, charm_opts in charm_map.items():
+            if charm_opts['namespace'] != 'containers':
+                continue
+            charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
+            click.echo(f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}")
+            charm_id = sh.charm.show(charm_entity, "--channel", from_channel, "id")
+            charm_id = yaml.safe_load(charm_id.stdout.decode())
+            resources_args = []
+            try:
+                resources = sh.charm(
+                    "list-resources", charm_id["id"]["Id"], channel=from_channel, format="yaml"
+                )
+                resources = yaml.safe_load(resources.stdout.decode())
+                if resources:
+                    resources_args = [
+                        ("--resource", "{}-{}".format(resource["name"], resource["revision"]))
+                        for resource in resources
+                    ]
+            except sh.ErrorReturnCode_1:
+                click.echo("No resources for {}".format(charm_id))
+            sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
 
 @cli.command()
 @click.option(
-    "--charm-entity",
+    "--charm-list",
     required=True,
-    help="Charmstore entity id (ie. cs~containers/flannel)",
+    help="path to charm list YAML",
 )
 @click.option("--from-channel", required=True, help="Charm channel to publish from")
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
-def promote(charm_entity, from_channel, to_channel):
-    return _promote(charm_entity, from_channel, to_channel)
-
-
-def _promote(charm_entity, from_channel="unpublished", to_channel="edge"):
-    charm_id = sh.charm.show(charm_entity, "--channel", from_channel, "id")
-    charm_id = yaml.safe_load(charm_id.stdout.decode())
-    resources_args = []
-    try:
-        resources = sh.charm(
-            "list-resources", charm_id["id"]["Id"], channel=from_channel, format="yaml"
-        )
-        resources = yaml.safe_load(resources.stdout.decode())
-        if resources:
-            resources_args = [
-                ("--resource", "{}-{}".format(resource["name"], resource["revision"]))
-                for resource in resources
-            ]
-    except sh.ErrorReturnCode_1:
-        click.echo("No resources for {}".format(charm_id))
-    sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
+def promote(charm_list, from_channel, to_channel):
+    return _promote(charm_list, from_channel, to_channel)
 
 
 @cli.command()
