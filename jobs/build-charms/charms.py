@@ -129,29 +129,40 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries, timeout):
         else:
             raise SystemExit(f"Unknown layer/interface: {layer_name}")
 
+
 def _promote(charm_list, from_channel="unpublished", to_channel="edge"):
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
 
     for charm_map in charm_list:
         for charm_name, charm_opts in charm_map.items():
             charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
-            click.echo(f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}")
+            click.echo(
+                f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
+            )
             charm_id = sh.charm.show(charm_entity, "--channel", from_channel, "id")
             charm_id = yaml.safe_load(charm_id.stdout.decode())
             resources_args = []
             try:
                 resources = sh.charm(
-                    "list-resources", charm_id["id"]["Id"], channel=from_channel, format="yaml"
+                    "list-resources",
+                    charm_id["id"]["Id"],
+                    channel=from_channel,
+                    format="yaml",
                 )
                 resources = yaml.safe_load(resources.stdout.decode())
                 if resources:
                     resources_args = [
-                        ("--resource", "{}-{}".format(resource["name"], resource["revision"]))
+                        (
+                            "--resource",
+                            "{}-{}".format(resource["name"], resource["revision"]),
+                        )
                         for resource in resources
                     ]
             except sh.ErrorReturnCode_1:
                 click.echo("No resources for {}".format(charm_id))
-            sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
+            sh.charm.release(
+                charm_id["id"]["Id"], "--channel", to_channel, *resources_args
+            )
 
 
 def _resource(charm_entity, channel, builder, out_path, resource_spec):
@@ -203,6 +214,7 @@ def _resource(charm_entity, channel, builder, out_path, resource_spec):
                         )
             click.echo(out)
 
+
 @click.group()
 def cli():
     pass
@@ -225,6 +237,7 @@ def cli():
 )
 def pull_layers(layer_index, layer_list, layer_branch, retries, timeout):
     return _pull_layers(layer_index, layer_list, layer_branch, retries, timeout)
+
 
 @cli.command()
 @click.option(
@@ -251,10 +264,15 @@ def pull_layers(layer_index, layer_list, layer_branch, retries, timeout):
     "--filter-by-tag",
     required=True,
     help="only build for charms matching a tag, comma separate list",
-    multiple=True
+    multiple=True,
 )
 @click.option("--bundle-list", required=True, help="list of bundles in YAML format")
-@click.option("--bundle-repo", required=True, help="upstream repo for bundle builder", default="https://github.com/juju-solutions/bundle-canonical-kubernetes.git")
+@click.option(
+    "--bundle-repo",
+    required=True,
+    help="upstream repo for bundle builder",
+    default="https://github.com/juju-solutions/bundle-canonical-kubernetes.git",
+)
 @click.option(
     "--to-channel", required=True, help="channel to promote charm to", default="edge"
 )
@@ -267,8 +285,8 @@ def build(
     layer_branch,
     resource_spec,
     filter_by_tag,
-        bundle_list,
-        bundle_repo,
+    bundle_list,
+    bundle_repo,
     to_channel,
     dry_run,
 ):
@@ -279,13 +297,11 @@ def build(
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
 
     _pull_layers(layer_index, layer_list, layer_branch)
-    log('charm builds')
+    log("charm builds")
     for charm_map in charm_list:
         for charm_name, charm_opts in charm_map.items():
             downstream = f"https://github.com/{charm_opts['downstream']}"
-            if not any(
-                match in filter_by_tag for match in charm_opts["tags"]
-            ):
+            if not any(match in filter_by_tag for match in charm_opts["tags"]):
                 continue
 
             if dry_run:
@@ -320,31 +336,35 @@ def build(
                 )
     _promote(charm_list, to_channel)
 
-    bundle_list = yaml.safe_load(Path(bundle_list).read_text(encoding='utf8'))
-    log('bundle builds')
-    bundle_repo_dir = charm_env.tmp_dir / 'bundles-kubernetes'
-    bundle_build_dir = charm_env.tmp_dir / 'tmp-bundles'
+    bundle_list = yaml.safe_load(Path(bundle_list).read_text(encoding="utf8"))
+    log("bundle builds")
+    bundle_repo_dir = charm_env.tmp_dir / "bundles-kubernetes"
+    bundle_build_dir = charm_env.tmp_dir / "tmp-bundles"
     os.makedirs(str(bundle_repo_dir))
     os.makedirs(str(bundle_build_dir))
     for line in sh.git.clone(bundle_repo, str(bundle_repo_dir), _iter=True):
         log(line)
     for bundle_map in bundle_list:
         for bundle_name, bundle_opts in bundle_map.items():
-            if not any(
-                match in filter_by_tag for match in bundle_opts["tags"]
-            ):
+            if not any(match in filter_by_tag for match in bundle_opts["tags"]):
                 continue
-            sh.bash(str(bundle_repo_dir / 'bundle'), '-o', str(bundle_build_dir / bundle_name), '-c', to_channel, bundle_opts['fragments'])
-            bundle_entity = f"cs:~{bundle_opts['namespace]}/{bundle_opts['name']}"
-            _push(str(bundle_repo_dir), str(bundle_build_dir / bundle_name), bundle_entity)
+            sh.bash(
+                str(bundle_repo_dir / "bundle"),
+                "-o",
+                str(bundle_build_dir / bundle_name),
+                "-c",
+                to_channel,
+                bundle_opts["fragments"],
+            )
+            bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_opts['name']}"
+            _push(
+                str(bundle_repo_dir), str(bundle_build_dir / bundle_name), bundle_entity
+            )
     _promote(bundle_list, to_channel)
 
+
 @cli.command()
-@click.option(
-    "--charm-list",
-    required=True,
-    help="path to charm list YAML",
-)
+@click.option("--charm-list", required=True, help="path to charm list YAML")
 @click.option("--from-channel", required=True, help="Charm channel to publish from")
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
 def promote(charm_list, from_channel, to_channel):
