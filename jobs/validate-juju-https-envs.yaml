@@ -7,17 +7,17 @@
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/validate-juju-proxy/Jenkinsfile
+      script-path: jobs/validate-juju-proxy-envs/Jenkinsfile
     parameters:
       - string:
           name: model
           default: 'validate-juju-proxy-vars'
       - string:
           name: controller
-          default: 'validate-juju-proxy-vars'
+          default: 'aws-eu-west-1'
       - string:
           name: cloud
-          default: 'aws/us-east-1'
+          default: 'aws/eu-west-1'
       - string:
           name: version_overlay
           default: '{version_overlay}'
