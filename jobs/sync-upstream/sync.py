@@ -67,7 +67,7 @@ def _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
                 git_rev_master = sh.git('rev-parse', 'origin/master', _cwd=identifier).stdout.decode()
                 git_rev_stable = sh.git('rev-parse', 'origin/stable', _cwd=identifier).stdout.decode()
                 if git_rev_master == git_rev_stable:
-                    click.echo("Skipping  :: {layer_name:^35} :: same commits")
+                    click.echo(f"Skipping  :: {layer_name:^35} :: master == stable")
                     continue
                 sh.git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
                 sh.git.config("user.name", "cdkbot", _cwd=identifier)

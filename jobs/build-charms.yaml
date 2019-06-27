@@ -62,6 +62,11 @@
           name: to_channel
           default: 'edge'
           description: Channel to publish charm to
+      - string:
+          name: tags
+          default: 'k8s'
+          description: |
+            Filter the builds by tag (ie. k8s general)
     properties:
       - build-discarder:
           num-to-keep: 7

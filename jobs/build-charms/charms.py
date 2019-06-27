@@ -110,6 +110,9 @@ def cli():
     "--timeout", default=60, required=True, help="timeout between retries in seconds"
 )
 def pull_layers(layer_index, layers, layer_branch, retries, timeout):
+    def log(line):
+        click.echo(f"Pulling layers :: {line}")
+
     charm_env = CharmEnv()
     layer_list = yaml.safe_load(Path(layers).read_text(encoding="utf8"))
     num_runs = 0
@@ -118,17 +121,19 @@ def pull_layers(layer_index, layers, layer_branch, retries, timeout):
         if layer_name == "layer:index":
             continue
 
+        log(layer_name)
+
         def download():
             for line in sh.charm(
                 "pull-source", "-v", "-i", layer_index, layer_name, _iter=True
             ):
-                click.echo(line.strip())
+                click.echo(f" -- {line.strip()}")
 
         try:
             num_runs += 1
             download()
         except sh.ErrorReturnCode_1 as e:
-            click.echo(f"Problem: {e}, retrying [{num_runs}/{retries}]")
+            log(f"Problem: {e}, retrying [{num_runs}/{retries}]")
             if num_runs == retries:
                 raise SystemExit(f"Could not download charm after {retries} retries.")
             time.sleep(timeout)
@@ -158,16 +163,10 @@ def pull_layers(layer_index, layers, layer_branch, retries, timeout):
     default="master",
 )
 @click.option(
-    "--filter-by-namespaces",
-    required=True,
-    help="only build for namespaces, comma separated list",
-    default="containers",
-)
-@click.option(
-    "--filter-by-tags",
+    "--filter-by-tag",
     required=True,
     help="only build for charms matching a tag, comma separate list",
-    default="k8s",
+    multiple=True
 )
 @click.option(
     "--to-channel", required=True, help="channel to promote charm to", default="edge"
@@ -177,8 +176,7 @@ def build(
     charm_list,
     resource_spec,
     charm_branch,
-    filter_by_namespaces,
-    filter_by_tags,
+    filter_by_tag,
     to_channel,
     dry_run,
 ):
@@ -190,11 +188,9 @@ def build(
 
     for charm_map in charm_list:
         for charm_name, charm_opts in charm_map.items():
-            if charm_opts["namespace"] not in filter_by_namespaces.split(","):
-                continue
-
+            downstream = f"https://github.com/{charm_opts['downstream']}"
             if not any(
-                match in charm_opts["tags"] for match in filter_by_tags.split(",")
+                match in filter_by_tag for match in charm_opts["tags"]
             ):
                 continue
 
@@ -209,7 +205,7 @@ def build(
 
             dst_path = str(charm_env.build_dir / charm_name)
             for line in sh.git.clone(
-                "--branch", charm_branch, charm_opts["downstream"], src_path, _iter=True
+                "--branch", charm_branch, downstream, src_path, _iter=True
             ):
                 log(line)
 
@@ -218,7 +214,7 @@ def build(
             ):
                 log(line.strip())
             sh.charm.proof(_cwd=dst_path)
-            _push(src_path, dst_path, charm_entity_path)
+            _push(src_path, dst_path, charm_entity)
             resource_builder = charm_opts.get("resource_build_sh", None)
             if resource_builder:
                 _resource(
