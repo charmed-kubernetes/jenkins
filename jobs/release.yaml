@@ -1,5 +1,15 @@
 # Release Job for k8s
 
+# Process
+# 1. Tag all current stable branches with the latest stable bundle revision
+# 2. Refresh all repos master branch onto stable, this marks the next major.minor.patch release
+# 3. Build all charms using all layers locally which is to be git cloned and utilizing the stable branch
+# 4. Promote MAJOR.MINOR.PATCH snaps from edge to beta/candidate
+# 5. Conformance test
+# 6. QA Validation
+# 7. QA Validation major to major upgrades
+# 8. QA Addon validation for Vault, NVidia, Calico, Tigera
+# 9. Manual release from beta/candidate channels/tracks to stable channels/tracks
 - job:
     name: 'release'
     description: |

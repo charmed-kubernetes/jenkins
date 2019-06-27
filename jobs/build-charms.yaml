@@ -1,4 +1,4 @@
-# Builds and releases latest charm development
+# Builds and releases charms
 
 - job:
     name: 'promote-all-charms'
@@ -27,39 +27,15 @@
           num-to-keep: 7
 
 - job:
-    name: 'build-all-charms'
+    name: 'build-release-charms'
     description: |
-      Builds all charms and releases to edge channel
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-charms/build-all-charms.groovy
-    triggers:
-        - timed: "0 */18 * * *"
-    properties:
-      - build-discarder:
-          num-to-keep: 7
-
-
-- job-template:
-    name: '{name}-{charm}'
-
-    # Defaults
-    resource_build_sh: ''
-    namespace: 'containers'
-
-    description: |
-      Builds and releases {charm} to charmstore edge channel.
+      Builds and releases charms to the charmstore.
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/build-charms/Jenkinsfile
     parameters:
-      - string:
-          name: charm
-          default: '{charm}'
       - string:
           name: model
           default: 'charms'
@@ -70,23 +46,18 @@
           name: cloud
           default: 'aws/us-east-1'
       - string:
-          name: namespace
-          default: '{namespace}'
-      - string:
-          name: repo_name
-          default: '{repo_name}'
-      - string:
-          name: git_repo
-          default: '{git_repo}'
-      - string:
-          name: git_branch
-          default: 'master'
-      - string:
-          name: resource_build_sh
-          default: '{resource_build_sh}'
-      - string:
           name: layer_index
           default: 'https://charmed-kubernetes.github.io/layer-index/'
+      - string:
+          name: layer_branch
+          default: 'master'
+          description: |
+            The layer git branch to checkout prior to building
+      - string:
+          name: charm_branch
+          default: 'master'
+          description: |
+            The charm git branch to checkout prior to building
       - string:
           name: to_channel
           default: 'edge'
@@ -94,15 +65,5 @@
     properties:
       - build-discarder:
           num-to-keep: 7
-
-- job-group:
-    name: '{name}'
-    charm:
-      !include: includes/charm-support-matrix.inc
-    jobs:
-      - '{name}-{charm}'
-
-- project:
-    name: build-release
-    jobs:
-      - '{name}'
+    triggers:
+        - timed: "0 */18 * * *"

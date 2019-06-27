@@ -10,7 +10,8 @@ See `charm build --help` for more information.
 Usage:
 
   tox -e py36 -- python3 jobs/build-charms/charms.py build \
-     --repo-path ../../layer-canal/ --out-path $HOME/charms/builds/canal
+     --charm-list jobs/includes/charm-support-matrix.inc \
+     --resource-spec jobs/build-charms/resource-spec.yaml
 
   tox -e py36 -- python3 jobs/build-charms/charms.py --help
 """
@@ -23,6 +24,7 @@ import click
 import sh
 import yaml
 import time
+import uuid
 
 
 class CharmEnv:
@@ -41,6 +43,52 @@ class CharmEnv:
             )
 
 
+def _push(repo_path, out_path, charm_entity):
+    """ Pushes a built charm to Charmstore
+    """
+
+    def log(line):
+        click.echo(f"Pushing :: {line}")
+
+    log(f"{repo_path} :: {charm_entity}")
+    git_commit = sh.git("rev-parse", "HEAD", _cwd=repo_path)
+    git_commit = git_commit.stdout.decode().strip()
+    log(f"grabbing git revision {git_commit}")
+
+    # Build a list of `oci-image` resources that have `upstream-source` defined,
+    # which is added for this logic to work.
+    resources = yaml.safe_load(
+        Path(out_path).joinpath("metadata.yaml").read_text()
+    ).get("resources", {})
+    images = {
+        name: details["upstream-source"]
+        for name, details in resources.items()
+        if details["type"] == "oci-image" and details.get("upstream-source")
+    }
+
+    log(f"Found {len(images)} oci-image resources:\n{pformat(images)}\n")
+
+    for image in images.values():
+        log(f"Pulling {image}...")
+        sh.docker.pull(image)
+
+    # Convert the image names and tags to `--resource foo=bar` format
+    # for passing to `charm push`.
+    resource_args = [
+        arg
+        for name, image in images.items()
+        for arg in ("--resource", f"{name}={image}")
+    ]
+
+    out = sh.charm.push(out_path, charm_entity, *resource_args)
+    log(f"Charm push returned: {out}")
+    # Output includes lots of ansi escape sequences from the docker push,
+    # and we only care about the first line, which contains the url as yaml.
+    out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
+    log(f"Setting {out['url']} metadata: {git_commit}")
+    sh.charm.set(out["url"], "commit={}".format(git_commit))
+
+
 @click.group()
 def cli():
     pass
@@ -50,7 +98,10 @@ def cli():
 @click.option("--layer-index", required=True, help="Charm layer index")
 @click.option("--layers", required=True, help="list of layers in YAML format")
 @click.option(
-    "--git-branch", required=True, help="Branch of layer to reference", default="master"
+    "--layer-branch",
+    required=True,
+    help="Branch of layer to reference",
+    default="master",
 )
 @click.option(
     "--retries", default=15, required=True, help="how many retries to perform"
@@ -58,13 +109,13 @@ def cli():
 @click.option(
     "--timeout", default=60, required=True, help="timeout between retries in seconds"
 )
-def pull_source(layer_index, layers, git_branch, retries, timeout):
+def pull_layers(layer_index, layers, layer_branch, retries, timeout):
     charm_env = CharmEnv()
     layer_list = yaml.safe_load(Path(layers).read_text(encoding="utf8"))
     num_runs = 0
     for layer_map in layer_list:
         layer_name = list(layer_map.keys())[0]
-        if layer_name == 'layer:index':
+        if layer_name == "layer:index":
             continue
 
         def download():
@@ -84,87 +135,101 @@ def pull_source(layer_index, layers, git_branch, retries, timeout):
             download()
         ltype, name = layer_name.split(":")
         if ltype == "layer":
-            sh.git.checkout('-f', git_branch, _cwd=str(charm_env.layers_dir / name))
+            sh.git.checkout("-f", layer_branch, _cwd=str(charm_env.layers_dir / name))
         elif ltype == "interface":
-            sh.git.checkout('-f', git_branch, _cwd=str(charm_env.interfaces_dir / name))
+            sh.git.checkout(
+                "-f", layer_branch, _cwd=str(charm_env.interfaces_dir / name)
+            )
         else:
             raise SystemExit(f"Unknown layer/interface: {layer_name}")
 
 
 @cli.command()
-@click.option("--repo-path", required=True, help="Path of charm vcs repo")
-@click.option("--out-path", required=True, help="Path of built charm")
 @click.option(
-    "--git-branch",
+    "--charm-list", required=True, help="path to a file with list of charms in YAML"
+)
+@click.option(
+    "--resource-spec", required=True, help="YAML Spec of resource keys and filenames"
+)
+@click.option(
+    "--charm-branch",
     required=True,
     help="Git branch to build charm from",
     default="master",
 )
-def build(repo_path, out_path, git_branch):
-    for line in sh.charm.build(
-        r=True, force=True, _cwd=repo_path, _iter=True, _err_to_out=True
-    ):
-        click.echo(line.strip())
-    sh.charm.proof(_cwd=out_path)
-
-
-@cli.command()
-@click.option("--repo-path", required=True, help="Path of charm vcs repo")
-@click.option("--out-path", required=True, help="Path of built charm")
 @click.option(
-    "--charm-entity",
+    "--filter-by-namespaces",
     required=True,
-    help="Charm entity path (ie. cs~containers/flannel)",
+    help="only build for namespaces, comma separated list",
+    default="containers",
 )
-def push(repo_path, out_path, charm_entity):
-    git_commit = sh.git("rev-parse", "HEAD", _cwd=repo_path)
-    git_commit = git_commit.stdout.decode().strip()
-    click.echo("Grabbing git revision {}".format(git_commit))
-
-    # Build a list of `oci-image` resources that have `upstream-source` defined,
-    # which is added for this logic to work.
-    resources = yaml.safe_load(
-        Path(out_path).joinpath("metadata.yaml").read_text()
-    ).get("resources", {})
-    images = {
-        name: details["upstream-source"]
-        for name, details in resources.items()
-        if details["type"] == "oci-image" and details.get("upstream-source")
-    }
-
-    click.echo(f"Found {len(images)} oci-image resources:\n{pformat(images)}\n")
-
-    for image in images.values():
-        click.echo(f"Pulling {image}...")
-        sh.docker.pull(image)
-
-    # Convert the image names and tags to `--resource foo=bar` format
-    # for passing to `charm push`.
-    resource_args = [
-        arg
-        for name, image in images.items()
-        for arg in ("--resource", f"{name}={image}")
-    ]
-
-    out = sh.charm.push(out_path, charm_entity, *resource_args)
-    click.echo(f"Charm push returned: {out}")
-    # Output includes lots of ansi escape sequences from the docker push,
-    # and we only care about the first line, which contains the url as yaml.
-    out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
-    click.echo("Setting {} metadata: {}".format(out["url"], git_commit))
-    sh.charm.set(out["url"], "commit={}".format(git_commit))
-
-
-@cli.command()
 @click.option(
-    "--charm-entity",
+    "--filter-by-tags",
     required=True,
-    help="Charmstore entity id (ie. cs~containers/flannel)",
+    help="only build for charms matching a tag, comma separate list",
+    default="k8s",
 )
-@click.option("--channel", required=True, help="Charm channel to display info from")
-def show(charm_entity, channel):
-    click.echo()
-    click.echo(sh.charm.show(charm_entity, channel=channel))
+@click.option(
+    "--to-channel", required=True, help="channel to promote charm to", default="edge"
+)
+@click.option("--dry-run", is_flag=True)
+def build(
+    charm_list,
+    resource_spec,
+    charm_branch,
+    filter_by_namespaces,
+    filter_by_tags,
+    to_channel,
+    dry_run,
+):
+    def log(line):
+        click.echo(f"Building :: {line}")
+
+    charm_env = CharmEnv()
+    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+
+    for charm_map in charm_list:
+        for charm_name, charm_opts in charm_map.items():
+            if charm_opts["namespace"] not in filter_by_namespaces.split(","):
+                continue
+
+            if not any(
+                match in charm_opts["tags"] for match in filter_by_tags.split(",")
+            ):
+                continue
+
+            if dry_run:
+                log(
+                    f"{charm_name:^25} :: vcs-branch: {charm_branch} to-channel: {to_channel} tags: {','.join(charm_opts['tags'])}"
+                )
+                continue
+            charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
+            src_path = charm_name
+            os.makedirs(src_path)
+
+            dst_path = str(charm_env.build_dir / charm_name)
+            for line in sh.git.clone(
+                "--branch", charm_branch, charm_opts["git_repo"], src_path, _iter=True
+            ):
+                log(line)
+
+            for line in sh.charm.build(
+                r=True, force=True, _cwd=src_path, _iter=True, _err_to_out=True
+            ):
+                log(line.strip())
+            sh.charm.proof(_cwd=dst_path)
+            _push(src_path, dst_path, charm_entity_path)
+            resource_builder = charm_opts.get("resource_build_sh", None)
+            if resource_builder:
+                _resource(
+                    charm_entity,
+                    "unpublished",
+                    f"{src_path}/{resource_builder}",
+                    f"{dst_path}/tmp",
+                    resource_spec,
+                )
+            _promote(charm_entity, to_channel)
+            sh.charm.show(charm_entity, channel=to_channel)
 
 
 @cli.command()
@@ -176,6 +241,10 @@ def show(charm_entity, channel):
 @click.option("--from-channel", required=True, help="Charm channel to publish from")
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
 def promote(charm_entity, from_channel, to_channel):
+    return _promote(charm_entity, from_channel, to_channel)
+
+
+def _promote(charm_entity, from_channel="unpublished", to_channel="edge"):
     charm_id = sh.charm.show(charm_entity, "--channel", from_channel, "id")
     charm_id = yaml.safe_load(charm_id.stdout.decode())
     resources_args = []
@@ -214,6 +283,10 @@ def promote(charm_entity, from_channel, to_channel):
     "--resource-spec", required=True, help="YAML Spec of resource keys and filenames"
 )
 def resource(charm_entity, channel, builder, out_path, resource_spec):
+    return _resource(charm_entity, channel, builder, out_path, resource_spec)
+
+
+def _resource(charm_entity, channel, builder, out_path, resource_spec):
     out_path = Path(out_path)
     resource_spec = yaml.safe_load(Path(resource_spec).read_text())
     resource_spec_fragment = resource_spec.get(charm_entity, None)

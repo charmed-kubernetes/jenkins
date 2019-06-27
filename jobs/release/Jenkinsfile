@@ -83,6 +83,10 @@ pipeline {
             }
 
             steps {
+                build job:"build-release-charms",
+                    parameters: [string(name:'layer_branch', value: 'stable'),
+                                 string(name:'charm_branch', value: 'stable'),
+                                 string(name:'to_channel', value: 'beta')]
                 script {
                     def jobs = [:]
                     // returns a LinkedHashMap
@@ -100,8 +104,7 @@ pipeline {
                         jobs[charm] = {
                             stage("Validate: ${charm}") {
                                 build job:"build-release-${charm}",
-                                    parameters: [string(name:'git_branch', value: 'stable'),
-                                                 string(name:'to_channel', value: params.charm_promote_to)]
+                                    parameters: 
                             }
                         }
                     }

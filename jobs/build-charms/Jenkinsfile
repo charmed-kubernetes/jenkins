@@ -33,65 +33,47 @@ pipeline {
         }
         stage('Prep Layers') {
             when {
-                expression { params.git_branch == "stable" }
+                expression { params.layer_branch == "stable" }
             }
             steps {
                 dir('jobs') {
-                    sh "${charm_sh} pull-source --layer-index ${params.layer_index} --layers includes/charm-layer-list.inc --git-branch ${params.git_branch}"
+                    sh "${charm_sh} pull-layers --layer-index ${params.layer_index} --layers includes/charm-layer-list.inc --layer-branch ${params.layer_branch}"
                 }
             }
         }
-        stage('Build') {
+        stage('Build, Push, Promote Charms') {
             options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
             }
             steps {
                 dir('jobs') {
-                    sh "git clone --branch ${params.git_branch} --depth 1 -q ${params.git_repo}"
-                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build --repo-path ${params.repo_name} --out-path ${env.CHARM_BUILD_DIR}/${params.charm} --git-branch ${params.git_branch}"
+                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build --charm-list includes/charm-support-matrix.inc --charm-branch ${params.charm_branch} --to-channel ${params.to_channel} --resource-spec build-charms/resource-spec.yaml"
                 }
             }
         }
-        stage('Test') {
-            options {
-                timeout(time: 2, unit: 'HOURS')
-            }
+        // stage('Test') {
+        //     options {
+        //         timeout(time: 2, unit: 'HOURS')
+        //     }
 
-            steps {
-                dir("jobs") {
-                    script {
-                        def test_path = "integration/charm/test_${params.charm}.py"
-                        if (fileExists(test_path)) {
-                            sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
-                            sh "CHARM_PATH=${env.CHARM_BUILD_DIR}/${params.charm} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} -n auto --junit-xml=${params.charm}.xml ${test_path}"
-                        }
-                    }
+        //     steps {
+        //         dir("jobs") {
+        //             script {
+        //                 def test_path = "integration/charm/test_${params.charm}.py"
+        //                 if (fileExists(test_path)) {
+        //                     sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
+        //                     sh "CHARM_PATH=${env.CHARM_BUILD_DIR}/${params.charm} CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} -n auto --junit-xml=${params.charm}.xml ${test_path}"
+        //                 }
+        //             }
 
-                }
-            }
-            post {
-                always {
-                    setEndTime()
-                }
-            }
-        }
-        stage('Release to Store') {
-            options {
-                timeout(time: 45, unit: 'MINUTES')
-            }
-            steps {
-                dir('jobs') {
-                    sh "${charm_sh} push --repo-path ${params.repo_name} --out-path ${env.CHARM_BUILD_DIR}/${params.charm} --charm-entity ${cs_url}"
-                    script {
-                        if(params.resource_build_sh) {
-                            sh "${charm_sh} resource --charm-entity ${cs_url} --builder ${params.repo_name}/${params.resource_build_sh} --out-path ${env.CHARM_BUILD_DIR}/tmp/${params.charm} --resource-spec build-charms/resource-spec.yaml"
-                        }
-                    }
-                    sh "${charm_sh} promote --charm-entity ${cs_url} --from-channel unpublished --to-channel ${params.to_channel}"
-                    sh "${charm_sh} show --charm-entity ${cs_url} --channel ${params.to_channel}"
-                }
-            }
-        }
+        //         }
+        //     }
+        //     post {
+        //         always {
+        //             setEndTime()
+        //         }
+        //     }
+        // }
     }
     post {
         failure {
