@@ -1,50 +1,55 @@
 # -*- mode:yaml; -*-
 - calico:
-    git_repo: 'https://github.com/charmed-kubernetes/layer-calico.git'
+    downstream: 'charmed-kubernetes/layer-calico.git'
     resource_build_sh: 'build-calico-resource.sh'
     namespace: 'containers'
     tags: ['k8s']
 - canal:
-    git_repo: 'https://github.com/charmed-kubernetes/layer-canal.git'
+    downstream: 'charmed-kubernetes/layer-canal.git'
     resource_build_sh: 'build-canal-resources.sh'
     namespace: 'containers'
     tags: ['k8s']
 - containerd:
-    git_repo: 'https://github.com/charmed-kubernetes/charm-containerd.git'
+    downstream: 'charmed-kubernetes/charm-containerd.git'
     namespace: 'containers'
     tags: ['k8s']
 - docker:
-    git_repo: 'https://github.com/charmed-kubernetes/charm-docker.git'
+    downstream: 'charmed-kubernetes/charm-docker.git'
     namespace: 'containers'
     tags: ['k8s']
 - easyrsa:
-    git_repo: 'https://github.com/charmed-kubernetes/layer-easyrsa.git'
+    downstream: 'charmed-kubernetes/layer-easyrsa.git'
     namespace: 'containers'
     tags: ['k8s']
 - etcd:
-    git_repo: 'https://github.com/charmed-kubernetes/layer-etcd.git'
+    downstream: 'charmed-kubernetes/layer-etcd.git'
     namespace: 'containers'
     tags: ['k8s']
 - flannel:
-    git_repo: 'https://github.com/charmed-kubernetes/charm-flannel.git'
+    downstream: 'charmed-kubernetes/charm-flannel.git'
     resource_build_sh: 'build-flannel-resources.sh'
     namespace: 'containers'
     tags: ['k8s']
 - kubeapi-load-balancer:
-    git_repo: 'https://github.com/charmed-kubernetes/charm-kubeapi-load-balancer.git'
+    downstream: 'charmed-kubernetes/charm-kubeapi-load-balancer.git'
     namespace: 'containers'
     tags: ['k8s']
 - kubernetes-e2e:
-    git_repo: 'https://github.com/charmed-kubernetes/charm-kubernetes-e2e.git'
+    downstream: 'charmed-kubernetes/charm-kubernetes-e2e.git'
     namespace: 'containers'
     tags: ['k8s']
 - kubernetes-master:
-    git_repo: 'https://github.com/charmed-kubernetes/charm-kubernetes-master.git'
+    downstream: 'charmed-kubernetes/charm-kubernetes-master.git'
     namespace: 'containers'
     tags: ['k8s']
 - kubernetes-worker:
-    downstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-worker.git'
+    downstream: 'charmed-kubernetes/charm-kubernetes-worker.git'
     resource_build_sh: 'build-cni-resources.sh'
+    namespace: 'containers'
+    tags: ['k8s']
+- tigera-secure-ee:
+    downstream: 'charmed-kubernetes/layer-tigera-secure-ee.git'
+    resource_build_sh: 'build-resources.sh'
     namespace: 'containers'
     tags: ['k8s']
 - keepalived:
@@ -55,11 +60,6 @@
     downstream: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
     namespace: 'containers'
     tags: ['general']
-- tigera-secure-ee:
-    downstream: 'https://github.com/charmed-kubernetes/layer-tigera-secure-ee.git'
-    resource_build_sh: 'build-resources.sh'
-    namespace: 'containers'
-    tags: ['k8s']
 - kubeflow-ambassador:
     namespace: 'kubeflow-charmers'
     downstream: 'https://github.com/juju-solutions/charm-kubeflow-ambassador.git'

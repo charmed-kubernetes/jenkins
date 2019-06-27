@@ -12,7 +12,6 @@ import yaml
 from pathlib import Path
 from urllib.parse import urlparse
 from sdk import utils
-from melddict import MeldDict
 
 
 @click.group()
@@ -20,7 +19,21 @@ def cli():
     pass
 
 
-def _cut_stable_release(layer_list, charm_list, dry_run):
+@cli.command()
+@click.option("--layer-list", required=True, help="Path to supported layer list")
+@click.option("--charm-list", required=True, help="Path to supported charm list")
+@click.option(
+    "--filter-by-namespace",
+    required=True,
+    help="only build for namespaces, comma separated list",
+    multiple=True
+)
+@click.option("--dry-run", is_flag=True)
+def cut_stable_release(layer_list, charm_list, filter_by_namespace, dry_run):
+    return _cut_stable_release(layer_list, charm_list, filter_by_namespace, dry_run)
+
+
+def _cut_stable_release(layer_list, charm_list, filter_by_namespace, dry_run):
     """ This will force push each layers master onto the stable branches.
 
     PLEASE NOTE: This step should come after each stable branch has been tagged
@@ -36,10 +49,13 @@ def _cut_stable_release(layer_list, charm_list, dry_run):
         for layer_name, repos in layer_map.items():
             downstream = repos["downstream"]
             if not repos.get("needs_stable", True):
-                click.echo(f"Skipping :: {layer_name:^25} :: no stable branch")
                 continue
 
-            click.echo(f"Releasing :: {layer_name:^25} :: from-to: master,stable vcs-repo: {repos['downstream']}")
+            namespace = repos.get('namespace', None)
+            if namespace and namespace not in filter_by_namespace:
+                continue
+
+            click.echo(f"Releasing :: {layer_name:^35} :: from: master to: stable")
             if not dry_run:
                 downstream = f"https://{new_env['CDKBOT_GH']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
@@ -52,14 +68,6 @@ def _cut_stable_release(layer_list, charm_list, dry_run):
                 sh.git.branch("-f", "stable", "master", _cwd=identifier)
                 for line in sh.git.push("-f", "origin", "stable", _cwd=identifier, _iter=True):
                     click.echo(line)
-
-
-@cli.command()
-@click.option("--layer-list", required=True, help="Path to supported layer list")
-@click.option("--charm-list", required=True, help="Path to supported charm list")
-@click.option("--dry-run", is_flag=True)
-def cut_stable_release(layer_list, charm_list, dry_run):
-    return _cut_stable_release(layer_list, dry_run)
 
 
 def _tag_stable_forks(layer_list, charm_list, bundle_rev, dry_run):
