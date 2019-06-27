@@ -101,6 +101,7 @@ pipeline {
                         return (r == 0);
                     }
                 }
+                sh "cd jobs && ${utils.cipy} jobs/infra/collect-debug.py push --key-id 'sonobuoy_file' *sonobuoy*.tar.gz"
             }
         }
     }
