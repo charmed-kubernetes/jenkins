@@ -209,7 +209,7 @@ def build(
 
             dst_path = str(charm_env.build_dir / charm_name)
             for line in sh.git.clone(
-                "--branch", charm_branch, charm_opts["git_repo"], src_path, _iter=True
+                "--branch", charm_branch, charm_opts["downstream"], src_path, _iter=True
             ):
                 log(line)
 

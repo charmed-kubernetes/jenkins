@@ -12,6 +12,7 @@ import yaml
 from pathlib import Path
 from urllib.parse import urlparse
 from sdk import utils
+from melddict import MeldDict
 
 
 @click.group()
@@ -31,14 +32,14 @@ def _cut_stable_release(layer_list, charm_list, dry_run):
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
-    for layer_map in layer_list:
+    for layer_map in layer_list + charm_list:
         for layer_name, repos in layer_map.items():
             downstream = repos["downstream"]
             if not repos.get("needs_stable", True):
-                click.echo(f"Skipping {layer_name} :: no stable branch")
+                click.echo(f"Skipping :: {layer_name:^25} :: no stable branch")
                 continue
 
-            click.echo(f"Releasing {layer_name} master -> stable :: {repos['downstream']}")
+            click.echo(f"Releasing :: {layer_name:^25} :: from-to: master,stable vcs-repo: {repos['downstream']}")
             if not dry_run:
                 downstream = f"https://{new_env['CDKBOT_GH']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
@@ -74,7 +75,7 @@ def _tag_stable_forks(layer_list, charm_list, bundle_rev, dry_run):
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
-    for layer_map in layer_list:
+    for layer_map in layer_list + charm_list:
         for layer_name, repos in layer_map.items():
             downstream = repos["downstream"]
             tag = f"ck-{bundle_rev}"

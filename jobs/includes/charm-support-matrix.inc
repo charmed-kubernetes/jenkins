@@ -43,56 +43,56 @@
     namespace: 'containers'
     tags: ['k8s']
 - kubernetes-worker:
-    git_repo: 'https://github.com/charmed-kubernetes/charm-kubernetes-worker.git'
+    downstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-worker.git'
     resource_build_sh: 'build-cni-resources.sh'
     namespace: 'containers'
     tags: ['k8s']
 - keepalived:
-    git_repo: 'https://github.com/juju-solutions/charm-keepalived.git'
+    downstream: 'https://github.com/juju-solutions/charm-keepalived.git'
     namespace: 'containers'
     tags: ['general']
 - docker-registry:
-    git_repo: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
+    downstream: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
     namespace: 'containers'
     tags: ['general']
 - tigera-secure-ee:
-    git_repo: 'https://github.com/charmed-kubernetes/layer-tigera-secure-ee.git'
+    downstream: 'https://github.com/charmed-kubernetes/layer-tigera-secure-ee.git'
     resource_build_sh: 'build-resources.sh'
     namespace: 'containers'
     tags: ['k8s']
 - kubeflow-ambassador:
     namespace: 'kubeflow-charmers'
-    git_repo: 'https://github.com/juju-solutions/charm-kubeflow-ambassador.git'
+    downstream: 'https://github.com/juju-solutions/charm-kubeflow-ambassador.git'
     tags: ['general']
 - kubeflow-jupyterhub:
     namespace: 'kubeflow-charmers'
-    git_repo: 'https://github.com/juju-solutions/charm-kubeflow-jupyterhub.git'
+    downstream: 'https://github.com/juju-solutions/charm-kubeflow-jupyterhub.git'
     tags: ['general']
 - kubeflow-pytorch-operator:
     namespace: 'kubeflow-charmers'
-    git_repo: 'https://github.com/juju-solutions/charm-kubeflow-pytorch-operator.git'
+    downstream: 'https://github.com/juju-solutions/charm-kubeflow-pytorch-operator.git'
     tags: ['general']
 - kubeflow-seldon-api-frontend:
     namespace: 'kubeflow-charmers'
-    git_repo: 'https://github.com/juju-solutions/charm-kubeflow-seldon-api-frontend.git'
+    downstream: 'https://github.com/juju-solutions/charm-kubeflow-seldon-api-frontend.git'
     tags: ['general']
 - kubeflow-seldon-cluster-manager:
     namespace: 'kubeflow-charmers'
-    git_repo: 'https://github.com/juju-solutions/charm-kubeflow-seldon-cluster-manager.git'
+    downstream: 'https://github.com/juju-solutions/charm-kubeflow-seldon-cluster-manager.git'
     tags: ['general']
 - kubeflow-tf-job-dashboard:
     namespace: 'kubeflow-charmers'
-    git_repo: 'https://github.com/juju-solutions/charm-kubeflow-tf-job-dashboard.git'
+    downstream: 'https://github.com/juju-solutions/charm-kubeflow-tf-job-dashboard.git'
     tags: ['general']
 - kubeflow-tf-job-operator:
     namespace: 'kubeflow-charmers'
-    git_repo: 'https://github.com/juju-solutions/charm-kubeflow-tf-job-operator.git'
+    downstream: 'https://github.com/juju-solutions/charm-kubeflow-tf-job-operator.git'
     tags: ['general']
 - kubeflow-tf-serving:
     namespace: 'kubeflow-charmers'
-    git_repo: 'https://github.com/juju-solutions/charm-kubeflow-tf-serving.git'
+    downstream: 'https://github.com/juju-solutions/charm-kubeflow-tf-serving.git'
     tags: ['general']
 - redis-k8s:
     namespace: 'kubeflow-charmers'
-    git_repo: 'https://github.com/juju-solutions/charm-redis-k8s.git'
+    downstream: 'https://github.com/juju-solutions/charm-redis-k8s.git'
     tags: ['general']
