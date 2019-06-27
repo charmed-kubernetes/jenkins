@@ -15,7 +15,7 @@
           default: 'edge'
       - string:
           name: to_channel
-          default: 'beta candidate'
+          default: 'beta'
       - choice:
           name: only_namespace
           choices:

@@ -1,6 +1,5 @@
 @Library('juju-pipeline@master') _
 
-def to_channels = params.to_channel.split()
 def charm_sh = "${utils.cipy} build-charms/charms.py"
 
 pipeline {
@@ -27,10 +26,13 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "${charm_sh} promote includes/charm-support-matrix.inc --from-channel ${params.from_channel} --to-channel ${channel}"
+                    sh "${charm_sh} promote --charm-list includes/charm-support-matrix.inc --from-channel ${params.from_channel} --to-channel ${params.to_channel}"
                 }
             }
         }
+    }
+}
+
         // stage('Release K8S extras to Store') {
         //     when {
         //         expression {
@@ -66,7 +68,3 @@ pipeline {
         //             }
         //         }
         //     }
-        }
-
-    }
-}
