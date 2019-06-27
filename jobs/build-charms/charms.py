@@ -90,7 +90,7 @@ def _push(repo_path, out_path, charm_entity):
     sh.charm.set(out["url"], "commit={}".format(git_commit))
 
 
-def _pull_layers(layer_index, layer_list, layer_branch, retries, timeout):
+def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
     def log(line):
         click.echo(f"Pulling layers :: {line}")
 
@@ -334,7 +334,7 @@ def build(
                     f"{dst_path}/tmp",
                     resource_spec,
                 )
-    _promote(charm_list, to_channel)
+    _promote(charm_list, to_channel=to_channel)
 
     bundle_list = yaml.safe_load(Path(bundle_list).read_text(encoding="utf8"))
     log("bundle builds")
@@ -360,7 +360,7 @@ def build(
             _push(
                 str(bundle_repo_dir), str(bundle_build_dir / bundle_name), bundle_entity
             )
-    _promote(bundle_list, to_channel)
+    _promote(bundle_list, to_channel=to_channel)
 
 
 @cli.command()
