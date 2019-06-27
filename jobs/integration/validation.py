@@ -1167,7 +1167,10 @@ data:
 
     # cleanup
     await model.applications['keystone'].destroy()
-    await model.applications['percona-cluster'].destroy()
+    if 'validate-vault' not in model.info.name:
+        # only clean this up if we're not also running the vault test,
+        # since vault needs it as well
+        await model.applications['percona-cluster'].destroy()
 
 
 @log_calls_async
@@ -1177,8 +1180,6 @@ async def validate_encryption_at_rest(model):
         await model.deploy('cs:~openstack-charmers-next/vault',
                            config={'auto-generate-root-ca-cert': True,
                                    'totally-unsecure-auto-unlock': True})
-        # @cory_fu This apparently is deployed already.
-        # await model.deploy('percona-cluster')
         await model.add_relation('vault:shared-db',
                                  'percona-cluster:shared-db')
         await model.applications['kubernetes-master'].remove_relation(
@@ -1225,7 +1226,7 @@ async def validate_encryption_at_rest(model):
                                'kubernetes-worker:certificates'),
         })
         await asyncify(_juju_wait)()
-        for task in done1 + done2:
+        for task in done1 | done2:
             # read and ignore any exception so that it doesn't get raised
             # when the task is GC'd
             task.exception()
