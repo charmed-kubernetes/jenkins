@@ -182,7 +182,7 @@ async def upgrade_charms(model,
             if "already running charm" not in str(e):
                 raise
     # Only keep here until 1.13/1.14 go out of support scope
-    await model.deploy('cs:~containers/docker', num_units=0)
+    await model.deploy('cs:~containers/docker', num_units=0, channel=channel)
 
     await model.applications['docker'].add_relation(
         'docker:docker',
@@ -204,7 +204,7 @@ async def upgrade_charms(model,
 
     await model.applications['docker'].destroy()
 
-    await model.deploy('cs:~containers/containerd', num_units=0)
+    await model.deploy('cs:~containers/containerd', num_units=0, channel=channel)
 
     await model.applications['containerd'].add_relation(
         'containerd:containerd',
