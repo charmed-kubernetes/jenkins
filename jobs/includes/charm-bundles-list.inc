@@ -1,28 +1,28 @@
 # -*- mode:yaml; -*-
-- cdk-flannel:
-    fragments: k8s/cdk cni/flannel
-    charmstore: cs:~containers/bundle/canonical-kubernetes
-    namespace: containers
-- charmed-flannel:
-    fragments: k8s/cdk cni/flannel
-    charmstore: cs:~containers/bundle/charmed-kubernetes
-    namespace: containers
-- core-flannel:
-    fragments: k8s/core cni/flannel
-    charmstore: cs:~containers/bundle/kubernetes-core
-    namespace: containers
-- cdk-calico:
-    fragments: k8s/cdk cni/calico
-    charmstore: cs:~containers/bundle/kubernetes-calico
-    namespace: containers
-- cdk-canal:
-    fragments: k8s/cdk cni/canal
-    charmstore: cs:~containers/bundle/canonical-kubernetes-canal
-    namespace: containers
+- canonical-kubernetes:
+    fragments: 'k8s/cdk cni/flannel cri/containerd'
+    namespace: containers/bundle
+    tags: ['k8s', 'cdk-flannel']
+- charmed-kubernetes:
+    fragments: 'k8s/cdk cni/flannel cri/containerd'
+    namespace: containers/bundle
+    tags: ['k8s', 'charmed-flannel']
+- kubernetes-core:
+    fragments: 'k8s/core cni/flannel cri/containerd'
+    namespace: containers/bundle
+    tags: ['k8s', 'core-flannel']
+- kubernetes-calico:
+    fragments: 'k8s/cdk cni/calico cri/containerd'
+    namespace: containers/bundle
+    tags: ['k8s', 'cdk-calico']
+- canonical-kubernetes-canal:
+    fragments: 'k8s/cdk cni/canal cri/docker'
+    namespace: containers/bundle
+    tags: ['k8s', 'cdk-canal']
 - kubernetes-tigera-secure-ee:
-    fragments: k8s/cdk cni/tigera-secure-ee
-    charmstore: cs:~containers/bundle/kubernetes-tigera-secure-ee
-    namespace: containers
+    fragments: 'k8s/cdk cni/tigera-secure-ee cri/containerd'
+    namespace: containers/bundle
+    tags: ['k8s', 'kubernetes-tigera-secure-ee']
 - kubeflow:
-    charmstore: cs:~kubeflow-charmers/kubeflow
     namespace: kubeflow-charmers
+    tags: ['general', 'kubeflow']

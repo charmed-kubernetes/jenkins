@@ -38,9 +38,9 @@ def endtime():
 def test_result(fail):
     """ Sets test result
     """
-    result = 'Pass'
+    result = True
     if fail:
-        result = 'Fail'
+        result = False
 
     db['test_result'] = result
 

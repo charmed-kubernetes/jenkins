@@ -31,23 +31,24 @@ pipeline {
                 sh "mkdir -p ${env.TMPDIR}"
             }
         }
-        stage('Prep Layers') {
-            when {
-                expression { params.layer_branch == "stable" }
-            }
-            steps {
-                dir('jobs') {
-                    sh "${charm_sh} pull-layers --layer-index ${params.layer_index} --layers includes/charm-layer-list.inc --layer-branch ${params.layer_branch}"
-                }
-            }
-        }
         stage('Build, Push, Promote Charms') {
             options {
                 timeout(time: 90, unit: 'MINUTES')
             }
             steps {
                 dir('jobs') {
-                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build --charm-list includes/charm-support-matrix.inc --charm-branch ${params.charm_branch} --to-channel ${params.to_channel} --resource-spec build-charms/resource-spec.yaml --filter-by-tag k8s"
+                    sh """
+                        CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build \
+                        --charm-list includes/charm-support-matrix.inc \
+                        --charm-branch ${params.charm_branch} \
+                        --to-channel ${params.to_channel} \
+                        --resource-spec build-charms/resource-spec.yaml \
+                        --filter-by-tag ${params.tag} \
+                        --layer-index ${params.layer_index} \
+                        --layer-list includes/charm-layer-list.inc \
+                        --layer-branch ${params.layer_branch} \
+                        --bundle-list includes/charm-bundles-list.inc
+                    """.replaceAll('\\s+', ' ')
                 }
             }
         }

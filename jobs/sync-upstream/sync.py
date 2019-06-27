@@ -77,7 +77,7 @@ def _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
                     click.echo(line)
 
 
-def _tag_stable_forks(layer_list, charm_list, bundle_rev, dry_run):
+def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, dry_run):
     """ Tags stable forks to a certain bundle revision for a k8s version
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
@@ -93,7 +93,7 @@ def _tag_stable_forks(layer_list, charm_list, bundle_rev, dry_run):
     for layer_map in layer_list + charm_list:
         for layer_name, repos in layer_map.items():
             downstream = repos["downstream"]
-            tag = f"ck-{bundle_rev}"
+            tag = f"ck-{k8s_version}-{bundle_rev}"
             if not repos.get("needs_tagging", True):
                 click.echo(f"Skipping {layer_name} :: does not require tagging")
                 continue
@@ -118,11 +118,14 @@ def _tag_stable_forks(layer_list, charm_list, bundle_rev, dry_run):
 @click.option("--layer-list", required=True, help="Path to supported layer list")
 @click.option("--charm-list", required=True, help="Path to supported charm list")
 @click.option(
+    "--k8s-version", required=True, help="Version of k8s this bundle provides"
+)
+@click.option(
     "--bundle-revision", required=True, help="Bundle revision to tag stable against"
 )
 @click.option("--dry-run", is_flag=True)
-def tag_stable(layer_list, charm_list, bundle_revision, dry_run):
-    return _tag_stable_forks(layer_list, charm_list, bundle_revision, dry_run)
+def tag_stable(layer_list, charm_list, k8s_version, bundle_revision, dry_run):
+    return _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_revision, dry_run)
 
 
 def _sync_upstream(layer_list, dry_run):

@@ -167,6 +167,7 @@ def get_snap_info():
         for _snap in snaps_to_query
     ]
 
+
 @cli.command()
 def build():
     """ Generate a report
