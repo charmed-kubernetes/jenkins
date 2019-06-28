@@ -286,11 +286,11 @@ def build(
     dry_run,
 ):
     charm_env = CharmEnv()
-    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+    _charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
 
     _pull_layers(layer_index, layer_list, layer_branch)
     log("charm builds")
-    for charm_map in charm_list:
+    for charm_map in _charm_list:
         for charm_name, charm_opts in charm_map.items():
             downstream = f"https://github.com/{charm_opts['downstream']}"
             if not any(match in filter_by_tag for match in charm_opts["tags"]):
@@ -352,7 +352,7 @@ def build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run):
 
 def _build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run):
     charm_env = CharmEnv()
-    bundle_list = yaml.safe_load(Path(bundle_list).read_text(encoding="utf8"))
+    _bundle_list = yaml.safe_load(Path(bundle_list).read_text(encoding="utf8"))
     log("bundle builds")
     bundle_repo_dir = charm_env.tmp_dir / "bundles-kubernetes"
     bundle_build_dir = charm_env.tmp_dir / "tmp-bundles"
@@ -360,7 +360,7 @@ def _build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run)
     os.makedirs(str(bundle_build_dir))
     for line in sh.git.clone(bundle_repo, str(bundle_repo_dir), _iter=True):
         log(line)
-    for bundle_map in bundle_list:
+    for bundle_map in _bundle_list:
         for bundle_name, bundle_opts in bundle_map.items():
             if not any(match in filter_by_tag for match in bundle_opts["tags"]):
                 continue
