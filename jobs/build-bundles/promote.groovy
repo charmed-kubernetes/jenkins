@@ -16,7 +16,7 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Release K8S bundles to Store') {
+        stage('Promotes bundles to Store') {
             options {
                 timeout(time: 45, unit: 'MINUTES')
             }
