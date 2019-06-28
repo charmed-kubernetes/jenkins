@@ -11,6 +11,9 @@
       script-path: jobs/build-charms/promote.groovy
     parameters:
       - string:
+          name: 'tag'
+          default: 'k8s'
+      - string:
           name: from_channel
           default: 'edge'
       - string:
