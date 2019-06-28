@@ -280,8 +280,6 @@ def build(
     layer_branch,
     resource_spec,
     filter_by_tag,
-    bundle_list,
-    bundle_repo,
     to_channel,
     dry_run,
 ):
