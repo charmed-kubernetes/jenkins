@@ -39,7 +39,7 @@ class CharmEnv:
             self.tmp_dir = Path(os.environ.get("WORKSPACE"))
         except TypeError:
             raise SystemExit(
-                "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR: "
+                "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE: "
                 "Unable to find some or all of these charm build environment variables."
             )
 
@@ -224,7 +224,8 @@ def cli():
 
 
 @cli.command()
-@click.option("--layer-index", required=True, help="Charm layer index")
+@click.option("--layer-index", required=True, help="Charm layer index",
+              default="https://charmed-kubernetes.github.io/layer-index/")
 @click.option("--layer-list", required=True, help="list of layers in YAML format")
 @click.option(
     "--layer-branch",

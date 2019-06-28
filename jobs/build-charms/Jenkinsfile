@@ -41,6 +41,22 @@ pipeline {
                 }
             }
         }
+    }
+    post {
+        failure {
+            setFail()
+        }
+        success {
+            setPass()
+        }
+        cleanup {
+            saveMeta()
+            collectDebug(juju_controller, juju_model)
+            tearDown(juju_controller)
+        }
+    }
+}
+
         // stage('Test') {
         //     options {
         //         timeout(time: 2, unit: 'HOURS')
@@ -64,18 +80,4 @@ pipeline {
         //         }
         //     }
         // }
-    }
-    post {
-        failure {
-            setFail()
-        }
-        success {
-            setPass()
-        }
-        cleanup {
-            saveMeta()
-            collectDebug(juju_controller, juju_model)
-            tearDown(juju_controller)
-        }
-    }
-}
+
