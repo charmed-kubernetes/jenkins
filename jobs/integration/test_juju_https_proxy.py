@@ -18,13 +18,38 @@ from juju.controller import Controller
 from builtins import open as open_file
 from tempfile import NamedTemporaryFile
 
-# REVISIT:
-JENKINS_PROXY =  os.environ.get('http_proxy')
+
 @log_calls_async
 async def test_http_conf_existing_container_runtime(model, runtime):
+    log('Adding proxy to the model')
+    proxy_app = await model.deploy("cs:~juju-qa/xenial/squid-forwardproxy-1")
+    log('waiting...')
+    await asyncify(_juju_wait)()
 
-    log('Adding container-runtime to the model')
-    await model.set_config({ 'juju-http-config': "http://192.168.2.103:8888" })
+    proxy_app = model.applications['squid-forwardproxy']
+    proxy = proxy_app.units[0]
+
+    http_allow_all_conf = """
+http_port 3128
+acl all src 0.0.0.0/0
+http_access allow all
+    """
+    log('Catting config into proxy conf and restarting service.')
+    log("proxy: %s " % "cat '%s' > /etc/squid/forwardproxy.conf && sudo service squid restart" % http_allow_all_conf)
+    # Could be overwritten by charm.. need to update or create new charm for this.
+    await proxy.ssh("sudo chmod -R 777 /etc/squid")
+    with NamedTemporaryFile() as squid_conf:
+        with open(squid_conf.name, 'w') as fp:
+            fp.write(http_allow_all_conf)
+        await proxy.scp_to(squid_conf.name, '/etc/squid/forwardproxy.conf')
+    await proxy.ssh("sudo service squid restart")
+
+
+    # Can try proxy.machine.dns_name if this fails.
+    proxy_ip = proxy.public_address
+
+    log('Adding container-runtime to the model and configuring proxy.')
+    await model.set_config({ 'juju-http-proxy': "http://%s:3128" % proxy_ip })
     # Add container runtimes
     # container_runtime = await model.deploy('cs:~containers/%s-0' % runtime, num_units=0)
     container_runtime = await model.deploy('/home/pjds/charms/builds/docker', num_units=0)
@@ -41,12 +66,12 @@ async def test_http_conf_existing_container_runtime(model, runtime):
 
     await model.add_relation(container_endpoint, 'kubernetes-worker:container-runtime')
     await model.add_relation(container_endpoint, 'kubernetes-master:container-runtime')
-
     log('waiting...')
     await asyncify(_juju_wait)()
 
 
-    kubernetes_master_zero = model.applications['kubernetes-master'].units[0]
+
+#     kubernetes_master_zero = model.applications['kubernetes-master'].units[0]
     kubernetes_worker_zero = model.applications['kubernetes-worker'].units[0]
     # await kubernetes_master_zero.scp_from(
     #     "/lib/systemd/system/%s.service.master" % runtime,
@@ -75,7 +100,7 @@ async def test_http_conf_existing_container_runtime(model, runtime):
     assert match is not None
 
     # Cleanup
-    await model.destroy()
+    # await model.destroy()
 
     await asyncify(_juju_wait)()
 
