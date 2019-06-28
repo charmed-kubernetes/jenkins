@@ -35,13 +35,10 @@
           default: 'edge'
       - string:
           name: to_channel
-          default: 'beta candidate'
-      - choice:
-          name: only_namespace
-          choices:
-            - all
-            - containers
-            - kubeflow-charmers
+          default: 'beta'
+      - string:
+          name: tag
+          default: 'k8s'
     properties:
       - build-discarder:
           num-to-keep: 7

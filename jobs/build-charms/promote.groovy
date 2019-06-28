@@ -26,7 +26,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "${charm_sh} promote --charm-list includes/charm-support-matrix.inc --filter-by-tag k8s --from-channel ${params.from_channel} --to-channel ${params.to_channel}"
+                    sh "${charm_sh} promote --charm-list includes/charm-support-matrix.inc --filter-by-tag ${params.tag} --from-channel ${params.from_channel} --to-channel ${params.to_channel}"
                 }
             }
         }
