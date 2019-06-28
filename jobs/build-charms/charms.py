@@ -130,11 +130,14 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
             raise SystemExit(f"Unknown layer/interface: {layer_name}")
 
 
-def _promote(charm_list, from_channel="unpublished", to_channel="edge"):
+def _promote(charm_list, filter_by_tag, from_channel="unpublished", to_channel="edge"):
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
 
     for charm_map in charm_list:
         for charm_name, charm_opts in charm_map.items():
+            if not any(match in filter_by_tag for match in charm_opts["tags"]):
+                continue
+
             charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
             click.echo(
                 f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
@@ -365,10 +368,16 @@ def build(
 
 @cli.command()
 @click.option("--charm-list", required=True, help="path to charm list YAML")
+@click.option(
+    "--filter-by-tag",
+    required=True,
+    help="only build for charms matching a tag, comma separate list",
+    multiple=True,
+)
 @click.option("--from-channel", required=True, help="Charm channel to publish from")
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
-def promote(charm_list, from_channel, to_channel):
-    return _promote(charm_list, from_channel, to_channel)
+def promote(charm_list, filter_by_tag, from_channel, to_channel):
+    return _promote(charm_list, filter_by_tag, from_channel, to_channel)
 
 
 @cli.command()
