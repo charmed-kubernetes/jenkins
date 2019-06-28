@@ -22,7 +22,7 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "${charm_sh} promote --charm-list includes/charm-bundles-matrix.inc --filter-by-tag ${params.tag} --from-channel ${params.from_channel} --to-channel ${params.to_channel}"
+                    sh "${charm_sh} promote --charm-list includes/charm-bundles-list.inc --filter-by-tag ${params.tag} --from-channel ${params.from_channel} --to-channel ${params.to_channel}"
                 }
             }
         }
