@@ -34,7 +34,7 @@ pipeline {
             steps {
                 sh 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
                 script {
-                    ゴゴゴ = sh(script: 'python3 jobs/build-bundles/ddbkf.py check', returnStdout: true).trim() == 'GO'
+                    ゴゴゴ = sh(script: 'python3 jobs/build-charms/ddbkf.py check', returnStdout: true).trim() == 'GO'
                 }
 
             }
@@ -42,7 +42,7 @@ pipeline {
         stage('Setup LXC') {
             steps {
                 sh 'sudo lxc profile show kfpush || sudo lxc profile copy default kfpush'
-                sh 'sudo lxc profile edit kfpush < jobs/build-bundles/lxc.profile'
+                sh 'sudo lxc profile edit kfpush < jobs/build-charms/lxc.profile'
                 sh "sudo lxc launch -p default -p kfpush ubuntu:18.04 ${CONTAINER}"
                 sh "sudo lxc file push -p ~/.go-cookies ${CONTAINER}/root/.go-cookies"
                 sh "sudo lxc file push -p ~/.local/share/juju/store-usso-token ${CONTAINER}/root/.local/share/juju/store-usso-token"
@@ -76,7 +76,7 @@ pipeline {
         }
         stage('Update DDB') {
             steps {
-                sh 'python3 jobs/build-bundles/ddbkf.py update'
+                sh 'python3 jobs/build-charms/ddbkf.py update'
             }
             when { expression { ゴゴゴ } }
         }

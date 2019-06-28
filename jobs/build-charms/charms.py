@@ -44,12 +44,13 @@ class CharmEnv:
             )
 
 
+def log(line):
+    click.echo(f"Charms :: {line}")
+
+
 def _push(repo_path, out_path, charm_entity):
     """ Pushes a built charm to Charmstore
     """
-
-    def log(line):
-        click.echo(f"Pushing :: {line}")
 
     log(f"{repo_path} :: {charm_entity}")
     git_commit = sh.git("rev-parse", "HEAD", _cwd=repo_path)
@@ -91,9 +92,6 @@ def _push(repo_path, out_path, charm_entity):
 
 
 def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
-    def log(line):
-        click.echo(f"Pulling layers :: {line}")
-
     charm_env = CharmEnv()
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     num_runs = 0
@@ -270,13 +268,6 @@ def pull_layers(layer_index, layer_list, layer_branch, retries, timeout):
     help="only build for charms matching a tag, comma separate list",
     multiple=True,
 )
-@click.option("--bundle-list", required=True, help="list of bundles in YAML format")
-@click.option(
-    "--bundle-repo",
-    required=True,
-    help="upstream repo for bundle builder",
-    default="https://github.com/juju-solutions/bundle-canonical-kubernetes.git",
-)
 @click.option(
     "--to-channel", required=True, help="channel to promote charm to", default="edge"
 )
@@ -294,9 +285,6 @@ def build(
     to_channel,
     dry_run,
 ):
-    def log(line):
-        click.echo(f"Building :: {line}")
-
     charm_env = CharmEnv()
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
 
@@ -338,8 +326,32 @@ def build(
                     f"{dst_path}/tmp",
                     resource_spec,
                 )
-    _promote(charm_list, to_channel=to_channel)
+    _promote(charm_list, filter_by_tag, to_channel=to_channel)
 
+@cli.command()
+@click.option("--bundle-list", required=True, help="list of bundles in YAML format")
+@click.option(
+    "--filter-by-tag",
+    required=True,
+    help="only build for charms matching a tag, comma separate list",
+    multiple=True,
+)
+@click.option(
+    "--bundle-repo",
+    required=True,
+    help="upstream repo for bundle builder",
+    default="https://github.com/juju-solutions/bundle-canonical-kubernetes.git",
+)
+@click.option(
+    "--to-channel", required=True, help="channel to promote charm to", default="edge"
+)
+@click.option("--dry-run", is_flag=True)
+def build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run):
+    return _build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run)
+
+
+def _build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run):
+    charm_env = CharmEnv()
     bundle_list = yaml.safe_load(Path(bundle_list).read_text(encoding="utf8"))
     log("bundle builds")
     bundle_repo_dir = charm_env.tmp_dir / "bundles-kubernetes"
@@ -364,7 +376,7 @@ def build(
             _push(
                 str(bundle_repo_dir), str(bundle_build_dir / bundle_name), bundle_entity
             )
-    _promote(bundle_list, to_channel=to_channel)
+    _promote(bundle_list, filter_by_tag, to_channel=to_channel)
 
 
 @cli.command()

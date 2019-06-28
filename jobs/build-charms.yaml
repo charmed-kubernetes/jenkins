@@ -1,14 +1,14 @@
 # Builds and releases charms
 
 - job:
-    name: 'promote-all-charms'
+    name: 'promote-charms'
     description: |
       Promotes all charms from channel -> to channel
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/build-charms/promote.groovy
+      script-path: jobs/build-charms/promote-charms.groovy
     parameters:
       - string:
           name: 'tag'
@@ -19,25 +19,81 @@
       - string:
           name: to_channel
           default: 'beta'
-      - choice:
-          name: only_namespace
-          choices:
-            - all
-            - containers
-            - kubeflow-charmers
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+
+# Builds and releases latest bundles
+
+- job:
+    name: 'promote-bundles'
+    description: |
+      Promotes bundles from channel -> to channel
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-charms/promote-bundles.groovy
+    parameters:
+      - string:
+          name: from_channel
+          default: 'edge'
+      - string:
+          name: to_channel
+          default: 'beta'
+      - string:
+          name: tag
+          default: 'k8s'
     properties:
       - build-discarder:
           num-to-keep: 7
 
 - job:
-    name: 'build-release-charms'
+    name: 'build-kubeflow-bundles'
+    description: |
+      Builds and releases Kubeflow bundle to charmstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-charms/kubeflow.groovy
+    properties:
+      - build-discarder:
+          num-to-keep: 36
+
+- job:
+    name: 'build-k8s-bundles'
+    description: |
+      Builds and releases k8s bundles to the charmstore.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-charms/build-bundles.groovy
+    parameters:
+      - string:
+          name: to_channel
+          default: 'edge'
+          description: Channel to publish bundle to
+      - string:
+          name: tag
+          default: 'k8s'
+          description: |
+            Filter the builds by tag (ie. k8s). A tag can also be the name of
+            the bundle to individually build.
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+
+- job:
+    name: 'build-charms'
     description: |
       Builds and releases charms to the charmstore.
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/build-charms/Jenkinsfile
+      script-path: jobs/build-charms/build.groovy
     parameters:
       - string:
           name: model
@@ -69,7 +125,8 @@
           name: tag
           default: 'k8s'
           description: |
-            Filter the builds by tag (ie. k8s)
+            Filter the builds by tag (ie. k8s). A tag can also be the name of a
+            charm you want to individually build.
     properties:
       - build-discarder:
           num-to-keep: 7
