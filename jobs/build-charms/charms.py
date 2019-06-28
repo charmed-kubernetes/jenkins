@@ -48,39 +48,39 @@ def log(line):
     click.echo(f"Charms :: {line}")
 
 
-def _push(repo_path, out_path, charm_entity):
+def _push(repo_path, out_path, charm_entity, is_bundle=False):
     """ Pushes a built charm to Charmstore
     """
 
-    log(f"{repo_path} :: {charm_entity}")
+    log(f"vcs: {repo_path} build-path: {out_path} {charm_entity}")
     git_commit = sh.git("rev-parse", "HEAD", _cwd=repo_path)
     git_commit = git_commit.stdout.decode().strip()
     log(f"grabbing git revision {git_commit}")
 
-    # Build a list of `oci-image` resources that have `upstream-source` defined,
-    # which is added for this logic to work.
-    resources = yaml.safe_load(
-        Path(out_path).joinpath("metadata.yaml").read_text()
-    ).get("resources", {})
-    images = {
-        name: details["upstream-source"]
-        for name, details in resources.items()
-        if details["type"] == "oci-image" and details.get("upstream-source")
-    }
+    resource_args = []
+    if not is_bundle:
+        # Build a list of `oci-image` resources that have `upstream-source` defined,
+        # which is added for this logic to work.
+        resources = yaml.safe_load(
+            Path(out_path).joinpath("metadata.yaml").read_text()
+        ).get("resources", {})
+        images = {
+            name: details["upstream-source"]
+            for name, details in resources.items()
+            if details["type"] == "oci-image" and details.get("upstream-source")
+        }
+        log(f"Found {len(images)} oci-image resources:\n{pformat(images)}\n")
+        for image in images.values():
+            log(f"Pulling {image}...")
+            sh.docker.pull(image)
 
-    log(f"Found {len(images)} oci-image resources:\n{pformat(images)}\n")
-
-    for image in images.values():
-        log(f"Pulling {image}...")
-        sh.docker.pull(image)
-
-    # Convert the image names and tags to `--resource foo=bar` format
-    # for passing to `charm push`.
-    resource_args = [
-        arg
-        for name, image in images.items()
-        for arg in ("--resource", f"{name}={image}")
-    ]
+        # Convert the image names and tags to `--resource foo=bar` format
+        # for passing to `charm push`.
+        resource_args = [
+            arg
+            for name, image in images.items()
+            for arg in ("--resource", f"{name}={image}")
+        ]
 
     out = sh.charm.push(out_path, charm_entity, *resource_args)
     log(f"Charm push returned: {out}")
@@ -356,25 +356,33 @@ def _build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run)
     log("bundle builds")
     bundle_repo_dir = charm_env.tmp_dir / "bundles-kubernetes"
     bundle_build_dir = charm_env.tmp_dir / "tmp-bundles"
-    os.makedirs(str(bundle_repo_dir))
-    os.makedirs(str(bundle_build_dir))
+    sh.rm('-rf', bundle_repo_dir)
+    sh.rm('-rf', bundle_build_dir)
+    os.makedirs(str(bundle_repo_dir), exist_ok=True)
+    os.makedirs(str(bundle_build_dir), exist_ok=True)
     for line in sh.git.clone(bundle_repo, str(bundle_repo_dir), _iter=True):
         log(line)
     for bundle_map in _bundle_list:
         for bundle_name, bundle_opts in bundle_map.items():
             if not any(match in filter_by_tag for match in bundle_opts["tags"]):
+                log(f"Skipping {bundle_name}")
                 continue
-            sh.bash(
+            log(f"Processing {bundle_name}")
+            cmd = [
                 str(bundle_repo_dir / "bundle"),
                 "-o",
                 str(bundle_build_dir / bundle_name),
                 "-c",
                 to_channel,
-                bundle_opts["fragments"],
-            )
-            bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_opts['name']}"
+                bundle_opts['fragments']
+            ]
+            log(f"Running {' '.join(cmd)}")
+            import subprocess
+            subprocess.call(' '.join(cmd), shell=True)
+            bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
+            log(f"Check {bundle_entity}")
             _push(
-                str(bundle_repo_dir), str(bundle_build_dir / bundle_name), bundle_entity
+                str(bundle_repo_dir), str(bundle_build_dir / bundle_name), bundle_entity, is_bundle=True
             )
     _promote(bundle_list, filter_by_tag, to_channel=to_channel)
 
