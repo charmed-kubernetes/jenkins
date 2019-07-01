@@ -123,6 +123,10 @@ pipeline {
                     STATIC_KEY=v${params.version}-static:
                     UPSTREAM_KEY=${kube_version}-upstream:
 
+                    # Multi-arch manifests are not currently supported by our registry (needs experimental). Tag these with an -arch suffix.
+                    # https://community.arm.com/developer/tools-software/tools/b/tools-software-ides-blog/posts/deploying-multi-architecture-docker-registry
+                    MULTI_ARCH_IMAGES="coredns"
+
                     ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|${params.arch}|g")
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
 
@@ -136,6 +140,14 @@ pipeline {
                             then
                                 RAW_IMAGE=\$(echo \${RAW_IMAGE} | sed -e "s|\${repl}||g")
                                 break
+                            fi
+                        done
+                        for multi in \${MULTI_ARCH_IMAGES}
+                        do
+                            if echo \${RAW_IMAGE} | grep -q \${multi}
+                            then
+                                # inject '-arch:' between the image name and version
+                                RAW_IMAGE=\${RAW_IMAGE%%:*}-${params.arch}:\${RAW_IMAGE#*:}
                             fi
                         done
                         docker tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
