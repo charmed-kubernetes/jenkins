@@ -2,6 +2,7 @@ import asyncio
 import pytest
 import re
 import os
+import time
 from .base import (
     UseModel,
     _juju_wait
@@ -18,68 +19,26 @@ from juju.controller import Controller
 from builtins import open as open_file
 from tempfile import NamedTemporaryFile
 
-
-@log_calls_async
-async def test_http_conf_existing_container_runtime(model, runtime):
+async def setup_proxy(model):
     log('Adding proxy to the model')
-    proxy_app = await model.deploy("cs:~juju-qa/xenial/squid-forwardproxy-1")
+    proxy_app = await model.deploy("cs:~pjds/squid-forwardproxy-testing-1")
     log('waiting...')
     await asyncify(_juju_wait)()
 
     proxy_app = model.applications['squid-forwardproxy']
     proxy = proxy_app.units[0]
 
-    http_allow_all_conf = """
-http_port 3128
-acl all src 0.0.0.0/0
-http_access allow all
-    """
-    log('Catting config into proxy conf and restarting service.')
-    log("proxy: %s " % "cat '%s' > /etc/squid/forwardproxy.conf && sudo service squid restart" % http_allow_all_conf)
-    # Could be overwritten by charm.. need to update or create new charm for this.
-    await proxy.ssh("sudo chmod -R 777 /etc/squid")
-    with NamedTemporaryFile() as squid_conf:
-        with open(squid_conf.name, 'w') as fp:
-            fp.write(http_allow_all_conf)
-        await proxy.scp_to(squid_conf.name, '/etc/squid/forwardproxy.conf')
-    await proxy.ssh("sudo service squid restart")
+
+    return proxy
 
 
-    # Can try proxy.machine.dns_name if this fails.
-    proxy_ip = proxy.public_address
-
-    log('Adding container-runtime to the model and configuring proxy.')
-    await model.set_config({ 'juju-http-proxy': "http://%s:3128" % proxy_ip })
-    # Add container runtimes
-    # container_runtime = await model.deploy('cs:~containers/%s-0' % runtime, num_units=0)
-    container_runtime = await model.deploy('/home/pjds/charms/builds/docker', num_units=0)
-    # proxy = await model.deploy('cs:haproxy-52', num_units=1)
+@log_calls_async
+async def test_kube_node_conf(worker_unit, runtime):
 
 
-    # Container runtime config should be overriden by the juju-envs.
-    # If this config remains the below regex will fail.
-    container_runtime.set_config({'http_proxy': 'blah'})
-    # MIGHT want to await this - revisit before PR;
-    # Does this await mean the model waits for the relations to finish implementing?
-    # - Check docs.
-    container_endpoint = "%s:%s" % (runtime, runtime)
-
-    await model.add_relation(container_endpoint, 'kubernetes-worker:container-runtime')
-    await model.add_relation(container_endpoint, 'kubernetes-master:container-runtime')
-    log('waiting...')
-    await asyncify(_juju_wait)()
-
-
-
-#     kubernetes_master_zero = model.applications['kubernetes-master'].units[0]
-    kubernetes_worker_zero = model.applications['kubernetes-worker'].units[0]
-    # await kubernetes_master_zero.scp_from(
-    #     "/lib/systemd/system/%s.service.master" % runtime,
-    #     docker_service_file_loc
-    # )
     container_runtime_conf_worker = ""
     with NamedTemporaryFile() as fp:
-        await kubernetes_worker_zero.scp_from(
+        await worker_unit.scp_from(
             "/lib/systemd/system/%s.service" % runtime,
             fp.name
         )
@@ -99,6 +58,60 @@ http_access allow all
     )
     assert match is not None
 
+
+@log_calls_async
+async def test_http_conf_existing_container_runtime(model, runtime):
+
+    container_endpoint = "%s:%s" % (runtime, runtime)
+
+    log('Adding container runtime to the model')
+    # Add container runtimes
+    # MIGHT want to await this - revisit before PR;
+    # Does this await mean the model waits for the relations to finish implementing?
+    # - Check docs.
+    container_runtime = await model.deploy('/home/pjds/charms/builds/docker', num_units=0)
+    await model.add_relation(container_endpoint, 'kubernetes-master:container-runtime')
+    await model.add_relation(container_endpoint, 'kubernetes-worker:container-runtime')
+
+
+    log('waiting...')
+    await asyncify(_juju_wait)()
+    log('Setting up proxy.')
+    proxy = await setup_proxy(model)
+    # Can try proxy.machine.dns_name if this fails.
+    # Container runtime config should be overriden by the juju-envs.
+    # If this config remains the below regex will fail.
+    log('Setting proxy configuration on juju-model.')
+    await model.set_config({ 'juju-http-proxy': "http://%s:3128" % proxy.public_address })
+    await model.set_config({ 'juju-https-proxy': "http://%s:3128" % proxy.public_address })
+    await container_runtime.set_config({'http_proxy': 'blah'})
+    time.sleep(20)
+    http_allow_all_conf = """
+http_port 3128
+acl all src 0.0.0.0/0
+http_access allow all
+    """
+
+    log('Catting config into proxy conf and restarting service.')
+    log("proxy: %s " % "cat '%s' > /etc/squid/forwardproxy.conf && sudo service squid restart" % http_allow_all_conf)
+    # Could be overwritten by charm.. need to update or create new charm for this.
+    await proxy.ssh("sudo chmod -R 777 /etc/squid")
+    with NamedTemporaryFile() as squid_conf:
+        with open(squid_conf.name, 'w') as fp:
+            fp.write(http_allow_all_conf)
+        await proxy.scp_to(squid_conf.name, '/etc/squid/forwardproxy.conf')
+    await proxy.ssh("sudo service squid restart")
+
+
+    log('waiting...')
+    await asyncify(_juju_wait)()
+    #     kubernetes_master_zero = model.applications['kubernetes-master'].units[0]
+    worker_unit = model.applications['kubernetes-worker'].units[0]
+    master_unit = model.applications['kubernetes-master'].units[0]
+    await test_kube_node_conf(worker_unit, runtime)
+    await test_kube_node_conf(master_unit, runtime)
+    # test_kube_node_conf(master_unit, runtime)
+
     # Cleanup
     # await model.destroy()
 
@@ -111,5 +124,5 @@ async def test_juju_proxy_vars(log_dir):
     cloud = await controller.get_cloud()
     if cloud is not 'localhost':
         async with UseModel() as model:
-            for container_runtime in ['docker', 'containerd']:
+            for container_runtime in ['docker']:
                 await test_http_conf_existing_container_runtime(model, container_runtime)
