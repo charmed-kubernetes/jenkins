@@ -2,7 +2,7 @@
 
 def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
-def charm_sh = "${utils.cipy} build-charms/charms.py"
+def charm_sh = "${utils.cibin}/ogc"
 
 pipeline {
     agent { label 'runner-amd64' }
@@ -36,8 +36,8 @@ pipeline {
             }
             steps {
                 dir('jobs') {
-                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build --charm-list includes/charm-support-matrix.inc --charm-branch ${params.charm_branch} --to-channel ${params.to_channel} --resource-spec build-charms/resource-spec.yaml --filter-by-tag ${params.tag} --layer-index ${params.layer_index} --layer-list includes/charm-layer-list.inc --layer-branch ${params.layer_branch}"
-                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} build-bundles --to-channel ${params.to_channel} --filter-by-tag ${params.tag} --bundle-list includes/charm-bundles-list.inc"
+                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} charm build --charm-list includes/charm-support-matrix.inc --charm-branch ${params.charm_branch} --to-channel ${params.to_channel} --resource-spec build-charms/resource-spec.yaml --filter-by-tag ${params.tag} --layer-index ${params.layer_index} --layer-list includes/charm-layer-list.inc --layer-branch ${params.layer_branch}"
+                    sh "CHARM_CACHE_DIR=${env.TMPDIR}/.charm ${charm_sh} charm build-bundles --to-channel ${params.to_channel} --filter-by-tag ${params.tag} --bundle-list includes/charm-bundles-list.inc"
                 }
             }
         }
