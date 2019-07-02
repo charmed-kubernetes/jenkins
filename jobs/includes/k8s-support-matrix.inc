@@ -10,3 +10,7 @@
     version_overlay: 'jobs/overlays/1.15-edge-overlay.yaml'
     snap_channel: '1.15/edge'
     normalized_ver: '1.15'
+- 'v1.16.x':
+    version_overlay: 'jobs/overlays/1.16-edge-overlay.yaml'
+    snap_channel: '1.16/edge'
+    normalized_ver: '1.16'

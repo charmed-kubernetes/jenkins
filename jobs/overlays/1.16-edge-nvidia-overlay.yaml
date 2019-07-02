@@ -1,0 +1,9 @@
+applications:
+  kubernetes-master:
+    constraints: cores=2 mem=8G root-disk=16G
+    options:
+      channel: 1.15/edge
+  kubernetes-worker:
+    constraints: instance-type=p2.xlarge
+    options:
+      channel: 1.15/edge
