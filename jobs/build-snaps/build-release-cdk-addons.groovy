@@ -101,7 +101,7 @@ pipeline {
                     sort -o ${bundle_image_file} ${bundle_image_file}
 
                     cd bundle
-                    if git status | grep -q "nothing to commit"
+                    if git status | grep -qi "nothing to commit"
                     then
                         echo "No image changes; nothing to commit"
                     else
@@ -120,24 +120,47 @@ pipeline {
         stage('Process Images'){
             steps {
                 sh """
+                    # Keys from the bundle_image_file used to identify images per release
                     STATIC_KEY=v${params.version}-static:
                     UPSTREAM_KEY=${kube_version}-upstream:
+
+                    # Multi-arch manifests are not currently supported by our registry (needs experimental). Tag these with an -arch suffix.
+                    # https://community.arm.com/developer/tools-software/tools/b/tools-software-ides-blog/posts/deploying-multi-architecture-docker-registry
+                    MULTI_ARCH_IMAGES="coredns"
 
                     ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|${params.arch}|g")
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
 
                     for i in \${ALL_IMAGES}
                     do
-                        docker pull \${i}
+                        # Skip images that dont exist for this arch; other pull failures will
+                        # manifest themselves when we attempt to tag.
+                        if docker pull \${i} 2>&1 | grep -qi 'no matching manifest for'
+                        then
+                            continue
+                        fi
+
+                        # Massage image names
+                        RAW_IMAGE=\${i}
                         for repl in ${env.REGISTRY_REPLACE}
                         do
-                            RAW_IMAGE=\${i}
-                            if echo \${RAW_IMAGE} | grep -q \${repl}
+                            if echo \${RAW_IMAGE} | grep -qi \${repl}
                             then
                                 RAW_IMAGE=\$(echo \${RAW_IMAGE} | sed -e "s|\${repl}||g")
                                 break
                             fi
                         done
+                        for multi in \${MULTI_ARCH_IMAGES}
+                        do
+                            if echo \${RAW_IMAGE} | grep -qi \${multi}
+                            then
+                                # inject '-arch:' between the image name and version
+                                RAW_IMAGE=\${RAW_IMAGE%%:*}-${params.arch}:\${RAW_IMAGE#*:}
+                                break
+                            fi
+                        done
+
+                        # Tag and push
                         docker tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         if ${params.dry_run}
                         then
