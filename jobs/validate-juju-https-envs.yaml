@@ -19,6 +19,12 @@
           name: cloud
           default: 'aws/eu-west-1'
       - string:
+          name: docker_runtime_version
+          default: '1'
+      - string:
+          name: containerd_runtime_version
+          default: '2'
+      - string:
           name: version_overlay
           default: '{version_overlay}'
       - string:
