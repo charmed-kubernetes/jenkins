@@ -143,7 +143,7 @@ async def test_http_conf_existing_container_runtime(model, proxy_app):
 @pytest.mark.asyncio
 async def test_juju_proxy_vars(log_dir):
     controller = Controller()
-    await controller.connect_current()
+    await controller.connect()
     cloud = await controller.get_cloud()
     if cloud is not 'localhost':
         async with UseModel() as model:
@@ -152,5 +152,6 @@ async def test_juju_proxy_vars(log_dir):
                 model,
                 proxy_app
             )
+            await controller.connect()
             info = await model.get_info()
             await controller.destroy_model(info.uuid)
