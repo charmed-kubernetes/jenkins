@@ -79,7 +79,7 @@ def _gen_metadata():
 
         if 'test_result' not in obj:
             result_bg_class = 'bg-light'
-        elif obj['test_result'] == 'Fail':
+        elif not obj['test_result']:
             result_bg_class = 'bg-danger'
         else:
             result_bg_class = 'bg-success'
