@@ -1,29 +1,29 @@
-# Validates ceph on a deployed CDK
+# Validates http proxy settings are passed down from the juju-model
 - job-template:
-    name: 'validate-juju-proxy-envs-{version}'
+    name: 'validate-juju-proxy-envs'
     description: |
-      Validates juju https proxy vars {version}
+      Validates juju https proxy vars
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/validate-juju-proxy-envs/Jenkinsfile
+      script-path: jobs/validate-juju-http-proxy/Jenkinsfile
     parameters:
       - string:
           name: model
           default: 'validate-juju-proxy-vars'
       - string:
           name: controller
-          default: 'aws-eu-west-1'
+          default: 'aws-controller'
       - string:
           name: cloud
-          default: 'aws/eu-west-1'
+          default: 'aws/us-east-1'
       - string:
           name: docker_runtime_version
-          default: '1'
+          default: '2'
       - string:
           name: containerd_runtime_version
-          default: '2'
+          default: '1'
       - string:
           name: version_overlay
           default: '{version_overlay}'
@@ -42,4 +42,4 @@
     version:
       !include: includes/k8s-support-matrix.inc
     jobs:
-      - 'validate-juju-proxy-envs-{version}'
+      - 'validate-juju-proxy-envs'
