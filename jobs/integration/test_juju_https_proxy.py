@@ -165,7 +165,7 @@ async def test_http_conf_existing_container_runtime(model, runtime, proxy_app):
     )
     await container_runtime.remove_relation(
         container_endpoint,
-        "kubernetes-master:container-runtime"
+        "kubernetes-worker:container-runtime"
     )
 
 
