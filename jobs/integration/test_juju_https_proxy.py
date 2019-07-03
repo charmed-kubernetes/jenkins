@@ -179,11 +179,13 @@ async def test_juju_proxy_vars(log_dir):
     if cloud is not 'localhost':
         async with UseModel() as model:
             proxy_app = await setup_proxy(model)
+            proxy_app = model.applications['squid-forwardproxy']
             for container_runtime in ['docker', 'containerd']:
                 await test_http_conf_existing_container_runtime(
                     model,
                     container_runtime,
                     proxy_app
                 )
-    info = await model.get_info()
-    await controller.destroy_model(info.uuid)
+
+            info = await model.get_info()
+            await controller.destroy_model(info.uuid)
