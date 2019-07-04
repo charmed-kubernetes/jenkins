@@ -1,0 +1,39 @@
+# Validates upgrading from stable to edge of release
+
+- job-template:
+    name: 'validate-lxd-profile-{version}'
+    description: |
+      Upgrades CDK {version} and validates its deployment.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/validate-lxd-profile-deploy/Jenkinsfile
+    parameters:
+      - string:
+          name: model
+          default: 'minor-upgrade'
+      - string:
+          name: controller
+          default: 'validate-minor'
+      - choice:
+          name: cloud
+          choices:
+            - 'localhost'
+      - string:
+          name: upgrade_snap_channel
+          default: '{upgrade_snap_channel}'
+      - string:
+          name: bundle
+          default: '{bundle}'
+      - string:
+          name: upgrade_charm_channel
+          default: '{upgrade_charm_channel}'
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+
+- project:
+    name: validate-lxd-profile-deploy
+    jobs:
+      - 'validate-lxd-profile-deploy'
