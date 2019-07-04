@@ -1,5 +1,9 @@
 import asyncio
 import pytest
+from .base import (
+    UseModel,
+    _juju_wait
+)
 from .utils import (
     _juju_wait,
     asyncify,
