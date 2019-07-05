@@ -16,7 +16,6 @@ from .utils import (
 )
 from .logger import log, log_calls_async
 from juju.controller import Controller
-from builtins import open as open_file
 from tempfile import NamedTemporaryFile
 
 
@@ -41,7 +40,7 @@ async def get_config_contents(file, unit):
             file,
             fp.name
         )
-        with open_file(fp.name, 'r') as stream:
+        with open(fp.name, 'r') as stream:
             conf_contents = stream.read()
     return conf_contents
 

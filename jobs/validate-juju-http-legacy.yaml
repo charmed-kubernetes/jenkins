@@ -1,45 +1,39 @@
 # Validates http proxy settings are passed down from the juju-model
 - job-template:
-    name: 'validate-juju-proxy-envs'
+    name: 'validate-juju-https-{name}-{version}'
     description: |
-      Validates juju https proxy vars
+      Validates charms are picking up the juju-*-proxy values
     project-type: pipeline
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/validate-juju-http-proxy/Jenkinsfile
+      script-path: jobs/validate-juju-http-proxy-legacy/Jenkinsfile
     parameters:
       - string:
           name: model
-          default: 'validate-juju-proxy-vars'
+          default: 'validate-juju-http-proxy'
       - string:
           name: controller
-          default: 'aws-controller'
+          default: 'juju-aws'
       - string:
           name: cloud
           default: 'aws/us-east-1'
       - string:
-          name: docker_runtime_version
-          default: '2'
-      - string:
-          name: containerd_runtime_version
-          default: '1'
-      - string:
-          name: version_overlay
+          name: overlay
           default: '{version_overlay}'
       - string:
           name: bundle_channel
           default: 'edge'
       - string:
           name: bundle
-          default: 'charmed-kubernetes'
+          default: 'canonical-kubernetes'
     properties:
       - build-discarder:
           num-to-keep: 7
 
 - project:
-    name: validate-juju-proxy-envs
+    name: validate-juju-http-proxy
     version:
       !include: includes/k8s-support-matrix.inc
     jobs:
-      - 'validate-juju-proxy-envs'
+      - '{name}-{version}'
