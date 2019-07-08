@@ -43,7 +43,7 @@ jeepney==0.4
 jenkins-job-builder==2.10.0
 Jinja2==2.10.1
 jmespath==0.9.4
-juju==0.11.6
+juju==0.11.7
 juju-wait==2.7.0
 jujubundlelib==0.5.6
 keyring==19.0.2
