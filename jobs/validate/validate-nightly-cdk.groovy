@@ -13,6 +13,9 @@ pipeline {
     }
     stages {
         stage('Validate CDK') {
+            options {
+                timeout(time: 8, unit: 'HOURS')
+            }
             steps {
                 script {
                     def jobs = [:]
