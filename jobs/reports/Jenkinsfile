@@ -1,6 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def generate_reports_sh = "${utils.cipy} reports/generate-reports.py"
+def ogc = "${utils.cibin}/ogc"
 
 pipeline {
     agent {
@@ -20,7 +21,7 @@ pipeline {
             steps {
                 dir("jobs") {
                     sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
-                    sh "${generate_reports_sh} build"
+                    sh "${ogc} report build-report --template-path reports/templates --out-path pages --report-plan includes/k8s-report-plan.yaml"
                 }
             }
         }

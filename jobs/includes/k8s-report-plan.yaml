@@ -1,3 +1,5 @@
-k8s-support-matrix: !include includes/k8s-support-matrix.inc
-jobs:
-  - canonical-kubernetes
+# Report plan for current supported versions and jobs to report on
+validation-report:
+  matrix: !include includes/k8s-support-matrix.inc
+  jobs:
+    - charmed-kubernetes
