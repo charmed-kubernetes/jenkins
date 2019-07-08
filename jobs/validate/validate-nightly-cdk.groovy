@@ -25,37 +25,37 @@ pipeline {
                         def options = k.values()
                         jobs[uuid()] = {
                             stage("Validate: ${options.normalized_ver}") {
-                                build job:"validate-${release}-canonical-kubernetes",
+                                build job:"validate-${release}-canonical-kubernetes", propagate: false,
                                     parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
                         jobs[uuid()] = {
                             stage("Validate: ${options.normalized_ver}") {
-                                build job:"validate-calico-${release}",
+                                build job:"validate-calico-${release}", propagate: false,
                                     parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
                         jobs[uuid()] = {
                             stage("Validate: ${options.normalized_ver}") {
-                                build job:"validate-ceph-${release}",
+                                build job:"validate-ceph-${release}", propagate: false,
                                     parameters: [string(name:'cloud', value: 'google/us-east1')]
                             }
                         }
                         jobs[uuid()] = {
                             stage("Validate: ${options.normalized_ver}") {
-                                build job:"validate-vault-${release}",
+                                build job:"validate-vault-${release}", propagate: false,
                                     parameters: [string(name:'cloud', value: 'google/us-east1')]
                             }
                         }
                         jobs[uuid()] = {
                             stage("Validate: ${options.normalized_ver}") {
-                                build job:"validate-tigera-secure-ee-${release}",
+                                build job:"validate-tigera-secure-ee-${release}", propagate: false,
                                     parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
                         jobs[uuid()] = {
                             stage("Validate: ${options.normalized_ver}") {
-                                build job:"validate-nvidia-${release}",
+                                build job:"validate-nvidia-${release}", propagate: false,
                                     parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
