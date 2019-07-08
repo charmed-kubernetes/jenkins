@@ -20,86 +20,43 @@ pipeline {
                     releases.each { k ->
                         def release = k.keySet().first()
                         def options = k.values()
-                        jobs[release] = {
+                        jobs[uuid()] = {
                             stage("Validate: ${options.normalized_ver}") {
                                 build job:"validate-${release}-canonical-kubernetes",
                                     parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
-                    }
-                    parallel jobs
-                }
-            }
-        }
-        stage('Validate Calico') {
-            steps {
-                script {
-                    def jobs = [:]
-                    def releases = readYaml file: 'jobs/includes/k8s-support-matrix.inc'
-                    releases.each { k ->
-                        def release = k.keySet().first()
-                        def options = k.values()
-                        jobs[release] = {
-                            stage("Validate Calico: ${options.normalized_ver}") {
+                        jobs[uuid()] = {
+                            stage("Validate: ${options.normalized_ver}") {
                                 build job:"validate-calico-${release}",
                                     parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
-                    }
-                    parallel jobs
-                }
-            }
-        }
-        stage('Validate Vault') {
-            steps {
-                script {
-                    def jobs = [:]
-                    def releases = readYaml file: 'jobs/includes/k8s-support-matrix.inc'
-                    releases.each { k ->
-                        def release = k.keySet().first()
-                        def options = k.values()
-                        jobs[release] = {
-                            stage("Validate Vault: ${options.normalized_ver}") {
-                                build job:"validate-vault-${release}",
-                                    parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                        jobs[uuid()] = {
+                            stage("Validate: ${options.normalized_ver}") {
+                                build job:"validate-ceph-${release}",
+                                    parameters: [string(name:'cloud', value: 'google/us-east1')]
                             }
                         }
-                    }
-                    parallel jobs
-                }
-            }
-        }
-        stage('Validate Tigera EE') {
-            steps {
-                script {
-                    def jobs = [:]
-                    def releases = readYaml file: 'jobs/includes/k8s-support-matrix.inc'
-                    releases.each { k ->
-                        def release = k.keySet().first()
-                        def options = k.values()
-                        jobs[release] = {
-                            stage("Validate Tigera EE: ${options.normalized_ver}") {
+                        jobs[uuid()] = {
+                            stage("Validate: ${options.normalized_ver}") {
+                                build job:"validate-vault-${release}",
+                                    parameters: [string(name:'cloud', value: 'google/us-east1')]
+                            }
+                        }
+                        jobs[uuid()] = {
+                            stage("Validate: ${options.normalized_ver}") {
                                 build job:"validate-tigera-secure-ee-${release}",
                                     parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
-                    }
-                    parallel jobs
-                }
-            }
-        }
-        stage('Validate NVidia') {
-            steps {
-                script {
-                    def jobs = [:]
-                    def releases = readYaml file: 'jobs/includes/k8s-support-matrix.inc'
-                    releases.each { k ->
-                        def release = k.keySet().first()
-                        def options = k.values()
-                        stage("Validate NVidia: ${options.normalized_ver}") {
-                            build job:"validate-nvidia-${release}",
-                                parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                        jobs[uuid()] = {
+                            stage("Validate: ${options.normalized_ver}") {
+                                build job:"validate-nvidia-${release}",
+                                    parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                            }
                         }
+                        parallel jobs
                     }
                 }
             }
