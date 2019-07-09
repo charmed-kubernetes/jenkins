@@ -98,8 +98,8 @@ pipeline {
         failure {
             setFail()
         }
-        cleanup {
-            ssh("s3lp3", "${juju_sh} destroy-controller --destroy-all-models --destroy-storage -y ${juju_controller} || true")
-        }
+        // cleanup {
+        //     ssh("s3lp3", "${juju_sh} destroy-controller --destroy-all-models --destroy-storage -y ${juju_controller} || true")
+        // }
     }
 }
