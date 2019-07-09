@@ -60,6 +60,7 @@ pipeline {
                             }
                         }
                         parallel jobs
+                        jobs = [:]
                     }
                 }
             }
