@@ -5,34 +5,29 @@ import pytest
 import yaml
 import os
 from sh import juju
-from .base import (
-    UseModel,
-    _juju_wait,
-    _controller_from_env,
-    _model_from_env
-)
+from .base import UseModel, _juju_wait, _controller_from_env, _model_from_env
 from .utils import asyncify
 from .validation import validate_all
-from .logger import log, log_calls_async
+from .logger import log
 
-SNAP_CHANNEL = os.environ.get('SNAP_CHANNEL', 'beta')
+SNAP_CHANNEL = os.environ.get("SNAP_CHANNEL", "beta")
 
-@log_calls_async
+
 async def enable_snapd_on_model(model):
-    cmd = f'sudo snap refresh core --{SNAP_CHANNEL}'
-    cloudinit_userdata = {'postruncmd': [cmd]}
+    cmd = f"sudo snap refresh core --{SNAP_CHANNEL}"
+    cloudinit_userdata = {"postruncmd": [cmd]}
     cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
-    await model.set_config({'cloudinit-userdata': cloudinit_userdata_str})
+    await model.set_config({"cloudinit-userdata": cloudinit_userdata_str})
 
 
 async def log_snap_versions(model):
-    log('Logging snap versions')
+    log("Logging snap versions")
     for unit in model.units.values():
         if unit.dead:
             continue
-        action = await unit.run('snap list')
-        snap_versions = action.data['results']['Stdout'].strip() or 'No snaps found'
-        log(unit.name + ': ' + snap_versions)
+        action = await unit.run("snap list")
+        snap_versions = action.data["results"]["Stdout"].strip() or "No snaps found"
+        log(unit.name + ": " + snap_versions)
 
 
 @pytest.mark.asyncio
@@ -40,8 +35,10 @@ async def test_snapd(log_dir):
     async with UseModel() as model:
         await enable_snapd_on_model(model)
     await asyncify(juju.deploy)(
-        '-m', '{}:{}'.format(_controller_from_env(), _model_from_env()),
-        'cs:~containers/charmed-kubernetes')
+        "-m",
+        "{}:{}".format(_controller_from_env(), _model_from_env()),
+        "cs:~containers/charmed-kubernetes",
+    )
     await asyncify(_juju_wait)()
 
     async with UseModel() as model:

@@ -7,7 +7,13 @@ import yaml
 def format(c):
     """ Formats py code
     """
-    c.run("black -t py36  build*/*.py validate/*.py")
+    c.run("black -t py36 build*/*.py validate/*.py integration")
+
+@task
+def flake8(c):
+    """ Runs flake8 against project
+    """
+    c.run("flake8 --ignore=E501,W503 integration")
 
 @task
 def test_jobs(c, conf):

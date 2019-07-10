@@ -24,7 +24,7 @@ pipeline {
                 timeout(time: 4, unit: 'HOURS')
             }
             steps {
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
+                sh "juju bootstrap ${params.cloud} ${juju_controller}"
                 sh "juju add-model -c ${juju_controller} ${juju_model}"
                 setStartTime()
 

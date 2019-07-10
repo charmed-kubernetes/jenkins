@@ -46,7 +46,7 @@ pipeline {
                         }
                     }
                 }
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints 'arch=amd64' --debug"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints 'arch=amd64'"
                 deployCDK(controller: juju_controller,
                           model: juju_model,
                           cloud: params.cloud,
@@ -64,7 +64,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} TEST_CHARM_CHANNEL=${params.bundle_channel} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::${test}"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} TEST_CHARM_CHANNEL=${params.bundle_channel} ${utils.pytest} --junit-xml=validate.xml integration/validation.py -m 'not slow'"
                 }
             }
         }

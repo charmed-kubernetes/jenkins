@@ -15,46 +15,47 @@ def log(msg):
 
 
 def get_juju_status():
-    cmd = [
-        'juju', 'status',
-        '--format', 'json',
-        '-m', MODEL
-    ]
-    output = check_output(cmd, encoding='UTF-8')
+    cmd = ["juju", "status", "--format", "json", "-m", MODEL]
+    output = check_output(cmd, encoding="UTF-8")
     status = json.loads(output)
     return status
 
 
 def get_instance_id(machine_id):
-    log('Getting instance ID for machine ' + machine_id)
+    log("Getting instance ID for machine " + machine_id)
     while True:
         status = get_juju_status()
-        machines = status['machines']
+        machines = status["machines"]
         if machine_id not in machines:
-            log('WARNING: machine %s disappeared' % machine_id)
+            log("WARNING: machine %s disappeared" % machine_id)
             return None
         machine = machines[machine_id]
-        if machine['instance-id'] == 'pending':
+        if machine["instance-id"] == "pending":
             time.sleep(1)
             continue
-        return machine['instance-id']
+        return machine["instance-id"]
 
 
 def disable_source_dest_check_on_instance(instance_id):
-    log('Disabling source dest check on instance ' + instance_id)
+    log("Disabling source dest check on instance " + instance_id)
     cmd = [
-        'aws', '--region', REGION,
-        'ec2', 'modify-instance-attribute',
-        '--instance-id', instance_id,
-        '--source-dest-check', '{"Value": false}'
+        "aws",
+        "--region",
+        REGION,
+        "ec2",
+        "modify-instance-attribute",
+        "--instance-id",
+        instance_id,
+        "--source-dest-check",
+        '{"Value": false}',
     ]
-    log('+ ' + ' '.join(cmd))
+    log("+ " + " ".join(cmd))
     check_call(cmd)
 
 
 def disable_source_dest_check():
     status = get_juju_status()
-    for machine_id in status['machines']:
+    for machine_id in status["machines"]:
         instance_id = get_instance_id(machine_id)
         if instance_id:
             disable_source_dest_check_on_instance(instance_id)
@@ -62,7 +63,7 @@ def disable_source_dest_check():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model', required=True)
+    parser.add_argument("-m", "--model", required=True)
     args = parser.parse_args()
 
     global MODEL
@@ -70,17 +71,17 @@ def main():
 
     status = get_juju_status()
 
-    if status['model']['cloud'] != 'aws':
-        log('Cloud is not AWS, doing nothing')
+    if status["model"]["cloud"] != "aws":
+        log("Cloud is not AWS, doing nothing")
         return
 
-    apps = ['calico', 'tigera-secure-ee']
-    if not any(app in status['applications'] for app in apps):
-        log('No apps need source dest check disabled, doing nothing')
+    apps = ["calico", "tigera-secure-ee"]
+    if not any(app in status["applications"] for app in apps):
+        log("No apps need source dest check disabled, doing nothing")
         return
 
     global REGION
-    REGION = status['model']['region']
+    REGION = status["model"]["region"]
 
     disable_source_dest_check()
 

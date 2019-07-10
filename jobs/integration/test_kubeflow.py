@@ -10,14 +10,14 @@ from .logger import log_calls, log_calls_async
 from .utils import asyncify
 
 TFJOB = "integration/k8s-jobs/mnist.yaml"
-SELDONJOB = 'integration/k8s-jobs/serve-simple-v1alpha2.yml'
-AUTH = ('admin', 'foobar')
+SELDONJOB = "integration/k8s-jobs/serve-simple-v1alpha2.yml"
+AUTH = ("admin", "foobar")
 
 
 def get_session():
     sess = requests.Session()
     sess.auth = AUTH
-    sess.hooks = {'response': lambda r, *args, **kwargs: r.raise_for_status()}
+    sess.hooks = {"response": lambda r, *args, **kwargs: r.raise_for_status()}
 
     return sess
 
@@ -25,8 +25,8 @@ def get_session():
 def get_ambassador_ip():
     """Returns the Ambassador IP address."""
 
-    with open('../PUB_IP') as f:
-        return f'{f.read().strip()}.xip.io'
+    with open("../PUB_IP") as f:
+        return f"{f.read().strip()}.xip.io"
 
 
 def kubectl_create(path: str):
@@ -90,7 +90,7 @@ def validate_statuses(model):
     for name, unit in model.units.items():
         assert unit.agent_status == "idle"
         assert unit.workload_status == "active"
-        assert unit.workload_status_message == ('ready' if name == 'mariadb/0' else '')
+        assert unit.workload_status_message == ("ready" if name == "mariadb/0" else "")
 
 
 @log_calls_async
@@ -131,7 +131,10 @@ async def validate_tf_dashboard():
 
     output = await asyncify(kubectl_create)(TFJOB)
 
-    assert re.match(rb"tfjob.kubeflow.org/mnist-test-[a-z0-9]{5} created$", output) is not None
+    assert (
+        re.match(rb"tfjob.kubeflow.org/mnist-test-[a-z0-9]{5} created$", output)
+        is not None
+    )
 
     expected_jobs = [("PS", 1), ("Worker", 1)]
     expected_conditions = [
@@ -148,7 +151,8 @@ async def validate_tf_dashboard():
         response = resp.json()["items"][0]
 
         jobs = [
-            (name, spec["replicas"]) for name, spec in response["spec"]["tfReplicaSpecs"].items()
+            (name, spec["replicas"])
+            for name, spec in response["spec"]["tfReplicaSpecs"].items()
         ]
 
         conditions = [
@@ -178,13 +182,17 @@ async def validate_seldon():
 
     output = await asyncify(kubectl_create)(SELDONJOB)
 
-    assert output == b"seldondeployment.machinelearning.seldon.io/mock-classifier created"
+    assert (
+        output == b"seldondeployment.machinelearning.seldon.io/mock-classifier created"
+    )
 
     for i in range(60):
         try:
-            resp = await asyncify(sess.get)(f"http://{ambassador_ip}/seldon/mock-classifier/")
+            resp = await asyncify(sess.get)(
+                f"http://{ambassador_ip}/seldon/mock-classifier/"
+            )
             resp.raise_for_status()
-            assert resp.text == 'Hello World!!'
+            assert resp.text == "Hello World!!"
             break
         except (AssertionError, requests.HTTPError) as err:
             print("Waiting for SeldonDeployment to start...")
