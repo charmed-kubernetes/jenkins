@@ -122,7 +122,7 @@ spec:
 
 
 @pytest.mark.asyncio
-async def test_validate_ceph(model):
+async def test_ceph(model):
     # setup
     log("deploying ceph mon")
     await model.deploy("ceph-mon", num_units=3)
