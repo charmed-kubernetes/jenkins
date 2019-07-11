@@ -38,13 +38,17 @@ pipeline {
                         jobs[uuid()] = {
                             stage("Validate: ${options.normalized_ver}") {
                                 build job:"validate-ceph-${release}", propagate: false,
-                                    parameters: [string(name:'cloud', value: 'google/us-east1')]
+                                    parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
+
+                        parallel jobs
+                        jobs = jobs[:]
+
                         jobs[uuid()] = {
                             stage("Validate: ${options.normalized_ver}") {
                                 build job:"validate-vault-${release}", propagate: false,
-                                    parameters: [string(name:'cloud', value: 'google/us-east1')]
+                                    parameters: [string(name:'cloud', value: 'aws/us-east-1')]
                             }
                         }
                         jobs[uuid()] = {

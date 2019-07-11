@@ -35,7 +35,7 @@ def _juju_wait(controller=None, model=None):
         controller = _controller_from_env()
     if not model:
         model = _model_from_env()
-    print("Settling...")
+    log("Settling...")
     juju_wait("-e", "{}:{}".format(controller, model), "-w")
 
 
