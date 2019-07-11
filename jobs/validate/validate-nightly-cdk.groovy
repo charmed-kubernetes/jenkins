@@ -28,24 +28,24 @@ pipeline {
                         }
                         stage("Validate: ${options.normalized_ver}") {
                             build job:"validate-calico-${release}", propagate: false,
-                                parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                                parameters: [string(name:'cloud', value: 'aws/us-east-2')]
                         }
                         stage("Validate: ${options.normalized_ver}") {
                             build job:"validate-ceph-${release}", propagate: false,
-                                parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                                parameters: [string(name:'cloud', value: 'aws/us-east-2')]
                         }
 
                         stage("Validate: ${options.normalized_ver}") {
                             build job:"validate-vault-${release}", propagate: false,
-                                parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                                parameters: [string(name:'cloud', value: 'aws/us-east-2')]
                         }
                         stage("Validate: ${options.normalized_ver}") {
                             build job:"validate-tigera-secure-ee-${release}", propagate: false,
-                                parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                                parameters: [string(name:'cloud', value: 'aws/us-east-2')]
                         }
                         stage("Validate: ${options.normalized_ver}") {
                             build job:"validate-nvidia-${release}", propagate: false,
-                                parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                                parameters: [string(name:'cloud', value: 'aws/us-east-2')]
                         }
                     }
                 }
