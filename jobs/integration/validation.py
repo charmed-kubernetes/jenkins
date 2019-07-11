@@ -25,41 +25,6 @@ from .utils import (
     _juju_wait,
 )
 
-# TODO: remove once new tests format passes
-# async def validate_all(model, log_dir):
-#     env = os.environ.copy()
-#     cpu_arch = await asyncify(arch)()
-#     validate_status_messages(model)
-#     await validate_auth_file_propagation(model)
-#     await validate_snap_versions(model)
-#     await validate_gpu_support(model)
-#     if cpu_arch not in ['s390x', 'arm64', 'aarch64']:
-#         await validate_dashboard(model, log_dir)
-#     await validate_kubelet_anonymous_auth_disabled(model)
-#     await validate_rbac_flag(model)
-#     await validate_rbac(model)
-#     if cpu_arch not in ['s390x', 'arm64', 'aarch64']:
-#         await validate_microbot(model)
-#     await validate_worker_master_removal(model)
-#     await validate_sans(model)
-#     network_policy_apps = ['canal', 'calico', 'tigera-secure-ee']
-#     if any(app in model.applications for app in network_policy_apps):
-#         log("Running network policy specific tests")
-#         await validate_network_policies(model)
-#     await validate_extra_args(model)
-#     await validate_kubelet_extra_config(model)
-#     await validate_audit_default_config(model)
-#     await validate_audit_empty_policy(model)
-#     await validate_audit_custom_policy(model)
-#     await validate_audit_webhook(model)
-#     if cpu_arch not in ['s390x', 'arm64', 'aarch64']:
-#         await validate_keystone(model)
-#     assert_no_unit_errors(model)
-#     if ('validate-vault' in model.info.name and
-#             cpu_arch not in ['s390x', 'arm64', 'aarch64']):
-#         await validate_encryption_at_rest(model)
-#     await validate_dns_provider(model)
-
 
 class MicrobotError(Exception):
     pass
