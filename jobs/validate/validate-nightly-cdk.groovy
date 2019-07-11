@@ -24,7 +24,7 @@ pipeline {
                         def options = k.values()
                         stage("Validate: ${options.normalized_ver}") {
                             build job:"validate-${release}-canonical-kubernetes", propagate: false,
-                                parameters: [string(name:'cloud', value: 'aws/us-east-1')]
+                                parameters: [string(name:'cloud', value: 'aws/us-east-2')]
                         }
                         stage("Validate: ${options.normalized_ver}") {
                             build job:"validate-calico-${release}", propagate: false,

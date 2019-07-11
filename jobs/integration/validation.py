@@ -1219,6 +1219,10 @@ async def test_encryption_at_rest(model):
     try:
         # setup
         await model.deploy(
+            "percona-cluster",
+            config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
+        )
+        await model.deploy(
             "cs:~openstack-charmers-next/vault",
             config={
                 "auto-generate-root-ca-cert": True,
