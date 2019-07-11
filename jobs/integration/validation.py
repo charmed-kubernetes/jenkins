@@ -1027,6 +1027,7 @@ async def test_audit_webhook(model):
 
 @pytest.mark.asyncio
 @pytest.mark.skip_arch(["s390x", "arm64", "aarch64"])
+@pytest.mark.skip_model("validate-vault")
 async def test_keystone(model):
     masters = model.applications["kubernetes-master"]
     k8s_version_str = masters.data["workload-version"]
@@ -1233,11 +1234,17 @@ data:
     assert "forbidden" not in output.data["results"]["Stderr"].lower()
 
     # cleanup
-    await model.applications["keystone"].destroy()
-    if "validate-vault" not in model.info.name:
-        # only clean this up if we're not also running the vault test,
-        # since vault needs it as well
-        await model.applications["percona-cluster"].destroy()
+    (done1, pending1) = await asyncio.wait(
+        {
+            model.applications["percona-cluster"].destroy(),
+            model.applications["keystone"].destroy(),
+        }
+    )
+    await asyncify(_juju_wait)()
+    for task in done1:
+        # read and ignore any exception so that it doesn't get raised
+        # when the task is GC'd
+        task.exception()
 
 
 @pytest.mark.asyncio

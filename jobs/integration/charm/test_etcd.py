@@ -124,20 +124,6 @@ async def test_snap_action(deploy, event_loop):
             await validate_etcd_fixture_data(etcd)
 
 
-@pytest.mark.skip("This is no longer a valid test, default is 3.2/stable")
-async def test_snap_upgrade_to_three_oh(deploy, event_loop):
-    """ Default configured channel is 3.2/stable. Ensure we can jump to
-    3.0 """
-    controller, model = deploy
-    await deploy_etcd(controller, model)
-    etcd = model.applications["etcd"]
-    await etcd.set_config({"channel": "3.2/stable"})
-
-    await asyncify(_juju_wait)(controller, model.info.name)
-    await validate_running_snap_daemon(etcd)
-    await validate_etcd_fixture_data(etcd)
-
-
 @pytest.mark.skip("Need to manually verify result tarball")
 async def test_snapshot_restore(deploy, event_loop):
     """
@@ -158,10 +144,10 @@ async def test_snapshot_restore(deploy, event_loop):
         if leader:
             # Load dummy data
             await load_data(unit)
-            for ver in ["v2", "v3"]:
+            for ver in ["v3"]:
                 assert await is_data_present(unit, ver)
             filenames = {}
-            for dataset in ["v2", "v3"]:
+            for dataset in ["v3"]:
                 # Take snapshot of data
                 action = await unit.run_action("snapshot", **{"keys-version": dataset})
                 action = await action.wait()
@@ -174,7 +160,7 @@ async def test_snapshot_restore(deploy, event_loop):
                 print(out.stdout.decode().strip())
 
             await delete_data(unit)
-            for ver in ["v2", "v3"]:
+            for ver in ["v3"]:
                 assert await is_data_present(unit, ver) is False
 
             # Restore v2 data
@@ -189,7 +175,7 @@ async def test_snapshot_restore(deploy, event_loop):
             action = await unit.run_action("restore")
             action = await action.wait()
             assert action.status == "completed"
-            for ver in ["v2", "v3"]:
+            for ver in ["v3"]:
                 assert await is_data_present(unit, ver) is True
 
             # Restore v3 data
@@ -204,7 +190,7 @@ async def test_snapshot_restore(deploy, event_loop):
             action = await unit.run_action("restore")
             action = await action.wait()
             await action.status == "completed"
-            for ver in ["v2", "v3"]:
+            for ver in ["v3"]:
                 assert await is_data_present(unit, ver) is True
 
 
@@ -408,11 +394,7 @@ async def is_data_present(leader, version):
         "ETCDCTL_CA_FILE=/var/snap/etcd/common/ca.crt"
     )
 
-    if version == "v2":
-        cmd = "{} ETCDCTL_API=2 /snap/bin/etcd.etcdctl ls".format(certs)
-        data = await leader.run(cmd)
-        return "etcd2key" in data.results["Stdout"].strip()
-    elif version == "v3":
+    if version == "v3":
         cmd = (
             "{} ETCDCTL_API=3 /snap/bin/etcd.etcdctl --endpoints=http://localhost:4001 "
             'get "" --prefix --keys-only'.format(certs)
