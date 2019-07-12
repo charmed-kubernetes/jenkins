@@ -36,9 +36,9 @@ def _is_upgrade():
     """
     return bool(os.environ.get("TEST_UPGRADE", None))
 
-@pytest.fixture(scope="module"):
-async def model(event_loop):
-  if request.config.getoption('snapd-upgrade'):
+@pytest.fixture
+async def model(request):
+  if request.config.getoption('--snapd-upgrade'):
       request.fixturenames.append('snapd_model')
   else:
       request.fixturenames.append('base_model')
