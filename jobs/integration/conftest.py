@@ -5,6 +5,7 @@ import os
 import pytest
 import asyncio
 import uuid
+import yaml
 from juju.model import Model
 from .utils import (
     upgrade_charms,
@@ -18,39 +19,29 @@ from .utils import (
 )
 from sh import juju
 
-
-def pytest_addoption(parser):
-    parser.addoption("--snapd-upgrade", action="store_true", default=False,
-        help="run tests with upgraded snapd")
-
 # Handle upgrades
 test_charm_channel = os.environ.get("TEST_CHARM_CHANNEL", "edge")
 test_snap_channel = os.environ.get("TEST_SNAP_CHANNEL")
-
-# pytest.register_assert_rewrite("utils")
-# pytest.register_assert_rewrite("validation")
-
 
 def _is_upgrade():
     """ Return if this is an upgrade test
     """
     return bool(os.environ.get("TEST_UPGRADE", None))
 
-@pytest.fixture
-async def model(request):
-  if request.config.getoption('--snapd-upgrade'):
-      request.fixturenames.append('snapd_model')
-  else:
-      request.fixturenames.append('base_model')
+def pytest_addoption(parser):
+    parser.addoption("--snapd-upgrade", action="store_true", default=False,
+        help="run tests with upgraded snapd")
+    parser.addoption(
+        "--connection", action="store",
+        default=f"{_controller_from_env()}:{_model_from_env()}",
+        help="Juju [controller:model] to use")
+
 
 @pytest.fixture(scope="module")
-async def snapd_model(event_loop):
-    controller_name = _controller_from_env()
-    model_name = _model_from_env()
-    # loop = asyncio.get_event_loop()
+async def model(request, event_loop):
     event_loop.set_exception_handler(lambda l, _: l.stop())
     model = Model(event_loop)
-    connection_name = "{}:{}".format(controller_name, model_name)
+    connection_name = request.config.getoption("--connection")
     await model.connect(connection_name)
     if _is_upgrade():
         print("Upgrading charms")
@@ -58,32 +49,14 @@ async def snapd_model(event_loop):
     if test_snap_channel:
         print("Upgrading snaps")
         await upgrade_snaps(model, test_snap_channel)
-    snapd_channel = os.environ.get("SNAPD_CHANNEL", None)
-    cmd = f"sudo snap refresh core --{snapd_channel}"
-    cloudinit_userdata = {"postruncmd": [cmd]}
-    cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
-    await model.set_config({"cloudinit-userdata": cloudinit_userdata_str})
-    await model.deploy("cs:~containers/charmed-kubernetes")
-    await asyncify(_juju_wait)()
-    yield model
-    await model.disconnect()
-
-@pytest.fixture(scope="module")
-async def base_model(event_loop):
-    controller_name = _controller_from_env()
-    model_name = _model_from_env()
-    # loop = asyncio.get_event_loop()
-    event_loop.set_exception_handler(lambda l, _: l.stop())
-    model = Model(event_loop)
-    connection_name = "{}:{}".format(controller_name, model_name)
-    await model.connect(connection_name)
-    if _is_upgrade():
-        print("Upgrading charms")
-        await upgrade_charms(model, test_charm_channel)
-    if test_snap_channel:
-        print("Upgrading snaps")
-        await upgrade_snaps(model, test_snap_channel)
-
+    if request.config.getoption('--snapd-upgrade'):
+        snapd_channel = os.environ.get("SNAPD_CHANNEL", None)
+        cmd = f"sudo snap refresh core --{snapd_channel}"
+        cloudinit_userdata = {"postruncmd": [cmd]}
+        cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
+        await model.set_config({"cloudinit-userdata": cloudinit_userdata_str})
+        await model.deploy("cs:~containers/charmed-kubernetes")
+        await asyncify(_juju_wait)()
     yield model
     await model.disconnect()
 
@@ -128,7 +101,7 @@ def log_dir(request):
     path = os.path.join(
         "logs", request.module.__name__, request.node.name.replace("/", "_")
     )
-    os.makedirs(path)
+    os.makedirs(path, exist_ok=True)
     return path
 
 
