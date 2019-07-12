@@ -159,6 +159,32 @@ async def reset_audit_config(master_app):
 
 
 # START TESTS
+@pytest.mark.asyncio
+@pytest.mark.snapd
+async def test_snapd(model, log_dir):
+    async def enable_snapd_on_model(model):
+        snap_channel = os.environ.get("SNAP_CHANNEL", "beta")
+        cmd = f"sudo snap refresh core --{snap_channel}"
+        cloudinit_userdata = {"postruncmd": [cmd]}
+        cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
+        await model.set_config({"cloudinit-userdata": cloudinit_userdata_str})
+
+    async def log_snap_versions(model):
+        log("Logging snap versions")
+        for unit in model.units.values():
+            if unit.dead:
+                continue
+            action = await unit.run("snap list")
+            snap_versions = action.data["results"]["Stdout"].strip() or "No snaps found"
+            log(unit.name + ": " + snap_versions)
+
+    await enable_snapd_on_model(model)
+    await asyncify(juju.deploy)(
+        "-m",
+        "{}:{}".format(_controller_from_env(), _model_from_env()),
+        "cs:~containers/charmed-kubernetes",
+    )
+    await asyncify(_juju_wait)()
 
 
 @pytest.mark.asyncio
