@@ -16,6 +16,7 @@ from .utils import (
     arch,
     asyncify,
     _juju_wait,
+    log_snap_versions
 )
 from sh import juju
 
@@ -36,7 +37,6 @@ def pytest_addoption(parser):
         default=f"{_controller_from_env()}:{_model_from_env()}",
         help="Juju [controller:model] to use")
 
-
 @pytest.fixture(scope="module")
 async def model(request, event_loop):
     event_loop.set_exception_handler(lambda l, _: l.stop())
@@ -56,14 +56,15 @@ async def model(request, event_loop):
         cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
         await model.set_config({"cloudinit-userdata": cloudinit_userdata_str})
         await model.deploy("cs:~containers/charmed-kubernetes")
+        await log_snap_versions(model, prefix="Before")
         await asyncify(_juju_wait)()
+        await log_snap_versions(model, prefix="After")
     yield model
     await model.disconnect()
 
 @pytest.fixture
 def system_arch():
     return arch
-
 
 @pytest.fixture(autouse=True)
 def skip_by_arch(request, system_arch):

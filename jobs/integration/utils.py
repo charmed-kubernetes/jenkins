@@ -334,3 +334,13 @@ async def verify_completed(unit, entity_type, name_list, extra_args=""):
 
     # now verify they are ALL completed - note that is in the phase 'Succeeded'
     return all([n["status"]["phase"] == "Succeeded" for n in matches])
+
+
+async def log_snap_versions(model):
+    log("Logging snap versions")
+    for unit in model.units.values():
+        if unit.dead:
+            continue
+        action = await unit.run("snap list")
+        snap_versions = action.data["results"]["Stdout"].strip() or "No snaps found"
+        log(unit.name + ": " + snap_versions)

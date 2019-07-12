@@ -18,14 +18,14 @@ async def enable_snapd_on_model(model):
     await model.set_config({"cloudinit-userdata": cloudinit_userdata_str})
 
 
-async def log_snap_versions(model):
-    log("Logging snap versions")
+async def log_snap_versions(model, prefix="Before"):
+    log(f"{prefix} :: Logging snap versions")
     for unit in model.units.values():
         if unit.dead:
             continue
         action = await unit.run("snap list")
         snap_versions = action.data["results"]["Stdout"].strip() or "No snaps found"
-        log(unit.name + ": " + snap_versions)
+        log(f"{prefix} :: {unit.name}:{snap_versions}")
 
 
 @pytest.mark.asyncio
