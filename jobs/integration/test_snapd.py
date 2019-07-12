@@ -5,9 +5,7 @@ import pytest
 import yaml
 import os
 from sh import juju
-from .base import UseModel, _juju_wait, _controller_from_env, _model_from_env
-from .utils import asyncify
-from .validation import validate_all
+from .utils import asyncify, _juju_wait, _controller_from_env, _model_from_env
 from .logger import log
 
 SNAP_CHANNEL = os.environ.get("SNAP_CHANNEL", "beta")
@@ -31,9 +29,8 @@ async def log_snap_versions(model):
 
 
 @pytest.mark.asyncio
-async def test_snapd(log_dir):
-    async with UseModel() as model:
-        await enable_snapd_on_model(model)
+async def test_snapd(model, log_dir):
+    await enable_snapd_on_model(model)
     await asyncify(juju.deploy)(
         "-m",
         "{}:{}".format(_controller_from_env(), _model_from_env()),
@@ -41,8 +38,7 @@ async def test_snapd(log_dir):
     )
     await asyncify(_juju_wait)()
 
-    async with UseModel() as model:
-        # Run validation
-        await log_snap_versions(model)  # log before run
-        await validate_all(model, log_dir)
-        await log_snap_versions(model)  # log after run
+    # Run validation
+    await log_snap_versions(model)  # log before run
+    exec(open('integration/validation.py').read())
+    await log_snap_versions(model)  # log after run
