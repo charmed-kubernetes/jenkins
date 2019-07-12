@@ -16,7 +16,7 @@ from .utils import (
     arch,
     asyncify,
     _juju_wait,
-    log_snap_versions
+    log_snap_versions,
 )
 from sh import juju
 
@@ -24,18 +24,27 @@ from sh import juju
 test_charm_channel = os.environ.get("TEST_CHARM_CHANNEL", "edge")
 test_snap_channel = os.environ.get("TEST_SNAP_CHANNEL")
 
+
 def _is_upgrade():
     """ Return if this is an upgrade test
     """
     return bool(os.environ.get("TEST_UPGRADE", None))
 
+
 def pytest_addoption(parser):
-    parser.addoption("--snapd-upgrade", action="store_true", default=False,
-        help="run tests with upgraded snapd")
     parser.addoption(
-        "--connection", action="store",
+        "--snapd-upgrade",
+        action="store_true",
+        default=False,
+        help="run tests with upgraded snapd",
+    )
+    parser.addoption(
+        "--connection",
+        action="store",
         default=f"{_controller_from_env()}:{_model_from_env()}",
-        help="Juju [controller:model] to use")
+        help="Juju [controller:model] to use",
+    )
+
 
 @pytest.fixture(scope="module")
 async def model(request, event_loop):
@@ -49,8 +58,8 @@ async def model(request, event_loop):
     if test_snap_channel:
         print("Upgrading snaps")
         await upgrade_snaps(model, test_snap_channel)
-    if request.config.getoption('--snapd-upgrade'):
-        snapd_channel = os.environ.get("SNAPD_CHANNEL", None)
+    if request.config.getoption("--snapd-upgrade"):
+        snapd_channel = os.environ.get("SNAPD_CHANNEL", "beta")
         cmd = f"sudo snap refresh core --{snapd_channel}"
         cloudinit_userdata = {"postruncmd": [cmd]}
         cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
@@ -62,9 +71,11 @@ async def model(request, event_loop):
     yield model
     await model.disconnect()
 
+
 @pytest.fixture
 def system_arch():
     return arch
+
 
 @pytest.fixture(autouse=True)
 def skip_by_arch(request, system_arch):
