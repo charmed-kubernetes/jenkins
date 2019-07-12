@@ -5,7 +5,7 @@ import os
 from pprint import pprint
 from subprocess import check_output, CalledProcessError
 
-REGION = "us-east-1"
+REGION = "us-east-2"
 
 
 def aws(*args, ignore_errors=False):
