@@ -27,7 +27,7 @@ pipeline {
                 sh "juju bootstrap ${params.cloud} ${params.controller}"
                 sh "juju add-model -c ${params.controller} ${juju_model} ${params.cloud}"
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} SERIES=${params.series} SNAP_CHANNEL=${params.snap_channel} ${utils.pytest} --junit-xml=validate.xml integration/validation -m 'snapd and not slow'"
+                    sh "SNAPD_CHANNEL=${params.snap_channel} CONTROLLER=${params.controller} MODEL=${juju_model} CLOUD=${params.cloud} SERIES=${params.series} SNAP_CHANNEL=${params.snap_channel} ${utils.pytest} --snapd-upgrade integration/validation -m 'not slow'"
                 }
             }
         }

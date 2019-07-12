@@ -13,24 +13,39 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col">
-      {% for bundle, channels in charm_report.rows.items() %}
-      <div>
-        <h3>{{bundle}}</h3>
-        {% for channel, app_data in channels.items() %}
-        <h4>
-          {{channel}}
-        </h4>
-        {% for application, revs in app_data.items() %}
-        {% for rev in revs %}
-        <div>
-          {{application}} : {{rev[0][0]}}
-        </div>
-        {% endfor %}
-        {% endfor %}
-        {% endfor %}
+      {% for bundle, _ in charm_report.rows.items() %}
+      <strong>{{bundle}}</strong>
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+          <thead class="thead-dark">
+            <tr>
+              <th class="align-middle text-center"><strong>{{bundle}}</strong></th>
+              <th></th>
+              <th></th>
+            </tr>
+          <tr>
+            {% for channel, app_data in channels.items() %}
+            <th></th>
+            <th class="align-middle text-center">{{channel}}</th>
+            <th></th>
+          </tr>
+          {% for application, revs in app_data.items() %}
+          <tr>
+            <th></th>
+            <th class="align-middle text-center">{{application}}</th>
+            <th>
+      <div class="col-3">
+        {{application}}
+      </div>
+      {% for rev in revs %}
+      <div class="col-3">
+        {{rev[0]}} - {{rev[1]}}
       </div>
       {% endfor %}
     </div>
+    {% endfor %}
+    {% endfor %}
   </div>
+  {% endfor %}
 </div>
 {% endblock %}
