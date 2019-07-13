@@ -130,7 +130,7 @@ pipeline {
                     # then re-tag that image with the suffix that the template is going to expect.
                     MULTI_ARCH_IMAGES="coredns k8s-dns-kube-dns k8s-dns-dnsmasq-nanny k8s-dns-sidecar"
 
-                    ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|${params.arch}|g")
+                    ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|${params.arch}|g" -e "s|{{ multiarch_workaround }}||g")
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
 
                     for i in \${ALL_IMAGES}
