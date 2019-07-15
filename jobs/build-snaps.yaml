@@ -1,5 +1,34 @@
 # Builds and releases latest snaps
 
+- job:
+    name: 'sync-upstream-k8s-tags'
+    description: Grabs upstream k8s release tags
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - ansicolor
+      - timestamps
+      - credentials-binding:
+          - username-password-separated:
+              credential-id: k8s_team_ci_lp
+              username: K8STEAMCI_USR
+              password: K8STEAMCI_PSW
+          - file:
+              credential-id: launchpad_creds
+              variable: LPCREDS
+    builders:
+      - shell: |-
+          #!/bin/bash
+          set -eux
+
+          export GIT_SSH_COMMAND="ssh -i /var/lib/jenkins/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"
+          export PATH=/var/lib/jenkins/venvs/ci/bin:/var/lib/jenkins/go/bin:/usr/local/go/bin:$PATH
+          cd jobs && ogc snap sync-upstream --snap-list includes/k8s-snap-list.inc
+    triggers:
+        - timed: "@daily"
+
+
 - job-template:
     name: 'promote-snaps-{arch}'
     description: |
@@ -157,28 +186,6 @@
       - build-discarder:
           num-to-keep: 2
 
-- job:
-    name: 'sync-release-tags'
-    description: Grabs upstream k8s release tags
-    project-type: freestyle
-    wrappers:
-      - credentials-binding:
-          - username-password-separated:
-              credential-id: k8s_team_ci_lp
-              username: K8STEAMCI_USR
-              password: K8STEAMCI_PSW
-          - username-password:
-              credential-id: launchpad_creds
-              variable: LPCREDS
-    builders:
-      - set-global-env
-      - git-clone-jenkaas
-      - shell: |
-          which pip3
-          pip3 install --upgrade ogc
-          cd ci/jobs && ogc snap sync-upstream --snap-list includes/k8s-snap-list.inc
-    triggers:
-        - timed: "@daily"
 
 - job:
     name: 'create-snap-recipes'

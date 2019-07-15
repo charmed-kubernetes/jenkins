@@ -6,6 +6,10 @@
           url: https://github.com/charmed-kubernetes/kubernetes-jenkins.git
           branches:
             - 'master'
+        skip-tag: true
+        fastpoll: true
+        shallow-clone: true
+        clean: {before: true}
 
 - scm:
     name: k8s-jenkins-scm
@@ -41,6 +45,8 @@
     builders:
       - shell: |
           export GIT_SSH_COMMAND="ssh -i /var/lib/jenkins/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"
+          export GOPATH=/var/lib/jenkins/go
+          export PATH=$PATH:/var/lib/jenkins/go/bin:/usr/local/go/bin:/var/lib/jenkins/venv/ci/bin
 
 - builder:
     name: git-clone-jenkaas

@@ -110,4 +110,4 @@ watchdog==0.9.0
 wcwidth==0.1.7
 websockets==7.0
 zipp==0.5.1
-ogc==0.1.4
+ogc==0.1.5
