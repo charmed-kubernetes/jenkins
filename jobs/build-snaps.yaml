@@ -78,7 +78,7 @@
           default: 'runner-{arch}'
       - string:
           name: version
-          default: '1.14'
+          default: '1.16'
           description: |
             Version to build and release. This job will clone (or create as needed) the
             cdk-addons release-`version` branch, then build and release the snap to the
@@ -91,17 +91,17 @@
             the tag will be set to https://dl.k8s.io/release/[stable|latest]-`version`.txt.
       - string:
           name: channels
-          default: '1.14/edge 1.14/beta 1.14/candidate 1.14/stable'
+          default: '1.16/edge 1.16/beta 1.16/candidate 1.16/stable'
           description: |
             Snap store channels to release the built snap to.
       - bool:
           name: dry_run
           default: false
           description: only report what would be pushed to github / snapstore / image registry
-
     properties:
       - build-discarder:
           num-to-keep: 7
+
 
 - job:
     name: 'build-release-eks-snaps'
@@ -160,11 +160,23 @@
 - job:
     name: 'sync-release-tags'
     description: Grabs upstream k8s release tags
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-snaps/sync-release-tags.groovy
+    project-type: freestyle
+    wrappers:
+      - credentials-binding:
+          - username-password-separated:
+              credential-id: k8s_team_ci_lp
+              username: K8STEAMCI_USR
+              password: K8STEAMCI_PSW
+          - username-password:
+              credential-id: launchpad_creds
+              variable: LPCREDS
+    builders:
+      - set-global-env
+      - git-clone-jenkaas
+      - shell: |
+          which pip3
+          pip3 install --upgrade ogc
+          cd ci/jobs && ogc snap sync-upstream --snap-list includes/k8s-snap-list.inc
     triggers:
         - timed: "@daily"
 

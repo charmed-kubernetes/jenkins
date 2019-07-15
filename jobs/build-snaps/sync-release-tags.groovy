@@ -1,6 +1,6 @@
 @Library('juju-pipeline@master') _
 
-def snap_sh = "${utils.cipy} build-snaps/snaps-source.py sync-upstream"
+def snap_sh = "${utils.cibin}/ogc"
 
 pipeline {
     agent { label "runner-cloud" }
@@ -20,7 +20,7 @@ pipeline {
         stage('Sync Upstream Releases'){
             steps {
                 dir('jobs'){
-                    sh "${snap_sh} --snap-list includes/k8s-snap-list.inc"
+                    sh "${snap_sh} snap sync-upstream --snap-list includes/k8s-snap-list.inc"
                 }
             }
         }

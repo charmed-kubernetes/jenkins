@@ -3,7 +3,7 @@
     name: k8s-jenkins-jenkaas
     scm:
       - git:
-          url: https://github.com/juju-solutions/kubernetes-jenkins.git
+          url: https://github.com/charmed-kubernetes/kubernetes-jenkins.git
           branches:
             - 'master'
 
@@ -11,7 +11,7 @@
     name: k8s-jenkins-scm
     scm:
       - git:
-          url: https://github.com/juju-solutions/kubernetes-jenkins.git
+          url: https://github.com/charmed-kubernetes/kubernetes-jenkins.git
           branches:
             - 'jenkaas'
 
@@ -35,3 +35,15 @@
          clean: {before: true}
          branches:
           - master
+
+- builder:
+    name: set-global-env
+    builders:
+      - shell: |
+          export GIT_SSH_COMMAND="ssh -i /var/lib/jenkins/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"
+
+- builder:
+    name: git-clone-jenkaas
+    builders:
+      - shell: |
+          git clone --depth 1 https://github.com/charmed-kubernetes/kubernetes-jenkins.git ci
