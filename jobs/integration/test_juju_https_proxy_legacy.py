@@ -3,24 +3,19 @@ import pytest
 import re
 import os
 import time
-from .base import (
-    UseModel,
-    _juju_wait
-)
 from .utils import (
     asyncify,
     verify_ready,
     verify_completed,
     verify_deleted,
-    retry_async_with_timeout
+    retry_async_with_timeout,
+    _juju_wait
 )
 from .logger import log, log_calls_async
 from juju.controller import Controller
 from tempfile import NamedTemporaryFile
 
 
-
-@log_calls_async
 async def setup_proxy(model):
     log('Adding proxy to the model')
     proxy_app = await model.deploy("cs:~pjds/squid-forwardproxy-testing-1")
@@ -45,7 +40,6 @@ async def get_config_contents(file, unit):
     return conf_contents
 
 
-@log_calls_async
 async def get_contents(runtime, worker_unit):
     runtime_conf_contents = ""
     service_file = get_config_for_rt(runtime)
@@ -61,7 +55,6 @@ async def get_contents(runtime, worker_unit):
 CONFIG_REGEX = r"Environment=\"HTTP(S){0,1}_PROXY=([a-zA-Z]{4,5}://[0-9a-zA-Z.]*(:[0-9]{0,5}){0,1}){1,1}\""
 
 
-@log_calls_async
 async def test_kube_node_conf(worker_unit, runtime='docker'):
     configuration_contents = await get_contents(runtime, worker_unit)
     # Assert runtime config vals were overriden
@@ -75,7 +68,6 @@ async def test_kube_node_conf(worker_unit, runtime='docker'):
     assert match is not None
 
 
-@log_calls_async
 async def test_kube_node_conf_missing(worker_unit, runtime='docker'):
     configuration_contents = await get_contents(runtime, worker_unit)
     # Assert runtime config vals were overriden
@@ -89,7 +81,6 @@ async def test_kube_node_conf_missing(worker_unit, runtime='docker'):
     assert match is None
 
 
-@log_calls_async
 async def test_http_conf_existing_container_runtime(model, proxy_app):
     proxy = proxy_app.units[0]
 
@@ -140,17 +131,9 @@ async def test_http_conf_existing_container_runtime(model, proxy_app):
 
 
 @pytest.mark.asyncio
-async def test_juju_proxy_vars(log_dir):
-    controller = Controller()
-    await controller.connect()
-    cloud = await controller.get_cloud()
-    if cloud is not 'localhost':
-        async with UseModel() as model:
-            proxy_app = setup_proxy(model)
-            await test_http_conf_existing_container_runtime(
-                model,
-                proxy_app
-            )
-            await controller.connect()
-            info = await model.get_info()
-            await controller.destroy_model(info.uuid)
+async def test_juju_proxy_vars(model):
+    proxy_app = setup_proxy(model)
+    await test_http_conf_existing_container_runtime(
+        model,
+        proxy_app
+    )
