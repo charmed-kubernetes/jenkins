@@ -114,12 +114,6 @@ async def test_http_conf_existing_container_runtime(model, runtime, proxy_app):
 
     proxy = proxy_app.units[0]
 
-####################
-    # container_runtime = model.applications[runtime]
-    # proxy_app = model.applications[runtime]
-    # proxy = proxy_app.units[0]
-#####################
-
     # Container runtime config should be overriden by the juju-envs.
     # If this config remains the below regex will fail.
     log('Setting proxy configuration on juju-model.')
@@ -169,23 +163,13 @@ async def test_http_conf_existing_container_runtime(model, runtime, proxy_app):
     )
 
 
-
-
 @pytest.mark.asyncio
-async def test_juju_proxy_vars(log_dir):
-    controller = Controller()
-    await controller.connect_current()
-    cloud = await controller.get_cloud()
-    if cloud is not 'localhost':
-        async with UseModel() as model:
-            proxy_app = await setup_proxy(model)
-            proxy_app = model.applications['squid-forwardproxy']
-            for container_runtime in ['docker', 'containerd']:
-                await test_http_conf_existing_container_runtime(
-                    model,
-                    container_runtime,
-                    proxy_app
-                )
-
-            info = await model.get_info()
-            await controller.destroy_model(info.uuid)
+async def test_juju_proxy_vars(model):
+    proxy_app = await setup_proxy(model)
+    proxy_app = model.applications['squid-forwardproxy']
+    for container_runtime in ['docker', 'containerd']:
+        await test_http_conf_existing_container_runtime(
+            model,
+            container_runtime,
+            proxy_app
+        )
