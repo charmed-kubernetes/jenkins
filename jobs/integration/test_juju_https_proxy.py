@@ -38,7 +38,6 @@ async def get_config_contents(file, unit):
     return conf_contents
 
 
-@log_calls_async
 async def get_contents(runtime, worker_unit):
     runtime_conf_contents = ""
     service_file = get_config_for_rt(runtime)
@@ -54,7 +53,6 @@ async def get_contents(runtime, worker_unit):
 CONFIG_REGEX = r"Environment=\"HTTP(S){0,1}_PROXY=([a-zA-Z]{4,5}://[0-9a-zA-Z.]*(:[0-9]{0,5}){0,1}){1,1}\""
 
 
-@log_calls_async
 async def test_kube_node_conf(worker_unit, runtime):
     configuration_contents = await get_contents(runtime, worker_unit)
     # Assert runtime config vals were overriden
@@ -68,7 +66,6 @@ async def test_kube_node_conf(worker_unit, runtime):
     assert match is not None
 
 
-@log_calls_async
 async def test_kube_node_conf_missing(worker_unit, runtime):
     configuration_contents = await get_contents(runtime, worker_unit)
     # Assert runtime config vals were overriden
@@ -82,14 +79,12 @@ async def test_kube_node_conf_missing(worker_unit, runtime):
     assert match is None
 
 
-@log_calls_async
 async def setup_proxy(model):
     log('Adding proxy to the model')
     proxy_app = await model.deploy("cs:~pjds/squid-forwardproxy-testing-1")
     return proxy_app
 
 
-@log_calls_async
 async def test_http_conf_existing_container_runtime(model, runtime, proxy_app):
     container_endpoint = "%s:%s" % (runtime, runtime)
     container_runtime_env = "%s_RUNTIME_VERSION" % runtime.upper()
