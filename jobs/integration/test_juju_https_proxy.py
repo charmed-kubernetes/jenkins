@@ -3,16 +3,13 @@ import pytest
 import re
 import os
 import time
-from .base import (
-    UseModel,
-    _juju_wait
-)
 from .utils import (
     asyncify,
     verify_ready,
     verify_completed,
     verify_deleted,
-    retry_async_with_timeout
+    retry_async_with_timeout,
+    _juju_wait
 )
 from .logger import log, log_calls_async
 from juju.controller import Controller
@@ -50,17 +47,18 @@ async def get_contents(runtime, worker_unit):
     log("Configuration file value: %s" % runtime_conf_contents)
     return runtime_conf_contents
 
-CONFIG_REGEX = r"Environment=\"HTTP(S){0,1}_PROXY=([a-zA-Z]{4,5}://[0-9a-zA-Z.]*(:[0-9]{0,5}){0,1}){1,1}\""
+HTTP_S_REGEX = r"Environment=\"HTTP(S){0,1}_PROXY=([a-zA-Z]{4,5}://[0-9a-zA-Z.]*(:[0-9]{0,5}){0,1}){1,1}\""
+BLAH_REGEX = r"Environment=\"HTTP(S){0,1}_PROXY={}\""
 
 
 async def test_kube_node_conf(worker_unit, runtime):
     configuration_contents = await get_contents(runtime, worker_unit)
-    # Assert runtime config vals were overriden
-    assert 'blah' not in configuration_contents
+    # Assert runtime config vals were not overriden
+    assert 'blah' in configuration_contents
 
     # Assert http value was set
     match = re.search(
-        CONFIG_REGEX,
+        BLAH_REGEX.format('blah'),
         configuration_contents
     )
     assert match is not None
@@ -73,7 +71,7 @@ async def test_kube_node_conf_missing(worker_unit, runtime):
 
     # Assert http value was set
     match = re.search(
-        CONFIG_REGEX,
+        HTTP_S_REGEX,
         configuration_contents
     )
     assert match is None
@@ -139,7 +137,7 @@ async def test_http_conf_existing_container_runtime(model, runtime, proxy_app):
     })
 
     # Config key must be different
-    await container_runtime.set_config({'http_proxy': 'bla2h'})
+    await container_runtime.set_config({'http_proxy': ''})
     time.sleep(20)
     log('waiting...')
     await asyncify(_juju_wait)()
