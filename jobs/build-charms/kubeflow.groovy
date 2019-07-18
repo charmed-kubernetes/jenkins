@@ -67,7 +67,7 @@ pipeline {
         stage('Release Kubeflow Bundle') {
             steps {
                 exec 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
-                exec 'cd bundle-kubeflow && CHARM_BUILD_DIR=/tmp/charms juju bundle publish --url cs:kubeflow'
+                exec 'cd bundle-kubeflow && CHARM_BUILD_DIR=/tmp/charms juju bundle publish --url cs:~kubeflow-charmers/kubeflow'
             }
             when { expression { ゴゴゴ } }
         }
