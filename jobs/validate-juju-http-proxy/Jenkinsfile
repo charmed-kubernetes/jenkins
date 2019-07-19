@@ -41,7 +41,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} CONTAINERD_RUNTIME_VERSION=${params.containerd_runtime_version} DOCKER_RUNTIME_VERSION=${params.docker_runtime_version} --junit-xml=validate.xml integration/test_juju_https_proxy.py::test_juju_proxy_vars"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} CONTAINERD_RUNTIME_VERSION=${params.containerd_runtime_version} DOCKER_RUNTIME_VERSION=${params.docker_runtime_version} --junit-xml=validate.xml integration/test_juju_https_proxy.py::test_http_conf_existing_container_runtime"
                 }
             }
         }
