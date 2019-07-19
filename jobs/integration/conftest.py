@@ -86,6 +86,18 @@ def skip_by_arch(request, system_arch):
             pytest.skip("skipped on this arch: {}".format(system_arch))
 
 
+@pytest.fixture(scope="module")
+async def proxy_app(model):
+    proxy_app = model.applications.get('squid-forwardproxy')
+
+    if proxy_app is None:
+        proxy_app = await model.deploy("cs:~pjds/squid-forwardproxy-testing-1")
+        await asyncify(_juju_wait)()
+
+    yield proxy_app
+    await proxy_app.remove()
+
+
 @pytest.fixture(autouse=True)
 def skip_by_app(request, model):
     """ Skip tests if missing certain applications
