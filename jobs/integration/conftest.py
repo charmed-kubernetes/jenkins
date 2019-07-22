@@ -92,10 +92,8 @@ async def proxy_app(model):
 
     if proxy_app is None:
         proxy_app = await model.deploy("cs:~pjds/squid-forwardproxy-testing-1")
-        await asyncify(_juju_wait)()
 
     yield proxy_app
-    await proxy_app.remove()
 
 
 @pytest.fixture(autouse=True)
