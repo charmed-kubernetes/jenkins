@@ -5,7 +5,6 @@ from subprocess import check_output
 import pytest
 import requests
 
-from .base import UseModel
 from .logger import log_calls, log_calls_async
 from .utils import asyncify
 
@@ -40,20 +39,19 @@ def kubectl_create(path: str):
 
 
 @pytest.mark.asyncio
-async def test_validate(log_dir):
+async def test_validate(model, log_dir):
     """Validates a Kubeflow deployment"""
 
-    async with UseModel() as model:
-        # Synchronously check what juju thinks happened
-        validate_statuses(model)
+    # Synchronously check what juju thinks happened
+    validate_statuses(model)
 
-        # Check everything else concurrently
-        await asyncio.gather(
-            validate_ambassador(),
-            validate_jupyterhub_api(),
-            validate_seldon(),
-            validate_tf_dashboard(),
-        )
+    # Check everything else concurrently
+    await asyncio.gather(
+        validate_ambassador(),
+        validate_jupyterhub_api(),
+        validate_seldon(),
+        validate_tf_dashboard(),
+    )
 
 
 @log_calls
@@ -68,8 +66,16 @@ def validate_statuses(model):
         "jupyter-controller/0",
         "jupyter-web/0",
         "jupyterhub/0",
+        "katib-controller/0",
+        "katib-manager/0",
+        "katib-db/0",
+        "katib-ui/0",
         "mariadb/0",
+        "metacontroller/0",
         "minio/0",
+        "modeldb-backend/0",
+        "modeldb-store/0",
+        "modeldb-ui/0",
         "pipelines-api/0",
         "pipelines-dashboard/0",
         "pipelines-persistence/0",
@@ -90,7 +96,7 @@ def validate_statuses(model):
     for name, unit in model.units.items():
         assert unit.agent_status == "idle"
         assert unit.workload_status == "active"
-        assert unit.workload_status_message == ("ready" if name == "mariadb/0" else "")
+        assert unit.workload_status_message in ("", "ready")
 
 
 @log_calls_async
@@ -142,7 +148,7 @@ async def validate_tf_dashboard():
         ("Running", "False", "TFJobRunning"),
         ("Succeeded", "True", "TFJobSucceeded"),
     ]
-    expected_statuses = {"PS": {}, "Worker": {}, "Chief": {}, "Master": {}}
+    expected_statuses = {"PS": {"succeeded": 1}, "Worker": {"succeeded": 1}}
 
     # Wait for up to 5 minutes for the job to complete,
     # checking every 5 seconds
@@ -160,7 +166,7 @@ async def validate_tf_dashboard():
             for cond in response["status"]["conditions"] or []
         ]
 
-        statuses = response["status"]["tfReplicaStatuses"]
+        statuses = response["status"]["replicaStatuses"]
 
         try:
             assert jobs == expected_jobs

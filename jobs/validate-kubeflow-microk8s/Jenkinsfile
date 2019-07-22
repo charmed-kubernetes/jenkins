@@ -28,7 +28,7 @@ pipeline {
         }
         stage('Setup') {
             steps {
-                sh "juju bootstrap aws ${CONTROLLER}"
+                sh "juju bootstrap aws/us-east-2 ${CONTROLLER}"
                 sh "juju deploy -m ${CONTROLLER}:default ubuntu --constraints 'cores=4 mem=16G root-disk=40G'"
                 sh "juju wait -vw -m ${CONTROLLER}:default"
                 sh "juju status -m ${CONTROLLER}:default"
@@ -62,7 +62,21 @@ pipeline {
                 exec 'echo \'PATH=$PATH:/snap/bin\' > ~/.bashrc'
                 exec 'microk8s.status'
                 exec 'sudo snap logs -n=100 microk8s'
-                exec "cd bundle-kubeflow && CI=true BUILD=true CHANNEL=${params.channel} CHARM_BUILD_DIR=/tmp/charm-builds ./scripts/deploy-microk8s.sh"
+                exec "cd bundle-kubeflow && CHARM_BUILD_DIR=/tmp/charm-builds ./scripts/deploy-microk8s create --build --ci --channel ${params.channel}"
+                exec "juju status --format yaml | yq r - applications.ambassador.address > PUB_IP"
+            }
+        }
+        stage('Wait for Ambassador') {
+            options {
+                retry(20)
+            }
+            steps {
+                exec 'curl $(<PUB_IP)'
+            }
+            post {
+                failure {
+                    sleep 5
+                }
             }
         }
         stage('Validate') {
@@ -70,8 +84,8 @@ pipeline {
                 exec """
                     git clone https://github.com/charmed-kubernetes/jenkins.git &&
                     cd jenkins &&
-                    juju status --format yaml | yq r - applications.ambassador.address > PUB_IP &&
                     git checkout ${env.GIT_COMMIT} &&
+                    cp ../PUB_IP ./ &&
                     cd jobs/ &&
                     PY_IGNORE_IMPORTMISMATCH=1
                     CONTROLLER=uk8s
