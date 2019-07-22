@@ -74,7 +74,7 @@ async def check_kube_node_conf_missing(worker_unit, runtime):
 
 @pytest.mark.parametrize(
     "runtime",
-    ["docker", "containerd"]
+    ["containerd", "docker"]
 )
 @pytest.mark.asyncio
 async def test_http_conf_existing_container_runtime(
@@ -83,7 +83,8 @@ async def test_http_conf_existing_container_runtime(
     proxy_app
 ):
     container_endpoint = "%s:%s" % (runtime, runtime)
-    container_runtime_name = 'cs:~pjds/%s' % (
+    # container_runtime_name = 'cs:~pjds/%s' % (
+    container_runtime_name = '/home/pjds/charms/builds/%s' % (
         runtime
     )
 
@@ -103,7 +104,7 @@ async def test_http_conf_existing_container_runtime(
             'kubernetes-worker:container-runtime'
         )
 
-        await asyncify(_juju_wait)()
+    await asyncify(_juju_wait)()
 
     proxy = proxy_app.units[0]
 
@@ -139,14 +140,9 @@ async def test_http_conf_existing_container_runtime(
         await check_kube_node_conf_missing(worker_unit, runtime)
     for master_unit in model.applications['kubernetes-master'].units:
         await check_kube_node_conf_missing(master_unit, runtime)
-    await container_runtime.remove_relation(
-        container_endpoint,
-        "kubernetes-master:container-runtime"
-    )
-    await container_runtime.remove_relation(
-        container_endpoint,
-        "kubernetes-worker:container-runtime"
-    )
+
+    # Removing container runtimes here
+    # apt issues, as also adding _juju_wait causes a permanent stall.
 
     # Reset
     await container_runtime.set_config({'http_proxy': ''})
