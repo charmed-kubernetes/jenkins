@@ -57,8 +57,12 @@ pipeline {
         }
         stage('Deploy kubeflow') {
             steps {
-                exec "git clone https://github.com/juju-solutions/bundle-kubeflow.git"
-                exec "cd bundle-kubeflow && CI=true BUILD=true CHANNEL=${params.channel} CHARM_BUILD_DIR=/tmp/charm-builds ./scripts/deploy-aws.sh"
+                exec """
+                    git clone https://github.com/juju-solutions/bundle-kubeflow.git &&
+                    cd bundle-kubeflow &&
+                    ./scripts/manage-cdk create --region us-east-2 &&
+                    CHARM_BUILD_DIR=/tmp/charm-builds ./scripts/deploy-cdk create --build --ci --channel ${params.channel}
+                """.replaceAll('\\s+', ' ')
                 exec 'juju status -m default | grep "kubernetes-worker/0" | awk "{print \\$5}" > PUB_IP'
             }
         }
