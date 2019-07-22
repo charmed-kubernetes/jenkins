@@ -83,8 +83,7 @@ async def test_http_conf_existing_container_runtime(
     proxy_app
 ):
     container_endpoint = "%s:%s" % (runtime, runtime)
-    # container_runtime_name = 'cs:~pjds/%s' % (
-    container_runtime_name = '/home/pjds/charms/builds/%s' % (
+    container_runtime_name = 'cs:~pjds/%s' % (
         runtime
     )
 
