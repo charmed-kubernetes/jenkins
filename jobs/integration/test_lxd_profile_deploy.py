@@ -16,10 +16,17 @@ from .utils import (
 from .logger import log, log_calls_async
 from juju.controller import Controller
 from juju.errors import JujuError
-
+here = os.path.dirname(os.path.abspath(__file__))
 
 LXD_PROFILE = yaml.load(
-    open('jobs/validate-alt-arch/lxd-profile.yaml', 'r').read()
+    open(
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "templates",
+            "lxd-profile.yaml"
+        ),
+        'r'
+    )
 )
 
 
