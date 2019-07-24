@@ -10,28 +10,14 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/validate-lxd-profile-deploy/Jenkinsfile
     parameters:
-      - string:
-          name: model
-          default: 'minor-upgrade'
-      - string:
-          name: controller
-          default: 'validate-minor'
       - choice:
           name: cloud
           choices:
             - 'localhost'
       - string:
-          name: upgrade_snap_channel
-          default: '{upgrade_snap_channel}'
-      - string:
           name: bundle
           default: '{bundle}'
-      - string:
-          name: upgrade_charm_channel
-          default: '{upgrade_charm_channel}'
-    properties:
-      - build-discarder:
-          num-to-keep: 7
+
 
 - project:
     name: validate-lxd-profile-deploy

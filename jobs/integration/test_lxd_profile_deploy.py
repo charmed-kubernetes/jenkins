@@ -107,9 +107,7 @@ async def test_lxd_profiles(model, charm_name):
 async def test_lxd_profile_upgrade(model, charm_name):
     app = model.applications[charm_name]
     log("Upgrading charm to edge channel")
-    # await app.upgrade_charm(channel="edge")
-    ## TESTING
-    app.upgrade_charm(path="/home/pjds/charms/builds/{}".format(charm_name))
+    await app.upgrade_charm(channel="edge")
     time.sleep(10)
     log("Upgraded charm.")
     await asyncify(_juju_wait)()
