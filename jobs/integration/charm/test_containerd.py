@@ -1,11 +1,18 @@
 """
 Test Containerd charm specific.
 """
+import pytest
+
 from ..logger import log
-from ..utils import retry_async_with_timeout
+from ..utils import (
+    _juju_wait,
+    asyncify,
+    retry_async_with_timeout
+)
 
 
-async def validate_containerd_no_gpu(model):
+@pytest.mark.asyncio
+async def test_containerd_no_gpu(model):
     """
     Mostly a place holder.
     """
@@ -18,10 +25,10 @@ async def validate_containerd_no_gpu(model):
     log('validating containerd no gpu')
 
     await worker_app.set_config({'gpu_driver': 'none'})
+    await asyncify(_juju_wait)()
 
     for worker in worker_app.units:
         log('verifying worker ' + worker.entity_id)
-        log(' - dockerd config')
         await retry_async_with_timeout(verify_ps_output,
                                         (worker, 'containerd'),
                                         timeout_msg="containerd ps test did not pass",

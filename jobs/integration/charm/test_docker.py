@@ -1,11 +1,14 @@
 """
 Test Docker charm specific.
 """
+import pytest
+
 from ..logger import log
 from ..utils import retry_async_with_timeout
 
 
-async def validate_docker_opts(model):
+@pytest.mark.asyncio
+async def test_docker_opts(model):
     worker_app = model.applications['docker']
 
     async def verify_default_docker(worker, opt):
@@ -35,4 +38,4 @@ async def validate_docker_opts(model):
                                            timeout_msg="docker ps test did not pass",
                                            timeout_insec=120)
 
-    await worker_app.set_config({'docker-opts': ""})
+    await worker_app.set_config({'docker-opts': ''})
