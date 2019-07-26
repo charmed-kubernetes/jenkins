@@ -30,13 +30,31 @@ def _cloud_from_env():
     return os.environ.get("CLOUD", None)
 
 
-def _juju_wait(controller=None, model=None):
+def _juju_wait(controller=None, model=None, exclude=None):
+    """
+    Juju wait.
+
+    :param controller: String controller
+    :param model: String model
+    :param exclude: List String or String applications to exclude
+    """
     if not controller:
         controller = _controller_from_env()
+
     if not model:
         model = _model_from_env()
+
+    if exclude and isinstance(exclude, str):
+            exclude = [exclude]
+
+    command = ["-e", "{}:{}".format(controller, model), "-w"]
+
+    if exclude:
+        for x in exclude:
+            command.extend(['-x', x])
+
     log("Settling...")
-    juju_wait("-e", "{}:{}".format(controller, model), "-w")
+    juju_wait(*command)
 
 
 @contextmanager
