@@ -1,0 +1,95 @@
+@Library('juju-pipeline@master') _
+
+def juju_model = String.format("%s-%s", params.model, uuid())
+def juju_controller = String.format("%s-%s", params.controller, uuid())
+
+pipeline {
+    agent {
+        label "${params.build_node}"
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = "${utils.cipaths}"
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage("Prep") {
+            steps {
+                tearDownLxd()
+            }
+        }
+        stage('Deploy: K8s') {
+            options {
+                timeout(time: 4, unit: 'HOURS')
+            }
+            steps {
+                setStartTime()
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
+                sh "juju add-model -c ${juju_controller} ${juju_model}"
+                deployCDK(
+                    controller: juju_controller,
+                    model: juju_model,
+                    cloud: params.cloud,
+                    bundle: "cs:~containers/${params.bundle}",
+                    version_overlay: params.version_overlay,
+                    bundle_channel: params.bundle_channel,
+                    disable_add_model: true
+                )
+            }
+        }
+
+        stage('Validate') {
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+
+            when {
+                expression { !params.perform_upgrade }
+            }
+            steps {
+                dir('jobs') {
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=lxd ${utils.pytest} --junit-xml=validate.xml integration/test_lxd_profile_deploy.py::test_lxd_profiles"
+                }
+            }
+        }
+        stage('Validate Upgrade') {
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+            when {
+                expression { params.perform_upgrade }
+            }
+            steps {
+                dir('jobs') {
+                    "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=lxd ${utils.pytest} --junit-xml=validate.xml integration/test_lxd_profile_deploy.py::test_lxd_profile_upgrade"
+                }
+            }
+        }
+    }
+    post {
+        failure {
+            setFail()
+        }
+
+        success {
+            setPass()
+        }
+        always {
+            setEndTime()
+            sh "sudo lxc profile show default"
+            collectDebug(juju_controller,
+                         juju_model)
+
+        }
+        cleanup {
+            saveMeta()
+            tearDown(juju_controller)
+            tearDownLxd()
+        }
+    }
+}

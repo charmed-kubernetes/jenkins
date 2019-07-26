@@ -53,7 +53,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} --junit-xml=validate.xml integration/validation.py -m 'not slow'"
                 }
             }
         }

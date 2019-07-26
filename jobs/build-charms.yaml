@@ -60,6 +60,8 @@
     properties:
       - build-discarder:
           num-to-keep: 36
+    triggers:
+      - timed: "H/10 * * * *"
 
 - job:
     name: 'build-k8s-bundles'

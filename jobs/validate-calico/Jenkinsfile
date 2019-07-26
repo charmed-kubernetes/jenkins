@@ -4,7 +4,6 @@ def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
 def upgrade = params.upgrade_from_bundle_channel != ''
 def deploy_bundle_channel = upgrade ? params.upgrade_from_bundle_channel : params.bundle_channel
-def test = upgrade ? 'test_upgrade' : 'test_validate'
 
 pipeline {
     agent {
@@ -54,7 +53,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} TEST_CHARM_CHANNEL=${params.bundle_channel} ${utils.pytest} --junit-xml=validate.xml integration/test_cdk.py::${test}"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} TEST_CHARM_CHANNEL=${params.bundle_channel} ${utils.pytest} --junit-xml=validate.xml integration/validation.py -m 'not slow'"
                 }
             }
         }

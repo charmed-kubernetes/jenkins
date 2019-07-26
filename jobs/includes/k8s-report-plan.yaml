@@ -28,3 +28,7 @@ validation-addon-report:
     - tigera-secure-ee
     - vault
   parser: "$prefix-$job-$version"
+
+charm-report:
+  bundles:
+    !include includes/charm-bundles-list.inc

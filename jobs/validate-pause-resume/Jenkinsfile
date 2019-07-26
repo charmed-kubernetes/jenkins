@@ -24,7 +24,7 @@ pipeline {
             }
             steps {
                 setStartTime()
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints arch=amd64 --debug"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints arch=amd64"
                 deployCDK(controller: juju_controller,
                           model: juju_model,
                           bundle: "cs:~containers/${params.bundle}",

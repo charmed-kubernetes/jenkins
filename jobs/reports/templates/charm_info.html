@@ -13,7 +13,19 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col">
-      booya
+      {% for obj in charm_report.rows %}
+      <strong>{{obj.bundle}} <small>{{obj.channel}}</small></strong>
+      <ul>
+        {% for app in obj.applications %}
+        <li>{{app.application}}</li>
+        <ul>
+          {% for layer in app.layers %}
+          <li>{{layer['url']}} - {{layer['rev']}}</li>
+          {% endfor %}
+        </ul>
+        {% endfor %}
+      </ul>
+      {% endfor %}
     </div>
   </div>
 </div>

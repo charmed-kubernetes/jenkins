@@ -20,11 +20,11 @@ pipeline {
     stages {
         stage('Deploy: K8s') {
             options {
-                timeout(time: 4, unit: 'HOURS')
+                timeout(time: 1.5, unit: 'HOURS')
             }
             steps {
                 setStartTime()
-                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints 'arch=amd64'"
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --debug"
                 deployCDK(controller: juju_controller,
                           model: juju_model,
                           cloud: params.cloud,
@@ -36,12 +36,12 @@ pipeline {
 
         stage('Validate') {
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 2, unit: 'hours')
             }
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} TEST_IPS='${params.test_ips}' ${utils.pytest} --junit-xml=validate.xml integration/test_ceph.py::test_ceph"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} ${utils.pytest} CONTAINERD_RUNTIME_VERSION=${params.containerd_runtime_version} DOCKER_RUNTIME_VERSION=${params.docker_runtime_version} --junit-xml=validate.xml integration/test_juju_https_proxy.py::test_http_conf_existing_container_runtime"
                 }
             }
         }

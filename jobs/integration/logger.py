@@ -3,8 +3,8 @@ from datetime import datetime
 
 
 def log(msg):
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print('[%s] %s' % (timestamp, msg), flush=True)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"LOG :: {timestamp} :: {msg}", flush=True)
 
 
 def function_call_str(f, args, kwargs):
@@ -17,6 +17,8 @@ def function_call_str(f, args, kwargs):
 
 
 logged_exception = None
+
+
 def log_exception_once(e):
     global logged_exception
     if e != logged_exception:
@@ -27,28 +29,30 @@ def log_exception_once(e):
 def log_calls(f):
     def wrapper(*args, **kwargs):
         f_str = function_call_str(f, args, kwargs)
-        log('START ' + f_str)
+        log("START " + f_str)
         try:
             result = f(*args, **kwargs)
-            log('END   ' + f_str)
+            log("END   " + f_str)
             return result
         except Exception as e:
             log_exception_once(e)
-            log('RAISE ' + f_str)
+            log("RAISE " + f_str)
             raise
+
     return wrapper
 
 
 def log_calls_async(f):
     async def wrapper(*args, **kwargs):
         f_str = function_call_str(f, args, kwargs)
-        log('START ' + f_str)
+        log("START " + f_str)
         try:
             result = await f(*args, **kwargs)
-            log('END   ' + f_str)
+            log("END   " + f_str)
             return result
         except Exception as e:
             log_exception_once(e)
-            log('RAISE ' + f_str)
+            log("RAISE " + f_str)
             raise
+
     return wrapper

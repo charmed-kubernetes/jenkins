@@ -16,7 +16,7 @@
     namespace: containers/bundle
     tags: ['k8s', 'kubernetes-calico']
 - canonical-kubernetes-canal:
-    fragments: 'k8s/cdk cni/canal cri/docker'
+    fragments: 'k8s/cdk cni/canal cri/containerd'
     namespace: containers/bundle
     tags: ['k8s', 'canonical-kubernetes-canal']
 - kubernetes-tigera-secure-ee:
