@@ -29,9 +29,12 @@ pipeline {
             steps {
                 build job:"build-charms",
                     parameters: [string(name:'charm_branch', value: 'stable'),
+                                 string(name:'layer_branch', value: 'stable'),
+                                 string(name:'tag', value: 'k8s'),
                                  string(name:'to_channel', value: params.charm_promote_to)]
                 build job:"build-k8s-bundles",
-                    parameters: [string(name:'to_channel', value: 'candidate')]
+                    parameters: [string(name:'to_channel', value: 'candidate'),
+                                 string(name:'tag', value: 'k8s')]
             }
             post {
                 failure {
