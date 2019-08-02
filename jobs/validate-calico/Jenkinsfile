@@ -4,6 +4,7 @@ def juju_model = String.format("%s-%s", params.model, uuid())
 def juju_controller = String.format("%s-%s", params.controller, uuid())
 def upgrade = params.upgrade_from_bundle_channel != ''
 def deploy_bundle_channel = upgrade ? params.upgrade_from_bundle_channel : params.bundle_channel
+def num_subnets = params.test_bgp ? 2 : 1
 
 pipeline {
     agent {
@@ -27,9 +28,12 @@ pipeline {
             steps {
                 setStartTime()
                 dir('jobs') {
-                    sh "${utils.cipy} integration/tigera/cleanup_vpcs.py"
+                    sh "${utils.cipy} integration/tigera_aws.py cleanup"
                     script {
-                        sh "CONTROLLER=${juju_controller} ${utils.cipy} integration/tigera/bootstrap_aws_single_subnet.py"
+                        sh "CONTROLLER=${juju_controller} NUM_SUBNETS=${num_subnets} ${utils.cipy} integration/tigera_aws.py bootstrap"
+                        if (params.test_bgp) {
+                            sh "MODEL=${juju_controller}:${juju_model} ${utils.cipy} integration/tigera_aws.py deploy-bgp-router"
+                        }
                     }
                 }
                 deployCDK(controller: juju_controller,
@@ -40,7 +44,12 @@ pipeline {
                           bundle_channel: deploy_bundle_channel,
                           disable_wait: true)
                 dir('jobs') {
-                    sh "${utils.cipy} integration/tigera/disable_source_dest_check.py -m ${juju_controller}:${juju_model}"
+                    script {
+                        sh "MODEL=${juju_controller}:${juju_model} ${utils.cipy} integration/tigera_aws.py disable-source-dest-check"
+                        if (params.test_bgp) {
+                            sh "MODEL=${juju_controller}:${juju_model} ${utils.cipy} integration/tigera_aws.py configure-bgp
+                        }
+                    }
                 }
                 sh "juju-wait -e ${juju_controller}:${juju_model} -w"
             }
@@ -75,7 +84,7 @@ pipeline {
             dir('jobs') {
                 script {
                     tearDown(juju_controller)
-                    sh "${utils.cipy} integration/tigera/cleanup_vpcs.py"
+                    sh "${utils.cipy} integration/tigera_aws.py cleanup"
                 }
             }
         }

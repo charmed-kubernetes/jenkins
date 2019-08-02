@@ -269,11 +269,13 @@ def arch():
 
 
 async def disable_source_dest_check():
-    path = os.path.dirname(__file__) + "/tigera/disable_source_dest_check.py"
+    path = os.path.dirname(__file__) + "/tigera_aws.py"
     controller = _controller_from_env()
     model = _model_from_env()
-    cmd = [path, "-m", controller + ":" + model]
-    await asyncify(check_call)(cmd)
+    env = os.environ.copy()
+    env['MODEL'] = controller + ':' + model
+    cmd = [path, "disable-source-dest-check"]
+    await asyncify(check_call)(cmd, env=env)
 
 
 async def verify_deleted(unit, entity_type, name, extra_args=""):
