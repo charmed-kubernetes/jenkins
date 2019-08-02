@@ -7,8 +7,8 @@ from pprint import pprint
 
 VPC_CIDR = "172.30.0.0/24"
 SUBNET0_CIDR = "172.30.0.0/24"
-REGION = "us-east-2a"
-AVAILABILITY_ZONE = "us-east-1b"
+REGION = "us-east-2"
+AVAILABILITY_ZONE = "us-east-2a"
 
 
 def aws(*args):
