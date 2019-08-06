@@ -1234,8 +1234,14 @@ async def test_encryption_at_rest(model):
         await model.applications["kubernetes-master"].remove_relation(
             "easyrsa:client", "kubernetes-worker:certificates"
         )
+        if "kubeapi-load-balancer" in model.applications:
+            await model.applications["kubeapi-load-balancer"].remove_relation(
+                "easyrsa:client", "kubeapi-load-balancer:certificates"
+            )
         await model.add_relation("vault:certificates", "kubernetes-master:certificates")
         await model.add_relation("vault:certificates", "kubernetes-worker:certificates")
+        if "kubeapi-load-balancer" in model.applications:
+            await model.add_relation("vault:certificates", "kubeapi-load-balancer:certificates")
         await model.add_relation("kubernetes-master:vault-kv", "vault:secrets")
         await asyncify(_juju_wait)()
         # create secret
@@ -1266,12 +1272,15 @@ async def test_encryption_at_rest(model):
         await asyncify(_juju_wait)()
         await model.applications["percona-cluster"].destroy()
         # re-add easyrsa after vault is gone
-        (done2, pending2) = await asyncio.wait(
-            {
-                model.add_relation("easyrsa:client", "kubernetes-master:certificates"),
-                model.add_relation("easyrsa:client", "kubernetes-worker:certificates"),
-            }
-        )
+        tasks = {
+            model.add_relation("easyrsa:client", "kubernetes-master:certificates"),
+            model.add_relation("easyrsa:client", "kubernetes-worker:certificates"),
+        }
+        if "kubeapi-load-balancer" in model.applications:
+            tasks.add(
+                model.add_relation("easyrsa:client", "kubeapi-load-balancer:certificates")
+            )
+        (done2, pending2) = await asyncio.wait(tasks)
         for task in done2:
             # read and ignore any exception so that it doesn't get raised
             # when the task is GC'd
