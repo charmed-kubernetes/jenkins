@@ -1260,25 +1260,23 @@ async def test_encryption_at_rest(model):
         assert "secret-value" not in output.results["Stdout"]
     finally:
         # cleanup
-        (done1, pending1) = await asyncio.wait(
-            {
-                model.applications["percona-cluster"].destroy(),
-                model.applications["vault"].destroy(),
-            }
-        )
-        # wait for vault to go away so we don't have 2 cert providers at once
+        await model.applications["vault"].destroy()
+        # wait for vault to go away before removing percona to prevent vault
+        # from erroring from having its DB taken away
         await asyncify(_juju_wait)()
+        await model.applications["percona-cluster"].destroy()
+        # re-add easyrsa after vault is gone
         (done2, pending2) = await asyncio.wait(
             {
                 model.add_relation("easyrsa:client", "kubernetes-master:certificates"),
                 model.add_relation("easyrsa:client", "kubernetes-worker:certificates"),
             }
         )
-        await asyncify(_juju_wait)()
-        for task in done1 | done2:
+        for task in done2:
             # read and ignore any exception so that it doesn't get raised
             # when the task is GC'd
             task.exception()
+        await asyncify(_juju_wait)()
 
 
 @pytest.mark.asyncio
