@@ -12,44 +12,280 @@
         clean: {before: true}
 
 - scm:
-    name: k8s-jenkins-scm
+    name: k8s-jenkins-bm
     scm:
       - git:
-          url: https://github.com/charmed-kubernetes/kubernetes-jenkins.git
+          url: https://github.com/battlemidget/kubernetes-jenkins.git
           branches:
-            - 'jenkaas'
+            - 'stokes-ogc'
+        skip-tag: true
+        fastpoll: true
+        shallow-clone: true
+        clean: {before: true}
 
-- scm:
-    name: k8s-jenkins-k8sci
-    scm:
-      - git:
-          url: https://github.com/juju-solutions/kubernetes-jenkins.git
-          branches:
-            - 'k8sci'
+- parameter:
+    name: global-params
+    parameters:
+      - string:
+          name: JOB_SPEC_DIR
+          description: |
+            Path to the directory that houses the calling spec.toml
+      - string:
+          name: JOB_SPEC_FILE
+          description: |
+            Name of the spec file, defaults to `spec.toml`
+          default: spec.toml
+      - string:
+          name: JOB_TAGS
+          description: |
+            Specific tags of the spec to run, in the format of '-t run-test -t run-build'.
+      - string:
+          name: RUN_ID
+          description: |
+            This should be a uniquely identifiable run tag so that
+            subsequent runs can query any previous state if available. This
+            allows passing jobs to be bypassed and only the failed job be run
+            again.
+      - choice:
+          name: BUILD_NODE
+          description: |
+            List of Jenkins nodes for performing tests
+          choices:
+            - runner-amd64-1
+            - runner-amd64-2
+            - runner-ppc64le
+            - runner-s390x
+            - runner-arm64
 
-- scm:
-    name: k8s-upstream
-    scm:
-      - git:
-         url: https://github.com/kubernetes/kubernetes
-         basedir: 'kubernetes'
-         skip-tag: true
-         fastpoll: true
-         shallow-clone: true
-         clean: {before: true}
-         branches:
-          - master
+- parameter:
+    name: snap-params
+    parameters:
+      - string:
+          name: SNAP_LIST
+          default: builders/snaps/k8s-snap-list.yaml
+      - string:
+          name: SNAP_PATCHES_LIST
+      - bool:
+          name: SNAP_FORCE
+          default: false
+
+- parameter:
+    name: test-params
+    parameters:
+      - string:
+          name: TEST_HARNESS
+          description: |
+            Path to a pytest compatible file to be processed.
+
+- parameter:
+    name: juju-params
+    parameters:
+      - string:
+          name: SNAP_VERSION
+          description: |
+            Version of Kubernetes to test against, in the form of
+            <major>.<minor>/<channel> (ie, 1.16/edge).
+      - string:
+          name: JUJU_CONTROLLER
+          default: 'validate-ck'
+          description: |
+            The Juju controller to create and reference during run.
+      - string:
+          name: JUJU_MODEL
+          default: 'validate'
+          description: |
+            The Juju model to create and reference during run.
+      - string:
+          name: JUJU_CLOUD
+          default: 'aws/us-east-2'
+          description: |
+            The Juju cloud to create and reference during run.
+      - string:
+          name: JUJU_BOOTSTRAP_CONSTRAINTS
+          description: |
+            Juju bootstrap constraints (ie, 'arch=amd64')
+      - bool:
+          name: JUJU_BOOTSTRAP_DEBUG
+          default: false
+          description: |
+            Juju bootstrap with debugging output.
+      - bool:
+          name: JUJU_BOOTSTRAP_DISABLE_ADD_MODEL
+          default: false
+          description: |
+            Disable creating JUJU_MODEL after bootstrap. Useful if model
+            configuration changes need to take place prior.
+      - string:
+          name: JUJU_DEPLOY_BUNDLE
+          description: |
+            The Juju bundle to deploy.
+          default: "cs:~containers/charmed-kubernetes"
+      - string:
+          name: JUJU_DEPLOY_CHANNEL
+          default: 'edge'
+          description: |
+            The Juju bundle channel to deploy from (ie, stable, candidate, beta, edge).
+      - string:
+          name: JUJU_DEPLOY_OVERLAY
+          description: |
+            Path to a YAML overlay bundle fragment
+
+- parameter:
+    name: charm-params
+    parameters:
+      - string:
+          name: LAYER_INDEX
+          default: 'https://charmed-kubernetes.github.io/layer-index/'
+      - string:
+          name: LAYER_LIST
+          default: "builders/charms/charm-layer-list.yaml"
+      - string:
+          name: LAYER_BRANCH
+          default: 'master'
+          description: |
+            The layer git branch to checkout prior to building
+      - string:
+          name: CHARM_BRANCH
+          default: 'master'
+          description: |
+            The charm git branch to checkout prior to building
+      - string:
+          name: CHARM_LIST
+          default: "builders/charms/charm-list.yaml"
+      - string:
+          name: BUNDLE_LIST
+          default: "builders/charms/charm-bundles-list.yaml"
+      - string:
+          name: BUNDLE_REPO
+          default: "https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git"
+      - string:
+          name: RESOURCE_SPEC
+          default: "builders/charms/resource-spec.yaml"
+      - string:
+          name: TO_CHANNEL
+          default: 'edge'
+          description: Channel to publish charm to
+      - string:
+          name: FILTER_BY_TAG
+          default: 'k8s'
+          description: |
+            Filter the builds by tag (ie. k8s). A tag can also be the name of a
+            charm you want to individually build.
+      - string:
+          name: CHARM_BUILD_DIR
+          default: 'build/charms'
+      - string:
+          name: CHARM_LAYERS_DIR
+          default: 'build/layers'
+      - string:
+          name: CHARM_INTERFACES_DIR
+          default: 'build/interfaces'
+    jobs:
+      - 'ogc-build-charms-bundles'
 
 - builder:
-    name: set-global-env
+    name: set-env
     builders:
-      - shell: |
-          export GIT_SSH_COMMAND="ssh -i /var/lib/jenkins/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"
-          export GOPATH=/var/lib/jenkins/go
-          export PATH=$PATH:/var/lib/jenkins/go/bin:/usr/local/go/bin:/var/lib/jenkins/venv/ci/bin
+      - shell: |-
+          #!/bin/bash
+          set -eux
+
+          # Login to snapstore
+          snapcraft login --with /var/lib/jenkins/snapcraft-creds
+
+          rm -rf $WORKSPACE/.env || true
+
+          export VIRTUAL_ENV_DISABLE_PROMPT=1
+          export PYTHONPATH="$JOB_SPEC_DIR"
+          export GIT_SSH_COMMAND='"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"'
+          export CHARM_BUILD_DIR="$WORKSPACE/${CHARM_BUILD_DIR:-build/charms}"
+          export CHARM_LAYERS_DIR="$WORKSPACE/${CHARM_LAYERS_DIR:-build/layers}"
+          export CHARM_INTERFACES_DIR="$WORKSPACE/${CHARM_INTERFACES_DIR:-build/interfaces}"
+          export CHARM_CACHE_DIR=$WORKSPACE/tmp/.charm
+          export PATH=/var/lib/jenkins/venvs/ci/bin:$PATH
+          export NODE_LABELS='"$NODE_LABELS"'
+
+          env > $WORKSPACE/.env
+
+          . /var/lib/jenkins/venvs/ci/bin/activate
+          # pip install -rrequirements.txt
+          pip install --upgrade https://github.com/battlemidget/ogc/archive/master.zip
+          pip install --upgrade https://github.com/battlemidget/ogc-plugins-runner/archive/master.zip
+          pip install --upgrade https://github.com/battlemidget/ogc-plugins-env/archive/master.zip
+          pip install --upgrade https://github.com/battlemidget/ogc-plugins-juju/archive/master.zip
 
 - builder:
-    name: git-clone-jenkaas
+    name: charm-build
     builders:
-      - shell: |
-          git clone --depth 1 https://github.com/charmed-kubernetes/kubernetes-jenkins.git ci
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          . /var/lib/jenkins/venvs/ci/bin/activate
+
+          rm -rf "$CHARM_BUILD_DIR" && mkdir -p "$CHARM_BUILD_DIR"
+          rm -rf "$CHARM_LAYERS_DIR" && mkdir -p "$CHARM_LAYERS_DIR"
+          rm -rf "$CHARM_INTERFACES_DIR" && mkdir -p "$CHARM_INTERFACES_DIR"
+
+          ogc --spec "$JOB_SPEC_DIR"/"$JOB_SPEC_FILE" --debug execute -t build-charms
+          ogc --spec "$JOB_SPEC_DIR"/"$JOB_SPEC_FILE" --debug execute -t build-bundles
+
+- builder:
+    name: ogc-execute-spec
+    builders:
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          . /var/lib/jenkins/venvs/ci/bin/activate
+
+          ogc --spec "$JOB_SPEC_DIR"/"$JOB_SPEC_FILE" --debug execute "$JOB_TAGS"
+
+
+- wrapper:
+    name: ci-creds
+    wrappers:
+      - credentials-binding:
+          - username-password-separated:
+              credential-id: k8s_team_ci_lp
+              username: K8STEAMCI_USR
+              password: K8STEAMCI_PSW
+          - file:
+              credential-id: launchpad_creds
+              variable: LPCREDS
+          - file:
+              credential-id: charm_creds
+              variable: CHARMCREDS
+          - file:
+              credential-id: juju_creds
+              variable: JUJUCREDS
+          - file:
+              credential-id: sso_token
+              variable: SSOCREDS
+          - file:
+              credential-id: aws_creds
+              variable: AWSCREDS
+          - file:
+              credential-id: snapcraft_cpc_creds
+              variable: SNAPCRAFTCPCCREDS
+          - file:
+              credential-id: cdkbot_ssh_rsa
+              variable: CDKBOTSSHCREDS
+          - text:
+              credential-id: NEADER
+              variable: NEADER
+          - text:
+              credential-id: S3LP3
+              variable: S3LP3
+          - file:
+              credential-id: scapestack_creds
+              variable: SCAPESTACKCREDS
+          - file:
+              credential-id: scapestack_cloud
+              variable: SCAPESTACKCLOUD

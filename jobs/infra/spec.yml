@@ -1,0 +1,72 @@
+meta:
+  name: CI Infrastructure
+  description: Provides support tasks for maintaining Jenkins
+
+plan:
+  - runner:
+      description: Sync system configuration w/ Ansible
+      tags: [configure]
+      script: |
+        #!/bin/bash
+
+        set -eux
+        /var/lib/jenkins/venvs/ansible/bin/pip3 install ansible
+        /var/lib/jenkins/venvs/ci/bin/pip3 install -r jobs/requirements.txt
+        cd jobs && \
+          /var/lib/jenkins/venvs/ansible/bin/ansible-playbook infra/playbook-jenkins.yml \
+          -e 'ansible_python_interpreter=/usr/bin/python3.5' \
+          --limit localhost \
+          --tags 'jenkins' \
+          -i infra/hosts
+
+  - runner:
+      description: Sync charmstore credentials
+      tags: [sync]
+      script: |
+        #!/bin/bash
+
+        set -eux
+        echo "$INFRA_CHARM_CRED" > /var/lib/jenkins/.go-cookies
+        echo "$INFRA_CHARM_SSO_TOKEN" > /var/lib/jenkins/.local/share/juju/store-usso-token
+
+  - runner:
+      description: Cleanup unused containers, storage pools, etc.
+      tags: [clean]
+      script: |
+        #!python3
+        import sh
+        import json
+        import click
+        click.echo(sh.sudo.apt("clean"))
+        click.echo(sh.sudo.rm("-rf", "/var/log/*"))
+        click.echo(sh.sudo.rm("-rf", "/var/lib/jenkins/.cache/*"))
+        click.echo(sh.sudo.docker.image.prune('-a', '--filter', "until=24h", '--force'))
+        click.echo(sh.sudo.docker.container.prune('--filter', "until=24h", '--force'))
+        click.echo(sh.sudo.du('-h', '--max-depth=1', '/var/lib'))
+        click.echo(sh.sudo.df('-h'))
+
+        juju_controllers = json.loads(sh.juju.controllers('--format', 'json').stdout.decode())
+        for name, _ in juju_controllers:
+            try:
+                sh.juju('destroy-controller', '--destroy-all-models', '--destroy-storage', '-y', name)
+            except sh.ErrorReturnCode as e:
+                click.echo(f"Error destroying {e}, continuing...")
+        containers = json.loads(sh.sudo.lxc.query('/1.0/containers').stdout.decode())
+        click.echo(containers)
+        for container in containers:
+            sh.sudo.lxc.delete('--force', container)
+
+        storage_pools = json.loads(sh.sudo.lxc.query('/1.0/storage-pools').stdout.decode())
+        click.echo(storage_pools)
+        for storage in storage_pools:
+            storage_name = storage.split('/')[-1]
+            volumes = json.loads(sh.sudo.lxc.query(f"/1.0/storage-pools/{storage_name}/volumes").stdout.decode())
+            click.echo(volumes)
+            for volume in volumes:
+                volume_name = volume.split('/')[-1]
+                click.echo(f"Deleting {volume_name}")
+                click.echo(sh.sudo.lxc.storage.volume.delete(storage_name, f"custom/{volume_name}"))
+            try:
+                sh.sudo.lxc.storage.delete(storage_name)
+            except sh.ErrorReturnCode as e:
+                click.echo(f"Error removing {e}, continuing...")

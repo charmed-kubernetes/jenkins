@@ -1,18 +1,26 @@
-# Generates jenkins worker nodes
+# Jenkins maintainer jobs
+
+- project:
+    name: infra
+    arch: ['amd64-1', 'amd64-2', 's390x', 'arm64', 'ppc64le']
+    jobs:
+      - 'infra-maintain-nodes-{arch}'
+      - 'infra-sync-creds-{arch}'
 
 - job-template:
     name: 'infra-maintain-nodes-{arch}'
     description: |
       Keeps jenkins slave {arch} nodes configured properly.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/infra/maintainNodes.groovy
+    node: runner-{arch}
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-bm
     parameters:
-      - string:
-          name: build_node
-          default: 'runner-{arch}'
+      - global-params
+    wrappers:
+      - ansicolor
+      - workspace-cleanup
+      - ci-creds
     triggers:
         - timed: "@daily"
     properties:
@@ -26,61 +34,36 @@
             - "validate.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
-
-- job-group:
-    name: 'infra-maintain-nodes'
-    jobs:
-      - 'infra-maintain-nodes-{arch}':
-          arch: ['amd64-1', 'amd64-2', 's390x', 'arm64', 'ppc64le']
-
-- project:
-    name: infra-maintain-nodes
-    jobs:
-      - 'infra-maintain-nodes'
+    builders:
+      - set-env
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/infra"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t configure"
 
 - job:
-    name: 'infra-exec-workspace'
+    name: 'infra-sync-creds-{arch}'
     description: |
-      cleans up workspace path
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/infra/execWorkspace.groovy
+      Synchronizes credentials from a environment variables. Currently, charm
+      creds need to be synced on a regular basis
+    node: runner-{arch}
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-bm
     parameters:
-      - choice:
-          name: build_node
-          choices:
-            - runner-amd64-1
-            - runner-amd64-2
-            - runner-ppc64le
-            - runner-s390x
-            - runner-arm64
+      - global-params
       - string:
-          name: workspace_path
+          name: INFRA_CHARM_CRED
+          description: "The charm credentials to be synced to nodes"
       - string:
-          name: exec_command
-      - text:
-          name: script
-          description: "executes as a script, set hash bang interpreter"
-    properties:
-      - build-discarder:
-          num-to-keep: 10
-
-
-- job:
-    name: 'infra-sosreport'
-    description: |
-      Grab sosreport of jenkins slave
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/infra/getSosreport.groovy
-    parameters:
-      - string:
-          name: build_node
-          default: 'runner-s390x'
+          name: INFRA_CHARM_SSO_TOKEN
+          description: "The charmstore sso token to be synced to nodes"
     properties:
       - build-discarder:
           num-to-keep: 1
+    builders:
+      - set-env
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/infra"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t sync"

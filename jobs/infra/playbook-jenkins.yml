@@ -9,7 +9,7 @@
   tasks:
     - name: update /etc/environment
       copy:
-        src: "environment"
+        src: "fixtures/environment"
         dest: /etc/environment
         owner: root
         group: root
@@ -131,7 +131,7 @@
       when: ansible_architecture != "x86_64"
     - name: copy bashrc
       copy:
-        src: "bashrc"
+        src: "fixtures/bashrc"
         dest: /var/lib/jenkins/.bashrc
         owner: jenkins
         group: jenkins
@@ -141,7 +141,7 @@
         - jenkins
     - name: ssh config
       template:
-        src: "ssh_config"
+        src: "fixtures/ssh_config"
         dest: /var/lib/jenkins/.ssh/config
         owner: jenkins
         group: jenkins
@@ -149,32 +149,33 @@
         force: yes
       tags:
         - jenkins
-    - name: login to charmstore
-      command: "charm login"
-      become: false
-      ignore_errors: yes
-      register: charmstore_login
-      tags:
-        - jenkins
-    - name: copy charm creds
-      copy:
-        src: "{{ lookup('env', 'CHARMCREDS') }}"
-        dest: /var/lib/jenkins/.go-cookies
-        owner: jenkins
-        group: jenkins
-        mode: 0644
-        force: yes
-      become: false
-      when: charmstore_login.rc != 0
-      tags:
-        - jenkins
+    # XXX: re-enable _if_ we ever get access to jenkins credentials store
+    # - name: login to charmstore
+    #   command: "charm login"
+    #   become: false
+    #   ignore_errors: yes
+    #   register: charmstore_login
+    #   tags:
+    #     - jenkins
+    # - name: copy charm creds
+    #   copy:
+    #     src: "{{ lookup('env', 'CHARMCREDS') }}"
+    #     dest: /var/lib/jenkins/.go-cookies
+    #     owner: jenkins
+    #     group: jenkins
+    #     mode: 0644
+    #     force: yes
+    #   become: false
+    #   when: charmstore_login.rc != 0
+    #   tags:
+    #     - jenkins
 
-    - name: login to charmstorex2
-      command: "charm login"
-      become: false
-      when: charmstore_login.rc != 0
-      tags:
-        - jenkins
+    # - name: login to charmstorex2
+    #   command: "charm login"
+    #   become: false
+    #   when: charmstore_login.rc != 0
+    #   tags:
+    #     - jenkins
     - name: copy snapcraft creds
       copy:
         src: "{{ lookup('env', 'SNAPCRAFTCREDS') }}"
@@ -257,23 +258,6 @@
         mode: 0644
       tags:
         - jenkins
-    - name: create jaas dir
-      file:
-        path: /var/lib/jenkins/.local/share/juju/cookies
-        state: directory
-        mode: 0755
-      tags:
-        - jenkins
-    - name: copy jaas cookie
-      copy:
-        src: "{{ lookup('env', 'JAASCREDS') }}"
-        dest: /var/lib/jenkins/.local/share/juju/cookies/jaas.json
-        owner: jenkins
-        group: jenkins
-        mode: 0600
-        force: no
-      tags:
-        - jenkins
     - name: set perms
       file:
         path: /var/lib/jenkins/.local/share/juju
@@ -321,7 +305,7 @@
         - adhoc
     - name: set docker daemon config
       copy:
-        src: docker.daemon.json
+        src: "fixtures/docker.daemon.json"
         dest: /etc/docker/daemon.json
         force: yes
         owner: root
