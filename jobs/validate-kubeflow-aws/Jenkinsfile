@@ -50,12 +50,13 @@ pipeline {
                 exec "sudo snap install juju --classic --channel ${params.juju_channel}"
                 exec "sudo snap install juju-helpers --classic --edge"
                 exec "sudo snap install juju-wait --classic"
-                exec "sudo snap install yq"
                 exec "sudo snap install kubectl --classic"
-                exec "sudo apt update && sudo apt install -y python-tox"
+                exec "sudo snap install yq"
+                exec "sudo apt update && sudo apt install -y libssl-dev python3-pip"
+                exec "sudo pip3 install pytest sh kfp requests pyyaml"
             }
         }
-        stage('Deploy kubeflow') {
+        stage('Deploy Kubeflow') {
             steps {
                 exec """
                     git clone https://github.com/juju-solutions/bundle-kubeflow.git &&
@@ -63,29 +64,11 @@ pipeline {
                     ./scripts/manage-cdk create --region us-east-2 &&
                     CHARM_BUILD_DIR=/tmp/charm-builds ./scripts/deploy-cdk create --build --ci --channel ${params.channel}
                 """.replaceAll('\\s+', ' ')
-                exec 'juju status -m default | grep "kubernetes-worker/0" | awk "{print \\$5}" > PUB_IP'
             }
         }
         stage('Validate') {
             steps {
-                exec """
-                    git clone https://github.com/charmed-kubernetes/jenkins.git &&
-                    cd jenkins &&
-                    git checkout ${env.GIT_COMMIT} &&
-                    cd jobs/ &&
-                    PY_IGNORE_IMPORTMISMATCH=1
-                    CONTROLLER=cdkkf
-                    MODEL=kubeflow
-                    TOX_WORK_DIR=.tox
-                    tox
-                        -e py36
-                        --
-                        pytest
-                            -v
-                            -s
-                            --junit-xml=validate.xml
-                            integration/test_kubeflow.py::test_validate
-            """.replaceAll('\\s+', ' ')
+                exec "cd bundle-kubeflow && pytest -vv"
             }
         }
     }
@@ -98,11 +81,11 @@ pipeline {
         }
         always {
             setEndTime()
-            //collectDebug(params.controller, 'default')
         }
         cleanup {
             saveMeta()
             exec "juju status || true"
+            exec "juju status --format yaml || true"
             exec "juju list-controllers || true"
             exec "juju list-models || true"
             exec "juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true"
