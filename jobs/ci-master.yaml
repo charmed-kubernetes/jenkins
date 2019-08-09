@@ -26,19 +26,19 @@
 - parameter:
     name: global-params
     parameters:
-      - string:
-          name: JOB_SPEC_DIR
-          description: |
-            Path to the directory that houses the calling spec
-      - string:
-          name: JOB_SPEC_FILE
-          description: |
-            Name of the spec file, defaults to `spec.yml`
-          default: spec.yml
-      - string:
-          name: JOB_TAGS
-          description: |
-            Specific tags of the spec to run, in the format of '-t run-test -t run-build'.
+      # - string:
+      #     name: JOB_SPEC_DIR
+      #     description: |
+      #       Path to the directory that houses the calling spec
+      # - string:
+      #     name: JOB_SPEC_FILE
+      #     description: |
+      #       Name of the spec file, defaults to `spec.yml`
+      #     default: spec.yml
+      # - string:
+      #     name: JOB_TAGS
+      #     description: |
+      #       Specific tags of the spec to run, in the format of '-t run-test -t run-build'.
       - string:
           name: RUN_ID
           description: |
@@ -196,11 +196,11 @@
           rm -rf $WORKSPACE/.env || true
 
           export VIRTUAL_ENV_DISABLE_PROMPT=1
-          export PYTHONPATH="$JOB_SPEC_DIR"
+          export PYTHONPATH="{JOB_SPEC_DIR}"
           export GIT_SSH_COMMAND='"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"'
-          export CHARM_BUILD_DIR="$WORKSPACE/${CHARM_BUILD_DIR:-build/charms}"
-          export CHARM_LAYERS_DIR="$WORKSPACE/${CHARM_LAYERS_DIR:-build/layers}"
-          export CHARM_INTERFACES_DIR="$WORKSPACE/${CHARM_INTERFACES_DIR:-build/interfaces}"
+          export CHARM_BUILD_DIR="$WORKSPACE/${{CHARM_BUILD_DIR:-build/charms}}"
+          export CHARM_LAYERS_DIR="$WORKSPACE/${{CHARM_LAYERS_DIR:-build/layers}}"
+          export CHARM_INTERFACES_DIR="$WORKSPACE/${{CHARM_INTERFACES_DIR:-build/interfaces}}"
           export CHARM_CACHE_DIR=$WORKSPACE/tmp/.charm
           export PATH=/var/lib/jenkins/venvs/ci/bin:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
@@ -227,8 +227,8 @@
           rm -rf "$CHARM_LAYERS_DIR" && mkdir -p "$CHARM_LAYERS_DIR"
           rm -rf "$CHARM_INTERFACES_DIR" && mkdir -p "$CHARM_INTERFACES_DIR"
 
-          ogc --spec "$JOB_SPEC_DIR"/"$JOB_SPEC_FILE" --debug execute -t build-charms
-          ogc --spec "$JOB_SPEC_DIR"/"$JOB_SPEC_FILE" --debug execute -t build-bundles
+          ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug execute -t build-charms
+          ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug execute -t build-bundles
 
 - builder:
     name: ogc-execute-spec
@@ -242,8 +242,7 @@
 
           . /var/lib/jenkins/venvs/ci/bin/activate
 
-          pwd
-          ogc --spec "$JOB_SPEC_DIR"/"$JOB_SPEC_FILE" --debug execute "$JOB_TAGS"
+          ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug execute {JOB_TAGS}
 
 
 - wrapper:

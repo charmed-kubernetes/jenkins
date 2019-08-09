@@ -14,7 +14,7 @@
     node: runner-{arch}
     project-type: freestyle
     scm:
-      - k8s-jenkins-bm
+      - k8s-jenkins-jenkaas
     parameters:
       - global-params
     wrappers:
@@ -49,20 +49,17 @@
     node: runner-{arch}
     project-type: freestyle
     scm:
-      - k8s-jenkins-bm
+      - k8s-jenkins-jenkaas
     parameters:
-      - global-params
       - string:
           name: INFRA_CHARM_CRED
           description: "The charm credentials to be synced to nodes"
-      - string:
-          name: INFRA_CHARM_SSO_TOKEN
-          description: "The charmstore sso token to be synced to nodes"
     properties:
       - build-discarder:
           num-to-keep: 1
     builders:
-      - set-env
+      - set-env:
+          JOB_SPEC_DIR: "jobs/infra"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/infra"
           JOB_SPEC_FILE: "spec.yml"

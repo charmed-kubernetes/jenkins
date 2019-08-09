@@ -27,7 +27,6 @@ plan:
 
         set -eux
         echo "$INFRA_CHARM_CRED" > /var/lib/jenkins/.go-cookies
-        echo "$INFRA_CHARM_SSO_TOKEN" > /var/lib/jenkins/.local/share/juju/store-usso-token
 
   - runner:
       description: Cleanup unused containers, storage pools, etc.
