@@ -1,0 +1,21 @@
+# Build charms, bundles, for k8s and kubeflow
+
+- job:
+    name: 'ogc-build-charms-bundles'
+    node: runner-amd64
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - charm-params
+    triggers:
+        - timed: "0 18 * * *"
+    wrappers:
+      - ansicolor
+      - workspace-cleanup
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-charms"
+      - charm-build:
+          JOB_SPEC_DIR: "jobs/build-charms"
+          JOB_SPEC_FILE: "spec.yml"

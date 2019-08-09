@@ -89,48 +89,20 @@
 
 - job:
     name: 'build-charms'
-    description: |
-      Builds and releases charms to the charmstore.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-charms/build.groovy
+    node: runner-amd64
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
     parameters:
-      - string:
-          name: model
-          default: 'charms'
-      - string:
-          name: controller
-          default: 'build-charms'
-      - string:
-          name: cloud
-          default: 'aws/us-east-1'
-      - string:
-          name: layer_index
-          default: 'https://charmed-kubernetes.github.io/layer-index/'
-      - string:
-          name: layer_branch
-          default: 'master'
-          description: |
-            The layer git branch to checkout prior to building
-      - string:
-          name: charm_branch
-          default: 'master'
-          description: |
-            The charm git branch to checkout prior to building
-      - string:
-          name: to_channel
-          default: 'edge'
-          description: Channel to publish charm to
-      - string:
-          name: tag
-          default: 'k8s'
-          description: |
-            Filter the builds by tag (ie. k8s). A tag can also be the name of a
-            charm you want to individually build.
-    properties:
-      - build-discarder:
-          num-to-keep: 7
+      - charm-params
     triggers:
-        - timed: "0 */18 * * *"
+        - timed: "@daily"
+    wrappers:
+      - ansicolor
+      - workspace-cleanup
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-charms"
+      - charm-build:
+          JOB_SPEC_DIR: "jobs/build-charms"
+          JOB_SPEC_FILE: "spec.yml"

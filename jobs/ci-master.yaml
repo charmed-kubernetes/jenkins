@@ -138,7 +138,7 @@
           default: 'https://charmed-kubernetes.github.io/layer-index/'
       - string:
           name: LAYER_LIST
-          default: "builders/charms/charm-layer-list.yaml"
+          default: "jobs/build-charms/charm-layer-list.yaml"
       - string:
           name: LAYER_BRANCH
           default: 'master'
@@ -151,16 +151,16 @@
             The charm git branch to checkout prior to building
       - string:
           name: CHARM_LIST
-          default: "builders/charms/charm-list.yaml"
+          default: "jobs/build-charms/charm-list.yaml"
       - string:
           name: BUNDLE_LIST
-          default: "builders/charms/charm-bundles-list.yaml"
+          default: "jobs/build-charms/charm-bundles-list.yaml"
       - string:
           name: BUNDLE_REPO
           default: "https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git"
       - string:
           name: RESOURCE_SPEC
-          default: "builders/charms/resource-spec.yaml"
+          default: "jobs/build-charms/resource-spec.yaml"
       - string:
           name: TO_CHANNEL
           default: 'edge'

@@ -1,0 +1,183 @@
+# -*- mode:yaml; -*-
+# K8s layers
+- interface:aws-integration:
+    downstream: 'charmed-kubernetes/interface-aws-integration.git'
+    upstream: 'https://github.com/juju-solutions/interface-aws-integration.git'
+    tags: ['k8s']
+- interface:azure-integration:
+    downstream: "charmed-kubernetes/interface-azure-integration.git"
+    upstream: "https://github.com/juju-solutions/interface-azure-integration.git"
+    tags: ['k8s']
+- interface:container-runtime:
+    downstream: "charmed-kubernetes/interface-container-runtime.git"
+    upstream: "https://github.com/charmed-kubernetes/interface-container-runtime.git"
+    tags: ['k8s']
+- interface:dockerhost:
+    downstream: "charmed-kubernetes/interface-dockerhost.git"
+    upstream: "https://github.com/juju-solutions/interface-dockerhost.git"
+    tags: ['k8s']
+- interface:docker-registry:
+    downstream: "charmed-kubernetes/interface-docker-registry.git"
+    upstream: "https://github.com/juju-solutions/interface-docker-registry.git"
+    tags: ['k8s']
+- interface:etcd:
+    downstream: "charmed-kubernetes/interface-etcd.git"
+    upstream: "https://github.com/juju-solutions/interface-etcd.git"
+    tags: ['k8s']
+- interface:etcd-proxy:
+    downstream: "charmed-kubernetes/interface-etcd-proxy.git"
+    upstream: "https://github.com/juju-solutions/interface-etcd-proxy.git"
+    tags: ['k8s']
+- interface:gcp-integration:
+    downstream: "charmed-kubernetes/interface-gcp-integration.git"
+    upstream: "https://github.com/juju-solutions/interface-gcp-integration.git"
+    tags: ['k8s']
+- interface:hacluster:
+    downstream: "charmed-kubernetes/charm-interface-hacluster.git"
+    upstream: "https://github.com/openstack/charm-interface-hacluster.git"
+    tags: ['k8s']
+- interface:http:
+    downstream: "charmed-kubernetes/interface-http.git"
+    upstream: "https://github.com/juju-solutions/interface-http.git"
+    tags: ['k8s']
+- interface:juju-info:
+    downstream: "charmed-kubernetes/interface-juju-info.git"
+    upstream: "https://github.com/juju-solutions/interface-juju-info.git"
+    tags: ['k8s']
+- interface:kube-control:
+    downstream: "charmed-kubernetes/interface-kube-control.git"
+    upstream: "https://github.com/juju-solutions/interface-kube-control.git"
+    tags: ['k8s']
+- interface:kube-dns:
+    downstream: "charmed-kubernetes/interface-kube-dns.git"
+    upstream: "https://github.com/juju-solutions/interface-kube-dns.git"
+    tags: ['k8s']
+- interface:kubernetes-cni:
+    downstream: "charmed-kubernetes/interface-kubernetes-cni.git"
+    upstream: "https://github.com/juju-solutions/interface-kubernetes-cni.git"
+    tags: ['k8s']
+- interface:mount:
+    downstream: "charmed-kubernetes/interface-mount.git"
+    upstream: "https://github.com/juju-solutions/interface-mount.git"
+    tags: ['k8s']
+- interface:nrpe-external-master:
+    downstream: "charmed-kubernetes/nrpe-external-master-interface.git"
+    upstream: "https://github.com/cmars/nrpe-external-master-interface.git"
+    tags: ['k8s']
+- interface:openstack-integration:
+    downstream: "charmed-kubernetes/interface-openstack-integration.git"
+    upstream: "https://github.com/juju-solutions/interface-openstack-integration.git"
+    tags: ['k8s']
+- interface:peer-discovery:
+    downstream: "charmed-kubernetes/charm-interface-peer-discovery.git"
+    upstream: "https://github.com/tbaumann/charm-interface-peer-discovery.git"
+    tags: ['k8s']
+- interface:public-address:
+    downstream: "charmed-kubernetes/interface-public-address.git"
+    upstream: "https://github.com/juju-solutions/interface-public-address.git"
+    tags: ['k8s']
+- interface:sdn-plugin:
+    downstream: "charmed-kubernetes/interface-sdn-plugin.git"
+    upstream: "https://github.com/juju-solutions/interface-sdn-plugin.git"
+    tags: ['k8s']
+- interface:tls-certificates:
+    downstream: "charmed-kubernetes/interface-tls-certificates.git"
+    upstream: "https://github.com/juju-solutions/interface-tls-certificates.git"
+    tags: ['k8s']
+- interface:vault-kv:
+    downstream: "charmed-kubernetes/charm-interface-vault-kv.git"
+    upstream: "https://github.com/openstack-charmers/charm-interface-vault-kv.git"
+    tags: ['k8s']
+- interface:vsphere-integration:
+    downstream: "charmed-kubernetes/interface-vsphere-integration.git"
+    upstream: "https://github.com/juju-solutions/interface-vsphere-integration.git"
+    tags: ['k8s']
+- interface:ceph-admin:
+    downstream: "charmed-kubernetes/juju-interface-ceph-admin.git"
+    upstream: "https://github.com/cholcombe973/juju-interface-ceph-admin"
+    tags: ['k8s']
+- interface:ceph-client:
+    downstream: "charmed-kubernetes/charm-interface-ceph-client.git"
+    upstream: "https://github.com/openstack/charm-interface-ceph-client"
+    tags: ['k8s']
+- interface:keystone-credentials:
+    downstream: "charmed-kubernetes/charm-interface-keystone-credentials.git"
+    upstream: "https://github.com/openstack/charm-interface-keystone-credentials"
+    tags: ['k8s']
+- layer:apt:
+    downstream: "charmed-kubernetes/layer-apt.git"
+    upstream: "https://git.launchpad.net/layer-apt"
+    tags: ['k8s']
+- layer:basic:
+    downstream: "charmed-kubernetes/layer-basic.git"
+    upstream: "https://github.com/juju-solutions/layer-basic.git"
+    tags: ['k8s']
+- layer:cdk-service-kicker:
+    downstream: "charmed-kubernetes/layer-cdk-service-kicker.git"
+    upstream: "https://github.com/juju-solutions/layer-cdk-service-kicker.git"
+    tags: ['k8s']
+- layer:container-runtime-common:
+    downstream: "charmed-kubernetes/layer-container-runtime-common.git"
+    upstream: "https://github.com/charmed-kubernetes/layer-container-runtime-common.git"
+    tags: ['k8s']
+- layer:debug:
+    downstream: "charmed-kubernetes/layer-debug.git"
+    upstream: "https://github.com/juju-solutions/layer-debug.git"
+    tags: ['k8s']
+- layer:hacluster:
+    downstream: "charmed-kubernetes/layer-hacluster.git"
+    upstream: "https://github.com/juju-solutions/layer-hacluster.git"
+    tags: ['k8s']
+- layer:kubernetes-common:
+    downstream: "charmed-kubernetes/layer-kubernetes-common"
+    upstream: "https://github.com/charmed-kubernetes/layer-kubernetes-common.git"
+    tags: ['k8s']
+- layer:kubernetes-master-worker-base:
+    downstream: "charmed-kubernetes/layer-kubernetes-master-worker-base"
+    upstream: "https://github.com/charmed-kubernetes/layer-kubernetes-master-worker-base.git"
+    tags: ['k8s']
+- layer:leadership:
+    downstream: "charmed-kubernetes/layer-leadership.git"
+    upstream: "https://git.launchpad.net/layer-leadership"
+    tags: ['k8s']
+- layer:metrics:
+    downstream: "charmed-kubernetes/layer-metrics.git"
+    upstream: "https://github.com/CanonicalLtd/layer-metrics.git"
+    tags: ['k8s']
+- layer:nagios:
+    downstream: "charmed-kubernetes/layer-nagios.git"
+    upstream: "https://git.launchpad.net/nagios-layer"
+    tags: ['k8s']
+- layer:nginx:
+    downstream: "charmed-kubernetes/juju-layer-nginx.git"
+    upstream: "https://github.com/battlemidget/juju-layer-nginx.git"
+    tags: ['k8s']
+- layer:options:
+    downstream: "charmed-kubernetes/layer-options.git"
+    upstream: "https://github.com/juju-solutions/layer-options.git"
+    tags: ['k8s']
+- layer:snap:
+    downstream: "charmed-kubernetes/layer-snap.git"
+    upstream: "https://git.launchpad.net/layer-snap"
+    tags: ['k8s']
+- layer:status:
+    downstream: "charmed-kubernetes/layer-status.git"
+    upstream: "https://github.com/juju-solutions/layer-status.git"
+    tags: ['k8s']
+- layer:tls-client:
+    downstream: "charmed-kubernetes/layer-tls-client.git"
+    upstream: "https://github.com/juju-solutions/layer-tls-client.git"
+    tags: ['k8s']
+- layer:vault-kv:
+    downstream: "charmed-kubernetes/layer-vault-kv.git"
+    upstream: "https://github.com/juju-solutions/layer-vault-kv.git"
+    tags: ['k8s']
+- layer:vaultlocker:
+    downstream: "charmed-kubernetes/layer-vaultlocker.git"
+    upstream: "https://github.com/juju-solutions/layer-vaultlocker.git"
+    tags: ['k8s']
+- layer:index:
+    downstream: "charmed-kubernetes/layer-index.git"
+    upstream: "https://github.com/juju/layer-index.git"
+    needs_stable: no
+    needs_tagging: no
