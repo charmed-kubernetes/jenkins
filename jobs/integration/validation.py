@@ -989,6 +989,7 @@ async def test_audit_webhook(model):
 
 
 @pytest.mark.asyncio
+@pytest.mark.flaky(max_runs=3, min_passes=2)
 @pytest.mark.skip_arch(["s390x", "arm64", "aarch64"])
 @pytest.mark.skip_model("validate-vault")
 async def test_keystone(model):

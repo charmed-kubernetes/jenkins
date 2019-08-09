@@ -1,0 +1,37 @@
+meta:
+  name: k8s ci maintainer spec
+  description: |
+    OGC Spec for generating documentation, running unittests, etc.
+
+plan:
+  - env:
+      deps:
+        - "pip:requirements_dev.txt"
+        - "snap:aws-cli/latest/stable:classic"
+
+  - runner:
+      description: Run unittests
+      cmd: pytest jobs
+      tags: [test]
+  - specdoc:
+      description: |
+        Generates the markdown content from spec files
+      file-glob: jobs/**/*spec.yml
+      top-level-dir: .
+      tags: [build-specs, build-docs]
+  - runner:
+      description: Builds docs
+      cmd: mkdocs build
+      tags: [build-docs]
+  - runner:
+      description: Deploys documentation
+      script: |
+        #!/bin/bash
+        set -eux
+        aws s3 sync site/ s3://jenkaas/docs
+      tags: [deploy-docs]
+      deps:
+        - "snap:aws-cli/latest/stable:classic"
+# - publish-s3:
+#     src: site/
+#     dst: s3://jenkaas/docs

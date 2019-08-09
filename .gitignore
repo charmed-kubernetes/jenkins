@@ -3,3 +3,5 @@
 cleanup-vpc*
 __pycache__/
 logs/
+pytest.log
+site/

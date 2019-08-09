@@ -44,6 +44,32 @@ def pytest_addoption(parser):
         default=f"{_controller_from_env()}:{_model_from_env()}",
         help="Juju [controller:model] to use",
     )
+    parser.addoption(
+        "--cloud",
+        action="store",
+        default=_cloud_from_env(),
+        help="Juju cloud to use",
+    )
+    parser.addoption(
+        "--charm-channel",
+        action="store",
+        default="edge",
+        help="Charm channel to use",
+    )
+    parser.addoption(
+        "--bundle-channel",
+        action="store",
+        default="edge",
+        help="Bundle channel to use",
+    )
+    parser.addoption(
+        "--snap-channel",
+        action="store",
+        required=True,
+        help="Snap channel to use eg 1.16/edge",
+    )
+
+
 
 
 @pytest.fixture(scope="module")

@@ -1,0 +1,8 @@
+ogc>0.3.0
+ogc-plugins-spec-doc<2.0.0
+mkdocs==1.0.4
+mkdocs-material
+pygments
+pymdown-extensions
+python-frontmatter==0.4.5
+PyYAML<6.0.0
