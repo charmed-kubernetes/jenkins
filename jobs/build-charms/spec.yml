@@ -1,52 +1,52 @@
 plan:
-  - charmstore:
+  - runner:
       description: |
         Builds the charms that make up Kubernetes
-      charms:
-        env-requires:
-          - CHARM_BUILD_DIR
-          - CHARM_LAYERS_DIR
-          - CHARM_INTERFACES_DIR
-          - CHARM_CACHE_DIR
-          - CHARM_BRANCH
-          - FILTER_BY_TAG
-          - LAYER_BRANCH
-          - LAYER_INDEX
-          - LAYER_LIST
-          - CHARM_LIST
-          - RESOURCE_SPEC
-          - BUNDLE_LIST
-          - BUNDLE_REPO
-          - TO_CHANNEL
-          - TMPDIR
-          - WORKSPACE
-        script: |
-          #!/bin/bash
-          set -eux
-          python3 charms.py build --charm-list "$CHARM_LIST" \
-            --charm-branch "$CHARM_BRANCH" \
-            --to-channel "$TO_CHANNEL" \
-            --resource-spec "$RESOURCE_SPEC" \
-            --filter-by-tag "$FILTER_BY_TAG" \
-            --layer-index  "$LAYER_INDEX" \
-            --layer-list "$LAYER_LIST" \
-            --layer-branch "$LAYER_BRANCH"
+      # env-requires:
+      #   - CHARM_BUILD_DIR
+      #   - CHARM_LAYERS_DIR
+      #   - CHARM_INTERFACES_DIR
+      #   - CHARM_CACHE_DIR
+      #   - CHARM_BRANCH
+      #   - FILTER_BY_TAG
+      #   - LAYER_BRANCH
+      #   - LAYER_INDEX
+      #   - LAYER_LIST
+      #   - CHARM_LIST
+      #   - RESOURCE_SPEC
+      #   - BUNDLE_LIST
+      #   - BUNDLE_REPO
+      #   - TO_CHANNEL
+      #   - TMPDIR
+      #   - WORKSPACE
+      script: |
+        #!/bin/bash
+        set -eux
+        export PATH=/snap/bin:$PATH
+        python3 jobs/build-charms/charms.py build --charm-list "$CHARM_LIST" \
+          --charm-branch "$CHARM_BRANCH" \
+          --to-channel "$TO_CHANNEL" \
+          --resource-spec "$RESOURCE_SPEC" \
+          --filter-by-tag "$FILTER_BY_TAG" \
+          --layer-index  "$LAYER_INDEX" \
+          --layer-list "$LAYER_LIST" \
+          --layer-branch "$LAYER_BRANCH"
       tags: [build-charms]
-  - charmstore:
+  - runner:
       description: |
         Buildes the bundles that make up Kubernetes
-      bundles:
-        env-requires:
-          - FILTER_BY_TAG
-          - BUNDLE_LIST
-          - BUNDLE_REPO
-          - TO_CHANNEL
-          - TMPDIR
-          - WORKSPACE
-        script: |
-          #!/bin/bash
-          set -eux
-          python3 charms.py build-bundles \
+      env-requires:
+        - FILTER_BY_TAG
+        - BUNDLE_LIST
+        - BUNDLE_REPO
+        - TO_CHANNEL
+        - TMPDIR
+        - WORKSPACE
+      script: |
+        #!/bin/bash
+        set -eux
+        export PATH=/snap/bin:$PATH
+        python3 jobs/build-charms/charms.py build-bundles \
             --to-channel "$TO_CHANNEL" \
             --bundle-list "$BUNDLE_LIST" \
             --filter-by-tag "$FILTER_BY_TAG"
