@@ -41,7 +41,7 @@
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t configure"
 
-- job:
+- job-template:
     name: 'infra-sync-creds-{arch}'
     description: |
       Synchronizes credentials from a environment variables. Currently, charm

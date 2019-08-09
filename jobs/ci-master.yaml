@@ -29,12 +29,12 @@
       - string:
           name: JOB_SPEC_DIR
           description: |
-            Path to the directory that houses the calling spec.toml
+            Path to the directory that houses the calling spec
       - string:
           name: JOB_SPEC_FILE
           description: |
-            Name of the spec file, defaults to `spec.toml`
-          default: spec.toml
+            Name of the spec file, defaults to `spec.yml`
+          default: spec.yml
       - string:
           name: JOB_TAGS
           description: |
@@ -209,10 +209,7 @@
 
           . /var/lib/jenkins/venvs/ci/bin/activate
           # pip install -rrequirements.txt
-          pip install --upgrade https://github.com/battlemidget/ogc/archive/master.zip
-          pip install --upgrade https://github.com/battlemidget/ogc-plugins-runner/archive/master.zip
-          pip install --upgrade https://github.com/battlemidget/ogc-plugins-env/archive/master.zip
-          pip install --upgrade https://github.com/battlemidget/ogc-plugins-juju/archive/master.zip
+          pip install --upgrade ogc ogc-plugins-runner ogc-plugins-env ogc-plugins-juju
 
 - builder:
     name: charm-build
@@ -245,6 +242,7 @@
 
           . /var/lib/jenkins/venvs/ci/bin/activate
 
+          pwd
           ogc --spec "$JOB_SPEC_DIR"/"$JOB_SPEC_FILE" --debug execute "$JOB_TAGS"
 
 
