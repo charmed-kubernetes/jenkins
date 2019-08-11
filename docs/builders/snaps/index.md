@@ -1,13 +1,5 @@
-# Build and Promote Snaps
+# Builds snaps
 Builds Kubernetes snaps from source
-
-## Plan Phase
-### Plugin: **runner**
-Pull down upstream release tags and make sure our launchpad git repo has those
-tags synced. Next, we push any new releases (major, minor, or patch) to the
-launchpad builders for building the snaps from source and uploading to the snap
-store.
-
 #### Environment
 
 - **SNAP_LIST**: *required*, This points to a yaml file containing the list of snaps we support. There is a list within this spec's directory: *k8s-snap-list.yaml* that can be referenced.
@@ -18,28 +10,30 @@ store.
 
 **Note**: Check LP for any credentials needed.
 
+## Plan Phase
+### Plugin: **runner** - Sync K8s snap recipes
+Pull down upstream release tags and make sure our launchpad git repo has those
+tags synced. Next, we push any new releases (major, minor, or patch) to the
+launchpad builders for building the snaps from source and uploading to the snap
+store.
+
 #### Running
 
-Set up the environment variables before running the spec:
-
 ```
-export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"
-export SNAP_LIST="$SNAP_LIST"
-export K8STEAMCI_USR="$K8STEAMCI_USR"
-export K8STEAMCI_PSW="$K8STEAMCI_PSW"
-```
+export GIT_SSH_COMMAND=\"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no\"
+export SNAP_LIST=\"$SNAP_LIST\"
+export K8STEAMCI_USR=\"$K8STEAMCI_USR\"
+export K8STEAMCI_PSW=\"$K8STEAMCI_PSW\"
 
-Next, execute the spec:
-
-```
-ogc --spec jobs/build-snaps/spec.yml --debug execute -t sync
+ogc --spec builders/snaps/spec.toml plugin-deps --installable | sh -
+ogc --spec builders/snaps/spec.toml --debug execute -t sync
 ```
 
-### Plugin: **runner**
-Handles building/promoting to the charmstore with one difference. This
-job allows patches to be injected into the Kubernetes upstream code.
-This is useful if a CVE is out and we need to do quick fixes without
-waiting for the next patch/minor release.
+### Plugin: **runner** - Sync K8s snap recipes w/ patches
+Pull down upstream release tags and make sure our launchpad git repo has those
+tags synced. Next, we push any new releases (major, minor, or patch) to the
+launchpad builders for building the snaps from source and uploading to the snap
+store.
 
 #### Patches
 
@@ -61,14 +55,4 @@ all:
   - builders/snaps/patches/release-1.15-001.patch
 ```
 
-Then in the _cmd_ section, pass the path to the above yaml file:
-
-```yaml
-plan:
-  - runner:
-      cmd: sync-upstream --snap-list $SNAP_LIST --force --patches jobs/build-snaps/patches.yaml
-```
-
-### Plugin: **runner**
-Provides a way to promote snaps from a certain version/channel/track
-
+### Plugin: **runner** - Promote snaps from/to a certain version/channel/track

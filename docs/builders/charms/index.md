@@ -1,6 +1,5 @@
 # Build charms and bundles
-Builds the charms and bundles that make up the Charmed Kubernetes
-deployment.
+Builds the charms and bundles that make up the Charmed Kubernetes deployment.
 
 ## Overview
 
@@ -15,9 +14,7 @@ the job to build for different risks, _ie. kubernetes-master@stable branch_.
 set by **TO_CHANNEL**
 
 ## Plan Phase
-### Plugin: **charmstore**
-Builds the charms that make up Kubernetes
+### Plugin: **runner** - Builds the charms that make up Kubernetes
 
-### Plugin: **charmstore**
-Buildes the bundles that make up Kubernetes
+### Plugin: **runner** - Buildes the bundles that make up Kubernetes
 

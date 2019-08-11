@@ -8,6 +8,7 @@ meta:
 
 setup:
   - juju:
+      description: Bootstrap and deploy kubernetes
       cloud: $JUJU_CLOUD
       controller: $JUJU_CONTROLLER
       model: $JUJU_MODEL
@@ -60,8 +61,8 @@ plan:
       wait_for_success: yes
       back_off: 5
       retries: 5
-      tags = [cncf, cncf-download-results]
+      tags: [cncf, cncf-download-results]
   - runner:
       description: Tearing down all deployed applications
       cmd: juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-      tags = [teardown]
+      tags: [teardown]

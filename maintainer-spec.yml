@@ -5,9 +5,11 @@ meta:
 
 plan:
   - env:
+      description: Show spec dependencies
       deps:
         - "pip:requirements_dev.txt"
         - "snap:aws-cli/latest/stable:classic"
+      tags: [show-env]
 
   - runner:
       description: Run unittests
@@ -28,10 +30,8 @@ plan:
       script: |
         #!/bin/bash
         set -eux
-        aws s3 sync site/ s3://jenkaas/docs
+        /snap/bin/aws s3 sync site/ s3://jenkaas/docs
       tags: [deploy-docs]
-      deps:
-        - "snap:aws-cli/latest/stable:classic"
 # - publish-s3:
 #     src: site/
 #     dst: s3://jenkaas/docs

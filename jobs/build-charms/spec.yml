@@ -58,8 +58,7 @@ meta:
       - "builders/charms/index.md"
   name: Build charms and bundles
   description: |
-    Builds the charms and bundles that make up the Charmed Kubernetes
-    deployment.
+    Builds the charms and bundles that make up the Charmed Kubernetes deployment.
   long-description: |
     ## Overview
 
