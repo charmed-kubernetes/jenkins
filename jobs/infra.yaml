@@ -51,7 +51,7 @@
     scm:
       - k8s-jenkins-jenkaas
     parameters:
-      - string:
+      - text:
           name: INFRA_CHARM_CRED
           description: "The charm credentials to be synced to nodes"
     properties:
