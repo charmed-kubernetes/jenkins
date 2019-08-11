@@ -3,7 +3,7 @@
 #
 
 - job-template:
-    name: 'conformance-{k8sver}-{bundle}-s390x'
+    name: 'conformance-{k8sver}-s390x'
     description: |
       CNCF Conformance testing for Kubernetes {k8sver} {bundle} on s390x.
 
@@ -31,67 +31,45 @@
           default: 'edge'
       - string:
           name: bundle
-          default: '{bundle}'
+          default: 'charmed-kubernetes'
     properties:
       - build-discarder:
           num-to-keep: 7
 
 
 - job-template:
-    name: 'conformance-{k8sver}-{bundle}'
+    name: 'conformance-{k8sver}'
     description: |
       CNCF Conformance testing for Kubernetes {k8sver} {bundle}.
 
       Please see https://git.io/fNwXY for more information.
-    project-type: pipeline
-    pipeline-scm:
+    project-type: freestyle
+    scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/cncf-conformance/Jenkinsfile
     parameters:
-      - string:
-          name: build_node
-          default: 'runner-amd64'
-      - string:
-          name: version_overlay
-          default: '{version_overlay}'
-      - string:
-          name: model
-          default: 'conformance'
-      - string:
-          name: controller
-          default: 'cncf'
-      - choice:
-          name: cloud
-          choices:
-            - 'aws/us-east-1'
-            - 'google/us-east1'
-            - 'azure/eastus'
-      - string:
-          name: bundle_channel
-          default: 'edge'
-      - string:
-          name: bundle
-          default: '{bundle}'
+      - global-params
+      - juju-params
     properties:
       - build-discarder:
           num-to-keep: 7
-
-- job-group:
-    name: 'conformance'
-    k8sver:
-      !include: includes/k8s-support-matrix.inc
-    jobs:
-      - 'conformance-{k8sver}-{bundle}':
-          bundle:
-            - 'canonical-kubernetes'
-            - 'canonical-kubernetes-canal'
-            - 'kubernetes-core'
-      - 'conformance-{k8sver}-{bundle}-s390x':
-          bundle:
-            - 'canonical-kubernetes'
+    wrappers:
+      - ansicolor
+      - timestamps
+      - timeout:
+          timeout: 240
+          fail: true
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/cncf-conformance"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/cncf-conformance"
+          JOB_SPEC_FILE: "spec.yml"
 
 - project:
     name: conformance
+    k8sver:
+      !include: includes/k8s-support-matrix.inc
     jobs:
-      - 'conformance'
+      - 'conformance-{k8sver}'
+      - 'conformance-{k8sver}-s390x'

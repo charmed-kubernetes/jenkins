@@ -119,3 +119,4 @@ fi
 export EDITOR=vim
 export GOPATH=/var/lib/jenkins/go
 export PATH=$PATH:/var/lib/jenkins/go/bin:/usr/local/go/bin:/var/lib/jenkins/venv/ci/bin
+export VIRTUAL_ENV_DISABLE_PROMPT=1

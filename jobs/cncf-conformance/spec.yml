@@ -1,0 +1,67 @@
+meta:
+  name: Verify CK Conformance
+  description: |
+    Verifies that CK passes CNCF conformance spec
+  mkdocs:
+    destination:
+      - "validations/conformance/index.md"
+
+setup:
+  - juju:
+      cloud: $JUJU_CLOUD
+      controller: $JUJU_CONTROLLER
+      model: $JUJU_MODEL
+      bootstrap:
+        debug: no
+        model-default: test-mode=true
+      deploy:
+        bundle: charmed-kubernetes
+        overlay: |
+          applications:
+            kubernetes-master:
+              options:
+                channel: $SNAP_VERSION
+            kubernetes-worker:
+              options:
+                channel: $SNAP_VERSION
+        wait: yes
+      config:
+        - kubernetes-master allow-privileged=true
+        - kubernetes-worker allow-privileged=true
+
+plan:
+  - runner:
+      description: |
+        See https://www.cncf.io/certification/software-conformance/ for more information.
+      script: |
+        #!/bin/bash
+        set -eux
+
+        mkdir -p $HOME/.kube
+        juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
+        export RBAC_ENABLED=$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)
+        kubectl version
+        sonobuoy version
+        sonobuoy run
+      tags: [cncf, cncf-run]
+  - runner:
+      description: |
+        See https://www.cncf.io/certification/software-conformance/ for more information.
+      cmd: sonobuoy status|grep -q 'Sonobuoy has completed'
+      wait_for_success: yes
+      timeout: 10800
+      back_off: 15
+      tags: [cncf, cncf-wait-status]
+  - runner:
+      description: Download results
+      script: |
+        sonobuoy retrieve results/.
+        kubectl version
+      wait_for_success: yes
+      back_off: 5
+      retries: 5
+      tags = [cncf, cncf-download-results]
+  - runner:
+      description: Tearing down all deployed applications
+      cmd: juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+      tags = [teardown]

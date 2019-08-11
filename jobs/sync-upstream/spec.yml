@@ -1,0 +1,15 @@
+plan:
+  - runner:
+      description: Sync upstream layer components to downstream charmed-kubernetes
+      tags: [sync]
+      cmd: python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc
+
+
+meta:
+  name: Sync upstream layers components
+  description: |
+    Syncs all upstream layer components to the downstream GitHub organization
+    'charmed-kubernetes'.
+  mkdocs:
+    destination:
+      - "maintenance/sync-upstream/index.md"

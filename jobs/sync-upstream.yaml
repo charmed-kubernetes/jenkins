@@ -3,18 +3,27 @@
 - job:
     name: 'sync-upstream'
     description: |
-      Sync all upstream charms, layers, used for building cdk.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/sync-upstream/Jenkinsfile
-    properties:
-      - build-discarder:
-          days-to-keep: 1
-          num-to-keep: 2
+      Syncs the upstream components into a controlled organization
+      (github/charmed-kubernetes). This allows more control over release
+      process.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - global-params
+      - charm-params
+    wrappers:
+      - ansicolor
+      - workspace-cleanup
+      - ci-creds
     triggers:
-        - timed: "@hourly"
+        - timed: "@daily"
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+          JOB_SPEC_FILE: "spec.yml"
 
 - job:
     name: 'sync-stable-tag-bundle-rev'

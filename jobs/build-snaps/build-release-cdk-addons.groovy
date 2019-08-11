@@ -3,7 +3,7 @@
 def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
-def snap_sh = "${utils.cipy} build-snaps/snaps.py"
+def snap_sh = "${utils.cipy} build-snaps/snap.py"
 
 pipeline {
     agent {

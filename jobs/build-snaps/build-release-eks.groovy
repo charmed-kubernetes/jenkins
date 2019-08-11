@@ -1,6 +1,6 @@
 @Library('juju-pipeline@master') _
 
-def snap_sh = "${utils.cipy} build-snaps/snaps.py"
+def snap_sh = "${utils.cipy} build-snaps/build-eks-snaps.py"
 def eks_snaps = '--snap kubelet --snap kubectl --snap kube-proxy --snap kubernetes-test'
 def path_id = "release-${uuid()}"
 

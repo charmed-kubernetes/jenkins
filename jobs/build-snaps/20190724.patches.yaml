@@ -1,0 +1,13 @@
+# Patches as of Wed Jul 24, 2019
+all:
+  - builders/snaps/patches/master-0001-apiextensions-add-scope-tests.patch
+  - builders/snaps/patches/master-0002-apiextensions-404-if-request-scope-does-not-match-cr.patch
+1.13.8:
+  - builders/snaps/patches/release-1.13-0001-apiextensions-add-scope-tests.patch
+  - builders/snaps/patches/release-1.13-0002-apiextensions-404-if-request-scope-does-not-match-cr.patch
+1.14.4:
+  - builders/snaps/patches/release-1.14-0001-apiextensions-add-scope-tests.patch
+  - builders/snaps/patches/release-1.14-0002-apiextensions-404-if-request-scope-does-not-match-cr.patch
+1.15.1:
+  - builders/snaps/patches/release-1.15-0001-apiextensions-add-scope-tests.patch
+  - builders/snaps/patches/release-1.15-0002-apiextensions-404-if-request-scope-does-not-match-cr.patch

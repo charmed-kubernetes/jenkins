@@ -1,0 +1,53 @@
+From 8d75c3e89edfb332b2367673972b2a816b560ba5 Mon Sep 17 00:00:00 2001
+From: "Dr. Stefan Schimanski" <stefan.schimanski@gmail.com>
+Date: Mon, 1 Jul 2019 21:24:02 +0200
+Subject: [PATCH 2/2] apiextensions: 404 if request scope does not match crd
+ scope
+
+---
+ .../pkg/apiserver/customresource_handler.go    | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/staging/src/k8s.io/apiextensions-apiserver/pkg/apiserver/customresource_handler.go b/staging/src/k8s.io/apiextensions-apiserver/pkg/apiserver/customresource_handler.go
+index f0cda49238..93e6d6b15a 100644
+--- a/staging/src/k8s.io/apiextensions-apiserver/pkg/apiserver/customresource_handler.go
++++ b/staging/src/k8s.io/apiextensions-apiserver/pkg/apiserver/customresource_handler.go
+@@ -192,6 +192,10 @@ func NewCustomResourceDefinitionHandler(
+ // and on the client side (by restarting the watch)
+ var longRunningFilter = genericfilters.BasicLongRunningRequestCheck(sets.NewString("watch"), sets.NewString())
+ 
++// possiblyAccrosAllNamespacesVerbs contains those verbs which can be per-namespace and accross all
++// namespaces for namespaces resources. I.e. for these an empty namespace in the requestInfo is fine.
++var possiblyAcrossAllNamespacesVerbs = sets.NewString("list", "watch")
++
+ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+ 	ctx := req.Context()
+ 	requestInfo, ok := apirequest.RequestInfoFrom(ctx)
+@@ -227,10 +231,24 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+ 		http.Error(w, err.Error(), http.StatusInternalServerError)
+ 		return
+ 	}
++
++	// if the scope in the CRD and the scope in request differ (with exception of the verbs in possiblyAcrossAllNamespacesVerbs
++	// for namespaced resources), pass request to the delegate, which is supposed to lead to a 404.
++	namespacedCRD, namespacedReq := crd.Spec.Scope == apiextensions.NamespaceScoped, len(requestInfo.Namespace) > 0
++	if !namespacedCRD && namespacedReq {
++		r.delegate.ServeHTTP(w, req)
++		return
++	}
++	if namespacedCRD && !namespacedReq && !possiblyAcrossAllNamespacesVerbs.Has(requestInfo.Verb) {
++		r.delegate.ServeHTTP(w, req)
++		return
++	}
++
+ 	if !apiextensions.HasServedCRDVersion(crd, requestInfo.APIVersion) {
+ 		r.delegate.ServeHTTP(w, req)
+ 		return
+ 	}
++
+ 	// There is a small chance that a CRD is being served because NamesAccepted condition is true,
+ 	// but it becomes "unserved" because another names update leads to a conflict
+ 	// and EstablishingController wasn't fast enough to put the CRD into the Established condition.
+-- 
+2.17.2
+

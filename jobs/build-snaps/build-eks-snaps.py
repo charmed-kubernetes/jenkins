@@ -1,5 +1,5 @@
 """
-snaps.py - Interface for building and publishing snaps
+snaps-eks.py - Interface for building and publishing snaps
 
 """
 

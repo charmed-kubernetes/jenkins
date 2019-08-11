@@ -1,86 +1,66 @@
 # Builds and releases latest snaps
-
 - job:
-    name: 'sync-upstream-k8s-tags'
-    description: Grabs upstream k8s release tags
+    name: 'build-snaps'
+    description: |
+      Sync all release tags from upstream, then create snap recipes to be built
+      and promoted into the snap store.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
+    parameters:
+      - global-params
+      - snap-params
     wrappers:
       - ansicolor
-      - timestamps
-      - credentials-binding:
-          - username-password-separated:
-              credential-id: k8s_team_ci_lp
-              username: K8STEAMCI_USR
-              password: K8STEAMCI_PSW
-          - file:
-              credential-id: launchpad_creds
-              variable: LPCREDS
+      - workspace-cleanup
+      - ci-creds
+    triggers:
+        - timed: "@daily"
     builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-snaps"
       - shell: |-
           #!/bin/bash
           set -eux
 
-          export GIT_SSH_COMMAND="ssh -i /var/lib/jenkins/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"
-          export PATH=/var/lib/jenkins/venvs/ci/bin:/var/lib/jenkins/go/bin:/usr/local/go/bin:$PATH
-          cd jobs && ogc snap sync-upstream --snap-list includes/k8s-snap-list.inc
+          TAG="sync"
+          if [ ! -z ${SNAP_PATCHES_LIST+x} ]; then
+              TAG="sync-with-patches"
+          fi
+
+          . /var/lib/jenkins/venvs/ci/bin/activate
+
+          ogc --spec jobs/build-snaps/spec.yml--debug execute -t "$TAG"
+
+- job:
+    name: 'promote-snaps'
+    description: |
+      Performs a snap promotion
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - global-params
+      - snap-params
+      - string:
+          name: TO_TRACK
+      - string:
+          name: FROM_TRACK
+      - string:
+          name: SNAP_ARCH
+    wrappers:
+      - ansicolor
+      - workspace-cleanup
+      - ci-creds
     triggers:
         - timed: "@daily"
-
-
-- job-template:
-    name: 'promote-snaps-{arch}'
-    description: |
-      Promotes snaps for {arch} to the snapstore.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-snaps/promote.groovy
-    parameters:
-      - string:
-          name: arch
-          default: '{arch}'
-      - string:
-          name: build_node
-          default: 'runner-{arch}'
-      - string:
-          name: promote_from
-      - string:
-          name: promote_to
-      - string:
-          name: snaps
-          description: |
-            Pass a list of snap names to promote, leaving empty will promote all snaps
-            (kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet
-            kube-proxy cdk-addons kubeadm kubernetes-test).
-    properties:
-      - build-discarder:
-          num-to-keep: 7
-
-- job-template:
-    name: 'build-release-snaps-{arch}'
-    description: |
-      Builds, releases and promotes snaps for {arch} to the snapstore.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-snaps/Jenkinsfile
-    parameters:
-      - string:
-          name: arch
-          default: '{arch}'
-      - string:
-          name: build_node
-          default: 'runner-{arch}'
-      - bool:
-          name: FORCE_RELEASE
-          default: false
-    properties:
-      - build-discarder:
-          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-snaps"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/build-snaps"
+          JOB_SPEC_FILE: spec.yml
+          JOB_TAGS: "-t promote-snaps"
 
 
 - job-template:
@@ -162,85 +142,8 @@
       - build-discarder:
           num-to-keep: 7
 
-- job:
-    name: 'promote-all-arch-snaps'
-    description: |
-      Promotes snaps for all architectures to the snapstore.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-snaps/promote-all-arch.groovy
-    parameters:
-      - string:
-          name: promote_from
-      - string:
-          name: promote_to
-      - string:
-          name: snaps
-          description: |
-            Pass a list of snap names to promote, leaving empty will promote all snaps
-            (kubectl kube-apiserver kube-controller-manager kube-scheduler kubelet
-            kube-proxy cdk-addons kubeadm kubernetes-test).
-    properties:
-      - build-discarder:
-          num-to-keep: 2
-
-
-- job:
-    name: 'create-snap-recipes'
-    description: |
-      Generates snap recipes for all required snaps.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-snaps/create-snap-recipes.groovy
-    parameters:
-      - text:
-          name: snaps
-          default: !include: includes/k8s-snap-list.inc
-          description: YAML list of snaps to create recipe for
-      - string:
-          name: version
-          default: '1.15'
-          description: k8s version to target
-      - string:
-          name: track
-          default: '1.15/edge'
-          description: snap version/risk/branch
-      - string:
-          name: owner
-          default: 'k8s-jenkaas-admins'
-      - string:
-          name: tag
-          default: 'v1.15.0'
-          description: k8s major.minor.patch-{HOTFIX} tag to build from
-    properties:
-      - build-discarder:
-          num-to-keep: 7
-
-- job-group:
-    name: 'build-release-snaps'
-    jobs:
-      - 'build-release-snaps-{arch}':
-          arch: ['amd64', 's390x', 'arm64', 'ppc64le']
-
-- job-group:
-    name: 'build-release-cdk-addons'
-    jobs:
-      - 'build-release-cdk-addons-{arch}':
-          arch: ['amd64', 's390x', 'arm64', 'ppc64le']
-
-- job-group:
-    name: 'promote-snaps'
-    jobs:
-      - 'promote-snaps-{arch}':
-          arch: ['amd64', 's390x', 'arm64', 'ppc64le']
-
 - project:
     name: build-release-snaps
+    arch: ['amd64', 's390x', 'arm64', 'ppc64le']
     jobs:
-      - 'build-release-snaps'
-      - 'promote-snaps'
-      - 'build-release-cdk-addons'
+      - 'build-release-cdk-addons-{arch}'
