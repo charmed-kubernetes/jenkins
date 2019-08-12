@@ -204,6 +204,10 @@
           export CHARM_CACHE_DIR=$WORKSPACE/tmp/.charm
           export PATH=/var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
+          export HTTP_PROXY="http://squid.internal:3128"
+          export http_proxy="http://squid.internal:3128"
+          export HTTPS_PROXY="http://squid.internal:3128"
+          export https_proxy="http://squid.internal:3128"
 
           env > $WORKSPACE/.env
 
