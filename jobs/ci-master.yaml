@@ -269,6 +269,10 @@
               credential-id: k8s_team_ci_lp
               username: K8STEAMCI_USR
               password: K8STEAMCI_PSW
+          - username-password-separated:
+              credential-id: cdkbot_github
+              username: CDKBOT_GH_USR
+              password: CDKBOT_GH_PSW
           - file:
               credential-id: launchpad_creds
               variable: LPCREDS
