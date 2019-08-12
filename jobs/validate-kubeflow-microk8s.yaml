@@ -12,14 +12,17 @@
       script-path: jobs/validate-kubeflow-microk8s/Jenkinsfile
     parameters:
       - string:
-          name: channel
-          default: 'stable'
-      - string:
-          name: juju_channel
-          default: 'stable'
-      - string:
           name: microk8s_channel
           default: 'stable'
+          description: microk8s snap channel
+      - string:
+          name: region
+          default: 'us-east-1'
+          description: AWS region that microk8s will be spun up in
+      - string:
+          name: bundle_revision
+          default: 'master'
+          description: Git revision of bundle-kubeflow repo to deploy
     triggers:
         - timed: "@daily"
     properties:
