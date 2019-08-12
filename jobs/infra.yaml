@@ -7,6 +7,7 @@
       - 'infra-maintain-nodes-{arch}'
       - 'infra-sync-creds-{arch}'
 
+
 - job-template:
     name: 'infra-maintain-nodes-{arch}'
     description: |
@@ -35,7 +36,8 @@
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
     builders:
-      - set-env
+      - set-env:
+          JOB_SPEC_DIR: "jobs/infra"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/infra"
           JOB_SPEC_FILE: "spec.yml"
@@ -51,9 +53,9 @@
     scm:
       - k8s-jenkins-jenkaas
     parameters:
-      - text:
+      - file:
           name: INFRA_CHARM_CRED
-          description: "The charm credentials to be synced to nodes"
+          description: "charm credential to be copied to node"
     properties:
       - build-discarder:
           num-to-keep: 1
@@ -64,3 +66,4 @@
           JOB_SPEC_DIR: "jobs/infra"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t sync"
+      - unset-env

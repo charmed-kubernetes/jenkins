@@ -202,14 +202,24 @@
           export CHARM_LAYERS_DIR="$WORKSPACE/${{CHARM_LAYERS_DIR:-build/layers}}"
           export CHARM_INTERFACES_DIR="$WORKSPACE/${{CHARM_INTERFACES_DIR:-build/interfaces}}"
           export CHARM_CACHE_DIR=$WORKSPACE/tmp/.charm
-          export PATH=/var/lib/jenkins/venvs/ci/bin:$PATH
+          export PATH=/var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
 
           env > $WORKSPACE/.env
 
-          . /var/lib/jenkins/venvs/ci/bin/activate
+          virtualenv /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER -p python3.6
+
+          . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
           # pip install -rrequirements.txt
           pip install --upgrade ogc ogc-plugins-runner ogc-plugins-env ogc-plugins-juju
+
+- builder:
+    name: unset-env
+    builders:
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          rm -rf /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER
 
 - builder:
     name: charm-build
@@ -221,7 +231,7 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          . /var/lib/jenkins/venvs/ci/bin/activate
+          . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
 
           rm -rf "$CHARM_BUILD_DIR" && mkdir -p "$CHARM_BUILD_DIR"
           rm -rf "$CHARM_LAYERS_DIR" && mkdir -p "$CHARM_LAYERS_DIR"
@@ -240,7 +250,7 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          . /var/lib/jenkins/venvs/ci/bin/activate
+          . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
 
           ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug execute {JOB_TAGS}
 

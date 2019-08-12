@@ -22,11 +22,7 @@ plan:
   - runner:
       description: Sync charmstore credentials
       tags: [sync]
-      script: |
-        #!/bin/bash
-
-        set -eux
-        echo "$INFRA_CHARM_CRED" > /var/lib/jenkins/.go-cookies
+      cmd: cp $INFRA_CHARM_CRED $HOME/.go-cookies
 
   - runner:
       description: Cleanup unused containers, storage pools, etc.
