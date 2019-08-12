@@ -5,7 +5,7 @@ plan:
         - GIT_SSH_COMMAND
         - K8STEAMCI_USR
         - K8STEAMCI_PSW
-      cmd: python3 jobs/build-snaps/snap.py sync-upstream --snap-list $SNAP_LIST
+      cmd: python3 -m snap sync-upstream --snap-list $SNAP_LIST
       tags: [sync]
       description: Sync K8s snap recipes
       long-description: |
@@ -22,8 +22,7 @@ plan:
         export K8STEAMCI_USR=\"$K8STEAMCI_USR\"
         export K8STEAMCI_PSW=\"$K8STEAMCI_PSW\"
 
-        ogc --spec builders/snaps/spec.toml plugin-deps --installable | sh -
-        ogc --spec builders/snaps/spec.toml --debug execute -t sync
+        ogc --spec builders/snaps/spec.yml --debug execute -t sync
         ```
   - runner:
       env-requires:
@@ -32,7 +31,7 @@ plan:
         - GIT_SSH_COMMAND
         - K8STEAMCI_USR
         - K8STEAMCI_PSW
-      cmd: python3 jobs/build-snaps/snap.py sync-upstream --snap-list $SNAP_LIST --force --patches $SNAP_PATCHES_LIST
+      cmd: python3 -m snap sync-upstream --snap-list $SNAP_LIST --force --patches $SNAP_PATCHES_LIST
       tags: [sync-with-patches]
       description: Sync K8s snap recipes w/ patches
       long-description: |
@@ -68,7 +67,7 @@ plan:
         - SNAP_ARCH
         - FROM_TRACK
         - TO_TRACK
-      cmd: python3 jobs/build-snaps/snap.py promote-snaps --snap-list $SNAP_LIST --arch $SNAP_ARCH --from-track $FROM_TRACK --to-track $TO_TRACK --exclude-pre
+      cmd: python3 -m snap promote-snaps --snap-list $SNAP_LIST --arch $SNAP_ARCH --from-track $FROM_TRACK --to-track $TO_TRACK --exclude-pre
       tags: [promote-snaps]
 
 meta:

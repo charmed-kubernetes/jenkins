@@ -10,3 +10,5 @@ requests==2.22.0
 semver==2.8.1
 sh==1.12.14
 theblues==0.5.1
+lazr.restfulclient==0.14.2
+launchpadlib==1.10.7

@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
-from .lib import lp, idm, git, snapapi
+from lib import lp, idm, git, snapapi
 
 
 def _render(tmpl_file, context):
