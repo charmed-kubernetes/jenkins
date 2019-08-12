@@ -209,6 +209,7 @@
           export CHARM_CACHE_DIR=$WORKSPACE/tmp/.charm
           export PATH=/var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
+          export TMPDIR="$WORKSPACE/tmp"
 
           env > $WORKSPACE/.env
 

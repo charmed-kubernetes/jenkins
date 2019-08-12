@@ -1,5 +1,6 @@
 """ sync repo script
 """
+import sys
 import click
 import sh
 import os
@@ -145,8 +146,12 @@ def _sync_upstream(layer_list, dry_run):
                 downstream = f"git@github.com:{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
-                for line in sh.git.clone(downstream, identifier, _iter=True, _bg_exc=False):
-                    click.echo(line)
+                try:
+                    for line in sh.git.clone(downstream, identifier, _iter=True, _bg_exc=False):
+                        click.echo(line)
+                except sh.ErrorReturnCode as e:
+                    click.echo(f"Failed to clone repo: {e.stderr.decode()}")
+                    sys.exit(1)
                 sh.git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
                 sh.git.config("user.name", "cdkbot", _cwd=identifier)
                 sh.git.config("--global", "push.default", "simple")
