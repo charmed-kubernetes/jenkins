@@ -2,23 +2,23 @@ plan:
   - runner:
       description: |
         Builds the charms that make up Kubernetes
-      # env-requires:
-      #   - CHARM_BUILD_DIR
-      #   - CHARM_LAYERS_DIR
-      #   - CHARM_INTERFACES_DIR
-      #   - CHARM_CACHE_DIR
-      #   - CHARM_BRANCH
-      #   - FILTER_BY_TAG
-      #   - LAYER_BRANCH
-      #   - LAYER_INDEX
-      #   - LAYER_LIST
-      #   - CHARM_LIST
-      #   - RESOURCE_SPEC
-      #   - BUNDLE_LIST
-      #   - BUNDLE_REPO
-      #   - TO_CHANNEL
-      #   - TMPDIR
-      #   - WORKSPACE
+      env-requires:
+        - CHARM_BUILD_DIR
+        - CHARM_LAYERS_DIR
+        - CHARM_INTERFACES_DIR
+        - CHARM_CACHE_DIR
+        - CHARM_BRANCH
+        - FILTER_BY_TAG
+        - LAYER_BRANCH
+        - LAYER_INDEX
+        - LAYER_LIST
+        - CHARM_LIST
+        - RESOURCE_SPEC
+        - BUNDLE_LIST
+        - BUNDLE_REPO
+        - TO_CHANNEL
+        - TMPDIR
+        - WORKSPACE
       script: |
         #!/bin/bash
         set -eux
@@ -35,13 +35,13 @@ plan:
   - runner:
       description: |
         Buildes the bundles that make up Kubernetes
-      # env-requires:
-      #   - FILTER_BY_TAG
-      #   - BUNDLE_LIST
-      #   - BUNDLE_REPO
-      #   - TO_CHANNEL
-      #   - TMPDIR
-      #   - WORKSPACE
+      env-requires:
+        - FILTER_BY_TAG
+        - BUNDLE_LIST
+        - BUNDLE_REPO
+        - TO_CHANNEL
+        - TMPDIR
+        - WORKSPACE
       script: |
         #!/bin/bash
         set -eux

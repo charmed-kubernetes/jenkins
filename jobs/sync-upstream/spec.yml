@@ -3,6 +3,8 @@ plan:
       description: Sync upstream layer components to downstream charmed-kubernetes
       tags: [sync]
       cmd: python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc
+      env-requires:
+        - CDKBOTSSHCREDS
   - runner:
       description: Tag all stable branches with bundle revision
       tags: [tag-stable-rev]
