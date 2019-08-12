@@ -78,13 +78,13 @@ def _push(repo_path, out_path, charm_entity, is_bundle=False):
             for arg in ("--resource", f"{name}={image}")
         ]
 
-    out = sh.charm.push(out_path, charm_entity, *resource_args)
+    out = sh.charm.push(out_path, charm_entity, *resource_args, _bg_exc=False)
     click.echo(f"Charm push returned: {out}")
     # Output includes lots of ansi escape sequences from the docker push,
     # and we only care about the first line, which contains the url as yaml.
     out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
     click.echo(f"Setting {out['url']} metadata: {git_commit}")
-    sh.charm.set(out["url"], "commit={}".format(git_commit))
+    sh.charm.set(out["url"], "commit={}".format(git_commit), _bg_exc=False)
 
 
 def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
