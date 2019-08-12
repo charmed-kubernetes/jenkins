@@ -65,3 +65,5 @@ plan:
                 sh.sudo.lxc.storage.delete(storage_name)
             except sh.ErrorReturnCode as e:
                 click.echo(f"Error removing {e}, continuing...")
+
+        sh.rm("-rf", "/var/lib/jenkins/venvs")

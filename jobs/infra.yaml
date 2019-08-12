@@ -5,7 +5,46 @@
     arch: ['amd64-1', 'amd64-2', 's390x', 'arm64', 'ppc64le']
     jobs:
       - 'infra-maintain-nodes-{arch}'
+      - 'infra-clean-nodes-{arch}'
       - 'infra-sync-creds-{arch}'
+
+
+- job-template:
+    name: 'infra-clean-nodes-{arch}'
+    description: |
+      Keeps jenkins slave {arch} nodes cleaned of any leftover artifacts.
+    node: runner-{arch}
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - global-params
+    wrappers:
+      - ansicolor
+      - workspace-cleanup
+      - ci-creds
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          num-to-keep: 1
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "release.*"
+            - "build.*"
+            - "validate.*"
+            - "sync.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/infra"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/infra"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t clean"
+      - unset-env
 
 
 - job-template:
@@ -30,9 +69,10 @@
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
-            - "release"
-            - "build-all-charms"
+            - "release.*"
+            - "build.*"
             - "validate.*"
+            - "sync.*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
     builders:
@@ -42,6 +82,7 @@
           JOB_SPEC_DIR: "jobs/infra"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t configure"
+      - unset-env
 
 - job-template:
     name: 'infra-sync-creds-{arch}'
