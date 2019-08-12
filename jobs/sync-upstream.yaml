@@ -31,39 +31,51 @@
     name: 'sync-stable-tag-bundle-rev'
     description: |
       Tags all downstream stable branches with bundle revision
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/sync-upstream/tag-stable-branches.groovy
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
           days-to-keep: 1
-          num-to-keep: 2
+    wrappers:
+      - ansicolor
+      - workspace-cleanup
+      - ci-creds
     parameters:
+      - global-params
       - string:
-          name: bundle_rev
+          name: BUNDLE_REV
           description: bundle revision to tag stable branches with
-      - bool:
-          name: dry_run
-          default: false
-          description: dry-run nothing is actually done
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t tag-stable-rev"
+      - unset-env
 
 - job:
     name: 'cut-stable-release'
     description: |
       Refreshes all layer stable branches on top of master.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/sync-upstream/cut-stable-release.groovy
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
           days-to-keep: 1
-          num-to-keep: 2
     parameters:
-      - bool:
-          name: dry_run
-          default: false
-          description: dry-run nothing is actually done
+      - global-params
+    wrappers:
+      - ansicolor
+      - workspace-cleanup
+      - ci-creds
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t cut-stable-release"
+      - unset-env

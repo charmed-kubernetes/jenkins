@@ -56,6 +56,11 @@
             - runner-ppc64le
             - runner-s390x
             - runner-arm64
+      - bool:
+          name: DRY_RUN
+          default: false
+          description: dry-run nothing is actually done
+
 
 - parameter:
     name: snap-params
