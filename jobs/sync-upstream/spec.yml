@@ -4,7 +4,8 @@ plan:
       tags: [sync]
       cmd: python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc
       env-requires:
-        - CDKBOTSSHCREDS
+        - CDKBOT_GH_USR
+        - CDKBOT_GH_PSW
   - runner:
       description: Tag all stable branches with bundle revision
       tags: [tag-stable-rev]

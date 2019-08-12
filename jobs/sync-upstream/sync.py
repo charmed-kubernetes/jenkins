@@ -143,7 +143,7 @@ def _sync_upstream(layer_list, dry_run):
                 f"Syncing {layer_name} :: {repos['upstream']} -> {repos['downstream']}"
             )
             if not dry_run:
-                downstream = f"https://{new_env['CDKBOT_GH_USER']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
+                downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 try:
