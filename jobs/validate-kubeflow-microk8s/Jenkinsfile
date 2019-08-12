@@ -28,7 +28,7 @@ pipeline {
         }
         stage('Setup') {
             steps {
-                sh "juju bootstrap aws/us-east-2 ${CONTROLLER}"
+                sh "juju bootstrap --debug aws/us-east-2 ${CONTROLLER}"
                 sh "juju deploy -m ${CONTROLLER}:default ubuntu --constraints 'cores=4 mem=16G root-disk=40G'"
                 sh "juju wait -vw -m ${CONTROLLER}:default"
                 sh "juju status -m ${CONTROLLER}:default"
@@ -53,53 +53,20 @@ pipeline {
                 exec "sudo snap install kubectl --classic"
                 exec "sudo snap install microk8s --classic --channel ${params.microk8s_channel}"
                 exec "sudo snap install yq"
-                exec "sudo apt update && sudo apt install -y python-tox docker.io"
+                exec "sudo apt update && sudo apt install -y libssl-dev"
+                exec "sudo pip install pytest sh kfp requests pyyaml"
             }
         }
         stage('Deploy kubeflow') {
             steps {
                 exec "git clone https://github.com/juju-solutions/bundle-kubeflow.git"
                 exec 'echo \'PATH=$PATH:/snap/bin\' > ~/.bashrc'
-                exec 'microk8s.status'
-                exec 'sudo snap logs -n=100 microk8s'
                 exec "cd bundle-kubeflow && CHARM_BUILD_DIR=/tmp/charm-builds ./scripts/deploy-microk8s create --build --ci --channel ${params.channel}"
-                exec "juju status --format yaml | yq r - applications.ambassador.address > PUB_IP"
-            }
-        }
-        stage('Wait for Ambassador') {
-            options {
-                retry(20)
-            }
-            steps {
-                exec 'curl $(<PUB_IP)'
-            }
-            post {
-                failure {
-                    sleep 5
-                }
             }
         }
         stage('Validate') {
             steps {
-                exec """
-                    git clone https://github.com/charmed-kubernetes/jenkins.git &&
-                    cd jenkins &&
-                    git checkout ${env.GIT_COMMIT} &&
-                    cp ../PUB_IP ./ &&
-                    cd jobs/ &&
-                    PY_IGNORE_IMPORTMISMATCH=1
-                    CONTROLLER=uk8s
-                    MODEL=kubeflow
-                    TOX_WORK_DIR=.tox
-                    tox
-                        -e py36
-                        --
-                        pytest
-                            -v
-                            -s
-                            --junit-xml=validate.xml
-                            integration/test_kubeflow.py::test_validate
-                """.replaceAll('\\s+', ' ')
+                exec "cd bundle-kubeflow && pytest -vv"
             }
         }
     }
@@ -112,10 +79,10 @@ pipeline {
         }
         always {
             setEndTime()
-//            collectDebug(params.controller, juju_model)
         }
         cleanup {
             saveMeta()
+            exec "juju status"
             exec "juju status --format yaml"
             sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${CONTROLLER}"
         }
