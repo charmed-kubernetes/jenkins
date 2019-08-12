@@ -17,8 +17,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - global-params
     wrappers:
       - ansicolor
       - workspace-cleanup
@@ -55,8 +53,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - global-params
     wrappers:
       - ansicolor
       - workspace-cleanup

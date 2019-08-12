@@ -28,7 +28,7 @@ plan:
       description: Cleanup unused containers, storage pools, etc.
       tags: [clean]
       script: |
-        #!python3
+        #!/usr/bin/env python3
         import sh
         import json
         import click
