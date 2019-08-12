@@ -14,9 +14,15 @@
       - string:
           name: juju_channel
           default: 'stable'
+          description: Juju snap channel
       - string:
-          name: channel
-          default: 'stable'
+          name: region
+          default: 'us-east-1'
+          description: AWS region that CDK will be spun up in
+      - string:
+          name: bundle_revision
+          default: 'master'
+          description: Git revision of bundle-kubeflow repo to deploy
     triggers:
         - timed: "@daily"
     properties:
