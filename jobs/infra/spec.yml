@@ -40,12 +40,15 @@ plan:
         click.echo(sh.sudo.du('-h', '--max-depth=1', '/var/lib'))
         click.echo(sh.sudo.df('-h'))
 
-        juju_controllers = json.loads(sh.juju.controllers('--format', 'json').stdout.decode())
-        for name, _ in juju_controllers:
-            try:
-                sh.juju('destroy-controller', '--destroy-all-models', '--destroy-storage', '-y', name)
-            except sh.ErrorReturnCode as e:
-                click.echo(f"Error destroying {e}, continuing...")
+        try:
+            juju_controllers = json.loads(sh.juju.controllers('--format', 'json').stdout.decode())
+            for name, _ in juju_controllers:
+                try:
+                    sh.juju('destroy-controller', '--destroy-all-models', '--destroy-storage', '-y', name)
+                except sh.ErrorReturnCode as e:
+                    click.echo(f"Error destroying {e}, continuing...")
+        except sh.ErrorReturnCode as e:
+            click.echo(f"Error reading controller: {e.stderr.decode()}, continuing...")
         containers = json.loads(sh.sudo.lxc.query('/1.0/containers').stdout.decode())
         click.echo(containers)
         for container in containers:

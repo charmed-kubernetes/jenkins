@@ -207,7 +207,7 @@
           export CHARM_LAYERS_DIR="$WORKSPACE/${{CHARM_LAYERS_DIR:-build/layers}}"
           export CHARM_INTERFACES_DIR="$WORKSPACE/${{CHARM_INTERFACES_DIR:-build/interfaces}}"
           export CHARM_CACHE_DIR=$WORKSPACE/tmp/.charm
-          export PATH=/var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin:$PATH
+          export PATH=/var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin:/snap/bin:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
 
