@@ -35,13 +35,13 @@ plan:
   - runner:
       description: |
         Buildes the bundles that make up Kubernetes
-      env-requires:
-        - FILTER_BY_TAG
-        - BUNDLE_LIST
-        - BUNDLE_REPO
-        - TO_CHANNEL
-        - TMPDIR
-        - WORKSPACE
+      # env-requires:
+      #   - FILTER_BY_TAG
+      #   - BUNDLE_LIST
+      #   - BUNDLE_REPO
+      #   - TO_CHANNEL
+      #   - TMPDIR
+      #   - WORKSPACE
       script: |
         #!/bin/bash
         set -eux
