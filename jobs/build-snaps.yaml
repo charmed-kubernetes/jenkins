@@ -22,15 +22,20 @@
       - shell: |-
           #!/bin/bash
           set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
 
           TAG="sync"
           if [ ! -z ${SNAP_PATCHES_LIST+x} ]; then
               TAG="sync-with-patches"
           fi
 
-          . /var/lib/jenkins/venvs/ci/bin/activate
+          . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
+          pip install -rjobs/build-snaps/requirements.txt
 
-          ogc --spec jobs/build-snaps/spec.yml--debug execute -t "$TAG"
+          ogc --spec jobs/build-snaps/spec.yml --debug execute -t "$TAG"
+      - unset-env
 
 - job:
     name: 'promote-snaps'
@@ -61,6 +66,7 @@
           JOB_SPEC_DIR: "jobs/build-snaps"
           JOB_SPEC_FILE: spec.yml
           JOB_TAGS: "-t promote-snaps"
+      - unset-env
 
 
 - job-template:
