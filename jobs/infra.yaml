@@ -19,7 +19,8 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
-      - teardown-juju-env
+      - teardown-juju-env:
+          JUJU_CONTROLLER: "{JUJU_CONTROLLER}"
       - unset-env
 
 - job-template:

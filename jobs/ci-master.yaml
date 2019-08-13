@@ -231,7 +231,7 @@
 
           . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
           # pip install -rrequirements.txt
-          pip install --upgrade ogc ogc-plugins-runner ogc-plugins-env ogc-plugins-juju
+          pip install --upgrade ogc ogc-plugins-runner ogc-plugins-env ogc-plugins-juju juju==0.11.7
 
 - builder:
     name: unset-env

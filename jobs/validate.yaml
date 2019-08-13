@@ -206,4 +206,5 @@
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t validate"
     publishers:
-      - teardown-juju
+      - teardown-juju:
+          JUJU_CONTROLLER: "${JUJU_CONTROLLER}"
