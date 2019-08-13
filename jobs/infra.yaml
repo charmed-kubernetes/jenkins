@@ -8,21 +8,6 @@
       - 'infra-clean-nodes-{arch}'
       - 'infra-sync-creds-{arch}'
 
-- job:
-    name: 'infra-teardown-juju'
-    description: Teardown juju controllers
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/infra"
-      - teardown-juju-env:
-          JUJU_CONTROLLER: "{JUJU_CONTROLLER}"
-      - unset-env
-
 - job-template:
     name: 'infra-clean-nodes-{arch}'
     description: |

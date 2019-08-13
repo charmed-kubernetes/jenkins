@@ -14,11 +14,8 @@ setup:
       model: $JUJU_MODEL
       bootstrap:
         debug: no
-        model-default: test-mode=true
-        run: |
-          #!/bin/bash
-          set -eux
-          /snap/bin/juju bootstrap aws/us-east-1 $JUJU_CONTROLLER -d $JUJU_MODEL
+        model-default:
+          - test-mode=true
       deploy:
         bundle: charmed-kubernetes
         channel: $JUJU_DEPLOY_CHANNEL

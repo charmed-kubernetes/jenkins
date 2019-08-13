@@ -188,29 +188,6 @@
           name: CHARM_INTERFACES_DIR
           default: 'build/interfaces'
 
-- publisher:
-    name: teardown-juju
-    publishers:
-      - trigger-parameterized-builds:
-        - project: infra-teardown-juju
-          current-parameters: true
-          node-parameters: true
-
-- builder:
-    name: teardown-juju-env
-    builders:
-      - shell: |-
-          #!/bin/bash
-          set -eux
-          set -o allexport
-          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-          set +o allexport
-
-          . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
-
-          juju destroy-controller -y \
-             --destroy-all-models \
-             --destroy-storage $JUJU_CONTROLLER
 
 - builder:
     name: set-env

@@ -205,5 +205,3 @@
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t validate"
-    publishers:
-      - teardown-juju
