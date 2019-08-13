@@ -10,14 +10,19 @@ plan:
         #!/bin/bash
 
         set -eux
-        /var/lib/jenkins/venvs/ansible/bin/pip3 install ansible
-        /var/lib/jenkins/venvs/ci/bin/pip3 install -r jobs/requirements.txt
-        cd jobs && \
-          /var/lib/jenkins/venvs/ansible/bin/ansible-playbook infra/playbook-jenkins.yml \
+
+        # Deactivate env set by set-env and use a python3.5 environment
+        deactivate
+        virtualenv /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER-py35 -p python3.5
+
+        . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER-py35/bin/activate
+
+        pip install --upgrade ansible
+        /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER-py35/bin/ansible-playbook jobs/infra/playbook-jenkins.yml \
           -e 'ansible_python_interpreter=/usr/bin/python3.5' \
           --limit localhost \
           --tags 'jenkins' \
-          -i infra/hosts
+          -i jobs/infra/hosts
 
   - runner:
       description: Sync charmstore credentials
