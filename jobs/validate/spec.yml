@@ -17,6 +17,7 @@ setup:
         model-default: test-mode=true
       deploy:
         bundle: charmed-kubernetes
+        channel: $JUJU_DEPLOY_CHANNEL
         overlay: |
           applications:
             kubernetes-master:
