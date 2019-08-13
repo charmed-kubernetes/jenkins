@@ -199,6 +199,9 @@
       - build-discarder:
           num-to-keep: 7
     builders:
+      - shell: |
+          rm -rf /var/lib/jenkins/.local/share/juju/charmcache || true
+          rm -rf /var/lib/jenkins/.local/share/juju/cookies || true
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
