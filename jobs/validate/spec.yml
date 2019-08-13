@@ -16,6 +16,16 @@ setup:
         debug: no
         model-default:
           - test-mode=true
+        run: |
+          #!/bin/bash
+          set -x
+          id
+          which juju
+          snap list juju
+          ls -l /var/lib/jenkins/.local/share/juju/**
+          /snap/bin/juju bootstrap \
+              $JUJU_CLOUD "$JUJU_CONTROLLER" \
+              -d $JUJU_MODEL --model-default test-mode=true
       deploy:
         bundle: charmed-kubernetes
         channel: $JUJU_DEPLOY_CHANNEL
