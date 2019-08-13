@@ -200,6 +200,14 @@
     name: teardown-juju-env
     builders:
       - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
+
           juju destroy-controller -y \
              --destroy-all-models \
              --destroy-storage $JUJU_CONTROLLER
