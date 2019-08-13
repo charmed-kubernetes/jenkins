@@ -12,7 +12,6 @@ plan:
         set -eux
 
         # Deactivate env set by set-env and use a python3.5 environment
-        deactivate
         virtualenv /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER-py35 -p python3.5
 
         . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER-py35/bin/activate
