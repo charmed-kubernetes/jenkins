@@ -139,28 +139,6 @@
       script-path: jobs/validate/Jenkinsfile
     <<: *validate_parameter_defaults
 
-- job:
-    name: 'validate-nightly-charmed-kubernetes'
-    description: |
-      Validates CDK edge nightly, supports last three recent releases.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/validate/validate-nightly-cdk.groovy
-    triggers:
-        - timed: "0 12 * * *"
-    properties:
-      - build-blocker:
-          use-build-blocker: true
-          blocking-jobs:
-            - "release"
-            - "build-all-charms"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
-      - build-discarder:
-          num-to-keep: 7
-
 - project:
     name: validate
     <<: *edge_overlay_defaults
@@ -177,3 +155,55 @@
       - 'validate-non-core-upgrade':
           upgrade_from_bundle_channel: 'stable'
           <<: *non_core_upgrade_bundle_defaults
+
+- job:
+    name: 'validate-ck-daily'
+    description: |
+      Validates CDK edge daily, supports last three recent releases.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    triggers:
+      - timed: "@daily"
+    publishers:
+      - trigger-parameterized-builds:
+        - project: validate-ck
+          predefined-parameters: SNAP_VERSION="1.16/edge"
+          condition: ALWAYS
+        - project: validate-ck
+          predefined-parameters: SNAP_VERSION="1.15/edge"
+          condition: ALWAYS
+        - project: validate-ck
+          predefined-parameters: SNAP_VERSION="1.14/edge"
+          condition: ALWAYS
+
+- job:
+    name: 'validate-ck'
+    description: |
+      Validates CDK edge, supports last three recent releases.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
+    properties:
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "release"
+            - "build-charms"
+            - "build-bundles"
+            - "infra*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t validate"
+    publishers:
+      - teardown-juju

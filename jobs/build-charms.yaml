@@ -98,8 +98,7 @@
     triggers:
         - timed: "@daily"
     wrappers:
-      - ansicolor
-      - workspace-cleanup
+      - default-job-wrapper
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"

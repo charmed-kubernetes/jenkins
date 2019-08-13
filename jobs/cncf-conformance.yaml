@@ -45,17 +45,15 @@
       Please see https://git.io/fNwXY for more information.
     project-type: freestyle
     scm:
-      scm:
-        - k8s-jenkins-jenkaas
+      - k8s-jenkins-jenkaas
     parameters:
       - global-params
       - juju-params
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 4
     wrappers:
-      - ansicolor
-      - timestamps
+      - default-job-wrapper
       - timeout:
           timeout: 240
           fail: true

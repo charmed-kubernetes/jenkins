@@ -4,13 +4,22 @@
     name: 'generate-reports-overview'
     description: |
       generates a report overview
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/reports/Jenkinsfile
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
           num-to-keep: 1
     triggers:
         - timed: "@hourly"
+    wrappers:
+      - ansicolor
+      - workspace-cleanup
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/reports"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/reports"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t gen-validation-report"
+      - unset-env

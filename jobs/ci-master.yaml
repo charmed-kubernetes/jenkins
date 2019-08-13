@@ -185,8 +185,22 @@
       - string:
           name: CHARM_INTERFACES_DIR
           default: 'build/interfaces'
-    jobs:
-      - 'ogc-build-charms-bundles'
+
+- publisher:
+    name: teardown-juju
+    publishers:
+      - trigger-parameterized-builds:
+        - project: infra-teardown-juju
+          current-parameters: true
+          node-parameters: true
+
+- builder:
+    name: teardown-juju-env
+    builders:
+      - shell: |-
+          juju destroy-controller -y \
+             --destroy-all-models \
+             --destroy-storage $JUJU_CONTROLLER
 
 - builder:
     name: set-env
@@ -260,6 +274,12 @@
 
           ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug execute {JOB_TAGS}
 
+- wrapper:
+    name: default-job-wrapper
+    wrappers:
+      - ansicolor
+      - timestamps
+      - workspace-cleanup
 
 - wrapper:
     name: ci-creds
@@ -285,6 +305,9 @@
           - file:
               credential-id: sso_token
               variable: SSOCREDS
+          - file:
+              credential-id: snapcraft_creds
+              variable: SNAPCRAFTCREDS
           - file:
               credential-id: aws_creds
               variable: AWSCREDS

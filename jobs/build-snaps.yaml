@@ -11,8 +11,7 @@
       - global-params
       - snap-params
     wrappers:
-      - ansicolor
-      - workspace-cleanup
+      - default-job-wrapper
       - ci-creds
     triggers:
         - timed: "@daily"
@@ -54,8 +53,7 @@
       - string:
           name: SNAP_ARCH
     wrappers:
-      - ansicolor
-      - workspace-cleanup
+      - default-job-wrapper
       - ci-creds
     triggers:
         - timed: "@daily"

@@ -1,0 +1,18 @@
+plan:
+  - runner:
+      description: |
+        Generate validation reports
+      script: |
+        #!/bin/bash
+        set -eux
+        export PATH=/snap/bin:$PATH
+        python3 -m report generate-validation
+      tags: [gen-validation-report]
+
+meta:
+  mkdocs:
+    destination:
+      - "reporters/index.md"
+  name: Reports
+  description: |
+    Generates reports from build statuses

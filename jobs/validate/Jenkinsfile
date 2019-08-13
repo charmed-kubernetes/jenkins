@@ -64,7 +64,7 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} TEST_CHARM_CHANNEL=${params.bundle_channel} ${utils.pytest} --junit-xml=validate.xml integration/validation.py -m 'not slow'"
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} TEST_CHARM_CHANNEL=${params.bundle_channel} ${utils.pytest} "
                 }
             }
         }
