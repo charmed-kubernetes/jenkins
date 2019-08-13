@@ -90,6 +90,7 @@
           description: |
             Version of Kubernetes to test against, in the form of
             <major>.<minor>/<channel> (ie, 1.16/edge).
+          default: '1.16/edge'
       - string:
           name: JUJU_CONTROLLER
           default: 'validate-ck'
@@ -109,6 +110,7 @@
           name: JUJU_BOOTSTRAP_CONSTRAINTS
           description: |
             Juju bootstrap constraints (ie, 'arch=amd64')
+          default: 'arch=amd64'
       - bool:
           name: JUJU_BOOTSTRAP_DEBUG
           default: false
