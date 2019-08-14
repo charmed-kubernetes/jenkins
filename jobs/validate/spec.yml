@@ -8,6 +8,7 @@ meta:
 
 setup:
   - juju:
+      propagate: no
       description: Bootstrap and deploy kubernetes
       cloud: $JUJU_CLOUD
       controller: $JUJU_CONTROLLER
@@ -38,6 +39,7 @@ setup:
 
 plan:
   - runner:
+      propagate: no
       description: Run testsuite against deployed CK
       script: |
         #!/bin/bash
@@ -50,7 +52,8 @@ plan:
       tags: [validate, test]
 
 teardown:
-  - juju:
+  - runner:
+      propagate: no
       description: Teardown juju deployment
-      teardown: yes
+      cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
       tags: [validate, destroy]
