@@ -212,6 +212,8 @@
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
 
+          rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
+
           env > $WORKSPACE/.env
 
           virtualenv /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER -p python3.6
