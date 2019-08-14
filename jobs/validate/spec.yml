@@ -17,6 +17,8 @@ setup:
         constraints: $JUJU_BOOTSTRAP_CONSTRAINTS
         model-default:
           - test-mode=true
+        replace-controller: yes
+        disable-add-model: yes
       deploy:
         bundle: charmed-kubernetes
         channel: $JUJU_DEPLOY_CHANNEL
