@@ -18,7 +18,7 @@ setup:
         model-default:
           - test-mode=true
         replace-controller: yes
-        disable-add-model: yes
+        disable-add-model: no
       deploy:
         bundle: charmed-kubernetes
         channel: $JUJU_DEPLOY_CHANNEL
@@ -31,7 +31,6 @@ setup:
               options:
                 channel: $SNAP_VERSION
         wait: yes
-        disable-add-model: no
       config:
         - kubernetes-master allow-privileged=true
         - kubernetes-worker allow-privileged=true
@@ -48,4 +47,10 @@ plan:
              --connection $JUJU_CONTROLLER:$JUJU_MODEL \
              --charm-channel $JUJU_DEPLOY_CHANNEL \
              --snap-channel $SNAP_VERSION
-      tags: [validate]
+      tags: [validate, test]
+
+teardown:
+  - juju:
+      description: Teardown juju deployment
+      teardown: yes
+      tags: [validate, destroy]

@@ -219,8 +219,8 @@
           virtualenv /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER -p python3.6
 
           . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
-          # pip install -rrequirements.txt
-          pip install --upgrade ogc ogc-plugins-runner ogc-plugins-env ogc-plugins-juju juju==0.11.7
+          pip install -rrequirements.txt
+          pip install -rrequirements_test.txt
 
 - builder:
     name: unset-env
