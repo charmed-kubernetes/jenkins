@@ -15,11 +15,11 @@ from sh import juju_wait
 
 
 def _model_from_env():
-    return os.environ.get("MODEL") or "validate-{}".format(os.environ["BUILD_NUMBER"])
+    return os.environ.get("JUJU_MODEL") or "validate-{}".format(os.environ["BUILD_NUMBER"])
 
 
 def _controller_from_env():
-    return os.environ.get("CONTROLLER", "jenkins-ci-aws")
+    return os.environ.get("JUJU_CONTROLLER", "jenkins-ci-aws")
 
 
 def _series_from_env():
@@ -27,7 +27,7 @@ def _series_from_env():
 
 
 def _cloud_from_env():
-    return os.environ.get("CLOUD", None)
+    return os.environ.get("JUJU_CLOUD", None)
 
 
 def _juju_wait(controller=None, model=None, exclude=None):
