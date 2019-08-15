@@ -26,9 +26,9 @@ pipeline {
             steps {
                 // setStartTime()
                 dir('jobs') {
-                    sh "${utils.cipy} integration/tigera/cleanup_vpcs.py"
+                    sh "${utils.cipy} integration/tigera_aws.py cleanup"
                     script {
-                        sh "CONTROLLER=${juju_controller} ${utils.cipy} integration/tigera/bootstrap_aws_single_subnet.py"
+                        sh "CONTROLLER=${juju_controller} ${utils.cipy} integration/tigera_aws.py bootstrap"
                     }
                 }
                 deployCDK(controller: juju_controller,
@@ -40,7 +40,7 @@ pipeline {
                           disable_wait: true)
                 sh "juju config -m ${juju_controller}:${juju_model} tigera-secure-ee license-key=\$(base64 -w0 ${env.TIGERA_SECURE_EE_LICENSE_KEY_FILE}) registry-credentials=\$(base64 -w0 ${env.TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE})"
                 dir('jobs') {
-                    sh "${utils.cipy} integration/tigera/disable_source_dest_check.py -m ${juju_controller}:${juju_model}"
+                    sh "MODEL=${juju_controller}:${juju_model} ${utils.cipy} integration/tigera_aws.py disable-source-dest-check"
                 }
                 sh "juju-wait -e ${juju_controller}:${juju_model} -w"
             }
@@ -75,7 +75,7 @@ pipeline {
             dir('jobs') {
                 script {
                     tearDown(juju_controller)
-                    sh "${utils.cipy} integration/tigera/cleanup_vpcs.py"
+                    sh "${utils.cipy} integration/tigera_aws.py cleanup"
                 }
             }
         }

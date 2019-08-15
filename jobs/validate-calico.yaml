@@ -31,6 +31,9 @@
       - string:
           name: upgrade_from_bundle_channel
           default: '{upgrade_from_bundle_channel}'
+      - string:
+          name: test_bgp
+          default: '{test_bgp}'
     properties:
       - build-discarder:
           num-to-keep: 7
@@ -38,6 +41,7 @@
 - project:
     name: validate-calico
     upgrade_from_bundle_channel: ''
+    test_bgp: false
     version:
       !include: includes/k8s-support-matrix.inc
     jobs:
@@ -46,6 +50,16 @@
 - project:
     name: validate-calico-upgrade
     upgrade_from_bundle_channel: stable
+    test_bgp: false
+    version:
+      !include: includes/k8s-support-matrix.inc
+    jobs:
+      - '{name}-{version}'
+
+- project:
+    name: validate-calico-bgp
+    upgrade_from_bundle_channel: ''
+    test_bgp: true
     version:
       !include: includes/k8s-support-matrix.inc
     jobs:

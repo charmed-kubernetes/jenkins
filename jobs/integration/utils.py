@@ -243,10 +243,12 @@ def arch():
     return architecture
 
 
-async def disable_source_dest_check(connection_name):
-    path = os.path.dirname(__file__) + "/tigera/disable_source_dest_check.py"
-    cmd = [path, "-m", connection_name]
-    await asyncify(check_call)(cmd)
+async def disable_source_dest_check(connection_name, controller_name, model_name):
+    path = os.path.dirname(__file__) + "/tigera_aws.py"
+    env = os.environ.copy()
+    env['MODEL'] = connection_name
+    cmd = [path, "disable-source-dest-check"]
+    await asyncify(check_call)(cmd, env=env)
 
 
 async def verify_deleted(unit, entity_type, name, extra_args=""):
