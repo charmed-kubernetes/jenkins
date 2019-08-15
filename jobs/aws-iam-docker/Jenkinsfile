@@ -1,0 +1,97 @@
+@Library('juju-pipeline@master') _
+
+tag = "${params.GIT_TAG}"
+
+pipeline {
+    agent {
+        label "runner-amd64 || runner-arm64"
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = "${utils.cipaths}"
+        GOPATH = "$WORKSPACE"
+        REGISTRY_CREDS = credentials('canonical_registry')
+        REGISTRY_URL = 'upload.image-registry.canonical.com:5000'
+    }
+    parameters {
+        string(name: 'GIT_REPO', defaultValue: 'https://github.com/kubernetes-sigs/aws-iam-authenticator.git', description: 'Git repo to build')
+        string(name: 'GIT_TAG', defaultValue: 'latest', description: 'Tag to clone in git, the value latest will query github and get the latest release')
+        string(name: 'DOCKER_TAG', defaultValue: 'source', description: 'Tag to attach to the OCI image, the value source will use git source tag')
+        string(name: 'DRY_RUN', defaultValue: 'no', description: 'Set to build OCI image, but not push')
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    stages {
+        stage('Clone Git') {
+            steps {
+                script {
+                    if (params.GIT_TAG == "latest") {
+                        tag = sh (script: "curl --silent 'https://api.github.com/repos/kubernetes-sigs/aws-iam-authenticator/releases/latest' | jq -r .tag_name",
+                                returnStdout: true)
+                    }
+                    sh "mkdir -p src/sigs.k8s.io/aws-iam-authenticator"
+                    dir('src/sigs.k8s.io/aws-iam-authenticator') {
+                        echo "Using tag ${tag}"
+                        checkout([$class: 'GitSCM', userRemoteConfigs: [[url: "${params.GIT_REPO}"]], branches: [[name: "${tag}"]]])
+                    }
+                }
+            }
+        }
+        stage('Build Image') {
+            steps {
+                sh "sudo snap install --classic goreleaser"
+                dir("src/sigs.k8s.io/aws-iam-authenticator") {
+                    sh "make"
+                }
+            }
+        }
+        stage('Push Image') {
+            steps {
+                script {
+                    // the image made by the build is tagged from a string in the code, so building master will result in a tag like v0.4.0.
+                    // We need to read that tag and then retag it to what we expected it to be. Outside of the master case, the tag
+                    // should match our expectations.
+                    images = sh (script: "docker images|grep aws-iam-authenticator|awk '{ print \$1 \":\" \$2 }'|grep -E 'v[0-9]\\.[0-9]\\.[0-9]\$'",
+                                 returnStdout: true
+                                ).split()
+                    if (params.DOCKER_TAG != "source") {
+                        tag = params.DOCKER_TAG
+                    }
+
+                    echo "Using tag ${tag}"
+                    images.each { image ->
+                        sh "docker tag ${image} ${env.REGISTRY_URL}/cdk/aws-iam-authenticator:${tag}"
+                    }
+                    if (params.DRY_RUN != "no") {
+                        echo "Dry run; would have pushed ${env.REGISTRY_URL}/cdk/aws-iam-authenticator:${tag}"
+                    } else {
+                        retry(3) {
+                            echo "pushing ${env.REGISTRY_URL}/cdk/aws-iam-authenticator:${tag}"
+                            sh "docker login -u ${env.REGISTRY_CREDS_USR} -p ${env.REGISTRY_CREDS_PSW} ${env.REGISTRY_URL}"
+                            sh "docker push ${env.REGISTRY_URL}/cdk/aws-iam-authenticator:${tag}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        cleanup {
+            script {
+                images = sh (script: "docker images|grep aws-iam-authenticator|awk '{ print \$3 }'",
+                             returnStdout: true
+                            ).split().join(' ')
+                if (images != "") {
+                    echo "cleaning up images ${images}"
+                    sh "docker rmi -f ${images}"
+                }
+            }
+        }
+    }
+}
