@@ -14,8 +14,9 @@ setup:
         This is ran with the validate-snapd-upgrade as the host snapd is also
         upgraded to the new channel.
       cmd: sudo snap refresh core --$TEST_UPGRADE_SNAPD_CHANNEL
-      env-requires:
-        - TEST_UPGRADE_SNAPD_CHANNEL
+      # Needs addressing in ogc to filter out selection on tags
+      # env-requires:
+      #   - TEST_UPGRADE_SNAPD_CHANNEL
       tags: [validate-snapd-upgrade]
 
   - juju:
