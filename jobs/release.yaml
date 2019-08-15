@@ -84,42 +84,51 @@
     description: |
       Validates charms from their stable branch/channels in order to release a
       bug/hotfix to stable.
-    project-type: pipeline
+    project-type: freestyle
     parameters:
-      - string:
-          name: release_id
-          description: |
-            This should be a uniquely identifiable release tag so that
-            subsequent runs can query any previous state if available. This
-            allows passing jobs to be bypassed and only the failed job be run
-            again.
-      - choice:
-          name: k8sver
-          choices:
-            - '1.13'
-            - '1.14'
-            - '1.15'
-      - string:
-          name: k8sver_range
-          default: 'v1.13.x-v1.14.x'
-          description: |
-            The previous version to upgrade and test from, format should be
-            'v1.13.x-v1.14.x'
-      - string:
-          name: charm_promote_to
-          default: 'candidate'
-          description: |
-            In the format of 'beta candidate'
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/release/charmBugfix.groovy
+      - juju-params
+    scm:
+      - k8s-jenkins-jenkaas
     properties:
-      - build-blocker:
-          use-build-blocker: false
-          blocking-jobs:
-            - ".*build.*"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
+      - block-on-release
       - build-discarder:
           num-to-keep: 7
+    publishers:
+      - trigger-parameterized-builds:
+        # Validate
+        - project: validate-ck
+          predefined-parameters: |
+            SNAP_VERSION="1.15/stable"
+          condition: SUCCESS
+        # Validate upgrades
+        - project: validate-ck-upgrade
+          predefined-parameters: |
+            SNAP_VERSION="1.13/stable"
+            JUJU_MODEL="validate-ck-upgrade"
+          condition: SUCCESS
+        - project: validate-ck-upgrade
+          predefined-parameters: |
+            SNAP_VERSION="1.14/stable"
+            JUJU_MODEL="validate-ck-upgrade"
+          condition: SUCCESS
+        # Validate Vault
+        - project: validate-ck
+          predefined-parameters: |
+            SNAP_VERSION="1.14/edge"
+            JUJU_MODEL="validate-vault"
+          condition: SUCCESS
+        # Validate Calico
+        - project: validate-calico-v1.15.x
+          condition: SUCCESS
+        # Validate NVidia
+        - project: validate-nvidia-v1.15.x
+          condition: SUCCESS
+        # Validate Tigera
+        - project: validate-tigera-secure-ee-v1.15.x
+          condition: SUCCESS
+        # Promote to stable
+        - project: promote-charms
+          condition: SUCCESS
+          predefined-parameters: |
+            FROM_CHANNEL="candidate"
+            TO_CHANNEL="stable"

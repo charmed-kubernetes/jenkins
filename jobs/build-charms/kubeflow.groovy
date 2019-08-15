@@ -22,11 +22,11 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Set Start Time') {
-            steps {
-                setStartTime()
-            }
-        }
+        // stage('Set Start Time') {
+        //     steps {
+        //         setStartTime()
+        //     }
+        // }
         stage('Check for new commits') {
             steps {
                 sh 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
@@ -79,17 +79,17 @@ pipeline {
         }
     }
     post {
-        success {
-            setPass()
-        }
-        failure {
-            setFail()
-        }
-        always {
-            setEndTime()
-        }
+        // success {
+        //     setPass()
+        // }
+        // failure {
+        //     setFail()
+        // }
+        // always {
+        //     setEndTime()
+        // }
         cleanup {
-            saveMeta()
+            // saveMeta()
             sh "sudo lxc delete --force ${CONTAINER} || true"
         }
     }
