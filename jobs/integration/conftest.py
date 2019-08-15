@@ -20,24 +20,9 @@ from .utils import (
 )
 from sh import juju
 
-# Handle upgrades
-test_charm_channel = os.environ.get("TEST_CHARM_CHANNEL", "edge")
-test_snap_channel = os.environ.get("TEST_SNAP_CHANNEL")
-
-
-def _is_upgrade():
-    """ Return if this is an upgrade test
-    """
-    return bool(os.environ.get("TEST_UPGRADE", None))
-
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--snapd-upgrade",
-        action="store_true",
-        default=False,
-        help="run tests with upgraded snapd",
-    )
+
     parser.addoption(
         "--connection",
         action="store",
@@ -45,31 +30,56 @@ def pytest_addoption(parser):
         help="Juju [controller:model] to use",
     )
     parser.addoption(
-        "--cloud",
-        action="store",
-        default=_cloud_from_env(),
-        help="Juju cloud to use",
+        "--cloud", action="store", default=_cloud_from_env(), help="Juju cloud to use"
     )
     parser.addoption(
-        "--charm-channel",
-        action="store",
-        default="edge",
-        help="Charm channel to use",
+        "--charm-channel", action="store", default="edge", help="Charm channel to use"
     )
     parser.addoption(
-        "--bundle-channel",
-        action="store",
-        default="edge",
-        help="Bundle channel to use",
+        "--bundle-channel", action="store", default="edge", help="Bundle channel to use"
     )
     parser.addoption(
         "--snap-channel",
         action="store",
-        required=True,
+        required=False,
         help="Snap channel to use eg 1.16/edge",
     )
 
+    # Set when performing upgrade tests
+    parser.addoption(
+        "--is-upgrade",
+        action="store_true",
+        default=False,
+        help="This test should be run with snap and charm upgrades",
+    )
+    parser.addoption(
+        "--upgrade-snap-channel",
+        action="store",
+        required=False,
+        help="Snap channel to use eg 1.16/edge",
+    )
+    parser.addoption(
+        "--uprade-charm-channel",
+        action="store",
+        required=False,
+        help="Charm channel to use (stable, candidate, beta, edge)",
+    )
 
+
+    # Set when testing a different snap core channel
+    parser.addoption(
+        "--snapd-upgrade",
+        action="store_true",
+        default=False,
+        help="run tests with upgraded snapd",
+    )
+    parser.addoption(
+        "--snapd-channel",
+        action="store",
+        required=False,
+        default="beta",
+        help="Snap channel to install snapcore from",
+    )
 
 
 @pytest.fixture(scope="module")
@@ -78,14 +88,19 @@ async def model(request, event_loop):
     model = Model(event_loop)
     connection_name = request.config.getoption("--connection")
     await model.connect(connection_name)
-    if _is_upgrade():
+    if request.config.getoption("--is-upgrade"):
+        upgrade_snap_channel = request.config.getoption("--upgrade-snap-channel")
+        upgrade_charm_channel = request.config.getoption("--upgrade-charm-channel")
+        if not upgrade_snap_channel and upgrade_charm_channel:
+            raise Exception(
+                "Must have both snap and charm upgrade channels set to perform upgrade prior to validation test."
+            )
         print("Upgrading charms")
-        await upgrade_charms(model, test_charm_channel)
-    if test_snap_channel:
+        await upgrade_charms(model, upgrade_charm_channel)
         print("Upgrading snaps")
-        await upgrade_snaps(model, test_snap_channel)
+        await upgrade_snaps(model, upgrade_snap_channel)
     if request.config.getoption("--snapd-upgrade"):
-        snapd_channel = os.environ.get("SNAPD_CHANNEL", "beta")
+        snapd_channel = request.config.getoption("--snapd-channel")
         cmd = f"sudo snap refresh core --{snapd_channel}"
         cloudinit_userdata = {"postruncmd": [cmd]}
         cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
@@ -114,7 +129,7 @@ def skip_by_arch(request, system_arch):
 
 @pytest.fixture(scope="module")
 async def proxy_app(model):
-    proxy_app = model.applications.get('squid-forwardproxy')
+    proxy_app = model.applications.get("squid-forwardproxy")
 
     if proxy_app is None:
         proxy_app = await model.deploy("cs:~pjds/squid-forwardproxy-testing-1")

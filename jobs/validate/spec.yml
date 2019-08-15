@@ -7,6 +7,17 @@ meta:
       - "validations/ck/index.md"
 
 setup:
+  - runner:
+      fail-silently: yes
+      description: Performs a snapd channel upgrade
+      long-description: |
+        This is ran with the validate-snapd-upgrade as the host snapd is also
+        upgraded to the new channel.
+      cmd: sudo snap refresh core --$TEST_UPGRADE_SNAPD_CHANNEL
+      env-requires:
+        - TEST_UPGRADE_SNAPD_CHANNEL
+      tags: [validate-snapd-upgrade]
+
   - juju:
       fail-silently: yes
       description: Bootstrap and deploy kubernetes
@@ -32,10 +43,7 @@ setup:
               options:
                 channel: $SNAP_VERSION
         wait: yes
-      config:
-        - kubernetes-master allow-privileged=true
-        - kubernetes-worker allow-privileged=true
-      tags: [validate]
+      tags: [validate, validate-upgrade, validate-snapd-upgrade]
 
 plan:
   - runner:
@@ -46,14 +54,44 @@ plan:
         set -eux
         pytest jobs/integration/validation.py \
              --cloud $JUJU_CLOUD \
+             --connection $JUJU_CONTROLLER:$JUJU_MODEL
+      tags: [validate]
+
+  - runner:
+      fail-silently: yes
+      description: Performs an upgrade validation against a deployed CK
+      script: |
+        #!/bin/bash
+        set -eux
+        pytest jobs/integration/validation.py \
+             --cloud $JUJU_CLOUD \
              --connection $JUJU_CONTROLLER:$JUJU_MODEL \
-             --charm-channel $JUJU_DEPLOY_CHANNEL \
-             --snap-channel $SNAP_VERSION
-      tags: [validate, test]
+             --is-upgrade \
+             --upgrade-charm-channel $TEST_UPGRADE_CHARM_CHANNEL \
+             --upgrade-snap-channel $TEST_UPGRADE_SNAP_CHANNEL
+      tags: [validate-upgrade]
+
+  - runner:
+      fail-silently: yes
+      description: Run testsuite against an upgrade snapcore
+      script: |
+        #!/bin/bash
+        set -eux
+        pytest jobs/integration/validation.py \
+             --cloud $JUJU_CLOUD \
+             --connection $JUJU_CONTROLLER:$JUJU_MODEL \
+             --snapd-upgrade \
+             --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL
+      tags: [validate-snapd-upgrade]
 
 teardown:
   - runner:
       fail-silently: yes
       description: Teardown juju deployment
       cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
-      tags: [validate, destroy]
+      tags: [validate, validate-snapd-upgrade, destroy]
+  - runner:
+      fail-silently: yes
+      description: Reset snapd back to stable
+      cmd: sudo snap refresh core --stable
+      tags: [validate-snapd-upgrade]
