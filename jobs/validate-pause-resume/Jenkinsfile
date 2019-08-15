@@ -23,7 +23,6 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS')
             }
             steps {
-                setStartTime()
                 sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints arch=amd64"
                 deployCDK(controller: juju_controller,
                           model: juju_model,
@@ -45,18 +44,7 @@ pipeline {
         }
     }
     post {
-        failure {
-            setFail()
-        }
-        success {
-            setPass()
-        }
-        always {
-            setEndTime()
-            collectDebug(params.controller, juju_model)
-        }
         cleanup {
-            saveMeta()
             tearDown(params.controller)
         }
     }
