@@ -1,4 +1,4 @@
-# K8s Jenkin GIT repos
+# SCM ------------------------------------------------------------------------ #
 - scm:
     name: k8s-jenkins-jenkaas
     scm:
@@ -23,22 +23,39 @@
         shallow-clone: true
         clean: {before: true}
 
+
+# PROPERTIES ----------------------------------------------------------------- #
+# Dont run jobs if a release, charm building, or infrastructure changes are
+# happening
+- property:
+    name: block-on-build-release
+    properties:
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "release"
+            - "build-charms"
+            - "build-bundles"
+            - "infra*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+
+# Dont run release job if builds are happening
+- property:
+    name: block-on-release
+    properties:
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - ".*build.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
+
+
+# PARAMETERS ----------------------------------------------------------------- #
 - parameter:
     name: global-params
     parameters:
-      # - string:
-      #     name: JOB_SPEC_DIR
-      #     description: |
-      #       Path to the directory that houses the calling spec
-      # - string:
-      #     name: JOB_SPEC_FILE
-      #     description: |
-      #       Name of the spec file, defaults to `spec.yml`
-      #     default: spec.yml
-      # - string:
-      #     name: JOB_TAGS
-      #     description: |
-      #       Specific tags of the spec to run, in the format of '-t run-test -t run-build'.
       - string:
           name: RUN_ID
           description: |
@@ -78,9 +95,21 @@
     name: test-params
     parameters:
       - string:
-          name: TEST_HARNESS
+          name: TEST_UPGRADE_SNAP_CHANNEL
           description: |
-            Path to a pytest compatible file to be processed.
+            Version of Kubernetes to upgrade to, in the form of
+            <major>.<minor>/<channel> (ie, 1.16/edge).
+          default: '1.16/candidate'
+      - string:
+          name: TEST_UPGRADE_CHARM_CHANNEL
+          description: |
+            Charmstore channel of the bundle to upgrade to.
+          default: 'candidate'
+      - string:
+          name: TEST_UPGRADE_SNAPD_CHANNEL
+          description: |
+            Snap store channel of snapd to upgrade to.
+          default: 'beta'
 
 - parameter:
     name: juju-params
@@ -189,6 +218,7 @@
           default: 'build/interfaces'
 
 
+# BUILDERS ------------------------------------------------------------------- #
 - builder:
     name: set-env
     builders:
@@ -212,13 +242,15 @@
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
 
+          rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
+
           env > $WORKSPACE/.env
 
           virtualenv /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER -p python3.6
 
           . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
-          # pip install -rrequirements.txt
-          pip install --upgrade ogc ogc-plugins-runner ogc-plugins-env ogc-plugins-juju juju==0.11.7
+          pip install -rrequirements.txt
+          pip install -rrequirements_test.txt
 
 - builder:
     name: unset-env
@@ -261,6 +293,8 @@
 
           ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug execute {JOB_TAGS}
 
+
+# WRAPPERS ------------------------------------------------------------------- #
 - wrapper:
     name: default-job-wrapper
     wrappers:

@@ -10,9 +10,6 @@ from juju.model import Model
 from .utils import (
     upgrade_charms,
     upgrade_snaps,
-    _controller_from_env,
-    _model_from_env,
-    _cloud_from_env,
     arch,
     asyncify,
     _juju_wait,
@@ -20,18 +17,56 @@ from .utils import (
 )
 from sh import juju
 
-# Handle upgrades
-test_charm_channel = os.environ.get("TEST_CHARM_CHANNEL", "edge")
-test_snap_channel = os.environ.get("TEST_SNAP_CHANNEL")
-
-
-def _is_upgrade():
-    """ Return if this is an upgrade test
-    """
-    return bool(os.environ.get("TEST_UPGRADE", None))
-
 
 def pytest_addoption(parser):
+
+    parser.addoption(
+        "--controller", action="store", required=True, help="Juju controller to use"
+    )
+
+    parser.addoption("--model", action="store", required=True, help="Juju model to use")
+
+    parser.addoption(
+        "--series", action="store", required=True, default="bionic", help="Base series"
+    )
+
+    parser.addoption(
+        "--cloud", action="store", default="aws/us-east-2", help="Juju cloud to use"
+    )
+    parser.addoption(
+        "--charm-channel", action="store", default="edge", help="Charm channel to use"
+    )
+    parser.addoption(
+        "--bundle-channel", action="store", default="edge", help="Bundle channel to use"
+    )
+    parser.addoption(
+        "--snap-channel",
+        action="store",
+        required=False,
+        help="Snap channel to use eg 1.16/edge",
+    )
+
+    # Set when performing upgrade tests
+    parser.addoption(
+        "--is-upgrade",
+        action="store_true",
+        default=False,
+        help="This test should be run with snap and charm upgrades",
+    )
+    parser.addoption(
+        "--upgrade-snap-channel",
+        action="store",
+        required=False,
+        help="Snap channel to use eg 1.16/edge",
+    )
+    parser.addoption(
+        "--upgrade-charm-channel",
+        action="store",
+        required=False,
+        help="Charm channel to use (stable, candidate, beta, edge)",
+    )
+
+    # Set when testing a different snap core channel
     parser.addoption(
         "--snapd-upgrade",
         action="store_true",
@@ -39,53 +74,32 @@ def pytest_addoption(parser):
         help="run tests with upgraded snapd",
     )
     parser.addoption(
-        "--connection",
+        "--snapd-channel",
         action="store",
-        default=f"{_controller_from_env()}:{_model_from_env()}",
-        help="Juju [controller:model] to use",
+        required=False,
+        default="beta",
+        help="Snap channel to install snapcore from",
     )
-    parser.addoption(
-        "--cloud",
-        action="store",
-        default=_cloud_from_env(),
-        help="Juju cloud to use",
-    )
-    parser.addoption(
-        "--charm-channel",
-        action="store",
-        default="edge",
-        help="Charm channel to use",
-    )
-    parser.addoption(
-        "--bundle-channel",
-        action="store",
-        default="edge",
-        help="Bundle channel to use",
-    )
-    parser.addoption(
-        "--snap-channel",
-        action="store",
-        required=True,
-        help="Snap channel to use eg 1.16/edge",
-    )
-
-
 
 
 @pytest.fixture(scope="module")
-async def model(request, event_loop):
+async def model(request, event_loop, connection_name):
     event_loop.set_exception_handler(lambda l, _: l.stop())
     model = Model(event_loop)
-    connection_name = request.config.getoption("--connection")
     await model.connect(connection_name)
-    if _is_upgrade():
+    if request.config.getoption("--is-upgrade"):
+        upgrade_snap_channel = request.config.getoption("--upgrade-snap-channel")
+        upgrade_charm_channel = request.config.getoption("--upgrade-charm-channel")
+        if not upgrade_snap_channel and upgrade_charm_channel:
+            raise Exception(
+                "Must have both snap and charm upgrade channels set to perform upgrade prior to validation test."
+            )
         print("Upgrading charms")
-        await upgrade_charms(model, test_charm_channel)
-    if test_snap_channel:
+        await upgrade_charms(model, upgrade_charm_channel)
         print("Upgrading snaps")
-        await upgrade_snaps(model, test_snap_channel)
+        await upgrade_snaps(model, upgrade_snap_channel)
     if request.config.getoption("--snapd-upgrade"):
-        snapd_channel = os.environ.get("SNAPD_CHANNEL", "beta")
+        snapd_channel = request.config.getoption("--snapd-channel")
         cmd = f"sudo snap refresh core --{snapd_channel}"
         cloudinit_userdata = {"postruncmd": [cmd]}
         cloudinit_userdata_str = yaml.dump(cloudinit_userdata)
@@ -96,6 +110,41 @@ async def model(request, event_loop):
         await log_snap_versions(model, prefix="After")
     yield model
     await model.disconnect()
+
+
+@pytest.fixture(scope="module")
+async def connection_name(request):
+    """ Provides the raw controller:model argument when calling juju directly and not from our existing fixtures
+    """
+    return f"{request.config.getoption('--controller')}:{request.config.getoption('--model')}"
+
+
+@pytest.fixture(scope="module")
+async def series(request):
+    """ The os distribution series to deploy with
+    """
+    return request.config.getoption("--series")
+
+
+@pytest.fixture(scope="module")
+async def controller_name(request):
+    """ Name of juju controller
+    """
+    return request.config.getoption("--controller")
+
+
+@pytest.fixture(scope="module")
+async def model_name(request):
+    """ Name of juju model
+    """
+    return request.config.getoption("--model")
+
+
+@pytest.fixture(scope="module")
+async def cloud(request):
+    """ The cloud to utilize
+    """
+    return request.config.getoption("--cloud")
 
 
 @pytest.fixture
@@ -114,7 +163,7 @@ def skip_by_arch(request, system_arch):
 
 @pytest.fixture(scope="module")
 async def proxy_app(model):
-    proxy_app = model.applications.get('squid-forwardproxy')
+    proxy_app = model.applications.get("squid-forwardproxy")
 
     if proxy_app is None:
         proxy_app = await model.deploy("cs:~pjds/squid-forwardproxy-testing-1")
@@ -162,23 +211,15 @@ def event_loop():
 
 
 @pytest.fixture
-async def deploy():
+async def deploy(request, connection_name, controller_name, model_name, cloud):
     test_run_nonce = uuid.uuid4().hex[-4:]
-    _model = "{}-{}".format(_model_from_env(), test_run_nonce)
+    _model = "{}-{}".format(model_name, test_run_nonce)
 
-    if _cloud_from_env():
-        juju("add-model", "-c", _controller_from_env(), _model, _cloud_from_env())
-    else:
-        juju("add-model", "-c", _controller_from_env(), _model)
-    juju(
-        "model-config",
-        "-m",
-        "{}:{}".format(_controller_from_env(), _model),
-        "test-mode=true",
-    )
+    juju("add-model", "-c", controller_name, _model, cloud)
+    juju("model-config", "-m", connection_name, "test-mode=true")
 
     _juju_model = Model()
-    await _juju_model.connect("{}:{}".format(_controller_from_env(), _model))
-    yield (_controller_from_env(), _juju_model)
+    await _juju_model.connect("{}:{}".format(controller_name, _model))
+    yield (controller_name, _juju_model)
     await _juju_model.disconnect()
-    juju("destroy-model", "-y", "{}:{}".format(_controller_from_env(), _model))
+    juju("destroy-model", "-y", "{}:{}".format(controller_name, _model))

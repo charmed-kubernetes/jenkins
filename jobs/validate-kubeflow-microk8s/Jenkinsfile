@@ -21,11 +21,11 @@ pipeline {
         timeout(time: 1, unit: 'HOURS')
     }
     stages {
-        stage('Set Start Time') {
-            steps {
-                setStartTime()
-            }
-        }
+//        stage('Set Start Time') {
+//            steps {
+//                setStartTime()
+//            }
+//        }
         stage('Setup') {
             steps {
                 sh "juju bootstrap --debug aws/us-east-2 ${CONTROLLER}"
@@ -71,17 +71,17 @@ pipeline {
         }
     }
     post {
-        success {
-            setPass()
-        }
-        failure {
-            setFail()
-        }
-        always {
-            setEndTime()
-        }
+//        success {
+//            setPass()
+//        }
+//        failure {
+//            setFail()
+//        }
+//        always {
+//            setEndTime()
+//        }
         cleanup {
-            saveMeta()
+//            saveMeta()
             exec "juju status"
             exec "juju status --format yaml"
             sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${CONTROLLER}"

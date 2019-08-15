@@ -23,4 +23,4 @@ requests==2.22.0
 semver==2.8.1
 sh==1.12.14
 theblues==0.5.1
-ogc>=0.3.0
+flaky==3.6.1

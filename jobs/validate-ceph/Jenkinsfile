@@ -47,18 +47,18 @@ pipeline {
         }
     }
     post {
-        success {
-            setPass()
-        }
-        failure {
-            setFail()
-        }
-        always {
-            setEndTime()
-            collectDebug(juju_controller, juju_model)
-        }
+        // success {
+        //     setPass()
+        // }
+        // failure {
+        //     setFail()
+        // }
+        // always {
+        //     setEndTime()
+        //     collectDebug(juju_controller, juju_model)
+        // }
         cleanup {
-            saveMeta()
+            // saveMeta()
             tearDown(juju_controller)
         }
     }

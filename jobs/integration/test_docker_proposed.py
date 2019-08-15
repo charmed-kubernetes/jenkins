@@ -1,13 +1,7 @@
 import pytest
 import yaml
 from sh import juju
-from .utils import (
-    _juju_wait,
-    _controller_from_env,
-    _model_from_env,
-    _series_from_env,
-    asyncify,
-)
+from .utils import _juju_wait, asyncify
 from .validation import validate_all
 from .logger import log
 
@@ -36,17 +30,17 @@ async def log_docker_versions(model):
 
 
 @pytest.mark.asyncio
-async def test_docker_proposed(model, log_dir):
+async def test_docker_proposed(request, model, log_dir, connection_name, series):
     # Enable <series>-proposed on this model
-    await enable_proposed_on_model(model, _series_from_env())
+    await enable_proposed_on_model(model, series)
     await asyncify(juju.deploy)(
         "-m",
-        "{}:{}".format(_controller_from_env(), _model_from_env()),
-        "cs:~containers/canonical-kubernetes",
+        connection_name,
+        "cs:~containers/charmed-kubernetes",
         "--channel",
         "edge",
         "--overlay",
-        "overlays/1.12-edge-{}-overlay.yaml".format(_series_from_env()),
+        "overlays/1.12-edge-{}-overlay.yaml".format(series),
     )
     await asyncify(_juju_wait)()
 

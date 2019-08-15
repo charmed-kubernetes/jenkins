@@ -23,7 +23,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                setStartTime()
+                // setStartTime()
                 sh "rm -rf ${env.CHARM_BUILD_DIR} && mkdir -p ${env.CHARM_BUILD_DIR}"
                 sh "rm -rf ${env.CHARM_LAYERS_DIR} && mkdir -p ${env.CHARM_LAYERS_DIR}"
                 sh "rm -rf ${env.CHARM_INTERFACES_DIR} && mkdir -p ${env.CHARM_INTERFACES_DIR}"
@@ -42,15 +42,15 @@ pipeline {
         }
     }
     post {
-        failure {
-            setFail()
-        }
-        success {
-            setPass()
-        }
+        // failure {
+        //     setFail()
+        // }
+        // success {
+        //     setPass()
+        // }
         cleanup {
-            saveMeta()
-            collectDebug(juju_controller, juju_model)
+            // saveMeta()
+            // collectDebug(juju_controller, juju_model)
             tearDown(juju_controller)
         }
     }

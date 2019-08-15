@@ -26,7 +26,6 @@ pipeline {
             steps {
                 sh "juju bootstrap ${params.cloud} ${juju_controller}"
                 sh "juju add-model -c ${juju_controller} ${juju_model}"
-                setStartTime()
 
                 script {
                     def arch = sh(
@@ -106,25 +105,15 @@ pipeline {
         }
     }
     post {
-        success {
-            setPass()
-        }
-        failure {
-            setFail()
-        }
         always {
-            setEndTime()
             sh '''
                 echo "Listing post-deployment iptables rules"
                 sudo iptables -n -L
                 sudo iptables -n -L -t mangle
                 sudo iptables -n -L -t nat
             '''
-            collectDebug(juju_controller,
-                         juju_model)
         }
         cleanup {
-            saveMeta()
             tearDown(juju_controller)
         }
     }

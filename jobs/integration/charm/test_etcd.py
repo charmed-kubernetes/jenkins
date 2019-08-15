@@ -125,7 +125,7 @@ async def test_snap_action(deploy, event_loop):
 
 
 @pytest.mark.skip("Need to manually verify result tarball")
-async def test_snapshot_restore(deploy, event_loop):
+async def test_snapshot_restore(deploy, event_loop, connection_name):
     """
     Trigger snapshot and restore actions
     """
@@ -154,7 +154,7 @@ async def test_snapshot_restore(deploy, event_loop):
                 assert action.status == "completed"
                 src = Path(action.results["snapshot"]["path"])
                 dst = Path(action.results["snapshot"]["path"]).name
-                await unit.scp_from(str(src), str(dst))
+                await unit.scp_from(str(src), str(dst), controller, connection_name)
                 filenames[dataset] = str(dst)
                 out = ls("-l", "result*")
                 print(out.stdout.decode().strip())

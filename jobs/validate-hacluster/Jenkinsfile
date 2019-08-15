@@ -23,7 +23,6 @@ pipeline {
                 timeout(time: 2, unit: 'HOURS')
             }
             steps {
-                setStartTime()
                 sh "juju add-cloud scapestack /var/lib/jenkins/.scapestack/scapestack-cloud || true"
                 sh "juju add-credential scapestack -f /var/lib/jenkins/.scapestack/scapestack-creds || true"
                 sh "juju bootstrap scapestack ${params.controller}"
@@ -53,18 +52,7 @@ pipeline {
         }
     }
     post {
-        success {
-            setPass()
-        }
-        failure {
-            setFail()
-        }
-        always {
-            setEndTime()
-            collectDebug(params.controller, juju_model)
-        }
         cleanup {
-            saveMeta()
             tearDown(params.controller)
             sh "juju remove-cloud scapestack"
         }

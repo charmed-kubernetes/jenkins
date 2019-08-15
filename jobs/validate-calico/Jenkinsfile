@@ -26,7 +26,6 @@ pipeline {
                 timeout(time: 4, unit: 'HOURS')
             }
             steps {
-                setStartTime()
                 dir('jobs') {
                     sh "${utils.cipy} integration/tigera_aws.py cleanup"
                     script {
@@ -68,19 +67,19 @@ pipeline {
         }
     }
     post {
-        failure {
-            setFail()
-        }
-        success {
-            setPass()
-        }
-        always {
-            setEndTime()
-            collectDebug(juju_controller,
-                         juju_model)
-        }
+        // failure {
+        //     setFail()
+        // }
+        // success {
+        //     setPass()
+        // }
+        // always {
+        //     setEndTime()
+        //     collectDebug(juju_controller,
+        //                  juju_model)
+        // }
         cleanup {
-            saveMeta()
+            // saveMeta()
             dir('jobs') {
                 script {
                     tearDown(juju_controller)

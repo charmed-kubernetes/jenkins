@@ -305,11 +305,11 @@ async def test_microbot(model):
 
 @pytest.mark.asyncio
 @pytest.mark.skip_arch(["s390x", "arm64", "aarch64"])
-async def test_dashboard(model, log_dir):
+async def test_dashboard(model, log_dir, controller, connection_name):
     """ Validate that the dashboard is operational """
     unit = model.applications["kubernetes-master"].units[0]
     with NamedTemporaryFile() as f:
-        await scp_from(unit, "config", f.name)
+        await scp_from(unit, "config", f.name, controller, connection_name)
         with open(f.name, "r") as stream:
             config = yaml.load(stream)
     url = config["clusters"][0]["cluster"]["server"]
@@ -371,7 +371,7 @@ async def test_kubelet_anonymous_auth_disabled(model):
 
 @pytest.mark.asyncio
 @pytest.mark.skip_apps(["canal", "calico", "tigera-secure-ee"])
-async def test_network_policies(model):
+async def test_network_policies(model, controller, connection_name):
     """ Apply network policy and use two busyboxes to validate it. """
     here = os.path.dirname(os.path.abspath(__file__))
     unit = model.applications["kubernetes-master"].units[0]
@@ -392,9 +392,15 @@ async def test_network_policies(model):
         os.path.join(here, "templates", "netpolicy-test.yaml"),
         unit,
         "netpolicy-test.yaml",
+        controller,
+        connection_name,
     )
     await scp_to(
-        os.path.join(here, "templates", "restrict.yaml"), unit, "restrict.yaml"
+        os.path.join(here, "templates", "restrict.yaml"),
+        unit,
+        "restrict.yaml",
+        controller,
+        connection_name,
     )
     cmd = await unit.run("/snap/bin/kubectl create -f /home/ubuntu/netpolicy-test.yaml")
     if not cmd.results["Code"] == "0":
@@ -515,7 +521,7 @@ async def test_worker_master_removal(model):
 
 
 @pytest.mark.asyncio
-async def test_gpu_support(model):
+async def test_gpu_support(model, controller, connection_name):
     """ Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
 
@@ -547,6 +553,8 @@ async def test_gpu_support(model):
             os.path.join(here, "templates", "cuda-add.yaml"),
             master_unit,
             "cuda-add.yaml",
+            controller,
+            connection_name,
         )
         await master_unit.run("/snap/bin/kubectl delete -f /home/ubuntu/cuda-add.yaml")
         await retry_async_with_timeout(
@@ -887,7 +895,7 @@ async def test_audit_empty_policy(model):
 
 
 @pytest.mark.asyncio
-async def test_audit_custom_policy(model):
+async def test_audit_custom_policy(model, controller, connection_name):
     app = model.applications["kubernetes-master"]
 
     # Set a custom policy that only logs requests to a special namespace
@@ -918,7 +926,7 @@ async def test_audit_custom_policy(model):
     with NamedTemporaryFile("w") as f:
         json.dump(namespace_definition, f)
         f.flush()
-        await scp_to(f.name, unit, path)
+        await scp_to(f.name, unit, path, controller, connection_name)
     await run_until_success(unit, "/snap/bin/kubectl create -f " + path)
 
     # Verify our very special request gets logged
@@ -1242,7 +1250,9 @@ async def test_encryption_at_rest(model):
         await model.add_relation("vault:certificates", "kubernetes-master:certificates")
         await model.add_relation("vault:certificates", "kubernetes-worker:certificates")
         if "kubeapi-load-balancer" in model.applications:
-            await model.add_relation("vault:certificates", "kubeapi-load-balancer:certificates")
+            await model.add_relation(
+                "vault:certificates", "kubeapi-load-balancer:certificates"
+            )
         await model.add_relation("kubernetes-master:vault-kv", "vault:secrets")
         await asyncify(_juju_wait)()
         # create secret
@@ -1279,7 +1289,9 @@ async def test_encryption_at_rest(model):
         }
         if "kubeapi-load-balancer" in model.applications:
             tasks.add(
-                model.add_relation("easyrsa:client", "kubeapi-load-balancer:certificates")
+                model.add_relation(
+                    "easyrsa:client", "kubeapi-load-balancer:certificates"
+                )
             )
         (done2, pending2) = await asyncio.wait(tasks)
         for task in done2:
@@ -1290,7 +1302,7 @@ async def test_encryption_at_rest(model):
 
 
 @pytest.mark.asyncio
-async def test_dns_provider(model):
+async def test_dns_provider(model, controller, connection_name):
     master_app = model.applications["kubernetes-master"]
     master_unit = master_app.units[0]
 
@@ -1361,7 +1373,7 @@ async def test_dns_provider(model):
         yaml.dump(pod_def, f)
         f.flush()
         remote_path = "/tmp/validate-dns-provider-ubuntu.yaml"
-        await scp_to(f.name, master_unit, remote_path)
+        await scp_to(f.name, master_unit, remote_path, controller, connection_name)
         cmd = "/snap/bin/kubectl apply -f " + remote_path
         await run_until_success(master_unit, cmd)
 
