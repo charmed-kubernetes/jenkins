@@ -58,7 +58,6 @@ plan:
       tags: [validate]
 
   - runner:
-      fail-silently: yes
       description: Performs an upgrade validation against a deployed CK
       script: |
         #!/bin/bash
