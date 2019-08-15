@@ -10,9 +10,6 @@ from juju.model import Model
 from .utils import (
     upgrade_charms,
     upgrade_snaps,
-    _controller_from_env,
-    _model_from_env,
-    _cloud_from_env,
     arch,
     asyncify,
     _juju_wait,
@@ -24,13 +21,17 @@ from sh import juju
 def pytest_addoption(parser):
 
     parser.addoption(
-        "--connection",
-        action="store",
-        default=f"{_controller_from_env()}:{_model_from_env()}",
-        help="Juju [controller:model] to use",
+        "--controller", action="store", required=True, help="Juju controller to use"
     )
+
+    parser.addoption("--model", action="store", required=True, help="Juju model to use")
+
     parser.addoption(
-        "--cloud", action="store", default=_cloud_from_env(), help="Juju cloud to use"
+        "--series", action="store", required=True, default="bionic", help="Base series"
+    )
+
+    parser.addoption(
+        "--cloud", action="store", default="aws/us-east-2", help="Juju cloud to use"
     )
     parser.addoption(
         "--charm-channel", action="store", default="edge", help="Charm channel to use"
@@ -82,10 +83,9 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="module")
-async def model(request, event_loop):
+async def model(request, event_loop, connection_name):
     event_loop.set_exception_handler(lambda l, _: l.stop())
     model = Model(event_loop)
-    connection_name = request.config.getoption("--connection")
     await model.connect(connection_name)
     if request.config.getoption("--is-upgrade"):
         upgrade_snap_channel = request.config.getoption("--upgrade-snap-channel")
@@ -110,6 +110,41 @@ async def model(request, event_loop):
         await log_snap_versions(model, prefix="After")
     yield model
     await model.disconnect()
+
+
+@pytest.fixture(scope="module")
+async def connection_name(request):
+    """ Provides the raw controller:model argument when calling juju directly and not from our existing fixtures
+    """
+    return f"{request.config.getoption('--controller')}:{request.config.getoption('--model')}"
+
+
+@pytest.fixture(scope="module")
+async def series(request):
+    """ The os distribution series to deploy with
+    """
+    return request.config.getoption("--series")
+
+
+@pytest.fixture(scope="module")
+async def controller_name(request):
+    """ Name of juju controller
+    """
+    return request.config.getoption("--controller")
+
+
+@pytest.fixture(scope="module")
+async def model_name(request):
+    """ Name of juju model
+    """
+    return request.config.getoption("--model")
+
+
+@pytest.fixture(scope="module")
+async def cloud(request):
+    """ The cloud to utilize
+    """
+    return request.config.getoption("--cloud")
 
 
 @pytest.fixture
@@ -176,23 +211,15 @@ def event_loop():
 
 
 @pytest.fixture
-async def deploy():
+async def deploy(request, connection_name, controller_name, model_name, cloud):
     test_run_nonce = uuid.uuid4().hex[-4:]
-    _model = "{}-{}".format(_model_from_env(), test_run_nonce)
+    _model = "{}-{}".format(model_name, test_run_nonce)
 
-    if _cloud_from_env():
-        juju("add-model", "-c", _controller_from_env(), _model, _cloud_from_env())
-    else:
-        juju("add-model", "-c", _controller_from_env(), _model)
-    juju(
-        "model-config",
-        "-m",
-        "{}:{}".format(_controller_from_env(), _model),
-        "test-mode=true",
-    )
+    juju("add-model", "-c", controller_name, _model, cloud)
+    juju("model-config", "-m", connection_name, "test-mode=true")
 
     _juju_model = Model()
-    await _juju_model.connect("{}:{}".format(_controller_from_env(), _model))
-    yield (_controller_from_env(), _juju_model)
+    await _juju_model.connect("{}:{}".format(controller_name, _model))
+    yield (controller_name, _juju_model)
     await _juju_model.disconnect()
-    juju("destroy-model", "-y", "{}:{}".format(_controller_from_env(), _model))
+    juju("destroy-model", "-y", "{}:{}".format(controller_name, _model))

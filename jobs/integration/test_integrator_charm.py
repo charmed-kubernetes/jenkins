@@ -4,30 +4,30 @@ import sh
 import pytest
 import requests
 import yaml
-from .utils import asyncify, _cloud_from_env
+from .utils import asyncify
 
 env = os.environ.copy()
 
 
-def template_path():
+def template_path(cloud):
     """ get correct template path for cloud
     """
     here = Path(__file__).absolute().parent
-    return here / "templates/integrator-charm-data" / _cloud_from_env()
+    return here / "templates/integrator-charm-data" / cloud
 
 
 @pytest.fixture(scope="function")
-def setup_storage_elb_resource(request):
+def setup_storage_elb_resource(request, cloud):
     """ Sets up and tearsdown k8s resources
     """
 
     def setup_storage_elb_resource_teardown():
         print("Perform teardown of resources")
 
-    storage_yml = template_path() / "storage-class.yaml"
+    storage_yml = template_path(cloud) / "storage-class.yaml"
     sh.kubectl.create(f=str(storage_yml))
 
-    pv_claim_yml = template_path() / "pv-claim.yaml"
+    pv_claim_yml = template_path(cloud) / "pv-claim.yaml"
     sh.kubectl.create(f=str(pv_claim_yml))
     request.addfinalizer(setup_storage_elb_resource_teardown)
 

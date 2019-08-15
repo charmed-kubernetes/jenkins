@@ -14,25 +14,7 @@ from subprocess import check_output, check_call
 from sh import juju_wait
 
 
-def _model_from_env():
-    return os.environ.get("JUJU_MODEL") or "validate-{}".format(
-        os.environ["BUILD_NUMBER"]
-    )
-
-
-def _controller_from_env():
-    return os.environ.get("JUJU_CONTROLLER", "jenkins-ci-aws")
-
-
-def _series_from_env():
-    return os.environ.get("SERIES", "bionic")
-
-
-def _cloud_from_env():
-    return os.environ.get("JUJU_CLOUD", None)
-
-
-def _juju_wait(controller=None, model=None, exclude=None):
+def _juju_wait(controller, model, exclude=None):
     """
     Juju wait.
 
@@ -40,12 +22,6 @@ def _juju_wait(controller=None, model=None, exclude=None):
     :param model: String model
     :param exclude: List String or String applications to exclude
     """
-    if not controller:
-        controller = _controller_from_env()
-
-    if not model:
-        model = _model_from_env()
-
     if exclude and isinstance(exclude, str):
         exclude = [exclude]
 
@@ -145,7 +121,9 @@ async def upgrade_charms(model, channel):
         await model.applications["docker"].destroy()
 
         if "containerd" not in model.applications:
-            await model.deploy("cs:~containers/containerd", num_units=0, channel=channel)
+            await model.deploy(
+                "cs:~containers/containerd", num_units=0, channel=channel
+            )
 
         await model.applications["containerd"].add_relation(
             "containerd:containerd", "kubernetes-worker:container-runtime"
@@ -203,36 +181,28 @@ async def upgrade_snaps(model, channel):
     await asyncify(_juju_wait)()
 
 
-async def is_localhost():
+async def is_localhost(controller):
     controller = Controller()
-    await controller.connect(_controller_from_env())
+    await controller.connect(controller)
     cloud = await controller.get_cloud()
     await controller.disconnect()
     return cloud == "localhost"
 
 
-async def scp_from(unit, remote_path, local_path):
-    if await is_localhost():
-        cmd = "juju scp -m {}:{} {}:{} {}".format(
-            _controller_from_env(),
-            _model_from_env(),
-            unit.name,
-            remote_path,
-            local_path,
+async def scp_from(unit, remote_path, local_path, controller, connection_name):
+    if await is_localhost(controller):
+        cmd = "juju scp -m {} {}:{} {}".format(
+            connection_name, unit.name, remote_path, local_path
         )
         await asyncify(subprocess.check_call)(cmd.split())
     else:
         await unit.scp_from(remote_path, local_path)
 
 
-async def scp_to(local_path, unit, remote_path):
-    if await is_localhost():
-        cmd = "juju scp -m {}:{} {} {}:{}".format(
-            _controller_from_env(),
-            _model_from_env(),
-            local_path,
-            unit.name,
-            remote_path,
+async def scp_to(local_path, unit, remote_path, controller, connection_name):
+    if await is_localhost(controller):
+        cmd = "juju scp -m {} {} {}:{}".format(
+            connection_name, local_path, unit.name, remote_path
         )
         await asyncify(subprocess.check_call)(cmd.split())
     else:
@@ -273,11 +243,9 @@ def arch():
     return architecture
 
 
-async def disable_source_dest_check():
+async def disable_source_dest_check(connection_name):
     path = os.path.dirname(__file__) + "/tigera/disable_source_dest_check.py"
-    controller = _controller_from_env()
-    model = _model_from_env()
-    cmd = [path, "-m", controller + ":" + model]
+    cmd = [path, "-m", connection_name]
     await asyncify(check_call)(cmd)
 
 
