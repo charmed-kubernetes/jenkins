@@ -157,6 +157,30 @@
           <<: *non_core_upgrade_bundle_defaults
 
 
+# V2 ------------------------------------------------------------------------- #
+- job:
+    name: 'validate-ck'
+    description: |
+      Validates CDK edge, supports last three recent releases.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t validate"
+      - unset-env
+
+
 - job:
     name: 'validate-ck-snapd-upgrade'
     description: |
@@ -216,19 +240,23 @@
     publishers:
       - trigger-parameterized-builds:
         - project: validate-ck
-          predefined-parameters: SNAP_VERSION="1.16/edge"
+          predefined-parameters: |
+            SNAP_VERSION="1.16/edge"
           condition: ALWAYS
         - project: validate-ck
-          predefined-parameters: SNAP_VERSION="1.15/edge"
+          predefined-parameters: |
+            SNAP_VERSION="1.15/edge"
           condition: ALWAYS
         - project: validate-ck
-          predefined-parameters: SNAP_VERSION="1.14/edge"
+          predefined-parameters: |
+            SNAP_VERSION="1.14/edge"
           condition: ALWAYS
 
+# ADDONS --------------------------------------------------------------------- #
 - job:
-    name: 'validate-ck'
+    name: 'validate-ck-vault'
     description: |
-      Validates CDK edge, supports last three recent releases.
+      Validates CK edge, with vault.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -238,11 +266,20 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t validate"
-      - unset-env
+    publishers:
+      - trigger-parameterized-builds:
+        - project: validate-ck
+          predefined-parameters: |
+            SNAP_VERSION="1.16/edge"
+            JUJU_MODEL="validate-vault"
+          condition: ALWAYS
+        - project: validate-ck
+          predefined-parameters: |
+            SNAP_VERSION="1.15/edge"
+            JUJU_MODEL="validate-vault"
+          condition: ALWAYS
+        - project: validate-ck
+          predefined-parameters: |
+            SNAP_VERSION="1.14/edge"
+            JUJU_MODEL="validate-vault"
+          condition: ALWAYS

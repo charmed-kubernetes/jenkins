@@ -1,4 +1,4 @@
-# K8s Jenkin GIT repos
+# SCM ------------------------------------------------------------------------ #
 - scm:
     name: k8s-jenkins-jenkaas
     scm:
@@ -24,6 +24,7 @@
         clean: {before: true}
 
 
+# PROPERTIES ----------------------------------------------------------------- #
 # Dont run jobs if a release, charm building, or infrastructure changes are
 # happening
 - property:
@@ -39,6 +40,8 @@
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
 
+
+# PARAMETERS ----------------------------------------------------------------- #
 - parameter:
     name: global-params
     parameters:
@@ -204,6 +207,7 @@
           default: 'build/interfaces'
 
 
+# BUILDERS ------------------------------------------------------------------- #
 - builder:
     name: set-env
     builders:
@@ -278,6 +282,8 @@
 
           ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug execute {JOB_TAGS}
 
+
+# WRAPPERS ------------------------------------------------------------------- #
 - wrapper:
     name: default-job-wrapper
     wrappers:
