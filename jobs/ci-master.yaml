@@ -350,3 +350,9 @@
           - file:
               credential-id: scapestack_cloud
               variable: SCAPESTACKCLOUD
+          - file:
+              credential-id: tigera-secure-ee-license-key
+              variable: TIGERA_SECURE_EE_LICENSE_KEY_FILE
+          - file:
+              credential-id: tigera-private-registry-credentials
+              variable: TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE

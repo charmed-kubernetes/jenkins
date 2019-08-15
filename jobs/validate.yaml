@@ -251,6 +251,10 @@
           predefined-parameters: |
             SNAP_VERSION="1.14/edge"
           condition: ALWAYS
+        - project: validate-ck
+          predefined-parameters: |
+            SNAP_VERSION="1.13/edge"
+          condition: ALWAYS
 
 # ADDONS --------------------------------------------------------------------- #
 - job:
@@ -282,4 +286,45 @@
           predefined-parameters: |
             SNAP_VERSION="1.14/edge"
             JUJU_MODEL="validate-vault"
+          condition: ALWAYS
+        - project: validate-ck
+          predefined-parameters: |
+            SNAP_VERSION="1.14/edge"
+            JUJU_MODEL="validate-vault"
+          condition: ALWAYS
+
+- job:
+    name: 'validate-ck-tigera-secure-ee'
+    description: |
+      Validates CK edge, with tigera.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    publishers:
+      - trigger-parameterized-builds:
+        - project: validate-ck-spec
+          predefined-parameters: |
+            SNAP_VERSION="1.16/edge"
+            JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
+          condition: ALWAYS
+        - project: validate-ck
+          predefined-parameters: |
+            SNAP_VERSION="1.15/edge"
+            JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
+          condition: ALWAYS
+        - project: validate-ck-spec
+          predefined-parameters: |
+            SNAP_VERSION="1.14/edge"
+            JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
+          condition: ALWAYS
+        - project: validate-ck
+          predefined-parameters: |
+            SNAP_VERSION="1.13/edge"
+            JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
           condition: ALWAYS

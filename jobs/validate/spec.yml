@@ -88,7 +88,7 @@ teardown:
       fail-silently: yes
       description: Teardown juju deployment
       cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
-      tags: [validate, validate-snapd-upgrade, destroy]
+      tags: [validate, validate-upgrade, validate-snapd-upgrade, destroy]
   - runner:
       fail-silently: yes
       description: Reset snapd back to stable
