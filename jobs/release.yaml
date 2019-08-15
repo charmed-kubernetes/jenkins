@@ -69,12 +69,7 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/release/Jenkinsfile
     properties:
-      - build-blocker:
-          use-build-blocker: false
-          blocking-jobs:
-            - ".*build.*"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
+      - block-on-release
       - build-discarder:
           num-to-keep: 7
 

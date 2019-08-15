@@ -8,7 +8,7 @@ import traceback
 
 from contextlib import contextmanager
 from juju.controller import Controller
-from juju.errors import JujuError
+from juju.errors import JujuError, JujuAPIError
 from .logger import log, log_calls
 from subprocess import check_output, check_call
 from sh import juju_wait
@@ -121,38 +121,40 @@ async def upgrade_charms(model, channel):
             if "already running charm" not in str(e):
                 raise
     # Only keep here until 1.13/1.14 go out of support scope
-    await model.deploy("cs:~containers/docker", num_units=0, channel=channel)
+    try:
+        await model.deploy("cs:~containers/docker", num_units=0, channel=channel)
 
-    await model.applications["docker"].add_relation(
-        "docker:docker", "kubernetes-worker:container-runtime"
-    )
+        await model.applications["docker"].add_relation(
+            "docker:docker", "kubernetes-worker:container-runtime"
+        )
 
-    await model.applications["docker"].add_relation(
-        "docker:docker", "kubernetes-master:container-runtime"
-    )
+        await model.applications["docker"].add_relation(
+            "docker:docker", "kubernetes-master:container-runtime"
+        )
 
-    await asyncify(_juju_wait)()
+        await asyncify(_juju_wait)()
 
-    await model.applications["docker"].remove_relation(
-        "docker:docker", "kubernetes-master:container-runtime"
-    )
+        await model.applications["docker"].remove_relation(
+            "docker:docker", "kubernetes-master:container-runtime"
+        )
 
-    await model.applications["docker"].remove_relation(
-        "docker:docker", "kubernetes-worker:container-runtime"
-    )
+        await model.applications["docker"].remove_relation(
+            "docker:docker", "kubernetes-worker:container-runtime"
+        )
 
-    await model.applications["docker"].destroy()
+        await model.applications["docker"].destroy()
 
-    if "containerd" not in model.applications:
-        await model.deploy("cs:~containers/containerd", num_units=0, channel=channel)
+        if "containerd" not in model.applications:
+            await model.deploy("cs:~containers/containerd", num_units=0, channel=channel)
 
-    await model.applications["containerd"].add_relation(
-        "containerd:containerd", "kubernetes-worker:container-runtime"
-    )
-    await model.applications["containerd"].add_relation(
-        "containerd:containerd", "kubernetes-master:container-runtime"
-    )
-
+        await model.applications["containerd"].add_relation(
+            "containerd:containerd", "kubernetes-worker:container-runtime"
+        )
+        await model.applications["containerd"].add_relation(
+            "containerd:containerd", "kubernetes-master:container-runtime"
+        )
+    except (JujuError, JujuAPIError) as e:
+        log("Docker and containerd already configured as required.")
     await asyncify(_juju_wait)()
 
 
