@@ -59,7 +59,7 @@ def pytest_addoption(parser):
         help="Snap channel to use eg 1.16/edge",
     )
     parser.addoption(
-        "--uprade-charm-channel",
+        "--upgrade-charm-channel",
         action="store",
         required=False,
         help="Charm channel to use (stable, candidate, beta, edge)",
