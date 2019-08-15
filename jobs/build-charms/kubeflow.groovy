@@ -27,13 +27,18 @@ pipeline {
         //         setStartTime()
         //     }
         // }
+        stage('Create virtualenv') {
+            steps {
+                sh 'virtualenv venv -p python3.6'
+                sh 'venv/bin/python -m pip install boto3'
+            }
+        }
         stage('Check for new commits') {
             steps {
                 sh 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
                 script {
-                    ゴゴゴ = sh(script: 'python3 jobs/build-charms/ddbkf.py check', returnStdout: true).trim() == 'GO'
+                    ゴゴゴ = sh(script: 'venv/bin/python jobs/build-charms/ddbkf.py check', returnStdout: true).trim() == 'GO'
                 }
-
             }
         }
         stage('Setup LXC') {
@@ -73,7 +78,7 @@ pipeline {
         }
         stage('Update DDB') {
             steps {
-                sh 'python3 jobs/build-charms/ddbkf.py update'
+                sh 'venv/bin/python jobs/build-charms/ddbkf.py update'
             }
             when { expression { ゴゴゴ } }
         }
@@ -90,6 +95,7 @@ pipeline {
         // }
         cleanup {
             // saveMeta()
+            sh 'rm -rf venv'
             sh "sudo lxc delete --force ${CONTAINER} || true"
         }
     }
