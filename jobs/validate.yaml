@@ -328,6 +328,10 @@
     parameters:
       - juju-params:
           override_juju_model: validate-calico
+      - bool:
+          name: TEST_BGP
+          default: false
+          description: Whether to inclue BGP in the testing
     wrappers:
       - default-job-wrapper
       - ci-creds

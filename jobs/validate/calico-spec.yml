@@ -1,10 +1,10 @@
 meta:
   name: Verify CK with Tigera
   description: |
-    Verifies that CK with Tigera passes integration tests
+    Verifies that CK with Calico passes integration tests
   mkdocs:
     destination:
-      - "validations/ck/tigera-ee.md"
+      - "validations/ck/calico.md"
 
 setup:
   - runner:
@@ -47,7 +47,7 @@ setup:
         set -eux
         python3 jobs/integration/tigera_aws.py disable-source-dest-check
         if [ -z $TEST_BGP ]; then
-          python3 integration/tigera_aws.py configure-bgp
+          python3 jobs/integration/tigera_aws.py configure-bgp
         fi
         juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
       tags: [validate]

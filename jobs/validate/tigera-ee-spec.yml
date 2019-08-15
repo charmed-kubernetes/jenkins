@@ -40,6 +40,9 @@ setup:
         wait: no
       tags: [validate]
   - runner:
+      env-requires:
+        - TIGERA_SECURE_EE_LICENSE_KEY_FILE
+        - TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE
       fail-silently: yes
       description: Prep environment for Tigera testing
       script: |
