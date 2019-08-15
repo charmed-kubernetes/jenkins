@@ -1,0 +1,74 @@
+meta:
+  name: Verify CK with Tigera
+  description: |
+    Verifies that CK with Tigera passes integration tests
+  mkdocs:
+    destination:
+      - "validations/ck/tigera-ee.md"
+
+setup:
+  - runner:
+      fail-silently: yes
+      description: Cleanup any previous artifacts
+      cmd: python3 jobs/integration/tigera_aws.py cleanup
+      tags: [validate]
+  - juju:
+      fail-silently: yes
+      description: Bootstrap and deploy kubernetes
+      cloud: $JUJU_CLOUD
+      controller: $JUJU_CONTROLLER
+      model: $JUJU_MODEL
+      bootstrap:
+        debug: no
+        run: |
+          #!/bin/bash
+          set -eux
+          python3 jobs/integration/tigera_aws.py bootstrap \
+              --bootstrap-constraints $JUJU_BOOTSTRAP_CONSTRAINTS \
+              --model-default test-mode=true
+      deploy:
+        bundle: $JUJU_DEPLOY_BUNDLE
+        channel: $JUJU_DEPLOY_CHANNEL
+        overlay: |
+          applications:
+            kubernetes-master:
+              options:
+                channel: $SNAP_VERSION
+            kubernetes-worker:
+              options:
+                channel: $SNAP_VERSION
+        wait: no
+      tags: [validate]
+  - runner:
+      fail-silently: yes
+      description: Prep environment for Tigera testing
+      script: |
+        #!/bin/bash
+        set -eux
+        juju config -m $JUJU_CONTROLLER:$JUJU_MODEL tigera-secure-ee \
+            license-key=$(base64 -w0 $TIGERA_SECURE_EE_LICENSE_KEY_FILE) \
+            registry-credentials=$(base64 -w0 $TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE)
+        python3 jobs/integration/tigera_aws.py disable-source-dest-check
+        juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+      tags: [validate]
+
+plan:
+  - runner:
+      fail-silently: yes
+      description: Run testsuite against deployed CK
+      script: |
+        #!/bin/bash
+        set -eux
+        pytest jobs/integration/validation.py \
+             --cloud $JUJU_CLOUD \
+             --model $JUJU_MODEL \
+             --controller $JUJU_CONTROLLER
+      tags: [validate]
+
+
+teardown:
+  - runner:
+      fail-silently: yes
+      description: Teardown juju deployment
+      cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
+      tags: [validate]

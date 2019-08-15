@@ -167,6 +167,9 @@
       - k8s-jenkins-jenkaas
     parameters:
       - juju-params
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
     properties:
       - block-on-build-release
       - build-discarder:
@@ -191,6 +194,9 @@
     parameters:
       - juju-params
       - test-params
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
     properties:
       - block-on-build-release
       - build-discarder:
@@ -215,6 +221,9 @@
     parameters:
       - juju-params
       - test-params
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
     properties:
       - block-on-build-release
       - build-discarder:
@@ -231,7 +240,7 @@
 - job:
     name: 'validate-ck-daily'
     description: |
-      Validates CDK edge daily, supports last three recent releases.
+      Validates CDK daily, supports last three recent releases.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -260,71 +269,77 @@
 - job:
     name: 'validate-ck-vault'
     description: |
-      Validates CK edge, with vault.
+      Validates CK, with vault.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
     parameters:
-      - juju-params
+      - juju-params:
+          override_juju_model: validate-vault
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
     properties:
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    publishers:
-      - trigger-parameterized-builds:
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.16/edge"
-            JUJU_MODEL="validate-vault"
-          condition: ALWAYS
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.15/edge"
-            JUJU_MODEL="validate-vault"
-          condition: ALWAYS
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.14/edge"
-            JUJU_MODEL="validate-vault"
-          condition: ALWAYS
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.14/edge"
-            JUJU_MODEL="validate-vault"
-          condition: ALWAYS
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t validate"
+      - unset-env
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
     description: |
-      Validates CK edge, with tigera.
+      Validates CK, with tigera.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
     parameters:
-      - juju-params
+      - juju-params:
+          override_juju_model: validate-tigera-ee
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
     properties:
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    publishers:
-      - trigger-parameterized-builds:
-        - project: validate-ck-spec
-          predefined-parameters: |
-            SNAP_VERSION="1.16/edge"
-            JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
-          condition: ALWAYS
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.15/edge"
-            JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
-          condition: ALWAYS
-        - project: validate-ck-spec
-          predefined-parameters: |
-            SNAP_VERSION="1.14/edge"
-            JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
-          condition: ALWAYS
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.13/edge"
-            JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
-          condition: ALWAYS
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "tigera-ee-spec.yml"
+          JOB_TAGS: "-t validate"
+      - unset-env
+
+- job:
+    name: 'validate-ck-calico'
+    description: |
+      Validates CK, with calico.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params:
+          override_juju_model: validate-calico
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "calico-spec.yml"
+          JOB_TAGS: "-t validate"
+      - unset-env

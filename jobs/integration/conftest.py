@@ -27,7 +27,7 @@ def pytest_addoption(parser):
     parser.addoption("--model", action="store", required=True, help="Juju model to use")
 
     parser.addoption(
-        "--series", action="store", required=True, default="bionic", help="Base series"
+        "--series", action="store", default="bionic", help="Base series"
     )
 
     parser.addoption(

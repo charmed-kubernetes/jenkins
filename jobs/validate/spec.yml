@@ -54,7 +54,8 @@ plan:
         set -eux
         pytest jobs/integration/validation.py \
              --cloud $JUJU_CLOUD \
-             --connection $JUJU_CONTROLLER:$JUJU_MODEL
+             --controller $JUJU_CONTROLLER \
+             --model $JUJU_MODEL
       tags: [validate]
 
   - runner:
@@ -64,7 +65,8 @@ plan:
         set -eux
         pytest jobs/integration/validation.py \
              --cloud $JUJU_CLOUD \
-             --connection $JUJU_CONTROLLER:$JUJU_MODEL \
+             --controller $JUJU_CONTROLLER \
+             --model $JUJU_MODEL \
              --is-upgrade \
              --upgrade-charm-channel $TEST_UPGRADE_CHARM_CHANNEL \
              --upgrade-snap-channel $TEST_UPGRADE_SNAP_CHANNEL
@@ -78,7 +80,8 @@ plan:
         set -eux
         pytest jobs/integration/validation.py \
              --cloud $JUJU_CLOUD \
-             --connection $JUJU_CONTROLLER:$JUJU_MODEL \
+             --controller $JUJU_CONTROLLER \
+             --model $JUJU_MODEL \
              --snapd-upgrade \
              --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL
       tags: [validate-snapd-upgrade]

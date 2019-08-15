@@ -127,7 +127,7 @@
             The Juju controller to create and reference during run.
       - string:
           name: JUJU_MODEL
-          default: 'validate'
+          default: '{override_juju_model|validate}'
           description: |
             The Juju model to create and reference during run.
       - string:
