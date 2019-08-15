@@ -22,11 +22,11 @@ pipeline {
         timeout(time: 1, unit: 'HOURS')
     }
     stages {
-        stage('Set Start Time') {
-            steps {
-                setStartTime()
-            }
-        }
+//        stage('Set Start Time') {
+//            steps {
+//                setStartTime()
+//            }
+//        }
         stage('Setup LXC') {
             steps {
                 sh "sudo lxc profile show aws || sudo lxc profile copy default aws"
@@ -73,17 +73,17 @@ pipeline {
         }
     }
     post {
-        success {
-            setPass()
-        }
-        failure {
-            setFail()
-        }
-        always {
-            setEndTime()
-        }
+//        success {
+//            setPass()
+//        }
+//        failure {
+//            setFail()
+//        }
+//        always {
+//            setEndTime()
+//        }
         cleanup {
-            saveMeta()
+//            saveMeta()
             exec "juju status || true"
             exec "juju status --format yaml || true"
             exec "juju list-controllers || true"
