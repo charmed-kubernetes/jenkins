@@ -65,7 +65,6 @@ def pytest_addoption(parser):
         help="Charm channel to use (stable, candidate, beta, edge)",
     )
 
-
     # Set when testing a different snap core channel
     parser.addoption(
         "--snapd-upgrade",

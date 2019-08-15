@@ -15,7 +15,9 @@ from sh import juju_wait
 
 
 def _model_from_env():
-    return os.environ.get("JUJU_MODEL") or "validate-{}".format(os.environ["BUILD_NUMBER"])
+    return os.environ.get("JUJU_MODEL") or "validate-{}".format(
+        os.environ["BUILD_NUMBER"]
+    )
 
 
 def _controller_from_env():
@@ -45,13 +47,13 @@ def _juju_wait(controller=None, model=None, exclude=None):
         model = _model_from_env()
 
     if exclude and isinstance(exclude, str):
-            exclude = [exclude]
+        exclude = [exclude]
 
     command = ["-e", "{}:{}".format(controller, model), "-w"]
 
     if exclude:
         for x in exclude:
-            command.extend(['-x', x])
+            command.extend(["-x", x])
 
     log("Settling...")
     juju_wait(*command)
@@ -141,7 +143,8 @@ async def upgrade_charms(model, channel):
 
     await model.applications["docker"].destroy()
 
-    await model.deploy("cs:~containers/containerd", num_units=0, channel=channel)
+    if "containerd" not in model.applications:
+        await model.deploy("cs:~containers/containerd", num_units=0, channel=channel)
 
     await model.applications["containerd"].add_relation(
         "containerd:containerd", "kubernetes-worker:container-runtime"
