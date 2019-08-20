@@ -26,7 +26,7 @@ plan:
         ```
   - runner:
       env-requires:
-        - SNAP_PATCHES_LIST
+        # - SNAP_PATCHES_LIST
         - SNAP_LIST
         - GIT_SSH_COMMAND
         - K8STEAMCI_USR
