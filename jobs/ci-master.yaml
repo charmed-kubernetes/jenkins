@@ -249,7 +249,7 @@
           export PATH=/var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin:/snap/bin:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
-
+          export JUJU_MODEL="{override_juju_model|validate}"
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 
           env > $WORKSPACE/.env
@@ -308,7 +308,6 @@
     name: default-job-wrapper
     wrappers:
       - ansicolor
-      - timestamps
       - workspace-cleanup
 
 - wrapper:

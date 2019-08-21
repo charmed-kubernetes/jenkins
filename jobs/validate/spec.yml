@@ -49,8 +49,7 @@ plan:
         pytest jobs/integration/validation.py \
              --cloud $JUJU_CLOUD \
              --controller $JUJU_CONTROLLER \
-             --model $JUJU_MODEL 2>&1 | tee pytest-integration.log
-      timeout: 240
+             --model $JUJU_MODEL
       tags: [validate, pytest]
 
   - runner:
@@ -64,7 +63,7 @@ plan:
              --model $JUJU_MODEL \
              --is-upgrade \
              --upgrade-charm-channel $TEST_UPGRADE_CHARM_CHANNEL \
-             --upgrade-snap-channel $TEST_UPGRADE_SNAP_CHANNEL 2>&1 | tee pytest-upgrade-integration.log
+             --upgrade-snap-channel $TEST_UPGRADE_SNAP_CHANNEL
       tags: [validate-upgrade]
 
   - runner:
@@ -77,7 +76,7 @@ plan:
              --controller $JUJU_CONTROLLER \
              --model $JUJU_MODEL \
              --snapd-upgrade \
-             --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL 2>&1 | tee pytest-snap-upgrade.log
+             --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL
       tags: [validate-snapd-upgrade]
 
 teardown:
