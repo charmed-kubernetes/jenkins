@@ -39,6 +39,7 @@ plan:
         - FILTER_BY_TAG
         - BUNDLE_LIST
         - BUNDLE_REPO
+        - BUNDLE_BRANCH
         - TO_CHANNEL
         - TMPDIR
         - WORKSPACE
@@ -49,6 +50,7 @@ plan:
         python3 jobs/build-charms/charms.py build-bundles \
             --to-channel "$TO_CHANNEL" \
             --bundle-list "$BUNDLE_LIST" \
+            --bundle-branch "$BUNDLE_BRANCH" \
             --filter-by-tag "$FILTER_BY_TAG"
       tags: [build-bundles]
   - runner:

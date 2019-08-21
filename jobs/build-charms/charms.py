@@ -24,7 +24,6 @@ import click
 import sh
 import yaml
 import time
-import uuid
 
 
 class CharmEnv:
@@ -324,6 +323,7 @@ def build(
 
 @cli.command()
 @click.option("--bundle-list", required=True, help="list of bundles in YAML format")
+@click.option("--bundle-branch", default="master", required=True, help="Upstream branch to build bundles from")
 @click.option(
     "--filter-by-tag",
     required=True,
@@ -337,14 +337,14 @@ def build(
     default="https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git",
 )
 @click.option(
-    "--to-channel", required=True, help="channel to promote charm to", default="edge"
+    "--to-channel", required=True, help="channel to promote bundle to", default="edge"
 )
 @click.option("--dry-run", is_flag=True)
-def build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run):
-    return _build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run)
+def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run):
+    return _build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run)
 
 
-def _build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run):
+def _build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run):
     charm_env = CharmEnv()
     _bundle_list = yaml.safe_load(Path(bundle_list).read_text(encoding="utf8"))
     click.echo("bundle builds")
@@ -354,7 +354,7 @@ def _build_bundles(bundle_list, filter_by_tag, bundle_repo, to_channel, dry_run)
     sh.rm('-rf', bundle_build_dir)
     os.makedirs(str(bundle_repo_dir), exist_ok=True)
     os.makedirs(str(bundle_build_dir), exist_ok=True)
-    for line in sh.git.clone(bundle_repo, str(bundle_repo_dir), _iter=True, _bg_exc=False):
+    for line in sh.git.clone("--branch", bundle_branch, bundle_repo, str(bundle_repo_dir), _iter=True, _bg_exc=False):
         click.echo(line)
     for bundle_map in _bundle_list:
         for bundle_name, bundle_opts in bundle_map.items():

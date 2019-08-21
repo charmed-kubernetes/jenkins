@@ -192,6 +192,11 @@
           name: BUNDLE_LIST
           default: "jobs/build-charms/charm-bundles-list.yaml"
       - string:
+          name: BUNDLE_BRANCH
+          default: "master"
+          description: |
+            The bundle branch to build k8s from.
+      - string:
           name: BUNDLE_REPO
           default: "https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git"
       - string:
