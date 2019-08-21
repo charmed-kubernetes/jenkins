@@ -51,6 +51,40 @@ plan:
             --bundle-list "$BUNDLE_LIST" \
             --filter-by-tag "$FILTER_BY_TAG"
       tags: [build-bundles]
+  - runner:
+      description: |
+        Promotes the charms that make up Kubernetes
+      env-requires:
+        - FILTER_BY_TAG
+        - CHARM_LIST
+        - FROM_CHANNEL
+        - TO_CHANNEL
+      script: |
+        #!/bin/bash
+        set -eux
+        python3 jobs/build-charms/charms.py promote \
+            --from-channel $FROM_CHANNEL \
+            --to-channel $TO_CHANNEL \
+            --charm-list $CHARM_LIST \
+            --filter-by-tag $FILTER_BY_TAG
+      tags: [promote-charms]
+  - runner:
+      description: |
+        Promotes the charms that make up Kubernetes
+      env-requires:
+        - FILTER_BY_TAG
+        - BUNDLE_LIST
+        - TO_CHANNEL
+        - FROM_CHANNEL
+      script: |
+        #!/bin/bash
+        set -eux
+        python3 jobs/build-charms/charms.py promote \
+            --to-channel $TO_CHANNEL \
+            --from-channel $FROM_CHANNEL \
+            --charm-list $BUNDLE_LIST \
+            --filter-by-tag $FILTER_BY_TAG
+      tags: [promote-bundles]
 
 meta:
   mkdocs:

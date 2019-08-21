@@ -6,38 +6,46 @@ import pytest
 import asyncio
 import uuid
 import yaml
+import requests
 from juju.model import Model
-from .utils import (
-    upgrade_charms,
-    upgrade_snaps,
-    arch,
-    asyncify,
-    _juju_wait,
-    log_snap_versions,
-)
-from sh import juju
+from aioify import aioify
+from .utils import upgrade_charms, upgrade_snaps, arch, log_snap_versions
 
 
 def pytest_addoption(parser):
 
     parser.addoption(
-        "--controller", action="store", required=True, help="Juju controller to use"
+        "--controller",
+        action="store",
+        required=True,
+        help="Juju controller to use",
     )
 
-    parser.addoption("--model", action="store", required=True, help="Juju model to use")
+    parser.addoption(
+        "--model", action="store", required=True, help="Juju model to use"
+    )
 
     parser.addoption(
         "--series", action="store", default="bionic", help="Base series"
     )
 
     parser.addoption(
-        "--cloud", action="store", default="aws/us-east-2", help="Juju cloud to use"
+        "--cloud",
+        action="store",
+        default="aws/us-east-2",
+        help="Juju cloud to use",
     )
     parser.addoption(
-        "--charm-channel", action="store", default="edge", help="Charm channel to use"
+        "--charm-channel",
+        action="store",
+        default="edge",
+        help="Charm channel to use",
     )
     parser.addoption(
-        "--bundle-channel", action="store", default="edge", help="Bundle channel to use"
+        "--bundle-channel",
+        action="store",
+        default="edge",
+        help="Bundle channel to use",
     )
     parser.addoption(
         "--snap-channel",
@@ -82,22 +90,58 @@ def pytest_addoption(parser):
     )
 
 
+class Tools:
+    """ Utility class for accessing juju related tools
+    """
+
+    def __init__(self, request):
+        from sh import juju as _juju_internal
+        from sh import juju_wait as _juju_wait_internal
+
+        self._juju = aioify(obj=_juju_internal)
+        self._juju_wait = aioify(obj=_juju_wait_internal)
+        self.requests = aioify(obj=requests)
+        self.controller_name = request.config.getoption("--controller")
+        self.model_name = request.config.getoption("--model")
+        self.series = request.config.getoption("--series")
+        self.cloud = request.config.getoption("--cloud")
+        self.connection = f"{self.controller_name}:{self.model_name}"
+
+    async def juju(self):
+        return await self._juju.bake(_env=os.environ.copy())
+
+    async def juju_wait(self):
+        return await self._juju_wait.bake(
+            "-e", self.connection, "-w", _env=os.environ.copy()
+        )
+
+
 @pytest.fixture(scope="module")
-async def model(request, event_loop, connection_name):
+def tools(request):
+    return Tools(request)
+
+
+@pytest.fixture(scope="module")
+async def model(request, event_loop, tools):
     event_loop.set_exception_handler(lambda l, _: l.stop())
     model = Model(event_loop)
-    await model.connect(connection_name)
+    await model.connect(tools.connection)
     if request.config.getoption("--is-upgrade"):
-        upgrade_snap_channel = request.config.getoption("--upgrade-snap-channel")
-        upgrade_charm_channel = request.config.getoption("--upgrade-charm-channel")
+        upgrade_snap_channel = request.config.getoption(
+            "--upgrade-snap-channel"
+        )
+        upgrade_charm_channel = request.config.getoption(
+            "--upgrade-charm-channel"
+        )
         if not upgrade_snap_channel and upgrade_charm_channel:
             raise Exception(
-                "Must have both snap and charm upgrade channels set to perform upgrade prior to validation test."
+                "Must have both snap and charm upgrade "
+                "channels set to perform upgrade prior to validation test."
             )
         print("Upgrading charms")
-        await upgrade_charms(model, upgrade_charm_channel)
+        await upgrade_charms(model, upgrade_charm_channel, tools)
         print("Upgrading snaps")
-        await upgrade_snaps(model, upgrade_snap_channel)
+        await upgrade_snaps(model, upgrade_snap_channel, tools)
     if request.config.getoption("--snapd-upgrade"):
         snapd_channel = request.config.getoption("--snapd-channel")
         cmd = f"sudo snap refresh core --{snapd_channel}"
@@ -106,45 +150,10 @@ async def model(request, event_loop, connection_name):
         await model.set_config({"cloudinit-userdata": cloudinit_userdata_str})
         await model.deploy("cs:~containers/charmed-kubernetes")
         await log_snap_versions(model, prefix="Before")
-        await asyncify(_juju_wait)()
+        await tools.juju_wait()
         await log_snap_versions(model, prefix="After")
     yield model
     await model.disconnect()
-
-
-@pytest.fixture(scope="module")
-async def connection_name(request):
-    """ Provides the raw controller:model argument when calling juju directly and not from our existing fixtures
-    """
-    return f"{request.config.getoption('--controller')}:{request.config.getoption('--model')}"
-
-
-@pytest.fixture(scope="module")
-async def series(request):
-    """ The os distribution series to deploy with
-    """
-    return request.config.getoption("--series")
-
-
-@pytest.fixture(scope="module")
-async def controller_name(request):
-    """ Name of juju controller
-    """
-    return request.config.getoption("--controller")
-
-
-@pytest.fixture(scope="module")
-async def model_name(request):
-    """ Name of juju model
-    """
-    return request.config.getoption("--model")
-
-
-@pytest.fixture(scope="module")
-async def cloud(request):
-    """ The cloud to utilize
-    """
-    return request.config.getoption("--cloud")
 
 
 @pytest.fixture
@@ -179,7 +188,9 @@ def skip_by_app(request, model):
         apps = request.node.get_closest_marker("skip_apps").args[0]
         is_available = any(app in model.applications for app in apps)
         if not is_available:
-            pytest.skip("skipped, no matching applications found: {}".format(apps))
+            pytest.skip(
+                "skipped, no matching applications found: {}".format(apps)
+            )
 
 
 @pytest.fixture(autouse=True)
@@ -188,7 +199,10 @@ def skip_by_model(request, model):
     running tests applicable to vault
     """
     if request.node.get_closest_marker("skip_model"):
-        if request.node.get_closest_marker("skip_model").args[0] not in model.info.name:
+        if (
+            request.node.get_closest_marker("skip_model").args[0]
+            not in model.info.name
+        ):
             pytest.skip("skipped on this model: {}".format(model.info.name))
 
 
@@ -211,15 +225,24 @@ def event_loop():
 
 
 @pytest.fixture
-async def deploy(request, connection_name, controller_name, model_name, cloud):
+async def deploy(request, tools):
     test_run_nonce = uuid.uuid4().hex[-4:]
-    _model = "{}-{}".format(model_name, test_run_nonce)
+    nonce_model = "{}-{}".format(tools.model_name, test_run_nonce)
 
-    juju("add-model", "-c", controller_name, _model, cloud)
-    juju("model-config", "-m", connection_name, "test-mode=true")
+    await tools.juju(
+        "add-model",
+        "-c",
+        tools.controller_name,
+        nonce_model,
+        tools.cloud,
+    )
 
-    _juju_model = Model()
-    await _juju_model.connect("{}:{}".format(controller_name, _model))
-    yield (controller_name, _juju_model)
-    await _juju_model.disconnect()
-    juju("destroy-model", "-y", "{}:{}".format(controller_name, _model))
+    await tools.juju(
+        "model-config", "-m", tools.connection, "test-mode=true"
+    )
+
+    _model_obj = Model()
+    await _model_obj.connect(f"{tools.controller_name}:{nonce_model}")
+    yield (tools.controller_name, _model_obj)
+    await _model_obj.disconnect()
+    await tools.juju("destroy-model", "-y", nonce_model)

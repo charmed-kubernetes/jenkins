@@ -4,7 +4,6 @@ import pytest
 import os
 import json
 from pathlib import Path
-from ..base import _juju_wait
 from ..utils import asyncify
 from sh import curl, juju
 
@@ -26,36 +25,36 @@ async def easyrsa_resource():
     return "/tmp/easyrsa.tgz"
 
 
-async def deploy_easyrsa(controller, model):
+async def deploy_easyrsa(controller, model, tools):
     resource_path = await easyrsa_resource()
-    await asyncify(juju)(
+    await tools.juju(
         "deploy",
         "-m",
-        "{}:{}".format(controller, model),
+        tools.connection,
         str(CHARM_PATH),
         "--resource",
         "easyrsa={}".format(resource_path),
     )
-    await asyncify(_juju_wait)(controller, model)
+    await tools.juju_wait()
 
 
-async def deploy_test_app(controller, model):
+async def deploy_test_app(controller, model, tools):
     test_app = "etcd"
 
     await asyncify(juju)("deploy", "-m", "{}:{}".format(controller, model), test_app)
     await asyncify(juju)(
         "relate", "-m", "{}:{}".format(controller, model), test_app, "easyrsa"
     )
-    await asyncify(_juju_wait)(controller, model)
+    await tools.juju_wait()
 
 
-async def get_relation_data(controller, model):
+async def get_relation_data(controller, model, tools):
     """Gets data from the relation specified"""
     global relation_data
 
     if relation_data is None:
-        await deploy_easyrsa(controller, model.info.name)
-        await deploy_test_app(controller, model.info.name)
+        await deploy_easyrsa(controller, model.info.name, tools)
+        await deploy_test_app(controller, model.info.name, tools)
         easyrsa = model.applications["easyrsa"]
         easyrsa = easyrsa.units[0]
 
@@ -138,18 +137,18 @@ async def test_ca(deploy, event_loop):
     assert ca_cert == installed_ca
 
 
-async def test_client(deploy, event_loop):
+async def test_client(deploy, event_loop, tools):
     """Test that the client certificate and key can be created."""
     controller, model = deploy
-    relation_data = await get_relation_data(controller, model)
+    relation_data = await get_relation_data(controller, model, tools)
     assert validate_certificate(relation_data["client.cert"])
     assert validate_key(relation_data["client.key"])
 
 
-async def test_server(deploy, event_loop):
+async def test_server(deploy, event_loop, tools):
     """Test that the server certificate and key can be created."""
     controller, model = deploy
-    relation_data = await get_relation_data(controller, model)
+    relation_data = await get_relation_data(controller, model, tools)
     # find server certs and keys
     server_certs = {
         key: data for key, data in relation_data.items() if ".server.cert" in key

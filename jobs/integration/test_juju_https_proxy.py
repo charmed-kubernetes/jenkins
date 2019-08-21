@@ -9,7 +9,6 @@ from .utils import (
     verify_completed,
     verify_deleted,
     retry_async_with_timeout,
-    _juju_wait,
 )
 from .logger import log, log_calls_async
 from juju.controller import Controller
@@ -74,7 +73,7 @@ async def check_kube_node_conf_missing(
 @pytest.mark.parametrize("runtime", ["containerd", "docker"])
 @pytest.mark.asyncio
 async def test_http_conf_existing_container_runtime(
-    model, runtime, proxy_app, controller, connection_name
+        model, runtime, proxy_app, controller, connection_name, tools
 ):
     container_endpoint = "%s:%s" % (runtime, runtime)
     container_runtime_name = "cs:~pjds/%s" % (runtime)
@@ -90,7 +89,7 @@ async def test_http_conf_existing_container_runtime(
             container_endpoint, "kubernetes-worker:container-runtime"
         )
 
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
 
     proxy = proxy_app.units[0]
 
@@ -106,7 +105,7 @@ async def test_http_conf_existing_container_runtime(
     await container_runtime.set_config({"https_proxy": "blah"})
     time.sleep(20)
 
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
     for worker_unit in model.applications["kubernetes-worker"].units:
         await check_kube_node_conf(worker_unit, runtime, controller, connection_name)
     for master_unit in model.applications["kubernetes-master"].units:
@@ -116,7 +115,7 @@ async def test_http_conf_existing_container_runtime(
     await container_runtime.set_config({"https_proxy": ""})
 
     time.sleep(20)
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
 
     for worker_unit in model.applications["kubernetes-worker"].units:
         await check_kube_node_conf_missing(
@@ -128,7 +127,7 @@ async def test_http_conf_existing_container_runtime(
         )
 
     # Removing container runtimes here
-    # apt issues, as also adding _juju_wait causes a permanent stall.
+    # apt issues, as also adding tools.juju_wait causes a permanent stall.
 
     # Reset
     await container_runtime.set_config({"http_proxy": ""})

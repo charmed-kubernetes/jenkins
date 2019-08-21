@@ -1,8 +1,5 @@
 import pytest
 import yaml
-from sh import juju
-from .utils import _juju_wait, asyncify
-from .validation import validate_all
 from .logger import log
 
 
@@ -30,21 +27,22 @@ async def log_docker_versions(model):
 
 
 @pytest.mark.asyncio
-async def test_docker_proposed(request, model, log_dir, connection_name, series):
+@pytest.mark.skip("Needs to be a fixture instead")
+async def test_docker_proposed(request, model, log_dir, tools):
     # Enable <series>-proposed on this model
-    await enable_proposed_on_model(model, series)
-    await asyncify(juju.deploy)(
+    await enable_proposed_on_model(model, tools.series)
+    await tools.juju.deploy(
         "-m",
-        connection_name,
+        tools.connection,
         "cs:~containers/charmed-kubernetes",
         "--channel",
         "edge",
         "--overlay",
-        "overlays/1.12-edge-{}-overlay.yaml".format(series),
+        "overlays/1.12-edge-{}-overlay.yaml".format(tools.series),
     )
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
 
     # Run validation
     await log_docker_versions(model)  # log before run
-    await validate_all(model, log_dir)
+    # await validate_all(model, log_dir)
     await log_docker_versions(model)  # log after run

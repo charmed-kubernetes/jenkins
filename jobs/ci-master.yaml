@@ -202,6 +202,10 @@
           default: 'edge'
           description: Channel to publish charm to
       - string:
+          name: FROM_CHANNEL
+          default: 'edge'
+          description: Channel to publish from charm to
+      - string:
           name: FILTER_BY_TAG
           default: 'k8s'
           description: |
@@ -225,6 +229,10 @@
       - shell: |-
           #!/bin/bash
           set -eux
+
+          git clone --depth 1 \
+               https://github.com/charmed-kubernetes/integration-tests \
+               $WORKSPACE/integration-tests
 
           # Login to snapstore
           snapcraft login --with /var/lib/jenkins/snapcraft-creds
@@ -290,6 +298,7 @@
           set +o allexport
 
           . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
+          [[ -f {JOB_SPEC_DIR}/requirements.txt ]] && pip install -r{JOB_SPEC_DIR}/requirements.txt
 
           ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug execute {JOB_TAGS}
 

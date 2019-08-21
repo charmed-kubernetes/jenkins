@@ -2,7 +2,7 @@ import asyncio
 import pytest
 import random
 import os
-from .utils import asyncify, _juju_wait
+from .utils import asyncify
 from .logger import log
 
 
@@ -51,7 +51,7 @@ async def verify_ip_valid(model, ip):
 
 
 @pytest.mark.asyncio
-async def test_validate_hacluster(model):
+async def test_validate_hacluster(model, tools):
     if "kubeapi-load-balancer" in model.applications:
         name = "kubeapi-load-balancer"
         app = model.applications[name]
@@ -79,7 +79,7 @@ async def test_validate_hacluster(model):
     await model.deploy("hacluster", num_units=0, series="bionic")
     await model.add_relation("hacluster:ha", "{}:ha".format(name))
     log("waiting for cluster to settle...")
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
 
     # virtual ip can change, verify that
     for ip in get_test_ips():
@@ -88,7 +88,7 @@ async def test_validate_hacluster(model):
         await app.set_config(cfg)
 
         log("waiting for cluster to settle...")
-        await asyncify(_juju_wait)()
+        await tools.juju_wait()
 
         # tests:
         log("verifying corosync...")

@@ -1,5 +1,5 @@
-ogc>=0.3.0<1.0.0
-ogc-plugins-runner>=1.0.0
-ogc-plugins-env>=0.0.6
-ogc-plugins-juju>=1.0.0
-ogc-plugins-spec-doc>=0.0.3
+ogc>=0.3.21<1.0.0
+ogc-plugins-runner>=1.0.13
+ogc-plugins-env>=1.0.2
+ogc-plugins-juju>=1.0.9
+ogc-plugins-spec-doc>=0.0.7

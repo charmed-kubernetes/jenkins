@@ -14,9 +14,13 @@ setup:
       model: $JUJU_MODEL
       bootstrap:
         debug: no
-        model-default: test-mode=true
+        model-default:
+          - test-mode=true
+        replace-controller: yes
+        disable-add-model: no
       deploy:
         bundle: charmed-kubernetes
+        channel: stable
         overlay: |
           applications:
             kubernetes-master:
@@ -29,6 +33,11 @@ setup:
       config:
         - kubernetes-master allow-privileged=true
         - kubernetes-worker allow-privileged=true
+      env-requires:
+        - SNAP_VERSION
+        - JUJU_CONTROLLER
+        - JUJU_MODEL
+        - JUJU_CLOUD
 
 plan:
   - runner:
@@ -47,19 +56,21 @@ plan:
       tags: [cncf, cncf-run]
   - runner:
       description: |
-        See https://www.cncf.io/certification/software-conformance/ for more information.
+        checking for completeness
       cmd: sonobuoy status|grep -q 'Sonobuoy has completed'
-      wait_for_success: yes
       timeout: 10800
-      back_off: 15
+      back-off: 15
+      wait-for-success: yes
       tags: [cncf, cncf-wait-status]
   - runner:
       description: Download results
       script: |
+        #!/bin/bash
+        set -eux
         sonobuoy retrieve results/.
         kubectl version
-      wait_for_success: yes
-      back_off: 5
+      wait-for-success: yes
+      back-off: 5
       retries: 5
       tags: [cncf, cncf-download-results]
   - runner:
