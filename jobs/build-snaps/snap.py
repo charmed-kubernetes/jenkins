@@ -6,10 +6,7 @@ import sys
 import click
 import sh
 import os
-import glob
-import re
 import yaml
-import operator
 import semver
 from urllib.parse import urlparse
 from jinja2 import Template
@@ -36,7 +33,6 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
     Usage:
     snaps-source.py sync-upstream --snap-list includes/k8s-snap-list.inc
     """
-    env = os.environ.copy()
     supported_releases = []
     upstream_releases = git.remote_tags("https://github.com/kubernetes/kubernetes")
 
@@ -59,11 +55,18 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
             snap_releases.sort()
             for snap_rel in snap_releases:
                 click.echo(f"Creating branch for {snap}-{snap_rel}")
-                _create_branch(git_repo, "master", snap_rel, dry_run=False, force=force, patches=patches)
+                _create_branch(
+                    git_repo,
+                    "master",
+                    snap_rel,
+                    dry_run=False,
+                    force=force,
+                    patches=patches,
+                )
                 _fmt_version = semver.parse(snap_rel.lstrip("v"))
                 _fmt_version_str = f'{_fmt_version["major"]}.{_fmt_version["minor"]}'
                 tracks_to_publish = []
-                if _fmt_version['prerelease']:
+                if _fmt_version["prerelease"]:
                     click.echo(f"This is a pre-release, skipping for now")
                     continue
                     tracks_to_publish = [f"{_fmt_version_str}/edge"]
@@ -71,7 +74,8 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
                     tracks_to_publish = [
                         f"{_fmt_version_str}/edge",
                         f"{_fmt_version_str}/candidate",
-                        f"{_fmt_version_str}/beta"]
+                        f"{_fmt_version_str}/beta",
+                    ]
                 click.echo(f"Generating recipe for {snap}-{_fmt_version_str}")
                 if not dry_run:
                     _create_snap_recipe(
@@ -144,29 +148,31 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
             click.echo("Patches found, applying.")
             patches_map = yaml.safe_load(patches_path.read_text(encoding="utf8"))
             # TODO: cleanup
-            if 'all' in patches_map:
-                for patch_fn in patches_map['all']:
+            if "all" in patches_map:
+                for patch_fn in patches_map["all"]:
                     patch_fn = Path(patch_fn).absolute()
-                    shared_path = str(Path('shared') / patch_fn.parts[-1])
+                    shared_path = str(Path("shared") / patch_fn.parts[-1])
                     sh.cp(str(patch_fn), str(shared_path), _cwd=snap_basename)
                     patches_list.append(shared_path)
                     sh.git.add(shared_path, _cwd=snap_basename)
             if to_branch.lstrip("v") in patches_map:
                 for patch_fn in patches_map[to_branch.lstrip("v")]:
                     patch_fn = Path(patch_fn).absolute()
-                    shared_path = str(Path('shared') / patch_fn.parts[-1])
+                    shared_path = str(Path("shared") / patch_fn.parts[-1])
                     sh.cp(str(patch_fn), str(shared_path), _cwd=snap_basename)
                     patches_list.append(shared_path)
                     sh.git.add(shared_path, _cwd=snap_basename)
 
     snapcraft_yml = snapcraft_fn_tpl.read_text()
-    snapcraft_yml = _render(snapcraft_fn_tpl, {"snap_version": to_branch.lstrip("v"),
-                                               "patches": patches_list})
+    snapcraft_yml = _render(
+        snapcraft_fn_tpl, {"snap_version": to_branch.lstrip("v"), "patches": patches_list}
+    )
     snapcraft_fn.write_text(snapcraft_yml)
     if not dry_run:
         sh.git.add(".", _cwd=snap_basename)
         sh.git.commit("-m", f"Creating branch {to_branch}", _cwd=snap_basename)
         sh.git.push(repo, to_branch, _cwd=snap_basename, _env=env)
+
 
 @cli.command()
 @click.option("--repo", help="Git repository to create a new branch on", required=True)
@@ -316,7 +322,7 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
     else:
         snap_list = []
     for snap in snap_list:
-        out = snapapi.latest(snap, from_track.split('/')[0], arch, exclude_pre)
+        out = snapapi.latest(snap, from_track.split("/")[0], arch, exclude_pre)
         if out:
             rev, uploaded, arch, version, channels = out
             for track in to_track:
@@ -330,19 +336,26 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
 
 @cli.command()
 @click.option("--snap-list", help="Path to supported snaps", required=True)
-@click.option("--arch", help="Architecture to use, amd64, arm64, ppc64le or s390x", required=True, default="amd64")
+@click.option(
+    "--arch",
+    help="Architecture to use, amd64, arm64, ppc64le or s390x",
+    required=True,
+    default="amd64",
+)
 @click.option("--from-track", required=True, help="Snap track to promote from")
-@click.option("--to-track", help="Snap track to promote to, format as: `[<track>/]<risk>[/<channel>]`", required=True, multiple=True)
-@click.option("--exclude-pre", is_flag=True, help="Do not count preleases when determining latest snap to promote")
+@click.option(
+    "--to-track",
+    help="Snap track to promote to, format as: `[<track>/]<risk>[/<channel>]`",
+    required=True,
+    multiple=True,
+)
+@click.option(
+    "--exclude-pre",
+    is_flag=True,
+    help="Do not count preleases when determining latest snap to promote",
+)
 @click.option("--dry-run", is_flag=True)
-def promote_snaps(
-    snap_list,
-        arch,
-        from_track,
-    to_track,
-        exclude_pre,
-    dry_run,
-):
+def promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
     """ Provides a way to promote the latest snaps for a particular version and a particular architecture
 
 
@@ -373,6 +386,7 @@ def release(name, channel, version, dry_run):
         click.echo(
             sh.snapcraft.release(name, latest_release["rev"], channel, _err_to_out=True)
         )
+
 
 if __name__ == "__main__":
     cli()

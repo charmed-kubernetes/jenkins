@@ -10,8 +10,7 @@ from .utils import (
     verify_ready,
     verify_completed,
     verify_deleted,
-    retry_async_with_timeout,
-    _juju_wait
+    retry_async_with_timeout
 )
 from .logger import log, log_calls_async
 from juju.controller import Controller
@@ -104,11 +103,11 @@ async def test_lxd_profiles(model, charm_name):
     ("kubernetes-worker", "kubernetes-master")
 )
 @pytest.mark.asyncio
-async def test_lxd_profile_upgrade(model, charm_name):
+async def test_lxd_profile_upgrade(model, charm_name, tools):
     app = model.applications[charm_name]
     log("Upgrading charm to edge channel")
     await app.upgrade_charm(channel="edge")
     time.sleep(10)
     log("Upgraded charm.")
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
     await check_charm_profile_deployed(app, charm_name)

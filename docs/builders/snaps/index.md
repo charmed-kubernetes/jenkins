@@ -25,8 +25,7 @@ export SNAP_LIST=\"$SNAP_LIST\"
 export K8STEAMCI_USR=\"$K8STEAMCI_USR\"
 export K8STEAMCI_PSW=\"$K8STEAMCI_PSW\"
 
-ogc --spec builders/snaps/spec.toml plugin-deps --installable | sh -
-ogc --spec builders/snaps/spec.toml --debug execute -t sync
+ogc --spec builders/snaps/spec.yml --debug execute -t sync
 ```
 
 ### Plugin: **runner** - Sync K8s snap recipes w/ patches

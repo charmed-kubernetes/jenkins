@@ -1,8 +1,6 @@
 import asyncio
 import pytest
 from .utils import (
-    _juju_wait,
-    asyncify,
     verify_ready,
     verify_completed,
     verify_deleted,
@@ -122,7 +120,7 @@ spec:
 
 
 @pytest.mark.asyncio
-async def test_ceph(model):
+async def test_ceph(model, tools):
     # setup
     log("deploying ceph mon")
     await model.deploy("ceph-mon", num_units=3)
@@ -138,7 +136,7 @@ async def test_ceph(model):
     await model.add_relation("ceph-mon:admin", "kubernetes-master")
     await model.add_relation("ceph-mon:client", "kubernetes-master")
     log("waiting...")
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
 
     # until bug https://bugs.launchpad.net/charm-kubernetes-master/+bug/1824035 fixed
     unit = model.applications["ceph-mon"].units[0]

@@ -5,14 +5,12 @@ import pytest
 
 from ..logger import log
 from ..utils import (
-    _juju_wait,
-    asyncify,
     retry_async_with_timeout
 )
 
 
 @pytest.mark.asyncio
-async def test_containerd_no_gpu(model):
+async def test_containerd_no_gpu(model, tools):
     """
     Mostly a place holder.
     """
@@ -25,7 +23,7 @@ async def test_containerd_no_gpu(model):
     log('validating containerd no gpu')
 
     await worker_app.set_config({'gpu_driver': 'none'})
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
 
     for worker in worker_app.units:
         log('verifying worker ' + worker.entity_id)

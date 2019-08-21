@@ -6,7 +6,7 @@ Verifies that CK passes CNCF conformance spec
 ## Plan Phase
 ### Plugin: **runner** - See https://www.cncf.io/certification/software-conformance/ for more information.
 
-### Plugin: **runner** - See https://www.cncf.io/certification/software-conformance/ for more information.
+### Plugin: **runner** - checking for completeness
 
 ### Plugin: **runner** - Download results
 ### Plugin: **runner** - Tearing down all deployed applications

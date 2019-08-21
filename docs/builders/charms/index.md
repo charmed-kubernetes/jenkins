@@ -18,3 +18,7 @@ set by **TO_CHANNEL**
 
 ### Plugin: **runner** - Buildes the bundles that make up Kubernetes
 
+### Plugin: **runner** - Promotes the charms that make up Kubernetes
+
+### Plugin: **runner** - Promotes the charms that make up Kubernetes
+

@@ -1,14 +1,5 @@
-meta:
-  name: Verify CK
-  description: |
-    Verifies that CK passes integration tests
-  mkdocs:
-    destination:
-      - "validations/ck/index.md"
-
 setup:
   - runner:
-      fail-silently: yes
       description: Performs a snapd channel upgrade
       long-description: |
         This is ran with the validate-snapd-upgrade as the host snapd is also
@@ -20,7 +11,6 @@ setup:
       tags: [validate-snapd-upgrade]
 
   - juju:
-      fail-silently: yes
       description: Bootstrap and deploy kubernetes
       cloud: $JUJU_CLOUD
       controller: $JUJU_CONTROLLER
@@ -48,7 +38,10 @@ setup:
 
 plan:
   - runner:
-      fail-silently: yes
+      env-requires:
+        - JUJU_CONTROLLER
+        - JUJU_MODEL
+        - JUJU_CLOUD
       description: Run testsuite against deployed CK
       script: |
         #!/bin/bash
@@ -56,8 +49,9 @@ plan:
         pytest jobs/integration/validation.py \
              --cloud $JUJU_CLOUD \
              --controller $JUJU_CONTROLLER \
-             --model $JUJU_MODEL
-      tags: [validate]
+             --model $JUJU_MODEL 2>&1 | tee pytest-integration.log
+      timeout: 240
+      tags: [validate, pytest]
 
   - runner:
       description: Performs an upgrade validation against a deployed CK
@@ -70,11 +64,10 @@ plan:
              --model $JUJU_MODEL \
              --is-upgrade \
              --upgrade-charm-channel $TEST_UPGRADE_CHARM_CHANNEL \
-             --upgrade-snap-channel $TEST_UPGRADE_SNAP_CHANNEL
+             --upgrade-snap-channel $TEST_UPGRADE_SNAP_CHANNEL 2>&1 | tee pytest-upgrade-integration.log
       tags: [validate-upgrade]
 
   - runner:
-      fail-silently: yes
       description: Run testsuite against an upgrade snapcore
       script: |
         #!/bin/bash
@@ -84,17 +77,53 @@ plan:
              --controller $JUJU_CONTROLLER \
              --model $JUJU_MODEL \
              --snapd-upgrade \
-             --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL
+             --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL 2>&1 | tee pytest-snap-upgrade.log
       tags: [validate-snapd-upgrade]
 
 teardown:
   - runner:
-      fail-silently: yes
       description: Teardown juju deployment
       cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
       tags: [validate, validate-upgrade, validate-snapd-upgrade, destroy]
   - runner:
-      fail-silently: yes
       description: Reset snapd back to stable
       cmd: sudo snap refresh core --stable
       tags: [validate-snapd-upgrade]
+
+
+meta:
+  name: Verify CK
+  description: |
+    Verifies that CK passes integration tests
+  examples:
+    - synopsis: Listing tasks that can be run
+      code: |
+        ```
+        > ogc --spec spec.yml tasks
+
+        Task                                                  Phase     Tags
+        ----------------------------------------------------  --------  -----------------------------------------------------------
+        Performs a snapd channel upgrade                      setup     validate-snapd-upgrade
+        Bootstrap and deploy kubernetes                       setup     validate, validate-snapd-upgrade, validate-upgrade
+        Run testsuite against deployed CK                     plan      validate
+        Performs an upgrade validation against a deployed CK  plan      validate-upgrade
+        Run testsuite against an upgrade snapcore             plan      validate-snapd-upgrade
+        Teardown juju deployment                              teardown  destroy, validate, validate-snapd-upgrade, validate-upgrade
+        Reset snapd back to stable                            teardown  validate-snapd-upgrade
+
+          Example:
+
+          > JUJU_CONTROLLER=my-controller ogc --spec spec.yml \
+              execute --phase teardown -t destroy
+        ```
+    - synopsis: Running the base validation suite against a deploy Kubernetes
+      code: |
+        ```
+        > JUJU_CLOUD=aws/us-east-1 JUJU_CONTROLLER=my-controller JUJU_MODEL=my-model \
+              ogc --spec spec.yml execute -t validate
+        ```
+  jenkins-job-builder:
+    job-source: ../validate.yaml
+  mkdocs:
+    destination:
+      - "validations/ck/index.md"
