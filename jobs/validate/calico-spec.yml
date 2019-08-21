@@ -8,12 +8,10 @@ meta:
 
 setup:
   - runner:
-      fail-silently: yes
       description: Cleanup any previous artifacts
       cmd: python3 jobs/integration/tigera_aws.py cleanup
       tags: [validate]
   - juju:
-      fail-silently: yes
       description: Bootstrap and deploy kubernetes
       cloud: $JUJU_CLOUD
       controller: $JUJU_CONTROLLER
@@ -40,7 +38,6 @@ setup:
         wait: no
       tags: [validate]
   - runner:
-      fail-silently: yes
       description: Prep environment for calico testing
       script: |
         #!/bin/bash
@@ -54,7 +51,6 @@ setup:
 
 plan:
   - runner:
-      fail-silently: yes
       description: Run testsuite against deployed CK
       script: |
         #!/bin/bash
@@ -68,7 +64,6 @@ plan:
 
 teardown:
   - runner:
-      fail-silently: yes
       description: Teardown juju deployment
       cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
       tags: [validate]

@@ -1,0 +1,65 @@
+setup:
+  - runner:
+      description: Performs a snapd channel upgrade
+      long-description: |
+        This is ran with the validate-snapd-upgrade as the host snapd is also
+        upgraded to the new channel.
+      cmd: sudo snap refresh core --$TEST_UPGRADE_SNAPD_CHANNEL
+      env-requires:
+        - TEST_UPGRADE_SNAPD_CHANNEL
+
+  - juju:
+      description: Bootstrap and deploy kubernetes
+      cloud: $JUJU_CLOUD
+      controller: $JUJU_CONTROLLER
+      model: $JUJU_MODEL
+      bootstrap:
+        debug: no
+        constraints: $JUJU_BOOTSTRAP_CONSTRAINTS
+        model-default:
+          - test-mode=true
+        replace-controller: yes
+        disable-add-model: no
+      deploy:
+        bundle: charmed-kubernetes
+        channel: $JUJU_DEPLOY_CHANNEL
+        overlay: |
+          applications:
+            kubernetes-master:
+              options:
+                channel: $SNAP_VERSION
+            kubernetes-worker:
+              options:
+                channel: $SNAP_VERSION
+        wait: yes
+
+plan:
+  - runner:
+      description: Run testsuite against an upgrade snapcore
+      script: |
+        #!/bin/bash
+        set -eux
+        pytest jobs/integration/validation.py \
+             --cloud $JUJU_CLOUD \
+             --controller $JUJU_CONTROLLER \
+             --model $JUJU_MODEL \
+             --snapd-upgrade \
+             --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL
+
+teardown:
+  - runner:
+      description: Teardown juju deployment
+      cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
+  - runner:
+      description: Reset snapd back to stable
+      cmd: sudo snap refresh core --stable
+
+
+meta:
+  name: Verify CK with Snapd upgrade
+  description: |
+    Verifies that CK passes when the underlying snap core (snapd) is upgraded to
+    a candidate/test/beta channel.
+  mkdocs:
+    destination:
+      - "validations/ck/index.md"
