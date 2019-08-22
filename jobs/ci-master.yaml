@@ -187,10 +187,10 @@
             The charm git branch to checkout prior to building
       - string:
           name: CHARM_LIST
-          default: "jobs/build-charms/charm-list.yaml"
+          default: "jobs/includes/charm-support-matrix.inc"
       - string:
           name: BUNDLE_LIST
-          default: "jobs/build-charms/charm-bundles-list.yaml"
+          default: "jobs/includes/charm-bundles-list.inc"
       - string:
           name: BUNDLE_BRANCH
           default: "master"
@@ -255,6 +255,7 @@
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
           export JUJU_MODEL="{override_juju_model|validate}"
+          export OGC_RESULTS_PATH="$WORKSPACE/results"
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 
           env > $WORKSPACE/.env

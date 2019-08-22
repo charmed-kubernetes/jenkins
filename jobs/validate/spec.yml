@@ -57,6 +57,16 @@ plan:
 
 teardown:
   - runner:
+      description: Get CDK Field Agent
+      script: |
+        #!/bin/bash
+        set -eux
+        wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+        python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+        aws s3 put results*tar.gz s3://jenkaas/$(date "+%Y/%m/%d")/
+        aws s3 put $OGC_RESULTS_PATH/*.json s3://jenkaas/$(date "+%Y/%m/%d")/
+
+  - runner:
       description: Teardown juju deployment
       cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
       tags: [validate, validate-upgrade, destroy]
