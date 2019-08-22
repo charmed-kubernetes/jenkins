@@ -1,6 +1,6 @@
 @Library('juju-pipeline@master') _
 
-def snap_sh = "${utils.cipy} build-snaps/build-eks-snaps.py"
+def snap_sh = "/var/lib/jenkins/venvs/eks/bin/python3 build-snaps/build-eks-snaps.py"
 def eks_snaps = '--snap kubelet --snap kubectl --snap kube-proxy --snap kubernetes-test'
 def path_id = "release-${uuid()}"
 
@@ -23,6 +23,9 @@ pipeline {
         stage('Setup') {
             steps {
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds"
+                sh "virtualenv /var/lib/jenkins/venvs/eks -p python3.6"
+                sh ". /var/lib/jenkins/venvs/eks/bin/activate"
+
             }
         }
         stage('Release Snaps'){
@@ -52,6 +55,8 @@ pipeline {
     }
     post {
         cleanup {
+            sh "deactivate"
+            sh "rm -rf /var/lib/jenkins/venvs/eks"
             sh "sudo rm -rf jobs/${path_id} || true"
             sh "snapcraft logout"
             sh "docker image prune -a --filter \"until=24h\" --force"
