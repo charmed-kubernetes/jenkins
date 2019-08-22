@@ -30,6 +30,10 @@
     resource_build_sh: 'build-flannel-resources.sh'
     namespace: 'containers'
     tags: ['k8s', 'flannel']
+- kata:
+    downstream: 'charmed-kubernetes/charm-kata.git'
+    namespace: 'containers'
+    tags: ['k8s', 'containerd']
 - kubeapi-load-balancer:
     downstream: 'charmed-kubernetes/charm-kubeapi-load-balancer.git'
     namespace: 'containers'
