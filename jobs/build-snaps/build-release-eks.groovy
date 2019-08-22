@@ -24,7 +24,7 @@ pipeline {
             steps {
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds"
                 sh "virtualenv /var/lib/jenkins/venvs/eks -p python3.6"
-                sh ". /var/lib/jenkins/venvs/eks/bin/activate"
+                sh "/var/lib/jenkins/venvs/eks/bin/pip install click sh pyyaml"
 
             }
         }
@@ -55,7 +55,6 @@ pipeline {
     }
     post {
         cleanup {
-            sh "deactivate"
             sh "rm -rf /var/lib/jenkins/venvs/eks"
             sh "sudo rm -rf jobs/${path_id} || true"
             sh "snapcraft logout"
