@@ -4,8 +4,7 @@ import click
 
 
 def log(msg):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    click.echo(msg)
+    click.echo(f"    {msg}")
 
 
 def function_call_str(f, args, kwargs):
