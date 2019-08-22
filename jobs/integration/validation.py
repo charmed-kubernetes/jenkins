@@ -513,7 +513,7 @@ async def test_worker_master_removal(model, tools):
     await tools.juju_wait()
 
     while len(workers.units) == unit_count:
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(15)
         log('Waiting for worker removal. (%d/%d)' % (len(workers.units), unit_count))
 
     # Remove the master leader
@@ -524,7 +524,7 @@ async def test_worker_master_removal(model, tools):
     await tools.juju_wait()
 
     while len(masters.units) == unit_count:
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(15)
         log('Waiting for master removal. (%d/%d)' % (len(masters.units), unit_count))
 
     # Try and restore the cluster state

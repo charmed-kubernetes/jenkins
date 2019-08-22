@@ -13,7 +13,7 @@ plan:
 
   - runner:
       description: Run unittests
-      cmd: pytest jobs
+      cmd: pytest **/*/tests
       tags: [test]
   - specdoc:
       description: |

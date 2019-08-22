@@ -1,10 +1,11 @@
 import traceback
 from datetime import datetime
+import click
 
 
 def log(msg):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"LOG :: {timestamp} :: {msg}", flush=True)
+    click.echo(msg)
 
 
 def function_call_str(f, args, kwargs):
