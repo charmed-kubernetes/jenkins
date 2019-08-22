@@ -515,7 +515,6 @@ async def test_worker_master_removal(model, tools):
     while len(workers.units) == unit_count:
         await asyncio.sleep(0.5)
         log('Waiting for worker removal. (%d/%d)' % (len(workers.units), unit_count))
-        assert_no_unit_errors(model)
 
     # Remove the master leader
     unit_count = len(masters.units)
@@ -527,7 +526,6 @@ async def test_worker_master_removal(model, tools):
     while len(masters.units) == unit_count:
         await asyncio.sleep(0.5)
         log('Waiting for master removal. (%d/%d)' % (len(masters.units), unit_count))
-        assert_no_unit_errors(model)
 
     # Try and restore the cluster state
     # Tests following this were passing, but they actually
@@ -537,7 +535,6 @@ async def test_worker_master_removal(model, tools):
     await disable_source_dest_check(tools.model_name)
     log("Waiting for new master and worker.")
     await tools.juju_wait()
-    assert_no_unit_errors(model)
 
 
 @pytest.mark.asyncio
