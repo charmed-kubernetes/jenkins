@@ -325,7 +325,7 @@ async def test_dashboard(model, log_dir, tools):
             tools.connection,
         )
         with open(f.name, "r") as stream:
-            config = yaml.load(stream)
+            config = yaml.safe_load(stream)
     url = config["clusters"][0]["cluster"]["server"]
     user = config["users"][0]["user"]["username"]
     password = config["users"][0]["user"]["password"]
@@ -801,7 +801,7 @@ async def test_kubelet_extra_config(model, tools):
         cmd = "/snap/bin/kubectl -o yaml get node"
         action = await master_unit.run(str(cmd))
         if action.status == "completed" and action.results["Code"] == "0":
-            nodes = yaml.load(action.results["Stdout"])
+            nodes = yaml.safe_load(action.results["Stdout"])
 
             all_nodes_updated = all(
                 [
@@ -820,7 +820,7 @@ async def test_kubelet_extra_config(model, tools):
         cmd = "cat /root/cdk/kubelet/config.yaml"
         action = await worker_unit.run(cmd)
         if action.status == "completed" and action.results["Code"] == "0":
-            config = yaml.load(action.results["Stdout"])
+            config = yaml.safe_load(action.results["Stdout"])
             assert config["evictionHard"]["memory.available"] == "200Mi"
             assert config["authentication"]["webhook"]["enabled"] is False
             assert "anonymous" in config["authentication"]
@@ -1075,8 +1075,8 @@ async def test_audit_webhook(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.flaky(max_runs=3, min_passes=2)
-@pytest.mark.skip_arch(["s390x", "arm64", "aarch64"])
-@pytest.mark.skip_model("validate-vault")
+@pytest.mark.skip_by_arch(["s390x", "arm64", "aarch64"])
+@pytest.mark.skip_by_model("validate-vault")
 async def test_keystone(model, tools):
     masters = model.applications["kubernetes-master"]
     k8s_version_str = masters.data["workload-version"]
