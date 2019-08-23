@@ -141,11 +141,11 @@ class Microk8sSnap:
         if release:
             if not release.startswith('v'):
                 release = "v{}".format(release)
-            cmd = "sed -i '/^set.*/a export KUBE_VERSION={}' microk8s/build-scripts/prepare-env.sh".format(release)
+            cmd = "sed -i '/^set.*/a export KUBE_VERSION={}' microk8s/build-scripts/set-env-variables.sh".format(release)
             if self.juju_controller:
                 cmd_array = self.cmd_array_to_run(cmd)
             else:
-                cmd_array = ["sed", "-i", "/^set.*/a export KUBE_VERSION={}".format(release), "microk8s/build-scripts/prepare-env.sh"]
+                cmd_array = ["sed", "-i", "/^set.*/a export KUBE_VERSION={}".format(release), "microk8s/build-scripts/set-env-variables.sh"]
             check_call(cmd_array)
 
         cmd = "(cd microk8s; sudo /snap/bin/snapcraft cleanbuild)"
