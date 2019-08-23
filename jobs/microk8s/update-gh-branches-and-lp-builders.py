@@ -58,7 +58,7 @@ def create_gh_branch(branch, gh_user, gh_token):
     check_call(cmd)
     cmd = "git checkout -b {}".format(branch).split()
     check_call(cmd)
-    cmd = "sed -i s/KUBE_TRACK:-/KUBE_TRACK:-{}/g build-scripts/prepare-env.sh".format(branch).split()
+    cmd = "sed -i s/KUBE_TRACK:-/KUBE_TRACK:-{}/g build-scripts/set-env-variables.sh".format(branch).split()
     check_call(cmd)
     cmd = "sed -i s@UPGRADE_MICROK8S_FROM=edge@UPGRADE_MICROK8S_FROM={}/edge@g .travis.yml".format(branch).split()
     check_call(cmd)
