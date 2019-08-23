@@ -19,9 +19,7 @@ pipeline {
     stages {
         stage('Release microk8s'){
             steps {
-                dir('jobs') {
-                    sh "LPCREDS=${env.LPCREDS} GH_USER='${env.GITHUB_CREDS_USR}' GH_TOKEN='${env.GITHUB_CREDS_PSW}' tox -e py36 -- python3 microk8s/update-gh-branches-and-lp-builders.py"
-                }
+                sh "LPCREDS=${env.LPCREDS} GH_USER='${env.GITHUB_CREDS_USR}' GH_TOKEN='${env.GITHUB_CREDS_PSW}' tox -c jobs/microk8s/tox.ini -e py36 -- python3 jobs/microk8s/update-gh-branches-and-lp-builders.py"
             }
         }
     }
