@@ -24,9 +24,7 @@ pipeline {
         }
         stage('Release microk8s'){
             steps {
-                dir('jobs') {
-                    sh "LPCREDS=${env.LPCREDS} tox -e py36 -- python3 microk8s/release-to-edge-on-new-upstream-release.py"
-                }
+                sh "LPCREDS=${env.LPCREDS} tox -c jobs/microk8s/tox.ini -e py36 -- python3 jobs/microk8s/release-to-edge-on-new-upstream-release.py"
             }
         }
     }

@@ -50,10 +50,8 @@ pipeline {
         }
         stage('Test and Release'){
             steps {
-                dir('jobs') {
-                    retry(3) {
-                        sh "DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0 JUJU_CONTROLLER=${params.controller}:default  tox -e py36 -- python3 microk8s/release-to-stable.py"
-                    }
+                retry(3) {
+                    sh "DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0 JUJU_CONTROLLER=${params.controller}:default  tox -c jobs/microk8s/tox.ini -e py36 -- python3 jobs/microk8s/release-to-stable.py"
                 }
             }
         }
