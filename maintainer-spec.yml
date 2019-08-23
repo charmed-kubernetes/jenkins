@@ -32,6 +32,3 @@ plan:
         set -eux
         /snap/bin/aws s3 sync site/ s3://jenkaas/docs
       tags: [deploy-docs]
-# - publish-s3:
-#     src: site/
-#     dst: s3://jenkaas/docs

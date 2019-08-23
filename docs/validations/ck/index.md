@@ -7,4 +7,5 @@ Verifies that CK passes integration tests
 ### Plugin: **runner** - Run testsuite against deployed CK
 ### Plugin: **runner** - Performs an upgrade validation against a deployed CK
 ## Teardown Phase
+### Plugin: **runner** - Get CDK Field Agent
 ### Plugin: **runner** - Teardown juju deployment
