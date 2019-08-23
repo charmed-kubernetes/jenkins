@@ -1,0 +1,24 @@
+- job:
+    name: 'build-aws-iam-oci'
+    description: Builds OCI image for aws-iam-authenticator and pushes it to a registry.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/aws-iam-docker/Jenkinsfile
+    parameters:
+      - string:
+          name: 'GIT_REPO'
+          default: 'https://github.com/kubernetes-sigs/aws-iam-authenticator.git'
+      - string:
+          name: 'GIT_TAG'
+          default: 'latest'
+      - string:
+          name: 'DOCKER_TAG'
+          default: 'source'
+      - string:
+          name: 'DRY_RUN'
+          default: 'no'
+    properties:
+      - build-discarder:
+          num-to-keep: 7
