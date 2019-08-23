@@ -84,7 +84,7 @@
     parameters:
       - string:
           name: SNAP_LIST
-          default: jobs/build-snaps/k8s-snap-list.yaml
+          default: jobs/includes/k8s-snap-list.inc
       - string:
           name: SNAP_PATCHES_LIST
       - bool:
