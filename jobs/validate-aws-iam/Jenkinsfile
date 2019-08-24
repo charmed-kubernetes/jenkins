@@ -12,6 +12,9 @@ pipeline {
      */
     environment {
         PATH = "${utils.cipaths}"
+        TEST_ARN = credentials('aws-iam-arn')
+        AWS_ACCESS_KEY_ID = credentials('aws-iam-key')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-iam-secret')
     }
     options {
         ansiColor('xterm')
@@ -52,7 +55,7 @@ pipeline {
 
         stage('Validate') {
             options {
-                timeout(time: 1, unit: 'HOURS')
+                timeout(time: 30, unit: 'MINUTES')
             }
 
             steps {

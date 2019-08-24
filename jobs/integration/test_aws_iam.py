@@ -96,8 +96,7 @@ async def test_validate_aws_iam(model):
 
     # 1) deploy
     log("deploying aws-iam")
-    # await model.deploy("cs:~containers/aws-iam")
-    await model.deploy("cs:~knobby/aws-iam", num_units=0)
+    await model.deploy("cs:~containers/aws-iam", num_units=0)
     await model.add_relation("aws-iam", "kubernetes-master")
     await model.add_relation("aws-iam", "easyrsa")
     log("waiting for cluster to settle...")
@@ -111,11 +110,11 @@ kind: IAMIdentityMapping
 metadata:
   name: kubernetes-admin
 spec:
-  arn: arn:aws:iam::531303548814:role/k8s-admin-role
+  arn: {}
   username: test-user
   groups:
   - view
-EOF"""
+EOF""".format(get_test_arn())
     # Note that we patch a single master's kubeconfig to have the arn in it,
     # so we need to use that one master for all commands
     one_master = random.choice(masters.units)
