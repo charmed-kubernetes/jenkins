@@ -18,7 +18,7 @@ pipeline {
         string(name: 'GIT_REPO', defaultValue: 'https://github.com/kubernetes-sigs/aws-iam-authenticator.git', description: 'Git repo to build')
         string(name: 'GIT_TAG', defaultValue: 'latest', description: 'Tag to clone in git, the value latest will query github and get the latest release')
         string(name: 'DOCKER_TAG', defaultValue: 'source', description: 'Tag to attach to the OCI image, the value source will use git source tag')
-        string(name: 'REGISTRY_URL', defaultValue: 'upload.registry.canonical.com:5000', description: 'OCI registry into which to push the built image')
+        string(name: 'REGISTRY_URL', defaultValue: 'upload.rocks.canonical.com:5000', description: 'OCI registry into which to push the built image')
         string(name: 'DRY_RUN', defaultValue: 'no', description: 'Set to build OCI image, but not push')
     }
     options {
