@@ -23,14 +23,8 @@ setup:
               options:
                 channel: $SNAP_VERSION
         wait: yes
-      tags: [validate, validate-upgrade, validate-snapd-upgrade]
-
 plan:
   - runner:
-      env-requires:
-        - JUJU_CONTROLLER
-        - JUJU_MODEL
-        - JUJU_CLOUD
       description: Run testsuite against deployed CK
       script: |
         #!/bin/bash
@@ -39,37 +33,31 @@ plan:
              --cloud $JUJU_CLOUD \
              --controller $JUJU_CONTROLLER \
              --model $JUJU_MODEL
-      tags: [validate, pytest]
-
-  - runner:
-      description: Performs an upgrade validation against a deployed CK
-      script: |
-        #!/bin/bash
-        set -eux
-        pytest jobs/integration/validation.py \
-             --cloud $JUJU_CLOUD \
-             --controller $JUJU_CONTROLLER \
-             --model $JUJU_MODEL \
-             --is-upgrade \
-             --upgrade-charm-channel $TEST_UPGRADE_CHARM_CHANNEL \
-             --upgrade-snap-channel $TEST_UPGRADE_SNAP_CHANNEL
-      tags: [validate-upgrade]
-
+  # - runner:
+  #     description: Performs an upgrade validation against a deployed CK
+  #     script: |
+  #       #!/bin/bash
+  #       set -eux
+  #       pytest jobs/integration/validation.py \
+  #            --cloud $JUJU_CLOUD \
+  #            --controller $JUJU_CONTROLLER \
+  #            --model $JUJU_MODEL \
+  #            --is-upgrade \
+  #            --upgrade-charm-channel $TEST_UPGRADE_CHARM_CHANNEL \
+  #            --upgrade-snap-channel $TEST_UPGRADE_SNAP_CHANNEL
 teardown:
   - runner:
       description: Get CDK Field Agent
       script: |
         #!/bin/bash
         set -eux
-        wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-        python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-        aws s3 put results*tar.gz s3://jenkaas/$(date "+%Y/%m/%d")/
-        aws s3 put $OGC_RESULTS_PATH/*.json s3://jenkaas/$(date "+%Y/%m/%d")/
-
+        pip install git+https://github.com/juju/juju-crashdump.git
+        juju-crashdump -a debug-layer -a config -m $JUJU_CONTROLLER:$JUJU_MODEL
+        aws s3 sync juju-crashdump*tar.gz s3://jenkaas/$(date "+%Y/%m/%d")/
+        aws s3 sync $OGC_RESULTS_PATH/*.json s3://jenkaas/$(date "+%Y/%m/%d")/
   - runner:
       description: Teardown juju deployment
       cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
-      tags: [validate, validate-upgrade, destroy]
 
 
 meta:
