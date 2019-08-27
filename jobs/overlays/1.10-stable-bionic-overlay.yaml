@@ -1,8 +1,0 @@
-series: bionic
-applications:
-  kubernetes-master:
-    options:
-      channel: 1.10/stable
-  kubernetes-worker:
-    options:
-      channel: 1.10/stable

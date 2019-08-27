@@ -1,8 +1,0 @@
-series: bionic
-applications:
-  kubernetes-master:
-    options:
-      channel: 1.11/edge
-  kubernetes-worker:
-    options:
-      channel: 1.11/edge

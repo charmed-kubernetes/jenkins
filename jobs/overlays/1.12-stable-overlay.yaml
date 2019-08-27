@@ -1,7 +1,0 @@
-applications:
-  kubernetes-master:
-    options:
-      channel: 1.12/stable
-  kubernetes-worker:
-    options:
-      channel: 1.12/stable

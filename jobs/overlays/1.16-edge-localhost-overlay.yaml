@@ -1,8 +1,8 @@
 applications:
   kubernetes-master:
     options:
-      channel: 1.15/edge
+      channel: 1.16/edge
   kubernetes-worker:
     options:
-      channel: 1.15/edge
+      channel: 1.16/edge
       proxy-extra-args: 'proxy-mode=userspace'

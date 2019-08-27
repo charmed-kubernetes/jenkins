@@ -1,8 +1,0 @@
-series: xenial
-applications:
-  kubernetes-master:
-    options:
-      channel: 1.12/edge
-  kubernetes-worker:
-    options:
-      channel: 1.12/edge
