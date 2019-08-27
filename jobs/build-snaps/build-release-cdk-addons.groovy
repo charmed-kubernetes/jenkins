@@ -16,7 +16,7 @@ pipeline {
         PATH = "${utils.cipaths}"
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
-        REGISTRY_URL = 'upload.image-registry.canonical.com:5000'
+        REGISTRY_URL = 'upload.rocks.canonical.com:5000'
         REGISTRY_REPLACE = 'docker.io/ k8s.gcr.io/ quay.io/'
     }
     options {
