@@ -180,7 +180,7 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t validate"
+          JOB_TAGS: "-t core"
       - unset-env
 
 
@@ -237,33 +237,33 @@
           JOB_TAGS: "-t validate-upgrade"
       - unset-env
 
-- job:
-    name: 'validate-ck-daily'
-    description: |
-      Validates CDK daily, supports last three recent releases plus latest upcoming release.
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    triggers:
-      - timed: "@daily"
-    publishers:
-      - trigger-parameterized-builds:
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.16/edge"
-          condition: ALWAYS
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.15/edge"
-          condition: ALWAYS
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.14/edge"
-          condition: ALWAYS
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.13/edge"
-          condition: ALWAYS
+# - job:
+#     name: 'validate-ck-daily'
+#     description: |
+#       Validates CDK daily, supports last three recent releases plus latest upcoming release.
+#     project-type: freestyle
+#     scm:
+#       - k8s-jenkins-jenkaas
+#     triggers:
+#       - timed: "@daily"
+#     publishers:
+#       - trigger-parameterized-builds:
+#         - project: validate-ck
+#           predefined-parameters: |
+#             SNAP_VERSION="1.16/edge"
+#           condition: ALWAYS
+#         - project: validate-ck
+#           predefined-parameters: |
+#             SNAP_VERSION="1.15/edge"
+#           condition: ALWAYS
+#         - project: validate-ck
+#           predefined-parameters: |
+#             SNAP_VERSION="1.14/edge"
+#           condition: ALWAYS
+#         - project: validate-ck
+#           predefined-parameters: |
+#             SNAP_VERSION="1.13/edge"
+#           condition: ALWAYS
 
 # ADDONS --------------------------------------------------------------------- #
 - job:
