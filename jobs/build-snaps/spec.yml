@@ -1,73 +1,13 @@
 plan:
-  - runner:
-      env-requires:
-        - SNAP_LIST
-        - GIT_SSH_COMMAND
-        - K8STEAMCI_USR
-        - K8STEAMCI_PSW
-      cmd: python3 -m snap sync-upstream --snap-list $SNAP_LIST
-      tags: [sync]
-      description: Sync K8s snap recipes
-      long-description: |
-        Pull down upstream release tags and make sure our launchpad git repo has those
-        tags synced. Next, we push any new releases (major, minor, or patch) to the
-        launchpad builders for building the snaps from source and uploading to the snap
-        store.
+  - script:
+      - python3 -m snap sync-upstream --snap-list $SNAP_LIST
+    tags: [sync]
+  - script:
+      - python3 -m snap sync-upstream --snap-list $SNAP_LIST --force --patches $SNAP_PATCHES_LIST
+    tags: [sync-with-patches]
 
-        #### Running
-
-        ```
-        export GIT_SSH_COMMAND=\"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no\"
-        export SNAP_LIST=\"$SNAP_LIST\"
-        export K8STEAMCI_USR=\"$K8STEAMCI_USR\"
-        export K8STEAMCI_PSW=\"$K8STEAMCI_PSW\"
-
-        ogc --spec builders/snaps/spec.yml --debug execute -t sync
-        ```
-  - runner:
-      env-requires:
-        # - SNAP_PATCHES_LIST
-        - SNAP_LIST
-        - GIT_SSH_COMMAND
-        - K8STEAMCI_USR
-        - K8STEAMCI_PSW
-      cmd: python3 -m snap sync-upstream --snap-list $SNAP_LIST --force --patches $SNAP_PATCHES_LIST
-      tags: [sync-with-patches]
-      description: Sync K8s snap recipes w/ patches
-      long-description: |
-        Pull down upstream release tags and make sure our launchpad git repo has those
-        tags synced. Next, we push any new releases (major, minor, or patch) to the
-        launchpad builders for building the snaps from source and uploading to the snap
-        store.
-
-        #### Patches
-
-        In addition to building the snaps, this provides the ability to patch the core
-        Kubernetes code. The format is as follows:
-
-        Each top level key references the Kubernetes version to patch, except for `all`
-        as this applies to all releases.
-
-        ```yaml
-        all:
-          - master-001.patch
-          - master-002.patch
-        1.13:
-          - builders/snaps/patches/release-1.13-001.patch
-        1.14:
-          - builders/snaps/patches/release-1.14-001.patch
-        1.15:
-          - builders/snaps/patches/release-1.15-001.patch
-        ```
-
-  - runner:
-      description: Promote snaps from/to a certain version/channel/track
-      env_requires:
-        - SNAP_LIST
-        - SNAP_ARCH
-        - FROM_TRACK
-        - TO_TRACK
-      script: |
+  - script:
+      - |
         #!/bin/bash
         set -eux
         python3 -m snap promote-snaps \
@@ -76,7 +16,7 @@ plan:
                         --from-track $FROM_TRACK \
                         --to-track $TO_TRACK \
                         --exclude-pre
-      tags: [promote-snaps]
+    tags: [promote-snaps]
 
 meta:
   name: Builds snaps
@@ -92,6 +32,43 @@ meta:
 
     **Note**: Check LP for any credentials needed.
 
+    #### Building snaps
+
+    Pull down upstream release tags and make sure our launchpad git repo has those
+    tags synced. Next, we push any new releases (major, minor, or patch) to the
+    launchpad builders for building the snaps from source and uploading to the snap
+    store.
+
+    #### Running
+
+    ```
+    export GIT_SSH_COMMAND=\"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no\"
+    export SNAP_LIST=\"$SNAP_LIST\"
+    export K8STEAMCI_USR=\"$K8STEAMCI_USR\"
+    export K8STEAMCI_PSW=\"$K8STEAMCI_PSW\"
+
+    ogc --spec builders/snaps/spec.yml --debug execute -t sync
+    ```
+
+    #### Patches
+
+    In addition to building the snaps, this provides the ability to patch the core
+    Kubernetes code. The format is as follows:
+
+    Each top level key references the Kubernetes version to patch, except for `all`
+    as this applies to all releases.
+
+    ```yaml
+    all:
+      - master-001.patch
+      - master-002.patch
+    1.13:
+      - builders/snaps/patches/release-1.13-001.patch
+    1.14:
+      - builders/snaps/patches/release-1.14-001.patch
+    1.15:
+      - builders/snaps/patches/release-1.15-001.patch
+    ```
 
   mkdocs:
     destination:
