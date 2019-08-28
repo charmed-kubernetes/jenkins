@@ -15,6 +15,11 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
+    install:
+      - pip install -rrequirements.txt
+      - pip install -rrequirements_test.txt
+      - pip install awscli
+      - pip install git+https://github.com/juju/juju-crashdump.git
     before-script:
       - python3 jobs/integration/tigera_aws.py cleanup
       - juju:
@@ -60,9 +65,9 @@ plan:
              --controller $JUJU_CONTROLLER
     after-script:
       - juju-crashdump -a debug-layer -a config -m $JUJU_CONTROLLER:$JUJU_MODEL
-      - /snap/bin/aws s3 cp *.log s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - /snap/bin/aws s3 cp *.json s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - /snap/bin/aws s3 cp juju-crashdump* s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - aws s3 cp *.log s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - aws s3 cp *.json s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - aws s3 cp juju-crashdump* s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
   - <<: *BASE_JOB
   - <<: *BASE_JOB

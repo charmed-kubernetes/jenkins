@@ -365,3 +365,5 @@
     - name: cleanup leftover artifacts
       command: python3 fixtures/cleanup-env.py
       ignore_errors: yes
+      tags:
+        - jenkins

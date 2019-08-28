@@ -10,6 +10,7 @@ plan:
     install:
       - pip install -rrequirements.txt
       - pip install -rrequirements_test.txt
+      - pip install awscli
       - pip install git+https://github.com/juju/juju-crashdump.git
     before-script:
       - juju:
@@ -44,9 +45,9 @@ plan:
                  --model $JUJU_MODEL
     after-script:
       - juju-crashdump -a debug-layer -a config -m $JUJU_CONTROLLER:$JUJU_MODEL
-      - /snap/bin/aws s3 cp *.log s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - /snap/bin/aws s3 cp *.json s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - /snap/bin/aws s3 cp juju-crashdump* s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - aws s3 cp *.log s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - aws s3 cp *.json s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - aws s3 cp juju-crashdump* s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
     tags: [core]
   - <<: *BASE_JOB
@@ -256,31 +257,11 @@ meta:
   description: |
     Verifies that CK passes integration tests
   examples:
-    - synopsis: Listing tasks that can be run
+    - synopsis: Running the base validation suite against a deployed Kubernetes
       code: |
         ```
-        > ogc --spec spec.yml tasks
-
-        Task                                                  Phase     Tags
-        ----------------------------------------------------  --------  -----------------------------------------------------------
-        Performs a snapd channel upgrade                      setup     validate-snapd-upgrade
-        Bootstrap and deploy kubernetes                       setup     validate, validate-snapd-upgrade, validate-upgrade
-        Run testsuite against deployed CK                     plan      validate
-        Performs an upgrade validation against a deployed CK  plan      validate-upgrade
-        Run testsuite against an upgrade snapcore             plan      validate-snapd-upgrade
-        Teardown juju deployment                              teardown  destroy, validate, validate-snapd-upgrade, validate-upgrade
-        Reset snapd back to stable                            teardown  validate-snapd-upgrade
-
-          Example:
-
-          > JUJU_CONTROLLER=my-controller ogc --spec spec.yml \
-              execute --phase teardown -t destroy
-        ```
-    - synopsis: Running the base validation suite against a deploy Kubernetes
-      code: |
-        ```
-        > JUJU_CLOUD=aws/us-east-1 JUJU_CONTROLLER=my-controller JUJU_MODEL=my-model \
-              ogc --spec spec.yml execute -t validate
+        # edit spec.yml and update the appropriate vars under the `env:` section
+        > ogc --spec jobs/validate/spec.yml -t core
         ```
   jenkins-job-builder:
     job-source: ../validate.yaml
