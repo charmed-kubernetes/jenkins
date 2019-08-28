@@ -16,44 +16,12 @@
           <thead class="thead-dark">
             <tr>
               <th class="align-middle">Job Name</th>
-              {% for day in validate_report.headers %}
+              {% for day in headers %}
               <th class="align-middle text-center" style="min-width: 70px;">{{ day }}</th>
               {% endfor %}
             </tr>
           </thead>
-          {% for row in validate_report.rows %}
-          <tr>
-            <td class="align-middle">{{ row[0] }}</td>
-            {% for day in row[1:] %}
-            <td class="{{ day['bg_class'] }} text-center align-middle" style="height: 50px;"><strong>{{ day.build_number }}</strong> {% if day['results_file'] %}<a href="{{ day['results_file'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download the results for debugging"><i class="fas fa-download"></i> </a>{% endif %}</td>
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </table>
-      </div>
-    </div>
-    <div class="col">
-    </div>
-  </div>
-  <div class="row">
-    <div class="col p-3">
-      <h3>Validation Addons</h3>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col">
-      <div class="table-responsive">
-        <table class="table table-hover table-bordered">
-          <thead class="thead-dark">
-            <tr>
-              <th class="align-middle">Job Name</th>
-              {% for day in validate_addon_report.headers %}
-              <th class="align-middle text-center" style="min-width: 70px;">{{ day }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          {% for row in validate_addon_report.rows %}
+          {% for row in rows %}
           <tr>
             <td class="align-middle">{{ row[0] }}</td>
             {% for day in row[1:] %}

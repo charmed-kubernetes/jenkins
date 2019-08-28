@@ -41,9 +41,11 @@ plan:
                  --model $JUJU_MODEL
     after-script:
       - juju-crashdump -a debug-layer -a config -m $JUJU_CONTROLLER:$JUJU_MODEL
-      - aws s3 cp *.log s3://jenkaas/$JOB_NAME/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - aws s3 cp *.json s3://jenkaas/$JOB_NAME/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - aws s3 cp juju-crashdump* s3://jenkaas/$JOB_NAME/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - python3 jobs/infra/collect-debug.py push --key-id 'build_log' ogc.log
+      - python3 jobs/infra/collect-debug.py push --key-id 'results_file' juju-crashdump*
+      - python3 jobs/infra/collect-debug.py push --key-id 'metadata' metadata.json
+      - python3 jobs/infra/collect-debug.py push --key-id 'job_results' *job.json
+      - python3 jobs/infra/collect-debug.py save-meta metadata.json
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
     tags: [core]
   - <<: *BASE_JOB

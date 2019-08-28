@@ -1,5 +1,5 @@
 meta:
-  name: Verify CK with Tigera
+  name: Verify CK with Calico
   description: |
     Verifies that CK with Calico passes integration tests
   mkdocs:
@@ -15,6 +15,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
+      - TEST_BGP=1
     before-script:
       - python3 jobs/integration/tigera_aws.py cleanup
       - juju:
@@ -27,9 +28,15 @@ plan:
             run: |
               #!/bin/bash
               set -eux
-              python3 jobs/integration/tigera_aws.py bootstrap \
-                  --bootstrap-constraints $JUJU_BOOTSTRAP_CONSTRAINTS \
-                  --model-default test-mode=true
+              SET_NUM_SUBNETS=1
+              if [ -z $TEST_BGP ]; then
+                SET_NUM_SUBNETS=2
+              fi
+
+              NUM_SUBNETS=$SET_NUM_SUBNETS python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap
+              if [ -z $TEST_BGP ]; then
+                python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router
+              fi
           deploy:
             bundle: $JUJU_DEPLOY_BUNDLE
             channel: $JUJU_DEPLOY_CHANNEL
@@ -54,7 +61,7 @@ plan:
       - |
         #!/bin/bash
         set -eux
-        pytest jobs/integration/validation.py \
+        pytest $INTEGRATION_TEST_PATH/validation.py \
              --cloud $JUJU_CLOUD \
              --model $JUJU_MODEL \
              --controller $JUJU_CONTROLLER
@@ -67,12 +74,23 @@ plan:
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=kubernetes-calico
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
-      - JUJU_DEPLOY_BUNDLE=kubernetes-calico
   - <<: *BASE_JOB
     env:
-      - JUJU_DEPLOY_BUNDLE=kubernetes-calico
+      - SNAP_VERSION=1.13/edge
+
+  # test upgrade
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.16/edge
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+  - <<: *BASE_JOB
+    env:
       - SNAP_VERSION=1.13/edge
