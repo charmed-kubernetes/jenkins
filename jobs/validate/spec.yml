@@ -19,6 +19,7 @@ plan:
           model: $JUJU_MODEL
           bootstrap:
             debug: no
+            constraints: 'arch=amd64'
             replace-controller: yes
             model-default:
               - test-mode=true
