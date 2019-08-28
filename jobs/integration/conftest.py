@@ -15,37 +15,21 @@ from .utils import upgrade_charms, upgrade_snaps, arch, log_snap_versions
 def pytest_addoption(parser):
 
     parser.addoption(
-        "--controller",
-        action="store",
-        required=True,
-        help="Juju controller to use",
+        "--controller", action="store", required=True, help="Juju controller to use"
     )
 
-    parser.addoption(
-        "--model", action="store", required=True, help="Juju model to use"
-    )
+    parser.addoption("--model", action="store", required=True, help="Juju model to use")
+
+    parser.addoption("--series", action="store", default="bionic", help="Base series")
 
     parser.addoption(
-        "--series", action="store", default="bionic", help="Base series"
-    )
-
-    parser.addoption(
-        "--cloud",
-        action="store",
-        default="aws/us-east-2",
-        help="Juju cloud to use",
+        "--cloud", action="store", default="aws/us-east-2", help="Juju cloud to use"
     )
     parser.addoption(
-        "--charm-channel",
-        action="store",
-        default="edge",
-        help="Charm channel to use",
+        "--charm-channel", action="store", default="edge", help="Charm channel to use"
     )
     parser.addoption(
-        "--bundle-channel",
-        action="store",
-        default="edge",
-        help="Bundle channel to use",
+        "--bundle-channel", action="store", default="edge", help="Bundle channel to use"
     )
     parser.addoption(
         "--snap-channel",
@@ -127,12 +111,8 @@ async def model(request, event_loop, tools):
     model = Model(event_loop)
     await model.connect(tools.connection)
     if request.config.getoption("--is-upgrade"):
-        upgrade_snap_channel = request.config.getoption(
-            "--upgrade-snap-channel"
-        )
-        upgrade_charm_channel = request.config.getoption(
-            "--upgrade-charm-channel"
-        )
+        upgrade_snap_channel = request.config.getoption("--upgrade-snap-channel")
+        upgrade_charm_channel = request.config.getoption("--upgrade-charm-channel")
         if not upgrade_snap_channel and upgrade_charm_channel:
             raise Exception(
                 "Must have both snap and charm upgrade "
@@ -188,9 +168,7 @@ def skip_by_app(request, model):
         apps = request.node.get_closest_marker("skip_apps").args[0]
         is_available = any(app in model.applications for app in apps)
         if not is_available:
-            pytest.skip(
-                "skipped, no matching applications found: {}".format(apps)
-            )
+            pytest.skip("skipped, no matching applications found: {}".format(apps))
 
 
 @pytest.fixture(autouse=True)
@@ -199,10 +177,7 @@ def skip_by_model(request, model):
     running tests applicable to vault
     """
     if request.node.get_closest_marker("skip_model"):
-        if (
-            request.node.get_closest_marker("skip_model").args[0]
-            not in model.info.name
-        ):
+        if request.node.get_closest_marker("skip_model").args[0] not in model.info.name:
             pytest.skip("skipped on this model: {}".format(model.info.name))
 
 
@@ -229,17 +204,9 @@ async def deploy(request, tools):
     test_run_nonce = uuid.uuid4().hex[-4:]
     nonce_model = "{}-{}".format(tools.model_name, test_run_nonce)
 
-    await tools.juju(
-        "add-model",
-        "-c",
-        tools.controller_name,
-        nonce_model,
-        tools.cloud,
-    )
+    await tools.juju("add-model", "-c", tools.controller_name, nonce_model, tools.cloud)
 
-    await tools.juju(
-        "model-config", "-m", tools.connection, "test-mode=true"
-    )
+    await tools.juju("model-config", "-m", tools.connection, "test-mode=true")
 
     _model_obj = Model()
     await _model_obj.connect(f"{tools.controller_name}:{nonce_model}")

@@ -26,9 +26,9 @@ def compare_releases(a, b):
 
     a = a.strip()
     b = b.strip()
-    if a.startswith('v'):
+    if a.startswith("v"):
         a = a[1:]
-    if b.startswith('v'):
+    if b.startswith("v"):
         b = b[1:]
 
     if a == b:
@@ -65,8 +65,8 @@ def get_latest_pre_release(track, patch):
     search_version = "v{}.0-{}".format(track, patch)
     release_names = []
     for release in releases:
-        if release['name'].startswith(search_version):
-            release_names.append(release['name'][1:])
+        if release["name"].startswith(search_version):
+            release_names.append(release["name"][1:])
 
     if len(release_names) > 0:
         max_release = release_names[0]

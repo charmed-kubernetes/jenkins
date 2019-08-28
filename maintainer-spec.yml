@@ -4,31 +4,8 @@ meta:
     OGC Spec for generating documentation, running unittests, etc.
 
 plan:
-  - env:
-      description: Show spec dependencies
-      deps:
-        - "pip:requirements_dev.txt"
-        - "snap:aws-cli/latest/stable:classic"
-      tags: [show-env]
-
-  - runner:
-      description: Run unittests
-      cmd: pytest **/*/tests
-      tags: [test]
-  - specdoc:
-      description: |
-        Generates the markdown content from spec files
-      file-glob: jobs/**/*spec.yml
-      top-level-dir: .
-      tags: [build-specs, build-docs]
-  - runner:
-      description: Builds docs
-      cmd: mkdocs build
-      tags: [build-docs]
-  - runner:
-      description: Deploys documentation
-      script: |
-        #!/bin/bash
-        set -eux
-        /snap/bin/aws s3 sync site/ s3://jenkaas/docs
-      tags: [deploy-docs]
+  script:
+    - specdoc:
+        file-glob: jobs/**/*spec.yml
+        top-level-dir: .
+    - mkdocs build

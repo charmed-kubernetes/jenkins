@@ -14,25 +14,18 @@ async def test_kata(model, tools):
     :return: None
     """
     kata_app = await model.deploy(
-        'cs:~containers/kata',
-        num_units=0,  # Subordinate.
-        channel='edge'
+        "cs:~containers/kata", num_units=0, channel="edge"  # Subordinate.
     )
 
     await kata_app.add_relation(
-        'kata:containerd',
-        'kubernetes-master:container-runtime'
+        "kata:containerd", "kubernetes-master:container-runtime"
     )
 
     await kata_app.add_relation(
-        'kata:containerd',
-        'kubernetes-worker:container-runtime'
+        "kata:containerd", "kubernetes-worker:container-runtime"
     )
 
-    await kata_app.add_relation(
-        'kata:untrusted',
-        'containerd:untrusted'
-    )
+    await kata_app.add_relation("kata:untrusted", "containerd:untrusted")
 
     await tools.juju_wait()
 

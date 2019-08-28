@@ -224,7 +224,7 @@ def arch():
 async def disable_source_dest_check(model_name):
     path = os.path.dirname(__file__) + "/tigera_aws.py"
     env = os.environ.copy()
-    env['JUJU_MODEL'] = model_name
+    env["JUJU_MODEL"] = model_name
     cmd = [path, "disable-source-dest-check"]
     await asyncify(check_call)(cmd, env=env)
 

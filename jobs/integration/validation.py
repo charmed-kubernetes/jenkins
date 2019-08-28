@@ -82,7 +82,9 @@ async def run_until_success(unit, cmd, timeout_insec=None):
         ):
             return action.data["results"]["Stdout"]
         else:
-            log("Action " + action.status + ". Command failed on unit " + unit.entity_id)
+            log(
+                "Action " + action.status + ". Command failed on unit " + unit.entity_id
+            )
             log("cmd: " + cmd)
             if "results" in action.data:
                 log("code: " + action.data["results"]["Code"])
@@ -286,7 +288,9 @@ async def test_microbot(model, tools):
     assert action.status == "completed"
     for i in range(60):
         try:
-            resp = await tools.requests.get("http://" + action.data["results"]["address"])
+            resp = await tools.requests.get(
+                "http://" + action.data["results"]["address"]
+            )
             if resp.status_code == 200:
                 return
         except requests.exceptions.ConnectionError:
@@ -1171,7 +1175,9 @@ data:
             await asyncio.sleep(10)
 
         assert output.status == "completed"
-        assert "invalid user credentials" not in output.data["results"]["Stderr"].lower()
+        assert (
+            "invalid user credentials" not in output.data["results"]["Stderr"].lower()
+        )
         assert "error" not in output.data["results"]["Stderr"].lower()
 
         # verify auth failure on pods outside of default namespace
@@ -1181,7 +1187,9 @@ data:
             --kubeconfig /home/ubuntu/config get po -n kube-system"
         output = await one_master.run(cmd)
         assert output.status == "completed"
-        assert "invalid user credentials" not in output.data["results"]["Stderr"].lower()
+        assert (
+            "invalid user credentials" not in output.data["results"]["Stderr"].lower()
+        )
         assert "forbidden" in output.data["results"]["Stderr"].lower()
 
     # verify auth works now that it is off
@@ -1283,7 +1291,9 @@ async def test_encryption_at_rest(model, tools):
         }
         if "kubeapi-load-balancer" in model.applications:
             tasks.add(
-                model.add_relation("easyrsa:client", "kubeapi-load-balancer:certificates")
+                model.add_relation(
+                    "easyrsa:client", "kubeapi-load-balancer:certificates"
+                )
             )
         (done2, pending2) = await asyncio.wait(tasks)
         for task in done2:
@@ -1299,9 +1309,7 @@ async def test_dns_provider(model, tools):
     master_unit = master_app.units[0]
 
     async def cleanup():
-        cmd = (
-            "/snap/bin/kubectl delete po validate-dns-provider-ubuntu --ignore-not-found"
-        )
+        cmd = "/snap/bin/kubectl delete po validate-dns-provider-ubuntu --ignore-not-found"
         await run_until_success(master_unit, cmd)
 
     async def wait_for_pod_removal(prefix):

@@ -99,7 +99,13 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
 
         def download():
             for line in sh.charm(
-                    "pull-source", "-v", "-i", layer_index, layer_name, _iter=True, _bg_exc=False
+                "pull-source",
+                "-v",
+                "-i",
+                layer_index,
+                layer_name,
+                _iter=True,
+                _bg_exc=False,
             ):
                 click.echo(f" -- {line.strip()}")
 
@@ -217,8 +223,12 @@ def cli():
 
 
 @cli.command()
-@click.option("--layer-index", required=True, help="Charm layer index",
-              default="https://charmed-kubernetes.github.io/layer-index/")
+@click.option(
+    "--layer-index",
+    required=True,
+    help="Charm layer index",
+    default="https://charmed-kubernetes.github.io/layer-index/",
+)
 @click.option("--layer-list", required=True, help="list of layers in YAML format")
 @click.option(
     "--layer-branch",
@@ -300,7 +310,12 @@ def build(
 
             dst_path = str(charm_env.build_dir / charm_name)
             for line in sh.git.clone(
-                    "--branch", charm_branch, downstream, src_path, _iter=True, _bg_exc=False
+                "--branch",
+                charm_branch,
+                downstream,
+                src_path,
+                _iter=True,
+                _bg_exc=False,
             ):
                 click.echo(line)
 
@@ -321,9 +336,15 @@ def build(
                 )
     _promote(charm_list, filter_by_tag, to_channel=to_channel)
 
+
 @cli.command()
 @click.option("--bundle-list", required=True, help="list of bundles in YAML format")
-@click.option("--bundle-branch", default="master", required=True, help="Upstream branch to build bundles from")
+@click.option(
+    "--bundle-branch",
+    default="master",
+    required=True,
+    help="Upstream branch to build bundles from",
+)
 @click.option(
     "--filter-by-tag",
     required=True,
@@ -340,21 +361,34 @@ def build(
     "--to-channel", required=True, help="channel to promote bundle to", default="edge"
 )
 @click.option("--dry-run", is_flag=True)
-def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run):
-    return _build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run)
+def build_bundles(
+    bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run
+):
+    return _build_bundles(
+        bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run
+    )
 
 
-def _build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run):
+def _build_bundles(
+    bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run
+):
     charm_env = CharmEnv()
     _bundle_list = yaml.safe_load(Path(bundle_list).read_text(encoding="utf8"))
     click.echo("bundle builds")
     bundle_repo_dir = charm_env.tmp_dir / "bundles-kubernetes"
     bundle_build_dir = charm_env.tmp_dir / "tmp-bundles"
-    sh.rm('-rf', bundle_repo_dir)
-    sh.rm('-rf', bundle_build_dir)
+    sh.rm("-rf", bundle_repo_dir)
+    sh.rm("-rf", bundle_build_dir)
     os.makedirs(str(bundle_repo_dir), exist_ok=True)
     os.makedirs(str(bundle_build_dir), exist_ok=True)
-    for line in sh.git.clone("--branch", bundle_branch, bundle_repo, str(bundle_repo_dir), _iter=True, _bg_exc=False):
+    for line in sh.git.clone(
+        "--branch",
+        bundle_branch,
+        bundle_repo,
+        str(bundle_repo_dir),
+        _iter=True,
+        _bg_exc=False,
+    ):
         click.echo(line)
     for bundle_map in _bundle_list:
         for bundle_name, bundle_opts in bundle_map.items():
@@ -368,15 +402,19 @@ def _build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_ch
                 str(bundle_build_dir / bundle_name),
                 "-c",
                 to_channel,
-                bundle_opts['fragments']
+                bundle_opts["fragments"],
             ]
             click.echo(f"Running {' '.join(cmd)}")
             import subprocess
-            subprocess.call(' '.join(cmd), shell=True)
+
+            subprocess.call(" ".join(cmd), shell=True)
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
             click.echo(f"Check {bundle_entity}")
             _push(
-                str(bundle_repo_dir), str(bundle_build_dir / bundle_name), bundle_entity, is_bundle=True
+                str(bundle_repo_dir),
+                str(bundle_build_dir / bundle_name),
+                bundle_entity,
+                is_bundle=True,
             )
     _promote(bundle_list, filter_by_tag, to_channel=to_channel)
 

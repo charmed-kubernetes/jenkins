@@ -10,21 +10,20 @@ from .utils import (
     verify_ready,
     verify_completed,
     verify_deleted,
-    retry_async_with_timeout
+    retry_async_with_timeout,
 )
 from .logger import log, log_calls_async
 from juju.controller import Controller
 from juju.errors import JujuError
+
 here = os.path.dirname(os.path.abspath(__file__))
 
 LXD_PROFILE = yaml.load(
     open(
         os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "templates",
-            "lxd-profile.yaml"
+            os.path.dirname(os.path.abspath(__file__)), "templates", "lxd-profile.yaml"
         ),
-        "r"
+        "r",
     )
 )
 
@@ -34,18 +33,11 @@ async def check_charm_profile_deployed(app, charm_name):
     # log("app_info %s" % machine.safe_data)
     # Assume that the only profile with juju-* is
     # the one we"re looking for.
-    result = subprocess.run(
-        ["lxc", "profile", "list"],
-        stdout=subprocess.PIPE
-    )
+    result = subprocess.run(["lxc", "profile", "list"], stdout=subprocess.PIPE)
 
     REGEX = r"(juju(-[a-zA-Z0-9]+)+(-[A-Za-z0-9]+)+(-[0-9])*)+"
-    matches = re.findall(
-        REGEX,
-        result.stdout.decode("utf-8")
-    )
+    matches = re.findall(REGEX, result.stdout.decode("utf-8"))
     log("[DEBUG] match: {}".format(str(matches)))
-
 
     # Profiles can be in the form of
     # juju-MODEL-NAME
@@ -56,8 +48,7 @@ async def check_charm_profile_deployed(app, charm_name):
         # In 3.7 stdout=subprocess.PIPE
         # can be replaced with capture_output... :-]
         result = subprocess.run(
-            ["lxc", "profile", "show", profile_name],
-            stdout=subprocess.PIPE
+            ["lxc", "profile", "show", profile_name], stdout=subprocess.PIPE
         )
         config = result.stdout.decode("utf-8")
 
@@ -88,20 +79,14 @@ async def check_charm_profile_deployed(app, charm_name):
     assert False
 
 
-@pytest.mark.parametrize(
-    "charm_name",
-    ["kubernetes-master", "kubernetes-worker"]
-)
+@pytest.mark.parametrize("charm_name", ["kubernetes-master", "kubernetes-worker"])
 @pytest.mark.asyncio
 async def test_lxd_profiles(model, charm_name):
     app = model.applications[charm_name]
     await check_charm_profile_deployed(app, charm_name)
 
 
-@pytest.mark.parametrize(
-    "charm_name",
-    ("kubernetes-worker", "kubernetes-master")
-)
+@pytest.mark.parametrize("charm_name", ("kubernetes-worker", "kubernetes-master"))
 @pytest.mark.asyncio
 async def test_lxd_profile_upgrade(model, charm_name, tools):
     app = model.applications[charm_name]

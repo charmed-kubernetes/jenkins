@@ -73,7 +73,7 @@ async def check_kube_node_conf_missing(
 @pytest.mark.parametrize("runtime", ["containerd", "docker"])
 @pytest.mark.asyncio
 async def test_http_conf_existing_container_runtime(
-        model, runtime, proxy_app, controller, connection_name, tools
+    model, runtime, proxy_app, controller, connection_name, tools
 ):
     container_endpoint = "%s:%s" % (runtime, runtime)
     container_runtime_name = "cs:~pjds/%s" % (runtime)

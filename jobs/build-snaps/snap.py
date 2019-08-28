@@ -67,11 +67,13 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
                 _fmt_version_str = f'{_fmt_version["major"]}.{_fmt_version["minor"]}'
                 tracks_to_publish = []
                 if _fmt_version["prerelease"]:
-                    if 'beta' in _fmt_version["prerelease"]:
+                    if "beta" in _fmt_version["prerelease"]:
                         click.echo(f"This is a beta release, setting edge/beta tracks")
-                        tracks_to_publish = [f"{_fmt_version_str}/edge",
-                                             f"{_fmt_version_str}/beta"]
-                    if 'alpha' in _fmt_version["prerelease"]:
+                        tracks_to_publish = [
+                            f"{_fmt_version_str}/edge",
+                            f"{_fmt_version_str}/beta",
+                        ]
+                    if "alpha" in _fmt_version["prerelease"]:
                         click.echo(f"This is an alpha release, setting edge tracks")
                         tracks_to_publish = [f"{_fmt_version_str}/edge"]
                 else:
@@ -169,7 +171,8 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
 
     snapcraft_yml = snapcraft_fn_tpl.read_text()
     snapcraft_yml = _render(
-        snapcraft_fn_tpl, {"snap_version": to_branch.lstrip("v"), "patches": patches_list}
+        snapcraft_fn_tpl,
+        {"snap_version": to_branch.lstrip("v"), "patches": patches_list},
     )
     snapcraft_fn.write_text(snapcraft_yml)
     if not dry_run:

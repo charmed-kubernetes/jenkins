@@ -183,6 +183,32 @@
           JOB_TAGS: "-t core"
       - unset-env
 
+- job:
+    name: 'validate-ck-upgrade'
+    description: |
+      Validates CDK minor release upgrades, supports last three recent releases.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
+      - test-params
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t validate-upgrade"
+      - unset-env
+
 
 - job:
     name: 'validate-ck-snapd-upgrade'
@@ -212,58 +238,26 @@
 
 
 - job:
-    name: 'validate-ck-upgrade'
+    name: 'validate-ck-daily'
     description: |
-      Validates CDK minor release upgrades, supports last three recent releases.
+      Validates CDK daily, supports last three recent releases plus latest upcoming release.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
-      - test-params
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    properties:
-      - block-on-build-release
-      - build-discarder:
-          num-to-keep: 7
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t validate-upgrade"
-      - unset-env
-
-# - job:
-#     name: 'validate-ck-daily'
-#     description: |
-#       Validates CDK daily, supports last three recent releases plus latest upcoming release.
-#     project-type: freestyle
-#     scm:
-#       - k8s-jenkins-jenkaas
-#     triggers:
-#       - timed: "@daily"
-#     publishers:
-#       - trigger-parameterized-builds:
-#         - project: validate-ck
-#           predefined-parameters: |
-#             SNAP_VERSION="1.16/edge"
-#           condition: ALWAYS
-#         - project: validate-ck
-#           predefined-parameters: |
-#             SNAP_VERSION="1.15/edge"
-#           condition: ALWAYS
-#         - project: validate-ck
-#           predefined-parameters: |
-#             SNAP_VERSION="1.14/edge"
-#           condition: ALWAYS
-#         - project: validate-ck
-#           predefined-parameters: |
-#             SNAP_VERSION="1.13/edge"
-#           condition: ALWAYS
+    triggers:
+      - timed: "@daily"
+    publishers:
+      - trigger-parameterized-builds:
+        - project: validate-ck
+          condition: ALWAYS
+        - project: validate-ck-vault
+          condition: ALWAYS
+        - project: validate-ck-tigera-secure-ee
+          condition: ALWAYS
+        - project: validate-ck-calico
+          condition: ALWAYS
+        - project: validate-ck-nvidia
+          condition: ALWAYS
 
 # ADDONS --------------------------------------------------------------------- #
 - job:
@@ -289,7 +283,32 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t validate"
+          JOB_TAGS: "-t vault"
+      - unset-env
+
+- job:
+    name: 'validate-ck-nvidia'
+    description: |
+      Validates CK, with NVidia.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t nvidia"
       - unset-env
 
 - job:
@@ -300,8 +319,7 @@
     scm:
       - k8s-jenkins-jenkaas
     parameters:
-      - juju-params:
-          override_juju_model: validate-tigera-ee
+      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -315,7 +333,6 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "tigera-ee-spec.yml"
-          JOB_TAGS: "-t validate"
       - unset-env
 
 - job:
@@ -345,5 +362,4 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "calico-spec.yml"
-          JOB_TAGS: "-t validate"
       - unset-env

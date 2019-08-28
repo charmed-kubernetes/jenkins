@@ -22,9 +22,8 @@ def cli():
     "--filter-by-tag",
     required=False,
     help="only build for tags, comma separated list",
-    multiple=True
+    multiple=True,
 )
-
 @click.option("--dry-run", is_flag=True)
 def cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
     return _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run)
@@ -48,7 +47,7 @@ def _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
             if not repos.get("needs_stable", True):
                 continue
 
-            tags = repos.get('tags', None)
+            tags = repos.get("tags", None)
             if tags:
                 if not any(match in filter_by_tag for match in tags):
                     continue
@@ -60,8 +59,12 @@ def _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
                 os.makedirs(identifier)
                 for line in sh.git.clone(downstream, identifier, _iter=True):
                     click.echo(line)
-                git_rev_master = sh.git('rev-parse', 'origin/master', _cwd=identifier).stdout.decode()
-                git_rev_stable = sh.git('rev-parse', 'origin/stable', _cwd=identifier).stdout.decode()
+                git_rev_master = sh.git(
+                    "rev-parse", "origin/master", _cwd=identifier
+                ).stdout.decode()
+                git_rev_stable = sh.git(
+                    "rev-parse", "origin/stable", _cwd=identifier
+                ).stdout.decode()
                 if git_rev_master == git_rev_stable:
                     click.echo(f"Skipping  :: {layer_name:^35} :: master == stable")
                     continue
@@ -69,7 +72,9 @@ def _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
                 sh.git.config("user.name", "cdkbot", _cwd=identifier)
                 sh.git.config("--global", "push.default", "simple")
                 sh.git.branch("-f", "stable", "master", _cwd=identifier)
-                for line in sh.git.push("-f", "origin", "stable", _cwd=identifier, _iter=True):
+                for line in sh.git.push(
+                    "-f", "origin", "stable", _cwd=identifier, _iter=True
+                ):
                     click.echo(line)
 
 
@@ -121,7 +126,9 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, dry_run):
 )
 @click.option("--dry-run", is_flag=True)
 def tag_stable(layer_list, charm_list, k8s_version, bundle_revision, dry_run):
-    return _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_revision, dry_run)
+    return _tag_stable_forks(
+        layer_list, charm_list, k8s_version, bundle_revision, dry_run
+    )
 
 
 def _sync_upstream(layer_list, dry_run):
@@ -147,7 +154,9 @@ def _sync_upstream(layer_list, dry_run):
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 try:
-                    for line in sh.git.clone(downstream, identifier, _iter=True, _bg_exc=False):
+                    for line in sh.git.clone(
+                        downstream, identifier, _iter=True, _bg_exc=False
+                    ):
                         click.echo(line)
                 except sh.ErrorReturnCode as e:
                     click.echo(f"Failed to clone repo: {e.stderr.decode()}")
@@ -156,16 +165,20 @@ def _sync_upstream(layer_list, dry_run):
                 sh.git.config("user.name", "cdkbot", _cwd=identifier)
                 sh.git.config("--global", "push.default", "simple")
                 sh.git.remote("add", "upstream", upstream, _cwd=identifier)
-                for line in sh.git.fetch("upstream", _cwd=identifier, _iter=True, _bg_exc=False):
+                for line in sh.git.fetch(
+                    "upstream", _cwd=identifier, _iter=True, _bg_exc=False
+                ):
                     click.echo(line)
                 sh.git.checkout("master", _cwd=identifier)
                 if "layer-index" in downstream:
                     sh.python3("update_readme.py", _cwd=identifier)
                 for line in sh.git.merge(
-                        "upstream/master", _cwd=identifier, _iter=True, _bg_exc=False
+                    "upstream/master", _cwd=identifier, _iter=True, _bg_exc=False
                 ):
                     click.echo(line)
-                for line in sh.git.push("origin", _cwd=identifier, _iter=True, _bg_exc=True):
+                for line in sh.git.push(
+                    "origin", _cwd=identifier, _iter=True, _bg_exc=True
+                ):
                     click.echo(line)
 
 
