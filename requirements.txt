@@ -1,3 +1,4 @@
+invoke
 ogc>=0.3.23,<1.0.0
 ogc-plugins-runner>=1.0.15
 ogc-plugins-juju>=1.0.10
