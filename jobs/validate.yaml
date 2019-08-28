@@ -165,8 +165,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds

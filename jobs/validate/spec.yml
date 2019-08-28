@@ -1,64 +1,259 @@
-setup:
-  - juju:
-      description: Bootstrap and deploy kubernetes
-      cloud: $JUJU_CLOUD
-      controller: $JUJU_CONTROLLER
-      model: $JUJU_MODEL
-      bootstrap:
-        debug: no
-        constraints: $JUJU_BOOTSTRAP_CONSTRAINTS
-        model-default:
-          - test-mode=true
-        replace-controller: yes
-        disable-add-model: no
-      deploy:
-        bundle: charmed-kubernetes
-        channel: $JUJU_DEPLOY_CHANNEL
-        overlay: |
-          applications:
-            kubernetes-master:
-              options:
-                channel: $SNAP_VERSION
-            kubernetes-worker:
-              options:
-                channel: $SNAP_VERSION
-        wait: yes
 plan:
-  - runner:
-      description: Run testsuite against deployed CK
-      script: |
+  - &BASE_JOB
+    env:
+      - SNAP_VERSION=1.16/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-2
+      - JUJU_CONTROLLER=validate-ck
+      - JUJU_MODEL=validate-model
+    install:
+      - pip install -rrequirements.txt
+      - pip install -rrequirements_test.txt
+      - pip install git+https://github.com/juju/juju-crashdump.git
+      - sudo apt install -qyf build-essential
+      - sudo snap install charm --edge --classic
+      - sudo snap install juju --classic
+      - sudo snap install aws-cli --classic
+    before-script:
+      - juju:
+          cloud: $JUJU_CLOUD
+          controller: $JUJU_CONTROLLER
+          model: $JUJU_MODEL
+          bootstrap:
+            debug: no
+            replace-controller: yes
+            model-default:
+              - test-mode=true
+          deploy:
+            reuse: no
+            bundle: $JUJU_DEPLOY_BUNDLE
+            overlay: |
+              applications:
+                kubernetes-master:
+                  options:
+                    channel: $SNAP_VERSION
+                kubernetes-worker:
+                  options:
+                    channel: $SNAP_VERSION
+            wait: yes
+            channel: $JUJU_DEPLOY_CHANNEL
+    script:
+      - |
         #!/bin/bash
         set -eux
         pytest jobs/integration/validation.py \
-             --cloud $JUJU_CLOUD \
-             --controller $JUJU_CONTROLLER \
-             --model $JUJU_MODEL
-  # - runner:
-  #     description: Performs an upgrade validation against a deployed CK
-  #     script: |
-  #       #!/bin/bash
-  #       set -eux
-  #       pytest jobs/integration/validation.py \
-  #            --cloud $JUJU_CLOUD \
-  #            --controller $JUJU_CONTROLLER \
-  #            --model $JUJU_MODEL \
-  #            --is-upgrade \
-  #            --upgrade-charm-channel $TEST_UPGRADE_CHARM_CHANNEL \
-  #            --upgrade-snap-channel $TEST_UPGRADE_SNAP_CHANNEL
-teardown:
-  - runner:
-      description: Get CDK Field Agent
-      script: |
-        #!/bin/bash
-        set -eux
-        pip install git+https://github.com/juju/juju-crashdump.git
-        juju-crashdump -a debug-layer -a config -m $JUJU_CONTROLLER:$JUJU_MODEL
-        aws s3 sync juju-crashdump*tar.gz s3://jenkaas/$(date "+%Y/%m/%d")/
-        aws s3 sync $OGC_RESULTS_PATH/*.json s3://jenkaas/$(date "+%Y/%m/%d")/
-  - runner:
-      description: Teardown juju deployment
-      cmd: juju destroy-controller --destroy-all-models --destroy-storage -y $JUJU_CONTROLLER
+                 --cloud $JUJU_CLOUD \
+                 --controller $JUJU_CONTROLLER \
+                 --model $JUJU_MODEL
+    after-script:
+      - juju-crashdump -a debug-layer -a config -m $JUJU_CONTROLLER:$JUJU_MODEL
+      - /snap/bin/aws s3 cp *.log s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - /snap/bin/aws s3 cp *.json s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - /snap/bin/aws s3 cp juju-crashdump* s3://jenkaas/$JUJU_DEPLOY_BUNDLE/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+    tags: [core]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+    tags: [core]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+    tags: [core]
+  - <<: *BASE_JOB
+    env:
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - SNAP_VERSION=1.13/edge
+    tags: [core]
 
+  # vault
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.16/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-vault
+    tags: [vault]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-vault
+    tags: [vault]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-vault
+    tags: [vault]
+  - <<: *BASE_JOB
+    env:
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-vault
+      - SNAP_VERSION=1.13/edge
+    tags: [vault]
+
+  # ceph
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.16/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-ceph
+    script:
+      - pytest jobs/integration/test_ceph.py::test_ceph
+    tags: [ceph]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-ceph
+    script:
+      - pytest jobs/integration/test_ceph.py::test_ceph
+    tags: [ceph]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-ceph
+    script:
+      - pytest jobs/integration/test_ceph.py::test_ceph
+    tags: [ceph]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.13/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-ceph
+    script:
+      - pytest jobs/integration/test_ceph.py::test_ceph
+    tags: [ceph]
+
+  # nvidia
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.16/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-nvidia
+    before-script:
+      - juju:
+          cloud: $JUJU_CLOUD
+          controller: $JUJU_CONTROLLER
+          model: $JUJU_MODEL
+          bootstrap:
+            debug: no
+            replace-controller: yes
+            model-default:
+              - test-mode=true
+          deploy:
+            reuse: no
+            bundle: $JUJU_DEPLOY_BUNDLE
+            overlay: |
+              applications:
+                kubernetes-master:
+                  constraints: cores=2 mem=8G root-disk=16G
+                  options:
+                    channel: $SNAP_VERSION
+                kubernetes-worker:
+                  constraints: instance-type=p2.xlarge
+                  options:
+                    channel: $SNAP_VERSION
+            wait: yes
+            channel: $JUJU_DEPLOY_CHANNEL
+    tags: [nvidia]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-nvidia
+    before-script:
+      - juju:
+          cloud: $JUJU_CLOUD
+          controller: $JUJU_CONTROLLER
+          model: $JUJU_MODEL
+          bootstrap:
+            debug: no
+            replace-controller: yes
+            model-default:
+              - test-mode=true
+          deploy:
+            reuse: no
+            bundle: $JUJU_DEPLOY_BUNDLE
+            overlay: |
+              applications:
+                kubernetes-master:
+                  constraints: cores=2 mem=8G root-disk=16G
+                  options:
+                    channel: $SNAP_VERSION
+                kubernetes-worker:
+                  constraints: instance-type=p2.xlarge
+                  options:
+                    channel: $SNAP_VERSION
+            wait: yes
+            channel: $JUJU_DEPLOY_CHANNEL
+    tags: [nvidia]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-nvidia
+    before-script:
+      - juju:
+          cloud: $JUJU_CLOUD
+          controller: $JUJU_CONTROLLER
+          model: $JUJU_MODEL
+          bootstrap:
+            debug: no
+            replace-controller: yes
+            model-default:
+              - test-mode=true
+          deploy:
+            reuse: no
+            bundle: $JUJU_DEPLOY_BUNDLE
+            overlay: |
+              applications:
+                kubernetes-master:
+                  constraints: cores=2 mem=8G root-disk=16G
+                  options:
+                    channel: $SNAP_VERSION
+                kubernetes-worker:
+                  constraints: instance-type=p2.xlarge
+                  options:
+                    channel: $SNAP_VERSION
+            wait: yes
+            channel: $JUJU_DEPLOY_CHANNEL
+    tags: [nvidia]
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.13/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_MODEL=validate-nvidia
+    before-script:
+      - juju:
+          cloud: $JUJU_CLOUD
+          controller: $JUJU_CONTROLLER
+          model: $JUJU_MODEL
+          bootstrap:
+            debug: no
+            replace-controller: yes
+            model-default:
+              - test-mode=true
+          deploy:
+            reuse: no
+            bundle: $JUJU_DEPLOY_BUNDLE
+            overlay: |
+              applications:
+                kubernetes-master:
+                  constraints: cores=2 mem=8G root-disk=16G
+                  options:
+                    channel: $SNAP_VERSION
+                kubernetes-worker:
+                  constraints: instance-type=p2.xlarge
+                  options:
+                    channel: $SNAP_VERSION
+            wait: yes
+            channel: $JUJU_DEPLOY_CHANNEL
+    tags: [nvidia]
 
 meta:
   name: Verify CK
