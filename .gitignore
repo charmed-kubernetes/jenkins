@@ -8,3 +8,5 @@ pytest.log
 site/
 *.json
 *.log
+jobs/reports/_build
+reports/_build
