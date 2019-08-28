@@ -46,9 +46,9 @@ plan:
                  --model $JUJU_MODEL
     after-script:
       - juju-crashdump -a debug-layer -a config -m $JUJU_CONTROLLER:$JUJU_MODEL
-      - aws s3 cp *.log s3://jenkaas/charmed-kubernetes/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - aws s3 cp *.json s3://jenkaas/charmed-kubernetes/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - aws s3 cp juju-crashdump* s3://jenkaas/charmed-kubernetes/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - aws s3 cp *.log s3://jenkaas/$JOB_NAME/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - aws s3 cp *.json s3://jenkaas/$JOB_NAME/$(date +"%Y/%m/%d")/$SNAP_VERSION/
+      - aws s3 cp juju-crashdump* s3://jenkaas/$JOB_NAME/$(date +"%Y/%m/%d")/$SNAP_VERSION/
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
     tags: [core]
   - <<: *BASE_JOB
