@@ -12,6 +12,7 @@ def test(c):
 
 @task
 def build_docs(c):
+    c.run("cp README.md docs/index.md")
     c.run("ogc --spec maintainer-spec.yml --debug -t build-docs")
 
 

@@ -15,11 +15,6 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
-    install:
-      - pip install -rrequirements.txt
-      - pip install -rrequirements_test.txt
-      - pip install awscli
-      - pip install git+https://github.com/juju/juju-crashdump.git
     before-script:
       - python3 jobs/integration/tigera_aws.py cleanup
       - juju:

@@ -6,3 +6,5 @@ __pycache__/
 logs/
 pytest.log
 site/
+*.json
+*.log

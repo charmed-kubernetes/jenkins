@@ -1,3 +1,4 @@
+awscli
 async-generator==1.10
 asyncio-extras==1.3.2
 aioify==0.3.1
@@ -26,3 +27,4 @@ semver==2.8.1
 sh==1.12.14
 theblues==0.5.1
 flaky==3.6.1
+git+https://github.com/juju/juju-crashdump.git

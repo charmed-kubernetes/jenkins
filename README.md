@@ -73,25 +73,18 @@ Job Builder. Example job:
 
 # Documentation
 
-## Prereqs
-
-Ability to create a virtualenv, install `virtualenvwrapper` from the archives.
-
 ## Build
 
 To build the docs do the following:
 
 ```
-> mkvirtualenv k8s
-> pip install -rrequirements.txt
-> pip install -rrequirements_doc.txt
-> inv build-docs
+> tox --workdir .tox -e py36 -- inv build-docs
 ```
 
 To deploy documentation (requires AWS credentials):
 
 ```
-> inv upload-docs
+> tox --workdir .tox -e py36 -- inv upload-docs
 ```
 
 
