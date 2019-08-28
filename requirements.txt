@@ -1,5 +1,5 @@
 invoke
-ogc>=0.3.23,<1.0.0
+ogc>=0.3.28,<1.0.0
 ogc-plugins-runner>=1.0.15
 ogc-plugins-juju>=1.0.10
 ogc-plugins-spec-doc>=1.0.3

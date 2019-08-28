@@ -1,3 +1,4 @@
+.tox
 .cache/
 .pytest_cache/
 cleanup-vpc*

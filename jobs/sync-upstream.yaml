@@ -25,7 +25,6 @@
           JOB_SPEC_DIR: "jobs/sync-upstream"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t sync"
-      - unset-env
 
 - job:
     name: 'sync-stable-tag-bundle-rev'
@@ -53,7 +52,6 @@
           JOB_SPEC_DIR: "jobs/sync-upstream"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t tag-stable-rev"
-      - unset-env
 
 - job:
     name: 'cut-stable-release'
@@ -78,4 +76,3 @@
           JOB_SPEC_DIR: "jobs/sync-upstream"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t cut-stable-release"
-      - unset-env

@@ -38,4 +38,3 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/infra"
           JOB_SPEC_FILE: "spec.yml"
-      - unset-env

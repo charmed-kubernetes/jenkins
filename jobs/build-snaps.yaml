@@ -30,11 +30,7 @@
               TAG="sync-with-patches"
           fi
 
-          . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
-          pip install -rjobs/build-snaps/requirements.txt
-
-          ogc --spec jobs/build-snaps/spec.yml --debug -t "$TAG"
-      - unset-env
+          tox -e py36 -- ogc --spec jobs/build-snaps/spec.yml --debug -t "$TAG"
 
 - job:
     name: 'promote-snaps'
@@ -62,7 +58,6 @@
           JOB_SPEC_DIR: "jobs/build-snaps"
           JOB_SPEC_FILE: spec.yml
           JOB_TAGS: "-t promote-snaps"
-      - unset-env
 
 
 - job-template:

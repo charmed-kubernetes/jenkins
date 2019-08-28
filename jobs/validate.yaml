@@ -179,7 +179,6 @@
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t core"
-      - unset-env
 
 - job:
     name: 'validate-ck-upgrade'
@@ -205,7 +204,6 @@
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t validate-upgrade"
-      - unset-env
 
 
 - job:
@@ -232,7 +230,6 @@
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t validate-snapd-upgrade"
-      - unset-env
 
 
 - job:
@@ -282,7 +279,6 @@
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t vault"
-      - unset-env
 
 - job:
     name: 'validate-ck-nvidia'
@@ -307,7 +303,6 @@
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t nvidia"
-      - unset-env
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
@@ -331,7 +326,6 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "tigera-ee-spec.yml"
-      - unset-env
 
 - job:
     name: 'validate-ck-calico'
@@ -360,4 +354,3 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "calico-spec.yml"
-      - unset-env
