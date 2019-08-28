@@ -6,6 +6,6 @@ meta:
 plan:
   - script:
       - specdoc:
-        file-glob: jobs/**/*spec.yml
-        top-level-dir: .
+          file-glob: jobs/**/*spec.yml
+          top-level-dir: .
       - mkdocs build

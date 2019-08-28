@@ -10,8 +10,8 @@ Builds Kubernetes snaps from source
 
 **Note**: Check LP for any credentials needed.
 
-## Plan Phase
-### Plugin: **runner** - Sync K8s snap recipes
+#### Building snaps
+
 Pull down upstream release tags and make sure our launchpad git repo has those
 tags synced. Next, we push any new releases (major, minor, or patch) to the
 launchpad builders for building the snaps from source and uploading to the snap
@@ -27,12 +27,6 @@ export K8STEAMCI_PSW=\"$K8STEAMCI_PSW\"
 
 ogc --spec builders/snaps/spec.yml --debug execute -t sync
 ```
-
-### Plugin: **runner** - Sync K8s snap recipes w/ patches
-Pull down upstream release tags and make sure our launchpad git repo has those
-tags synced. Next, we push any new releases (major, minor, or patch) to the
-launchpad builders for building the snaps from source and uploading to the snap
-store.
 
 #### Patches
 
@@ -54,4 +48,3 @@ all:
   - builders/snaps/patches/release-1.15-001.patch
 ```
 
-### Plugin: **runner** - Promote snaps from/to a certain version/channel/track

@@ -350,7 +350,7 @@
       tags:
         - adhoc
         - jenkins
-      become: false
+      become: no
       shell: |
         export GOPATH=$HOME/go
         mkdir -p $HOME/go/bin || true
@@ -362,3 +362,6 @@
         rm -rf $HOME/go/src/github.com/heptio/sonobuoy
       args:
         executable: /bin/bash
+    - name: cleanup leftover artifacts
+      command: python3 fixtures/cleanup-env.py
+      ignore_errors: yes

@@ -13,12 +13,3 @@ the job to build for different risks, _ie. kubernetes-master@stable branch_.
 3. Publishes the built charm to the charmstore for the particular channel
 set by **TO_CHANNEL**
 
-## Plan Phase
-### Plugin: **runner** - Builds the charms that make up Kubernetes
-
-### Plugin: **runner** - Buildes the bundles that make up Kubernetes
-
-### Plugin: **runner** - Promotes the charms that make up Kubernetes
-
-### Plugin: **runner** - Promotes the charms that make up Kubernetes
-
