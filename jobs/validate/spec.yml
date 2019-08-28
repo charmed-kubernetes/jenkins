@@ -255,17 +255,15 @@ plan:
 
 meta:
   name: Verify CK
-  description: |
-    Verifies that CK passes integration tests
-  examples:
-    - synopsis: Running the base validation suite against a deployed Kubernetes
+  synopsis:
+    - summary: Running the base validation suite against a deployed Kubernetes
       code: |
         ```
         # edit spec.yml and update the appropriate vars under the `env:` section
         > ogc --spec jobs/validate/spec.yml -t core
         ```
-  jenkins-job-builder:
-    job-source: ../validate.yaml
+  description: |
+    Verifies that CK passes integration tests
   mkdocs:
     destination:
       - "validations/ck/index.md"

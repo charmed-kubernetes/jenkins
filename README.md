@@ -12,13 +12,36 @@ This project contains the scripts used to build and test the CDK.
 
 Running the tests locally can be accomplished easily with tox. The tests expect
 certain environment variables to be set. These can be found by looking at the
-Jenkinsfile for each test. For example, the [jobs/validate/Jenkinsfile](
-https://github.com/juju-solutions/kubernetes-jenkins/blob/master/jobs/validate/Jenkinsfile)
-file has:
+help output from `pytest` under the **custom options** section.
 
 ```
-sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} ${utils.pytest} \
-    --junit-xml=validate.xml integration/test_cdk.py::test_validate"
+> pytest jobs/integration/validation.py --help
+
+custom options:
+  --no-flaky-report     Suppress the report at the end of the run detailing
+                        flaky test results.
+  --no-success-flaky-report
+                        Suppress reporting flaky test successesin the report
+                        at the end of the run detailing flaky test results.
+  --controller=CONTROLLER
+                        Juju controller to use
+  --model=MODEL         Juju model to use
+  --series=SERIES       Base series
+  --cloud=CLOUD         Juju cloud to use
+  --charm-channel=CHARM_CHANNEL
+                        Charm channel to use
+  --bundle-channel=BUNDLE_CHANNEL
+                        Bundle channel to use
+  --snap-channel=SNAP_CHANNEL
+                        Snap channel to use eg 1.16/edge
+  --is-upgrade          This test should be run with snap and charm upgrades
+  --upgrade-snap-channel=UPGRADE_SNAP_CHANNEL
+                        Snap channel to use eg 1.16/edge
+  --upgrade-charm-channel=UPGRADE_CHARM_CHANNEL
+                        Charm channel to use (stable, candidate, beta, edge)
+  --snapd-upgrade       run tests with upgraded snapd
+  --snapd-channel=SNAPD_CHANNEL
+                        Snap channel to install snapcore from
 ```
 
 This tells us what the commandline is to run this test and what parameters we
@@ -27,10 +50,11 @@ working directory for tox is in /var/lib/jenkins, which probably doesn't exist
 on development machines, so --workdir is used to specify a new directory to use.
 
 ```
-CONTROLLER=aws-us-east-1 MODEL=cdk CLOUD=aws tox --workdir .tox -e py36 -- \
-    pytest -v -s \
-    --junit-xml=validate.xml \
-    integration/test_cdk.py::test_validate 2>&1 | tee ~/log.txt
+tox --workdir .tox -e py36 -- \
+    pytest jobs/integration/validation.py \
+      --controller aws-us-east-1 \
+      --model cdk \
+      --cloud aws 2>&1 | tee ~/log.txt
 ```
 
 ## Developing new tests
@@ -61,11 +85,13 @@ To build the docs do the following:
 > mkvirtualenv k8s
 > pip install -rrequirements.txt
 > pip install -rrequirements_doc.txt
-> ogc --spec maintainer-spec.yml --debug execute -t build-docs
+> inv build-docs
 ```
 
 To deploy documentation (requires AWS credentials):
 
 ```
-> ogc --spec maintainer-spec.yml execute -t deploy-docs
+> inv upload-docs
 ```
+
+

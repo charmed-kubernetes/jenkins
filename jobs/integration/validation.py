@@ -298,7 +298,7 @@ async def test_microbot(model, tools):
                 "Caught connection error attempting to hit xip.io, "
                 "retrying. Error follows:"
             )
-            traceback.print_exc()
+            log(traceback.print_exc())
         await asyncio.sleep(0.5)
     raise MicrobotError("Microbot failed to start.")
 
