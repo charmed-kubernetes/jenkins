@@ -33,7 +33,7 @@
           . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
           pip install -rjobs/build-snaps/requirements.txt
 
-          ogc --spec jobs/build-snaps/spec.yml --debug execute -t "$TAG"
+          ogc --spec jobs/build-snaps/spec.yml --debug -t "$TAG"
       - unset-env
 
 - job:

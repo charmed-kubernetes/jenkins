@@ -4,8 +4,8 @@ meta:
     OGC Spec for generating documentation, running unittests, etc.
 
 plan:
-  script:
-    - specdoc:
+  - script:
+      - specdoc:
         file-glob: jobs/**/*spec.yml
         top-level-dir: .
-    - mkdocs build
+      - mkdocs build
