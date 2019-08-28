@@ -1,25 +1,6 @@
 plan:
-  - runner:
-      description: |
-        Builds the charms that make up Kubernetes
-      env-requires:
-        - CHARM_BUILD_DIR
-        - CHARM_LAYERS_DIR
-        - CHARM_INTERFACES_DIR
-        - CHARM_CACHE_DIR
-        - CHARM_BRANCH
-        - FILTER_BY_TAG
-        - LAYER_BRANCH
-        - LAYER_INDEX
-        - LAYER_LIST
-        - CHARM_LIST
-        - RESOURCE_SPEC
-        - BUNDLE_LIST
-        - BUNDLE_REPO
-        - TO_CHANNEL
-        - TMPDIR
-        - WORKSPACE
-      script: |
+  - script:
+      - |
         #!/bin/bash
         set -eux
         export PATH=/snap/bin:$PATH
@@ -31,37 +12,19 @@ plan:
           --layer-index  "$LAYER_INDEX" \
           --layer-list "$LAYER_LIST" \
           --layer-branch "$LAYER_BRANCH"
-      tags: [build-charms]
-  - runner:
-      description: |
-        Buildes the bundles that make up Kubernetes
-      env-requires:
-        - FILTER_BY_TAG
-        - BUNDLE_LIST
-        - BUNDLE_REPO
-        - BUNDLE_BRANCH
-        - TO_CHANNEL
-        - TMPDIR
-        - WORKSPACE
-      script: |
+    tags: [build-charms]
+  - script:
+      - |
         #!/bin/bash
         set -eux
-        export PATH=/snap/bin:$PATH
         python3 jobs/build-charms/charms.py build-bundles \
             --to-channel "$TO_CHANNEL" \
             --bundle-list "$BUNDLE_LIST" \
             --bundle-branch "$BUNDLE_BRANCH" \
             --filter-by-tag "$FILTER_BY_TAG"
-      tags: [build-bundles]
-  - runner:
-      description: |
-        Promotes the charms that make up Kubernetes
-      env-requires:
-        - FILTER_BY_TAG
-        - CHARM_LIST
-        - FROM_CHANNEL
-        - TO_CHANNEL
-      script: |
+    tags: [build-bundles]
+  - script:
+      - |
         #!/bin/bash
         set -eux
         python3 jobs/build-charms/charms.py promote \
@@ -69,16 +32,9 @@ plan:
             --to-channel $TO_CHANNEL \
             --charm-list $CHARM_LIST \
             --filter-by-tag $FILTER_BY_TAG
-      tags: [promote-charms]
-  - runner:
-      description: |
-        Promotes the charms that make up Kubernetes
-      env-requires:
-        - FILTER_BY_TAG
-        - BUNDLE_LIST
-        - TO_CHANNEL
-        - FROM_CHANNEL
-      script: |
+    tags: [promote-charms]
+  - script:
+      - |
         #!/bin/bash
         set -eux
         python3 jobs/build-charms/charms.py promote \
@@ -86,7 +42,7 @@ plan:
             --from-channel $FROM_CHANNEL \
             --charm-list $BUNDLE_LIST \
             --filter-by-tag $FILTER_BY_TAG
-      tags: [promote-bundles]
+    tags: [promote-bundles]
 
 meta:
   mkdocs:
