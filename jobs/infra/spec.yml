@@ -9,13 +9,7 @@ plan:
 
         set -eux
 
-        # Deactivate env set by set-env and use a python3.5 environment
-        virtualenv /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER-py35 -p python3.5
-
-        . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER-py35/bin/activate
-
-        pip install --upgrade ansible
-        /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER-py35/bin/ansible-playbook jobs/infra/playbook-jenkins.yml \
+        tox -e py35 -- pip install ansible && ansible-playbook jobs/infra/playbook-jenkins.yml \
           -e 'ansible_python_interpreter=/usr/bin/python3.5' \
           --limit localhost \
           --tags 'jenkins' \
