@@ -306,7 +306,7 @@
           . /var/lib/jenkins/venvs/$JOB_NAME-$BUILD_NUMBER/bin/activate
           [[ -f {JOB_SPEC_DIR}/requirements.txt ]] && pip install -r{JOB_SPEC_DIR}/requirements.txt
 
-          ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug {JOB_TAGS|''}
+          ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
 
 
 # WRAPPERS ------------------------------------------------------------------- #

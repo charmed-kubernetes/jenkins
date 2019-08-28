@@ -26,13 +26,13 @@ plan:
         import sh
         import json
         import click
-        click.echo(sh.sudo.apt("clean"))
-        click.echo(sh.sudo.rm("-rf", "/var/log/*"))
-        click.echo(sh.sudo.rm("-rf", "/var/lib/jenkins/.cache/*"))
-        click.echo(sh.sudo.docker.image.prune('-a', '--filter', "until=24h", '--force'))
-        click.echo(sh.sudo.docker.container.prune('--filter', "until=24h", '--force'))
-        click.echo(sh.sudo.du('-h', '--max-depth=1', '/var/lib'))
-        click.echo(sh.sudo.df('-h'))
+        sh.sudo.apt("clean", _fg=True)
+        sh.sudo.rm("-rf", "/var/log/*", _fg=True)
+        sh.sudo.rm("-rf", "/var/lib/jenkins/.cache/*", _fg=True)
+        sh.sudo.docker.image.prune('-a', '--filter', "until=24h", '--force', _fg=True)
+        sh.sudo.docker.container.prune('--filter', "until=24h", '--force', _fg=True)
+        sh.sudo.du('-h', '--max-depth=1', '/var/lib', _fg=True)
+        sh.sudo.df('-h', _fg=True)
 
         try:
             juju_controllers = json.loads(sh.juju.controllers('--format', 'json').stdout.decode())
@@ -44,23 +44,23 @@ plan:
                         click.echo(f"Error destroying {e}, continuing...")
         except sh.ErrorReturnCode as e:
             click.echo(f"Error reading controller: {e.stderr.decode()}, continuing...")
-        containers = json.loads(sh.sudo.lxc.query('/1.0/containers').stdout.decode())
+        containers = json.loads(sh.sudo.lxc.query('/1.0/containers', _fg=True).stdout.decode())
         click.echo(containers)
         for container in containers:
-            sh.sudo.lxc.delete('--force', container)
+            sh.sudo.lxc.delete('--force', container, _fg=True)
 
-        storage_pools = json.loads(sh.sudo.lxc.query('/1.0/storage-pools').stdout.decode())
+        storage_pools = json.loads(sh.sudo.lxc.query('/1.0/storage-pools', _fg=True).stdout.decode())
         click.echo(storage_pools)
         for storage in storage_pools:
             storage_name = storage.split('/')[-1]
-            volumes = json.loads(sh.sudo.lxc.query(f"/1.0/storage-pools/{storage_name}/volumes").stdout.decode())
+            volumes = json.loads(sh.sudo.lxc.query(f"/1.0/storage-pools/{storage_name}/volumes", _fg=True).stdout.decode())
             click.echo(volumes)
             for volume in volumes:
                 volume_name = volume.split('/')[-1]
                 click.echo(f"Deleting {volume_name}")
-                click.echo(sh.sudo.lxc.storage.volume.delete(storage_name, f"custom/{volume_name}"))
+                sh.sudo.lxc.storage.volume.delete(storage_name, f"custom/{volume_name}", _fg=True)
             try:
-                sh.sudo.lxc.storage.delete(storage_name)
+                sh.sudo.lxc.storage.delete(storage_name, _fg=True)
             except sh.ErrorReturnCode as e:
                 click.echo(f"Error removing {e}, continuing...")
 
