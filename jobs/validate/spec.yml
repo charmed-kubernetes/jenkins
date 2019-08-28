@@ -11,10 +11,6 @@ plan:
       - pip install -rrequirements.txt
       - pip install -rrequirements_test.txt
       - pip install git+https://github.com/juju/juju-crashdump.git
-      - sudo apt install -qyf build-essential
-      - sudo snap install charm --edge --classic
-      - sudo snap install juju --classic
-      - sudo snap install aws-cli --classic
     before-script:
       - juju:
           cloud: $JUJU_CLOUD

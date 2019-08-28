@@ -3,10 +3,8 @@ meta:
   description: Provides support tasks for maintaining Jenkins
 
 plan:
-  - runner:
-      description: Sync system configuration w/ Ansible
-      tags: [configure]
-      script: |
+  - script:
+      - |
         #!/bin/bash
 
         set -eux
@@ -23,15 +21,7 @@ plan:
           --tags 'jenkins' \
           -i jobs/infra/hosts
 
-  - runner:
-      description: Sync charmstore credentials
-      tags: [sync]
-      cmd: cp INFRA_CHARM_CRED $HOME/.go-cookies
-
-  - runner:
-      description: Cleanup unused containers, storage pools, etc.
-      tags: [clean]
-      script: |
+      - |
         #!/usr/bin/env python3
         import sh
         import json
