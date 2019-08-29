@@ -8,6 +8,7 @@ import boto3
 import click
 import sh
 from staticjinja import Site
+from pathlib import Path
 
 session = boto3.Session(region_name='us-east-1')
 s3 = session.resource('s3')
@@ -68,6 +69,7 @@ def _gen_metadata():
         if 'build_endtime' not in obj:
             continue
 
+
         if 'test_result' not in obj:
             result_bg_class = 'bg-light'
         elif not obj['test_result']:
@@ -83,6 +85,12 @@ def _gen_metadata():
         except:
             day = datetime.strptime(obj['build_endtime'],
                                     '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d')
+
+        # set obj url
+        debug_host_url = "https://jenkaas.s3.amazonaws.com/"
+        obj['debug_url'] = (f"{debug_host_url}"
+                            f"{obj['job_name']}/"
+                            f"{str(Path(obj['build_log']).parent)}")
 
         if day not in db[job_name]:
             db[job_name][day] = []

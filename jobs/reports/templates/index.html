@@ -25,7 +25,7 @@
           <tr>
             <td class="align-middle">{{ row[0] }}</td>
             {% for day in row[1:] %}
-            <td class="{{ day['bg_class'] }} text-center align-middle" style="height: 50px;"><strong>{{ day.build_number }}</strong> {% if day['results_file'] %}<a href="{{ day['results_file'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download the results for debugging"><i class="fas fa-download"></i> </a>{% endif %}</td>
+            <td class="{{ day['bg_class'] }} text-center align-middle" style="height: 50px;"><strong>{{ day.build_number }}</strong> <a href="{{ day['build_log'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download job results"><i class="fas fa-download"></i> </a></td>
             {% endfor %}
           </tr>
           {% endfor %}
