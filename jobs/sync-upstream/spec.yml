@@ -1,15 +1,9 @@
 plan:
-  - runner:
-      description: Sync upstream layer components to downstream charmed-kubernetes
-      tags: [sync]
-      cmd: python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc
-      env-requires:
-        - CDKBOT_GH_USR
-        - CDKBOT_GH_PSW
-  - runner:
-      description: Tag all stable branches with bundle revision
-      tags: [tag-stable-rev]
-      script: |
+  - script:
+      - python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc
+    tags: [sync]
+  - script:
+      - |
         #!/bin/bash
 
         set -eux
@@ -21,10 +15,9 @@ plan:
                      --layer-list includes/charm-layer-list.inc \
                      --charm-list includes/charm-support-matrix.inc \
                      --bundle-revision $BUNDLE_REV $IS_DRY_RUN
-  - runner:
-      description: Refreshes all layer stable branches on top of master
-      tags: [cut-stable-release]
-      script: |
+    tags: [tag-stable-rev]
+  - script:
+      - |
         #!/bin/bash
 
         set -eux
@@ -36,6 +29,7 @@ plan:
             --layer-list includes/charm-layer-list.inc \
             --charm-list includes/charm-support-matrix.inc \
             --filter-by-tag k8s $IS_DRY_RUN
+    tags: [cut-stable-release]
 
 meta:
   name: Sync upstream layers components
