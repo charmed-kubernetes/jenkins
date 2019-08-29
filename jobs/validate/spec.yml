@@ -41,6 +41,9 @@ plan:
                  --controller $JUJU_CONTROLLER \
                  --model $JUJU_MODEL
     after-script:
+      - wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+      - python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+      - python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
       - juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
       - python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
       - python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump*
