@@ -26,19 +26,21 @@ cffi==1.12.3              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via requests
 click==7.0                # via black, mkdocs, ogc, ogc-plugins-juju, ogc-plugins-runner, ogc-plugins-spec-doc
 colorama==0.3.9           # via awscli, ogc
-cryptography==2.7         # via paramiko
+cryptography==2.7         # via paramiko, secretstorage
 decorator==4.4.0          # via ipython, traitlets
 defusedxml==0.6.0         # via python3-openid
 dict-deep==2.0.2          # via ogc
+distro==1.4.0             # via lazr.restfulclient
 docopt==0.6.2             # via staticjinja
 docutils==0.15.2          # via awscli, botocore
 easywatch==0.0.5          # via staticjinja
-entrypoints==0.3          # via flake8
+entrypoints==0.3          # via flake8, keyring
 execnet==1.7.0            # via pytest-xdist
 fasteners==0.15           # via jenkins-job-builder
 flake8==3.7.8
 flaky==3.6.1
 htmlmin==0.1.12           # via mkdocs-minify-plugin
+httplib2==0.13.1          # via launchpadlib, lazr.restfulclient
 idna==2.8                 # via requests
 importlib-metadata==0.19  # via pluggy, pytest
 invoke==1.3.0
@@ -46,6 +48,7 @@ ipdb==0.12.2
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.7.0            # via ipdb
 jedi==0.15.1              # via ipython
+jeepney==0.4.1            # via secretstorage
 jenkins-job-builder==3.0.2
 jinja2==2.10.1
 jmespath==0.9.4           # via boto3, botocore
@@ -54,7 +57,11 @@ juju-wait==2.7.0
 juju==2.6.2
 jujubundlelib==0.5.6
 git+https://github.com/juju/juju-crashdump.git
+keyring==19.1.0           # via launchpadlib
 kv==0.3                   # via ogc
+launchpadlib==1.10.7
+lazr.restfulclient==0.14.2
+lazr.uri==1.0.3           # via launchpadlib, wadllib
 livereload==2.6.1         # via mkdocs
 loguru==0.3.2             # via ogc
 macaroonbakery==1.2.3     # via juju, theblues
@@ -69,6 +76,7 @@ module-wrapper==0.2.4     # via aioify
 monotonic==1.5            # via fasteners
 more-itertools==7.2.0     # via pytest, zipp
 multi-key-dict==2.0.3     # via python-jenkins
+oauthlib==3.1.0           # via lazr.restfulclient
 ogc-plugins-juju==1.0.12
 ogc-plugins-runner==1.0.22
 ogc-plugins-spec-doc==1.0.4
@@ -77,7 +85,7 @@ packaging==19.1           # via pytest, pytest-sugar
 paramiko==2.6.0           # via juju
 parso==0.5.1              # via jedi
 pathtools==0.1.2          # via watchdog
-pbr==5.4.2                # via jenkins-job-builder, python-jenkins, stevedore
+pbr==5.4.2                # via jenkins-job-builder, python-jenkins, stevedore, testresources
 pexpect==4.7.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pluggy==0.12.0            # via pytest
@@ -113,13 +121,15 @@ pyyaml==4.2b4
 requests==2.22.0
 rsa==3.4.2                # via awscli
 s3transfer==0.2.1         # via awscli, boto3
+secretstorage==3.1.1      # via keyring
 semver==2.8.1             # via ogc
 sh==1.12.14               # via ogc, ogc-plugins-juju, ogc-plugins-runner, ogc-plugins-spec-doc
-six==1.12.0               # via bcrypt, cryptography, fasteners, jenkins-job-builder, livereload, macaroonbakery, packaging, prompt-toolkit, protobuf, pymacaroons, pynacl, pytest-xdist, python-dateutil, python-frontmatter, python-jenkins, stevedore, traitlets
+six==1.12.0               # via bcrypt, cryptography, fasteners, jenkins-job-builder, lazr.restfulclient, livereload, macaroonbakery, packaging, prompt-toolkit, protobuf, pymacaroons, pynacl, pytest-xdist, python-dateutil, python-frontmatter, python-jenkins, stevedore, traitlets
 staticjinja==0.3.5
 stevedore==1.30.1         # via jenkins-job-builder
 tabulate==0.8.3           # via ogc
 termcolor==1.1.0          # via pytest-sugar
+testresources==2.0.1      # via launchpadlib
 theblues==0.5.1
 toml==0.10.0              # via black
 tomlkit==0.5.5            # via poetry-version
@@ -127,10 +137,11 @@ toposort==1.5             # via juju
 tornado==6.0.3            # via livereload, mkdocs
 traitlets==4.3.2          # via ipython
 urllib3==1.25.3           # via botocore, requests
+wadllib==1.3.3            # via launchpadlib, lazr.restfulclient
 watchdog==0.9.0           # via easywatch
 wcwidth==0.1.7            # via prompt-toolkit, pytest
 websockets==7.0           # via juju
 zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.2.0        # via ipdb, ipython, markdown, protobuf
+# setuptools==41.2.0        # via ipdb, ipython, launchpadlib, lazr.restfulclient, lazr.uri, markdown, protobuf, wadllib
