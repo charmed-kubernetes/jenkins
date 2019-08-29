@@ -80,6 +80,21 @@
 
 
 - parameter:
+    name: ogc-spec-params
+    parameters:
+      - string:
+          name: JOB_SPEC_DIR
+          description: Directory housing the spec to run
+      - string:
+          name: JOB_SPEC_FILE
+          description: Spec filename to execute within JOB_SPEC_DIR
+          default: spec.yml
+      - string:
+          name: JOB_TAGS
+          description: Optional tags to pass to spec, in the form of `-t tagname -t tagname2`
+
+
+- parameter:
     name: snap-params
     parameters:
       - string:
@@ -249,7 +264,7 @@
           rm -rf $WORKSPACE/.env || true
 
           export VIRTUAL_ENV_DISABLE_PROMPT=1
-          export PYTHONPATH="{JOB_SPEC_DIR}"
+          export PYTHONPATH="{JOB_SPEC_DIR|$WORKSPACE}"
           export GIT_SSH_COMMAND='"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"'
           export CHARM_BUILD_DIR="$WORKSPACE/${{CHARM_BUILD_DIR:-build/charms}}"
           export CHARM_LAYERS_DIR="$WORKSPACE/${{CHARM_LAYERS_DIR:-build/layers}}"

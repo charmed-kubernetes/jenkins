@@ -4,7 +4,7 @@ async-generator
 asyncio-extras
 autopep8
 awscli
-black
+# black
 boto3
 canonicalwebteam.snapstoreapi
 flake8

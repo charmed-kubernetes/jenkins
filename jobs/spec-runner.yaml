@@ -1,0 +1,27 @@
+- job:
+    name: 'spec-runner'
+    node: runner-amd64
+    description: |
+      Runs a defined spec
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - ogc-spec-params
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 3
+    builders:
+      - set-env
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          tox -e py36 -- ogc --spec $JOB_SPEC_DIR/$JOB_SPEC_FILE $JOB_TAGS
