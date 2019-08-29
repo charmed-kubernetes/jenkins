@@ -1,0 +1,9 @@
+dist: bionic
+language: python
+python:
+  - "3.7"
+  - "3.6"
+install:
+  - travis_retry pip install -rrequirements.txt
+  - travis_retry pip install tox-travis
+script: tox

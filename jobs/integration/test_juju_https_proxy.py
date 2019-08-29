@@ -1,17 +1,7 @@
-import asyncio
 import pytest
 import re
-import os
 import time
-from .utils import (
-    asyncify,
-    verify_ready,
-    verify_completed,
-    verify_deleted,
-    retry_async_with_timeout,
-)
-from .logger import log, log_calls_async
-from juju.controller import Controller
+from .logger import log
 from builtins import open as open_file
 from tempfile import NamedTemporaryFile
 
@@ -45,7 +35,8 @@ async def get_contents(runtime, worker_unit, controller, connection_name):
     return runtime_conf_contents
 
 
-HTTP_S_REGEX = r"Environment=\"HTTP(S){0,1}_PROXY=([a-zA-Z]{4,5}://[0-9a-zA-Z.]*(:[0-9]{0,5}){0,1}){1,1}\""
+HTTP_S_REGEX = (r"Environment=\"HTTP(S){0,1}_PROXY=([a-zA-Z]{4,5}://"
+                r"[0-9a-zA-Z.]*(:[0-9]{0,5}){0,1}){1,1}\"")
 BLAH_REGEX = r"Environment=\"HTTP(S){0,1}_PROXY=%s\""
 
 

@@ -2,7 +2,6 @@ import asyncio
 import pytest
 import random
 import os
-from .utils import asyncify
 from .logger import log
 
 

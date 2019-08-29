@@ -41,10 +41,11 @@ plan:
                  --model $JUJU_MODEL
     after-script:
       - juju-crashdump -a debug-layer -a config -m $JUJU_CONTROLLER:$JUJU_MODEL
-      - python3 jobs/infra/collect-debug.py push --key-id 'build_log' ogc.log
-      - python3 jobs/infra/collect-debug.py push --key-id 'results_file' juju-crashdump*
-      - python3 jobs/infra/collect-debug.py push --key-id 'metadata' metadata.json
-      - python3 jobs/infra/collect-debug.py push --key-id 'job_results' *job.json
+      - python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+      - python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump*
+      - python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
+      - python3 jobs/infra/collect-debug.py push 'job_results' *job.json
+      - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
       - python3 jobs/infra/collect-debug.py save-meta metadata.json
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
     tags: [core]

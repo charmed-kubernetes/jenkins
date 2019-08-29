@@ -110,7 +110,7 @@ async def upgrade_charms(model, channel, tools):
             "containerd:containerd", "kubernetes-master:container-runtime"
         )
     except (JujuError, JujuAPIError) as e:
-        log("Docker and containerd already configured as required.")
+        log(f"Docker and containerd already configured as required: {e}")
     await tools.juju_wait()
 
 
@@ -233,8 +233,9 @@ async def verify_deleted(unit, entity_type, name, extra_args=""):
     cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
     output = await unit.run(cmd)
     if "error" in output.results["Stdout"]:
-        # error resource type not found most likely. This can happen when the api server is
-        # restarting. As such, don't assume this means we've finished the deletion
+        # error resource type not found most likely. This can happen when the
+        # api server is restarting. As such, don't assume this means we've
+        # finished the deletion
         return False
     try:
         out_list = json.loads(output.results["Stdout"])
@@ -254,8 +255,8 @@ async def find_entities(unit, entity_type, name_list, extra_args=""):
     cmd = cmd.format(extra_args, entity_type)
     output = await unit.run(cmd)
     if output.results["Code"] != "0":
-        # error resource type not found most likely. This can happen when the api server is
-        # restarting. As such, don't assume this means ready.
+        # error resource type not found most likely. This can happen when the
+        # api server is restarting. As such, don't assume this means ready.
         return False
     out_list = json.loads(output.results["Stdout"])
     matches = []

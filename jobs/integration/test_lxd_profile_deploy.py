@@ -1,20 +1,10 @@
-import asyncio
 import pytest
 import subprocess
 import yaml
 import time
 import os
 import re
-from .utils import (
-    asyncify,
-    verify_ready,
-    verify_completed,
-    verify_deleted,
-    retry_async_with_timeout,
-)
-from .logger import log, log_calls_async
-from juju.controller import Controller
-from juju.errors import JujuError
+from .logger import log
 
 here = os.path.dirname(os.path.abspath(__file__))
 
@@ -29,7 +19,6 @@ LXD_PROFILE = yaml.load(
 
 
 async def check_charm_profile_deployed(app, charm_name):
-    machine = app.units[0]
     # log("app_info %s" % machine.safe_data)
     # Assume that the only profile with juju-* is
     # the one we"re looking for.

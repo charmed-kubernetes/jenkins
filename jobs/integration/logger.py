@@ -1,5 +1,4 @@
 import traceback
-from datetime import datetime
 import click
 
 
