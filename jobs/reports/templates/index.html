@@ -25,7 +25,20 @@
           <tr>
             <td class="align-middle">{{ row[0] }}</td>
             {% for day in row[1:] %}
-            <td class="{{ day['bg_class'] }} text-center align-middle" style="height: 50px;"><strong>{{ day.build_number }}</strong> <a href="{{ day['build_log'] }}" class="text-dark" data-toggle="tooltip" data-placement="top" title="Download job results"><i class="fas fa-download"></i> </a></td>
+            <td class="text-center align-middle" style="height: 50px;">
+              <div class="dropdown">
+                <a class="btn {{ day.btn_class }} dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  {{ day.build_number}}
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                  <a class="dropdown-item" href="{{ day.build_log }}">Job Log</a>
+                  <a class="dropdown-item" href="{{ day.job_results }}">Job Results</a>
+                  <a class="dropdown-item" href="{{ day.metadata }}">Job Metadata</a>
+                  {% if day.results_file %}<a class="dropdown-item" href="{{ day.results_file }}">Juju Crashdump</a>{% endif %}
+                  {% if day.cdk_field_agent %}<a class="dropdown-item" href="{{ day.cdk_field_agent }}">CDK Field Agent</a>{% endif %}
+                </div>
+              </div>
+            </td>
             {% endfor %}
           </tr>
           {% endfor %}

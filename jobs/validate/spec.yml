@@ -44,13 +44,13 @@ plan:
       - wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
       - python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
       - python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-      - juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+      - juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
+      - python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
       - python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-      - python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump*
       - python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
-      - python3 jobs/infra/collect-debug.py push 'job_results' *job.json
+      - python3 jobs/infra/collect-debug.py push 'job_result' *job.json
       - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-      - python3 jobs/infra/collect-debug.py save-meta metadata.json
+      - python3 jobs/infra/collect-debug.py save-meta metadata.json || true
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
     tags: [core]
   - <<: *BASE_JOB

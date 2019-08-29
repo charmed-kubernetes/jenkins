@@ -72,13 +72,16 @@ def _gen_metadata():
 
         if 'test_result' not in obj:
             result_bg_class = 'bg-light'
+            result_btn_class = "btn-light"
         elif not obj['test_result']:
             result_bg_class = 'bg-danger'
+            result_btn_class = "btn-danger"
         else:
+            result_btn_class = "btn-success"
             result_bg_class = 'bg-success'
 
         obj['bg_class'] = result_bg_class
-
+        obj['btn_class'] = result_btn_class
         try:
             day = datetime.strptime(obj['build_endtime'],
                                     '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%d')
