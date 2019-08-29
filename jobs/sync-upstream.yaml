@@ -9,6 +9,9 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
+    properties:
+      - build-discarder:
+          num-to-keep: 3
     parameters:
       - global-params
       - charm-params

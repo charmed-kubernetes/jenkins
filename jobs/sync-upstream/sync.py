@@ -170,8 +170,8 @@ def _sync_upstream(layer_list, dry_run):
                 ):
                     click.echo(line)
                 sh.git.checkout("master", _cwd=identifier)
-                if "layer-index" in downstream:
-                    sh.python3("update_readme.py", _cwd=identifier)
+                # if "layer-index" in downstream:
+                #     sh.python3("update_readme.py", _cwd=identifier)
                 for line in sh.git.merge(
                     "upstream/master", _cwd=identifier, _iter=True, _bg_exc=False
                 ):

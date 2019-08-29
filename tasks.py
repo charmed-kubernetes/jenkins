@@ -22,7 +22,7 @@ def update_deps(c):
 @task
 def build_docs(c):
     c.run("cp README.md docs/index.md")
-    c.run("ogc --spec maintainer-spec.yml -t build-docs")
+    c.run("ogc --spec maintainer-spec.yml")
 
 
 @task(pre=[build_docs])
