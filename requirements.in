@@ -22,10 +22,10 @@ mkdocs
 ogc-plugins-juju
 ogc-plugins-runner
 ogc-plugins-spec-doc
-ogc
+ogc>=0.3.31
 requests
 pymacaroons
-pyyaml
+pyyaml>=4.2b1,<=4.2
 pytest-asyncio
 pytest-forked
 pytest-sugar

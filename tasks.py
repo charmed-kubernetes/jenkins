@@ -7,7 +7,16 @@ load_dotenv()
 
 @task
 def test(c):
+    """ Run unittest suite
+    """
     c.run("pytest jobs/**/*/tests")
+
+
+@task
+def update_deps(c):
+    """ Syncs package dependencies
+    """
+    c.run("pip-compile")
 
 
 @task
