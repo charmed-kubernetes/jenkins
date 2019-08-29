@@ -59,8 +59,11 @@ def _gen_metadata():
             items.append(item)
     db = OrderedDict()
     for obj in items:
-        if obj['job_name'] not in db:
-            db[obj['job_name']] = {}
+        job_name = obj['job_name']
+        if 'snap_version' in obj:
+            job_name = f"{job_name}-{obj['snap_version']}"
+        if job_name not in db:
+            db[job_name] = {}
 
         if 'build_endtime' not in obj:
             continue
@@ -81,9 +84,9 @@ def _gen_metadata():
             day = datetime.strptime(obj['build_endtime'],
                                     '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d')
 
-        if day not in db[obj['job_name']]:
-            db[obj['job_name']][day] = []
-        db[obj['job_name']][day].append(obj)
+        if day not in db[job_name]:
+            db[job_name][day] = []
+        db[job_name][day].append(obj)
     return db
 
 def _gen_rows():
