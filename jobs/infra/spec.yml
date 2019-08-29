@@ -4,13 +4,16 @@ meta:
 
 plan:
   - script:
-      - |
-        #!/bin/bash
+      - tox -e ansible
+  # - script:
+  #     - |
+  #       #!/bin/bash
 
-        set -eux
+  #       set -eux
 
-        tox -e py35 -- pip install ansible && ansible-playbook jobs/infra/playbook-jenkins.yml \
-          -e 'ansible_python_interpreter=/usr/bin/python3.5' \
-          --limit localhost \
-          --tags 'jenkins' \
-          -i jobs/infra/hosts
+  #       # tox -e ansible -- ansible-playbook jobs/infra/playbook-jenkins.yml \
+  #       #   -e 'ansible_python_interpreter=/usr/bin/python3.5' \
+  #       #   --limit localhost \
+  #       #   --tags 'jenkins' \
+  #       #   -i jobs/infra/hosts
+  #       tox -e ansible
