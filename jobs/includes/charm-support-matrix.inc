@@ -59,11 +59,11 @@
 - keepalived:
     downstream: 'https://github.com/juju-solutions/charm-keepalived.git'
     namespace: 'containers'
-    tags: ['general', 'keepalived']
+    tags: ['k8s', 'general', 'keepalived']
 - docker-registry:
     downstream: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
     namespace: 'containers'
-    tags: ['general', 'docker-registry']
+    tags: ['k8s', 'general', 'docker-registry']
 - kubeflow-ambassador:
     namespace: 'kubeflow-charmers'
     downstream: 'https://github.com/juju-solutions/charm-kubeflow-ambassador.git'

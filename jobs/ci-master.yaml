@@ -241,7 +241,7 @@
                https://github.com/charmed-kubernetes/integration-tests \
                $WORKSPACE/integration-tests
 
-          export INTEGRATION_TEST_PATH=$WORKSPACE/integration-tests
+          export INTEGRATION_TEST_PATH=jobs/integration
 
           # Login to snapstore
           snapcraft login --with /var/lib/jenkins/snapcraft-creds

@@ -160,6 +160,7 @@
 # V2 ------------------------------------------------------------------------- #
 - job:
     name: 'validate-ck'
+    node: runner-amd64
     description: |
       Validates CDK edge, supports last three recent releases.
     project-type: freestyle
@@ -182,6 +183,7 @@
 
 - job:
     name: 'validate-ck-upgrade'
+    node: runner-amd64
     description: |
       Validates CDK minor release upgrades, supports last three recent releases.
     project-type: freestyle
@@ -208,6 +210,7 @@
 
 - job:
     name: 'validate-ck-snapd-upgrade'
+    node: runner-amd64
     description: |
       Validates CK release using an upgrade snapcore.
     project-type: freestyle
@@ -257,6 +260,7 @@
 # ADDONS --------------------------------------------------------------------- #
 - job:
     name: 'validate-ck-vault'
+    node: runner-amd64
     description: |
       Validates CK, with vault.
     project-type: freestyle
@@ -282,6 +286,7 @@
 
 - job:
     name: 'validate-ck-nvidia'
+    node: runner-amd64
     description: |
       Validates CK, with NVidia.
     project-type: freestyle
@@ -308,6 +313,7 @@
     name: 'validate-ck-tigera-secure-ee'
     description: |
       Validates CK, with tigera.
+    node: runner-amd64
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -331,6 +337,7 @@
     name: 'validate-ck-calico'
     description: |
       Validates CK, with calico.
+    node: runner-amd64
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
