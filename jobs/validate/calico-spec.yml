@@ -66,11 +66,15 @@ plan:
              --model $JUJU_MODEL \
              --controller $JUJU_CONTROLLER
     after-script:
-      - juju-crashdump -a debug-layer -a config -m $JUJU_CONTROLLER:$JUJU_MODEL
-      - aws s3 cp *.log s3://jenkaas/$JOB_NAME/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - aws s3 cp *.json s3://jenkaas/$JOB_NAME/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - aws s3 cp juju-crashdump* s3://jenkaas/$JOB_NAME/$(date +"%Y/%m/%d")/$SNAP_VERSION/
-      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+      - wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+      - python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+      - python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
+      - python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+      - python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
+      - python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+      - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+      - python3 jobs/infra/collect-debug.py save-meta metadata.json || true
+      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/edge

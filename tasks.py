@@ -22,12 +22,12 @@ def update_deps(c):
 @task
 def build_docs(c):
     c.run("cp README.md docs/index.md")
-    c.run("ogc --spec maintainer-spec.yml --debug -t build-docs")
+    c.run("ogc --spec maintainer-spec.yml -t build-docs")
 
 
-@task
+@task(pre=[build_docs])
 def upload_docs(c):
-    c.run("/snap/bin/aws s3 sync site/ s3://jenkaas/docs")
+    c.run("aws s3 sync site/ s3://jenkaas/docs")
 
 
 @task

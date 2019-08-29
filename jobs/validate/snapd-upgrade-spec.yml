@@ -1,0 +1,67 @@
+plan:
+  - env:
+      - SNAP_VERSION=1.16/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-2
+      - JUJU_CONTROLLER=validate-ck-snapd-upgrade
+      - JUJU_MODEL=validate-model
+    before-script:
+      - sudo snap refresh core --$TEST_UPGRADE_SNAPD_CHANNEL
+      - juju:
+          cloud: $JUJU_CLOUD
+          controller: $JUJU_CONTROLLER
+          model: $JUJU_MODEL
+          bootstrap:
+            debug: no
+            constraints: 'arch=amd64'
+            replace-controller: yes
+            model-default:
+              - test-mode=true
+          deploy:
+            reuse: no
+            bundle: $JUJU_DEPLOY_BUNDLE
+            overlay: |
+              applications:
+                kubernetes-master:
+                  options:
+                    channel: $SNAP_VERSION
+                kubernetes-worker:
+                  options:
+                    channel: $SNAP_VERSION
+            wait: yes
+            channel: $JUJU_DEPLOY_CHANNEL
+
+    script:
+      - |
+        #!/bin/bash
+        set -eux
+        pytest $INTEGRATION_TEST_PATH/validation.py \
+                 --cloud $JUJU_CLOUD \
+                 --controller $JUJU_CONTROLLER \
+                 --model $JUJU_MODEL \
+                 --snapd-upgrade \
+                 --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL
+    after-script:
+      - wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+      - python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+      - python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
+      - python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+      - python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
+      - python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+      - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+      - python3 jobs/infra/collect-debug.py save-meta metadata.json || true
+      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
+      - sudo snap refresh core --stable
+
+meta:
+  name: Verify CK with Snapd upgrade
+  description: |
+    Verifies that CK passes when the underlying snap core (snapd) is upgraded to
+    a candidate/test/beta channel.
+  mkdocs:
+    destination:
+      - "validations/ck/snapd-upgrade.md"
+    jenkins-job-builder:
+      job: ../validate.yaml
+      name: validate-ck-snapd-upgrade

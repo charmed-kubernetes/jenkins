@@ -231,8 +231,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t validate-snapd-upgrade"
+          JOB_SPEC_FILE: "snapd-upgrade-spec.yml"
 
 
 - job:

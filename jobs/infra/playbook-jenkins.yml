@@ -92,13 +92,14 @@
       command: "snap install {{item}}"
       ignore_errors: yes
       loop:
-        - "lxd"
-        - "juju --classic --channel latest/stable"
-        - "juju-wait --classic"
-        - "kubectl --classic"
+        - "aws-cli --classic"
         - "charm --classic --edge"
         - "go --classic --channel 1.12/stable"
-        - "aws-cli --classic"
+        - "juju --classic --channel latest/stable"
+        - "juju-crashdump --classic --edge"
+        - "juju-wait --classic"
+        - "kubectl --classic"
+        - "lxd"
         - "multipass"
       tags:
         - jenkins

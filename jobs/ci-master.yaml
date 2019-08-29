@@ -252,11 +252,12 @@
 
           rm -rf /var/lib/jenkins/venvs || true
 
-          git clone --depth 1 \
-               https://github.com/charmed-kubernetes/integration-tests \
-               $WORKSPACE/integration-tests
+          # TODO: Switch to this repo when ready
+          # git clone --depth 1 \
+          #      https://github.com/charmed-kubernetes/integration-tests \
+          #      $WORKSPACE/integration-tests
 
-          export INTEGRATION_TEST_PATH=jobs/integration
+          export INTEGRATION_TEST_PATH=$WORKSPACE/jobs/integration
 
           # Login to snapstore
           snapcraft login --with /var/lib/jenkins/snapcraft-creds
@@ -274,7 +275,6 @@
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
           export JUJU_MODEL="{override_juju_model|validate}"
-          export OGC_RESULTS_PATH="$WORKSPACE/results"
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 
           env > $WORKSPACE/.env

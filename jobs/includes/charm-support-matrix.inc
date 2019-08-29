@@ -59,7 +59,7 @@
 - keepalived:
     downstream: 'juju-solutions/charm-keepalived.git'
     namespace: 'containers'
-    tags: ['k8s', 'general', 'keepalived']
+    tags: ['general', 'keepalived']
 - docker-registry:
     downstream: 'CanonicalLtd/docker-registry-charm.git'
     namespace: 'containers'

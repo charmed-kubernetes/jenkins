@@ -1,4 +1,4 @@
-# Kubernetes Jenkins scripts
+# Charm Kubernetes Jenkins
 
 This project contains the scripts used to build and test the CDK.
 
@@ -13,6 +13,8 @@ This project contains the scripts used to build and test the CDK.
 Running the tests locally can be accomplished easily with tox. The tests expect
 certain environment variables to be set. These can be found by looking at the
 help output from `pytest` under the **custom options** section.
+
+> **Note**: Recommended minimum Python version is 3.6.
 
 ```
 > pytest jobs/integration/validation.py --help
@@ -50,7 +52,7 @@ working directory for tox is in /var/lib/jenkins, which probably doesn't exist
 on development machines, so --workdir is used to specify a new directory to use.
 
 ```
-tox --workdir .tox -e py36 -- \
+tox --workdir .tox -e py3 -- \
     pytest jobs/integration/validation.py \
       --controller aws-us-east-1 \
       --model cdk \
@@ -71,20 +73,20 @@ Job Builder. Example job:
 [validate yaml](https://github.com/juju-solutions/kubernetes-jenkins/blob/master/jobs/validate.yaml)
 
 
-# Documentation
+## Documentation
 
-## Build
+### Build
 
 To build the docs do the following:
 
 ```
-> tox --workdir .tox -e py36 -- inv build-docs
+> tox --workdir .tox -e py3 -- inv build-docs
 ```
 
-To deploy documentation (requires AWS credentials):
+To build and deploy documentation (requires AWS credentials):
 
 ```
-> tox --workdir .tox -e py36 -- inv upload-docs
+> tox --workdir .tox -e docs
 ```
 
 
