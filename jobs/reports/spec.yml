@@ -1,13 +1,6 @@
 plan:
-  - runner:
-      description: |
-        Generate validation reports
-      script: |
-        #!/bin/bash
-        set -eux
-        export PATH=/snap/bin:$PATH
-        python3 -m report generate-validation
-      tags: [gen-validation-report]
+  - script:
+      - python3 jobs/reports/generate-reports.py build
 
 meta:
   mkdocs:

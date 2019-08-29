@@ -21,4 +21,3 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/reports"
           JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t gen-validation-report"

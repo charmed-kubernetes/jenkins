@@ -1,18 +1,12 @@
 """ Script for generating HTML output
 """
 
-import sys
-sys.path.insert(0, '.')
-
 from datetime import datetime, timedelta
-from pathlib import Path
 from collections import OrderedDict
 from boto3.dynamodb.conditions import Key, Attr
 import boto3
 import click
-import os
 import sh
-import yaml
 from staticjinja import Site
 
 session = boto3.Session(region_name='us-east-1')
@@ -63,7 +57,6 @@ def _gen_metadata():
         response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
         for item in response['Items']:
             items.append(item)
-    metadata = OrderedDict()
     db = OrderedDict()
     for obj in items:
         if obj['job_name'] not in db:
