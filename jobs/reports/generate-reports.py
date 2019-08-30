@@ -91,9 +91,12 @@ def _gen_metadata():
 
         # set obj url
         debug_host_url = "https://jenkaas.s3.amazonaws.com/"
+        build_log = obj.get('build_log', None)
+        if build_log:
+            build_log = str(Path(obj['build_log']).parent)
         obj['debug_url'] = (f"{debug_host_url}"
                             f"{obj['job_name']}/"
-                            f"{str(Path(obj['build_log']).parent)}")
+                            f"{build_log}")
 
         if day not in db[job_name]:
             db[job_name][day] = []
