@@ -1229,10 +1229,12 @@ data:
 async def test_encryption_at_rest(model, tools):
     try:
         # setup
-        await model.deploy(
-            "percona-cluster",
-            config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
-        )
+        if 'percona-cluster' not in model.applications:
+            await model.deploy(
+                "percona-cluster",
+                config={"innodb-buffer-pool-size": "256M",
+                        "max-connections": "1000"},
+            )
         await model.deploy(
             "cs:~openstack-charmers-next/vault",
             config={
@@ -1281,11 +1283,13 @@ async def test_encryption_at_rest(model, tools):
         assert "secret-value" not in output.results["Stdout"]
     finally:
         # cleanup
-        await model.applications["vault"].destroy()
-        # wait for vault to go away before removing percona to prevent vault
-        # from erroring from having its DB taken away
-        await tools.juju_wait()
-        await model.applications["percona-cluster"].destroy()
+        if 'vault' in model.applications:
+            await model.applications["vault"].destroy()
+            # wait for vault to go away before removing percona to prevent vault
+            # from erroring from having its DB taken away
+            await tools.juju_wait()
+        if 'percona-cluster' in model.applications:
+            await model.applications["percona-cluster"].destroy()
         # re-add easyrsa after vault is gone
         tasks = {
             model.add_relation("easyrsa:client", "kubernetes-master:certificates"),
