@@ -17,6 +17,7 @@ plan:
       - JUJU_MODEL=validate-calico-model
       - TEST_BGP=1
     before-script:
+      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
       - python3 jobs/integration/tigera_aws.py cleanup
       - |
         #!/bin/bash
@@ -30,27 +31,8 @@ plan:
         if [ -z $TEST_BGP ]; then
           python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router
         fi
-        juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER -d $JUJU_MODEL --model-default test-mode=true
-      - juju:
-          description: Bootstrap and deploy kubernetes
-          cloud: $JUJU_CLOUD
-          controller: $JUJU_CONTROLLER
-          model: $JUJU_MODEL
-          bootstrap:
-            debug: no
-            reuse: yes
-          deploy:
-            bundle: $JUJU_DEPLOY_BUNDLE
-            channel: $JUJU_DEPLOY_CHANNEL
-            overlay: |
-              applications:
-                kubernetes-master:
-                  options:
-                    channel: $SNAP_VERSION
-                kubernetes-worker:
-                  options:
-                    channel: $SNAP_VERSION
-            wait: no
+      - juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER -d $JUJU_MODEL --model-default test-mode=true
+      - juju deploy $JUJU_DEPLOY_BUNDLE --overlay jobs/overlays/1.16-edge-overlay.yaml --channel edge
       - |
         #!/bin/bash
         set -eux
@@ -75,7 +57,7 @@ plan:
       - python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
       - python3 jobs/infra/collect-debug.py push 'job_result' *job.json
       - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-      - python3 jobs/infra/collect-debug.py save-meta metadata.json || true
+      - python3 jobs/infra/collect-debug.py save-meta metadata.json
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
   - <<: *BASE_JOB
     env:

@@ -16,40 +16,23 @@ plan:
       - JUJU_CONTROLLER=validate-tigera
       - JUJU_MODEL=validate-tigera-model
     before-script:
+      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
       - python3 jobs/integration/tigera_aws.py cleanup
       - python3 jobs/integration/tigera_aws.py bootstrap
-      - juju:
-          cloud: $JUJU_CLOUD
-          controller: $JUJU_CONTROLLER
-          model: $JUJU_MODEL
-          bootstrap:
-            debug: no
-            reuse: yes
-          deploy:
-            bundle: $JUJU_DEPLOY_BUNDLE
-            channel: $JUJU_DEPLOY_CHANNEL
-            overlay: |
-              applications:
-                kubernetes-master:
-                  options:
-                    channel: $SNAP_VERSION
-                kubernetes-worker:
-                  options:
-                    channel: $SNAP_VERSION
-            wait: no
+      - juju deploy $JUJU_DEPLOY_BUNDLE --overlay jobs/overlays/1.16-edge-overlay.yaml --channel edge
       - |
         #!/bin/bash
         set -eux
         juju config -m $JUJU_CONTROLLER:$JUJU_MODEL tigera-secure-ee \
             license-key=$(base64 -w0 $TIGERA_SECURE_EE_LICENSE_KEY_FILE) \
             registry-credentials=$(base64 -w0 $TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE)
-        python3 jobs/integration/tigera_aws.py disable-source-dest-check
-        juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+      - python3 jobs/integration/tigera_aws.py disable-source-dest-check
+      - juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
     script:
       - |
         #!/bin/bash
         set -eux
-        pytest jobs/integration/validation.py \
+        pytest $INTEGRATION_TEST_PATH/validation.py \
              --cloud $JUJU_CLOUD \
              --model $JUJU_MODEL \
              --controller $JUJU_CONTROLLER
@@ -61,7 +44,7 @@ plan:
       - python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
       - python3 jobs/infra/collect-debug.py push 'job_result' *job.json
       - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-      - python3 jobs/infra/collect-debug.py save-meta metadata.json || true
+      - python3 jobs/infra/collect-debug.py save-meta metadata.json
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
 
   - <<: *BASE_JOB
