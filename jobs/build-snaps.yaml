@@ -1,3 +1,4 @@
+
 # Builds and releases latest snaps
 - job:
     name: 'build-snaps'
@@ -126,6 +127,7 @@
       - string:
           name: channels
           default: '1.12.7/edge'
+          description: A space separated list of snap verion/channel, ie '1.12.9/edge 1.12.9/beta 1.12.9/candidate 1.12.9/stable'
       - bool:
           name: release_only
           default: false
