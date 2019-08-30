@@ -608,6 +608,12 @@ async def test_extra_args(model, tools):
             {arg for arg in args if not arg.startswith("master=")} for args in results
         ]
 
+        # implied true vs explicit true should be treated the same
+        results = [
+            {arg + '=true' if '=' not in arg else arg for arg in args}
+            for args in results
+        ]
+
         return results
 
     async def run_extra_args_test(app_name, new_config, expected_args):
@@ -678,11 +684,19 @@ async def test_extra_args(model, tools):
         expected_args={
             "kube-apiserver": {
                 "min-request-timeout=314",
-                "watch-cache",
+                "watch-cache=true",
                 "profiling=false",
             },
-            "kube-controller": {"v=3", "profiling", "contention-profiling=false"},
-            "kube-scheduler": {"v=3", "profiling", "contention-profiling=false"},
+            "kube-controller": {
+                "v=3",
+                "profiling=true",
+                "contention-profiling=false"
+            },
+            "kube-scheduler": {
+                "v=3",
+                "profiling=true",
+                "contention-profiling=false"
+            },
         },
     )
 
@@ -705,8 +719,8 @@ async def test_extra_args(model, tools):
             ),
         },
         expected_args={
-            "kubelet": {"v=1", "enable-server", "alsologtostderr=false"},
-            "kube-proxy": {"v=1", "profiling", "alsologtostderr=false"},
+            "kubelet": {"v=1", "enable-server=true", "alsologtostderr=false"},
+            "kube-proxy": {"v=1", "profiling=true", "alsologtostderr=false"},
         },
     )
 
