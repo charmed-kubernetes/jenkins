@@ -293,6 +293,33 @@
           JOB_TAGS: "-t nvidia"
 
 - job:
+    name: 'validate-ck-ceph'
+    node: runner-amd64
+    triggers:
+      - timed: "@daily"
+    description: |
+      Validates CK, with Ceph.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t ceph"
+
+- job:
     name: 'validate-ck-tigera-secure-ee'
     description: |
       Validates CK, with tigera.
