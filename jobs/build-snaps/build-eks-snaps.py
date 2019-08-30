@@ -9,22 +9,6 @@ import operator
 from lib import snapapi
 from pathlib import Path
 
-
-def _alias(match_re, rename_re, snap):
-    return re.sub(match_re, fr"{rename_re}", snap)
-
-
-def _set_snap_alias(build_path, alias):
-    click.echo(f"Setting new snap alias: {alias}")
-    if build_path.exists():
-        snapcraft_yml = yaml.load(build_path.read_text())
-        if snapcraft_yml["name"] != alias:
-            snapcraft_yml["name"] = alias
-            build_path.write_text(
-                yaml.dump(snapcraft_yml, default_flow_style=False, indent=2)
-            )
-
-
 @click.group()
 def cli():
     pass
@@ -39,8 +23,6 @@ def cli():
 @click.option(
     "--arch", required=True, default="amd64", help="Architecture to build against"
 )
-@click.option("--match-re", "Regex matcher")
-@click.option("--rename-re", help="Regex renamer")
 @click.option("--dry-run", is_flag=True)
 def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
     if not version.startswith("v"):
@@ -58,8 +40,7 @@ def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
     snap_alias = None
 
     for _snap in snap:
-        if match_re and rename_re:
-            snap_alias = _alias(match_re, rename_re, _snap)
+        snap_alias = f"{_snap}-eks"
 
         if snap_alias:
             snapcraft_fn = build_path / f"{_snap}.yaml"
