@@ -114,29 +114,24 @@
     name: 'build-release-eks-snaps'
     description: |
       Builds, releases and promotes Amazon EKS snaps for {version} to the snapstore.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-snaps/build-release-eks.groovy
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-snaps"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/build-snaps"
+          JOB_SPEC_FILE: spec.yml
+          JOB_TAGS: "-t build-eks-snaps"
     parameters:
       - string:
-          name: version
+          name: VERSION
           default: '1.12.7'
           description: snap eks version to build/promote
-      - string:
-          name: channels
-          default: '1.12.7/edge'
-          description: A space separated list of snap verion/channel, ie '1.12.9/edge 1.12.9/beta 1.12.9/candidate 1.12.9/stable'
-      - bool:
-          name: release_only
-          default: false
-          description: release only, no building or pushing to snapstore.
-      - bool:
-          name: dry_run
-          default: false
-          description: dry-run nothing is actually done
-
     properties:
       - build-discarder:
           num-to-keep: 7

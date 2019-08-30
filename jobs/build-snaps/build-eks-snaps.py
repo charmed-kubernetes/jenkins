@@ -147,7 +147,7 @@ def push(result_dir, dry_run):
 
 @cli.command()
 @click.option("--name", required=True, help="Snap name to release")
-@click.option("--channel", required=True, help="Snapstore channel to release to")
+@click.option("--channel", required=True, multiple=True,  help="Snapstore channel to release to")
 @click.option("--version", required=True, help="Snap application version to release")
 @click.option("--dry-run", is_flag=True)
 def release(name, channel, version, dry_run):
@@ -157,11 +157,13 @@ def release(name, channel, version, dry_run):
     click.echo(latest_release)
     if dry_run:
         click.echo("dry-run only:")
-        click.echo(f"  > snapcraft release {name} {latest_release['rev']} {channel}")
+        for _chan in channel:
+            click.echo(f"  > snapcraft release {name} {latest_release['rev']} {_chan}")
     else:
-        click.echo(
-            sh.snapcraft.release(name, latest_release["rev"], channel, _err_to_out=True)
-        )
+        for _chan in channel:
+            click.echo(
+                sh.snapcraft.release(name, latest_release["rev"], _chan, _err_to_out=True)
+            )
 
 
 if __name__ == "__main__":
