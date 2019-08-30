@@ -13,8 +13,8 @@ plan:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-2
-      - JUJU_CONTROLLER=validate-ck
-      - JUJU_MODEL=validate-model
+      - JUJU_CONTROLLER=validate-calico
+      - JUJU_MODEL=validate-calico-model
       - TEST_BGP=1
     before-script:
       - python3 jobs/integration/tigera_aws.py cleanup

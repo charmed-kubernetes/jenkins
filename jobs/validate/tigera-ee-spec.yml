@@ -13,8 +13,8 @@ plan:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-tigera-secure-ee
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-2
-      - JUJU_CONTROLLER=validate-ck
-      - JUJU_MODEL=validate-model
+      - JUJU_CONTROLLER=validate-tigera
+      - JUJU_MODEL=validate-tigera-model
     before-script:
       - python3 jobs/integration/tigera_aws.py cleanup
       - python3 jobs/integration/tigera_aws.py bootstrap
