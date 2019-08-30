@@ -14,10 +14,10 @@ plan:
             #!/bin/bash
             set -x
 
-            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1 | tee -a spec-out.log
+            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
 
             juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-               -d $JUJU_MODEL --model-default test-mode=true --debug --bootstrap-constraints 'arch=amd64' 2>&1 | tee -a spec-out.log
+               -d $JUJU_MODEL --model-default test-mode=true --debug --bootstrap-constraints 'arch=amd64' 2>&1
 
             cat > overlay.yaml <<EOF
             applications:
@@ -29,14 +29,14 @@ plan:
                   channel: $SNAP_VERSION
             EOF
 
-            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --channel $JUJU_DEPLOY_CHANNEL --overlay overlay.yaml 2>&1 | tee -a spec-out.log
+            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --channel $JUJU_DEPLOY_CHANNEL --overlay overlay.yaml 2>&1
 
-            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -v 2>&1 | tee -a spec-out.log
+            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -v 2>&1
 
             pytest $INTEGRATION_TEST_PATH/validation.py \
                --cloud $JUJU_CLOUD \
                --model $JUJU_MODEL \
-               --controller $JUJU_CONTROLLER 2>&1 | tee -a spec-out.log
+               --controller $JUJU_CONTROLLER 2>&1
 
     after-script:
       - runner:

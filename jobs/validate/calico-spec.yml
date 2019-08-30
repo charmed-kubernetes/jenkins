@@ -23,37 +23,33 @@ plan:
             #!/bin/bash
             set -x
 
-            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1 | tee -a spec-out.log
+            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
 
-            python3 jobs/integration/tigera_aws.py cleanup 2>&1 | tee -a spec-out.log
+            python3 jobs/integration/tigera_aws.py cleanup 2>&1
 
             SET_NUM_SUBNETS=1
             if [ -z $TEST_BGP ]; then
               SET_NUM_SUBNETS=2
             fi
 
-            NUM_SUBNETS=$SET_NUM_SUBNETS python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap 2>&1 | tee -a spec-out.log
+            NUM_SUBNETS=$SET_NUM_SUBNETS python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap 2>&1
             if [ -z $TEST_BGP ]; then
-              python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router 2>&1 | tee -a spec-out.log
+              python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router 2>&1
             fi
 
-            # juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-            #    -d $JUJU_MODEL --model-default test-mode=true --debug --bootstrap-constraints 'arch=amd64'
+            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --overlay jobs/overlays/1.16-edge-overlay.yaml 2>&1
 
-
-            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --overlay jobs/overlays/1.16-edge-overlay.yaml 2>&1 | tee -a spec-out.log
-
-            python3 jobs/integration/tigera_aws.py disable-source-dest-check 2>&1 | tee -a spec-out.log
+            python3 jobs/integration/tigera_aws.py disable-source-dest-check 2>&1
             if [ -z $TEST_BGP ]; then
-              python3 jobs/integration/tigera_aws.py configure-bgp 2>&1 | tee -a spec-out.log
+              python3 jobs/integration/tigera_aws.py configure-bgp 2>&1
             fi
 
-            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -v 2>&1 | tee -a spec-out.log
+            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -v 2>&1
 
             pytest $INTEGRATION_TEST_PATH/validation.py \
                --cloud $JUJU_CLOUD \
                --model $JUJU_MODEL \
-               --controller $JUJU_CONTROLLER 2>&1 | tee -a spec-out.log
+               --controller $JUJU_CONTROLLER 2>&1
     after-script:
       - runner:
           script: |
