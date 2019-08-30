@@ -1,12 +1,4 @@
-"""
-snaps-eks.py - Interface for building and publishing snaps
-
-"""
-
 import sys
-
-sys.path.insert(0, ".")
-
 import click
 import sh
 import os
@@ -14,20 +6,11 @@ import glob
 import re
 import yaml
 import operator
-from sdk import snap as snapapi
+from lib import snapapi
 from pathlib import Path
 
 
 def _alias(match_re, rename_re, snap):
-    """ Provide any snap substitutions for things like kubectl-eks...snap
-
-    Usage:
-
-      alias = _rename(match_re\'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\',
-                      rename-re=\'\\1-eks_\\2\',
-                      snap=kubectl)
-    """
-    click.echo(f"Setting alias based on {match_re} -> {rename_re}: {snap}")
     return re.sub(match_re, fr"{rename_re}", snap)
 
 
@@ -56,20 +39,10 @@ def cli():
 @click.option(
     "--arch", required=True, default="amd64", help="Architecture to build against"
 )
-@click.option("--match-re", default="(?=\S*[-]*)([a-zA-Z-]+)(.*)", help="Regex matcher")
-@click.option("--rename-re", help="Regex renamer, ie \1-eks")
+@click.option("--match-re", "Regex matcher")
+@click.option("--rename-re", help="Regex renamer")
 @click.option("--dry-run", is_flag=True)
 def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
-    """ Build snaps
-
-    Usage:
-
-    snaps.py build --snap kubectl --snap kube-proxy --version 1.10.3 --arch amd64 --match-re '(?=\S*[-]*)([a-zA-Z-]+)(.*)' --rename-re '\1-eks'
-
-    Passing --rename-re and --match-re allows you to manipulate the resulting
-    snap file, for example, the above renames kube-proxy_1.10.3_amd64.snap to
-    kube-proxy-eks_1.10.3_amd64.snap
-    """
     if not version.startswith("v"):
         version = f"v{version}"
     env = os.environ.copy()
@@ -147,7 +120,9 @@ def push(result_dir, dry_run):
 
 @cli.command()
 @click.option("--name", required=True, help="Snap name to release")
-@click.option("--channel", required=True, multiple=True,  help="Snapstore channel to release to")
+@click.option(
+    "--channel", required=True, multiple=True, help="Snapstore channel to release to"
+)
 @click.option("--version", required=True, help="Snap application version to release")
 @click.option("--dry-run", is_flag=True)
 def release(name, channel, version, dry_run):
@@ -162,7 +137,9 @@ def release(name, channel, version, dry_run):
     else:
         for _chan in channel:
             click.echo(
-                sh.snapcraft.release(name, latest_release["rev"], _chan, _err_to_out=True)
+                sh.snapcraft.release(
+                    name, latest_release["rev"], _chan, _err_to_out=True
+                )
             )
 
 
