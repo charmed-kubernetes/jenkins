@@ -174,12 +174,15 @@ def bootstrap():
 
     # Juju bootstrap
     controller_name = os.environ.get("JUJU_CONTROLLER", "aws-" + vpc_id)
+    _model_name = os.environ.get("JUJU_MODEL", "aws-" + vpc_id)
     check_call(
         [
             "juju",
             "bootstrap",
             "aws/" + REGION,
             controller_name,
+            "-d",
+            _model_name,
             "--config",
             "vpc-id=" + vpc_id,
             "--to",
