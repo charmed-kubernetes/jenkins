@@ -18,6 +18,19 @@ plan:
       - TEST_BGP=1
     before-script:
       - python3 jobs/integration/tigera_aws.py cleanup
+      - |
+        #!/bin/bash
+        set -eux
+        SET_NUM_SUBNETS=1
+        if [ -z $TEST_BGP ]; then
+          SET_NUM_SUBNETS=2
+        fi
+
+        NUM_SUBNETS=$SET_NUM_SUBNETS python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap
+        if [ -z $TEST_BGP ]; then
+          python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router
+        fi
+        juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER -d $JUJU_MODEL --model-default test-mode=true
       - juju:
           description: Bootstrap and deploy kubernetes
           cloud: $JUJU_CLOUD
@@ -25,19 +38,7 @@ plan:
           model: $JUJU_MODEL
           bootstrap:
             debug: no
-            run: |
-              #!/bin/bash
-              set -eux
-              SET_NUM_SUBNETS=1
-              if [ -z $TEST_BGP ]; then
-                SET_NUM_SUBNETS=2
-              fi
-
-              NUM_SUBNETS=$SET_NUM_SUBNETS python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap
-              if [ -z $TEST_BGP ]; then
-                python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router
-              fi
-              juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER -d $JUJU_MODEL --model-default test-mode=true
+            reuse: yes
           deploy:
             bundle: $JUJU_DEPLOY_BUNDLE
             channel: $JUJU_DEPLOY_CHANNEL
