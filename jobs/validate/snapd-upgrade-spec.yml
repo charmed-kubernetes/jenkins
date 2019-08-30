@@ -11,12 +11,11 @@ plan:
           timeout: 21600
           script: |
             #!/bin/bash
-            set -x
+            set -xue
 
-            which pytest
-            pwd
-            which python3
+            pytest --version
             sudo snap refresh core --$TEST_UPGRADE_SNAPD_CHANNEL 2>&1
+            pytest --version
 
             juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
 
@@ -35,7 +34,8 @@ plan:
 
             juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --channel $JUJU_DEPLOY_CHANNEL --overlay overlay.yaml 2>&1
 
-            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -v 2>&1
+            echo "Settling deployment"
+            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
 
             pytest $INTEGRATION_TEST_PATH/validation.py \
                  --cloud $JUJU_CLOUD \
