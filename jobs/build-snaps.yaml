@@ -112,6 +112,7 @@
 
 - job:
     name: 'build-release-eks-snaps'
+    node: runner-amd64
     description: |
       Builds, releases and promotes Amazon EKS snaps for {version} to the snapstore.
     project-type: freestyle
