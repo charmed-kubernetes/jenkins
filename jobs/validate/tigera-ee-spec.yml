@@ -27,9 +27,7 @@ plan:
             run: |
               #!/bin/bash
               set -eux
-              python3 jobs/integration/tigera_aws.py bootstrap \
-                  --bootstrap-constraints $JUJU_BOOTSTRAP_CONSTRAINTS \
-                  --model-default test-mode=true
+              python3 jobs/integration/tigera_aws.py bootstrap
           deploy:
             bundle: $JUJU_DEPLOY_BUNDLE
             channel: $JUJU_DEPLOY_CHANNEL
