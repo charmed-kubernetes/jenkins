@@ -22,19 +22,19 @@ plan:
       - |
         #!/bin/bash
         set -x
-        docker image prune -a --filter \"until=24h\" --force || true
-        docker container prune --filter \"until=24h\" --force || true
+        docker image prune -a --filter "until=24h" --force || true
+        docker container prune --filter "until=24h" --force || true
 
         snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds
-        # python3 jobs/build-snaps/build-eks-snaps.py build --snap kubelet --snap kubectl --snap kube-proxy --snap kubernetes-test --arch amd64 --version $VERSION --match-re "(?=\\S*[-]*)([a-zA-Z-]+)(.*)" --rename-re "\1-eks" 2>&1
-        # python3 jobs/build-snaps/build-eks-snaps.py push --result-dir $PATH_ID/snap/build 2>&1
+        python3 jobs/build-snaps/build-eks-snaps.py build --snap kubelet --snap kubectl --snap kube-proxy --snap kubernetes-test --arch amd64 --version $VERSION --match-re "(?=\\S*[-]*)([a-zA-Z-]+)(.*)" --rename-re "\1-eks" 2>&1
+        python3 jobs/build-snaps/build-eks-snaps.py push --result-dir release/snap/build 2>&1
         snapcraft revisions kubelet-eks
         python3 jobs/build-snaps/build-eks-snaps.py release --name kubelet-eks --channel $VERSION/edge --channel $VERSION/beta --channel $VERSION/candidate --channel $VERSION/stable --version $VERSION 2>&1
         python3 jobs/build-snaps/build-eks-snaps.py release --name kubectl-eks --channel $VERSION/edge --channel $VERSION/beta --channel $VERSION/candidate --channel $VERSION/stable --version $VERSION 2>&1
         python3 jobs/build-snaps/build-eks-snaps.py release --name kube-proxy-eks --channel $VERSION/edge --channel $VERSION/beta --channel $VERSION/candidate --channel $VERSION/stable --version $VERSION 2>&1
         python3 jobs/build-snaps/build-eks-snaps.py release --name kubernetes-test-eks --channel $VERSION/edge --channel $VERSION/beta --channel $VERSION/candidate --channel $VERSION/stable --version $VERSION 2>&1
-        docker image prune -a --filter \"until=24h\" --force
-        docker container prune --filter \"until=24h\" --force
+        docker image prune -a --filter "until=24h" --force
+        docker container prune --filter "until=24h" --force
 
 meta:
   mkdocs:
