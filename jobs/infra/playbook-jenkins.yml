@@ -61,6 +61,7 @@
           - ubuntu-server
           - ubuntu-standard
           - unzip
+          - uuid
           - wget
           - tree
           - virtualenv

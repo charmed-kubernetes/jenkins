@@ -30,8 +30,8 @@ plan:
           --snap kubernetes-test \
           build $PATH_ID \
           --arch amd64 --version $VERSION \
-          --match-re \'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\' \
-          --rename-re \'\\1-eks'
+          --match-re "(?=\\S*[-]*)([a-zA-Z-]+)(.*)" \
+          --rename-re "\1-eks"
         sudo chown jenkins:jenkins -R $PATH_ID/snap
         python3 build-snaps/build-eks-snaps.py push --result-dir $PATH_ID/snap/build
         python3 build-snaps/build-eks-snaps.py release --name kubelet --channel $VERSION/edge --channel $VERSION/beta --channel $VERSION/candidate --channel $VERSION/stable --version $VERSION
@@ -39,8 +39,8 @@ plan:
         python3 build-snaps/build-eks-snaps.py release --name kube-proxy --channel $VERSION/edge --channel $VERSION/beta --channel $VERSION/candidate --channel $VERSION/stable --version $VERSION
         python3 build-snaps/build-eks-snaps.py release --name kubernetes-test --channel $VERSION/edge --channel $VERSION/beta --channel $VERSION/candidate --channel $VERSION/stable --version $VERSION
 
-        docker image prune -a --filter \"until=24h\" --force
-        docker container prune --filter \"until=24h\" --force
+        docker image prune -a --filter "until=24h" --force
+        docker container prune --filter "until=24h" --force
 
 meta:
   mkdocs:
