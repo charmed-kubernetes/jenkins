@@ -22,8 +22,8 @@ plan:
       - |
         #!/bin/bash
         set -x
-        PATH_ID="$(uuid)"
-        python3 jobs/build-snaps/build-eks-snaps.py build --snap kubelet --snap kubectl --snap kube-proxy --snap kubernetes-test --build-path "$PATH_ID" --arch amd64 --version $VERSION --match-re "(?=\\S*[-]*)([a-zA-Z-]+)(.*)" --rename-re "\1-eks" 2>&1
+        snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds
+        python3 jobs/build-snaps/build-eks-snaps.py build --snap kubelet --snap kubectl --snap kube-proxy --snap kubernetes-test --arch amd64 --version $VERSION --match-re "(?=\\S*[-]*)([a-zA-Z-]+)(.*)" --rename-re "\1-eks" 2>&1
         python3 jobs/build-snaps/build-eks-snaps.py push --result-dir $PATH_ID/snap/build 2>&1
         python3 jobs/build-snaps/build-eks-snaps.py release --name kubelet --channel $VERSION/edge --channel $VERSION/beta --channel $VERSION/candidate --channel $VERSION/stable --version $VERSION 2>&1
         python3 jobs/build-snaps/build-eks-snaps.py release --name kubectl --channel $VERSION/edge --channel $VERSION/beta --channel $VERSION/candidate --channel $VERSION/stable --version $VERSION 2>&1

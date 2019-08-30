@@ -6,13 +6,16 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-ck-snapd-upgrade
       - JUJU_MODEL=validate-model
-  - script:
+    script:
       - runner:
           timeout: 21600
           script: |
             #!/bin/bash
             set -x
 
+            which pytest
+            pwd
+            which python3
             sudo snap refresh core --$TEST_UPGRADE_SNAPD_CHANNEL 2>&1
 
             juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1

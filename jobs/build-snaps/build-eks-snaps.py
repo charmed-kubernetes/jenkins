@@ -12,10 +12,8 @@ import glob
 import re
 import yaml
 import operator
-import uuid
 from lib import snapapi
 from pathlib import Path
-
 
 def _alias(match_re, rename_re, snap):
     """ Provide any snap substitutions for things like kubectl-eks...snap
@@ -69,8 +67,6 @@ def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
     snap file, for example, the above renames kube-proxy_1.10.3_amd64.snap to
     kube-proxy-eks_1.10.3_amd64.snap
     """
-    build_path = str(uuid.uuid4())
-    os.makedirs(build_path, exist_ok=True)
     if not version.startswith("v"):
         version = f"v{version}"
     env = os.environ.copy()
