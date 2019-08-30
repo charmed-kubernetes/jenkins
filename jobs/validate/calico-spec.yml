@@ -17,48 +17,62 @@ plan:
       - JUJU_MODEL=validate-calico-model
       - TEST_BGP=1
     before-script:
-      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
-      - python3 jobs/integration/tigera_aws.py cleanup
-      - |
-        #!/bin/bash
-        set -eux
-        SET_NUM_SUBNETS=1
-        if [ -z $TEST_BGP ]; then
-          SET_NUM_SUBNETS=2
-        fi
+      - runner:
+          timeout: 21600
+          script: |
+            #!/bin/bash
+            set -x
 
-        NUM_SUBNETS=$SET_NUM_SUBNETS python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap
-        if [ -z $TEST_BGP ]; then
-          python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router
-        fi
-      - juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER -d $JUJU_MODEL --model-default test-mode=true
-      - juju deploy $JUJU_DEPLOY_BUNDLE --overlay jobs/overlays/1.16-edge-overlay.yaml --channel edge
-      - |
-        #!/bin/bash
-        set -eux
-        python3 jobs/integration/tigera_aws.py disable-source-dest-check
-        if [ -z $TEST_BGP ]; then
-          python3 jobs/integration/tigera_aws.py configure-bgp
-        fi
-        juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
-    script:
-      - |
-        #!/bin/bash
-        set -eux
-        pytest $INTEGRATION_TEST_PATH/validation.py \
-             --cloud $JUJU_CLOUD \
-             --model $JUJU_MODEL \
-             --controller $JUJU_CONTROLLER
+            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1 | tee -a spec-out.log
+
+            python3 jobs/integration/tigera_aws.py cleanup 2>&1 | tee -a spec-out.log
+
+            SET_NUM_SUBNETS=1
+            if [ -z $TEST_BGP ]; then
+              SET_NUM_SUBNETS=2
+            fi
+
+            NUM_SUBNETS=$SET_NUM_SUBNETS python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap 2>&1 | tee -a spec-out.log
+            if [ -z $TEST_BGP ]; then
+              python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router 2>&1 | tee -a spec-out.log
+            fi
+
+            # juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+            #    -d $JUJU_MODEL --model-default test-mode=true --debug --bootstrap-constraints 'arch=amd64'
+
+
+            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --overlay jobs/overlays/1.16-edge-overlay.yaml 2>&1 | tee -a spec-out.log
+
+            python3 jobs/integration/tigera_aws.py disable-source-dest-check 2>&1 | tee -a spec-out.log
+            if [ -z $TEST_BGP ]; then
+              python3 jobs/integration/tigera_aws.py configure-bgp 2>&1 | tee -a spec-out.log
+            fi
+
+            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -v 2>&1 | tee -a spec-out.log
+
+            pytest $INTEGRATION_TEST_PATH/validation.py \
+               --cloud $JUJU_CLOUD \
+               --model $JUJU_MODEL \
+               --controller $JUJU_CONTROLLER 2>&1 | tee -a spec-out.log
     after-script:
-      - wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-      - python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-      - python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-      - python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-      - python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
-      - python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-      - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-      - python3 jobs/infra/collect-debug.py save-meta metadata.json
-      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
+      - runner:
+          script: |
+            #!/bin/bash
+            set -x
+            wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+            python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+            python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
+            python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+            python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
+            python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+            python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+            python3 jobs/infra/collect-debug.py save-meta metadata.json
+            juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
+            python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
+
+            juju destroy-controller -y \
+               --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
+
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/edge
