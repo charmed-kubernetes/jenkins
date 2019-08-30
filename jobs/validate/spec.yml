@@ -60,50 +60,82 @@ plan:
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck
+      - JUJU_MODEL=validate-model
     tags: [core]
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck
+      - JUJU_MODEL=validate-model
     tags: [core]
   - <<: *BASE_JOB
     env:
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - SNAP_VERSION=1.13/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck
+      - JUJU_MODEL=validate-model
     tags: [core]
 
   # vault
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-vault
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-vault
+
     tags: [vault]
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-vault
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-vault
+
     tags: [vault]
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-vault
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-vault
+
     tags: [vault]
   - <<: *BASE_JOB
     env:
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-vault
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-vault
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - SNAP_VERSION=1.13/edge
     tags: [vault]
 
   # ceph
   - <<: *BASE_JOB
     env:
-      - SNAP_VERSION=1.16/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-ceph
       - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+      - SNAP_VERSION=1.16/edge
       - JUJU_MODEL=validate-ceph
     script:
       - pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph
@@ -111,24 +143,35 @@ plan:
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-ceph
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-ceph
+
     script:
       - pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph
     tags: [ceph]
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-ceph
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-ceph
+
     script:
       - pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph
     tags: [ceph]
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.13/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-ceph
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-ceph
     script:
       - pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph
     tags: [ceph]
@@ -137,8 +180,12 @@ plan:
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-nvidia
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nvidia
+
     before-script:
       - juju:
           cloud: $JUJU_CLOUD
@@ -168,8 +215,12 @@ plan:
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-nvidia
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nvidia
+
     before-script:
       - juju:
           cloud: $JUJU_CLOUD
@@ -199,8 +250,12 @@ plan:
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-nvidia
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nvidia
+
     before-script:
       - juju:
           cloud: $JUJU_CLOUD
@@ -230,8 +285,12 @@ plan:
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.13/edge
-      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_MODEL=validate-nvidia
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nvidia
+
     before-script:
       - juju:
           cloud: $JUJU_CLOUD

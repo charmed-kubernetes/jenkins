@@ -22,7 +22,7 @@ mkdocs
 ogc-plugins-juju
 ogc-plugins-runner
 ogc-plugins-spec-doc
-ogc>=0.3.31
+ogc>=0.3.32
 requests
 pymacaroons
 pyyaml>=4.2b1,<=4.2
