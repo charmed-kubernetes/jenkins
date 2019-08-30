@@ -160,10 +160,12 @@
 # V2 ------------------------------------------------------------------------- #
 - job:
     name: 'validate-ck'
-    node: runner-amd64
+    node: runner-cloud
     description: |
       Validates CDK edge, supports last three recent releases.
     project-type: freestyle
+    triggers:
+      - timed: "@daily"
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -234,28 +236,6 @@
           JOB_SPEC_FILE: "snapd-upgrade-spec.yml"
 
 
-- job:
-    name: 'validate-ck-daily'
-    description: |
-      Validates CDK daily, supports last three recent releases plus latest upcoming release.
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    triggers:
-      - timed: "@daily"
-    publishers:
-      - trigger-parameterized-builds:
-        - project: validate-ck
-          condition: ALWAYS
-        - project: validate-ck-vault
-          condition: ALWAYS
-        - project: validate-ck-tigera-secure-ee
-          condition: ALWAYS
-        - project: validate-ck-calico
-          condition: ALWAYS
-        - project: validate-ck-nvidia
-          condition: ALWAYS
-
 # ADDONS --------------------------------------------------------------------- #
 - job:
     name: 'validate-ck-vault'
@@ -263,6 +243,8 @@
     description: |
       Validates CK, with vault.
     project-type: freestyle
+    triggers:
+      - timed: "@daily"
     scm:
       - k8s-jenkins-jenkaas
     parameters:
@@ -286,6 +268,8 @@
 - job:
     name: 'validate-ck-nvidia'
     node: runner-amd64
+    triggers:
+      - timed: "@daily"
     description: |
       Validates CK, with NVidia.
     project-type: freestyle
@@ -313,6 +297,8 @@
     description: |
       Validates CK, with tigera.
     node: runner-amd64
+    triggers:
+      - timed: "@daily"
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -337,6 +323,8 @@
     description: |
       Validates CK, with calico.
     node: runner-amd64
+    triggers:
+      - timed: "@daily"
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
