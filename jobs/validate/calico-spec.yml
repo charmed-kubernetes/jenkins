@@ -44,7 +44,8 @@ plan:
               python3 jobs/integration/tigera_aws.py configure-bgp 2>&1
             fi
 
-            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -v 2>&1
+            echo "Waiting for deployment"
+            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
 
             pytest $INTEGRATION_TEST_PATH/validation.py \
                --cloud $JUJU_CLOUD \
