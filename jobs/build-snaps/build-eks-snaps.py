@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
 """
-snaps-eks.py - Interface for building and publishing snaps
+Interface for building and publishing snaps
 
 """
 
@@ -14,19 +13,6 @@ import yaml
 import operator
 from lib import snapapi
 from pathlib import Path
-
-def _alias(match_re, rename_re, snap):
-    """ Provide any snap substitutions for things like kubectl-eks...snap
-
-    Usage:
-
-      alias = _rename(match_re\'(?=\\S*[-]*)([a-zA-Z-]+)(.*)\',
-                      rename-re=\'\\1-eks_\\2\',
-                      snap=kubectl)
-    """
-    click.echo(f"Setting alias based on {match_re} -> {rename_re}: {snap}")
-    return re.sub(match_re, fr"{rename_re}", snap)
-
 
 def _set_snap_alias(build_path, alias):
     click.echo(f"Setting new snap alias: {alias}")
@@ -49,12 +35,10 @@ def cli():
 @click.option(
     "--build-path", required=True, default="release/snap", help="Path of snap builds"
 )
-@click.option("--version", required=True, help="Version of k8s to build")
+@click.option("--version", required=True, default="1.12.9", help="Version of k8s to build")
 @click.option(
     "--arch", required=True, default="amd64", help="Architecture to build against"
 )
-@click.option("--match-re", default="(?=\S*[-]*)([a-zA-Z-]+)(.*)", help="Regex matcher")
-@click.option("--rename-re", help="Regex renamer, ie \1-eks")
 @click.option("--dry-run", is_flag=True)
 def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
     """ Build snaps
@@ -83,7 +67,7 @@ def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
 
     for _snap in snap:
         if match_re and rename_re:
-            snap_alias = _alias(match_re, rename_re, _snap)
+            snap_alias = f"{_snap}-eks"
 
         if snap_alias:
             snapcraft_fn = build_path / f"{_snap}.yaml"
@@ -100,8 +84,8 @@ def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
                 _snap,
                 _env=env,
                 _cwd=str(build_path),
+                    _bg_exc=False,
                 _iter=True,
-                _err_to_out=True,
             ):
                 click.echo(line.strip())
 
@@ -110,19 +94,14 @@ def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
 @click.option(
     "--result-dir",
     required=True,
-    default="release/snap/build",
+    default="release/snap/snap/build",
     help="Path of resulting snap builds",
 )
+@click.option("--version", required=True, default="1.12.9", help="k8s Version")
 @click.option("--dry-run", is_flag=True)
-def push(result_dir, dry_run):
+def push(result_dir, version, dry_run):
     """ Promote to a snapstore channel/track
-
-    Usage:
-
-       tox -e py36 -- python3 snaps.py push --result-dir ./release/snap/build
     """
-    # TODO: Verify channel is a ver/chan string
-    #   re: [\d+\.]+\/(?:edge|stable|candidate|beta)
     for fname in glob.glob(f"{result_dir}/*.snap"):
         try:
             click.echo(f"Running: snapcraft push {fname}")
@@ -130,38 +109,12 @@ def push(result_dir, dry_run):
                 click.echo("dry-run only:")
                 click.echo(f"  > snapcraft push {fname}")
             else:
-                for line in sh.snapcraft.push(fname, _iter=True, _err_to_out=True):
+                for line in sh.snapcraft.push(fname, "--release", f"{version}/edge,{version}/beta,{version}/candidate,{version}/stable", _iter=True, _bg_exc=False):
                     click.echo(line.strip())
-        except sh.ErrorReturnCode_2 as e:
+        except sh.ErrorReturnCode as e:
             click.echo("Failed to upload to snap store")
             click.echo(e.stdout)
             click.echo(e.stderr)
-        except sh.ErrorReturnCode_1 as e:
-            click.echo("Failed to upload to snap store")
-            click.echo(e.stdout)
-            click.echo(e.stderr)
-
-
-@cli.command()
-@click.option("--name", required=True, help="Snap name to release")
-@click.option("--channel", required=True, multiple=True,  help="Snapstore channel to release to")
-@click.option("--version", required=True, help="Snap application version to release")
-@click.option("--dry-run", is_flag=True)
-def release(name, channel, version, dry_run):
-    """ Release the most current revision snap to channel
-    """
-    latest_release = snapapi.latest(name, version)
-    click.echo(latest_release)
-    if dry_run:
-        click.echo("dry-run only:")
-        for _chan in channel:
-            click.echo(f"  > snapcraft release {name} {latest_release['rev']} {_chan}")
-    else:
-        for _chan in channel:
-            click.echo(
-                sh.snapcraft.release(name, latest_release["rev"], _chan, _err_to_out=True)
-            )
-
 
 if __name__ == "__main__":
     cli()

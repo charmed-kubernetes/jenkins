@@ -9,7 +9,6 @@ boto3
 canonicalwebteam.snapstoreapi
 flake8
 flaky
-git+https://github.com/juju/juju-crashdump.git
 invoke
 ipdb
 jenkins-job-builder
