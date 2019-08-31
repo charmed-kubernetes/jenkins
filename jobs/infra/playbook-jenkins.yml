@@ -113,25 +113,30 @@
         - "bundletester"
       tags:
         - jenkins
-    - name: clone juju-wait script
-      git:
-        repo: 'https://git.launchpad.net/juju-wait'
-        dest: /srv/juju-wait
-      when: ansible_architecture != "x86_64"
+    - name: remove py juju-wait
+      command: "rm -rf /usr/local/bin/juju-wait"
       tags:
-        - adhoc
         - jenkins
-    - name: copy juju-wait to bindir
-      copy:
-        src: /srv/juju-wait/juju_wait/__init__.py
-        dest: /usr/local/bin/juju-wait
-        mode: 0777
-        force: yes
-        remote_src: yes
-      tags:
-        - adhoc
-        - jenkins
-      when: ansible_architecture != "x86_64"
+      ignore_errors: yes
+    # - name: clone juju-wait script
+    #   git:
+    #     repo: 'https://git.launchpad.net/juju-wait'
+    #     dest: /srv/juju-wait
+    #   when: ansible_architecture != "x86_64"
+    #   tags:
+    #     - adhoc
+    #     - jenkins
+    # - name: copy juju-wait to bindir
+    #   copy:
+    #     src: /srv/juju-wait/juju_wait/__init__.py
+    #     dest: /usr/local/bin/juju-wait
+    #     mode: 0777
+    #     force: yes
+    #     remote_src: yes
+    #   tags:
+    #     - adhoc
+    #     - jenkins
+    #   when: ansible_architecture != "x86_64"
     - name: copy bashrc
       copy:
         src: "fixtures/bashrc"
