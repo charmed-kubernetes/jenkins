@@ -307,8 +307,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t ceph"
+          JOB_SPEC_FILE: "ceph-spec.yml"
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
