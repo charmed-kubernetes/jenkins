@@ -165,7 +165,7 @@
       Validates CDK edge, supports last three recent releases.
     project-type: freestyle
     triggers:
-      - timed: "@daily"
+      - timed: "H */5 * * *"
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -221,6 +221,8 @@
     parameters:
       - juju-params
       - test-params
+    triggers:
+      - timed: "H */5 * * *"
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -244,7 +246,7 @@
       Validates CK, with vault.
     project-type: freestyle
     triggers:
-      - timed: "@daily"
+      - timed: "H */5 * * *"
     scm:
       - k8s-jenkins-jenkaas
     parameters:
@@ -269,7 +271,7 @@
     name: 'validate-ck-nvidia'
     node: runner-amd64
     triggers:
-      - timed: "@daily"
+      - timed: "H */5 * * *"
     description: |
       Validates CK, with NVidia.
     project-type: freestyle
@@ -296,7 +298,7 @@
     name: 'validate-ck-ceph'
     node: runner-amd64
     triggers:
-      - timed: "@daily"
+      - timed: "H */5 * * *"
     description: |
       Validates CK, with Ceph.
     project-type: freestyle
@@ -325,7 +327,7 @@
       Validates CK, with tigera.
     node: runner-amd64
     triggers:
-      - timed: "@daily"
+      - timed: "H */5 * * *"
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -351,7 +353,7 @@
       Validates CK, with calico.
     node: runner-amd64
     triggers:
-      - timed: "@daily"
+      - timed: "H */5 * * *"
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
