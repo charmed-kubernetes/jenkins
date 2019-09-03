@@ -7,6 +7,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-snapd-upgrade
       - JUJU_MODEL=validate-model
+      - TEST_UPGRADE_SNAPD_CHANNEL=beta
     script:
       - runner:
           timeout: 21600
@@ -64,6 +65,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-snapd-upgrade
       - JUJU_MODEL=validate-model
+      - TEST_UPGRADE_SNAPD_CHANNEL=beta
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
@@ -72,6 +74,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-snapd-upgrade
       - JUJU_MODEL=validate-model
+      - TEST_UPGRADE_SNAPD_CHANNEL=beta
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.13/edge
@@ -80,6 +83,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-snapd-upgrade
       - JUJU_MODEL=validate-model
+      - TEST_UPGRADE_SNAPD_CHANNEL=beta
 
 meta:
   name: Verify CK with Snapd upgrade

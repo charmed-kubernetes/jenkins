@@ -14,12 +14,12 @@ plan:
             #!/bin/bash
             set -x
 
-            if ! juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1; then
+            if ! juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER 2>&1; then
                juju kill-controller -y $JUJU_CONTROLLER 2>&1
             fi
 
             juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-               -d $JUJU_MODEL --model-default test-mode=true --debug --bootstrap-constraints 'arch=amd64' 2>&1
+               -d $JUJU_MODEL --model-default test-mode=true --bootstrap-constraints 'arch=amd64' 2>&1
 
             cat > overlay.yaml <<EOF
             applications:
