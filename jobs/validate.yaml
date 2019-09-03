@@ -215,7 +215,6 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t core"
 
 - job:
     name: 'validate-ck-upgrade'
@@ -284,8 +283,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t vault"
+          JOB_SPEC_FILE: "vault-spec.yml"
 
 - job:
     name: 'validate-ck-nvidia'
@@ -307,8 +305,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t nvidia"
+          JOB_SPEC_FILE: "nvidia-spec.yml"
 
 - job:
     name: 'validate-ck-ceph'
