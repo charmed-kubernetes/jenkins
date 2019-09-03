@@ -166,9 +166,8 @@
     project-type: pipeline
     triggers:
       - timed: "@daily"
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
+    scm:
+      - k8s-jenkins-jenkaas
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -177,14 +176,22 @@
       - build-discarder:
           num-to-keep: 1
     dsl: |
-      build job: "validate-ck"
-      build job: "validate-ck-upgrade"
-      build job: "validate-ck-vault"
-      build job: "validate-ck-ceph"
-      build job: "validate-ck-nvidia"
-      build job: "validate-ck-calico"
-      build job: "validate-ck-tigera-secure-ee"
-      build job: "validate-ck-snapd-upgrade"
+      parallel [
+        1a: build job: "validate-ck",
+        1b: build job: "validate-ck-upgrade"
+      ]
+      paralell [
+        2a: build job: "validate-ck-vault"
+        2b: build job: "validate-ck-tigera-secure-ee"
+      ]
+      paralell [
+        3a: build job: "validate-ck-ceph"
+        3b: build job: "validate-ck-nvidia"
+      ]
+      paralell [
+        4a: build job: "validate-ck-calico"
+        4b: build job: "validate-ck-snapd-upgrade"
+      ]
 
 
 - job:
