@@ -3,7 +3,7 @@
 def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
-def snap_sh = "${utils.cipy} build-snaps/snap.py"
+def snap_sh = "TOX_WORK_DIR='.tox-cdk-addons' tox -e py36 -- python3 jobs/build-snaps/snap.py"
 
 pipeline {
     agent {
@@ -26,6 +26,7 @@ pipeline {
     stages {
         stage('Setup User') {
             steps {
+                sh "${snap_sh} --help"
                 sh "git config --global user.email 'cdkbot@juju.solutions'"
                 sh "git config --global user.name 'cdkbot'"
                 sh "docker login -u ${env.REGISTRY_CREDS_USR} -p ${env.REGISTRY_CREDS_PSW} ${env.REGISTRY_URL}"
@@ -190,17 +191,15 @@ pipeline {
         }
         stage('Promote cdk-addons snap'){
             steps {
-                dir('jobs'){
-                    script {
-                        def kube_ersion = kube_version.substring(1)
-                        def snaps_to_release = ['cdk-addons']
-                        params.channels.split().each { channel ->
-                            snaps_to_release.each  { snap ->
-                                if(params.dry_run) {
-                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion} --dry-run"
-                                } else {
-                                    sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion}"
-                                }
+                script {
+                    def kube_ersion = kube_version.substring(1)
+                    def snaps_to_release = ['cdk-addons']
+                    params.channels.split().each { channel ->
+                        snaps_to_release.each  { snap ->
+                            if(params.dry_run) {
+                                sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion} --dry-run"
+                            } else {
+                                sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion}"
                             }
                         }
                     }
