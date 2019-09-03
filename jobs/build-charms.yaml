@@ -64,30 +64,6 @@
       - timed: "H/10 * * * *"
 
 - job:
-    name: 'build-k8s-bundles'
-    description: |
-      Builds and releases k8s bundles to the charmstore.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-charms/build-bundles.groovy
-    parameters:
-      - string:
-          name: to_channel
-          default: 'edge'
-          description: Channel to publish bundle to
-      - string:
-          name: tag
-          default: 'k8s'
-          description: |
-            Filter the builds by tag (ie. k8s). A tag can also be the name of
-            the bundle to individually build.
-    properties:
-      - build-discarder:
-          num-to-keep: 7
-
-- job:
     name: 'build-charms'
     node: runner-amd64
     project-type: freestyle

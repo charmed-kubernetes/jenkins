@@ -62,7 +62,7 @@
 
 
 - job-template:
-    name: 'build-release-cdk-addons-{arch}'
+    name: 'build-release-cdk-addons-{arch}-{version}'
     description: |
       Builds, releases and promotes cdk-addons for supported k8s versions on {arch} to the snapstore.
       Container images required by CDK are known during the build, so this job also tags and pushes
@@ -85,7 +85,7 @@
           default: 'runner-{arch}'
       - string:
           name: version
-          default: '1.16'
+          default: '{version}'
           description: |
             Version to build and release. This job will clone (or create as needed) the
             cdk-addons release-`version` branch, then build and release the snap to the
@@ -98,7 +98,7 @@
             the tag will be set to https://dl.k8s.io/release/[stable|latest]-`version`.txt.
       - string:
           name: channels
-          default: '1.16/edge 1.16/beta 1.16/candidate 1.16/stable'
+          default: '{version}/edge'
           description: |
             Snap store channels to release the built snap to.
       - bool:
@@ -140,5 +140,6 @@
 - project:
     name: build-release-snaps
     arch: ['amd64', 's390x', 'arm64', 'ppc64le']
+    version: ['1.13', '1.14', '1.15', '1.16']
     jobs:
-      - 'build-release-cdk-addons-{arch}'
+      - 'build-release-cdk-addons-{arch}-{version}'

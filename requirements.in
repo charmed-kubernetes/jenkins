@@ -24,7 +24,7 @@ ogc-plugins-spec-doc
 ogc>=0.3.33
 requests
 pymacaroons
-pyyaml>=4.2b1,<=4.2
+pyyaml>=5.1.2,<=6.0
 pytest-asyncio
 pytest-forked
 pytest-sugar
