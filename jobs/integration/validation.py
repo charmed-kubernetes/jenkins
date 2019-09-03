@@ -1243,6 +1243,18 @@ data:
 async def test_encryption_at_rest(model, tools):
     try:
         # setup
+        if 'percona-cluster' in model.applications and \
+           model.applications['percona-cluster'].life != 'alive':
+            try:
+                await model.block_until(
+                    lambda: ('percona-cluster' not in model.applications or
+                             model.applications['percona-cluster'].life == 'alive'),
+                    timeout=120)
+            except asyncio.TimeoutError:
+                life = model.applications['percona-cluster'].life
+                pytest.fail('Timed out waiting for percona-cluster '
+                            'to settle or go away ({} != alive)'.format(life))
+
         if 'percona-cluster' not in model.applications:
             await model.deploy(
                 "percona-cluster",
