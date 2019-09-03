@@ -6,6 +6,8 @@
       scm:
         - k8s-jenkins-jenkaas
       script-path: jobs/aws-iam-docker/Jenkinsfile
+    triggers:
+      - timed: "@weekly"
     parameters:
       - string:
           name: 'GIT_REPO'
