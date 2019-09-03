@@ -177,20 +177,20 @@
           num-to-keep: 1
     dsl: |
       parallel [
-        1a: build job: "validate-ck",
-        1b: build job: "validate-ck-upgrade"
+        1a: build job: "validate-ck", propagate: false
+        1b: build job: "validate-ck-upgrade", propagate: false
       ]
       paralell [
-        2a: build job: "validate-ck-vault"
-        2b: build job: "validate-ck-tigera-secure-ee"
+        2a: build job: "validate-ck-vault", propagate: false
+        2b: build job: "validate-ck-tigera-secure-ee", propagate: false
       ]
       paralell [
-        3a: build job: "validate-ck-ceph"
-        3b: build job: "validate-ck-nvidia"
+        3a: build job: "validate-ck-ceph", propagate: false
+        3b: build job: "validate-ck-nvidia", propagate: false
       ]
       paralell [
-        4a: build job: "validate-ck-calico"
-        4b: build job: "validate-ck-snapd-upgrade"
+        4a: build job: "validate-ck-calico", propagate: false
+        4b: build job: "validate-ck-snapd-upgrade", propagate: false
       ]
 
 
