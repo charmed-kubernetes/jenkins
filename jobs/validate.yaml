@@ -185,7 +185,7 @@
 
 - job:
     name: 'validate-ck-upgrade'
-    node: runner-amd64
+    node: runner-cloud
     description: |
       Validates CDK minor release upgrades, supports last three recent releases.
     project-type: freestyle
@@ -210,7 +210,7 @@
 
 - job:
     name: 'validate-ck-snapd-upgrade'
-    node: runner-amd64
+    node: runner-cloud
     description: |
       Validates CK release using an upgrade snapcore.
     project-type: freestyle
@@ -236,7 +236,7 @@
 # ADDONS --------------------------------------------------------------------- #
 - job:
     name: 'validate-ck-vault'
-    node: runner-amd64
+    node: runner-cloud
     description: |
       Validates CK, with vault.
     project-type: freestyle
@@ -261,7 +261,7 @@
 
 - job:
     name: 'validate-ck-nvidia'
-    node: runner-amd64
+    node: runner-cloud
     triggers:
       - timed: "H */5 * * *"
     description: |
@@ -286,7 +286,7 @@
 
 - job:
     name: 'validate-ck-ceph'
-    node: runner-amd64
+    node: runner-cloud
     triggers:
       - timed: "H */5 * * *"
     description: |
