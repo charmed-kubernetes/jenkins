@@ -189,23 +189,23 @@ pipeline {
                 }
             }
         }
-        stage('Promote cdk-addons snap'){
-            steps {
-                script {
-                    def kube_ersion = kube_version.substring(1)
-                    def snaps_to_release = ['cdk-addons']
-                    params.channels.split().each { channel ->
-                        snaps_to_release.each  { snap ->
-                            if(params.dry_run) {
-                                sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion} --dry-run"
-                            } else {
-                                sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion}"
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // stage('Promote cdk-addons snap'){
+        //     steps {
+        //         script {
+        //             def kube_ersion = kube_version.substring(1)
+        //             def snaps_to_release = ['cdk-addons']
+        //             params.channels.split().each { channel ->
+        //                 snaps_to_release.each  { snap ->
+        //                     if(params.dry_run) {
+        //                         sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion} --dry-run"
+        //                     } else {
+        //                         sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion}"
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
     post {
         always {
