@@ -14,7 +14,9 @@ plan:
             #!/bin/bash
             set -x
 
-            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
+            if ! juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1; then
+               juju kill-controller -y $JUJU_CONTROLLER 2>&1
+            fi
 
             juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
                -d $JUJU_MODEL --model-default test-mode=true --debug --bootstrap-constraints 'arch=amd64' 2>&1
