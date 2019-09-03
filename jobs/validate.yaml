@@ -159,13 +159,40 @@
 
 # V2 ------------------------------------------------------------------------- #
 - job:
+    name: 'validate-ck-full'
+    node: runner-cloud
+    description: |
+      Triggers all validation jobs
+    project-type: pipeline
+    triggers:
+      - timed: "@daily"
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 1
+    dsl: |
+      build job: "validate-ck"
+      build job: "validate-ck-upgrade"
+      build job: "validate-ck-vault"
+      build job: "validate-ck-ceph"
+      build job: "validate-ck-nvidia"
+      build job: "validate-ck-calico"
+      build job: "validate-ck-tigera-secure-ee"
+      build job: "validate-ck-snapd-upgrade"
+
+
+- job:
     name: 'validate-ck'
     node: runner-cloud
     description: |
       Validates CDK edge, supports last three recent releases.
     project-type: freestyle
-    triggers:
-      - timed: "H */5 * * *"
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -194,8 +221,6 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
-    triggers:
-      - timed: "H */5 * * *"
     properties:
       - block-on-build-release
       - build-discarder:
