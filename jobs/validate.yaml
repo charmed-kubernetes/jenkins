@@ -192,7 +192,6 @@
     scm:
       - k8s-jenkins-jenkaas
     parameters:
-      - juju-params
       - test-params
     wrappers:
       - default-job-wrapper
@@ -218,9 +217,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
-      - test-params
     triggers:
       - timed: "H */5 * * *"
     wrappers:
@@ -249,9 +245,6 @@
       - timed: "H */5 * * *"
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params:
-          override_juju_model: validate-vault
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -277,8 +270,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -304,8 +295,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -331,8 +320,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -357,13 +344,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params:
-          override_juju_model: validate-calico
-      - bool:
-          name: TEST_BGP
-          default: false
-          description: Whether to inclue BGP in the testing
     wrappers:
       - default-job-wrapper
       - ci-creds
