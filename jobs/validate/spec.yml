@@ -138,7 +138,13 @@ plan:
       - SNAP_VERSION=1.16/edge
       - JUJU_MODEL=validate-ceph
     script:
-      - pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph
+      - |
+        #!/bin/bash
+        set -x
+        pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph \
+                       --cloud $JUJU_CLOUD \
+                       --model $JUJU_MODEL \
+                       --controller $JUJU_CONTROLLER 2>&1
     tags: [ceph]
   - <<: *BASE_JOB
     env:
@@ -150,7 +156,13 @@ plan:
       - JUJU_CONTROLLER=validate-ck-ceph
 
     script:
-      - pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph
+      - |
+        #!/bin/bash
+        set -x
+        pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph \
+                       --cloud $JUJU_CLOUD \
+                       --model $JUJU_MODEL \
+                       --controller $JUJU_CONTROLLER 2>&1
     tags: [ceph]
   - <<: *BASE_JOB
     env:
@@ -160,9 +172,14 @@ plan:
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-ceph
-
     script:
-      - pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph
+      - |
+        #!/bin/bash
+        set -x
+        pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph \
+                       --cloud $JUJU_CLOUD \
+                       --model $JUJU_MODEL \
+                       --controller $JUJU_CONTROLLER 2>&1
     tags: [ceph]
   - <<: *BASE_JOB
     env:
@@ -173,7 +190,13 @@ plan:
       - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-ceph
     script:
-      - pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph
+      - |
+        #!/bin/bash
+        set -x
+        pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph \
+                       --cloud $JUJU_CLOUD \
+                       --model $JUJU_MODEL \
+                       --controller $JUJU_CONTROLLER 2>&1
     tags: [ceph]
 
   # nvidia
