@@ -1,0 +1,84 @@
+@Library('juju-pipeline@master') _
+
+def juju_model = String.format("%s-%s", params.model, uuid())
+def juju_controller = String.format("%s-%s", params.controller, uuid())
+
+pipeline {
+    agent {
+        label "${params.build_node}"
+    }
+    /* XXX: Global $PATH setting doesn't translate properly in pipelines
+     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
+     */
+    environment {
+        PATH = "${utils.cipaths}"
+        TEST_ARN = credentials('aws-iam-arn')
+        AWS_ACCESS_KEY_ID = credentials('aws-iam-key')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-iam-secret')
+    }
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+    stages {
+        stage('Deploy: K8s') {
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
+            steps {
+                sh "${utils.cipy} --version"
+                setStartTime()
+                script {
+                    dir('jobs'){
+                        if (params.overlay_input) {
+                            overlay = "${env.WORKSPACE}/custom_overlay.yaml"
+                            def overlay_input = readYaml text: params.overlay_input
+                            writeYaml file: overlay, data: overlay_input
+                        }
+                        if (params.custom_bundle) {
+                            custom_bundle_file = "${env.WORKSPACE}/custom_bundle.yaml"
+                            def custom_bundle_input = readYaml text: params.custom_bundle
+                            writeYaml file: custom_bundle_file, data: custom_bundle_input
+                        }
+                    }
+                }
+                sh "juju bootstrap ${params.cloud} ${juju_controller} --bootstrap-constraints 'arch=amd64'"
+                deployCDK(controller: juju_controller,
+                          model: juju_model,
+                          cloud: params.cloud,
+                          bundle: "cs:~containers/${params.bundle}",
+                          version_overlay: overlay,
+                          bundle_channel: deploy_bundle_channel,
+                          custom_bundle: custom_bundle_file)
+            }
+        }
+
+        stage('Validate') {
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
+
+            steps {
+                dir('jobs') {
+                    sh "CONTROLLER=${juju_controller} MODEL=${juju_model} CLOUD=${params.cloud} TEST_CHARM_CHANNEL=${params.bundle_channel} ${utils.pytest} --junit-xml=validate.xml integration/test_aws_iam.py -m 'aws-iam'"
+                }
+            }
+        }
+    }
+    post {
+        failure {
+            setFail()
+        }
+        success {
+            setPass()
+        }
+        always {
+            setEndTime()
+            collectDebug(juju_controller, juju_model)
+        }
+        cleanup {
+            saveMeta()
+            tearDown(juju_controller)
+        }
+    }
+}
