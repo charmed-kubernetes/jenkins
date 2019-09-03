@@ -370,7 +370,7 @@
       args:
         executable: /bin/bash
     - name: cleanup leftover artifacts
-      command: python3 fixtures/cleanup-env.py
+      command: bash fixtures/cleanup-env.sh
       ignore_errors: yes
       tags:
         - jenkins

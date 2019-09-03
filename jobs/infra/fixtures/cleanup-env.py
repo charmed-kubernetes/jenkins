@@ -1,55 +1,48 @@
 import json
-import click
-
-import sh
+from subprocess import run, CalledProcessError
 
 try:
     juju_controllers = json.loads(
-        sh("juju", "controllers", "--format", "json")
+        run("juju controllers --format json", shell=True, capture_output=True).stdout.decode()
     )
     if juju_controllers:
         for name, _ in juju_controllers:
             try:
-                sh(["juju",
-                    "destroy-controller",
-                    "--destroy-all-models",
-                    "--destroy-storage",
-                    "-y",
-                    name]
-                )
-            except sh.ErrorReturn as e:
-                click.echo(f"Error destroying {e}, continuing...")
-except sh.ErrorReturnCodeas e:
-    click.echo(f"Error reading controller: {e.stderr.decode()}, continuing...")
+                run(
+                    "juju destroy-controller --destroy-all-models --destroy-storage -y {}".format(name), shell=True)
+            except CalledProcessError as e:
+                print("Error destroying {}, continuing...".format(e))
+except CalledProcessError as e:
+    print("Error reading controller: {}, continuing...".format(e))
 
 
 
-sh.sudo("apt", "clean")
-sh.sudo("rm", "-rf", "/var/log/*")
-sh("rm", "-rf", "/var/lib/jenkins/.cache/*")
-sh.sudo("docker", "image", "prune", "-a", "--filter", "until=24h", "--force")
-sh.sudo("docker", "container", "prune", "--filter", "until=24h", "--force")
+run("sudo apt clean", shell=True)
+run("sudo rm -rf /var/log/*", shell=True)
+run("sudo rm -rf /var/lib/jenkins/.cache/*", shell=True)
+run("docker image prune -a --filter until=24h --force", shell=True)
+run("docker container prune --filter until=24h --force", shell=True)
 
-containers = json.loads(sh.sudo("lxc", "query", "/1.0/containers"))
-click.echo(containers)
+containers = json.loads(run("sudo lxc query /1.0/containers", shell=True, capture_output=True).stdout.decode())
+print(containers)
 for container in containers:
-    sh.sudo("lxc", "--force", container)
+    run("sudo lxc --force {}".format(container), shell=True)
 
-storage_pools = json.loads(sh.sudo("sudo", "lxc", "query", "/1.0/storage-pools"))
-click.echo(storage_pools)
+storage_pools = json.loads(run("sudo lxc query /1.0/storage-pools", shell=True, capture_output=True).stdout.decode())
+print(storage_pools)
 for storage in storage_pools:
     storage_name = storage.split("/")[-1]
     volumes = json.loads(
-        sh.sudo("lxc", "query", f"/1.0/storage-pools/{storage_name}/volumes")
+        run("sudo lxc query /1.0/storage-pools/{}/volumes".format(storage_name), shell=True, capture_output=True).stdout.decode()
     )
-    click.echo(volumes)
+    print(volumes)
     for volume in volumes:
         volume_name = volume.split("/")[-1]
-        click.echo(f"Deleting {volume_name}")
-        sh.sudo("lxc", "storage", "volume", "delete", storage_name, f"custom/{volume_name}")
+        print("Deleting {}".format(volume_name))
+        run("sudo lxc storage volume delete {} {}".format(storage_name, "custom/{}".format(volume_name)), shell=True)
     try:
-        sh.sudo("lxc", "storage", "delete", storage_name)
-    except sh.ErrorReturnCode as e:
-        click.echo(f"Error removing {e}, continuing...")
+        run("sudo lxc storage delete {}".format(storage_name))
+    except CalledProcessError as e:
+        print("Error removing {}, continuing...".format(e))
 
-sh("rm", "-rf", "/var/lib/jenkins/venvs")
+run("rm -rf /var/lib/jenkins/venvs", shell=True)
