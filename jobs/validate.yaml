@@ -175,23 +175,30 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 1
-    dsl: |
-      parallel [
-        1a: build job: "validate-ck", propagate: false
-        1b: build job: "validate-ck-upgrade", propagate: false
-      ]
-      paralell [
-        2a: build job: "validate-ck-vault", propagate: false
-        2b: build job: "validate-ck-tigera-secure-ee", propagate: false
-      ]
-      paralell [
-        3a: build job: "validate-ck-ceph", propagate: false
-        3b: build job: "validate-ck-nvidia", propagate: false
-      ]
-      paralell [
-        4a: build job: "validate-ck-calico", propagate: false
-        4b: build job: "validate-ck-snapd-upgrade", propagate: false
-      ]
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "spec.yml"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "upgrade-spec.yml"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "snapd-upgrade-spec.yml"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "vault-spec.yml"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "tigera-ee-spec.yml"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "nvidia-spec.yml"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "calico-spec.yml"
 
 
 - job:
