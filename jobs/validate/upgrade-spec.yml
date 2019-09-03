@@ -1,20 +1,12 @@
-meta:
-  name: Verify CK with Tigera
-  description: |
-    Verifies that CK with Tigera passes integration tests
-  mkdocs:
-    destination:
-      - "validations/ck/tigera-ee.md"
-
 plan:
   - &BASE_JOB
     env:
-      - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-tigera-secure-ee
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-2
-      - JUJU_CONTROLLER=validate-tigera
-      - JUJU_MODEL=validate-tigera-model
+      - SNAP_VERSION=1.13/stable
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=stable
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-upgrade
+      - JUJU_MODEL=validate-model
     script:
       - runner:
           timeout: 21600
@@ -23,8 +15,10 @@ plan:
             set -x
 
             juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
-            python3 jobs/integration/tigera_aws.py cleanup 2>&1
-            python3 jobs/integration/tigera_aws.py bootstrap 2>&1
+
+            juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+               -d $JUJU_MODEL --model-default test-mode=true --debug --bootstrap-constraints 'arch=amd64' 2>&1
+
             cat > overlay.yaml <<EOF
             applications:
               kubernetes-master:
@@ -35,19 +29,17 @@ plan:
                   channel: $SNAP_VERSION
             EOF
 
-            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --overlay overlay.yaml --channel $JUJU_DEPLOY_CHANNEL 2>&1
-            juju config -m $JUJU_CONTROLLER:$JUJU_MODEL tigera-secure-ee \
-               license-key=$(base64 -w0 $TIGERA_SECURE_EE_LICENSE_KEY_FILE) \
-               registry-credentials=$(base64 -w0 $TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE) 2>&1
-
-            python3 jobs/integration/tigera_aws.py disable-source-dest-check 2>&1
+            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --channel $JUJU_DEPLOY_CHANNEL --overlay overlay.yaml 2>&1
 
             juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
 
             pytest $INTEGRATION_TEST_PATH/validation.py \
+               --upgrade-snap-channel 1.16/edge \
+               --upgrade-charm-channel edge \
                --cloud $JUJU_CLOUD \
                --model $JUJU_MODEL \
                --controller $JUJU_CONTROLLER 2>&1
+
     after-script:
       - runner:
           script: |
@@ -60,34 +52,47 @@ plan:
             python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
             python3 jobs/infra/collect-debug.py push 'job_result' *job.json
             python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+            python3 jobs/infra/collect-debug.py set-key 'to_snap_version' "1.16/edge"
+            python3 jobs/infra/collect-debug.py set-key 'is_upgrade' "yes"
             python3 jobs/infra/collect-debug.py save-meta metadata.json
             juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
             python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
-            python3 jobs/integration/tigera_aws.py cleanup 2>&1
 
             juju destroy-controller -y \
                --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
   - <<: *BASE_JOB
     env:
-      - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-tigera-secure-ee
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-2
-      - JUJU_CONTROLLER=validate-tigera
-      - JUJU_MODEL=validate-tigera-model
+      - SNAP_VERSION=1.14/stable
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=stable
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-upgrade
+      - JUJU_MODEL=validate-model
   - <<: *BASE_JOB
     env:
-      - SNAP_VERSION=1.14/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-tigera-secure-ee
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-2
-      - JUJU_CONTROLLER=validate-tigera
-      - JUJU_MODEL=validate-tigera-model
+      - SNAP_VERSION=1.15/stable
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=stable
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-upgrade
+      - JUJU_MODEL=validate-model
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.13/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-tigera-secure-ee
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-2
-      - JUJU_CONTROLLER=validate-tigera
-      - JUJU_MODEL=validate-tigera-model
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck
+      - JUJU_MODEL=validate-model
+
+meta:
+  name: Verify CK with minor upgrade
+  description: |
+    Verifies that CK minor upgrades from previous stable to upcoming edge passes integration tests
+  mkdocs:
+    destination:
+      - "validations/ck/minor-upgrade.md"
+    jenkins-job-builder:
+      jobs:
+        - jobs/ci-master.yaml
+        - jobs/build-charms.yaml
