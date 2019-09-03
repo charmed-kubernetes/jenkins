@@ -216,8 +216,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    triggers:
-      - timed: "H */5 * * *"
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -236,12 +234,10 @@
 # ADDONS --------------------------------------------------------------------- #
 - job:
     name: 'validate-ck-vault'
-    node: runner-cloud
+    node: runner-amd64
     description: |
       Validates CK, with vault.
     project-type: freestyle
-    triggers:
-      - timed: "H */5 * * *"
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -262,8 +258,6 @@
 - job:
     name: 'validate-ck-nvidia'
     node: runner-cloud
-    triggers:
-      - timed: "H */5 * * *"
     description: |
       Validates CK, with NVidia.
     project-type: freestyle
@@ -287,8 +281,6 @@
 - job:
     name: 'validate-ck-ceph'
     node: runner-cloud
-    triggers:
-      - timed: "H */5 * * *"
     description: |
       Validates CK, with Ceph.
     project-type: freestyle
@@ -313,8 +305,6 @@
     description: |
       Validates CK, with tigera.
     node: runner-amd64
-    triggers:
-      - timed: "H */5 * * *"
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -337,8 +327,6 @@
     description: |
       Validates CK, with calico.
     node: runner-amd64
-    triggers:
-      - timed: "H */5 * * *"
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
