@@ -92,7 +92,7 @@ plan:
       - JUJU_MODEL=validate-vault
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-vault
 
     tags: [vault]
@@ -102,7 +102,7 @@ plan:
       - JUJU_MODEL=validate-vault
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-vault
 
     tags: [vault]
@@ -112,7 +112,7 @@ plan:
       - JUJU_MODEL=validate-vault
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-vault
 
     tags: [vault]
@@ -121,7 +121,7 @@ plan:
       - JUJU_MODEL=validate-vault
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-vault
       - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - SNAP_VERSION=1.13/edge
@@ -132,7 +132,7 @@ plan:
     env:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-ceph
       - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - SNAP_VERSION=1.16/edge
@@ -146,7 +146,7 @@ plan:
       - JUJU_MODEL=validate-ceph
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-ceph
 
     script:
@@ -158,7 +158,7 @@ plan:
       - JUJU_MODEL=validate-ceph
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-ceph
 
     script:
@@ -170,7 +170,7 @@ plan:
       - JUJU_MODEL=validate-ceph
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CLOUD=google/us-east1
       - JUJU_CONTROLLER=validate-ck-ceph
     script:
       - pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph
