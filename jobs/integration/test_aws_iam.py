@@ -3,7 +3,6 @@ import pytest
 import random
 import json
 import os
-from .utils import asyncify, _juju_wait
 from .logger import log
 from subprocess import check_output
 from shlex import split
@@ -72,7 +71,7 @@ async def patch_kubeconfig_and_verify_aws_iam(one_master):
 
 
 @pytest.mark.asyncio
-async def test_validate_aws_iam(model):
+async def test_validate_aws_iam(model, tools):
     # This test verifies the aws-iam charm is working
     # properly. This requires:
     # 1) Deploy aws-iam and relate
@@ -100,7 +99,7 @@ async def test_validate_aws_iam(model):
     await model.add_relation("aws-iam", "kubernetes-master")
     await model.add_relation("aws-iam", "easyrsa")
     log("waiting for cluster to settle...")
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
 
     # 2) deploy CRD for test
     log("deploying crd")
@@ -150,7 +149,7 @@ EOF""".format(get_test_arn())
     # 7) turn on RBAC and add a test user
     await masters.set_config({"authorization-mode": "RBAC,Node"})
     log("waiting for cluster to settle...")
-    await asyncify(_juju_wait)()
+    await tools.juju_wait()
 
     # 8) verify failure
     await verify_auth_failure(one_master, "get po")
