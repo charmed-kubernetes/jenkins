@@ -37,9 +37,9 @@ pipeline {
         }
         stage('Prepare VM') {
             steps {
-                sh "juju run -m ${params.controller}:default --unit ubuntu/0 'sudo snap install lxd'"
-                sh "juju run -m ${params.controller}:default --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'"
-                sh "juju run -m ${params.controller}:default --unit ubuntu/0 --timeout=60m0s 'sudo lxd init --auto'"
+                sh "juju run -m ${params.controller}:microk8s-model --unit ubuntu/0 'sudo snap install lxd'"
+                sh "juju run -m ${params.controller}:microk8s-model --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'"
+                sh "juju run -m ${params.controller}:microk8s-model --unit ubuntu/0 --timeout=60m0s 'sudo lxd init --auto'"
             }
         }
         stage('Setup') {
@@ -52,7 +52,7 @@ pipeline {
         stage('Test and Release'){
             steps {
                 retry(3) {
-                    sh "DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0 JUJU_CONTROLLER=${params.controller}:default  tox -c jobs/microk8s/tox.ini -e py36 -- python3 jobs/microk8s/release-to-beta.py"
+                    sh "DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0 JUJU_CONTROLLER=${params.controller}:microk8s-model tox -c jobs/microk8s/tox.ini -e py36 -- python3 jobs/microk8s/release-to-beta.py"
                 }
             }
         }
