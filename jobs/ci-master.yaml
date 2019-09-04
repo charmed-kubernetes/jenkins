@@ -3,7 +3,7 @@
     name: k8s-jenkins-jenkaas
     scm:
       - git:
-          url: https://github.com/charmed-kubernetes/kubernetes-jenkins.git
+          url: https://github.com/charmed-kubernetes/jenkins.git
           branches:
             - 'master'
         skip-tag: true
@@ -317,6 +317,9 @@
     wrappers:
       - ansicolor
       - workspace-cleanup
+      - timeout:
+          timeout: 240
+          fail: true
 
 - wrapper:
     name: ci-creds

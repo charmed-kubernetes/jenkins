@@ -3,7 +3,7 @@
 # V2 ------------------------------------------------------------------------- #
 - job:
     name: 'validate-ck'
-    node: runner-cloud
+    node: runner-amd64
     description: |
       Validates CDK edge, supports last three recent releases.
     project-type: freestyle
@@ -24,6 +24,10 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-upgrade'
+          threshold: SUCCESS
 
 - job:
     name: 'validate-ck-upgrade'
@@ -40,14 +44,16 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    triggers:
-        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "upgrade-spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-snapd-upgrade'
+          threshold: SUCCESS
 
 
 - job:
@@ -65,14 +71,16 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    triggers:
-        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "snapd-upgrade-spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-vault'
+          threshold: SUCCESS
 
 
 # ADDONS --------------------------------------------------------------------- #
@@ -91,14 +99,16 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    triggers:
-        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "vault-spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-nvidia'
+          threshold: SUCCESS
 
 - job:
     name: 'validate-ck-nvidia'
@@ -115,14 +125,17 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    triggers:
-        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "nvidia-spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-ceph'
+          threshold: SUCCESS
+
 
 - job:
     name: 'validate-ck-ceph'
@@ -139,14 +152,16 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    triggers:
-        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "ceph-spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-tigera-secure-ee'
+          threshold: SUCCESS
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
@@ -163,14 +178,16 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    triggers:
-        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "tigera-ee-spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-calico'
+          threshold: SUCCESS
 
 - job:
     name: 'validate-ck-calico'
@@ -187,8 +204,6 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
-    triggers:
-        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
