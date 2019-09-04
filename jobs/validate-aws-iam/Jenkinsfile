@@ -5,7 +5,7 @@ def juju_controller = String.format("%s-%s", params.controller, uuid())
 
 pipeline {
     agent {
-        label "${params.build_node}"
+        label "runner"
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
