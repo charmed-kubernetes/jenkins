@@ -1,206 +1,6 @@
 # Validates a deployed CDK
 
-# - core_bundle_defaults: &core_bundle_defaults
-#     name: 'core-bundle-defaults'
-#     bundle:
-#       - 'canonical-kubernetes'
-#       - 'kubernetes-core'
-
-# - core_upgrade_bundle_defaults: &core_upgrade_bundle_defaults
-#     name: 'core-upgrade-bundle-defaults'
-#     bundle:
-#       - 'canonical-kubernetes'
-#       - 'kubernetes-core'
-
-# - non_core_bundle_defaults: &non_core_bundle_defaults
-#     name: 'non-core-bundle-defaults'
-#     bundle:
-#       - 'canonical-kubernetes-canal'
-
-# - non_core_upgrade_bundle_defaults: &non_core_upgrade_bundle_defaults
-#     name: 'non-core-upgrade-bundle-defaults'
-#     bundle:
-#       - 'canonical-kubernetes-canal'
-
-
-# # Overlays
-# - edge_overlay_defaults: &edge_overlay_defaults
-#     name: 'edge-overlay-defaults'
-#     version:
-#       !include: includes/k8s-support-matrix.inc
-
-# - validate_parameter_defaults: &validate_parameter_defaults
-#     name: 'validate-parameter-defaults'
-#     parameters:
-#       - string:
-#           name: model
-#           default: 'validate'
-#       - string:
-#           name: controller
-#           default: 'validate-k8s'
-#       - choice:
-#           name: cloud
-#           choices:
-#             - 'aws/us-east-1'
-#             - 'google/us-east1'
-#             - 'azure/eastus'
-#       - string:
-#           name: version_overlay
-#           default: '{version_overlay}'
-#       - string:
-#           name: bundle_channel
-#           default: 'edge'
-#       - string:
-#           name: bundle
-#           default: '{bundle}'
-#       - string:
-#           name: snap_channel
-#           default: '{snap_channel}'
-#       - text:
-#           name: overlay_input
-#           description: "Paste yaml bundle overlay, this will merge on top of any bundles, overlays, defined."
-#       - text:
-#           name: custom_bundle
-#           description: "Paste a custom yaml bundle, this will replace any channels, bundles, or overlays defined."
-#       - string:
-#           name: upgrade_from_bundle_channel
-#           default: '{upgrade_from_bundle_channel}'
-
-
-# - job-template:
-#     name: 'validate-{version}-{bundle}'
-#     id: validate-core
-#     description: |
-#       Validates k8s {version} {bundle} deployment.
-#     project-type: pipeline
-#     pipeline-scm:
-#       scm:
-#         - k8s-jenkins-jenkaas
-#       script-path: jobs/validate/Jenkinsfile
-#     <<: *validate_parameter_defaults
-#     properties:
-#       - build-discarder:
-#           num-to-keep: 7
-
-# - job-template:
-#     name: 'validate-upgrade-{version}-{bundle}'
-#     id: validate-core-upgrade
-#     description: |
-#       Validates upgrade k8s {version} {bundle} deployment.
-#     project-type: pipeline
-#     pipeline-scm:
-#       scm:
-#         - k8s-jenkins-jenkaas
-#       script-path: jobs/validate/Jenkinsfile
-#     <<: *validate_parameter_defaults
-#     properties:
-#       - build-discarder:
-#           num-to-keep: 7
-
-
-# - job-template:
-#     name: 'validate-{version}-{bundle}'
-#     id: validate-non-core
-#     description: |
-#       Validates non core k8s {version} {bundle} deployment.
-#     project-type: pipeline
-#     pipeline-scm:
-#       scm:
-#         - k8s-jenkins-jenkaas
-#       script-path: jobs/validate/Jenkinsfile
-#     <<: *validate_parameter_defaults
-#     properties:
-#       - build-discarder:
-#           num-to-keep: 7
-
-# - job-template:
-#     name: 'validate-upgrade-{version}-{bundle}'
-#     id: validate-non-core-upgrade
-#     description: |
-#       Validates non core upgrade k8s {version} {bundle} deployment.
-#     project-type: pipeline
-#     pipeline-scm:
-#       scm:
-#         - k8s-jenkins-jenkaas
-#       script-path: jobs/validate/Jenkinsfile
-#     <<: *validate_parameter_defaults
-#     properties:
-#       - build-discarder:
-#           num-to-keep: 7
-
-# - job:
-#     name: 'validate-oneoff'
-#     description: |
-#       Validates a one off deployment, typically using a custom bundle
-#     project-type: pipeline
-#     pipeline-scm:
-#       scm:
-#         - k8s-jenkins-jenkaas
-#       script-path: jobs/validate/Jenkinsfile
-#     <<: *validate_parameter_defaults
-
-# - project:
-#     name: validate
-#     <<: *edge_overlay_defaults
-#     jobs:
-#       - 'validate-core':
-#           upgrade_from_bundle_channel: ''
-#           <<: *core_bundle_defaults
-#       - 'validate-non-core':
-#           upgrade_from_bundle_channel: ''
-#           <<: *non_core_bundle_defaults
-#       - 'validate-core-upgrade':
-#           upgrade_from_bundle_channel: 'stable'
-#           <<: *core_upgrade_bundle_defaults
-#       - 'validate-non-core-upgrade':
-#           upgrade_from_bundle_channel: 'stable'
-#           <<: *non_core_upgrade_bundle_defaults
-
-
 # V2 ------------------------------------------------------------------------- #
-- job:
-    name: 'validate-ck-full'
-    node: runner-cloud
-    description: |
-      Triggers all validation jobs
-    project-type: pipeline
-    triggers:
-      - timed: "@daily"
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    properties:
-      - block-on-build-release
-      - build-discarder:
-          num-to-keep: 1
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "spec.yml"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "upgrade-spec.yml"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "snapd-upgrade-spec.yml"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "vault-spec.yml"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "tigera-ee-spec.yml"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "nvidia-spec.yml"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "calico-spec.yml"
-
-
 - job:
     name: 'validate-ck'
     node: runner-cloud
@@ -216,6 +16,8 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -238,6 +40,8 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -261,6 +65,8 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -285,6 +91,8 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -307,6 +115,8 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -329,6 +139,8 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -351,6 +163,8 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -373,6 +187,8 @@
       - block-on-build-release
       - build-discarder:
           num-to-keep: 7
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
