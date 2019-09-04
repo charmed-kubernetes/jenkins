@@ -1296,9 +1296,11 @@ async def test_encryption_at_rest(model, tools):
             "kubectl create secret generic test-secret "
             "--from-literal=username='secret-value'"
         )
+        assert output.results.get("Stderr", "") == ""
         assert output.status == "completed"
         # read secret
         output = await worker.run("kubectl get secret test-secret -o yaml")
+        assert output.results.get("Stderr", "") == ""
         assert output.status == "completed"
         assert "secret-value" in output.results["Stdout"]
         # verify secret is encrypted
@@ -1308,6 +1310,7 @@ async def test_encryption_at_rest(model, tools):
             "--endpoints http://127.0.0.1:4001 "
             "get /registry/secrets/default/test-secret | hexdump -C"
         )
+        assert output.results.get("Stderr", "") == ""
         assert output.status == "completed"
         assert "secret-value" not in output.results["Stdout"]
     finally:
