@@ -7,6 +7,7 @@ import yaml
 import re
 import random
 import pytest
+import juju
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from datetime import datetime
@@ -1235,6 +1236,15 @@ data:
         # read and ignore any exception so that it doesn't get raised
         # when the task is GC'd
         task.exception()
+    # apparently, juju-wait will consider the model settled before an
+    # application has fully gone away (presumably, when all units are gone) but
+    # but having a dying percona-cluster in the model can break the vault test
+    try:
+        await model.block_until(
+            lambda: 'percona-cluster' not in model.applications,
+            timeout=120)
+    except asyncio.TimeoutError:
+        pytest.fail('Timed out waiting for percona-cluster to go away')
 
 
 @pytest.mark.asyncio
@@ -1243,18 +1253,6 @@ data:
 async def test_encryption_at_rest(model, tools):
     try:
         # setup
-        if 'percona-cluster' in model.applications and \
-           model.applications['percona-cluster'].life != 'alive':
-            try:
-                await model.block_until(
-                    lambda: ('percona-cluster' not in model.applications or
-                             model.applications['percona-cluster'].life == 'alive'),
-                    timeout=120)
-            except asyncio.TimeoutError:
-                life = model.applications['percona-cluster'].life
-                pytest.fail('Timed out waiting for percona-cluster '
-                            'to settle or go away ({} != alive)'.format(life))
-
         if 'percona-cluster' not in model.applications:
             await model.deploy(
                 "percona-cluster",
@@ -1268,7 +1266,12 @@ async def test_encryption_at_rest(model, tools):
                 "totally-unsecure-auto-unlock": True,
             },
         )
-        await model.add_relation("vault:shared-db", "percona-cluster:shared-db")
+        try:
+            await model.add_relation("vault:shared-db", "percona-cluster:shared-db")
+        except juju.errors.JujuAPIError as e:
+            pc = model.applications.get('percona-cluster')
+            pytest.fail('JujuAPIError: {}\n\n{}'.format(
+                e, pc.data if pc else '(percona-cluster not in model)'))
         await model.applications["kubernetes-master"].remove_relation(
             "easyrsa:client", "kubernetes-master:certificates"
         )
