@@ -3,7 +3,9 @@ set -x
 
 for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
     echo "$i"
-    juju destroy-controller --destroy-all-models --destroy-storage -y "$i" 2>&1
+    if ! juju destroy-controller -y --destroy-all-models --destroy-storage "$i" 2>&1; then
+        juju kill-controller -y "$i" 2>&1
+    fi
 done
 
 sudo apt clean
