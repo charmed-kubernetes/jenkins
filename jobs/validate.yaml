@@ -210,3 +210,28 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "calico-spec.yml"
+
+
+- job:
+    name: 'validate-ck-aws-iam'
+    description: |
+      Validates CK, with AWS IAM.
+    node: runner-amd64
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    triggers:
+        - timed: "@daily"
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "aws-iam-spec.yml"
