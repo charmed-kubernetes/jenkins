@@ -28,6 +28,9 @@
       - trigger:
           project: 'validate-ck-upgrade'
           threshold: SUCCESS
+      - trigger:
+          project: 'validate-ck-snapd-upgrade'
+          threshold: SUCCESS
 
 - job:
     name: 'validate-ck-upgrade'
@@ -52,7 +55,7 @@
           JOB_SPEC_FILE: "upgrade-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-snapd-upgrade'
+          project: 'validate-ck-vault'
           threshold: SUCCESS
 
 
@@ -79,7 +82,7 @@
           JOB_SPEC_FILE: "snapd-upgrade-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-vault'
+          project: 'validate-ck-nvidia'
           threshold: SUCCESS
 
 
@@ -107,7 +110,7 @@
           JOB_SPEC_FILE: "vault-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-nvidia'
+          project: 'validate-ck-ceph'
           threshold: SUCCESS
 
 - job:
@@ -133,7 +136,7 @@
           JOB_SPEC_FILE: "nvidia-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-ceph'
+          project: 'validate-ck-tigera-secure-ee'
           threshold: SUCCESS
 
 
@@ -160,7 +163,7 @@
           JOB_SPEC_FILE: "ceph-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-tigera-secure-ee'
+          project: 'validate-ck-calico'
           threshold: SUCCESS
 
 - job:
@@ -186,7 +189,7 @@
           JOB_SPEC_FILE: "tigera-ee-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-calico'
+          project: 'validate-ck-aws-iam'
           threshold: SUCCESS
 
 - job:
