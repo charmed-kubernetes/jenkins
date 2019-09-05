@@ -17,6 +17,7 @@ plan:
             replace-controller: yes
             model-default:
               - test-mode=true
+              - owner=k8sci
           deploy:
             reuse: no
             bundle: $JUJU_DEPLOY_BUNDLE

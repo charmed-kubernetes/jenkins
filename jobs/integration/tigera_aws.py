@@ -187,8 +187,10 @@ def bootstrap():
             "vpc-id=" + vpc_id,
             "--to",
             "subnet=" + subnet_cidrs[0],
-            "--config",
+            "--model-default",
             "test-mode=true",
+            "--model-default",
+            "resource-tags=owner=k8sci"
         ]
     )
     check_call(["juju", "model-defaults", "vpc-id=" + vpc_id, "test-mode=true"])
