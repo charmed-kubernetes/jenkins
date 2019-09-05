@@ -1,5 +1,9 @@
 # -*- mode:yaml; -*-
 # K8s layers
+- interface:aws-iam:
+    downstream: 'charmed-kubernetes/interface-aws-iam.git'
+    upstream: 'https://github.com/juju-solutions/interface-aws-iam.git'
+    tags: ['k8s']    
 - interface:aws-integration:
     downstream: 'charmed-kubernetes/interface-aws-integration.git'
     upstream: 'https://github.com/juju-solutions/interface-aws-integration.git'
