@@ -3,7 +3,9 @@ language: python
 python:
   - "3.7"
   - "3.6"
+env:
+  - TOX_WORK_DIR=.tox
 install:
   - travis_retry pip install -rrequirements.txt
   - travis_retry pip install tox-travis
-script: TOX_WORK_DIR=.tox tox
+script: tox
