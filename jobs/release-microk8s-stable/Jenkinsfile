@@ -20,7 +20,7 @@ pipeline {
     options {
         ansiColor('xterm')
         timestamps()
-        timeout(time: 4, unit: 'HOURS')
+        timeout(time: 6, unit: 'HOURS')
     }
     stages {
         stage('Provision VM') {
