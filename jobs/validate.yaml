@@ -55,7 +55,7 @@
           JOB_SPEC_FILE: "upgrade-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-vault'
+          project: 'validate-ck-calico'
           threshold: SUCCESS
 
 
@@ -82,11 +82,61 @@
           JOB_SPEC_FILE: "snapd-upgrade-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-nvidia'
+          project: 'validate-ck-tigera-ee'
           threshold: SUCCESS
 
 
 # ADDONS --------------------------------------------------------------------- #
+- job:
+    name: 'validate-ck-calico'
+    description: |
+      Validates CK, with calico.
+    node: runner-amd64
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "calico-spec.yml"
+
+
+- job:
+    name: 'validate-ck-tigera-secure-ee'
+    description: |
+      Validates CK, with tigera.
+    node: runner-amd64
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "tigera-ee-spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-vault'
+          threshold: SUCCESS
+
+
 - job:
     name: 'validate-ck-vault'
     node: runner-amd64
@@ -114,33 +164,6 @@
           threshold: SUCCESS
 
 - job:
-    name: 'validate-ck-nvidia'
-    node: runner-amd64
-    description: |
-      Validates CK, with NVidia.
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    properties:
-      - block-on-build-release
-      - build-discarder:
-          num-to-keep: 7
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "nvidia-spec.yml"
-    publishers:
-      - trigger:
-          project: 'validate-ck-tigera-secure-ee'
-          threshold: SUCCESS
-
-
-- job:
     name: 'validate-ck-ceph'
     node: runner-amd64
     description: |
@@ -163,14 +186,15 @@
           JOB_SPEC_FILE: "ceph-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-calico'
+          project: 'validate-ck-nvidia'
           threshold: SUCCESS
 
+
 - job:
-    name: 'validate-ck-tigera-secure-ee'
-    description: |
-      Validates CK, with tigera.
+    name: 'validate-ck-nvidia'
     node: runner-amd64
+    description: |
+      Validates CK, with NVidia.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -186,34 +210,11 @@
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "tigera-ee-spec.yml"
+          JOB_SPEC_FILE: "nvidia-spec.yml"
     publishers:
       - trigger:
           project: 'validate-ck-aws-iam'
           threshold: SUCCESS
-
-- job:
-    name: 'validate-ck-calico'
-    description: |
-      Validates CK, with calico.
-    node: runner-amd64
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    properties:
-      - block-on-build-release
-      - build-discarder:
-          num-to-keep: 7
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "calico-spec.yml"
-
 
 - job:
     name: 'validate-ck-aws-iam'
