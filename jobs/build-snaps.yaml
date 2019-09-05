@@ -108,6 +108,8 @@
     properties:
       - build-discarder:
           num-to-keep: 7
+    triggers:
+        - timed: "@daily"
 
 
 - job:
