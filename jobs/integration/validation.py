@@ -189,6 +189,7 @@ async def test_auth_file_propagation(model):
     await run_until_success(leader, "sed -i '$d' /root/cdk/basic_auth.csv")
 
 
+@pytest.mark.flaky
 @pytest.mark.asyncio
 async def test_status_messages(model, tools):
     """ Validate that the status messages are correct. """
