@@ -212,7 +212,7 @@ pipeline {
             sh "sudo rm -rf cdk-addons/build"
             sh "docker image prune -a --filter \"until=24h\" --force"
             sh "docker container prune --filter \"until=24h\" --force"
-            sh "docker logout ${env.REGISTRY_URL}"
+            // sh "docker logout ${env.REGISTRY_URL}"
             sh "snapcraft logout"
         }
     }
