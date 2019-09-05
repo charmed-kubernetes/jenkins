@@ -100,3 +100,7 @@
     namespace: 'kubeflow-charmers'
     downstream: 'juju-solutions/charm-redis-k8s.git'
     tags: ['general', 'redis-k8s']
+- aws-iam:
+    namespace: 'containers'
+    downstream: 'charmed-kubernetes/charm-aws-iam'
+    tags: ['k8s', 'aws-iam']
