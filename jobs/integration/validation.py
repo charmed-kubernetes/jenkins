@@ -189,7 +189,13 @@ async def test_auth_file_propagation(model):
     await run_until_success(leader, "sed -i '$d' /root/cdk/basic_auth.csv")
 
 
-@pytest.mark.flaky
+def delay_rerun(*args):
+    import time
+    time.sleep(30)
+    return True
+
+
+@pytest.mark.flaky(rerun_filter=delay_rerun)
 @pytest.mark.asyncio
 async def test_status_messages(model, tools):
     """ Validate that the status messages are correct. """
