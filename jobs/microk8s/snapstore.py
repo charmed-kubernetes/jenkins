@@ -211,10 +211,11 @@ class Microk8sSnap:
 
         """
         if self.juju_unit:
-            cmd_array = "juju run -m {} --timeout=90m0s --unit {}".format(
+            cmd_array = "juju run -m {} --timeout=120m0s --unit {}".format(
                 self.juju_controller, self.juju_unit
             ).split()
             cmd_array.append(cmd)
         else:
             cmd_array = cmd.split()
+        print("Executing: {}".format(cmd_array))
         return cmd_array
