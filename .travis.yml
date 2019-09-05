@@ -6,4 +6,4 @@ python:
 install:
   - travis_retry pip install -rrequirements.txt
   - travis_retry pip install tox-travis
-script: tox
+script: TOX_WORK_DIR=.tox tox
