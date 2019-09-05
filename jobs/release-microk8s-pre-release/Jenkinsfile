@@ -24,7 +24,7 @@ pipeline {
                 /* g3s.xlarge and p2.xlarge are for gpu
                    a1.2xlarge for arm, t2.xlarge for amd64
                 */
-                sh "while ! juju show-status -m ${params.controller}:default --format short ubuntu/0 | grep active ; do sleep 10 ; echo waiting... ; done"
+                sh "while ! juju show-status -m ${params.controller}:microk8s-model --format short ubuntu/0 | grep active ; do sleep 10 ; echo waiting... ; done"
             }
         }
         stage('Prepare VM') {
