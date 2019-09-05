@@ -1,5 +1,5 @@
 import pytest
-from ..snapapi import latest, max_rev
+from lib import snapapi
 
 
 revisions = [
@@ -107,7 +107,7 @@ revisions = [
 def test_latest_rev_115():
     """ Make sure we pull latest revision
     """
-    output = max_rev(revisions, "1.15")
+    output = snapapi.max_rev(revisions, "1.15")
     # latest("kubectl", "1.14", "s390x", True)
     assert output is not None
     assert output == 1107
@@ -116,7 +116,7 @@ def test_latest_rev_115():
 def test_latest_rev_114():
     """ Make sure we pull latest revision
     """
-    output = max_rev(revisions, "1.14")
+    output = snapapi.max_rev(revisions, "1.14")
     # latest("kubectl", "1.14", "s390x", True)
     assert output is not None
     assert output == 1105
@@ -125,7 +125,7 @@ def test_latest_rev_114():
 def test_latest_rev_113():
     """ Make sure we pull latest revision
     """
-    output = max_rev(revisions, "1.13")
+    output = snapapi.max_rev(revisions, "1.13")
     # latest("kubectl", "1.14", "s390x", True)
     assert output is not None
     assert output == 1110

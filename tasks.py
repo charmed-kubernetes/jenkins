@@ -6,13 +6,6 @@ load_dotenv()
 
 
 @task
-def test(c):
-    """ Run unittest suite
-    """
-    c.run("pytest jobs/**/*/tests")
-
-
-@task
 def update_deps(c):
     """ Syncs package dependencies
     """
@@ -42,6 +35,13 @@ def flake8(c):
     """ Runs flake8 against project
     """
     c.run("flake8 --ignore=E501,W503 jobs/integration")
+
+
+@task(pre=[flake8])
+def test(c):
+    """ Run unittest suite
+    """
+    c.run("pytest jobs/**/test_unit*")
 
 
 @task
