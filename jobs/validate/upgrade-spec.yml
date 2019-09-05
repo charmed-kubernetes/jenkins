@@ -4,9 +4,9 @@ plan:
       - SNAP_VERSION=1.13/stable
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=stable
-      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-ck-upgrade
-      - JUJU_MODEL=validate-model
+      - JUJU_MODEL=validate-upgrade-model
     script:
       - runner:
           timeout: 21600
