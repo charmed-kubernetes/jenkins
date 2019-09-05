@@ -53,11 +53,6 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "upgrade-spec.yml"
-    publishers:
-      - trigger:
-          project: 'validate-ck-calico'
-          threshold: SUCCESS
-
 
 - job:
     name: 'validate-ck-snapd-upgrade'
@@ -87,27 +82,6 @@
 
 
 # ADDONS --------------------------------------------------------------------- #
-- job:
-    name: 'validate-ck-calico'
-    description: |
-      Validates CK, with calico.
-    node: runner-amd64
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    properties:
-      - block-on-build-release
-      - build-discarder:
-          num-to-keep: 7
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "calico-spec.yml"
 
 
 - job:
@@ -133,9 +107,34 @@
           JOB_SPEC_FILE: "tigera-ee-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-vault'
+          project: 'validate-ck-calico'
           threshold: SUCCESS
 
+- job:
+    name: 'validate-ck-calico'
+    description: |
+      Validates CK, with calico.
+    node: runner-amd64
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "calico-spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-vault'
+          threshold: SUCCESS
 
 - job:
     name: 'validate-ck-vault'
