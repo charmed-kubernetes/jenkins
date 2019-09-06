@@ -69,7 +69,7 @@ pipeline {
         }
         stage('Validate') {
             steps {
-                exec "cd bundle-kubeflow && git checkout ${params.bundle_revision} && pytest -vv"
+                exec "cd bundle-kubeflow && git checkout ${params.bundle_revision} && ./tests/run.sh"
             }
         }
     }
