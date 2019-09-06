@@ -12,9 +12,6 @@
     properties:
       - build-discarder:
           num-to-keep: 3
-    parameters:
-      - global-params
-      - charm-params
     wrappers:
       - ansicolor
       - workspace-cleanup
