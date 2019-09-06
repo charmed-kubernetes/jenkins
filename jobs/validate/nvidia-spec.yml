@@ -40,26 +40,26 @@ plan:
             #!/bin/bash
             set -x
 
-            if ! juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER 2>&1; then
-               juju kill-controller -y $JUJU_CONTROLLER 2>&1
-            fi
+            # if ! juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER 2>&1; then
+            #    juju kill-controller -y $JUJU_CONTROLLER 2>&1
+            # fi
 
-            juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-               -d $JUJU_MODEL --model-default test-mode=true --bootstrap-constraints 'arch=amd64' 2>&1
+            # juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+            #    -d $JUJU_MODEL --model-default test-mode=true --bootstrap-constraints 'arch=amd64' 2>&1
 
-            cat > overlay.yaml <<EOF
-            applications:
-              kubernetes-master:
-                options:
-                  channel: $SNAP_VERSION
-              kubernetes-worker:
-                options:
-                  channel: $SNAP_VERSION
-            EOF
+            # cat > overlay.yaml <<EOF
+            # applications:
+            #   kubernetes-master:
+            #     options:
+            #       channel: $SNAP_VERSION
+            #   kubernetes-worker:
+            #     options:
+            #       channel: $SNAP_VERSION
+            # EOF
 
-            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --channel $JUJU_DEPLOY_CHANNEL --overlay overlay.yaml 2>&1
+            # juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --channel $JUJU_DEPLOY_CHANNEL --overlay overlay.yaml 2>&1
 
-            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
+            # juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
 
             pytest $INTEGRATION_TEST_PATH/validation.py \
                --cloud $JUJU_CLOUD \
