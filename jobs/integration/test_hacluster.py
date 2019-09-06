@@ -14,6 +14,14 @@ def get_test_ips():
         return ["10.96.117.5", "10.96.117.200"]
 
 
+def is_app_in_model(app_str, model):
+    '''Searches for app names in the juju model containing app_str.'''
+    for app in model.applications.keys():
+        if app_str in app:
+            return True
+    return False
+
+
 async def verify_kubeconfig_has_ip(model, ip):
     log("validating generated kubectl config file")
     one_master = random.choice(model.applications["kubernetes-master"].units)
@@ -74,11 +82,12 @@ async def test_validate_hacluster(model, tools):
     # ensure no vip/dns set
     await app.set_config({"ha-cluster-vip": "", "ha-cluster-dns": ""})
 
-    log("deploying hacluster...")
-    await model.deploy("hacluster", num_units=0, series="bionic")
-    await model.add_relation("hacluster:ha", "{}:ha".format(name))
-    log("waiting for cluster to settle...")
-    await tools.juju_wait()
+    if not is_app_in_model('hacluster', model):
+        log("deploying hacluster...")
+        await model.deploy("hacluster", num_units=0, series="bionic")
+        await model.add_relation("hacluster:ha", "{}:ha".format(name))
+        log("waiting for cluster to settle...")
+        await tools.juju_wait()
 
     # virtual ip can change, verify that
     for ip in get_test_ips():
