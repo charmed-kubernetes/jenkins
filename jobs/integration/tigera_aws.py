@@ -190,7 +190,7 @@ def bootstrap():
             "--model-default",
             "test-mode=true",
             "--model-default",
-            "resource-tags=owner=k8sci"
+            "resource-tags=owner=k8sci",
         ]
     )
     check_call(["juju", "model-defaults", "vpc-id=" + vpc_id, "test-mode=true"])

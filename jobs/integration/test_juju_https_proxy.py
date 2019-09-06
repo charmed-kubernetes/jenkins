@@ -35,8 +35,10 @@ async def get_contents(runtime, worker_unit, controller, connection_name):
     return runtime_conf_contents
 
 
-HTTP_S_REGEX = (r"Environment=\"HTTP(S){0,1}_PROXY=([a-zA-Z]{4,5}://"
-                r"[0-9a-zA-Z.]*(:[0-9]{0,5}){0,1}){1,1}\"")
+HTTP_S_REGEX = (
+    r"Environment=\"HTTP(S){0,1}_PROXY=([a-zA-Z]{4,5}://"
+    r"[0-9a-zA-Z.]*(:[0-9]{0,5}){0,1}){1,1}\""
+)
 BLAH_REGEX = r"Environment=\"HTTP(S){0,1}_PROXY=%s\""
 
 

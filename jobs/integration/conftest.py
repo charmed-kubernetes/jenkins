@@ -82,8 +82,6 @@ class Tools:
         from sh import juju as _juju_internal
         from sh import juju_wait as _juju_wait_internal
 
-        self._juju = aioify(obj=_juju_internal)
-        self._juju_wait = aioify(obj=_juju_wait_internal)
         self.requests = aioify(obj=requests)
         self.controller_name = request.config.getoption("--controller")
         self.model_name = request.config.getoption("--model")
@@ -91,13 +89,13 @@ class Tools:
         self.cloud = request.config.getoption("--cloud")
         self.connection = f"{self.controller_name}:{self.model_name}"
 
-    async def juju(self):
-        return await self._juju.bake(_env=os.environ.copy())
-
-    async def juju_wait(self):
-        return await self._juju_wait.bake(
+        _j_bake = _juju_internal.bake(_env=os.environ.copy())
+        _jw_bake = _juju_wait_internal.bake(
             "-e", self.connection, "-w", _env=os.environ.copy()
         )
+
+        self.juju = aioify(obj=_j_bake)
+        self.juju_wait = aioify(obj=_jw_bake)
 
 
 @pytest.fixture(scope="module")

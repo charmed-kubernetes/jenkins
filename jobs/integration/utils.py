@@ -308,7 +308,7 @@ async def verify_completed(unit, entity_type, name_list, extra_args=""):
     return all([n["status"]["phase"] == "Succeeded" for n in matches])
 
 
-async def log_snap_versions(model, prefix='before'):
+async def log_snap_versions(model, prefix="before"):
     log("Logging snap versions")
     for unit in model.units.values():
         if unit.dead:

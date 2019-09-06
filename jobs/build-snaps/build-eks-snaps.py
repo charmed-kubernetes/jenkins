@@ -14,6 +14,7 @@ import operator
 from lib import snapapi
 from pathlib import Path
 
+
 def _set_snap_alias(build_path, alias):
     click.echo(f"Setting new snap alias: {alias}")
     if build_path.exists():
@@ -35,7 +36,9 @@ def cli():
 @click.option(
     "--build-path", required=True, default="release/snap", help="Path of snap builds"
 )
-@click.option("--version", required=True, default="1.12.9", help="Version of k8s to build")
+@click.option(
+    "--version", required=True, default="1.12.9", help="Version of k8s to build"
+)
 @click.option(
     "--arch", required=True, default="amd64", help="Architecture to build against"
 )
@@ -84,7 +87,7 @@ def build(snap, build_path, version, arch, match_re, rename_re, dry_run):
                 _snap,
                 _env=env,
                 _cwd=str(build_path),
-                    _bg_exc=False,
+                _bg_exc=False,
                 _iter=True,
             ):
                 click.echo(line.strip())
@@ -109,12 +112,19 @@ def push(result_dir, version, dry_run):
                 click.echo("dry-run only:")
                 click.echo(f"  > snapcraft push {fname}")
             else:
-                for line in sh.snapcraft.push(fname, "--release", f"{version}/edge,{version}/beta,{version}/candidate,{version}/stable", _iter=True, _bg_exc=False):
+                for line in sh.snapcraft.push(
+                    fname,
+                    "--release",
+                    f"{version}/edge,{version}/beta,{version}/candidate,{version}/stable",
+                    _iter=True,
+                    _bg_exc=False,
+                ):
                     click.echo(line.strip())
         except sh.ErrorReturnCode as e:
             click.echo("Failed to upload to snap store")
             click.echo(e.stdout)
             click.echo(e.stderr)
+
 
 if __name__ == "__main__":
     cli()

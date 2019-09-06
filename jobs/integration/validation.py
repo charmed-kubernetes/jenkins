@@ -189,17 +189,9 @@ async def test_auth_file_propagation(model):
     await run_until_success(leader, "sed -i '$d' /root/cdk/basic_auth.csv")
 
 
-def delay_rerun(*args):
-    import time
-    time.sleep(120)
-    return True
-
-
-@pytest.mark.flaky(rerun_filter=delay_rerun)
 @pytest.mark.asyncio
 async def test_status_messages(model, tools):
     """ Validate that the status messages are correct. """
-    await tools.juju_wait()
     expected_messages = {
         "kubernetes-master": "Kubernetes master running.",
         "kubernetes-worker": "Kubernetes worker running.",
@@ -618,7 +610,7 @@ async def test_extra_args(model, tools):
 
         # implied true vs explicit true should be treated the same
         results = [
-            {arg + '=true' if '=' not in arg else arg for arg in args}
+            {arg + "=true" if "=" not in arg else arg for arg in args}
             for args in results
         ]
 
@@ -695,16 +687,8 @@ async def test_extra_args(model, tools):
                 "watch-cache=true",
                 "profiling=false",
             },
-            "kube-controller": {
-                "v=3",
-                "profiling=true",
-                "contention-profiling=false"
-            },
-            "kube-scheduler": {
-                "v=3",
-                "profiling=true",
-                "contention-profiling=false"
-            },
+            "kube-controller": {"v=3", "profiling=true", "contention-profiling=false"},
+            "kube-scheduler": {"v=3", "profiling=true", "contention-profiling=false"},
         },
     )
 
@@ -1248,10 +1232,10 @@ data:
     # but having a dying percona-cluster in the model can break the vault test
     try:
         await model.block_until(
-            lambda: 'percona-cluster' not in model.applications,
-            timeout=120)
+            lambda: "percona-cluster" not in model.applications, timeout=120
+        )
     except asyncio.TimeoutError:
-        pytest.fail('Timed out waiting for percona-cluster to go away')
+        pytest.fail("Timed out waiting for percona-cluster to go away")
 
 
 @pytest.mark.asyncio
@@ -1260,11 +1244,10 @@ data:
 async def test_encryption_at_rest(model, tools):
     try:
         # setup
-        if 'percona-cluster' not in model.applications:
+        if "percona-cluster" not in model.applications:
             await model.deploy(
                 "percona-cluster",
-                config={"innodb-buffer-pool-size": "256M",
-                        "max-connections": "1000"},
+                config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
             )
         await model.deploy(
             "cs:~openstack-charmers-next/vault",
@@ -1276,9 +1259,12 @@ async def test_encryption_at_rest(model, tools):
         try:
             await model.add_relation("vault:shared-db", "percona-cluster:shared-db")
         except juju.errors.JujuAPIError as e:
-            pc = model.applications.get('percona-cluster')
-            pytest.fail('JujuAPIError: {}\n\n{}'.format(
-                e, pc.data if pc else '(percona-cluster not in model)'))
+            pc = model.applications.get("percona-cluster")
+            pytest.fail(
+                "JujuAPIError: {}\n\n{}".format(
+                    e, pc.data if pc else "(percona-cluster not in model)"
+                )
+            )
         await model.applications["kubernetes-master"].remove_relation(
             "easyrsa:client", "kubernetes-master:certificates"
         )
@@ -1322,12 +1308,12 @@ async def test_encryption_at_rest(model, tools):
         assert "secret-value" not in output.results["Stdout"]
     finally:
         # cleanup
-        if 'vault' in model.applications:
+        if "vault" in model.applications:
             await model.applications["vault"].destroy()
             # wait for vault to go away before removing percona to prevent vault
             # from erroring from having its DB taken away
             await tools.juju_wait()
-        if 'percona-cluster' in model.applications:
+        if "percona-cluster" in model.applications:
             await model.applications["percona-cluster"].destroy()
         # re-add easyrsa after vault is gone
         tasks = {

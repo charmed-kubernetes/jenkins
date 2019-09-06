@@ -27,12 +27,12 @@ plan:
 
             python3 jobs/integration/tigera_aws.py cleanup 2>&1
 
-            SET_NUM_SUBNETS=1
+            export NUM_SUBNETS=1
             if [ -z $TEST_BGP ]; then
-              SET_NUM_SUBNETS=2
+              export NUM_SUBNETS=2
             fi
 
-            NUM_SUBNETS=$SET_NUM_SUBNETS python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap 2>&1
+            python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap 2>&1
             if [ -z $TEST_BGP ]; then
               python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router 2>&1
             fi
