@@ -86,10 +86,6 @@ class Tools:
         self.cloud = request.config.getoption("--cloud")
         self.connection = f"{self.controller_name}:{self.model_name}"
 
-        from sh import juju as _juju_internal
-        from sh import juju_wait as _juju_wait_internal
-
-
     async def run(self, cmd):
         proc = await asyncio.create_subprocess_shell(
             cmd,
