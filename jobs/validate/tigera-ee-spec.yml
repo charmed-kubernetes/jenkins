@@ -22,7 +22,10 @@ plan:
             #!/bin/bash
             set -x
 
-            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
+            if ! juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER 2>&1; then
+               juju kill-controller -y $JUJU_CONTROLLER 2>&1
+            fi
+
             python3 jobs/integration/tigera_aws.py cleanup 2>&1
             python3 jobs/integration/tigera_aws.py bootstrap 2>&1
             cat > overlay.yaml <<EOF

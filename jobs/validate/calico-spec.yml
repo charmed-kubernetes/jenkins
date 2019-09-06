@@ -23,7 +23,9 @@ plan:
             #!/bin/bash
             set -x
 
-            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
+            if ! juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER 2>&1; then
+               juju kill-controller -y $JUJU_CONTROLLER 2>&1
+            fi
 
             python3 jobs/integration/tigera_aws.py cleanup 2>&1
 
@@ -37,9 +39,20 @@ plan:
               python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router 2>&1
             fi
 
-            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --overlay jobs/overlays/1.16-edge-overlay.yaml 2>&1
+            cat > overlay.yaml <<EOF
+            applications:
+              kubernetes-master:
+                options:
+                  channel: $SNAP_VERSION
+              kubernetes-worker:
+                options:
+                  channel: $SNAP_VERSION
+            EOF
+
+            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --overlay overlay.yaml --channel $JUJU_DEPLOY_CHANNEL 2>&1
 
             python3 jobs/integration/tigera_aws.py disable-source-dest-check 2>&1
+
             if [ -z $TEST_BGP ]; then
               python3 jobs/integration/tigera_aws.py configure-bgp 2>&1
             fi

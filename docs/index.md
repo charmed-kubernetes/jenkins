@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/charmed-kubernetes/jenkins.svg?branch=master)](https://travis-ci.org/charmed-kubernetes/jenkins)
+
 # Charm Kubernetes Jenkins
 
 This project contains the scripts used to build and test the CDK.
@@ -14,7 +16,7 @@ Running the tests locally can be accomplished easily with tox. The tests expect
 certain environment variables to be set. These can be found by looking at the
 help output from `pytest` under the **custom options** section.
 
-> **Note**: Recommended minimum Python version is 3.6.
+> **Note**: Required minimum Python version is 3.6.
 
 ```
 > pytest jobs/integration/validation.py --help
@@ -60,6 +62,8 @@ tox --workdir .tox -e py3 -- \
 ```
 
 ## Developing new tests
+
+(TODO): Use [OGC](https://ogc.8op.org) specs for future tests.
 
 Jenkins Job Builder is used to generate jobs for Jenkins programmatically. No
 jobs are created by hand in the Jenkins UI.

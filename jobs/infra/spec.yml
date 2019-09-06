@@ -1,19 +1,27 @@
 meta:
   name: CI Infrastructure
   description: Provides support tasks for maintaining Jenkins
+  long-description: |
+    ## Ansible
+
+    Ansible playbook is run nightly to make sure each system is kept updated,
+    reset to a reasonable working state (we aren't immutable yet) and cleaning
+    up any cloud resources.
+
+    The playbook used is located in `jobs/infra/playbook-jenkins.yml`.
+
+    Credentials used in the playbook are pulled from the Jenkins Credentials
+    store, attempting to run this locally would require that those credential
+    environment variables are met (seen in `jobs/ci-master.yaml` under `-
+    wrapper` section.
+  mkdocs:
+    destination:
+      - "maintenance/infra.md"
+    jenkins-job-builder:
+      jobs:
+        - jobs/ci-master.yaml
+        - jobs/infra.yaml
 
 plan:
   - script:
       - tox -e ansible
-  # - script:
-  #     - |
-  #       #!/bin/bash
-
-  #       set -eux
-
-  #       # tox -e ansible -- ansible-playbook jobs/infra/playbook-jenkins.yml \
-  #       #   -e 'ansible_python_interpreter=/usr/bin/python3.5' \
-  #       #   --limit localhost \
-  #       #   --tags 'jenkins' \
-  #       #   -i jobs/infra/hosts
-  #       tox -e ansible
