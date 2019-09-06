@@ -7,59 +7,56 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
+    before-script:
+      - juju:
+          cloud: $JUJU_CLOUD
+          controller: $JUJU_CONTROLLER
+          model: $JUJU_MODEL
+          bootstrap:
+            debug: no
+            replace-controller: yes
+            model-default:
+              - test-mode=true
+              - resource-tags=owner=k8sci
+          deploy:
+            reuse: no
+            bundle: $JUJU_DEPLOY_BUNDLE
+            overlay: |
+              applications:
+                kubernetes-master:
+                  options:
+                    channel: $SNAP_VERSION
+                kubernetes-worker:
+                  options:
+                    channel: $SNAP_VERSION
+            wait: yes
+            channel: $JUJU_DEPLOY_CHANNEL
     script:
-      - runner:
-          timeout: 7200
-          script: |
-            #!/bin/bash
-            set -x
-
-            if ! juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER 2>&1; then
-               juju kill-controller -y $JUJU_CONTROLLER 2>&1
-            fi
-
-            juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-               -d $JUJU_MODEL --model-default test-mode=true \
-               --model-default resource-tags=owner=k8sci \
-               --bootstrap-constraints 'arch=amd64' 2>&1
-
-            cat > overlay.yaml <<EOF
-            applications:
-              kubernetes-master:
-                options:
-                  channel: $SNAP_VERSION
-              kubernetes-worker:
-                options:
-                  channel: $SNAP_VERSION
-            EOF
-
-            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --channel $JUJU_DEPLOY_CHANNEL --overlay overlay.yaml 2>&1
-
-            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
-
-            pytest $INTEGRATION_TEST_PATH/validation.py \
-               --cloud $JUJU_CLOUD \
-               --model $JUJU_MODEL \
-               --controller $JUJU_CONTROLLER 2>&1
+      - |
+        #!/bin/bash
+        set -x
+        pytest $INTEGRATION_TEST_PATH/validation.py \
+           --cloud $JUJU_CLOUD \
+           --model $JUJU_MODEL \
+           --controller $JUJU_CONTROLLER 2>&1
 
     after-script:
-      - runner:
-          script: |
-            #!/bin/bash
-            set -x
-            wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-            python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-            python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-            python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-            python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
-            python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-            python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-            python3 jobs/infra/collect-debug.py save-meta metadata.json
-            juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
-            python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
+      - |
+        #!/bin/bash
+        set -x
+        wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+        python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+        python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
+        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+        python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
+        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+        python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+        python3 jobs/infra/collect-debug.py save-meta metadata.json
+        juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
+        python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
 
-            juju destroy-controller -y \
-               --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
+        juju destroy-controller -y \
+           --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
   # - <<: *BASE_JOB
   #   env:
   #     - SNAP_VERSION=1.15/edge
@@ -102,4 +99,4 @@ meta:
     jenkins-job-builder:
       jobs:
         - jobs/ci-master.yaml
-        - jobs/build-charms.yaml
+        - jobs/validate.yaml
