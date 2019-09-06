@@ -191,7 +191,7 @@ async def test_auth_file_propagation(model):
 
 def delay_rerun(*args):
     import time
-    time.sleep(30)
+    time.sleep(120)
     return True
 
 
