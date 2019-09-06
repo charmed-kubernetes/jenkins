@@ -79,9 +79,6 @@ class Tools:
     """
 
     def __init__(self, request):
-        from sh import juju as _juju_internal
-        from sh import juju_wait as _juju_wait_internal
-
         self.requests = aioify(obj=requests)
         self.controller_name = request.config.getoption("--controller")
         self.model_name = request.config.getoption("--model")
@@ -89,13 +86,24 @@ class Tools:
         self.cloud = request.config.getoption("--cloud")
         self.connection = f"{self.controller_name}:{self.model_name}"
 
-        _j_bake = _juju_internal.bake(_env=os.environ.copy())
-        _jw_bake = _juju_wait_internal.bake(
-            "-e", self.connection, "-w", _env=os.environ.copy()
-        )
+        from sh import juju as _juju_internal
+        from sh import juju_wait as _juju_wait_internal
 
-        self.juju = aioify(obj=_j_bake)
-        self.juju_wait = aioify(obj=_jw_bake)
+
+    async def run(self, cmd):
+        proc = await asyncio.create_subprocess_shell(
+            cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=os.environ.copy())
+
+        stdout, stderr = await proc.communicate()
+        if proc.returncode > 0:
+            raise Exception(f"Problem with run command: \nstdout: "
+                            f"{stdout.decode()}\nstderr: {stderr.decode()}")
+
+    async def juju_wait(self):
+        return await self.run(f'juju wait -e {self.connection} -w')
 
 
 @pytest.fixture(scope="module")
