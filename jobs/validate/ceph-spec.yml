@@ -7,38 +7,38 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-ck-ceph
       - JUJU_MODEL=validate-ceph-model
+    before-script:
+      - juju:
+          cloud: $JUJU_CLOUD
+          controller: $JUJU_CONTROLLER
+          model: $JUJU_MODEL
+          bootstrap:
+            debug: no
+            replace-controller: yes
+            model-default:
+              - test-mode=true
+              - resource-tags=owner=k8sci
+          deploy:
+            reuse: no
+            bundle: $JUJU_DEPLOY_BUNDLE
+            overlay: |
+              applications:
+                kubernetes-master:
+                  options:
+                    channel: $SNAP_VERSION
+                kubernetes-worker:
+                  options:
+                    channel: $SNAP_VERSION
+            wait: yes
+            channel: $JUJU_DEPLOY_CHANNEL
     script:
-      - runner:
-          timeout: 21600
-          script: |
-            #!/bin/bash
-            set -x
-
-            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
-
-            juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-               -d $JUJU_MODEL --model-default test-mode=true \
-               --model-default resource-tags=owner=k8sci \
-               --bootstrap-constraints 'arch=amd64' 2>&1
-
-            cat > overlay.yaml <<EOF
-            applications:
-              kubernetes-master:
-                options:
-                  channel: $SNAP_VERSION
-              kubernetes-worker:
-                options:
-                  channel: $SNAP_VERSION
-            EOF
-
-            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --channel $JUJU_DEPLOY_CHANNEL --overlay overlay.yaml 2>&1
-
-            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
-
-            pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph \
-               --cloud $JUJU_CLOUD \
-               --model $JUJU_MODEL \
-               --controller $JUJU_CONTROLLER 2>&1
+      - |
+        #!/bin/bash
+        set -x
+        pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph \
+           --cloud $JUJU_CLOUD \
+           --model $JUJU_MODEL \
+           --controller $JUJU_CONTROLLER 2>&1
 
     after-script:
       - runner:
@@ -100,7 +100,7 @@ meta:
       code: |
         ```
         # edit spec.yml and update the appropriate vars under the `env:` section
-        > ogc --spec jobs/validate/spec.yml -t core
+        > ogc --spec jobs/validate/spec.yml
         ```
   description: |
     Verifies that CK with Ceph passes integration tests.
@@ -110,4 +110,4 @@ meta:
     jenkins-job-builder:
       jobs:
         - jobs/ci-master.yaml
-        - jobs/build-charms.yaml
+        - jobs/validate.yaml
