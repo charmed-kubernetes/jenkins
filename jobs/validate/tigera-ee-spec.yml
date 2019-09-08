@@ -17,7 +17,7 @@ plan:
       - JUJU_MODEL=validate-tigera-model
     script:
       - runner:
-          timeout: 21600
+          timeout: 14400
           script: |
             #!/bin/bash
             set -x

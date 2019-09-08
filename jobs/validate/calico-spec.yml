@@ -18,7 +18,7 @@ plan:
       - TEST_BGP=1
     before-script:
       - runner:
-          timeout: 21600
+          timeout: 14400
           script: |
             #!/bin/bash
             set -x

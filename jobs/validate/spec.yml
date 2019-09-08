@@ -30,6 +30,7 @@ plan:
                   options:
                     channel: $SNAP_VERSION
             wait: yes
+            timeout: 7200
             channel: $JUJU_DEPLOY_CHANNEL
     script:
       - |
