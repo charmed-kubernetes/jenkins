@@ -32,7 +32,7 @@ plan:
                   options:
                     channel: $SNAP_VERSION
             wait: yes
-            timeout: 14400
+            timeout: 7200
             channel: $JUJU_DEPLOY_CHANNEL
     script:
       - runner:

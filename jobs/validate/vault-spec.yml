@@ -9,7 +9,7 @@ plan:
       - JUJU_MODEL=validate-vault
     script:
       - runner:
-          timeout: 21600
+          timeout: 7200
           script: |
             #!/bin/bash
             set -x
