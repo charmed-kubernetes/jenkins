@@ -571,7 +571,7 @@ async def test_gpu_support(model, tools):
             assert False
 
         async def cuda_test(master):
-            action = await master.run("/snap/bin/kubectl log cuda-vector-add")
+            action = await master.run("/snap/bin/kubectl logs cuda-vector-add")
             log(action.results["Stdout"])
             return action.results["Stdout"].count("Test PASSED") > 0
 
