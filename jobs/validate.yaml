@@ -54,7 +54,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "ck-arm.yml"
+          JOB_SPEC_FILE: "ck-arm-spec.yml"
 
 
 - job:
