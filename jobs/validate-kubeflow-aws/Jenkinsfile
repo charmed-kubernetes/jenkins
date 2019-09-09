@@ -85,6 +85,10 @@ pipeline {
 //        }
         cleanup {
 //            saveMeta()
+            exec "juju kubectl logs --all-containers --timestamps -l workflows.argoproj.io/completed='true'"
+            exec "juju kubectl logs --all-containers --timestamps -l workflows.argoproj.io/completed='false'"
+            exec "juju kubectl get pods"
+            exec "juju kubectl get pods -oyaml"
             exec "juju status || true"
             exec "juju status --format yaml || true"
             exec "juju list-controllers || true"
