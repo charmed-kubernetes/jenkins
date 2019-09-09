@@ -36,6 +36,7 @@ plan:
 
             python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap 2>&1
             if [ -z $TEST_BGP ]; then
+              echo "Deploying bgp router"
               python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router 2>&1
             fi
 

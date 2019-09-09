@@ -33,6 +33,31 @@
           threshold: SUCCESS
 
 - job:
+    name: 'validate-ck-arm64'
+    node: runner-arm64
+    description: |
+      Validates CDK edge on ARM, supports last three recent releases.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
+    triggers:
+        - timed: "@daily"
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "ck-arm.yml"
+
+
+- job:
     name: 'validate-ck-upgrade'
     node: runner-amd64
     description: |
@@ -53,6 +78,10 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "upgrade-spec.yml"
+    publishers:
+      - trigger:
+          project: 'validate-ck-calico'
+          threshold: SUCCESS
 
 - job:
     name: 'validate-ck-snapd-upgrade'
@@ -75,10 +104,6 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "snapd-upgrade-spec.yml"
-    publishers:
-      - trigger:
-          project: 'validate-ck-tigera-ee'
-          threshold: SUCCESS
 
 
 # ADDONS --------------------------------------------------------------------- #
@@ -107,7 +132,7 @@
           JOB_SPEC_FILE: "tigera-ee-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-calico'
+          project: 'validate-ck-vault'
           threshold: SUCCESS
 
 - job:
@@ -133,7 +158,7 @@
           JOB_SPEC_FILE: "calico-spec.yml"
     publishers:
       - trigger:
-          project: 'validate-ck-vault'
+          project: 'validate-ck-tigera-ee'
           threshold: SUCCESS
 
 - job:
@@ -187,7 +212,9 @@
       - trigger:
           project: 'validate-ck-nvidia'
           threshold: SUCCESS
-
+      - trigger:
+          project: 'validate-ck-aws-iam'
+          threshold: SUCCESS
 
 - job:
     name: 'validate-ck-nvidia'
@@ -210,10 +237,6 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/validate"
           JOB_SPEC_FILE: "nvidia-spec.yml"
-    publishers:
-      - trigger:
-          project: 'validate-ck-aws-iam'
-          threshold: SUCCESS
 
 - job:
     name: 'validate-ck-aws-iam'
