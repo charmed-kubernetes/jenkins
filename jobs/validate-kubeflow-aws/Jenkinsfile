@@ -89,6 +89,7 @@ pipeline {
             exec "juju status --format yaml || true"
             exec "juju list-controllers || true"
             exec "juju list-models || true"
+            exec "juju destroy-model cdkkf:kubeflow -y --destroy-storage --force || true"
             exec "juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true"
             sh "sudo lxc delete --force ${CONTAINER} || true"
         }
