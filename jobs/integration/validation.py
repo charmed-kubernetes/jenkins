@@ -10,6 +10,7 @@ import pytest
 import juju
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
+from base64 import b64encode
 from datetime import datetime
 from .logger import log
 from pprint import pformat
@@ -1297,7 +1298,7 @@ async def test_encryption_at_rest(model, tools):
         if output.results["Stderr"]:
             log("stderr: {}".format(output.results["Stderr"]))
         assert output.status == "completed"
-        assert "secret-value" in output.results["Stdout"]
+        assert b64encode(b"secret-value").decode("utf8") in output.results["Stdout"]
         # verify secret is encrypted
         etcd = model.applications["etcd"].units[0]
         etcd.run(
@@ -1306,7 +1307,7 @@ async def test_encryption_at_rest(model, tools):
             "get /registry/secrets/default/test-secret | hexdump -C"
         )
         assert output.status == "completed"
-        assert "secret-value" not in output.results["Stdout"]
+        assert b64encode(b"secret-value").decode("utf8") not in output.results["Stdout"]
     finally:
         # cleanup
         if "vault" in model.applications:
