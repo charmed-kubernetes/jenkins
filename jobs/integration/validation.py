@@ -1284,14 +1284,18 @@ async def test_encryption_at_rest(model, tools):
         await model.add_relation("kubernetes-master:vault-kv", "vault:secrets")
         await tools.juju_wait()
         # create secret
-        worker = model.applications["kubernetes-worker"].units[0]
-        output = await worker.run(
-            "kubectl create secret generic test-secret "
+        one_master = random.choice(model.applications["kubernetes-master"].units)
+        output = await one_master.run(
+            "/snap/bin/kubectl create secret generic test-secret "
             "--from-literal=username='secret-value'"
         )
+        if output.results["Stderr"]:
+            log("stderr: {}".format(output.results["Stderr"]))
         assert output.status == "completed"
         # read secret
-        output = await worker.run("kubectl get secret test-secret -o yaml")
+        output = await one_master.run("/snap/bin/kubectl get secret test-secret -o yaml")
+        if output.results["Stderr"]:
+            log("stderr: {}".format(output.results["Stderr"]))
         assert output.status == "completed"
         assert "secret-value" in output.results["Stdout"]
         # verify secret is encrypted
