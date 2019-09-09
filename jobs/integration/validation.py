@@ -1284,8 +1284,7 @@ async def test_encryption_at_rest(model, tools):
         await model.add_relation("kubernetes-master:vault-kv", "vault:secrets")
         await tools.juju_wait()
         # create secret
-        one_master = random.choice(model.applications["kubernetes-worker"].units)
-        await one_master.run("/usr/bin/snap install --edge client-keystone-auth")
+        one_master = random.choice(model.applications["kubernetes-master"].units)
         output = await one_master.run(
             "/snap/bin/kubectl create secret generic test-secret "
             "--from-literal=username='secret-value'"
