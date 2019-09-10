@@ -158,7 +158,7 @@
       tags:
         - jenkins
     - name: login to charmstore
-      command: "charm login"
+      command: "/snap/bin/charm login"
       become: false
       register: charmstore_login
       tags:
