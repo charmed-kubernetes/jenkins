@@ -137,11 +137,12 @@
           description: snap eks version to build/promote
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 2
 
 - project:
     name: build-release-snaps
-    arch: ['amd64', 's390x', 'arm64', 'ppc64le']
+    # arch: ['amd64', 's390x', 'arm64', 'ppc64le']
+    arch: ['amd64']
     version: ['1.13', '1.14', '1.15', '1.16']
     jobs:
       - 'build-release-cdk-addons-{arch}-{version}'

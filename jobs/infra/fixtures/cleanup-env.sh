@@ -14,7 +14,7 @@ sudo rm -rf /var/lib/jenkins/.cache/*
 docker image prune -a --filter until=24h --force
 docker container prune --filter until=24h --force
 rm -rf /var/lib/jenkins/venvs
-rm -rf /var/lib/jenkins/slaves/"$NODE_NAME"/workspace/* 2>&1
+rm -rf /var/lib/jenkins/slaves/"$NODE_NAME"/workspace/build* 2>&1
 
 
 for sid in $(aws --region us-east-2 ec2 describe-subnets --query 'Subnets[].SubnetId' --output text); do
