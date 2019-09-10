@@ -28,7 +28,7 @@
           name: bundle
           default: '{starting_bundle}'
     triggers:
-        - timed: "@daily"
+        - timed: "@monthly"
     properties:
       - build-discarder:
           num-to-keep: 7
