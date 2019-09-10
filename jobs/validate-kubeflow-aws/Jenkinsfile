@@ -85,8 +85,18 @@ pipeline {
 //        }
         cleanup {
 //            saveMeta()
-            exec "juju kubectl logs --all-containers --timestamps -l workflows.argoproj.io/completed='true'"
-            exec "juju kubectl logs --all-containers --timestamps -l workflows.argoproj.io/completed='false'"
+            exec '''
+            pods=`juju kubectl get pods -l workflows.argoproj.io/completed="true" -o custom-columns=:metadata.name --no-headers || echo -n ""`
+            for pod in $pods; do
+                echo "===>" $pod main "<==="
+                juju kubectl logs -c main --timestamps $pod || true
+                printf '\n'
+                echo "===>" $pod wait "<==="
+                juju kubectl logs -c wait --timestamps $pod || true
+                printf '\n\n'
+            done
+            '''
+            exec 'juju kubectl logs --tail 1000 --all-containers -l juju-app=argo-controller'
             exec "juju kubectl get pods"
             exec "juju kubectl get pods -oyaml"
             exec "juju status || true"
