@@ -20,3 +20,8 @@ for sid in $(aws --region us-east-2 ec2 describe-subnets --query 'Subnets[].Subn
     aws --region us-east-2 ec2 delete-tags --resources "$sid" --tags Value=owned
 done
 
+for cntr in $(sudo lxc list --format json | jq -r ".[] | .name"); do
+    echo "Removing $cntr"
+    sudo lxc delete --force "$cntr"
+done
+

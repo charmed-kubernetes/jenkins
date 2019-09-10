@@ -374,8 +374,3 @@
       ignore_errors: yes
       tags:
         - jenkins
-    - name: cleanup lxds
-      command: python3 fixtures/cleanup-lxds.py
-      ignore_errors: yes
-      tags:
-        - jenkins

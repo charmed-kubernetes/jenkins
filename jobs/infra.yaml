@@ -20,7 +20,7 @@
     triggers:
         - timed: "0 */20 * * *"
     properties:
-      - block-on-build-release
+      #- block-on-build-release
       - build-discarder:
           num-to-keep: 1
     builders:
@@ -33,4 +33,4 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          tox -e ansible
+          TOX_WORK_DIR=.tox tox -e ansible
