@@ -61,7 +61,7 @@
       - build-discarder:
           num-to-keep: 36
     triggers:
-      - timed: "H/10 * * * *"
+      - timed: "@hourly"
 
 - job:
     name: 'build-charms'
