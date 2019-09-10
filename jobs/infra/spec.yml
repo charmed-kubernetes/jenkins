@@ -25,3 +25,6 @@ meta:
 plan:
   - script:
       - tox -e ansible
+  - script:
+      - jobs/infra/fixtures/cleanup-env.sh
+    tags: ['cleanup']
