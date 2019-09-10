@@ -55,6 +55,7 @@ pipeline {
                 exec "sudo snap install yq"
                 exec "sudo apt update && sudo apt install -y libssl-dev"
                 exec "sudo pip install pytest sh kfp requests pyyaml"
+                exec "sudo usermod -a -G microk8s ubuntu"
             }
         }
         stage('Deploy kubeflow') {
