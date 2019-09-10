@@ -264,8 +264,6 @@
 
           rm -rf $WORKSPACE/.env || true
 
-          export VIRTUAL_ENV_DISABLE_PROMPT=1
-          export PYTHONPATH="{JOB_SPEC_DIR|$WORKSPACE}"
           export GIT_SSH_COMMAND='"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"'
           export CHARM_BUILD_DIR="$WORKSPACE/${{CHARM_BUILD_DIR:-build/charms}}"
           export CHARM_LAYERS_DIR="$WORKSPACE/${{CHARM_LAYERS_DIR:-build/layers}}"
@@ -275,7 +273,7 @@
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
           export JUJU_MODEL="{override_juju_model|validate}"
-          export TOX_WORK_DIR="$WORKSPACE/.tox-$JOB_NAME-$BUILD_NUMBER"
+          # export TOX_WORK_DIR="$WORKSPACE/.tox-$JOB_NAME-$BUILD_NUMBER"
 
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 

@@ -158,7 +158,7 @@
       tags:
         - jenkins
     - name: login to charmstore
-      command: "charm login"
+      command: "charm login -B"
       become: false
       register: charmstore_login
       tags:
@@ -177,7 +177,7 @@
         - jenkins
 
     - name: login to charmstorex2
-      command: "charm login"
+      command: "charm login -B"
       become: false
       when: charmstore_login.rc != 0
       tags:

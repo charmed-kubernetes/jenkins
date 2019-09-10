@@ -21,7 +21,3 @@ meta:
       jobs:
         - jobs/ci-master.yaml
         - jobs/infra.yaml
-
-plan:
-  - script:
-      - tox -e ansible

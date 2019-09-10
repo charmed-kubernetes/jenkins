@@ -18,7 +18,7 @@
       - default-job-wrapper
       - ci-creds
     triggers:
-        - timed: "@daily"
+        - timed: "0 */20 * * *"
     properties:
       - block-on-build-release
       - build-discarder:
