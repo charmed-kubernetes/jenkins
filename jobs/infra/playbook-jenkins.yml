@@ -374,3 +374,8 @@
       ignore_errors: yes
       tags:
         - jenkins
+    - name: cleanup lxds
+      command: python3 jobs/infra/fixtures/cleanup-lxds.py
+      ignore_errors: yes
+      tags:
+        - jenkins

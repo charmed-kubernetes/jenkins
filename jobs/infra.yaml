@@ -33,7 +33,6 @@
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
     builders:
-      - shell: python3 jobs/infra/fixtures/cleanup-lxds.py
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
       - ogc-execute-spec:
