@@ -43,14 +43,14 @@ async def run_auth(one_master, args):
 
 
 async def verify_auth_success(one_master, args):
-    error_text = run_auth(one_master, args)
+    error_text = await run_auth(one_master, args)
     assert "invalid user credentials" not in error_text
     assert "error" not in error_text
     assert "forbidden" not in error_text
 
 
 async def verify_auth_failure(one_master, args):
-    error_text = run_auth(one_master, args)
+    error_text = await run_auth(one_master, args)
     assert (
         "invalid user credentials" in error_text
         or "error" in error_text
@@ -102,7 +102,7 @@ async def test_validate_aws_iam(model, tools):
 
     # 1) deploy
     log("deploying aws-iam")
-    await model.deploy("cs:~containers/aws-iam", num_units=0)
+    await model.deploy("cs:~containers/aws-iam", channel='edge', num_units=0)
     await model.add_relation("aws-iam", "kubernetes-master")
     await model.add_relation("aws-iam", "easyrsa")
     log("waiting for cluster to settle...")
