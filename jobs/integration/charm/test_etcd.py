@@ -7,25 +7,10 @@ from ..utils import asyncify
 from sh import juju
 
 
-# Locally built charm layer path
-ETCD_CHARM_PATH = os.getenv("CHARM_PATH")
-
 pytestmark = pytest.mark.asyncio
 
 
-async def deploy_etcd(controller, model, tools):
-    await tools.run(
-        "juju",
-        "deploy",
-        "-m",
-        f"{tools.controller_name}:{model.info.name}",
-        str(ETCD_CHARM_PATH),
-    )
-    await model.deploy("cs:~containers/easyrsa")
-    await model.add_relation("easyrsa:client", "etcd:certificates")
-
-
-async def test_etcd_actions(deploy, event_loop, tools):
+async def test_etcd_actions(model, tools):
     """Test etcd charm actions
 
     """
@@ -38,13 +23,7 @@ async def test_etcd_actions(deploy, event_loop, tools):
             output = action.data["results"]["output"]
             assert re.search(output_regex, output)
 
-    controller, model = deploy
-    await deploy_etcd(controller, model, tools)
-    etcd = model.applications["etcd"]
-    await etcd.set_config({"channel": "3.2/stable"})
     etcd = model.applications["etcd"].units[0]
-    await tools.juju_wait()
-
     # set db size limit to 16MB so we can fill it quickly
     await etcd.run(
         "sed -i 's/^quota-backend-bytes:.*$/quota-backend-bytes: 16777216/' /var/snap/etcd/common/etcd.conf.yml"
@@ -71,16 +50,9 @@ async def test_etcd_actions(deploy, event_loop, tools):
     await etcd.run("sudo systemctl restart snap.etcd.etcd.service")
 
 
-@pytest.mark.skip("https://github.com/juju-solutions/layer-etcd/issues/138")
-async def test_node_scale_down_members(deploy, event_loop, tools):
+async def test_node_scale_down_members(model, tools):
     """ Scale the cluster down and ensure the cluster state is still
     healthy """
-    controller, model = deploy
-    await deploy_etcd(controller, model, tools)
-    etcd = model.applications["etcd"]
-    await etcd.set_config({"channel": "3.2/stable"})
-    await tools.juju_wait()
-
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
@@ -101,43 +73,12 @@ async def test_node_scale_down_members(deploy, event_loop, tools):
     await test_cluster_health(deploy, event_loop)
 
 
-# The snap-upgrade action is for upgrading from etcd charm revisions released
-# before March 2017. It's pretty much irrelevant today.
-@pytest.mark.skip("https://bugs.launchpad.net/snapd/+bug/1823768")
-async def test_snap_action(deploy, event_loop, tools):
-    """ When the charm is upgraded, a message should appear requesting the
-    user to run a manual upgrade."""
-    controller, model = deploy
-    await deploy_etcd(controller, model, tools)
-    etcd = model.applications["etcd"]
-    await tools.juju_wait()
-
-    for unit in etcd.units:
-        is_leader = await unit.is_leader_from_status()
-        if is_leader:
-            action = await unit.run_action("snap-upgrade")
-            action = await action.wait()
-
-            # This will fail if the upgrade didnt work
-            assert "completed" in action.status
-            await validate_running_snap_daemon(etcd)
-            await validate_etcd_fixture_data(etcd)
-
-
 @pytest.mark.skip("Need to manually verify result tarball")
-async def test_snapshot_restore(deploy, event_loop, connection_name, tools):
+async def test_snapshot_restore(model, tools):
     """
     Trigger snapshot and restore actions
     """
     from sh import juju, ls
-
-    controller, model = deploy
-    etcd = await model.deploy(str(ETCD_CHARM_PATH))
-    await model.deploy("cs:~containers/easyrsa")
-    await model.add_relation("easyrsa:client", "etcd:certificates")
-
-    await etcd.set_config({"channel": "3.2/stable"})
-    await tools.juju_wait()
 
     for unit in etcd.units:
         leader = await unit.is_leader_from_status()
@@ -194,21 +135,8 @@ async def test_snapshot_restore(deploy, event_loop, connection_name, tools):
                 assert await is_data_present(unit, ver) is True
 
 
-async def test_local_deployed(deploy, event_loop, tools):
-    """ Verify local etcd charm can be deployed """
-    controller, model = deploy
-    await deploy_etcd(controller, model, tools)
-    await tools.juju_wait()
-    assert "etcd" in model.applications
-
-
-async def test_leader_status(deploy, event_loop, tools):
+async def test_leader_status(model, tools):
     """ Verify our leader is running the etcd daemon """
-    controller, model = deploy
-    await deploy_etcd(controller, model, tools)
-    etcd = model.applications["etcd"]
-    await etcd.set_config({"channel": "3.2/stable"})
-    await tools.juju_wait()
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
@@ -217,13 +145,8 @@ async def test_leader_status(deploy, event_loop, tools):
             assert "active" in status.results["Stdout"].strip()
 
 
-async def test_config_snapd_refresh(deploy, event_loop, tools):
+async def test_config_snapd_refresh(model, tools):
     """ Verify initial snap refresh config is set and can be changed """
-    controller, model = deploy
-    await deploy_etcd(controller, model, tools)
-    etcd = model.applications["etcd"]
-    await etcd.set_config({"channel": "3.2/stable"})
-    await tools.juju_wait()
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
@@ -238,15 +161,9 @@ async def test_config_snapd_refresh(deploy, event_loop, tools):
             assert timer.results["Stdout"].strip() == "fri5"
 
 
-async def test_node_scale(deploy, event_loop, tools):
+async def test_node_scale(model, tools):
     """ Scale beyond 1 node because etcd supports peering as a standalone
     application. """
-    controller, model = deploy
-    await deploy_etcd(controller, model, tools)
-    etcd = model.applications["etcd"]
-    # Ensure we aren't testing a single node
-    await etcd.set_config({"channel": "3.2/stable"})
-    await tools.juju_wait()
     if not len(etcd.units) > 1:
         await etcd.add_units(count=2)
         await tools.juju_wait()
@@ -258,7 +175,7 @@ async def test_node_scale(deploy, event_loop, tools):
         assert "active" in out.results["Stdout"].strip()
 
 
-async def test_cluster_health(deploy, event_loop, tools):
+async def test_cluster_health(model, tools):
     """ Iterate all the units and verify we have a clean bill of health
     from etcd """
     certs = (
@@ -267,11 +184,6 @@ async def test_cluster_health(deploy, event_loop, tools):
         "ETCDCTL_CA_FILE=/var/snap/etcd/common/ca.crt"
     )
 
-    controller, model = deploy
-    await deploy_etcd(controller, model, tools)
-    etcd = model.applications["etcd"]
-    await etcd.set_config({"channel": "3.2/stable"})
-    await tools.juju_wait()
     for unit in etcd.units:
         cmd = "{} /snap/bin/etcdctl cluster-health".format(certs)
         health = await unit.run(cmd)
@@ -279,7 +191,7 @@ async def test_cluster_health(deploy, event_loop, tools):
         assert "unavailable" not in health.results["Stdout"].strip()
 
 
-async def test_leader_knows_all_members(deploy, event_loop, tools):
+async def test_leader_knows_all_members(model, tools):
     """ Test we have the same number of units deployed and reporting in
     the etcd cluster as participating """
 
@@ -291,12 +203,6 @@ async def test_leader_knows_all_members(deploy, event_loop, tools):
         "ETCDCTL_CERT_FILE=/var/snap/etcd/common/client.crt "
         "ETCDCTL_CA_FILE=/var/snap/etcd/common/ca.crt"
     )
-
-    controller, model = deploy
-    await deploy_etcd(controller, model, tools)
-    etcd = model.applications["etcd"]
-    await etcd.set_config({"channel": "3.2/stable"})
-    await tools.juju_wait()
 
     # format the command, and execute on the leader
     cmd = "{} /snap/bin/etcd.etcdctl member list".format(certs)
