@@ -86,11 +86,9 @@ class Tools:
         self.cloud = request.config.getoption("--cloud")
         self.connection = f"{self.controller_name}:{self.model_name}"
 
-    async def run(self, cmd):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
+    async def run(self, *cmd):
         proc = await asyncio.create_subprocess_shell(
-            cmd,
+            *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=os.environ.copy())
