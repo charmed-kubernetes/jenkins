@@ -88,7 +88,7 @@ class Tools:
 
     async def run(self, *cmd):
         proc = await asyncio.create_subprocess_shell(
-            *cmd,
+            " ".join(cmd),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=os.environ.copy())

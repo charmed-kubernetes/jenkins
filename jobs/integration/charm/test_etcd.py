@@ -13,11 +13,12 @@ ETCD_CHARM_PATH = os.getenv("CHARM_PATH")
 pytestmark = pytest.mark.asyncio
 
 
-async def deploy_etcd(controller, model):
-    await asyncify(juju)(
+async def deploy_etcd(controller, model, tools):
+    await tools.run(
+        "juju",
         "deploy",
         "-m",
-        "{}:{}".format(controller, model.info.name),
+        f"{tools.controller_name}:{model.info.name}",
         str(ETCD_CHARM_PATH),
     )
     await model.deploy("cs:~containers/easyrsa")
@@ -38,7 +39,7 @@ async def test_etcd_actions(deploy, event_loop, tools):
             assert re.search(output_regex, output)
 
     controller, model = deploy
-    await deploy_etcd(controller, model)
+    await deploy_etcd(controller, model, tools)
     etcd = model.applications["etcd"]
     await etcd.set_config({"channel": "3.2/stable"})
     etcd = model.applications["etcd"].units[0]
@@ -75,7 +76,7 @@ async def test_node_scale_down_members(deploy, event_loop, tools):
     """ Scale the cluster down and ensure the cluster state is still
     healthy """
     controller, model = deploy
-    await deploy_etcd(controller, model)
+    await deploy_etcd(controller, model, tools)
     etcd = model.applications["etcd"]
     await etcd.set_config({"channel": "3.2/stable"})
     await tools.juju_wait()
@@ -107,7 +108,7 @@ async def test_snap_action(deploy, event_loop, tools):
     """ When the charm is upgraded, a message should appear requesting the
     user to run a manual upgrade."""
     controller, model = deploy
-    await deploy_etcd(controller, model)
+    await deploy_etcd(controller, model, tools)
     etcd = model.applications["etcd"]
     await tools.juju_wait()
 
@@ -196,7 +197,7 @@ async def test_snapshot_restore(deploy, event_loop, connection_name, tools):
 async def test_local_deployed(deploy, event_loop, tools):
     """ Verify local etcd charm can be deployed """
     controller, model = deploy
-    await deploy_etcd(controller, model)
+    await deploy_etcd(controller, model, tools)
     await tools.juju_wait()
     assert "etcd" in model.applications
 
@@ -204,7 +205,7 @@ async def test_local_deployed(deploy, event_loop, tools):
 async def test_leader_status(deploy, event_loop, tools):
     """ Verify our leader is running the etcd daemon """
     controller, model = deploy
-    await deploy_etcd(controller, model)
+    await deploy_etcd(controller, model, tools)
     etcd = model.applications["etcd"]
     await etcd.set_config({"channel": "3.2/stable"})
     await tools.juju_wait()
@@ -219,7 +220,7 @@ async def test_leader_status(deploy, event_loop, tools):
 async def test_config_snapd_refresh(deploy, event_loop, tools):
     """ Verify initial snap refresh config is set and can be changed """
     controller, model = deploy
-    await deploy_etcd(controller, model)
+    await deploy_etcd(controller, model, tools)
     etcd = model.applications["etcd"]
     await etcd.set_config({"channel": "3.2/stable"})
     await tools.juju_wait()
@@ -241,7 +242,7 @@ async def test_node_scale(deploy, event_loop, tools):
     """ Scale beyond 1 node because etcd supports peering as a standalone
     application. """
     controller, model = deploy
-    await deploy_etcd(controller, model)
+    await deploy_etcd(controller, model, tools)
     etcd = model.applications["etcd"]
     # Ensure we aren't testing a single node
     await etcd.set_config({"channel": "3.2/stable"})
@@ -267,7 +268,7 @@ async def test_cluster_health(deploy, event_loop, tools):
     )
 
     controller, model = deploy
-    await deploy_etcd(controller, model)
+    await deploy_etcd(controller, model, tools)
     etcd = model.applications["etcd"]
     await etcd.set_config({"channel": "3.2/stable"})
     await tools.juju_wait()
@@ -292,7 +293,7 @@ async def test_leader_knows_all_members(deploy, event_loop, tools):
     )
 
     controller, model = deploy
-    await deploy_etcd(controller, model)
+    await deploy_etcd(controller, model, tools)
     etcd = model.applications["etcd"]
     await etcd.set_config({"channel": "3.2/stable"})
     await tools.juju_wait()
