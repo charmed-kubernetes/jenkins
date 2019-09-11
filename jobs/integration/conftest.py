@@ -87,6 +87,8 @@ class Tools:
         self.connection = f"{self.controller_name}:{self.model_name}"
 
     async def run(self, cmd):
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
         proc = await asyncio.create_subprocess_shell(
             cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -206,12 +208,12 @@ async def deploy(request, tools):
     test_run_nonce = uuid.uuid4().hex[-4:]
     nonce_model = "{}-{}".format(tools.model_name, test_run_nonce)
 
-    await tools.juju("add-model", "-c", tools.controller_name, nonce_model, tools.cloud)
+    await tools.run("juju", "add-model", "-c", tools.controller_name, nonce_model, tools.cloud)
 
-    await tools.juju("model-config", "-m", tools.connection, "test-mode=true")
+    await tools.run("juju", "model-config", "-m", tools.connection, "test-mode=true")
 
     _model_obj = Model()
     await _model_obj.connect(f"{tools.controller_name}:{nonce_model}")
     yield (tools.controller_name, _model_obj)
     await _model_obj.disconnect()
-    await tools.juju("destroy-model", "-y", nonce_model)
+    await tools.run("juju", "destroy-model", "-y", nonce_model)

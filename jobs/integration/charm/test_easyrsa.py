@@ -27,7 +27,8 @@ async def easyrsa_resource():
 
 async def deploy_easyrsa(controller, model, tools):
     resource_path = await easyrsa_resource()
-    await tools.juju(
+    await tools.run(
+        "juju",
         "deploy",
         "-m",
         tools.connection,
