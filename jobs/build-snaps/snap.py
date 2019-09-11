@@ -67,6 +67,14 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
                 _fmt_version_str = f'{_fmt_version["major"]}.{_fmt_version["minor"]}'
                 tracks_to_publish = []
                 if _fmt_version["prerelease"]:
+                    if "rc" in _fmt_version["prerelease"]:
+                        click.echo(f"This is a beta release, setting edge/beta tracks")
+                        tracks_to_publish = [
+                            f"{_fmt_version_str}/edge",
+                            f"{_fmt_version_str}/beta",
+                            f"{_fmt_version_str}/candidate",
+                        ]
+
                     if "beta" in _fmt_version["prerelease"]:
                         click.echo(f"This is a beta release, setting edge/beta tracks")
                         tracks_to_publish = [
