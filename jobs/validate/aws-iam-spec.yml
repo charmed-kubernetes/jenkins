@@ -8,10 +8,6 @@ plan:
       - JUJU_CONTROLLER=validate-ck-aws-iam
       - JUJU_MODEL=validate-aws-iam-model
     before-script:
-      - |
-        #!/bin/bash
-        juju kill-controller -y validate-ck-aws-iam 2>&1
-
       - juju:
           cloud: $JUJU_CLOUD
           controller: $JUJU_CONTROLLER
