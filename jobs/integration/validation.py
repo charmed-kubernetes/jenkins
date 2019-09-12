@@ -8,6 +8,7 @@ import re
 import random
 import pytest
 import juju
+import logging
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from base64 import b64encode
@@ -24,6 +25,11 @@ from .utils import (
     verify_deleted,
     verify_ready,
 )
+
+
+# Quiet the noise
+ws_logger = logging.getLogger('websockets.protocol')
+ws_logger.setLevel(logging.INFO)
 
 
 class MicrobotError(Exception):
