@@ -91,15 +91,18 @@ class Tools:
             " ".join(cmd),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            env=os.environ.copy())
+            env=os.environ.copy(),
+        )
 
         stdout, stderr = await proc.communicate()
         if proc.returncode > 0:
-            raise Exception(f"Problem with run command: \nstdout: "
-                            f"{stdout.decode()}\nstderr: {stderr.decode()}")
+            raise Exception(
+                f"Problem with run command: \nstdout: "
+                f"{stdout.decode()}\nstderr: {stderr.decode()}"
+            )
 
     async def juju_wait(self):
-        return await self.run(f'juju wait -e {self.connection} -w')
+        return await self.run(f"juju wait -e {self.connection} -w")
 
 
 @pytest.fixture(scope="module")
@@ -206,7 +209,9 @@ async def deploy(request, tools):
     test_run_nonce = uuid.uuid4().hex[-4:]
     nonce_model = "{}-{}".format(tools.model_name, test_run_nonce)
 
-    await tools.run("juju", "add-model", "-c", tools.controller_name, nonce_model, tools.cloud)
+    await tools.run(
+        "juju", "add-model", "-c", tools.controller_name, nonce_model, tools.cloud
+    )
 
     await tools.run("juju", "model-config", "-m", tools.connection, "test-mode=true")
 

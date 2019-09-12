@@ -15,7 +15,7 @@ def get_test_ips():
 
 
 def is_app_in_model(app_str, model):
-    '''Searches for app names in the juju model containing app_str.'''
+    """Searches for app names in the juju model containing app_str."""
     for app in model.applications.keys():
         if app_str in app:
             return True
@@ -82,7 +82,7 @@ async def test_validate_hacluster(model, tools):
     # ensure no vip/dns set
     await app.set_config({"ha-cluster-vip": "", "ha-cluster-dns": ""})
 
-    if not is_app_in_model('hacluster', model):
+    if not is_app_in_model("hacluster", model):
         log("deploying hacluster...")
         await model.deploy("hacluster", num_units=0, series="bionic")
         await model.add_relation("hacluster:ha", "{}:ha".format(name))

@@ -28,7 +28,7 @@ from .utils import (
 
 
 # Quiet the noise
-ws_logger = logging.getLogger('websockets.protocol')
+ws_logger = logging.getLogger("websockets.protocol")
 ws_logger.setLevel(logging.INFO)
 
 
@@ -1300,7 +1300,9 @@ async def test_encryption_at_rest(model, tools):
             log("stderr: {}".format(output.results["Stderr"]))
         assert output.status == "completed"
         # read secret
-        output = await one_master.run("/snap/bin/kubectl get secret test-secret -o yaml")
+        output = await one_master.run(
+            "/snap/bin/kubectl get secret test-secret -o yaml"
+        )
         if output.results["Stderr"]:
             log("stderr: {}".format(output.results["Stderr"]))
         assert output.status == "completed"

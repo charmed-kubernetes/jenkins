@@ -2,12 +2,9 @@ import asyncio
 import logging
 import pytest
 import re
-import os
 from pathlib import Path
-from ..utils import asyncify
-from sh import juju
 
-ws_logger = logging.getLogger('websockets.protocol')
+ws_logger = logging.getLogger("websockets.protocol")
 ws_logger.setLevel(logging.INFO)
 
 pytestmark = pytest.mark.asyncio
@@ -58,6 +55,7 @@ async def test_etcd_scaling(model, tools):
 
     """
     e = asyncio.Event()
+
     async def on_unit_removed(delta, old_obj, new_obj, model):
         e.set()
 
@@ -86,6 +84,7 @@ async def test_snapshot_restore(model, tools):
     Trigger snapshot and restore actions
     """
     from sh import juju, ls
+
     etcd = model.applications["etcd"]
     for unit in etcd.units:
         leader = await unit.is_leader_from_status()
@@ -102,7 +101,8 @@ async def test_snapshot_restore(model, tools):
                 assert action.status == "completed"
                 src = Path(action.results["snapshot"]["path"])
                 dst = Path(action.results["snapshot"]["path"]).name
-                await unit.scp_from(str(src), str(dst), controller, connection_name)
+                await unit.scp_from(str(src), str(dst),
+                                    tools.controller_name, tools.connection)
                 filenames[dataset] = str(dst)
                 out = ls("-l", "result*")
                 print(out.stdout.decode().strip())
@@ -116,7 +116,7 @@ async def test_snapshot_restore(model, tools):
             juju(
                 "attach",
                 "-m",
-                "{}:{}".format(controller, model.info.name),
+                "{}:{}".format(tools.controller_name, model.info.name),
                 "etcd",
                 "snapshot='./{}'".format(str(filenames["v2"])),
             )
@@ -130,7 +130,7 @@ async def test_snapshot_restore(model, tools):
             juju(
                 "attach",
                 "-m",
-                "{}:{}".format(controller, model.info.name),
+                "{}:{}".format(tools.controller_name, model.info.name),
                 "etcd",
                 "snapshot='./{}'".format(str(filenames["v3"])),
             )
@@ -223,47 +223,48 @@ async def test_leader_knows_all_members(model, tools):
             assert len(members) == len(etcd.units)
 
 
-async def validate_etcd_fixture_data(etcd):
-    """ Recall data set by set_etcd_fixture_data to ensure it persisted
-    through the upgrade """
+# TODO: Can we remove these?
+# async def validate_etcd_fixture_data(etcd):
+#     """ Recall data set by set_etcd_fixture_data to ensure it persisted
+#     through the upgrade """
 
-    # The spacing here is semi-important as its a string of ENV exports
-    # also, this is hard coding for the defaults. if the defaults in
-    # layer.yaml change, this will need to change.
-    certs = (
-        "ETCDCTL_KEY_FILE=/var/snap/etcd/common/client.key "
-        "ETCDCTL_CERT_FILE=/var/snap/etcd/common/client.crt "
-        "ETCDCTL_CA_FILE=/var/snap/etcd/common/ca.crt"
-    )
+#     # The spacing here is semi-important as its a string of ENV exports
+#     # also, this is hard coding for the defaults. if the defaults in
+#     # layer.yaml change, this will need to change.
+#     certs = (
+#         "ETCDCTL_KEY_FILE=/var/snap/etcd/common/client.key "
+#         "ETCDCTL_CERT_FILE=/var/snap/etcd/common/client.crt "
+#         "ETCDCTL_CA_FILE=/var/snap/etcd/common/ca.crt"
+#     )
 
-    etcd = model.applications["etcd"]
-    for unit in etcd.units:
-        is_leader = await unit.is_leader_from_status()
-        if is_leader:
-            await unit.run("{} /snap/bin/etcd.etcdctl set juju rocks".format(certs))
-            await unit.run(
-                "{} /snap/bin/etcd.etcdctl set nested/data works".format(certs)
-            )
+#     etcd = model.applications["etcd"]
+#     for unit in etcd.units:
+#         is_leader = await unit.is_leader_from_status()
+#         if is_leader:
+#             await unit.run("{} /snap/bin/etcd.etcdctl set juju rocks".format(certs))
+#             await unit.run(
+#                 "{} /snap/bin/etcd.etcdctl set nested/data works".format(certs)
+#             )
 
-            juju_key = await unit.run(
-                "{} /snap/bin/etcd.etcdctl get juju rocks".format(certs)
-            )
-            nested_key = await unit.run(
-                "{} /snap/bin/etcd.etcdctl get nested/data works".format(certs)
-            )
+#             juju_key = await unit.run(
+#                 "{} /snap/bin/etcd.etcdctl get juju rocks".format(certs)
+#             )
+#             nested_key = await unit.run(
+#                 "{} /snap/bin/etcd.etcdctl get nested/data works".format(certs)
+#             )
 
-            assert "rocks" in juju_key.results["Stdout"].strip()
-            assert "works" in nested_key.results["Stdout"].strip()
+#             assert "rocks" in juju_key.results["Stdout"].strip()
+#             assert "works" in nested_key.results["Stdout"].strip()
 
 
-async def validate_running_snap_daemon(etcd):
-    """ Validate the snap based etcd daemon is running after an op """
-    etcd = model.applications["etcd"]
-    for unit in etcd.units:
-        is_leader = await unit.is_leader_from_status()
-        if is_leader:
-            daemon_status = await unit.run("systemctl is-active snap.etcd.etcd")
-            assert "active" in daemon_status.results["Stdout"].strip()
+# async def validate_running_snap_daemon(etcd):
+#     """ Validate the snap based etcd daemon is running after an op """
+#     etcd = model.applications["etcd"]
+#     for unit in etcd.units:
+#         is_leader = await unit.is_leader_from_status()
+#         if is_leader:
+#             daemon_status = await unit.run("systemctl is-active snap.etcd.etcd")
+#             assert "active" in daemon_status.results["Stdout"].strip()
 
 
 async def load_data(leader):
