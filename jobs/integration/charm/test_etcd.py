@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import pytest
 import re
 import os
@@ -6,6 +7,8 @@ from pathlib import Path
 from ..utils import asyncify
 from sh import juju
 
+ws_logger = logging.getLogger('websockets.protocol')
+ws_logger.setLevel(logging.INFO)
 
 pytestmark = pytest.mark.asyncio
 
@@ -50,27 +53,31 @@ async def test_etcd_actions(model, tools):
     await etcd.run("sudo systemctl restart snap.etcd.etcd.service")
 
 
-async def test_node_scale_down_members(model, tools):
-    """ Scale the cluster down and ensure the cluster state is still
-    healthy """
+async def test_etcd_scaling(model, tools):
+    """ Scale etcd up and down and ensure the cluster state remains healthy.
+
+    """
+    e = asyncio.Event()
+    async def on_unit_removed(delta, old_obj, new_obj, model):
+        e.set()
+
+    etcd = model.applications["etcd"]
+
+    # Scale down
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
-            # unit_name_copy = unit.name
+            unit.on_remove(on_unit_removed)
             await etcd.destroy_unit(unit.name)
-            # cory_fu> stokachu: It would be really good to add that to
-            # libjuju, but in the meantime you could use either
-            # `block_until(lambda: unit.name not in [u.name for u in
-            # etcd.units])` or `e = asyncio.Event(); unit.on_remove(e.set);
-            # await e.wait()`
-            e = asyncio.Event()
-            unit.on_remove(e.set)
             await e.wait()
-            # await model.block_until(
-            #     lambda: unit_name_copy not in [u.name for u in etcd.units])
+            break
     await tools.juju_wait()
-    # re-use the cluster-health test to validate we are still healthy.
-    await test_cluster_health(deploy, event_loop)
+    await test_cluster_health(model, tools)
+
+    # Scale up
+    await etcd.add_units(count=1)
+    await tools.juju_wait()
+    await test_cluster_health(model, tools)
 
 
 @pytest.mark.skip("Need to manually verify result tarball")
@@ -79,7 +86,7 @@ async def test_snapshot_restore(model, tools):
     Trigger snapshot and restore actions
     """
     from sh import juju, ls
-
+    etcd = model.applications["etcd"]
     for unit in etcd.units:
         leader = await unit.is_leader_from_status()
         if leader:
@@ -137,6 +144,7 @@ async def test_snapshot_restore(model, tools):
 
 async def test_leader_status(model, tools):
     """ Verify our leader is running the etcd daemon """
+    etcd = model.applications["etcd"]
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
@@ -147,6 +155,7 @@ async def test_leader_status(model, tools):
 
 async def test_config_snapd_refresh(model, tools):
     """ Verify initial snap refresh config is set and can be changed """
+    etcd = model.applications["etcd"]
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
@@ -161,20 +170,6 @@ async def test_config_snapd_refresh(model, tools):
             assert timer.results["Stdout"].strip() == "fri5"
 
 
-async def test_node_scale(model, tools):
-    """ Scale beyond 1 node because etcd supports peering as a standalone
-    application. """
-    if not len(etcd.units) > 1:
-        await etcd.add_units(count=2)
-        await tools.juju_wait()
-
-    for unit in etcd.units:
-        out = await unit.run("systemctl is-active snap.etcd.etcd")
-        assert out.status == "completed"
-        assert "inactive" not in out.results["Stdout"].strip()
-        assert "active" in out.results["Stdout"].strip()
-
-
 async def test_cluster_health(model, tools):
     """ Iterate all the units and verify we have a clean bill of health
     from etcd """
@@ -184,7 +179,12 @@ async def test_cluster_health(model, tools):
         "ETCDCTL_CA_FILE=/var/snap/etcd/common/ca.crt"
     )
 
+    etcd = model.applications["etcd"]
     for unit in etcd.units:
+        out = await unit.run("systemctl is-active snap.etcd.etcd")
+        assert out.status == "completed"
+        assert "inactive" not in out.results["Stdout"].strip()
+        assert "active" in out.results["Stdout"].strip()
         cmd = "{} /snap/bin/etcdctl cluster-health".format(certs)
         health = await unit.run(cmd)
         assert "unhealthy" not in health.results["Stdout"].strip()
@@ -207,6 +207,7 @@ async def test_leader_knows_all_members(model, tools):
     # format the command, and execute on the leader
     cmd = "{} /snap/bin/etcd.etcdctl member list".format(certs)
 
+    etcd = model.applications["etcd"]
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
@@ -235,6 +236,7 @@ async def validate_etcd_fixture_data(etcd):
         "ETCDCTL_CA_FILE=/var/snap/etcd/common/ca.crt"
     )
 
+    etcd = model.applications["etcd"]
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
@@ -256,6 +258,7 @@ async def validate_etcd_fixture_data(etcd):
 
 async def validate_running_snap_daemon(etcd):
     """ Validate the snap based etcd daemon is running after an op """
+    etcd = model.applications["etcd"]
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
