@@ -380,7 +380,7 @@
               variable: TEST_ARN
           - text:
               credential-id: aws-iam-key
-              variable: AWS_IAM_ACCESS_KEY_ID
+              variable: AWS_ACCESS_KEY_ID
           - text:
               credential-id: aws-iam-secret
-              variable: AWS_IAM_SECRET_ACCESS_KEY
+              variable: AWS_SECRET_ACCESS_KEY
