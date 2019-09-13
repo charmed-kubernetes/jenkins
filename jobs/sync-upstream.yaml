@@ -37,11 +37,12 @@
       - build-discarder:
           days-to-keep: 1
     wrappers:
-      - ansicolor
-      - workspace-cleanup
+      - default-job-wrapper
       - ci-creds
     parameters:
-      - global-params
+      - string:
+          name: K8S_VERSION
+          description: Stable K8S version to tag branches against.
       - string:
           name: BUNDLE_REV
           description: bundle revision to tag stable branches with

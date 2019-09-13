@@ -12,9 +12,10 @@ plan:
           IS_DRY_RUN="--dry-run"
         fi
         python3 jobs/sync-upstream/sync.py tag-stable \
-                     --layer-list includes/charm-layer-list.inc \
-                     --charm-list includes/charm-support-matrix.inc \
-                     --bundle-revision $BUNDLE_REV $IS_DRY_RUN
+                     --layer-list jobs/includes/charm-layer-list.inc \
+                     --charm-list jobs/includes/charm-support-matrix.inc \
+                     --bundle-revision $BUNDLE_REV \
+                     --k8s-version $K8S_VERSION $IS_DRY_RUN
     tags: [tag-stable-rev]
   - script:
       - |
@@ -26,8 +27,8 @@ plan:
           IS_DRY_RUN="--dry-run"
         fi
         python3 jobs/sync-upstream/sync.py cut-stable-release \
-            --layer-list includes/charm-layer-list.inc \
-            --charm-list includes/charm-support-matrix.inc \
+            --layer-list jobs/includes/charm-layer-list.inc \
+            --charm-list jobs/includes/charm-support-matrix.inc \
             --filter-by-tag k8s $IS_DRY_RUN
     tags: [cut-stable-release]
 

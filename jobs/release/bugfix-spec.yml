@@ -10,21 +10,21 @@ meta:
   long-description: |
     ## Bugfix Release Process
 
-    ### Cherry-pick fixes from master into stable branches
+    ### 1. Cherry-pick fixes from master into stable branches
 
-    ### Document release notes
+    ### 2. Document release notes
 
     - Bugfixes
     - Enhancements
     - Known Limitations/Issues
 
-    ### Run the **release-charm-bugfix** job
+    ### 3. Run the **release-charm-bugfix** job
 
     **Job**: https://jenkins.canonical.com/k8s/job/release-charm-bugfix/
 
     This is the main job to run when needing to do a bugfix. The steps this build performs are as follows:
 
-    - Build and Publish charms to the `beta` channel. You can override the channel if needed.
+    - Build and Publish charms to the `beta` channel.
     - The validation suite is run against a deployed `charmed-kubernetes`
     - The validation suite is run against the following variations:
         - NVidia
