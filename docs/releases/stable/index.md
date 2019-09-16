@@ -34,8 +34,7 @@ should be loaded into your ssh-agent.
 _Example_:
 
 ```
-tox -e py36 -- ogc --spec jobs/sync-upstream/spec.yml \
-    -t tag-stable-rev
+tox -e py36 -- ogc --spec jobs/sync-upstream/spec.yml -t tag-stable-rev
 ```
 
 ### 2. Rebase stable on top of master git branches
@@ -58,8 +57,7 @@ should be loaded into your ssh-agent.
 _Example_:
 
 ```
-tox -e py36 -- ogc --spec jobs/sync-upstream/spec.yml \
-     -t cut-stable-release
+tox -e py36 -- ogc --spec jobs/sync-upstream/spec.yml -t cut-stable-release
 ```
 
 ### 3. Build new CK Charms from stable git branches
@@ -93,8 +91,7 @@ Must be logged into the charmstore as **cdkbot**
 _Example_:
 
 ```
-tox -e py36 -- ogc --spec jobs/release/release-spec.yml \
-     -t build-charms
+tox -e py36 -- ogc --spec jobs/release/release-spec.yml -t build-charms
 ```
 
 ### 4. Promote new K8S snaps
@@ -123,8 +120,7 @@ Must have username/password for **cdkbot** to publish to snapstore.
 _Example_:
 
 ```
-tox -e py36 -- ogc --spec jobs/build-snaps/spec.yml \
-     -t sync
+tox -e py36 -- ogc --spec jobs/build-snaps/spec.yml -t sync
 ```
 
 ### 5. Validate Charmed Kubernetes
@@ -171,16 +167,46 @@ it will only promote the necessary charms that make up charmed-kuberneetes (the
 others are kubeflow related).
 
 _Jenkins Job_: promote-charms
-_Requirements_
-_Example_
+
+_Requirements_:
+
+**Environment Variables**:
+
+- TOX_WORK_DIR=~/.tox
+- FROM_CHANNEL=beta
+- TO_CHANNEL=stable
+- CHARM_LIST=jobs/includes/charm-support-matrix.inc
+- FILTER_BY_TAG=k8s
+
+
+_Example_:
+
+```
+tox -e py36 -- ogc jobs/build-charms/spec.yml -t promote-charms
+```
 
 ### 11. Promote bundles from `beta` to `candidate` and `stable`
 
 Same as charm promotion.
 
 _Jenkins Job_: promote-bundles
-_Requirements_
-_Example_
+
+_Requirements_:
+
+**Environment Variables**:
+
+- TOX_WORK_DIR=~/.tox
+- FROM_CHANNEL=beta
+- TO_CHANNEL=stable
+- CHARM_LIST=jobs/includes/charm-support-matrix.inc
+- FILTER_BY_TAG=k8s
+
+
+_Example_:
+
+```
+tox -e py36 -- ogc jobs/build-charms/spec.yml -t promote-bundles
+```
 
 ### 11. Send announcement
 
