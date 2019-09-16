@@ -144,23 +144,189 @@ _Example_:
 tox -e py36 -- ogc --spec validate/spec.yml
 ```
 
-### 6. Validate Variants (TBW)
+### 6. Validate CK Upgrade
 
+Run validation tests against minor to minor upgrades, for example, 1.13 ->
+1.16, 1.14 -> 1.16, 1.15 > 1.16
 
-### 7. CNCF Conformance (TBW)
+_Jenkins Job_: validate-ck-upgrade
 
-### 8. Notify Solutions QA
+_Requires_:
+
+Must have aws credentials setup and loaded within Juju credentials.
+
+**Environment Variables**:
+
+- INTEGRATION_TEST_PATH=jobs/integration
+- JUJU_DEPLOY_CHANNEL=beta
+
+_Example_:
+
+```
+tox -e py36 -- ogc --spec validate/upgrade-spec.yml
+```
+
+### 7. Validate CK ARM64
+
+Run validation tests on a arm64 deployment
+
+_Jenkins Job_: validate-ck-arm64
+
+_Requires_:
+
+Must have aws credentials setup and loaded within Juju credentials.
+
+**Environment Variables**:
+
+- INTEGRATION_TEST_PATH=jobs/integration
+- JUJU_DEPLOY_CHANNEL=beta
+
+_Example_:
+
+```
+tox -e py36 -- ogc --spec validate/ck-arm-spec.yml
+```
+
+### 8. Validate CK with Calico
+
+Run validation tests on CK with Calico enabled
+
+_Jenkins Job_: validate-ck-calico
+
+_Requires_:
+
+Must have aws credentials setup and loaded within Juju credentials.
+
+**Environment Variables**:
+
+- INTEGRATION_TEST_PATH=jobs/integration
+- JUJU_DEPLOY_CHANNEL=beta
+
+_Example_:
+
+```
+tox -e py36 -- ogc --spec validate/calico-spec.yml
+```
+
+### 9. Validate CK with Tigera Secure EE
+
+Run validation tests on CK with Tigera Secure EE enabled
+
+_Jenkins Job_: validate-ck-tigera-secure-ee
+
+_Requires_:
+
+Must have aws credentials setup and loaded within Juju credentials.
+
+**Environment Variables**:
+
+- INTEGRATION_TEST_PATH=jobs/integration
+- JUJU_DEPLOY_CHANNEL=beta
+
+_Example_:
+
+```
+tox -e py36 -- ogc --spec validate/tigera-ee-spec.yml
+```
+
+### 10. Validate CK with Vault
+
+Run validation tests on CK with Vault enabled instead, replaces EasyRSA
+
+_Jenkins Job_: validate-ck-vault
+
+_Requires_:
+
+Must have aws credentials setup and loaded within Juju credentials.
+
+**Environment Variables**:
+
+- INTEGRATION_TEST_PATH=jobs/integration
+- JUJU_DEPLOY_CHANNEL=beta
+
+_Example_:
+
+```
+tox -e py36 -- ogc --spec validate/vault-spec.yml
+```
+
+### 11. Validate CK with Ceph
+
+Run validation tests on CK with Ceph enabled
+
+_Jenkins Job_: validate-ck-ceph
+
+_Requires_:
+
+Must have aws credentials setup and loaded within Juju credentials.
+
+**Environment Variables**:
+
+- INTEGRATION_TEST_PATH=jobs/integration
+- JUJU_DEPLOY_CHANNEL=beta
+
+_Example_:
+
+```
+tox -e py36 -- ogc --spec validate/ceph-spec.yml
+```
+
+### 12. Validate CK with NVidia
+
+Run validation tests on CK with NVidia enabled instead
+
+_Jenkins Job_: validate-ck-nvidia
+
+_Requires_:
+
+Must have aws credentials setup and loaded within Juju credentials.
+
+**Environment Variables**:
+
+- INTEGRATION_TEST_PATH=jobs/integration
+- JUJU_DEPLOY_CHANNEL=beta
+
+_Example_:
+
+```
+tox -e py36 -- ogc --spec validate/nvidia-spec.yml
+```
+
+### 13. Validate CK with AWS IAM
+
+Run validation tests on CK with AWS IAM enabled
+
+_Jenkins Job_: validate-ck-aws-iam
+
+_Requires_:
+
+Must have aws credentials setup and loaded within Juju credentials.
+
+**Environment Variables**:
+
+- INTEGRATION_TEST_PATH=jobs/integration
+- JUJU_DEPLOY_CHANNEL=beta
+
+_Example_:
+
+```
+tox -e py36 -- ogc --spec validate/aws-iam-spec.yml
+```
+
+### 14. CNCF Conformance (TBW)
+
+### 15. Notify Solutions QA
 
 Notify solutions-qa that CK is ready to be run through their tests. Once
-that is complete and related to us, we can start the release to stable.
+that is complete and relayed to us, we can start the release to stable.
 
-### 9. Document release notes
+### 16. Document release notes
 
 - Bugfixes
 - Enhancements
 - Known Limitations/Issues
 
-### 10. Promote charms from `beta` to `candidate` and `stable`
+### 17. Promote charms from **beta** to **stable**
 
 This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
 it will only promote the necessary charms that make up charmed-kuberneetes (the
@@ -185,7 +351,7 @@ _Example_:
 tox -e py36 -- ogc jobs/build-charms/spec.yml -t promote-charms
 ```
 
-### 11. Promote bundles from `beta` to `candidate` and `stable`
+### 18. Promote bundles from **beta** to **stable**
 
 Same as charm promotion.
 
@@ -208,7 +374,7 @@ _Example_:
 tox -e py36 -- ogc jobs/build-charms/spec.yml -t promote-bundles
 ```
 
-### 11. Send announcement
+### 19. Send announcement
 
 Email annoucement to k8s-crew with any relevant information.
 
