@@ -556,31 +556,31 @@ async def test_gpu_support(model, tools):
         # First clean any previous runs
         here = os.path.dirname(os.path.abspath(__file__))
         await scp_to(
-            os.path.join(here, "templates", "cuda-add.yaml"),
+            os.path.join(here, "templates", "nvidia-smi.yaml"),
             master_unit,
-            "cuda-add.yaml",
+            "nvidia-smi.yaml",
             tools.controller_name,
             tools.connection,
         )
-        await master_unit.run("/snap/bin/kubectl delete -f /home/ubuntu/cuda-add.yaml")
+        await master_unit.run("/snap/bin/kubectl delete -f /home/ubuntu/nvidia-smi.yaml")
         await retry_async_with_timeout(
             verify_deleted,
-            (master_unit, "po", "cuda-vector-add", "-n default"),
-            timeout_msg="Cleaning of cuda-vector-add pod failed",
+            (master_unit, "po", "nvidia-smi", "-n default"),
+            timeout_msg="Cleaning of nvidia-smi pod failed",
         )
         # Run the cuda addition
         cmd = await master_unit.run(
-            "/snap/bin/kubectl create -f /home/ubuntu/cuda-add.yaml"
+            "/snap/bin/kubectl create -f /home/ubuntu/nvidia-smi.yaml"
         )
         if not cmd.results["Code"] == "0":
-            log("Failed to create cuda-add pod test!")
+            log("Failed to create nvidia-smi pod test!")
             log(cmd.results)
             assert False
 
         async def cuda_test(master):
-            action = await master.run("/snap/bin/kubectl logs cuda-vector-add")
+            action = await master.run("/snap/bin/kubectl logs nvidia-smi")
             log(action.results["Stdout"])
-            return action.results["Stdout"].count("Test PASSED") > 0
+            return action.results["Stdout"].count("NVIDIA-SMI") > 0
 
         await retry_async_with_timeout(
             cuda_test,
