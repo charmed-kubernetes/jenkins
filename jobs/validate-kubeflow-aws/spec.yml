@@ -6,11 +6,10 @@ plan:
       - REGION=us-east-2
       - BUNDLE_REVISION=master
     before-script:
-      - sudo apt-get -qyf install expect tcl8.6
-      - unbuffer -p sudo lxc profile copy default aws 2>&1
-      - unbuffer -p sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
-      - unbuffer -p sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
-      - unbuffer -p sudo lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
+      - sudo lxc profile copy default aws 2>&1
+      - sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
+      - sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
+      - sudo lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
       - |
         #!/bin/bash
         set -x
