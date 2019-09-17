@@ -1260,7 +1260,7 @@ async def test_encryption_at_rest(model, tools):
             "cs:~openstack-charmers-next/vault",
             config={
                 "auto-generate-root-ca-cert": True,
-                "totally-unsecure-auto-unlock": True,
+                "disable-mlock": True,
             },
         )
         try:
@@ -1289,6 +1289,30 @@ async def test_encryption_at_rest(model, tools):
                 "vault:certificates", "kubeapi-load-balancer:certificates"
             )
         await model.add_relation("kubernetes-master:vault-kv", "vault:secrets")
+        await model.block_until(lambda: "vault" in model.applications)
+        vault = model.applications["vault"].units[0]
+        await model.block_until(lambda: vault.workload_status_message == "Vault needs to "
+                                                                         "be initialized")
+        # unseal vault
+        output = await vault.run("VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
+                                 "operator init -key-shares=5 -key-threshold=3 "
+                                 "--format=yaml")
+        assert output.status == "completed"
+        vault_info = yaml.safe_load(output.results["Stdout"])
+        for key in vault_info['unseal_keys_hex'][:3]:
+            output = await vault.run("VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
+                                     "operator unseal {}".format(key))
+            assert output.status == "completed"
+        output = await vault.run("VAULT_ADDR=http://localhost:8200 VAULT_TOKEN={} "
+                                 "/snap/bin/vault token create -ttl=10m --format=yaml"
+                                 "".format(vault_info["root_token"]))
+        assert output.status == "completed"
+        vault_token_info = yaml.safe_load(output.results["Stdout"])
+        charm_token = vault_token_info["auth"]["client_token"]
+        action = await vault.run_action("authorize-charm", token=charm_token)
+        await action.wait()
+        assert action.status == "complete"
+        # now wait for k8s to settle
         await tools.juju_wait()
         # create secret
         one_master = random.choice(model.applications["kubernetes-master"].units)
@@ -1312,7 +1336,7 @@ async def test_encryption_at_rest(model, tools):
         await etcd.run(
             "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
             "--endpoints http://127.0.0.1:4001 "
-            "get /registry/secrets/default/test-secret | hexdump -C"
+            "get /registry/secrets/default/test-secret | strings"
         )
         assert output.status == "completed"
         assert b64encode(b"secret-value").decode("utf8") not in output.results["Stdout"]
