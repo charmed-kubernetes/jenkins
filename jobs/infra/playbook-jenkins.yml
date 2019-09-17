@@ -66,6 +66,7 @@
           - tree
           - virtualenv
           - jq
+          - expect-dev
       tags:
         - jenkins
     - name: remove unused debs
