@@ -68,12 +68,20 @@ plan:
         juju list-models || true
         juju destroy-model cdkkf:kubeflow -y --destroy-storage --force || true
         juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true
-        sudo lxc delete --force "$CONTAINER" || true
         EOF
 
         chmod +x kubeflow-cleanup
         sudo lxc file push -p kubeflow-cleanup "$CONTAINER"/root/kubeflow-cleanup
         sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-cleanup'
+        sudo lxc delete --force "$CONTAINER"
+
+        # Data collection
+        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+        python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
+        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+        python3 jobs/infra/collect-debug.py set-key 'juju_snap_channel' "$JUJU_SNAP_CHANNEL"
+        python3 jobs/infra/collect-debug.py set-key 'juju_version' $(juju version)
+        python3 jobs/infra/collect-debug.py save-meta metadata.json
 
 meta:
   name: Verify CK with Kubeflow
