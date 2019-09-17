@@ -3,7 +3,7 @@ plan:
       - CONTAINER=validate-aws
       - STORAGE=validate-aws-storage
       - JUJU_SNAP_CHANNEL=edge
-      - REGION=us-east-1
+      - REGION=us-east-2
       - BUNDLE_REVISION=master
     before-script:
       - |
@@ -11,10 +11,10 @@ plan:
 
         set -x
 
-        sudo lxc profile copy default aws
-        sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile
-        sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER"
-        sudo lxc file push -p ~/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml
+        sudo lxc profile copy default aws 2>&1
+        sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
+        sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
+        sudo lxc file push -p ~/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
 
         cat >kubeflow-deploy<<EOF
         #!/bin/bash
@@ -31,15 +31,15 @@ plan:
 
         git clone https://github.com/juju-solutions/bundle-kubeflow.git
         cd bundle-kubeflow && \
-             git checkout ${params.bundle_revision} && \
-             ./scripts/manage-cdk create --region ${params.region} &&
+             git checkout "$BUNDLE_REVISION" && \
+             ./scripts/manage-cdk create --region "$REGION" &&
              ./scripts/deploy-cdk create --build --ci
 
         cd bundle-kubeflow && git checkout "$BUNDLE_REVISION" && ./tests/run.sh
         EOF
         chmod +x kubeflow-deploy
-        sudo lxc file push -p kubeflow-cleanup "$CONTAINER"/root/kubeflow-deploy
-        sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-deploy'
+        sudo lxc file push -p kubeflow-cleanup "$CONTAINER"/root/kubeflow-deploy 2>&1
+        sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-deploy' 2>&1
 
 
     after-script:
@@ -59,15 +59,15 @@ plan:
             juju kubectl logs -c wait --timestamps $pod || true
             printf '\n\n'
         done
-        juju kubectl logs --tail 1000 --all-containers -l juju-app=argo-controller
-        juju kubectl get pods
-        juju kubectl get pods -oyaml
-        juju status || true
-        juju status --format yaml || true
-        juju list-controllers || true
-        juju list-models || true
-        juju destroy-model cdkkf:kubeflow -y --destroy-storage --force || true
-        juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true
+        juju kubectl logs --tail 1000 --all-containers -l juju-app=argo-controller 2>&1
+        juju kubectl get pods 2>&1
+        juju kubectl get pods -oyaml 2>&1
+        juju status  2>&1 || true
+        juju status --format yaml 2>&1 || true
+        juju list-controllers 2>&1 || true
+        juju list-models 2>&1 || true
+        juju destroy-model cdkkf:kubeflow -y --destroy-storage --force 2>&1 || true
+        juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf 2>&1 || true
         EOF
 
         chmod +x kubeflow-cleanup
