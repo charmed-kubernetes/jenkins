@@ -6,6 +6,7 @@ autopep8
 awscli
 # black
 boto3
+configobj
 canonicalwebteam.snapstoreapi
 flake8
 flaky

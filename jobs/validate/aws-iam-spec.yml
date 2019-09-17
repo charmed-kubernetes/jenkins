@@ -40,14 +40,14 @@ plan:
         set -x
 
         # get your account ID
-        ACCOUNT_ID=$(aws sts get-caller-identity --output text --query 'Account')
+        # ACCOUNT_ID=$(aws sts get-caller-identity --output text --query 'Account')
 
         # define a role trust policy that opens the role to users in your account (limited by IAM policy)
 
-        POLICY=$(echo -n '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"arn:aws:iam::'; echo -n "$ACCOUNT_ID"; echo -n ':root"},"Action":"sts:AssumeRole","Condition":{}}]}')
+        # POLICY=$(echo -n '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"arn:aws:iam::'; echo -n "$ACCOUNT_ID"; echo -n ':root"},"Action":"sts:AssumeRole","Condition":{}}]}')
 
         # create a role named KubernetesAdmin (will print the new role's ARN)
-        export TEST_ARN=$(aws iam create-role --role-name KubernetesAdmin --description "Kubernetes administrator role (for AWS IAM Authenticator for Kubernetes)." --assume-role-policy-document "$POLICY" --output text --query 'Role.Arn')
+        # export TEST_ARN=$(aws iam create-role --role-name KubernetesAdmin --description "Kubernetes administrator role (for AWS IAM Authenticator for Kubernetes)." --assume-role-policy-document "$POLICY" --output text --query 'Role.Arn')
 
         pytest $INTEGRATION_TEST_PATH/test_aws_iam.py \
            --cloud $JUJU_CLOUD \
@@ -58,7 +58,6 @@ plan:
       - |
         #!/bin/bash
         set -x
-        aws iam delete-role --role-name KubernetesAdmin
 
         wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
         python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL

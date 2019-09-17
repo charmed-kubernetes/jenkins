@@ -2,30 +2,54 @@ import asyncio
 import pytest
 import random
 import json
-import os
+from pathlib import Path
 from .logger import log
 from subprocess import check_output
 from shlex import split
+from configobj import ConfigObj
+import sh
 
 
-def get_test_arn():
-    env = os.environ.get("TEST_ARN")
-    if not env:
-        # default to garbage
-        env = "arn:aws:iam::xxxxxxxx:role/k8s-view-role"
-        log("Warning: Using bogus arn!")
-    return env
+@pytest.fixture(scope="module")
+def arn():
+    log("Adding AWS IAM Role KubernetesAdmin")
+    caller_id = sh.aws.sts.get_caller_identity(
+        "--output", "text", "--query", "Account"
+    ).stdout.decode()
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {"AWS": f"arn:aws:iam::{caller_id}:root"},
+                "Action": "sts:AssumeRole",
+                "Condition": {},
+            }
+        ],
+    }
+    arn = sh.aws.iam.create_role(
+        "--role-name",
+        "KubernetesAdmin",
+        "--description",
+        "Kubernetes administrator role (for AWS IAM Authenticator for Kubernetes).",
+        "--assume-role-policy-document",
+        json.dumps(policy),
+        "--output",
+        "text",
+        "--query",
+        "Role.Arn",
+    )
+    yield arn.stdout.decode()
+    log("Deleting AWS IAM Role KubernetesAdmin")
+    sh.aws.iam.delete_role("--role-name", "KubernetesAdmin")
 
 
 def get_test_keys():
-    key_id = os.environ.get("AWS_ACCESS_KEY_ID")
-    key = os.environ.get("AWS_SECRET_ACCESS_KEY")
-    if not key_id:
-        log("Warning: Invalid key ID being used")
-        key_id = "DEADBEEFDEADBEEF"
-    if not key:
-        log("Warning: Invalid key being used")
-        key = "INVALIDKEYINVALIDKEYINVALIDKEY"
+    creds = ConfigObj(str(Path("~/.aws/credentials").expanduser()))
+    if 'default' not in creds.keys():
+        raise Exception("Could not find default aws credentials")
+    key_id = creds.get("default")["aws_access_key_id"]
+    key = creds.get("default")["aws_secret_access_key"]
     return {"id": key_id, "key": key}
 
 
@@ -58,7 +82,7 @@ async def verify_auth_failure(one_master, args):
     )
 
 
-async def patch_kubeconfig_and_verify_aws_iam(one_master):
+async def patch_kubeconfig_and_verify_aws_iam(one_master, arn):
     log("patching and validating generated kubectl config file")
     for i in range(6):
         output = await one_master.run("cat /home/ubuntu/config")
@@ -68,7 +92,7 @@ async def patch_kubeconfig_and_verify_aws_iam(one_master):
             )
             cmd = (
                 "sed -i 's;<<insert_arn_here>>;{};'"
-                " /home/ubuntu/aws-kubeconfig".format(get_test_arn())
+                " /home/ubuntu/aws-kubeconfig".format(arn)
             )
             await one_master.run(cmd)
             break
@@ -78,7 +102,7 @@ async def patch_kubeconfig_and_verify_aws_iam(one_master):
 
 
 @pytest.mark.asyncio
-async def test_validate_aws_iam(model, tools):
+async def test_validate_aws_iam(model, tools, arn):
     # This test verifies the aws-iam charm is working
     # properly. This requires:
     # 1) Deploy aws-iam and relate
@@ -121,7 +145,7 @@ spec:
   groups:
   - view
 EOF""".format(
-        get_test_arn()
+        arn()
     )
     # Note that we patch a single master's kubeconfig to have the arn in it,
     # so we need to use that one master for all commands
@@ -131,7 +155,7 @@ EOF""".format(
 
     # 3 & 4) grab config and verify aws-iam is inside
     log("verifying kubeconfig")
-    await patch_kubeconfig_and_verify_aws_iam(one_master)
+    await patch_kubeconfig_and_verify_aws_iam(one_master, arn)
 
     # 5) get aws-iam-authenticator binary
     log("getting aws-iam binary")
