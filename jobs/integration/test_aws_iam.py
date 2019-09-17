@@ -40,7 +40,7 @@ def arn():
         "--query",
         "Role.Arn",
     )
-    yield arn.stdout.decode()
+    yield arn.stdout.decode().strip()
     log("Deleting AWS IAM Role KubernetesAdmin")
     sh.aws.iam.delete_role("--role-name", "KubernetesAdmin")
 
@@ -146,7 +146,7 @@ spec:
   groups:
   - view
 EOF""".format(
-        arn()
+        arn
     )
     # Note that we patch a single master's kubeconfig to have the arn in it,
     # so we need to use that one master for all commands
