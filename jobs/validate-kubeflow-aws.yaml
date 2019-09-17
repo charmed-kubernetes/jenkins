@@ -39,6 +39,7 @@
     name: 'validate-kubeflow-aws'
     description: |
       Validates Kubeflow support on AWS
+    node: runner-amd64
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas

@@ -11,9 +11,9 @@ plan:
 
         set -x
 
-        sudo lxc profile show aws || sudo lxc profile copy default aws
+        sudo lxc profile copy default aws
         sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile
-        sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER
+        sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER"
         sudo lxc file push -p ~/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml
 
         cat >kubeflow-deploy<<EOF
