@@ -1,35 +1,59 @@
 # Validates Kubeflow on AWS
 
-- job-template:
+# - job-template:
+#     name: 'validate-kubeflow-aws'
+#     description: |
+#       Validates Kubeflow support on AWS
+#     project-type: pipeline
+#     concurrent: true
+#     pipeline-scm:
+#       scm:
+#         - k8s-jenkins-jenkaas
+#       script-path: jobs/validate-kubeflow-aws/Jenkinsfile
+#     parameters:
+#       - string:
+#           name: juju_channel
+#           default: 'stable'
+#           description: Juju snap channel
+#       - string:
+#           name: region
+#           default: 'us-east-1'
+#           description: AWS region that CDK will be spun up in
+#       - string:
+#           name: bundle_revision
+#           default: 'master'
+#           description: Git revision of bundle-kubeflow repo to deploy
+#     triggers:
+#         - timed: "@daily"
+#     properties:
+#       - build-discarder:
+#           days-to-keep: 7
+
+# - project:
+#     name: validate-kubeflow-aws
+#     jobs:
+#       - 'validate-kubeflow-aws'
+
+
+- job:
     name: 'validate-kubeflow-aws'
     description: |
       Validates Kubeflow support on AWS
-    project-type: pipeline
-    concurrent: true
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/validate-kubeflow-aws/Jenkinsfile
-    parameters:
-      - string:
-          name: juju_channel
-          default: 'stable'
-          description: Juju snap channel
-      - string:
-          name: region
-          default: 'us-east-1'
-          description: AWS region that CDK will be spun up in
-      - string:
-          name: bundle_revision
-          default: 'master'
-          description: Git revision of bundle-kubeflow repo to deploy
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 7
     triggers:
         - timed: "@daily"
-    properties:
-      - build-discarder:
-          days-to-keep: 7
-
-- project:
-    name: validate-kubeflow-aws
-    jobs:
-      - 'validate-kubeflow-aws'
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate-kubeflow-aws"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate-kubeflow-aws"
+          JOB_SPEC_FILE: "spec.yml"

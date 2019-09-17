@@ -13,8 +13,8 @@ import sh
 @pytest.fixture(scope="module")
 def arn():
     log("Adding AWS IAM Role KubernetesAdmin")
-    caller_id = sh.aws.sts.get_caller_identity(
-        "--output", "text", "--query", "Account"
+    caller_id = sh.aws.sts(
+        "get_caller_identity", "--output", "text", "--query", "Account"
     ).stdout.decode()
     policy = {
         "Version": "2012-10-17",
@@ -27,7 +27,8 @@ def arn():
             }
         ],
     }
-    arn = sh.aws.iam.create_role(
+    arn = sh.aws.iam(
+        "create_role",
         "--role-name",
         "KubernetesAdmin",
         "--description",
@@ -46,7 +47,7 @@ def arn():
 
 def get_test_keys():
     creds = ConfigObj(str(Path("~/.aws/credentials").expanduser()))
-    if 'default' not in creds.keys():
+    if "default" not in creds.keys():
         raise Exception("Could not find default aws credentials")
     key_id = creds.get("default")["aws_access_key_id"]
     key = creds.get("default")["aws_secret_access_key"]
