@@ -6,15 +6,13 @@ plan:
       - REGION=us-east-2
       - BUNDLE_REVISION=master
     before-script:
+      - su - root -c lxc profile copy default aws 2>&1
+      - su - root -c lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
+      - su - root -c lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
+      - su - root -c lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
       - |
         #!/bin/bash
-
         set -x
-
-        sudo lxc profile copy default aws 2>&1 || true
-        sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
-        sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
-        sudo lxc file push -p ~/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
 
         cat >kubeflow-deploy<<EOF
         #!/bin/bash
@@ -32,14 +30,15 @@ plan:
         git clone https://github.com/juju-solutions/bundle-kubeflow.git
         cd bundle-kubeflow && \
              git checkout "$BUNDLE_REVISION" && \
-             ./scripts/manage-cdk create --region "$REGION" &&
+             ./scripts/manage-cdk create --region "$REGION" && \
              ./scripts/deploy-cdk create --build --ci
 
         cd bundle-kubeflow && git checkout "$BUNDLE_REVISION" && ./tests/run.sh
         EOF
+        cat kubeflow-deploy
         chmod +x kubeflow-deploy
-        sudo lxc file push -p kubeflow-cleanup "$CONTAINER"/root/kubeflow-deploy 2>&1
-        sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-deploy' 2>&1
+      - su - root -c lxc file push -p kubeflow-deploy "$CONTAINER"/root/kubeflow-deploy 2>&1
+      - su - root -c lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-deploy' 2>&1
 
 
     after-script:
@@ -71,9 +70,9 @@ plan:
         EOF
 
         chmod +x kubeflow-cleanup
-        sudo lxc file push -p kubeflow-cleanup "$CONTAINER"/root/kubeflow-cleanup
-        sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-cleanup'
-        sudo lxc delete --force "$CONTAINER"
+        su - root -c lxc file push -p kubeflow-cleanup "$CONTAINER"/root/kubeflow-cleanup
+        su - root -c lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-cleanup'
+        su - root -c lxc delete --force "$CONTAINER"
 
         # Data collection
         python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
