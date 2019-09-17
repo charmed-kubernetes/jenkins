@@ -15,7 +15,7 @@ def arn():
     log("Adding AWS IAM Role KubernetesAdmin")
     caller_id = sh.aws.sts(
         "get-caller-identity", "--output", "text", "--query", "Account"
-    ).stdout.decode()
+    ).stdout.decode().strip()
     policy = {
         "Version": "2012-10-17",
         "Statement": [
