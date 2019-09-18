@@ -6,13 +6,14 @@ plan:
       - REGION=us-east-2
       - BUNDLE_REVISION=master
     before-script:
-      - sudo lxc profile copy default aws 2>&1
-      - sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
-      - sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
-      - sudo lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
       - |
         #!/bin/bash
         set -x
+
+        sudo lxc profile copy default aws 2>&1
+        sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
+        sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
+        sudo lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
 
         cat >kubeflow-deploy<<EOF
         #!/bin/bash
@@ -24,21 +25,21 @@ plan:
         sudo snap install juju-wait --classic
         sudo snap install kubectl --classic
         sudo snap install yq
-        sudo apt update && sudo apt install -y libssl-dev python3-pip
-        sudo pip3 install pytest sh kfp requests pyyaml
+        sudo apt update && sudo apt install -y libssl-dev python3-pip 2>&1
+        sudo pip3 install pytest sh kfp requests pyyaml 2>&1
 
         git clone https://github.com/juju-solutions/bundle-kubeflow.git
         cd bundle-kubeflow && \
              git checkout "$BUNDLE_REVISION" && \
              ./scripts/manage-cdk create --region "$REGION" && \
-             ./scripts/deploy-cdk create --build --ci
+             ./scripts/deploy-cdk create --build --ci 2>&1
 
-        cd bundle-kubeflow && git checkout "$BUNDLE_REVISION" && ./tests/run.sh
+        cd bundle-kubeflow && git checkout "$BUNDLE_REVISION" && ./tests/run.sh 2>&1
         EOF
         cat kubeflow-deploy
         chmod +x kubeflow-deploy
-      - sudo lxc file push -p kubeflow-deploy "$CONTAINER"/root/kubeflow-deploy 2>&1
-      - sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-deploy' 2>&1
+        sudo lxc file push -p kubeflow-deploy "$CONTAINER"/root/kubeflow-deploy 2>&1
+        sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-deploy' 2>&1
 
 
     after-script:
