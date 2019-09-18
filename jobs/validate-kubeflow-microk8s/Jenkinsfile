@@ -1,6 +1,10 @@
 @Library('juju-pipeline@master') _
 
-def exec(cmd) {
+def exec(String cmd) {
+    sh "juju ssh -m ${CONTROLLER}:default ubuntu/0 -- bash -c 'cd . && ${cmd}'"
+}
+
+def tryexec(String cmd) {
     sh "juju ssh -m ${CONTROLLER}:default ubuntu/0 -- bash -c 'cd . && ${cmd}'"
 }
 
@@ -40,29 +44,31 @@ pipeline {
                 retry(20)
             }
             steps {
-                exec "sudo snap install core"
+                exec 'sudo snap install core'
             }
         }
         stage('Install dependencies') {
             steps {
-                exec "sudo snap install charm --classic"
-                exec "sudo snap install jq"
-                exec "sudo snap install juju --classic"
-                exec "sudo snap install juju-helpers --classic --edge"
-                exec "sudo snap install juju-wait --classic"
-                exec "sudo snap install kubectl --classic"
+                exec 'sudo snap install charm --classic'
+                exec 'sudo snap install jq'
+                exec 'sudo snap install juju --classic'
+                exec 'sudo snap install juju-helpers --classic --edge'
+                exec 'sudo snap install juju-wait --classic'
+                exec 'sudo snap install kubectl --classic'
                 exec "sudo snap install microk8s --classic --channel ${params.microk8s_channel}"
-                exec "sudo snap install yq"
-                exec "sudo apt update && sudo apt install -y libssl-dev"
-                exec "sudo pip install pytest sh kfp requests pyyaml"
-                exec "sudo usermod -a -G microk8s ubuntu"
+                exec 'sudo snap install yq'
+                exec 'sudo apt update && sudo apt install -y libssl-dev'
+                exec 'sudo pip install pytest sh kfp requests pyyaml'
+                exec 'sudo usermod -a -G microk8s ubuntu'
+                exec "sed -i 's/--anonymous-auth=false/--anonymous-auth=true/g' /var/snap/microk8s/current/args/kubelet"
+                exec 'echo \'PATH=$PATH:/snap/bin\' > ~/.bashrc'
             }
         }
         stage('Deploy kubeflow') {
             steps {
-                exec "git clone https://github.com/juju-solutions/bundle-kubeflow.git"
-                exec 'echo \'PATH=$PATH:/snap/bin\' > ~/.bashrc'
-                exec "cd bundle-kubeflow && ./scripts/deploy-microk8s create --build --ci"
+                exec 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
+                exec 'cd bundle-kubeflow && ./scripts/deploy-microk8s create --build --ci'
+                exec 'juju config argo-controller kubelet-insecure=true'
             }
         }
         stage('Validate') {
@@ -75,30 +81,20 @@ pipeline {
 //        success {
 //            setPass()
 //        }
-//        failure {
+        failure {
 //            setFail()
-//        }
+            tryexec 'cd bundle-kubeflow && ./tests/dump-pipeline-logs.sh'
+            tryexec 'juju kubectl logs --tail 1000 --all-containers -l juju-app=argo-controller'
+            tryexec 'juju kubectl get pods'
+            tryexec 'juju kubectl get pods -oyaml'
+            tryexec 'juju status'
+            tryexec 'juju status --format yaml'
+        }
 //        always {
 //            setEndTime()
 //        }
         cleanup {
 //            saveMeta()
-            exec '''
-            pods=`juju kubectl get pods -l workflows.argoproj.io/completed="true" -o custom-columns=:metadata.name --no-headers || echo -n ""`
-            for pod in $pods; do
-                echo "===>" $pod main "<==="
-                juju kubectl logs -c main --timestamps $pod || true
-                printf '\n'
-                echo "===>" $pod wait "<==="
-                juju kubectl logs -c wait --timestamps $pod || true
-                printf '\n\n'
-            done
-            '''
-            exec 'juju kubectl logs --tail 1000 --all-containers -l juju-app=argo-controller'
-            exec "juju kubectl get pods"
-            exec "juju kubectl get pods -oyaml"
-            exec "juju status"
-            exec "juju status --format yaml"
             sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${CONTROLLER}"
         }
     }
