@@ -69,6 +69,9 @@ def _gen_metadata():
         job_name = obj["job_name"]
         if "snap_version" in obj:
             job_name = f"{job_name}-{obj['snap_version']}"
+        if "juju_version" in obj:
+            job_name = f"{job_name}-{obj['juju_version']}"
+
         if job_name not in db:
             db[job_name] = {}
 

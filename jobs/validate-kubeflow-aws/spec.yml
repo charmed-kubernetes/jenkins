@@ -1,19 +1,18 @@
 plan:
   - env:
-      - CONTAINER=validate-aws
-      - STORAGE=validate-aws-storage
-      - JUJU_SNAP_CHANNEL=edge
+      - JUJU_VERSION=2.6/edge
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_MODEL=validate-aws
       - REGION=us-east-2
       - BUNDLE_REVISION=master
     before-script:
       - sudo lxc profile copy default aws || true
       - sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile || true
-      - sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" || true
-      - sudo lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml  2>&1 || true
+      - sudo lxc launch -p default -p aws ubuntu:18.04 "$JUJU_MODEL" || true
+      - sudo lxc file push -p $HOME/.local/share/juju/credentials.yaml "$JUJU_MODEL"/root/.local/share/juju/credentials.yaml  2>&1 || true
       - |
         #!/bin/bash
         set -x
-
         echo "Installing required bits"
 
         cat >kubeflow-deploy<<EOF
@@ -29,19 +28,19 @@ plan:
         sudo apt update && sudo -E -n apt install -y libssl-dev python3-pip
         sudo pip3 install pytest sh kfp requests pyyaml
 
-        git clone https://github.com/juju-solutions/bundle-kubeflow.git 2>&1
-        cd bundle-kubeflow && \
-             git checkout "$BUNDLE_REVISION" && \
-             ./scripts/manage-cdk create --region "$REGION" && \
-             ./scripts/deploy-cdk create --build --ci
+        git clone https://github.com/juju-solutions/bundle-kubeflow.git
+        cd bundle-kubeflow
+        git checkout "$BUNDLE_REVISION"
+        ./scripts/manage-cdk create --region "$REGION"
+        ./scripts/deploy-cdk create --build --ci --channel $JUJU_DEPLOY_CHANNEL
+        ./tests/run.sh
 
-        cd bundle-kubeflow && git checkout "$BUNDLE_REVISION" && ./tests/run.sh
         EOF
 
         cat kubeflow-deploy
         chmod +x kubeflow-deploy
-        sudo lxc file push -p kubeflow-deploy "$CONTAINER"/root/kubeflow-deploy
-        sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-deploy'
+        sudo lxc file push -p kubeflow-deploy "$JUJU_MODEL"/root/kubeflow-deploy
+        sudo lxc exec "$JUJU_MODEL" -- bash -c '/root/kubeflow-deploy'
 
 
     after-script:
@@ -52,37 +51,20 @@ plan:
 
         cat >kubeflow-cleanup<<EOF
         #!/bin/bash
-        pods=`juju kubectl get pods -l workflows.argoproj.io/completed="true" -o custom-columns=:metadata.name --no-headers || echo -n ""`
-        for pod in $pods; do
-            echo "===>" $pod main "<==="
-            juju kubectl logs -c main --timestamps $pod || true
-            printf '\n'
-            echo "===>" $pod wait "<==="
-            juju kubectl logs -c wait --timestamps $pod || true
-            printf '\n\n'
-        done
-        juju kubectl logs --tail 1000 --all-containers -l juju-app=argo-controller 2>&1
-        juju kubectl get pods 2>&1
-        juju kubectl get pods -oyaml 2>&1
-        juju status  2>&1 || true
-        juju status --format yaml 2>&1 || true
-        juju list-controllers 2>&1 || true
-        juju list-models 2>&1 || true
-        juju destroy-model cdkkf:kubeflow -y --destroy-storage --force 2>&1 || true
-        juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf 2>&1 || true
+        juju destroy-model cdkkf:kubeflow -y --destroy-storage --force || true
+        juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true
         EOF
 
         chmod +x kubeflow-cleanup
-        sudo lxc file push -p kubeflow-cleanup "$CONTAINER"/root/kubeflow-cleanup
-        sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-cleanup'
-        sudo lxc delete --force "$CONTAINER"
+        sudo lxc file push -p kubeflow-cleanup "$JUJU_MODEL"/root/kubeflow-cleanup
+        sudo lxc exec "$JUJU_MODEL" -- bash -c '/root/kubeflow-cleanup'
+        sudo lxc delete --force "$JUJU_MODEL"
 
         # Data collection
         python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
         python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
         python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-        python3 jobs/infra/collect-debug.py set-key 'juju_snap_channel' "$JUJU_SNAP_CHANNEL"
-        python3 jobs/infra/collect-debug.py set-key 'juju_version' $(juju version)
+        python3 jobs/infra/collect-debug.py set-key 'juju_version' "$JUJU_SNAP_CHANNEL"
         python3 jobs/infra/collect-debug.py save-meta metadata.json
 
 meta:
