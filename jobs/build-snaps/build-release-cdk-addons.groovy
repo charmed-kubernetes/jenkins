@@ -136,8 +136,14 @@ pipeline {
 
                     for i in \${ALL_IMAGES}
                     do
-                        # Skip images that dont exist for this arch; other pull failures will
-                        # manifest themselves when we attempt to tag.
+                        # Skip images that we already host
+                        if echo \${i} | grep -qi -e 'rocks.canonical.com' -e 'image-registry.canonical.com'
+                        then
+                            continue
+                        fi
+
+                        # Skip images that dont exist (usually due to non-existing arch). Other
+                        # pull failures will manifest themselves when we attempt to tag.
                         if docker pull \${i} 2>&1 | grep -qi 'no matching manifest for'
                         then
                             continue
