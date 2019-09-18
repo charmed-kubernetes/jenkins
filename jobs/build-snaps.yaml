@@ -8,9 +8,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - global-params
-      - snap-params
     wrappers:
       - default-job-wrapper
       - ci-creds
