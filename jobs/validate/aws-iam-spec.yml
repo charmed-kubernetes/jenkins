@@ -35,6 +35,7 @@ plan:
             channel: $JUJU_DEPLOY_CHANNEL
 
     script:
+      - aws iam delete-role --role-name KubernetesAdmin || true
       - |
         #!/bin/bash
         set -x
@@ -55,6 +56,7 @@ plan:
            --controller $JUJU_CONTROLLER 2>&1
 
     after-script:
+      - aws iam delete-role --role-name KubernetesAdmin || true
       - |
         #!/bin/bash
         set -x

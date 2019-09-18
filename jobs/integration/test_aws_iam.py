@@ -12,15 +12,8 @@ import sh
 
 @pytest.fixture(scope="module")
 def arn():
-    log("Adding AWS IAM Role KubernetesAdmin")
 
-    try:
-        for line in sh.aws.iam(
-            "delete-role", "--role-name", "KubernetesAdmin", _bg_exc=False, _iter=True
-        ):
-            log(line)
-    except sh.ErrorReturnCode as error:
-        log(f"Problem removing role {error.strip()}, skipping for now...")
+    log("Adding AWS IAM Role KubernetesAdmin")
 
     caller_id = (
         sh.aws.sts("get-caller-identity", "--output", "text", "--query", "Account")
@@ -52,8 +45,6 @@ def arn():
         "Role.Arn",
     )
     yield arn.stdout.decode().strip()
-    log("Deleting AWS IAM Role KubernetesAdmin")
-    sh.aws.iam("delete-role", "--role-name", "KubernetesAdmin")
 
 
 def get_test_keys():
