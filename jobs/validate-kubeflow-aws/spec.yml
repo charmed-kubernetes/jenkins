@@ -10,10 +10,12 @@ plan:
         #!/bin/bash
         set -x
 
-        sudo -E -n lxc profile copy default aws 2>&1
-        sudo -E -n lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
-        sudo -E -n lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
-        sudo -E -n lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
+        sudo -E -n lxc profile copy default aws || true
+        sudo -E -n lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile || true
+        sudo -E -n lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" || true
+        sudo -E -n lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml || true
+
+        echo "Installing required bits"
 
         cat >kubeflow-deploy<<EOF
         #!/bin/bash
@@ -28,7 +30,7 @@ plan:
         sudo -E -n apt update && sudo -E -n apt install -y libssl-dev python3-pip 2>&1
         sudo -E -n pip3 install pytest sh kfp requests pyyaml 2>&1
 
-        git clone https://github.com/juju-solutions/bundle-kubeflow.git
+        git clone https://github.com/juju-solutions/bundle-kubeflow.git 2>&1
         cd bundle-kubeflow && \
              git checkout "$BUNDLE_REVISION" && \
              ./scripts/manage-cdk create --region "$REGION" && \

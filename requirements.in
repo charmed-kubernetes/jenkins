@@ -15,8 +15,7 @@ ipdb
 jenkins-job-builder
 jinja2
 juju-wait
-https://github.com/juju/python-libjuju/archive/master.zip
-#juju
+juju>=2.6.3
 jujubundlelib
 mkdocs-material
 mkdocs
