@@ -1,7 +1,11 @@
 @Library('juju-pipeline@master') _
 
-def exec(cmd) {
+def exec(String cmd) {
     sh "sudo lxc exec ${CONTAINER} -- bash -c 'cd . && ${cmd}'"
+}
+
+def tryexec(String cmd) {
+    sh "sudo lxc exec ${CONTAINER} -- bash -c 'cd . && ${cmd}'", returnStatus: true
 }
 
 pipeline {
@@ -45,15 +49,15 @@ pipeline {
         }
         stage('Install dependencies') {
             steps {
-                exec "sudo snap install charm --classic"
-                exec "sudo snap install jq"
+                exec 'sudo snap install charm --classic'
+                exec 'sudo snap install jq'
                 exec "sudo snap install juju --classic --channel ${params.juju_channel}"
-                exec "sudo snap install juju-helpers --classic --edge"
-                exec "sudo snap install juju-wait --classic"
-                exec "sudo snap install kubectl --classic"
-                exec "sudo snap install yq"
-                exec "sudo apt update && sudo apt install -y libssl-dev python3-pip"
-                exec "sudo pip3 install pytest sh kfp requests pyyaml"
+                exec 'sudo snap install juju-helpers --classic --edge'
+                exec 'sudo snap install juju-wait --classic'
+                exec 'sudo snap install kubectl --classic'
+                exec 'sudo snap install yq'
+                exec 'sudo apt update && sudo apt install -y libssl-dev python3-pip'
+                exec 'sudo pip3 install pytest sh kfp requests pyyaml'
             }
         }
         stage('Deploy Kubeflow') {
@@ -77,35 +81,25 @@ pipeline {
 //        success {
 //            setPass()
 //        }
-//        failure {
+        failure {
 //            setFail()
-//        }
+            tryexec 'cd bundle-kubeflow && ./tests/dump-pipeline-logs.sh'
+            tryexec 'juju kubectl logs --tail 1000 --all-containers -l juju-app=argo-controller'
+            tryexec 'juju kubectl get pods'
+            tryexec 'juju kubectl get pods -oyaml'
+            tryexec 'juju status'
+            tryexec 'juju status --format yaml'
+            tryexec 'juju list-controllers'
+            tryexec 'juju list-models'
+        }
 //        always {
 //            setEndTime()
 //        }
         cleanup {
 //            saveMeta()
-            exec '''
-            pods=`juju kubectl get pods -l workflows.argoproj.io/completed="true" -o custom-columns=:metadata.name --no-headers || echo -n ""`
-            for pod in $pods; do
-                echo "===>" $pod main "<==="
-                juju kubectl logs -c main --timestamps $pod || true
-                printf '\n'
-                echo "===>" $pod wait "<==="
-                juju kubectl logs -c wait --timestamps $pod || true
-                printf '\n\n'
-            done
-            '''
-            exec 'juju kubectl logs --tail 1000 --all-containers -l juju-app=argo-controller'
-            exec "juju kubectl get pods"
-            exec "juju kubectl get pods -oyaml"
-            exec "juju status || true"
-            exec "juju status --format yaml || true"
-            exec "juju list-controllers || true"
-            exec "juju list-models || true"
-            exec "juju destroy-model cdkkf:kubeflow -y --destroy-storage --force || true"
-            exec "juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true"
-            sh "sudo lxc delete --force ${CONTAINER} || true"
+            exec 'juju show-model cdkkf:kubeflow && juju destroy-model cdkkf:kubeflow -y --destroy-storage --force'
+            exec 'juju show-controller cdkkf && juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf'
+            sh "sudo lxc delete --force ${CONTAINER}"
         }
     }
 }
