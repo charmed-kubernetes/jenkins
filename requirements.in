@@ -22,7 +22,7 @@ mkdocs
 ogc-plugins-juju>=1.0.15
 ogc-plugins-runner
 ogc-plugins-spec-doc
-ogc>=0.3.39
+ogc>=0.3.40
 requests
 pynacl==1.1.2
 pymacaroons
