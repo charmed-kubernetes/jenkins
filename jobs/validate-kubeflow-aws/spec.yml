@@ -6,6 +6,7 @@ plan:
       - REGION=us-east-2
       - BUNDLE_REVISION=master
     before-script:
+      - sudo lxc delete --force "$JUJU_MODEL" || true
       - sudo lxc profile copy default aws || true
       - sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile || true
       - sudo lxc launch -p default -p aws ubuntu:18.04 "$JUJU_MODEL" || true
@@ -46,13 +47,12 @@ plan:
     after-script:
       - |
         #!/bin/bash
-
         set -x
 
         cat >kubeflow-cleanup<<EOF
         #!/bin/bash
-        juju destroy-model cdkkf:kubeflow -y --destroy-storage --force || true
-        juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true
+        /snap/bin/juju destroy-model cdkkf:kubeflow -y --destroy-storage --force || true
+        /snap/bin/juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true
         EOF
 
         chmod +x kubeflow-cleanup
@@ -64,7 +64,7 @@ plan:
         python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
         python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
         python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-        python3 jobs/infra/collect-debug.py set-key 'juju_version' "$JUJU_SNAP_CHANNEL"
+        python3 jobs/infra/collect-debug.py set-key 'juju_version' "$JUJU_VERSION"
         python3 jobs/infra/collect-debug.py save-meta metadata.json
 
 meta:
