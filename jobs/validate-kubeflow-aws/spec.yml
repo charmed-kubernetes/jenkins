@@ -10,23 +10,23 @@ plan:
         #!/bin/bash
         set -x
 
-        sudo lxc profile copy default aws 2>&1
-        sudo lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
-        sudo lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
-        sudo lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
+        sudo -E -n lxc profile copy default aws 2>&1
+        sudo -E -n lxc profile edit aws < jobs/validate-kubeflow-aws/lxc.profile 2>&1
+        sudo -E -n lxc launch -p default -p aws ubuntu:18.04 "$CONTAINER" 2>&1
+        sudo -E -n lxc file push -p $HOME/.local/share/juju/credentials.yaml "$CONTAINER"/root/.local/share/juju/credentials.yaml 2>&1
 
         cat >kubeflow-deploy<<EOF
         #!/bin/bash
-        sudo snap install core
-        sudo snap install charm --classic
-        sudo snap install jq
-        sudo snap install juju --classic --channel $JUJU_SNAP_CHANNEL
-        sudo snap install juju-helpers --classic --edge
-        sudo snap install juju-wait --classic
-        sudo snap install kubectl --classic
-        sudo snap install yq
-        sudo apt update && sudo apt install -y libssl-dev python3-pip 2>&1
-        sudo pip3 install pytest sh kfp requests pyyaml 2>&1
+        sudo -E -n snap install core
+        sudo -E -n snap install charm --classic
+        sudo -E -n snap install jq
+        sudo -E -n snap install juju --classic --channel $JUJU_SNAP_CHANNEL
+        sudo -E -n snap install juju-helpers --classic --edge
+        sudo -E -n snap install juju-wait --classic
+        sudo -E -n snap install kubectl --classic
+        sudo -E -n snap install yq
+        sudo -E -n apt update && sudo -E -n apt install -y libssl-dev python3-pip 2>&1
+        sudo -E -n pip3 install pytest sh kfp requests pyyaml 2>&1
 
         git clone https://github.com/juju-solutions/bundle-kubeflow.git
         cd bundle-kubeflow && \
@@ -38,8 +38,8 @@ plan:
         EOF
         cat kubeflow-deploy
         chmod +x kubeflow-deploy
-        sudo lxc file push -p kubeflow-deploy "$CONTAINER"/root/kubeflow-deploy 2>&1
-        sudo lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-deploy' 2>&1
+        sudo -E -n lxc file push -p kubeflow-deploy "$CONTAINER"/root/kubeflow-deploy 2>&1
+        sudo -E -n lxc exec "$CONTAINER" -- bash -c '/root/kubeflow-deploy' 2>&1
 
 
     after-script:
