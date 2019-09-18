@@ -15,13 +15,18 @@ def arn():
     log("Adding AWS IAM Role KubernetesAdmin")
 
     try:
-        sh.aws.iam("delete-role", "--role-name", "KubernetesAdmin")
+        for line in sh.aws.iam(
+            "delete-role", "--role-name", "KubernetesAdmin", _bg_exc=False, _iter=True
+        ):
+            log(line)
     except sh.ErrorReturnCode as error:
-        log(f"Problem removing role {error}, skipping for now...")
+        log(f"Problem removing role {error.strip()}, skipping for now...")
 
-    caller_id = sh.aws.sts(
-        "get-caller-identity", "--output", "text", "--query", "Account"
-    ).stdout.decode().strip()
+    caller_id = (
+        sh.aws.sts("get-caller-identity", "--output", "text", "--query", "Account")
+        .stdout.decode()
+        .strip()
+    )
     policy = {
         "Version": "2012-10-17",
         "Statement": [
