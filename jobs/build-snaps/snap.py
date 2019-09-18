@@ -91,6 +91,7 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
                         f"{_fmt_version_str}/edge",
                         f"{_fmt_version_str}/candidate",
                         f"{_fmt_version_str}/beta",
+                        f"{_fmt_version_str}/stable",
                     ]
                 click.echo(f"Generating recipe for {snap}-{_fmt_version_str}")
                 if not dry_run:
