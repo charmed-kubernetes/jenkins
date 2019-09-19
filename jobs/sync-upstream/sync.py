@@ -54,7 +54,7 @@ def _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
 
             click.echo(f"Releasing :: {layer_name:^35} :: from: master to: stable")
             if not dry_run:
-                downstream = f"git@github.com:{downstream}"
+                downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 for line in sh.git.clone(downstream, identifier, _iter=True):
