@@ -15,7 +15,12 @@ Each step should contain the following:
 - Requirements to run the job including what environment variables need to be set
 - Example of running the OGC specification within tox.
 
-### 1. Tag existing stable branches with the current stable bundle
+### Submit PR's to bundle and charms to pin snap version
+
+We need to make sure that the bundle fragments and kubernetes-worker/master
+are set to `<k8sver>/stable` prior to cutting a new release.
+
+### Tag existing stable branches with the current stable bundle
 
 For all charm repos that make up CK tag the existing stable branches with
 the most recently released stable bundle revision.
@@ -37,7 +42,7 @@ _Example_:
 tox -e py36 -- ogc --spec jobs/sync-upstream/spec.yml -t tag-stable-rev
 ```
 
-### 2. Rebase stable on top of master git branches
+### Rebase stable on top of master git branches
 
 Once all repositories are tagged we need to rebase what's in master git on
 to stable as this will be our snapshot on what we test and subsequently
@@ -60,7 +65,12 @@ _Example_:
 tox -e py36 -- ogc --spec jobs/sync-upstream/spec.yml -t cut-stable-release
 ```
 
-### 3. Build new CK Charms from stable git branches
+### Bump snap version to next minor release
+
+Once the rebase has occurred we need to bump the charms and bundle fragments
+to the next k8s minor version, ie 1.17/edge.
+
+### Build new CK Charms from stable git branches
 
 Pull down all layers and checkout their stable branches. From there build
 each charm against those local branches. After the charms are built they need to be
@@ -94,7 +104,7 @@ _Example_:
 tox -e py36 -- ogc --spec jobs/release/release-spec.yml -t build-charms
 ```
 
-### 4. Promote new K8S snaps
+### Promote new K8S snaps
 
 Promote new K8S snaps for the upcoming stable release to the beta and
 candidate channels of the snapstore.
@@ -123,7 +133,7 @@ _Example_:
 tox -e py36 -- ogc --spec jobs/build-snaps/spec.yml -t sync
 ```
 
-### 5. Validate Charmed Kubernetes
+### Validate Charmed Kubernetes
 
 With all bits in place, time to validate CK.
 
@@ -144,7 +154,7 @@ _Example_:
 tox -e py36 -- ogc --spec validate/spec.yml
 ```
 
-### 6. Validate CK Upgrade
+### Validate CK Upgrade
 
 Run validation tests against minor to minor upgrades, for example, 1.13 ->
 1.16, 1.14 -> 1.16, 1.15 > 1.16
@@ -166,7 +176,7 @@ _Example_:
 tox -e py36 -- ogc --spec validate/upgrade-spec.yml
 ```
 
-### 7. Validate CK ARM64
+### Validate CK ARM64
 
 Run validation tests on a arm64 deployment
 
@@ -187,7 +197,7 @@ _Example_:
 tox -e py36 -- ogc --spec validate/ck-arm-spec.yml
 ```
 
-### 8. Validate CK with Calico
+### Validate CK with Calico
 
 Run validation tests on CK with Calico enabled
 
@@ -208,7 +218,7 @@ _Example_:
 tox -e py36 -- ogc --spec validate/calico-spec.yml
 ```
 
-### 9. Validate CK with Tigera Secure EE
+### Validate CK with Tigera Secure EE
 
 Run validation tests on CK with Tigera Secure EE enabled
 
@@ -229,7 +239,7 @@ _Example_:
 tox -e py36 -- ogc --spec validate/tigera-ee-spec.yml
 ```
 
-### 10. Validate CK with Vault
+### Validate CK with Vault
 
 Run validation tests on CK with Vault enabled instead, replaces EasyRSA
 
@@ -250,7 +260,7 @@ _Example_:
 tox -e py36 -- ogc --spec validate/vault-spec.yml
 ```
 
-### 11. Validate CK with Ceph
+### Validate CK with Ceph
 
 Run validation tests on CK with Ceph enabled
 
@@ -271,7 +281,7 @@ _Example_:
 tox -e py36 -- ogc --spec validate/ceph-spec.yml
 ```
 
-### 12. Validate CK with NVidia
+### Validate CK with NVidia
 
 Run validation tests on CK with NVidia enabled instead
 
@@ -292,7 +302,7 @@ _Example_:
 tox -e py36 -- ogc --spec validate/nvidia-spec.yml
 ```
 
-### 13. Validate CK with AWS IAM
+### Validate CK with AWS IAM
 
 Run validation tests on CK with AWS IAM enabled
 
@@ -313,20 +323,20 @@ _Example_:
 tox -e py36 -- ogc --spec validate/aws-iam-spec.yml
 ```
 
-### 14. CNCF Conformance (TBW)
+### CNCF Conformance (TBW)
 
-### 15. Notify Solutions QA
+### Notify Solutions QA
 
 Notify solutions-qa that CK is ready to be run through their tests. Once
 that is complete and relayed to us, we can start the release to stable.
 
-### 16. Document release notes
+### Document release notes
 
 - Bugfixes
 - Enhancements
 - Known Limitations/Issues
 
-### 17. Promote charms from **beta** to **stable**
+### Promote charms from **beta** to **stable**
 
 This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
 it will only promote the necessary charms that make up charmed-kuberneetes (the
@@ -351,7 +361,7 @@ _Example_:
 tox -e py36 -- ogc jobs/build-charms/spec.yml -t promote-charms
 ```
 
-### 18. Promote bundles from **beta** to **stable**
+### Promote bundles from **beta** to **stable**
 
 Same as charm promotion.
 
@@ -374,7 +384,7 @@ _Example_:
 tox -e py36 -- ogc jobs/build-charms/spec.yml -t promote-bundles
 ```
 
-### 19. Send announcement
+### Send announcement
 
 Email annoucement to k8s-crew with any relevant information.
 
