@@ -63,7 +63,7 @@
 - docker-registry:
     downstream: 'CanonicalLtd/docker-registry-charm.git'
     namespace: 'containers'
-    tags: ['k8s', 'general', 'docker-registry']
+    tags: ['general', 'docker-registry']
 - aws-iam:
     namespace: 'containers'
     downstream: 'charmed-kubernetes/charm-aws-iam'
