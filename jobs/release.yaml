@@ -61,7 +61,6 @@
         - k8s-jenkins-jenkaas
       script-path: jobs/release/Jenkinsfile
     properties:
-      - block-on-release
       - build-discarder:
           num-to-keep: 7
 

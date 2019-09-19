@@ -15,7 +15,6 @@
       - default-job-wrapper
       - ci-creds
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
@@ -39,7 +38,6 @@
       - default-job-wrapper
       - ci-creds
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
@@ -72,7 +70,6 @@
           description: |
             Version of snap to upgrade to and test against, ie 1.16/stable
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     builders:
@@ -94,7 +91,6 @@
       - default-job-wrapper
       - ci-creds
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
@@ -124,7 +120,6 @@
     parameters:
       - juju-params
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
@@ -150,7 +145,6 @@
       - default-job-wrapper
       - ci-creds
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
@@ -176,7 +170,6 @@
     parameters:
       - juju-params
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
@@ -202,7 +195,6 @@
       - default-job-wrapper
       - ci-creds
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
@@ -228,7 +220,6 @@
     parameters:
       - juju-params
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
@@ -254,7 +245,6 @@
       - default-job-wrapper
       - ci-creds
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
