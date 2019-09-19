@@ -4,24 +4,35 @@
     name: 'promote-charms'
     description: |
       Promotes all charms from channel -> to channel
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-charms/promote-charms.groovy
+    node: runner-amd64
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
     parameters:
       - string:
-          name: 'tag'
+          name: FILTER_BY_TAG
           default: 'k8s'
       - string:
-          name: from_channel
+          name: FROM_CHANNEL
           default: 'edge'
       - string:
-          name: to_channel
+          name: TO_CHANNEL
           default: 'beta'
+      - string:
+          name: CHARM_LIST
+          default: "jobs/includes/charm-support-matrix.inc"
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
+    wrappers:
+      - default-job-wrapper
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-charms"
+      - charm-build:
+          JOB_SPEC_DIR: "jobs/build-charms"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t promote-charms"
 
 # Builds and releases latest bundles
 
@@ -29,24 +40,35 @@
     name: 'promote-bundles'
     description: |
       Promotes bundles from channel -> to channel
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-charms/promote-bundles.groovy
+    node: runner-amd64
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
     parameters:
       - string:
-          name: from_channel
+          name: FILTER_BY_TAG
+          default: 'k8s'
+      - string:
+          name: FROM_CHANNEL
           default: 'edge'
       - string:
-          name: to_channel
+          name: TO_CHANNEL
           default: 'beta'
       - string:
-          name: tag
-          default: 'k8s'
+          name: BUNDLE_LIST
+          default: "jobs/includes/charm-bundles-list.inc"
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
+    wrappers:
+      - default-job-wrapper
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-charms"
+      - charm-build:
+          JOB_SPEC_DIR: "jobs/build-charms"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t promote-bundles"
 
 - job:
     name: 'build-kubeflow-bundles'
