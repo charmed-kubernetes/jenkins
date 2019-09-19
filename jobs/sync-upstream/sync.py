@@ -113,10 +113,11 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, dry_run):
                 try:
                     for line in sh.git.tag(tag, _cwd=identifier, _iter=True, _bg_exc=False):
                         click.echo(line)
-                    for line in sh.git.push("origin", tag, _cwd=identifier, _bg_exc=True, _iter=True):
+                    for line in sh.git.push("origin", tag, _cwd=identifier, _bg_exc=False, _iter=True):
                         click.echo(line)
                 except sh.ErrorReturnCode as error:
-                    click.echo(f"Problem tagging: {error}, will skip for now")
+                    click.echo(f"Problem tagging: {error.stderr.decode().strip()}, will skip for now..")
+
 
 
 @cli.command()
