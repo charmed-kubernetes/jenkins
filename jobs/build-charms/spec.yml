@@ -61,4 +61,4 @@ meta:
   long-description: |
     ## Overview
 
-    This spec automates the building of charms and bundles in CI. 
+    This spec automates the building of charms and bundles in CI.

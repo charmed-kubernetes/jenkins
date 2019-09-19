@@ -18,52 +18,44 @@
       charms and snaps are published accordingly.
     project-type: pipeline
     parameters:
+      - global-params
       - string:
-          name: release_id
-          description: |
-            This should be a uniquely identifiable release tag so that
-            subsequent runs can query any previous state if available. This
-            allows passing jobs to be bypassed and only the failed job be run
-            again.
-      - choice:
-          name: k8sver
-          choices:
-            - '1.13'
-            - '1.14'
-            - '1.15'
-      - string:
-          name: current_stable_bundle_rev
+          name: CURRENT_STABLE_BUNDLE_REV
           description: |
             Input the current bundle revision associated with the stable branch.
             The downstream repos will then be tagged with that bundle revision
             so that fixes can still be applied to our currently supported
             releases.
       - string:
-          name: k8sver_range
-          default: 'v1.13.x-v1.15.x v1.14.x-v1.15.x'
+          name: CURRENT_STABLE_K8S_VERSION
+          default: '1.15'
           description: |
-            The previous version to upgrade and test from, format should be
-            'v1.13.x-v1.15.x v1.14.x-v1.15.x'
+            Input the current stable Kubernetes release, for example, if
+            releasing a new minor of 1.16 then this parameter would be set to
+            1.15 so that when the stable tagging occurs 1.15 will be included in
+            the name.
       - string:
-          name: snaps_promote_from
-          description: |
-            In the format of 1.12/edge
-      - string:
-          name: snaps_promote_to
-          description: |
-            In the format of 1.12/beta 1.12/candidate
-      - string:
-          name: charm_promote_to
+          name: CHARM_PROMOTE_TO
           default: 'beta'
           description: |
             In the format of 'beta candidate'. Until charmstore supports tracks
             this should usually be the 'beta' channel to promote to.
       - string:
-          name: test_bundle_channel
+          name: JUJU_DEPLOY_CHANNEL
           default: 'beta'
           description: |
             Bundle channel to test from, with major releases this is typically
             the beta channel as to not overwrite any hotfix releases happening.
+      - string:
+          name: SNAP_VERSION
+          default: '1.16/stable'
+          description: |
+            Snap kubernetes channel to test from
+      - string:
+          name: SNAP_VERSION_UPGRADE_TO
+          default: '1.16/stable'
+          description: |
+            Snap kubernetes channel to upgrade too when testing prior minor releases.
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas

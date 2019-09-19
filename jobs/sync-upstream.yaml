@@ -64,8 +64,6 @@
     properties:
       - build-discarder:
           days-to-keep: 1
-    parameters:
-      - global-params
     wrappers:
       - ansicolor
       - workspace-cleanup

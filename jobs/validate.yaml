@@ -9,6 +9,8 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -63,6 +65,12 @@
       - ci-creds
     triggers:
         - timed: "@daily"
+    parameters:
+      - juju-params
+      - string:
+          name: SNAP_VERSION_UPGRADE_TO
+          description: |
+            Version of snap to upgrade to and test against, ie 1.16/stable
     properties:
       - block-on-build-release
       - build-discarder:
@@ -113,6 +121,8 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
+    parameters:
+      - juju-params
     properties:
       - block-on-build-release
       - build-discarder:
@@ -134,6 +144,8 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -161,6 +173,8 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
+    parameters:
+      - juju-params
     properties:
       - block-on-build-release
       - build-discarder:
@@ -182,6 +196,8 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -209,6 +225,8 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
+    parameters:
+      - juju-params
     properties:
       - block-on-build-release
       - build-discarder:
@@ -230,6 +248,8 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
+    parameters:
+      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds

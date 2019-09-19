@@ -57,22 +57,12 @@
     name: global-params
     parameters:
       - string:
-          name: RUN_ID
+          name: RELEASE_ID
           description: |
             This should be a uniquely identifiable run tag so that
             subsequent runs can query any previous state if available. This
             allows passing jobs to be bypassed and only the failed job be run
             again.
-      - choice:
-          name: BUILD_NODE
-          description: |
-            List of Jenkins nodes for performing tests
-          choices:
-            - runner-amd64-1
-            - runner-amd64-2
-            - runner-ppc64le
-            - runner-s390x
-            - runner-arm64
       - bool:
           name: DRY_RUN
           default: false
@@ -134,35 +124,28 @@
           description: |
             Version of Kubernetes to test against, in the form of
             <major>.<minor>/<channel> (ie, 1.16/edge).
-          default: '1.16/edge'
       - string:
           name: JUJU_CONTROLLER
-          default: 'validate-ck'
           description: |
             The Juju controller to create and reference during run.
       - string:
           name: JUJU_MODEL
-          default: '{override_juju_model|validate}'
           description: |
             The Juju model to create and reference during run.
       - string:
           name: JUJU_CLOUD
-          default: 'aws/us-east-2'
           description: |
             The Juju cloud to create and reference during run.
       - string:
           name: JUJU_BOOTSTRAP_CONSTRAINTS
           description: |
             Juju bootstrap constraints (ie, 'arch=amd64')
-          default: 'arch=amd64'
       - bool:
           name: JUJU_BOOTSTRAP_DEBUG
-          default: false
           description: |
             Juju bootstrap with debugging output.
       - bool:
           name: JUJU_BOOTSTRAP_DISABLE_ADD_MODEL
-          default: false
           description: |
             Disable creating JUJU_MODEL after bootstrap. Useful if model
             configuration changes need to take place prior.
@@ -170,10 +153,8 @@
           name: JUJU_DEPLOY_BUNDLE
           description: |
             The Juju bundle to deploy.
-          default: "cs:~containers/charmed-kubernetes"
       - string:
           name: JUJU_DEPLOY_CHANNEL
-          default: 'edge'
           description: |
             The Juju bundle channel to deploy from (ie, stable, candidate, beta, edge).
       - string:

@@ -2,6 +2,7 @@ plan:
   - &BASE_JOB
     env:
       - SNAP_VERSION=1.13/stable
+      - SNAP_VERSION_UPGRADE_TO=1.16/stable
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=stable
       - JUJU_CLOUD=aws/us-east-2
@@ -36,7 +37,7 @@ plan:
             juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
 
             pytest $INTEGRATION_TEST_PATH/validation.py \
-               --upgrade-snap-channel 1.16/edge \
+               --upgrade-snap-channel $SNAP_VERSION_UPGRADE_TO \
                --upgrade-charm-channel edge \
                --cloud $JUJU_CLOUD \
                --model $JUJU_MODEL \

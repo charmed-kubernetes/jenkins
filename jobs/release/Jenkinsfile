@@ -1,15 +1,11 @@
 @Library('juju-pipeline@master') _
 
-def release_id = params.release_id
-def tracker_sh = "cd jobs && ${utils.cipy} release/release-tracker.py --release-id ${release_id}"
-def upgrade_ranges = params.k8sver_range.split()
+def release_id = params.RELEASE_ID
+def tracker_sh = "tox -e py36 -- python3 jobs/release/release-tracker.py --release-id ${release_id}"
 
 pipeline {
     agent {
         label 'runner'
-    }
-    environment {
-        PATH = "${utils.cipaths}"
     }
     options {
         ansiColor('xterm')
@@ -29,7 +25,8 @@ pipeline {
 
             steps {
                 build job:"sync-stable-tag-bundle-rev",
-                    parameters: [string(name:'bundle_rev', value: params.current_stable_bundle_rev)]
+                    parameters: [string(name:'BUNDLE_REV', value: params.CURRENT_STABLE_BUNDLE_REV),
+                                 string(name:'K8S_VERSION', value: params.CURRENT_STABLE_K8S_VERSION)]
             }
             post {
                 failure {
@@ -68,7 +65,7 @@ pipeline {
 
 
         stage('Build and Promote charms') {
-            /* NOTE: We must always cut these charms releases to the beta
+            /* NOTE: We must always cut these charm releases to the beta
              * channel as to not interfere with any concurrently running hotfix
              * builds/promotions. This can go away once charmstore supports tracks.
              */
@@ -83,12 +80,10 @@ pipeline {
             }
 
             steps {
-                build job:"build-release-charms",
-                    parameters: [string(name:'layer_branch', value: 'stable'),
-                                 string(name:'charm_branch', value: 'stable'),
-                                 string(name:'to_channel', value: params.charm_promote_to)]
-                build job:"build-release-bundles",
-                    parameters: [string(name:'channel', value: params.charm_promote_to)]
+                build job:"build-charms",
+                    parameters: [string(name:'LAYER_BRANCH', value: 'stable'),
+                                 string(name:'CHARM_BRANCH', value: 'stable'),
+                                 string(name:'TO_CHANNEL', value: params.CHARM_PROMOTE_TO)]
             }
             post {
                 failure {
@@ -100,38 +95,92 @@ pipeline {
             }
         }
 
-        stage('Promote snaps to beta and candidate') {
+        // stage('Promote snaps to beta and candidate') {
+        //     when {
+        //         expression {
+        //             res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name promote-snaps").trim()
+        //             return res != 'pass'
+        //         }
+        //     }
+
+        //     options {
+        //         timeout(time: 2, unit: 'HOURS')
+        //     }
+
+        //     steps {
+        //         build job:"promote-all-arch-snaps",
+        //             parameters: [string(name:'promote_from', value: params.snaps_promote_from),
+        //                          string(name:'promote_to', value: params.snaps_promote_to)]
+        //     }
+        //     post {
+        //         failure {
+        //             sh "${tracker_sh} set-phase --name promote-snaps --result fail"
+        //         }
+        //         success {
+        //             sh "${tracker_sh} set-phase --name promote-snaps --result pass"
+        //         }
+        //     }
+
+        // }
+
+        // stage('Validate: Conformance') {
+        //     when {
+        //         expression {
+        //             res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name conformance").trim()
+        //             return res != 'pass'
+        //         }
+        //     }
+
+        //     options {
+        //         timeout(time: 4, unit: 'HOURS')
+        //     }
+        //     steps {
+        //         build job:"conformance-v${k8sver}.x-canonical-kubernetes",
+        //             parameters: [string(name:'cloud', value: "google/us-east1"),
+        //                          string(name:'bundle_channel', value: params.test_bundle_channel),
+        //                          string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
+        //     }
+        //     post {
+        //         failure {
+        //             sh "${tracker_sh} set-phase --name conformance --result fail"
+        //         }
+        //         success {
+        //             sh "${tracker_sh} set-phase --name conformance --result pass"
+        //         }
+        //     }
+        // }
+
+        stage('Validate CK') {
             when {
                 expression {
-                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name promote-snaps").trim()
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate").trim()
                     return res != 'pass'
                 }
             }
-
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 4, unit: 'HOURS')
             }
 
             steps {
-                build job:"promote-all-arch-snaps",
-                    parameters: [string(name:'promote_from', value: params.snaps_promote_from),
-                                 string(name:'promote_to', value: params.snaps_promote_to)]
+                build job:"validate-ck",
+                    parameters: [string(name:'JUJU_DEPLOY_CHANNEL', value: params.JUJU_DEPLOY_CHANNEL),
+                                 string(name:'SNAP_VERSION', value: params.SNAP_VERSION)]
             }
             post {
                 failure {
-                    sh "${tracker_sh} set-phase --name promote-snaps --result fail"
+                    sh "${tracker_sh} set-phase --name validate --result fail"
                 }
                 success {
-                    sh "${tracker_sh} set-phase --name promote-snaps --result pass"
+                    sh "${tracker_sh} set-phase --name validate --result pass"
                 }
             }
-
         }
 
-        stage('Validate: Conformance') {
+        // start minor upgrade
+        stage('Validate: Minor Upgrades') {
             when {
                 expression {
-                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name conformance").trim()
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-upgrade").trim()
                     return res != 'pass'
                 }
             }
@@ -140,256 +189,126 @@ pipeline {
                 timeout(time: 4, unit: 'HOURS')
             }
             steps {
-                build job:"conformance-v${k8sver}.x-canonical-kubernetes",
-                    parameters: [string(name:'cloud', value: "google/us-east1"),
-                                 string(name:'bundle_channel', value: params.test_bundle_channel),
-                                 string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
+                build job:"validate-ck-upgrade",
+                    parameters: [string(name:'JUJU_DEPLOY_CHANNEL', value: params.JUJU_DEPLOY_CHANNEL),
+                                 string(name:'SNAP_VERSION_UPGRADE_TO', value: params.SNAP_VERSION_UPGRADE_TO)]
             }
             post {
                 failure {
-                    sh "${tracker_sh} set-phase --name conformance --result fail"
+                    sh "${tracker_sh} set-phase --name validate-upgrade --result fail"
                 }
                 success {
-                    sh "${tracker_sh} set-phase --name conformance --result pass"
+                    sh "${tracker_sh} set-phase --name validate-upgrade --result pass"
                 }
             }
         }
 
-        stage('Validate') {
-            parallel {
-                // start e2e
-                stage('Validate: e2e') {
-                    when {
-                        expression {
-                            res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate").trim()
-                            return res != 'pass'
-                        }
-                    }
-
-                    options {
-                        timeout(time: 4, unit: 'HOURS')
-                    }
-
-                    steps {
-                        build job:"validate-v${k8sver}.x-canonical-kubernetes",
-                            parameters: [string(name:'cloud', value: "aws/us-east-1"),
-                                         string(name:'bundle_channel', value: params.test_bundle_channel),
-                                         string(name:'snap_channel', value:"${k8sver}/candidate"),
-                                         string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
-                    }
-                    post {
-                        failure {
-                            sh "${tracker_sh} set-phase --name validate --result fail"
-                        }
-                        success {
-                            sh "${tracker_sh} set-phase --name validate --result pass"
-                        }
-                    }
+        // start calico
+        stage('Validate: Calico') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-calico").trim()
+                    return res != 'pass'
                 }
-                // end e2e
+            }
 
-                // start minor upgrade
-                stage('Validate: Minor Upgrades') {
-                    when {
-                        expression {
-                            res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-upgrade").trim()
-                            return res != 'pass'
-                        }
-                    }
+            options {
+                timeout(time: 4, unit: 'HOURS')
+            }
 
-                    options {
-                        timeout(time: 4, unit: 'HOURS')
-                    }
-                    steps {
-                        script {
-                            upgrade_ranges.each { k8srange ->
-                                build job:"validate-minor-upgrade-${k8srange}",
-                                    parameters: [string(name:'cloud', value: "google/us-east1")]
+            steps {
+                build job:"validate-ck-calico",
+                    parameters: [string(name:'JUJU_DEPLOY_CHANNEL', value: params.JUJU_DEPLOY_CHANNEL),
+                                 string(name:'SNAP_VERSION', value: params.SNAP_VERSION)]
 
-                            }
-                        }
-
-                    }
-                    post {
-                        failure {
-                            sh "${tracker_sh} set-phase --name validate-upgrade --result fail"
-                        }
-                        success {
-                            sh "${tracker_sh} set-phase --name validate-upgrade --result pass"
-                        }
-                    }
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-calico --result fail"
                 }
-                // end minor upgrade
+                success {
+                    sh "${tracker_sh} set-phase --name validate-calico --result pass"
+                }
             }
         }
+        // end calico
 
-
-        stage('Validate: Addons') {
-            parallel {
-                // start vault
-                stage('Validate: Vault') {
-                    when {
-                        expression {
-                            res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-vault").trim()
-                            return res != 'pass'
-                        }
-                    }
-
-                    options {
-                        timeout(time: 4, unit: 'HOURS')
-                    }
-                    steps {
-                        build job:"validate-vault-v${k8sver}.x",
-                            parameters: [string(name:'cloud', value: "google/us-east1"),
-                                         string(name:'controller', value: "release-vault"),
-                                         string(name:'bundle_channel', value: params.test_bundle_channel),
-                                         string(name:'bundle', value:"canonical-kubernetes"),
-                                         string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
-
-                    }
-                    post {
-                        failure {
-                            sh "${tracker_sh} set-phase --name validate-vault --result fail"
-                        }
-                        success {
-                            sh "${tracker_sh} set-phase --name validate-vault --result pass"
-                        }
-                    }
+        // start tigera
+        stage('Validate: Tigera') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-tigera").trim()
+                    return res != 'pass'
                 }
-                // end vault
+            }
 
-                // start nvidia
-                stage('Validate: NVidia') {
-                    when {
-                        expression {
-                            res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-nvidia").trim()
-                            return res != 'pass'
-                        }
-                    }
-
-                    options {
-                        timeout(time: 4, unit: 'HOURS')
-                    }
-                    steps {
-                        build job:"validate-nvidia-v${k8sver}.x",
-                            parameters: [string(name:'cloud', value: "aws/us-east-1"),
-                                         string(name:'bundle_channel', value: params.test_bundle_channel),
-                                         string(name:'controller', value:"release-nvidia"),
-                                         string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
-
-                    }
-                    post {
-                        failure {
-                            sh "${tracker_sh} set-phase --name validate-nvidia --result fail"
-                        }
-                        success {
-                            sh "${tracker_sh} set-phase --name validate-nvidia --result pass"
-                        }
-                    }
+            options {
+                timeout(time: 4, unit: 'HOURS')
+            }
+            steps {
+                build job:"validate-ck-tigera-secure-ee",
+                    parameters: [string(name:'JUJU_DEPLOY_CHANNEL', value: params.JUJU_DEPLOY_CHANNEL),
+                                 string(name:'SNAP_VERSION', value: params.SNAP_VERSION)]
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-tigera --result fail"
                 }
-                // end nvidia
-
-                // start calico
-                stage('Validate: Calico') {
-                    when {
-                        expression {
-                            res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-calico").trim()
-                            return res != 'pass'
-                        }
-                    }
-
-                    options {
-                        timeout(time: 4, unit: 'HOURS')
-                    }
-                    steps {
-                        build job:"validate-calico-v${k8sver}.x",
-                            parameters: [string(name:'controller', value:"release-calico"),
-                                         string(name:'bundle_channel', value: params.test_bundle_channel),
-                                         string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
-
-                    }
-                    post {
-                        failure {
-                            sh "${tracker_sh} set-phase --name validate-calico --result fail"
-                        }
-                        success {
-                            sh "${tracker_sh} set-phase --name validate-calico --result pass"
-                        }
-                    }
+                success {
+                    sh "${tracker_sh} set-phase --name validate-tigera --result pass"
                 }
-                // end calico
-
-                // start tigera
-                stage('Validate: Tigera') {
-                    when {
-                        expression {
-                            res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-tigera").trim()
-                            return res != 'pass'
-                        }
-                    }
-
-                    options {
-                        timeout(time: 4, unit: 'HOURS')
-                    }
-                    steps {
-                        build job:"validate-tigera-secure-ee-v${k8sver}.x",
-                            parameters: [string(name:'bundle_channel', value:params.test_bundle_channel),
-                                         string(name:'controller', value:'release-tigera'),
-                                         string(name:'overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
-
-                    }
-                    post {
-                        failure {
-                            sh "${tracker_sh} set-phase --name validate-tigera --result fail"
-                        }
-                        success {
-                            sh "${tracker_sh} set-phase --name validate-tigera --result pass"
-                        }
-                    }
-                }
-                // end tigera
             }
         }
+        // end tigera
+        stage('Validate: Ceph') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-ceph").trim()
+                    return res != 'pass'
+                }
+            }
 
-        // cdk-addons does not support alt-arch yet
-        // stage('Validate: Localhost and Alternate Arches') {
-        //     when {
-        //         expression {
-        //             res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-alt").trim()
-        //             return res != 'pass'
-        //         }
-        //     }
+            options {
+                timeout(time: 4, unit: 'HOURS')
+            }
+            steps {
+                build job:"validate-ck-ceph",
+                    parameters: [string(name:'JUJU_DEPLOY_CHANNEL', value: params.JUJU_DEPLOY_CHANNEL),
+                                 string(name:'SNAP_VERSION', value: params.SNAP_VERSION)]
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-ceph --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name validate-ceph --result pass"
+                }
+            }
+        }
+        stage('Validate: AWS IAM') {
+            when {
+                expression {
+                    res = sh(returnStdout: true, script: "${tracker_sh} get-phase --name validate-aws-iam").trim()
+                    return res != 'pass'
+                }
+            }
 
-        //     options {
-        //         timeout(time: 5, unit: 'HOURS')
-        //     }
-        //     steps {
-        //         script {
-        //             def jobs = [:]
-        //             def arches = ['amd64', 'arm64', 'ppc64le', 's390x']
-        //             arches.each { arch ->
-        //                 jobs[arch] = {
-        //                     stage(String.format("Validate arch: %s", arch)) {
-        //                         build job:"validate-alt-${arch}-v${k8sver}.x-canonical-kubernetes",
-        //                             parameters: [string(name:'bundle_channel', value:'candidate'),
-        //                                          string(name:'snap_channel', value:"${k8sver}/candidate"),
-        //                                          string(name:'version_overlay', value: "jobs/overlays/${k8sver}-candidate-overlay.yaml")]
-
-        //                     }
-        //                 }
-        //             }
-        //             parallel jobs
-        //         }
-        //     }
-        //     post {
-        //         failure {
-        //             sh "${tracker_sh} set-phase --name validate-alt --result fail"
-        //         }
-        //         success {
-        //             sh "${tracker_sh} set-phase --name validate-alt --result pass"
-        //         }
-        //     }
-
-        // }
+            options {
+                timeout(time: 4, unit: 'HOURS')
+            }
+            steps {
+                build job:"validate-ck-aws-iam",
+                    parameters: [string(name:'JUJU_DEPLOY_CHANNEL', value: params.JUJU_DEPLOY_CHANNEL),
+                                 string(name:'SNAP_VERSION', value: params.SNAP_VERSION)]
+            }
+            post {
+                failure {
+                    sh "${tracker_sh} set-phase --name validate-ck-aws-iam --result fail"
+                }
+                success {
+                    sh "${tracker_sh} set-phase --name validate-ck-aws-iam --result pass"
+                }
+            }
+        }
     }
 }
