@@ -15,7 +15,8 @@ plan:
                      --layer-list jobs/includes/charm-layer-list.inc \
                      --charm-list jobs/includes/charm-support-matrix.inc \
                      --bundle-revision $BUNDLE_REV \
-                     --k8s-version $K8S_VERSION $IS_DRY_RUN
+                     --k8s-version $K8S_VERSION \
+                     --filter-by-tag k8s
     tags: [tag-stable-rev]
   - script:
       - |

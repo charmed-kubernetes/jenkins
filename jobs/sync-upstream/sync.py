@@ -21,7 +21,7 @@ def cli():
 @click.option(
     "--filter-by-tag",
     required=False,
-    help="only build for tags, comma separated list",
+    help="only build for tags",
     multiple=True,
 )
 @click.option("--dry-run", is_flag=True)
@@ -78,7 +78,7 @@ def _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
                     click.echo(line)
 
 
-def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, dry_run):
+def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, filter_by_tag, dry_run):
     """ Tags stable forks to a certain bundle revision for a k8s version
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
@@ -93,6 +93,12 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, dry_run):
     new_env = os.environ.copy()
     for layer_map in layer_list + charm_list:
         for layer_name, repos in layer_map.items():
+
+            tags = repos.get("tags", None)
+            if tags:
+                if not any(match in filter_by_tag for match in tags):
+                    continue
+
             downstream = repos["downstream"]
             tag = f"ck-{k8s_version}-{bundle_rev}"
             if not repos.get("needs_tagging", True):
@@ -129,10 +135,16 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, dry_run):
 @click.option(
     "--bundle-revision", required=True, help="Bundle revision to tag stable against"
 )
+@click.option(
+    "--filter-by-tag",
+    required=False,
+    help="only build for tags",
+    multiple=True,
+)
 @click.option("--dry-run", is_flag=True)
-def tag_stable(layer_list, charm_list, k8s_version, bundle_revision, dry_run):
+def tag_stable(layer_list, charm_list, k8s_version, bundle_revision, filter_by_tag, dry_run):
     return _tag_stable_forks(
-        layer_list, charm_list, k8s_version, bundle_revision, dry_run
+        layer_list, charm_list, k8s_version, bundle_revision, filter_by_tag, dry_run
     )
 
 
