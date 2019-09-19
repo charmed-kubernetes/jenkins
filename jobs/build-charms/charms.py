@@ -320,7 +320,12 @@ def build(
                 click.echo(line)
 
             for line in sh.charm.build(
-                r=True, force=True, _cwd=src_path, _iter=True, _bg_exc=True
+                r=True,
+                force=True,
+                i="https://localhost",
+                _cwd=src_path,
+                _iter=True,
+                _bg_exc=True,
             ):
                 click.echo(line.strip())
             sh.charm.proof(_cwd=dst_path)
