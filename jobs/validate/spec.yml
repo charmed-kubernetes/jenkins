@@ -8,6 +8,7 @@ plan:
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
     before-script:
+      - juju kill-controller -y $JUJU_CONTROLLER || true
       - juju:
           cloud: $JUJU_CLOUD
           controller: $JUJU_CONTROLLER
@@ -52,6 +53,7 @@ plan:
         python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
         python3 jobs/infra/collect-debug.py push 'job_result' *job.json
         python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+        python3 jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
         python3 jobs/infra/collect-debug.py save-meta metadata.json
         juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
         python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
