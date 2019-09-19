@@ -101,7 +101,7 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, dry_run):
 
             click.echo(f"Tagging {layer_name} ({tag}) :: {repos['downstream']}")
             if not dry_run:
-                downstream = f"git@github.com:{downstream}"
+                downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 for line in sh.git.clone(downstream, identifier, _iter=True):
