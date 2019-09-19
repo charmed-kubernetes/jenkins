@@ -55,8 +55,7 @@ plan:
         cat kubeflow-deploy
         chmod +x kubeflow-deploy
         sudo lxc file push -p kubeflow-deploy "$JUJU_MODEL"/root/kubeflow-deploy
-        ret=$(sudo lxc exec "$JUJU_MODEL" -- bash -c '/root/kubeflow-deploy')
-        echo $ret
+        sudo lxc exec "$JUJU_MODEL" -- bash -c '/root/kubeflow-deploy'
 
 
     after-script:
