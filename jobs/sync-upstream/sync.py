@@ -110,9 +110,13 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, dry_run):
                 sh.git.config("user.name", "cdkbot", _cwd=identifier)
                 sh.git.config("--global", "push.default", "simple")
                 sh.git.checkout("stable", _cwd=identifier)
-                sh.git.tag(tag, _cwd=identifier)
-                for line in sh.git.push("origin", tag, _cwd=identifier, _iter=True):
-                    click.echo(line)
+                try:
+                    for line in sh.git.tag(tag, _cwd=identifier, _iter=True, _bg_exc=False):
+                        click.echo(line)
+                    for line in sh.git.push("origin", tag, _cwd=identifier, _bg_exc=True, _iter=True):
+                        click.echo(line)
+                except sh.ErrorReturnCode as error:
+                    click.echo(f"Problem tagging: {error}, will skip for now")
 
 
 @cli.command()
