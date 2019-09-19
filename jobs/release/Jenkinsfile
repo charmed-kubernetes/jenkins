@@ -15,8 +15,7 @@ pipeline {
         stage('Tag current stable branches') {
             when {
                 expression {
-                    def res = sh(returnStatus: true, script: "${tracker_sh} get-phase --name tag-current-stable")
-                    return res != 0
+                    return sh(returnStatus: true, script: "${tracker_sh} get-phase --name tag-current-stable") != 0
                 }
             }
             options {
@@ -42,8 +41,7 @@ pipeline {
         stage('Cut new stable branches') {
             when {
                 expression {
-                    res = sh(returnStatus: true, script: "${tracker_sh} get-phase --name cut-stable-release").trim()
-                    return res != 0
+                    return sh(returnStatus: true, script: "${tracker_sh} get-phase --name cut-stable-release") != 0
                 }
             }
             options {
@@ -71,8 +69,7 @@ pipeline {
              */
             when {
                 expression {
-                    res = sh(returnStatus: true, script: "${tracker_sh} get-phase --name promote-charms").trim()
-                    return res != 0
+                    return sh(returnStatus: true, script: "${tracker_sh} get-phase --name promote-charms") != 0
                 }
             }
             options {
@@ -153,8 +150,7 @@ pipeline {
         stage('Validate CK') {
             when {
                 expression {
-                    res = sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate").trim()
-                    return res != 0
+                    return sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate") != 0
                 }
             }
             options {
@@ -180,8 +176,7 @@ pipeline {
         stage('Validate: Minor Upgrades') {
             when {
                 expression {
-                    res = sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-upgrade").trim()
-                    return res != 0
+                    return sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-upgrade") != 0
                 }
             }
 
@@ -207,8 +202,7 @@ pipeline {
         stage('Validate: Calico') {
             when {
                 expression {
-                    res = sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-calico").trim()
-                    return res != 0
+                    return sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-calico") != 0
                 }
             }
 
@@ -237,8 +231,7 @@ pipeline {
         stage('Validate: Tigera') {
             when {
                 expression {
-                    res = sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-tigera").trim()
-                    return res != 0
+                    return sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-tigera") != 0
                 }
             }
 
@@ -263,8 +256,7 @@ pipeline {
         stage('Validate: Ceph') {
             when {
                 expression {
-                    res = sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-ceph").trim()
-                    return res != 0
+                    return sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-ceph") != 0
                 }
             }
 
@@ -288,8 +280,7 @@ pipeline {
         stage('Validate: AWS IAM') {
             when {
                 expression {
-                    res = sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-aws-iam").trim()
-                    return res != 0
+                    return sh(returnStatus: true, script: "${tracker_sh} get-phase --name validate-aws-iam") != 0
                 }
             }
 
