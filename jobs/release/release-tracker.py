@@ -46,7 +46,9 @@ def store_results(db):
 def get_phase(db, opts):
     """ checks for existing phase and returns result
     """
-    print(db.get(opts.phase_name, "fail"))
+    if db.get(opts.phase_name, 'fail') == 'fail':
+        sys.exit(1)
+    sys.exit(0)
 
 
 def set_phase(db, opts):
