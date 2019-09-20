@@ -2,7 +2,7 @@ plan:
   - &BASE_JOB
     env:
       - SNAP_VERSION=1.13/stable
-      - SNAP_VERSION_UPGRADE_TO=1.16/stable
+      - SNAP_VERSION_UPGRADE_TO=1.16/edge
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=stable
       - JUJU_CLOUD=aws/us-east-2
@@ -66,6 +66,7 @@ plan:
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/stable
+      - SNAP_VERSION_UPGRADE_TO=1.16/edge
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=stable
       - JUJU_CLOUD=aws/us-east-1
@@ -74,6 +75,7 @@ plan:
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/stable
+      - SNAP_VERSION_UPGRADE_TO=1.16/edge
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=stable
       - JUJU_CLOUD=aws/us-east-1
