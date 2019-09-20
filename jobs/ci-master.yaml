@@ -170,7 +170,7 @@
           default: 'https://charmed-kubernetes.github.io/layer-index/'
       - string:
           name: LAYER_LIST
-          default: "jobs/build-charms/charm-layer-list.yaml"
+          default: "jobs/includes/charm-layer-list.inc"
       - string:
           name: LAYER_BRANCH
           default: 'master'
