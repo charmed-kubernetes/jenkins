@@ -9,39 +9,37 @@ plan:
       - JUJU_CONTROLLER=validate-ck-upgrade
       - JUJU_MODEL=validate-upgrade-model
     script:
-      - runner:
-          timeout: 21600
-          script: |
-            #!/bin/bash
-            set -x
+      - |
+        #!/bin/bash
+        set -x
 
-            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
+        juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" --debug
 
-            juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-               -d $JUJU_MODEL --model-default test-mode=true \
-               --model-default resource-tags=owner=k8sci \
-               --bootstrap-constraints 'arch=amd64' 2>&1
+        juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
+           -d "$JUJU_MODEL" --model-default test-mode=true \
+           --model-default resource-tags=owner=k8sci \
+           --bootstrap-constraints 'arch=amd64'
 
-            cat > overlay.yaml <<EOF
-            applications:
-              kubernetes-master:
-                options:
-                  channel: $SNAP_VERSION
-              kubernetes-worker:
-                options:
-                  channel: $SNAP_VERSION
-            EOF
+        cat > overlay.yaml <<EOF
+        applications:
+          kubernetes-master:
+            options:
+              channel: $SNAP_VERSION
+          kubernetes-worker:
+            options:
+              channel: $SNAP_VERSION
+        EOF
 
-            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --channel $JUJU_DEPLOY_CHANNEL --overlay overlay.yaml 2>&1
+        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" "$JUJU_DEPLOY_BUNDLE" --channel "$JUJU_DEPLOY_CHANNEL" --overlay overlay.yaml
 
-            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
+        juju-wait -e "$JUJU_CONTROLLER":"$JUJU_MODEL" -w
 
-            pytest $INTEGRATION_TEST_PATH/validation.py \
-               --upgrade-snap-channel $SNAP_VERSION_UPGRADE_TO \
-               --upgrade-charm-channel edge \
-               --cloud $JUJU_CLOUD \
-               --model $JUJU_MODEL \
-               --controller $JUJU_CONTROLLER 2>&1
+        pytest "$INTEGRATION_TEST_PATH"/validation.py \
+           --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
+           --upgrade-charm-channel edge \
+           --cloud "$JUJU_CLOUD" \
+           --model "$JUJU_MODEL" \
+           --controller "$JUJU_CONTROLLER"
 
     after-script:
       - runner:
