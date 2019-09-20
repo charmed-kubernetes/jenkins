@@ -47,7 +47,6 @@
       - default-job-wrapper
       - ci-creds
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 7
     triggers:
