@@ -3,7 +3,19 @@
 - interface:aws-iam:
     downstream: 'charmed-kubernetes/interface-aws-iam.git'
     upstream: 'https://github.com/juju-solutions/interface-aws-iam.git'
-    tags: ['k8s']    
+    tags: ['k8s']
+- interface:prometheus-manual:
+    downstream: 'charmed-kubernetes/interface-prometheus-manual.git'
+    upstream: 'https://github.com/juju-solutions/interface-prometheus-manual'
+    tags: ['k8s']
+- interface:grafana-dashboard:
+    downstream: 'charmed-kubernetes/interface-grafana-dashboard.git'
+    upstream: 'https://github.com/juju-solutions/interface-grafana-dashboard'
+    tags: ['k8s']
+- interface:untrusted-container-runtime:
+    downstream: 'charmed-kubernetes/interface-untrusted-container-runtime.git'
+    upstream: 'https://github.com/charmed-kubernetes/interface-untrusted-container-runtime'
+    tags: ['k8s']
 - interface:aws-integration:
     downstream: 'charmed-kubernetes/interface-aws-integration.git'
     upstream: 'https://github.com/juju-solutions/interface-aws-integration.git'
