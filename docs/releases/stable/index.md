@@ -388,3 +388,13 @@ tox -e py36 -- ogc jobs/build-charms/spec.yml -t promote-bundles
 
 Email annoucement to k8s-crew with any relevant information.
 
+### Update ck bundle repo references
+
+Update ck bundle repo to match the current stable snap release and point the
+latest to the next minor version.
+
+For example, if 1.16 is the upcoming release, then once CK is released we
+need to update the bundle repo stable branch to reflect 1.16/stable. Also,
+update the master branch to point to the next K8S release, in this case
+1.17/edge.
+
