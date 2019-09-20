@@ -334,6 +334,7 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
         snap_list = yaml.safe_load(snap_list.read_text(encoding="utf8"))
     else:
         snap_list = []
+    snap_list.append('cdk-addons')
     snaps_to_promote = [
         {snap: snapapi.latest(snap, from_track.split("/")[0], _arch, exclude_pre)}
         for snap in snap_list
