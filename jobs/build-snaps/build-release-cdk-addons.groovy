@@ -62,7 +62,7 @@ pipeline {
                     else
                         echo "Getting cdk-addons from master branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
-                        if [ "${kube_status}" == "stable" ]
+                        if [ "${kube_status}" = "stable" ]
                         then
                             echo "Creating \$ADDONS_BRANCH for cdk-addons."
                             cd cdk-addons
