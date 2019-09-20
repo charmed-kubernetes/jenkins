@@ -38,14 +38,16 @@
     scm:
       - k8s-jenkins-jenkaas
     parameters:
-      - global-params
-      - snap-params
       - string:
           name: TO_TRACK
+          description: Snap track(s) to promote to, separated by space.
       - string:
           name: FROM_TRACK
+          description: Snap track to promote from
       - string:
           name: SNAP_ARCH
+          default: "amd64 arm64 s390x ppc64le"
+          description: Architectures to promote in snap store, separated by space.
     wrappers:
       - default-job-wrapper
       - ci-creds

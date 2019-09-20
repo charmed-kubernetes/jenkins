@@ -334,17 +334,21 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
         snap_list = yaml.safe_load(snap_list.read_text(encoding="utf8"))
     else:
         snap_list = []
-    for snap in snap_list:
-        out = snapapi.latest(snap, from_track.split("/")[0], arch, exclude_pre)
-        if out:
-            rev, uploaded, arch, version, channels = out
-            for track in to_track:
-                click.echo(f"Promoting ({rev}) {snap} {version} -> {track}")
-                try:
-                    sh.snapcraft.release(snap, rev, track)
-                except sh.ErrorReturnCode as error:
-                    click.echo(f"Problem: {error}")
-                    sys.exit(1)
+    snaps_to_promote = [
+        {snap: snapapi.latest(snap, from_track.split("/")[0], _arch, exclude_pre)}
+        for snap in snap_list
+        for _arch in arch.split(" ")
+    ]
+    for _snap in snaps_to_promote:
+        _snap_name = next(iter(_snap))
+        rev, uploaded, arch, version, channels = _snap[_snap_name]
+        for track in to_track.split(' '):
+            click.echo(f"Promoting ({rev}) {_snap[_snap_name]} {version} -> {track}")
+            try:
+                str(sh.snapcraft.release(_snap_name, rev, track))
+            except sh.ErrorReturnCode as error:
+                click.echo(f"Problem: {error}")
+                sys.exit(1)
 
 
 @cli.command()
@@ -360,7 +364,6 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
     "--to-track",
     help="Snap track to promote to, format as: `[<track>/]<risk>[/<channel>]`",
     required=True,
-    multiple=True,
 )
 @click.option(
     "--exclude-pre",

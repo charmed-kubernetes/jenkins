@@ -11,10 +11,10 @@ plan:
         #!/bin/bash
         set -eux
         python3 jobs/build-snaps/snap.py promote-snaps \
-                        --snap-list $SNAP_LIST \
-                        --arch $SNAP_ARCH \
-                        --from-track $FROM_TRACK \
-                        --to-track $TO_TRACK \
+                        --snap-list "$SNAP_LIST" \
+                        --arch "$SNAP_ARCH" \
+                        --from-track "$FROM_TRACK" \
+                        --to-track "$TO_TRACK" \
                         --exclude-pre
     tags: [promote-snaps]
   - tags: [build-eks-snaps]
