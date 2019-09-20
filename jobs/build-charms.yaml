@@ -29,7 +29,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"
-      - charm-build:
+      - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/build-charms"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t promote-charms"
@@ -65,7 +65,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"
-      - charm-build:
+      - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/build-charms"
           JOB_SPEC_FILE: "spec.yml"
           JOB_TAGS: "-t promote-bundles"
