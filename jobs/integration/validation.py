@@ -339,8 +339,10 @@ async def test_dashboard(model, log_dir, tools):
     # dashboard will present a login form prompting for login
     if k8s_version < (1, 8):
         url = "%s/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/login"
-    else:
+    elif k8s_version < (1, 16):
         url = "%s/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login"
+    else:
+        url = "%s/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#!/login"
     url %= config["clusters"][0]["cluster"]["server"]
 
     log("Waiting for dashboard to stabilize...")
