@@ -1,7 +1,7 @@
 plan:
   - &BASE_JOB
     env:
-      - SNAP_VERSION=1.16/edge
+      - SNAP_VERSION=1.17/edge
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-2
@@ -61,30 +61,38 @@ plan:
         juju destroy-controller -y \
            --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
     tags: ['validate-core']
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.15/stable
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=stable
-  #     - JUJU_CLOUD=aws/us-east-2
-  #     - JUJU_CONTROLLER=validate-ck
-  #     - JUJU_MODEL=validate-model
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.14/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=aws/us-east-1
-  #     - JUJU_CONTROLLER=validate-ck
-  #     - JUJU_MODEL=validate-model
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.13/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=aws/us-east-1
-  #     - JUJU_CONTROLLER=validate-ck
-  #     - JUJU_MODEL=validate-model
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.16/stable
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=stable
+      - JUJU_CLOUD=aws/us-east-2
+      - JUJU_CONTROLLER=validate-ck
+      - JUJU_MODEL=validate-model
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.16/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=stable
+      - JUJU_CLOUD=aws/us-east-2
+      - JUJU_CONTROLLER=validate-ck
+      - JUJU_MODEL=validate-model
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck
+      - JUJU_MODEL=validate-model
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck
+      - JUJU_MODEL=validate-model
 
 meta:
   name: Verify CK
