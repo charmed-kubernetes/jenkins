@@ -254,9 +254,10 @@
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
           export JUJU_MODEL="{override_juju_model|validate}"
-          # export TOX_WORK_DIR="$WORKSPACE/.tox-$JOB_NAME-$BUILD_NUMBER"
+          export TOX_WORK_DIR="$WORKSPACE/.tox-$JOB_NAME-$BUILD_NUMBER"
+          export PATH=$TOX_WORK_DIR/py36/bin:$PATH
 
-          # mkdir -p "$TOX_WORK_DIR"
+          mkdir -p "$TOX_WORK_DIR"
 
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 

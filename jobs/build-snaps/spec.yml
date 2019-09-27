@@ -11,7 +11,7 @@ plan:
         #!/bin/bash
         set -eux
         python3 jobs/build-snaps/snap.py promote-snaps \
-                        --snap-list "$SNAP_LIST" \
+                        --snap-list "jobs/includes/k8s-snap-list.inc" \
                         --arch "$SNAP_ARCH" \
                         --from-track "$FROM_TRACK" \
                         --to-track "$TO_TRACK" \
