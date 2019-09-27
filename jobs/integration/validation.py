@@ -320,12 +320,14 @@ async def test_dashboard(model, log_dir, tools):
         await scp_from(unit, "config", f.name, tools.controller_name, tools.connection)
         with open(f.name, "r") as stream:
             config = yaml.safe_load(stream)
+    # make sure we can hit the api-server
     url = config["clusters"][0]["cluster"]["server"]
     user = config["users"][0]["user"]["username"]
     password = config["users"][0]["user"]["password"]
     auth = tools.requests.auth.HTTPBasicAuth(user, password)
     resp = await tools.requests.get(url, auth=auth, verify=False)
     assert resp.status_code == 200
+
     # get k8s version
     app_config = await model.applications["kubernetes-master"].get_config()
     channel = app_config["channel"]["value"]
@@ -336,14 +338,14 @@ async def test_dashboard(model, log_dir, tools):
         version_string = channel.split("/")[0]
         k8s_version = tuple(int(q) for q in re.findall("[0-9]+", version_string)[:2])
 
-    # dashboard will present a login form prompting for login
-    if k8s_version < (1, 8):
-        url = "%s/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/login"
-    elif k8s_version < (1, 16):
-        url = "%s/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login"
+    # construct the url to the dashboard login form
+    if k8s_version < (1, 16):
+        dash_ns = "kube-system"
     else:
-        url = "%s/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#!/login"
-    url %= config["clusters"][0]["cluster"]["server"]
+        dash_ns = "kubernetes-dashboard"
+    url = ("{server}/api/v1/namespaces/{ns}/services/https:kubernetes-dashboard:"
+           "/proxy/#!/login").format(server=config["clusters"][0]["cluster"]["server"],
+                                     ns=dash_ns)
 
     log("Waiting for dashboard to stabilize...")
 
@@ -355,7 +357,7 @@ async def test_dashboard(model, log_dir, tools):
 
     await retry_async_with_timeout(
         verify_ready,
-        (unit, "po", ["kubernetes-dashboard"], "-n kube-system"),
+        (unit, "po", ["kubernetes-dashboard"], "-n {ns}".format(dash_ns)),
         timeout_msg="Unable to find kubernetes dashboard before timeout",
     )
 
@@ -455,8 +457,10 @@ async def test_network_policies(model, tools):
 
     async def get_to_restricted_networkpolicy_service():
         log("Reaching out to nginx.netpolicy with restrictions")
-        query_from_bad = "/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
-        query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy -O foo.html"
+        query_from_bad = ("/snap/bin/kubectl exec bboxbad -n netpolicy -- "
+                          "wget --timeout=30  nginx.netpolicy -O foo.html")
+        query_from_good = ("/snap/bin/kubectl exec bboxgood -n netpolicy -- "
+                           "wget --timeout=30  nginx.netpolicy -O foo.html")
         cmd_good = await unit.run(query_from_good)
         cmd_bad = await unit.run(query_from_bad)
         if (
