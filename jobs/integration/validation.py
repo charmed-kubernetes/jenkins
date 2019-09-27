@@ -357,7 +357,7 @@ async def test_dashboard(model, log_dir, tools):
 
     await retry_async_with_timeout(
         verify_ready,
-        (unit, "po", ["kubernetes-dashboard"], "-n {ns}".format(dash_ns)),
+        (unit, "po", ["kubernetes-dashboard"], "-n {ns}".format(ns=dash_ns)),
         timeout_msg="Unable to find kubernetes dashboard before timeout",
     )
 
