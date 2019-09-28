@@ -174,6 +174,9 @@ async def test_auth_file_propagation(model):
     """
     # Get a leader and non-leader unit to test with
     masters = model.applications["kubernetes-master"]
+    if len(masters.units) < 2:
+        pytest.skip("Auth file propagation test requires multiple masters")
+
     for master in masters.units:
         if await master.is_leader_from_status():
             leader = master
