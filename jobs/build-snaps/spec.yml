@@ -1,9 +1,9 @@
 plan:
   - script:
-      - python3 jobs/build-snaps/snap.py sync-upstream --snap-list $SNAP_LIST
+      - python3 jobs/build-snaps/snap.py sync-upstream --snap-list jobs/includes/k8s-snap-list.inc
     tags: [sync]
   - script:
-      - python3 jobs/build-snaps/snap.py sync-upstream --snap-list $SNAP_LIST --force --patches $SNAP_PATCHES_LIST
+      - python3 jobs/build-snaps/snap.py sync-upstream --snap-list jobs/includes/k8s-snap-list.inc --force --patches $SNAP_PATCHES_LIST
     tags: [sync-with-patches]
 
   - script:
