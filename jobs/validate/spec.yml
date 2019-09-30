@@ -58,7 +58,7 @@ plan:
         python3 jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
         python3 jobs/infra/collect-debug.py save-meta metadata.json
         juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-        python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump*
+        python3 jobs/infra/collect-debug.py push 'cdk_field_agent' juju-crashdump*
 
         juju destroy-controller -y \
            --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
