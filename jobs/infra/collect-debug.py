@@ -7,6 +7,7 @@ import boto3
 import click
 import os
 import json
+import operator
 from pprint import pformat
 from kv import KV
 
@@ -62,17 +63,22 @@ def set_key(db_key, db_val):
 @cli.command()
 @click.option("--bucket", required=True, help="s3 bucket to use", default="jenkaas")
 @click.argument("db_key")
-@click.argument("results-file")
+@click.argument("results-file", nargs=-1)
 def push(bucket, db_key, results_file):
     """ pushes files to s3
     """
-    results_file = Path(results_file)
-    if not results_file.exists():
-        return
+    result_path_objs = []
+    for r_file in results_file:
+        r_file = Path(r_file)
+        if not r_file.exists():
+            continue
+        result_path_objs.append((r_file, r_file.stat().st_mtime))
+
+    newest_result_file = max(result_path_objs, key=operator.itemgetter(1))[0]
     current_date = datetime.now().strftime("%Y/%m/%d")
     env = os.environ.copy()
-    s3_path = Path(env["JOB_NAME"]) / current_date / env["BUILD_NUMBER"] / results_file
-    s3.upload_file(str(results_file), bucket, str(s3_path))
+    s3_path = Path(env["JOB_NAME"]) / current_date / env["BUILD_NUMBER"] / newest_result_file
+    s3.upload_file(str(newest_result_file), bucket, str(s3_path))
     db[db_key] = str(s3_path)
 
 

@@ -48,21 +48,20 @@ plan:
       - |
         #!/bin/bash
         set -x
-        wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-        python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-        python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz && rm -rf results*.tar.gz
+        # wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+        # python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+        # python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz && rm -rf results*.tar.gz
         python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
         python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
-        python3 jobs/infra/collect-debug.py push 'job_result' *job.json && rm -rf *job.json
+        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
         python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
         python3 jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
         python3 jobs/infra/collect-debug.py save-meta metadata.json
-        juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
-        python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
+        juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+        python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump*
 
         juju destroy-controller -y \
            --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
-    tags: ['validate-core']
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.16/stable
