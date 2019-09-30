@@ -132,6 +132,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-calico
       - JUJU_MODEL=validate-calico-model
+      - JOB_NAME=validate-ck-calico-no-bgp
 
   - <<: *BASE_JOB
     env:
@@ -141,6 +142,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-calico
       - JUJU_MODEL=validate-calico-model
+      - JOB_NAME=validate-ck-calico-no-bgp
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.16/stable
@@ -149,6 +151,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-calico
       - JUJU_MODEL=validate-calico-model
+      - JOB_NAME=validate-ck-calico-no-bgp
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/edge
@@ -157,6 +160,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-calico
       - JUJU_MODEL=validate-calico-model
+      - JOB_NAME=validate-ck-calico-no-bgp
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
@@ -165,3 +169,4 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-calico
       - JUJU_MODEL=validate-calico-model
+      - JOB_NAME=validate-ck-calico-no-bgp
