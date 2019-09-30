@@ -9,6 +9,11 @@ meta:
 plan:
   - env:
       - JUJU_DEPLOY_CHANNEL=stable
+      - SNAP_VERSION=1.16/stable
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-conformance
+      - JUJU_MODEL=validate-model
     before-script:
       - juju:
           cloud: $JUJU_CLOUD
@@ -20,7 +25,6 @@ plan:
               - test-mode=true
               - resource-tags=owner=k8sci
             replace-controller: yes
-            disable-add-model: no
           deploy:
             bundle: $JUJU_DEPLOY_BUNDLE
             channel: $JUJU_DEPLOY_CHANNEL
@@ -68,6 +72,7 @@ plan:
             wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
             python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
             python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
+            python3 jobs/infra/collect-debug.py push 'conformance' results/*.tar.gz
             python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
             python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
             python3 jobs/infra/collect-debug.py push 'job_result' *job.json

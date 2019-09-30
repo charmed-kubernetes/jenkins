@@ -1,6 +1,3 @@
-- 'v1.13.x':
-    version_overlay: 'jobs/overlays/1.13-edge-localhost-overlay.yaml'
-    snap_channel: '1.13/edge'
 - 'v1.14.x':
     version_overlay: 'jobs/overlays/1.14-edge-localhost-overlay.yaml'
     snap_channel: '1.14/edge'

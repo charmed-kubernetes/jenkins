@@ -2,72 +2,37 @@
 # https://github.com/cncf/k8s-conformance
 #
 
-- job-template:
-    name: 'conformance-{k8sver}-s390x'
+# - job:
+#     name: 'conformance-s390x'
+#     description: |
+#       CNCF Conformance testing for Kubernetes on s390x.
+
+#       Please see https://git.io/fNwXY for more information.
+#     project-type: freestyle
+#     scm:
+#       - k8s-jenkins-jenkaas
+#     properties:
+#       - build-discarder:
+#           num-to-keep: 7
+
+
+- job:
+    name: 'conformance'
     description: |
-      CNCF Conformance testing for Kubernetes {k8sver} {bundle} on s390x.
-
-      Please see https://git.io/fNwXY for more information.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/cncf-conformance/s390x.groovy
-    parameters:
-      - string:
-          name: version_overlay
-          default: 'jobs/overlays/{normalized_ver}-edge-localhost-overlay.yaml'
-      - string:
-          name: model
-          default: 'conformance'
-      - string:
-          name: controller
-          default: 'cncf'
-      - string:
-          name: cloud
-          default: 'localhost/localhost'
-      - string:
-          name: bundle_channel
-          default: 'edge'
-      - string:
-          name: bundle
-          default: 'charmed-kubernetes'
-    properties:
-      - build-discarder:
-          num-to-keep: 7
-
-
-- job-template:
-    name: 'conformance-{k8sver}'
-    description: |
-      CNCF Conformance testing for Kubernetes {k8sver} {bundle}.
+      CNCF Conformance testing for Kubernetes.
 
       Please see https://git.io/fNwXY for more information.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - global-params
-      - juju-params
     properties:
       - build-discarder:
           num-to-keep: 4
     wrappers:
       - default-job-wrapper
-      - timeout:
-          timeout: 240
-          fail: true
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/cncf-conformance"
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/cncf-conformance"
           JOB_SPEC_FILE: "spec.yml"
-
-- project:
-    name: conformance
-    k8sver:
-      !include: includes/k8s-support-matrix.inc
-    jobs:
-      - 'conformance-{k8sver}'
-      - 'conformance-{k8sver}-s390x'
