@@ -145,6 +145,12 @@
       - default-job-wrapper
       - ci-creds
     properties:
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - ".*calico.*"
+          block-level: 'GLOBAL'
+          queue-scanning: 'ALL'
       - build-discarder:
           num-to-keep: 7
     triggers:
