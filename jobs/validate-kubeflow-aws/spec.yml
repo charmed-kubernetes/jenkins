@@ -1,5 +1,6 @@
 plan:
-  - env:
+  - &BASE_JOB
+    env:
       - JUJU_VERSION=2.6/edge
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_MODEL=validate-aws
@@ -80,6 +81,13 @@ plan:
         python3 jobs/infra/collect-debug.py push 'job_result' *job.json
         python3 jobs/infra/collect-debug.py set-key 'juju_version' "$JUJU_VERSION"
         python3 jobs/infra/collect-debug.py save-meta metadata.json
+  - <<: *BASE_JOB
+    env:
+      - JUJU_VERSION=2.6/stable
+      - JUJU_DEPLOY_CHANNEL=stable
+      - JUJU_MODEL=validate-aws
+      - REGION=us-east-2
+      - BUNDLE_REVISION=master
 
 meta:
   name: Verify CK with Kubeflow

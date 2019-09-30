@@ -8,7 +8,7 @@ meta:
 
 plan:
   - env:
-      - JUJU_DEPLOY_CHANNEL=candidate
+      - JUJU_DEPLOY_CHANNEL=stable
     before-script:
       - juju:
           cloud: $JUJU_CLOUD
@@ -73,8 +73,5 @@ plan:
             python3 jobs/infra/collect-debug.py push 'job_result' *job.json
             python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
             python3 jobs/infra/collect-debug.py save-meta metadata.json
-            juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
-            python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
-            python3 jobs/integration/tigera_aws.py cleanup 2>&1
             juju destroy-controller -y \
-               --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
+               --destroy-all-models --destroy-storage $JUJU_CONTROLLER
