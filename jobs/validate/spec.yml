@@ -34,13 +34,15 @@ plan:
             timeout: 7200
             channel: $JUJU_DEPLOY_CHANNEL
     script:
-      - |
-        #!/bin/bash
-        set -x
-        pytest $INTEGRATION_TEST_PATH/validation.py \
-           --cloud $JUJU_CLOUD \
-           --model $JUJU_MODEL \
-           --controller $JUJU_CONTROLLER 2>&1
+      - runner:
+          timeout: 7200
+          script: |
+            #!/bin/bash
+            set -x
+            pytest $INTEGRATION_TEST_PATH/validation.py \
+               --cloud $JUJU_CLOUD \
+               --model $JUJU_MODEL \
+               --controller $JUJU_CONTROLLER 2>&1
 
     after-script:
       - |
