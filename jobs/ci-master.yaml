@@ -34,6 +34,7 @@
           use-build-blocker: true
           blocking-jobs:
             - "release"
+            - "release-microk8s*"
             - "build-charms"
             - "build-bundles"
             - "infra*"

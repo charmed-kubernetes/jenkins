@@ -1,40 +1,5 @@
 # Validates Kubeflow on AWS
 
-# - job-template:
-#     name: 'validate-kubeflow-aws'
-#     description: |
-#       Validates Kubeflow support on AWS
-#     project-type: pipeline
-#     concurrent: true
-#     pipeline-scm:
-#       scm:
-#         - k8s-jenkins-jenkaas
-#       script-path: jobs/validate-kubeflow-aws/Jenkinsfile
-#     parameters:
-#       - string:
-#           name: juju_channel
-#           default: 'stable'
-#           description: Juju snap channel
-#       - string:
-#           name: region
-#           default: 'us-east-1'
-#           description: AWS region that CDK will be spun up in
-#       - string:
-#           name: bundle_revision
-#           default: 'master'
-#           description: Git revision of bundle-kubeflow repo to deploy
-#     triggers:
-#         - timed: "@daily"
-#     properties:
-#       - build-discarder:
-#           days-to-keep: 7
-
-# - project:
-#     name: validate-kubeflow-aws
-#     jobs:
-#       - 'validate-kubeflow-aws'
-
-
 - job:
     name: 'validate-kubeflow-aws'
     description: |
