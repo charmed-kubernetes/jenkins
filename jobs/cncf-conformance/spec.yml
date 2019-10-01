@@ -25,6 +25,7 @@ plan:
               - test-mode=true
               - resource-tags=owner=k8sci
             replace-controller: yes
+            constraints: "arch=amd64"
           deploy:
             bundle: $JUJU_DEPLOY_BUNDLE
             channel: $JUJU_DEPLOY_CHANNEL
