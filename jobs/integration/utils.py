@@ -283,6 +283,7 @@ async def verify_ready(unit, entity_type, name_list, extra_args=""):
         n
         for n in matches
         if n["kind"] == "DaemonSet"
+        or n["kind"] == "Service"
         or n["status"]["phase"] == "Running"
         or n["status"]["phase"] == "Active"
     ]

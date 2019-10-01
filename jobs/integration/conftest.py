@@ -101,8 +101,11 @@ class Tools:
                 f"{stdout.decode()}\nstderr: {stderr.decode()}"
             )
 
-    async def juju_wait(self):
-        return await self.run(f"juju wait -e {self.connection} -w")
+    async def juju_wait(self, timeout_secs=None):
+        cmd = f"juju wait -e {self.connection} -w"
+        if timeout_secs:
+            cmd = f"{cmd} -t {timeout_secs}"
+        return await self.run(cmd)
 
 
 @pytest.fixture(scope="module")

@@ -140,7 +140,7 @@ async def assert_hook_occurs_on_all_units(app, hook):
         await asyncio.sleep(0.5)
 
 
-async def set_config_and_wait(app, config, tools):
+async def set_config_and_wait(app, config, tools, timeout_secs=None):
     current_config = await app.get_config()
 
     if all(config[key] == current_config[key]["value"] for key in config):
@@ -149,7 +149,7 @@ async def set_config_and_wait(app, config, tools):
 
     async with assert_hook_occurs_on_all_units(app, "config-changed"):
         await app.set_config(config)
-        await tools.juju_wait()
+        await tools.juju_wait(timeout_secs=timeout_secs)
 
 
 async def reset_audit_config(master_app, tools):
@@ -897,6 +897,43 @@ async def test_audit_default_config(model, tools):
 
     # Clean up
     await reset_audit_config(app, tools)
+
+
+@pytest.mark.asyncio
+async def test_toggle_metrics(model, tools):
+    """Turn metrics on/off via the 'enable-metrics' config on kubernetes-master,
+    and check that workload status returns to 'active', and that the metrics-server
+    svc is started and stopped appropriately.
+
+    """
+    async def check_svc(app, enabled):
+        unit = app.units[0]
+        if enabled:
+            await retry_async_with_timeout(
+                verify_ready,
+                (unit, "svc", ["metrics-server"], "-n kube-system"),
+                timeout_msg="Unable to find metrics-server svc before timeout",
+            )
+        else:
+            await retry_async_with_timeout(
+                verify_deleted,
+                (unit, "svc", "metrics-server", "-n kube-system"),
+                timeout_msg="metrics-server svc still exists after timeout",
+            )
+
+    app = model.applications["kubernetes-master"]
+
+    config = await app.get_config()
+    old_value = config['enable-metrics']['value']
+    new_value = not old_value
+
+    await set_config_and_wait(
+        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=120)
+    await check_svc(app, new_value)
+
+    await set_config_and_wait(
+        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=120)
+    await check_svc(app, old_value)
 
 
 @pytest.mark.asyncio
