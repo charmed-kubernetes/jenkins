@@ -9,8 +9,9 @@ plan:
       - JUJU_MODEL=validate-snapd-upgrade-model
       - TEST_UPGRADE_SNAPD_CHANNEL=beta
     script:
+      - juju kill-controller -y $JUJU_CONTROLLER || true
       - runner:
-          timeout: 21600
+          timeout: 7200
           script: |
             #!/bin/bash
             set -x
