@@ -50,8 +50,11 @@ plan:
         sonobuoy version
         sonobuoy run
       - runner:
-          cmd: sonobuoy status|grep -q 'Sonobuoy has completed'
-          timeout: 10800
+          script: |
+            #!/bin/bash
+            set -x
+            sonobuoy status|grep 'Sonobuoy has completed'
+          timeout: 7200
           back-off: 15
           wait-for-success: yes
       - runner:
@@ -70,7 +73,6 @@ plan:
           script: |
             #!/bin/bash
             set -x
-            python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
             python3 jobs/infra/collect-debug.py push 'conformance' results/*.tar.gz
             python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
             python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
