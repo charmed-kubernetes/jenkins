@@ -13,7 +13,7 @@ plan:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-conformance
-      - JUJU_MODEL=validate-model
+      - JUJU_MODEL=validate-conformance
     before-script:
       - juju:
           cloud: $JUJU_CLOUD
