@@ -3,7 +3,7 @@
 # V2 ------------------------------------------------------------------------- #
 - job:
     name: 'validate-ck'
-    node: runner-amd64
+    node: runner-cloud
     description: |
       Validates CDK edge, supports last three recent releases.
     project-type: freestyle
