@@ -928,11 +928,11 @@ async def test_toggle_metrics(model, tools):
     new_value = not old_value
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=120)
+        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=240)
     await check_svc(app, new_value)
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=120)
+        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=240)
     await check_svc(app, old_value)
 
 
