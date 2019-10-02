@@ -78,7 +78,7 @@ oauthlib==3.1.0           # via lazr.restfulclient
 ogc-plugins-juju==1.0.15
 ogc-plugins-runner==1.0.23
 ogc-plugins-spec-doc==1.0.6
-ogc==0.3.48
+ogc==0.3.49
 packaging==19.1           # via pytest, pytest-sugar
 paramiko==2.6.0           # via juju
 parso==0.5.1              # via jedi

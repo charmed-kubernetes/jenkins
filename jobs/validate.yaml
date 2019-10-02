@@ -52,7 +52,7 @@
 
 - job:
     name: 'validate-ck-upgrade'
-    node: runner-amd64
+    node: runner-cloud
     description: |
       Validates CDK minor release upgrades, supports last three recent releases.
     project-type: freestyle
