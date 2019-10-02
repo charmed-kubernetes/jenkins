@@ -381,3 +381,5 @@
         owner: jenkins
         group: jenkins
         recurse: yes
+      tags:
+        - jenkins

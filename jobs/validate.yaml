@@ -135,7 +135,7 @@
     name: 'validate-ck-tigera-secure-ee'
     description: |
       Validates CK, with tigera.
-    node: runner-amd64
+    node: runner-cloud
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
