@@ -20,9 +20,9 @@ jujubundlelib
 mkdocs-material
 mkdocs
 ogc-plugins-juju>=1.0.15
-ogc-plugins-runner
-ogc-plugins-spec-doc
-ogc>=0.3.47
+ogc-plugins-runner>=1.0.23
+ogc-plugins-spec-doc>=1.0.6
+ogc>=0.3.48
 requests
 pynacl==1.1.2
 pymacaroons
