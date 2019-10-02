@@ -67,7 +67,8 @@ pipeline {
         stage('Deploy kubeflow') {
             steps {
                 exec 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
-                exec 'cd bundle-kubeflow && ./scripts/deploy-microk8s create --build --ci'
+                exec 'cd bundle-kubeflow && python3 ./scripts/cli.py microk8s setup'
+                exec 'cd bundle-kubeflow && KUBEFLOW_AUTH_PASSWORD=foobar python3 ./scripts/cli.py deploy-to uk8s --build'
                 exec 'juju config argo-controller kubelet-insecure=true'
             }
         }

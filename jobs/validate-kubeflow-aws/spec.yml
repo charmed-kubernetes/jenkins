@@ -47,9 +47,10 @@ plan:
         git clone https://github.com/juju-solutions/bundle-kubeflow.git
         cd bundle-kubeflow
         git checkout "$BUNDLE_REVISION"
-        ./scripts/manage-cdk create --region "$REGION"
-        ./scripts/deploy-cdk create --build --ci --channel $JUJU_DEPLOY_CHANNEL
+        python3 ./scripts/cli.py cdk setup --region "$REGION" --channel edge
+        KUBEFLOW_AUTH_PASSWORD=foobar python3 scripts/cli.py deploy-to cdkkf --build --channel $JUJU_DEPLOY_CHANNEL
         ./tests/run.sh
+        ./tests/dump-pipeline-logs.sh || true
 
         EOF
 
