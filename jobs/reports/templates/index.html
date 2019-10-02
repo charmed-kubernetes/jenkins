@@ -32,7 +32,7 @@
                 </a>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
                   <a class="dropdown-item" href="{{ day.build_log }}">Job Log</a>
-                  <a class="dropdown-item" href="{{ day.job_results }}">Job Results</a>
+                  <a class="dropdown-item" href="{{ day.job_result }}">Job Results</a>
                   <a class="dropdown-item" href="{{ day.metadata }}">Job Metadata</a>
                   {% if day.results_file %}<a class="dropdown-item" href="{{ day.results_file }}">Juju Crashdump</a>{% endif %}
                   {% if day.cdk_field_agent %}<a class="dropdown-item" href="{{ day.cdk_field_agent }}">CDK Field Agent</a>{% endif %}
