@@ -114,6 +114,10 @@ candidate channels of the snapstore.
   push any new stable release to the appropriate channels. If that's the
   case this job will just check for existence and continue on.
 
+>-
+  **Info**: Please note that currently **CDK-ADDONS** snap needs to be
+    manually promoted to the appropriate channels
+
 _Jenkins Job_: build-snaps
 
 _Requires_:

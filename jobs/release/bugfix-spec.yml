@@ -10,39 +10,29 @@ meta:
   long-description: |
     ## Bugfix Release Process
 
-    ### 1. Cherry-pick fixes from master into stable branches
+    ### Cherry-pick fixes from master into stable branches
 
-    ### 2. Document release notes
+    ### Document release notes
 
     - Bugfixes
     - Enhancements
     - Known Limitations/Issues
 
-    ### 3. Run the **build-charms** job
+    ### Tag existing stable branches with bugfix release tag
+
+    **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
+
+    ### Run the **build-charms** job
 
     **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
     This will build and promote the stable charms to candidate channel for testing.
 
-    This is the main job to run when needing to do a bugfix. The steps this build performs are as follows:
+    #### Charm build options
 
-    - Build and Publish charms to the **candidate** channel.
-    - The validation suite is run against a deployed **charmed-kubernetes**
-    - The validation suite runs against a minor to minor upgrade
-    - The validation suite is run against the following variations:
-        - NVidia
-        - Vault
-        - Tigera EE
-        - Calico
-        - Ceph
-        - AWS IAM
-        - Snapd Upgrade
+    ![build charm options](bugfix-options.png)
 
-    **Note**: Keep up with the `release_id` as that will need to be referenced in
-    case the job needs to be re-run due to build errors. Simply hitting `Rebuild`
-    on the Jenkins job page will have that ID prepopulated.
-
-    ### Promote charms from **candidate** and **stable**
+    ### Promote charms from **candidate** to **stable**
 
     **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
 
@@ -50,7 +40,7 @@ meta:
     it will only promote the necessary charms that make up charmed-kuberneetes (the
     others are kubeflow related).
 
-    ### Promote bundles from **candidate** and **stable**
+    ### Promote bundles from **candidate** to **stable**
 
     **Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
 

@@ -56,6 +56,35 @@
           JOB_TAGS: "-t tag-stable-rev"
 
 - job:
+    name: 'sync-stable-tag-bugfix-rev'
+    description: |
+      Tags all downstream stable branches with bugfix revision
+    project-type: freestyle
+    node: runner-amd64
+    scm:
+      - k8s-jenkins-jenkaas
+    properties:
+      - build-discarder:
+          days-to-keep: 1
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    parameters:
+      - string:
+          name: K8S_VERSION
+          description: Stable K8S version to tag branches against.
+      - string:
+          name: BUGFIX_REV
+          description: bugfix revision to tag stable branches with, (ie ck1)
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t tag-bugfix-rev"
+
+- job:
     name: 'cut-stable-release'
     description: |
       Refreshes all layer stable branches on top of master.

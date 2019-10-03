@@ -27,6 +27,24 @@ plan:
         if [ ! -z ${DRY_RUN+x} ]; then
           IS_DRY_RUN="--dry-run"
         fi
+        python3 jobs/sync-upstream/sync.py tag-stable \
+                     --layer-list jobs/includes/charm-layer-list.inc \
+                     --charm-list jobs/includes/charm-support-matrix.inc \
+                     --bundle-revision $BUGFIX_REV \
+                     --k8s-version $K8S_VERSION \
+                     --filter-by-tag k8s \
+                     --bugfix
+    tags: [tag-bugfix-rev]
+
+  - script:
+      - |
+        #!/bin/bash
+
+        set -eux
+        IS_DRY_RUN=""
+        if [ ! -z ${DRY_RUN+x} ]; then
+          IS_DRY_RUN="--dry-run"
+        fi
         python3 jobs/sync-upstream/sync.py cut-stable-release \
             --layer-list jobs/includes/charm-layer-list.inc \
             --charm-list jobs/includes/charm-support-matrix.inc \

@@ -5,43 +5,26 @@ ceph.
 
 ## Bugfix Release Process
 
-### 1. Cherry-pick fixes from master into stable branches
+### Cherry-pick fixes from master into stable branches
 
-### 2. Document release notes
+### Document release notes
 
 - Bugfixes
 - Enhancements
 - Known Limitations/Issues
 
-### 3. Run the **release-charm-bugfix** job
+### 3. Run the **build-charms** job
 
-**Job**: https://jenkins.canonical.com/k8s/job/release-charm-bugfix/
+**Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
-This is the main job to run when needing to do a bugfix. The steps this build performs are as follows:
+This will build and promote the stable charms to candidate channel for testing.
 
-- Build and Publish charms to the `beta` channel.
-- The validation suite is run against a deployed `charmed-kubernetes`
-- The validation suite is run against the following variations:
-    - NVidia
-    - Vault
-    - Tigera EE
-    - Calico
-    - Ceph
 
-**Note**: Keep up with the `release_id` as that will need to be referenced in
-case the job needs to be re-run due to build errors. Simply hitting `Rebuild`
-on the Jenkins job page will have that ID prepopulated.
+#### Charm build options
 
-### Validate a minor upgrade
+![build charm options](bugfix-options.png)
 
-**Job**: https://jenkins.canonical.com/k8s/view/Validate%20Upgrades/job/validate-minor-upgrade-v1.14.x-v1.15.x/
-
-This will deploy the previous Charmed Kubernetes release using the stable charm
-channel and allow you to upgrade to a different snap and charm channel.
-Typically, in this case we set the `upgrade_snap_channel` to the latest stable
-release (ie. 1.15/stable) and set the `upgrade_charm_channel` to `beta`.
-
-### Promote charms from `beta` to `candidate` and `stable`
+### Promote charms from **candidate** to **stable**
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
 
@@ -49,7 +32,7 @@ This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
 it will only promote the necessary charms that make up charmed-kuberneetes (the
 others are kubeflow related).
 
-### Promote bundles from `beta` to `candidate` and `stable`
+### Promote bundles from **candidate** to **stable**
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
 
