@@ -141,7 +141,7 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     if snap_basename.endswith(".git"):
         snap_basename = snap_basename.rstrip(".git")
     sh.rm("-rf", snap_basename)
-    sh.git.clone(repo, branch=from_branch, _env=env)
+    sh.git.clone(repo, snap_basename, _env=env)
     sh.git.config("user.email", "cdkbot@gmail.com", _cwd=snap_basename)
     sh.git.config("user.name", "cdkbot", _cwd=snap_basename)
     sh.git.checkout("-b", to_branch, _cwd=snap_basename)
