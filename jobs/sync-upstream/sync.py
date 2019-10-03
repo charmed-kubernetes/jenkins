@@ -101,7 +101,7 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, filter_by
 
             downstream = repos["downstream"]
             if bugfix:
-                tag = f"ck-{k8s_version}+{bundle_rev}"
+                tag = f"{k8s_version}+{bundle_rev}"
             else:
                 tag = f"ck-{k8s_version}-{bundle_rev}"
             if not repos.get("needs_tagging", True):

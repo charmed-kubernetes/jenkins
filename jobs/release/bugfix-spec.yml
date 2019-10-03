@@ -20,7 +20,9 @@ meta:
 
     ### Tag existing stable branches with bugfix release tag
 
-    **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
+    **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bugfix-rev/
+
+    This will tag all stable repos with the k8s version and bugfix revision associated, for example, the first bugfix release of 1.16 would be **1.16+ck1**
 
     ### Run the **build-charms** job
 
