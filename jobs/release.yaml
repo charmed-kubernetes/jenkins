@@ -72,49 +72,18 @@
       bug/hotfix to stable.
     project-type: freestyle
     parameters:
+      - global-params
+      - charm-params
       - juju-params
     scm:
       - k8s-jenkins-jenkaas
     properties:
       - block-on-release
       - build-discarder:
-          num-to-keep: 7
-    publishers:
-      - trigger-parameterized-builds:
-        # Validate
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.15/stable"
-          condition: SUCCESS
-        # Validate upgrades
-        - project: validate-ck-upgrade
-          predefined-parameters: |
-            SNAP_VERSION="1.13/stable"
-            JUJU_MODEL="validate-ck-upgrade"
-          condition: SUCCESS
-        - project: validate-ck-upgrade
-          predefined-parameters: |
-            SNAP_VERSION="1.14/stable"
-            JUJU_MODEL="validate-ck-upgrade"
-          condition: SUCCESS
-        # Validate Vault
-        - project: validate-ck
-          predefined-parameters: |
-            SNAP_VERSION="1.14/edge"
-            JUJU_MODEL="validate-vault"
-          condition: SUCCESS
-        # Validate Calico
-        - project: validate-calico-v1.15.x
-          condition: SUCCESS
-        # Validate NVidia
-        - project: validate-nvidia-v1.15.x
-          condition: SUCCESS
-        # Validate Tigera
-        - project: validate-tigera-secure-ee-v1.15.x
-          condition: SUCCESS
-        # Promote to stable
-        - project: promote-charms
-          condition: SUCCESS
-          predefined-parameters: |
-            FROM_CHANNEL="candidate"
-            TO_CHANNEL="stable"
+          num-to-keep: 3
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/release"
+      - charm-build:
+          JOB_SPEC_DIR: "jobs/build-charms"
+          JOB_SPEC_FILE: "spec.yml"

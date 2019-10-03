@@ -299,11 +299,11 @@
     name: default-job-wrapper
     wrappers:
       - ansicolor
-      - timestamps
+      # - timestamps
       - workspace-cleanup
-      - timeout:
-          timeout: 360
-          fail: true
+      # - timeout:
+      #     timeout: 360
+      #     fail: true
 
 - wrapper:
     name: ci-creds

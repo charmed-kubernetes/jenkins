@@ -1,7 +1,7 @@
 @Library('juju-pipeline@master') _
 
 def release_id = params.release_id
-def tracker_sh = "cd jobs && ${utils.cipy} release/release-tracker.py --release-id ${release_id}"
+def tracker_sh = "tox -e py36 -- python3 jobs/release/release-tracker.py --release-id ${release_id}"
 
 pipeline {
     agent {
@@ -12,7 +12,6 @@ pipeline {
     }
     options {
         ansiColor('xterm')
-        timestamps()
     }
     stages {
         stage('Build and Promote charms to candidate') {

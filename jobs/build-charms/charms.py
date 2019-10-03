@@ -122,9 +122,8 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
         if ltype == "layer":
             sh.git.checkout("-f", layer_branch, _cwd=str(charm_env.layers_dir / name))
         elif ltype == "interface":
-            sh.git.checkout(
-                "-f", layer_branch, _cwd=str(charm_env.interfaces_dir / name)
-            )
+            import subprocess
+            subprocess.run(f"git checkout -f {layer_branch}", cwd=str(charm_env.interfaces_dir / name), check=True, shell=True)
         else:
             raise SystemExit(f"Unknown layer/interface: {layer_name}")
 
