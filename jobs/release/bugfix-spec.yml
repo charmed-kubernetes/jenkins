@@ -22,6 +22,8 @@ meta:
 
     **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
+    This will build and promote the stable charms to candidate channel for testing.
+
     This is the main job to run when needing to do a bugfix. The steps this build performs are as follows:
 
     - Build and Publish charms to the **candidate** channel.

@@ -92,10 +92,11 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
     num_runs = 0
     for layer_map in layer_list:
         layer_name = list(layer_map.keys())[0]
+        layer_props = list(layer_map.values())[0]
         if layer_name == "layer:index":
             continue
 
-        click.echo(layer_name)
+        click.echo(f"{layer_name} - {layer_props['upstream']}")
 
         def download():
             for line in sh.charm(
@@ -122,8 +123,9 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
         if ltype == "layer":
             sh.git.checkout("-f", layer_branch, _cwd=str(charm_env.layers_dir / name))
         elif ltype == "interface":
+            sh.git.fetch("--all", _cwd=str(charm_env.interfaces_dir / name))
             sh.git.checkout(
-                "-f", layer_branch, _cwd=str(charm_env.interfaces_dir / name)
+                "-b", layer_branch, _cwd=str(charm_env.interfaces_dir / name)
             )
         else:
             raise SystemExit(f"Unknown layer/interface: {layer_name}")
