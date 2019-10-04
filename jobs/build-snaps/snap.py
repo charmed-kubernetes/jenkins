@@ -8,11 +8,14 @@ import sh
 import os
 import yaml
 import semver
+import tempfile
+from sh.contrib import git
 from urllib.parse import urlparse
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
-from lib import lp, idm, git, snapapi
+from lib import lp, idm, snapapi
+from lib import git as gitapi
 
 
 def _render(tmpl_file, context):
@@ -34,7 +37,7 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
     snaps-source.py sync-upstream --snap-list includes/k8s-snap-list.inc
     """
     supported_releases = []
-    upstream_releases = git.remote_tags("https://github.com/kubernetes/kubernetes")
+    upstream_releases = gitapi.remote_tags("https://github.com/kubernetes/kubernetes")
 
     for rel in upstream_releases:
         _fmt_rel = rel.lstrip("v")
@@ -49,7 +52,7 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
     for snap in snaps:
         click.echo(f"Checking: git+ssh://cdkbot@git.launchpad.net/snap-{snap}")
         git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
-        snap_releases = git.remote_branches(git_repo)
+        snap_releases = gitapi.remote_branches(git_repo)
         if not set(supported_releases).issubset(set(snap_releases)):
             snap_releases = list(set(supported_releases).difference(set(snap_releases)))
             snap_releases.sort()
@@ -132,7 +135,7 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     """
     env = os.environ.copy()
 
-    if git.branch_exists(repo, to_branch, env):
+    if gitapi.branch_exists(repo, to_branch, env):
         click.echo(f"{to_branch} already exists, skipping...")
         sys.exit(0)
 
@@ -140,11 +143,13 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     snap_basename = Path(snap_basename.path).name
     if snap_basename.endswith(".git"):
         snap_basename = snap_basename.rstrip(".git")
-    sh.rm("-rf", snap_basename)
-    sh.git.clone(repo, snap_basename, _env=env)
-    sh.git.config("user.email", "cdkbot@gmail.com", _cwd=snap_basename)
-    sh.git.config("user.name", "cdkbot", _cwd=snap_basename)
-    sh.git.checkout("-b", to_branch, _cwd=snap_basename)
+    tmpdir = tempfile.TemporaryDirectory()
+    snap_basename = f"{tmpdir.name}/{snap_basename}"
+    git.clone(repo, snap_basename, _env=env)
+    git.remote("prune", "origin", _env=env, _cwd=snap_basename)
+    git.config("user.email", "cdkbot@gmail.com", _env=env, _cwd=snap_basename)
+    git.config("user.name", "cdkbot", _env=env, _cwd=snap_basename)
+    git.checkout("-b", to_branch, _env=env, _cwd=snap_basename)
 
     snapcraft_fn = Path(snap_basename) / "snapcraft.yaml"
     snapcraft_fn_tpl = Path(snap_basename) / "snapcraft.yaml.in"
@@ -166,14 +171,14 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
                     shared_path = str(Path("shared") / patch_fn.parts[-1])
                     sh.cp(str(patch_fn), str(shared_path), _cwd=snap_basename)
                     patches_list.append(shared_path)
-                    sh.git.add(shared_path, _cwd=snap_basename)
+                    git.add(shared_path, _cwd=snap_basename)
             if to_branch.lstrip("v") in patches_map:
                 for patch_fn in patches_map[to_branch.lstrip("v")]:
                     patch_fn = Path(patch_fn).absolute()
                     shared_path = str(Path("shared") / patch_fn.parts[-1])
                     sh.cp(str(patch_fn), str(shared_path), _cwd=snap_basename)
                     patches_list.append(shared_path)
-                    sh.git.add(shared_path, _cwd=snap_basename)
+                    git.add(shared_path, _cwd=snap_basename)
 
     snapcraft_yml = snapcraft_fn_tpl.read_text()
     snapcraft_yml = _render(
@@ -182,9 +187,10 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     )
     snapcraft_fn.write_text(snapcraft_yml)
     if not dry_run:
-        sh.git.add(".", _cwd=snap_basename)
-        sh.git.commit("-m", f"Creating branch {to_branch}", _cwd=snap_basename)
-        sh.git.push(repo, to_branch, _cwd=snap_basename, _env=env)
+        git.add(".", _cwd=snap_basename)
+        git.commit("-m", f"Creating branch {to_branch}", _cwd=snap_basename)
+        git.push(repo, to_branch, _cwd=snap_basename, _env=env)
+    tmpdir.cleanup()
 
 
 @cli.command()
