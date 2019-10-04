@@ -923,7 +923,7 @@ async def test_toggle_metrics(model, tools):
 
     app = model.applications["kubernetes-master"]
 
-    k8s_version_str = masters.data["workload-version"]
+    k8s_version_str = app.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 16):
         log("skipping, k8s version v" + k8s_version_str)
