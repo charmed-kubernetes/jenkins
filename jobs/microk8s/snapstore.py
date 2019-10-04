@@ -211,8 +211,11 @@ class Microk8sSnap:
 
         """
         if self.juju_unit:
-            cmd_array = "juju run -m {} --timeout=120m0s --unit {}".format(
-                self.juju_controller, self.juju_unit
+            import os
+            _controller = os.environ.get('JUJU_CONTROLLER')
+            _model = os.environ.get('JUJU_MODEL')
+            cmd_array = "juju run -m {}:{} --timeout=120m0s --unit {}".format(
+                _controller, _model, self.juju_unit
             ).split()
             cmd_array.append(cmd)
         else:

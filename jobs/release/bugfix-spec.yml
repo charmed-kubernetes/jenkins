@@ -2,8 +2,7 @@
 sequential: yes
 
 plan:
-  - on-complete:
-    condition:
+  - condition:
       - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate != 0
     env:
       - SNAP_VERSION=1.16/stable
