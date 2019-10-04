@@ -9,8 +9,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -64,7 +62,6 @@
     triggers:
         - timed: "@daily"
     parameters:
-      - juju-params
       - string:
           name: SNAP_VERSION_UPGRADE_TO
           description: |
@@ -117,8 +114,6 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
-    parameters:
-      - juju-params
     properties:
       - build-discarder:
           num-to-keep: 7
@@ -139,8 +134,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -173,8 +166,6 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
-    parameters:
-      - juju-params
     properties:
       - build-discarder:
           num-to-keep: 7
@@ -195,8 +186,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -223,8 +212,6 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
-    parameters:
-      - juju-params
     properties:
       - build-discarder:
           num-to-keep: 7
@@ -245,8 +232,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - juju-params
     wrappers:
       - default-job-wrapper
       - ci-creds
