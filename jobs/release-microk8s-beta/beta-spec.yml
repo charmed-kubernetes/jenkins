@@ -24,16 +24,17 @@ plan:
         juju-wait -e "$JUJU_CONTROLLER":"$JUJU_MODEL" -w
 
     script:
-      - runner:
-          timeout: 7200
-          script: |
-            #!/bin/bash
-            set -x
-            juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 'sudo snap install lxd'"
-            juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'"
-            juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd init --auto'"
+      - |
+        #!/bin/bash
+        set -x
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 'sudo snap install lxd'
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd init --auto'
 
-            DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH PROXY=$PROXY JUJU_UNIT=ubuntu/0 python3 jobs/microk8s/release-to-beta.py"
+        DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
+          TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
+          PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
+          python3 jobs/microk8s/release-to-beta.py
 
     after-script:
       - |
