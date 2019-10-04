@@ -1,48 +1,45 @@
 # Tests and releases microk8s to beta
 
-- job-template:
-    name: 'release-microk8s-beta-{arch}'
+- job:
+    name: 'release-microk8s-beta'
     description: |
-      Tests and releases microk8s to beta. Affects all tracks on {arch}.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/release-microk8s-beta/Jenkinsfile
+      Tests and releases microk8s to beta. Affects all tracks on amd64/arm64.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
     parameters:
+      - global-params
+      - bool:
+          name: ALWAYS_RELEASE
+          default: false
+          description: |
+            Do not release. Run all tests but do not release.
       - string:
-          name: build_node
-          default: 'runner-{arch}'
+          name: TRACKS
+          description: |
+            The tracks you want to test and release. For example latest 1.10
+            1.11 1.12. Leave empty to iterate over all tracks.
       - string:
-          name: controller
-          default: 'microk8s-release-to-beta-{arch}'
+          name: TESTS_BRANCH
+          description: |
+            You might want to test with a set of tests that are in your own
+            branch. Here is where you set the branch name.
       - string:
-          name: cloud
-          default: 'aws/us-east-1'
-      - string:
-          name: arch
-          default: '{arch}'
+          name: PROXY
+          description: |
+            Proxy endpoint
 
     triggers:
-        - timed: "0 0 * * *"
+        - timed: "@daily"
     properties:
-      - build-blocker:
-          use-build-blocker: true
-          blocking-jobs:
-            - ".*build.*"
-            - ".*snap-info.*"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
       - build-discarder:
           num-to-keep: 7
-
-- job-group:
-    name: 'release-microk8s-beta'
-    jobs:
-      - 'release-microk8s-beta-{arch}':
-          arch: ['amd64', 'arm64']
-
-- project:
-    name: release-microk8s-beta
-    jobs:
-      - 'release-microk8s-beta'
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/release-microk8s-beta"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/release-microk8s-beta"
+          JOB_SPEC_FILE: "beta-spec.yml"

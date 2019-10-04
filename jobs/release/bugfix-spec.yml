@@ -1,5 +1,11 @@
+plan-properties:
+  # Run the jobs from order listed in plan
+  sequential: yes
+
 plan:
   - &BASE_JOB
+    cond-if-not:
+      - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate
     env:
       - SNAP_VERSION=1.16/stable
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes

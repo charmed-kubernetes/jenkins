@@ -73,8 +73,9 @@
     project-type: freestyle
     parameters:
       - global-params
-      - charm-params
-      - juju-params
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
     scm:
       - k8s-jenkins-jenkaas
     properties:
