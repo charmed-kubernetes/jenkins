@@ -84,6 +84,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release"
-      - charm-build:
-          JOB_SPEC_DIR: "jobs/build-charms"
-          JOB_SPEC_FILE: "spec.yml"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/release"
+          JOB_SPEC_FILE: "bugfix-spec.yml"
+          JOB_TAGS: "-t validate-ck-candidate"
