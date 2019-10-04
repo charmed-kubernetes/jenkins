@@ -35,6 +35,12 @@ This will build and promote the stable charms to candidate channel for testing.
 
 ![build charm options](bugfix-options.png)
 
+### Run **release-charm-bugfix** job
+
+**Job**: https://jenkins.canonical.com/k8s/job/release-charm-bugfix/
+
+This validates the deployment using the charms from candidate channel.
+
 ### Promote charms from **candidate** to **stable**
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/

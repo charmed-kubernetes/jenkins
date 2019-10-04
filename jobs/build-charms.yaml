@@ -4,7 +4,7 @@
     name: 'promote-charms'
     description: |
       Promotes all charms from channel -> to channel
-    node: runner-amd64
+    node: runner-cloud
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -40,7 +40,7 @@
     name: 'promote-bundles'
     description: |
       Promotes bundles from channel -> to channel
-    node: runner-amd64
+    node: runner-cloud
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas

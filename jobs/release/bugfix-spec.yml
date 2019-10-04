@@ -1,10 +1,10 @@
-plan-properties:
-  # Run the jobs from order listed in plan
-  sequential: yes
+# Run the jobs from order listed in plan
+sequential: yes
 
 plan:
-  - cond-if-not:
-      - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate
+  - on-complete:
+    condition:
+      - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate != 0
     env:
       - SNAP_VERSION=1.16/stable
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
@@ -13,7 +13,6 @@ plan:
       - JUJU_CONTROLLER=release-ck-bugfix
       - JUJU_MODEL=release-ck-bugfix-model
     before-script:
-      - juju kill-controller -y $JUJU_CONTROLLER || true
       - juju:
           cloud: $JUJU_CLOUD
           controller: $JUJU_CONTROLLER
@@ -115,6 +114,12 @@ meta:
     #### Charm build options
 
     ![build charm options](bugfix-options.png)
+
+    ### Run **release-charm-bugfix** job
+
+    **Job**: https://jenkins.canonical.com/k8s/job/release-charm-bugfix/
+
+    This validates the deployment using the charms from candidate channel.
 
     ### Promote charms from **candidate** to **stable**
 
