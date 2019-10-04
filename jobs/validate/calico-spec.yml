@@ -71,6 +71,9 @@ plan:
           script: |
             #!/bin/bash
             set -x
+            if [ -z $TEST_BGP ]; then
+              export JOB_NAME=validate-calico-bgp-router
+            fi
             wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
             python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
             python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz && rm -rf results*.tar.gz
