@@ -119,15 +119,16 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
                 raise SystemExit(f"Could not download charm after {retries} retries.")
             time.sleep(timeout)
             download()
-        ltype, name = layer_name.split(":")
-        if ltype == "layer":
-            sh.git.checkout("-b", layer_branch, _cwd=str(charm_env.layers_dir / name))
-        elif ltype == "interface":
-            sh.git.checkout(
-                "-b", layer_branch, _cwd=str(charm_env.interfaces_dir / name)
-            )
-        else:
-            raise SystemExit(f"Unknown layer/interface: {layer_name}")
+        if layer_branch != "master":
+            ltype, name = layer_name.split(":")
+            if ltype == "layer":
+                sh.git.checkout("-b", layer_branch, _cwd=str(charm_env.layers_dir / name))
+            elif ltype == "interface":
+                sh.git.checkout(
+                    "-b", layer_branch, _cwd=str(charm_env.interfaces_dir / name)
+                )
+            else:
+                raise SystemExit(f"Unknown layer/interface: {layer_name}")
 
 
 def _promote(charm_list, filter_by_tag, from_channel="unpublished", to_channel="edge"):

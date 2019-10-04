@@ -3,8 +3,7 @@ plan-properties:
   sequential: yes
 
 plan:
-  - &BASE_JOB
-    cond-if-not:
+  - cond-if-not:
       - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate
     env:
       - SNAP_VERSION=1.16/stable
@@ -46,10 +45,16 @@ plan:
           script: |
             #!/bin/bash
             set -x
-            pytest $INTEGRATION_TEST_PATH/validation.py \
-               --cloud $JUJU_CLOUD \
-               --model $JUJU_MODEL \
-               --controller $JUJU_CONTROLLER 2>&1
+            RET=$(pytest $INTEGRATION_TEST_PATH/validation.py \
+                    --cloud $JUJU_CLOUD \
+                    --model $JUJU_MODEL \
+                    --controller $JUJU_CONTROLLER 2>&1)
+
+            if [ $RET -ne 0 ]; then
+                python3 jobs/release/release-tracker.py --release-id $RELEASE_ID set-phase --name validate --result fail
+            else
+                python3 jobs/release/release-tracker.py --release-id $RELEASE_ID set-phase --name validate --result pass
+            fi
 
     after-script:
       - |
