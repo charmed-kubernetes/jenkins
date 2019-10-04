@@ -13,12 +13,23 @@ ceph.
 - Enhancements
 - Known Limitations/Issues
 
-### 3. Run the **build-charms** job
+### Tag existing stable branches with bugfix release tag
+
+**Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bugfix-rev/
+
+This will tag all stable repos with the k8s version and bugfix revision
+associated, for example, the first bugfix release of 1.16 would be
+**1.16+ck1**
+
+#### Charm tag options
+
+![bugfix tag options](bugfix-tag-options.png)
+
+### Run the **build-charms** job
 
 **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
 This will build and promote the stable charms to candidate channel for testing.
-
 
 #### Charm build options
 
