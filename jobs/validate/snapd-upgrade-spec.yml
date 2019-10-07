@@ -69,34 +69,6 @@ plan:
       - JUJU_CONTROLLER=validate-ck-snapd-upgrade
       - JUJU_MODEL=validate-snapd-upgrade-model
       - TEST_UPGRADE_SNAPD_CHANNEL=beta
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-snapd-upgrade
-      - JUJU_MODEL=validate-snapd-upgrade-model
-      - TEST_UPGRADE_SNAPD_CHANNEL=beta
-
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-snapd-upgrade
-      - JUJU_MODEL=validate-snapd-upgrade-model
-      - TEST_UPGRADE_SNAPD_CHANNEL=beta
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.14/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-snapd-upgrade
-      - JUJU_MODEL=validate-snapd-upgrade-model
-      - TEST_UPGRADE_SNAPD_CHANNEL=beta
 
 meta:
   name: Verify CK with Snapd upgrade
