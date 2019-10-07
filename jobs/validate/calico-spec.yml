@@ -79,7 +79,7 @@ plan:
             python3 jobs/infra/collect-debug.py push 'job_result' *job.json
             python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
             if [ -z $TEST_BGP ]; then
-                python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-calico-bgp-router"
+                python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-ck-calico-bgp-router"
             fi
             juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
             python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
