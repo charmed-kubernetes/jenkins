@@ -12,6 +12,7 @@ plan:
         #!/bin/bash
         set -x
 
+        juju kill-controller -y "$JUJU_CONTROLLER" || true
         juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" --debug
 
         juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
