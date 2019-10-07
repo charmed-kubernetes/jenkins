@@ -107,7 +107,7 @@
     name: 'validate-ck-calico'
     description: |
       Validates CK, with calico.
-    node: runner-amd64
+    node: runner-cloud
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -157,7 +157,7 @@
 
 - job:
     name: 'validate-ck-vault'
-    node: runner-amd64
+    node: runner-cloud
     description: |
       Validates CK, with vault.
     project-type: freestyle
@@ -180,7 +180,7 @@
 
 - job:
     name: 'validate-ck-ceph'
-    node: runner-amd64
+    node: runner-cloud
     description: |
       Validates CK, with Ceph.
     project-type: freestyle
@@ -203,7 +203,7 @@
 
 - job:
     name: 'validate-ck-nvidia'
-    node: runner-amd64
+    node: runner-cloud
     description: |
       Validates CK, with NVidia.
     project-type: freestyle
@@ -228,7 +228,7 @@
     name: 'validate-ck-aws-iam'
     description: |
       Validates CK, with AWS IAM.
-    node: runner-amd64
+    node: runner-cloud
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas

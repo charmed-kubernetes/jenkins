@@ -28,7 +28,10 @@
               TAG="sync-with-patches"
           fi
 
-          tox -e py36 -- ogc --spec jobs/build-snaps/spec.yml -t "$TAG"
+          virtualenv venv -p python3.6
+          venv/bin/python -m pip install pip-tools
+          venv/bin/pip-sync requirements.txt
+          venv/bin/ogc --spec jobs/build-snaps/spec.yml -t "$TAG"
 
 - job:
     name: 'promote-snaps'

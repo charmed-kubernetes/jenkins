@@ -255,7 +255,8 @@
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
           export TOX_WORK_DIR="$WORKSPACE/.tox-$JOB_NAME-$BUILD_NUMBER"
-          export PATH=$TOX_WORK_DIR/py36/bin:$PATH
+          export PATH=venv/bin:$PATH
+          # export PATH=$TOX_WORK_DIR/py36/bin:$PATH
           export PATH=$HOME/go/bin::$PATH
 
           mkdir -p "$TOX_WORK_DIR"
@@ -278,8 +279,13 @@
           rm -rf "$CHARM_LAYERS_DIR" && mkdir -p "$CHARM_LAYERS_DIR"
           rm -rf "$CHARM_INTERFACES_DIR" && mkdir -p "$CHARM_INTERFACES_DIR"
 
-          tox -e py36 -- ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-charms
-          tox -e py36 -- ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-bundles
+          virtualenv venv -p python3.6
+          venv/bin/python -m pip install pip-tools
+          venv/bin/pip-sync requirements.txt
+          venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-charms
+          venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-bundles
+          # tox -e py36 -- ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-charms
+          # tox -e py36 -- ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-bundles
 
 - builder:
     name: ogc-execute-spec
@@ -291,7 +297,11 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          tox -e py36 -- ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
+          virtualenv venv -p python3.6
+          venv/bin/python -m pip install pip-tools
+          venv/bin/pip-sync requirements.txt
+          venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
+          # tox -e py36 -- ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
 
 
 # WRAPPERS ------------------------------------------------------------------- #
