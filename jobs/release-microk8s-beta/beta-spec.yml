@@ -1,8 +1,8 @@
 plan:
   - &BASE_JOB
     env:
-      - DRY_RUN=no
-      - ALWAYS_RELEASE=no
+      - DRY_RUN="no"
+      - ALWAYS_RELEASE="no"
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=release-microk8s-beta
       - JUJU_MODEL=release-microk8s-beta-model
