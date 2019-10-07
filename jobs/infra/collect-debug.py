@@ -77,7 +77,11 @@ def push(bucket, db_key, results_file):
     newest_result_file = max(result_path_objs, key=operator.itemgetter(1))[0]
     current_date = datetime.now().strftime("%Y/%m/%d")
     env = os.environ.copy()
-    s3_path = Path(db["job_name"]) / current_date / db["build_number"] / newest_result_file
+    if 'job_name_custom' in db:
+        job_name = db['job_name_custom']
+    else:
+        job_name = db['job_name']
+    s3_path = Path(job_name) / current_date / db["build_number"] / newest_result_file
     s3.upload_file(str(newest_result_file), bucket, str(s3_path))
     db[db_key] = str(s3_path)
 

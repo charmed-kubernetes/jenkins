@@ -58,12 +58,12 @@ plan:
             set -x
             wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
             python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+            python3 jobs/infra/collect-debug.py save-meta metadata.json
             python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz && rm -rf results*.tar.gz
             python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
             python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
             python3 jobs/infra/collect-debug.py push 'job_result' *job.json
             python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-            python3 jobs/infra/collect-debug.py save-meta metadata.json
             juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
             python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
             python3 jobs/integration/tigera_aws.py cleanup 2>&1
