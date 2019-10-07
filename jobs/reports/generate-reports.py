@@ -67,6 +67,8 @@ def _gen_metadata():
     db = OrderedDict()
     for obj in items:
         job_name = obj["job_name"]
+        if "job_name_custom" in obj:
+            job_name = job_name_custom
         if "snap_version" in obj:
             job_name = f"{job_name}-{obj['snap_version']}"
         if "juju_version" in obj:

@@ -11,7 +11,6 @@ plan:
       - |
         #!/bin/bash
         set -x
-        export JOB_NAME=release-microk8s-beta-$ARCH
 
         juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" --debug
 
@@ -28,7 +27,6 @@ plan:
       - |
         #!/bin/bash
         set -x
-        export JOB_NAME=release-microk8s-beta-$ARCH
 
         juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 'sudo snap install lxd'
         juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'
@@ -43,8 +41,7 @@ plan:
       - |
         #!/bin/bash
         set -x
-        export JOB_NAME=release-microk8s-beta-$ARCH
-
+        python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "release-microk8s-beta-$ARCH"
         python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
         python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
         python3 jobs/infra/collect-debug.py push 'job_result' *job.json
@@ -69,4 +66,3 @@ meta:
     jenkins-job-builder:
       jobs:
         - jobs/ci-master.yaml
-        - jobs/validate.yaml
