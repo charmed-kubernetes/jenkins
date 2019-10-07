@@ -68,3 +68,23 @@
     namespace: 'containers'
     downstream: 'charmed-kubernetes/charm-aws-iam'
     tags: ['k8s', 'aws-iam']
+- charm-azure-integrator:
+    namespace: 'containers'
+    downstream: 'charmed-kubernetes/charm-azure-integrator'
+    tags: ['k8s', 'charm-azure-integrator']
+- charm-gcp-integrator:
+    namespace: 'containers'
+    downstream: 'charmed-kubernetes/charm-gcp-integrator'
+    tags: ['k8s', 'charm-gcp-integrator']
+- charm-aws-integrator:
+    namespace: 'containers'
+    downstream: 'charmed-kubernetes/charm-aws-integrator'
+    tags: ['k8s', 'charm-aws-integrator']
+- charm-openstack-integrator:
+    namespace: 'containers'
+    downstream: 'charmed-kubernetes/charm-openstack-integrator'
+    tags: ['k8s', 'charm-openstack-integrator']
+- charm-vsphere-integrator:
+    namespace: 'containers'
+    downstream: 'charmed-kubernetes/charm-vsphere-integrator'
+    tags: ['k8s', 'charm-vsphere-integrator']

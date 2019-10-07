@@ -55,5 +55,10 @@ others are kubeflow related).
 
 Same as charm promotion.
 
+### Notify Solutions QA
+
+Notify solutions-qa that CK is ready to be run through their tests. Once
+that is complete and relayed to us, we can start the release to stable.
+
 ### Send announcement to k8s-crew with any relevant information.
 
