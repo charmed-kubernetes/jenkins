@@ -11,12 +11,16 @@
       - default-job-wrapper
       - ci-creds
     parameters:
-      - global-params
-      - bool:
-          name: ALWAYS_RELEASE
-          default: false
+      - string:
+          name: DRY_RUN
+          default: "no"
           description: |
             Do not release. Run all tests but do not release.
+      - string:
+          name: ALWAYS_RELEASE
+          default: "no"
+          description: |
+            Run all tests and release.
       - string:
           name: TRACKS
           description: |
