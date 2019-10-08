@@ -78,7 +78,7 @@ oauthlib==3.1.0           # via lazr.restfulclient
 ogc-plugins-juju==1.0.15
 ogc-plugins-runner==1.0.23
 ogc-plugins-spec-doc==1.0.6
-ogc==0.3.51
+ogc==0.3.53
 packaging==19.1           # via pytest, pytest-sugar
 paramiko==2.6.0           # via juju
 parso==0.5.1              # via jedi
@@ -116,6 +116,7 @@ python-frontmatter==0.4.5
 python-jenkins==1.5.0     # via jenkins-job-builder
 python3-openid==3.1.0     # via canonicalwebteam.snapstoreapi
 pytz==2019.2              # via pyrfc3339
+pyyaml-include==1.1.1.1   # via ogc
 pyyaml==5.1.2
 requests==2.22.0
 rsa==3.4.2                # via awscli
