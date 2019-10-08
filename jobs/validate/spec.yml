@@ -8,6 +8,7 @@ plan:
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
     before-script:
+      - juju kill-controller -y $JUJU_CONTROLLER || true
       - !include jobs/spec-helpers/bootstrap.yml
     script:
       - !include jobs/spec-helpers/pytest.yml
