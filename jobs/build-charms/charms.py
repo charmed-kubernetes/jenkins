@@ -327,7 +327,7 @@ def build(
                 i="https://localhost",
                 _cwd=src_path,
                 _iter=True,
-                _bg_exc=True,
+                _bg_exc=False,
             ):
                 click.echo(line.strip())
             sh.charm.proof(_cwd=dst_path)
