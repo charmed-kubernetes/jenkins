@@ -60,32 +60,18 @@ plan:
 
             echo "Waiting for deployment"
             juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
-
-            pytest $INTEGRATION_TEST_PATH/validation.py \
-               --cloud $JUJU_CLOUD \
-               --model $JUJU_MODEL \
-               --controller $JUJU_CONTROLLER 2>&1
+      - !include jobs/spec-helpers/pytest.yml
     after-script:
-      - runner:
-          script: |
-            #!/bin/bash
-            set -x
-            wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-            python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-            python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-            python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-            python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
-            python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-            python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-            if [ -z $TEST_BGP ]; then
-                python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-ck-calico-bgp-router"
-            fi
-            juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
-            python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
-            python3 jobs/infra/collect-debug.py save-meta
-
-            juju destroy-controller -y \
-               --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
+      - python3 jobs/integration/tigera_aws.py cleanup
+      - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+      - |
+        #!/bin/bash
+        set -x
+        if [ -z $TEST_BGP ]; then
+            python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-ck-calico-bgp-router"
+        fi
+      - !include jobs/spec-helpers/collect.yml
+      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
 
   - <<: *BASE_JOB
     env:
