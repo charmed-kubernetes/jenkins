@@ -81,7 +81,7 @@ plan:
         python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
         python3 jobs/infra/collect-debug.py push 'job_result' *job.json
         python3 jobs/infra/collect-debug.py set-key 'juju_version' "$JUJU_VERSION"
-        python3 jobs/infra/collect-debug.py save-meta metadata.json
+        python3 jobs/infra/collect-debug.py save-meta
   - <<: *BASE_JOB
     env:
       - JUJU_VERSION=2.6/stable
