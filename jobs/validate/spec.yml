@@ -39,6 +39,9 @@ plan:
   #     - JUJU_CLOUD=aws/us-east-1
   #     - JUJU_CONTROLLER=validate-ck
   #     - JUJU_MODEL=validate-model
+  #   condition-if:
+  #     - $(date +%F) = 'Wed'
+  #     - test -d /tmp
   # - <<: *BASE_JOB
   #   env:
   #     - SNAP_VERSION=1.14/edge
