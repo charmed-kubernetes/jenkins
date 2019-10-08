@@ -23,34 +23,14 @@ def cli():
 
 
 @cli.command()
-def set_meta():
-    """ Sets metadata information
-    """
-    env = os.environ.copy()
-    db["job_name"] = env.get("JOB_NAME", "yoink")
-    db["build_number"] = env.get("BUILD_NUMBER", 0)
-    db["build_tag"] = env.get("BUILD_TAG", "master")
-    db["workspace"] = env.get("WORKSPACE", "n/a")
-    db["git_commit"] = env.get("GIT_COMMIT", "n/a")
-    db["git_url"] = env.get("GIT_URL", "n/a")
-    db["git_branch"] = env.get("GIT_BRANCH", "master")
-
-
-@cli.command()
 @click.option("--table", default="CIBuilds")
-@click.argument("results-file")
-def save_meta(table, results_file):
+def save_meta(table):
     """ Saves metadata to dynamo
     """
     click.echo("Saving build to database")
-    metadata = Path(results_file)
-    if metadata.exists():
-        _db = json.loads(metadata.read_text(encoding="utf8"))
-        db.update(_db)
-        click.echo("Build Data:\n{}\n".format(pformat(dict(db))))
-        table = dynamodb.Table(table)
-        table.put_item(Item=dict(db))
-
+    table = dynamodb.Table(table)
+    table.put_item(Item=dict(db))
+    click.echo("Build Data:\n{}\n".format(pformat(dict(db))))
 
 @cli.command()
 @click.argument("db_key")

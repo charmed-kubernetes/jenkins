@@ -8,6 +8,7 @@ plan:
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=amd64
     before-script:
+      - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "release-microk8s-beta-$ARCH"
       - |
         #!/bin/bash
         set -x
@@ -42,12 +43,10 @@ plan:
       - |
         #!/bin/bash
         set -x
-        python3 jobs/infra/collect-debug.py set-meta
-        python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "release-microk8s-beta-$ARCH"
         python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-        python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
+        python3 jobs/infra/collect-debug.py push 'metadata' metadata.db
         python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-        python3 jobs/infra/collect-debug.py save-meta metadata.json
+        python3 jobs/infra/collect-debug.py save-meta
         juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
   - <<: *BASE_JOB
     env:
