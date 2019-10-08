@@ -22,6 +22,7 @@ def cli():
     pass
 
 
+@cli.command()
 def set_meta():
     """ Sets metadata information
     """
