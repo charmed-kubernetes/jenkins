@@ -1,0 +1,25 @@
+juju:
+  cloud: $JUJU_CLOUD
+  controller: $JUJU_CONTROLLER
+  model: $JUJU_MODEL
+  bootstrap:
+    constraints: "arch=amd64"
+    debug: no
+    replace-controller: yes
+    model-default:
+      - test-mode=true
+      - resource-tags=owner=k8sci
+  deploy:
+    reuse: no
+    bundle: $JUJU_DEPLOY_BUNDLE
+    overlay: |
+      applications:
+        kubernetes-master:
+          options:
+            channel: $SNAP_VERSION
+        kubernetes-worker:
+          options:
+            channel: $SNAP_VERSION
+    wait: yes
+    timeout: 7200
+    channel: $JUJU_DEPLOY_CHANNEL

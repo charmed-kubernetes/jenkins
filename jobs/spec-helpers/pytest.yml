@@ -1,0 +1,9 @@
+runner:
+  timeout: 7200
+  script: |
+    #!/bin/bash
+    set -x
+    pytest $INTEGRATION_TEST_PATH/validation.py \
+       --cloud $JUJU_CLOUD \
+       --model $JUJU_MODEL \
+       --controller $JUJU_CONTROLLER 2>&1

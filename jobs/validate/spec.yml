@@ -8,59 +8,11 @@ plan:
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
     before-script:
-      - juju kill-controller -y $JUJU_CONTROLLER || true
-      - juju:
-          cloud: $JUJU_CLOUD
-          controller: $JUJU_CONTROLLER
-          model: $JUJU_MODEL
-          bootstrap:
-            constraints: "arch=amd64"
-            debug: no
-            replace-controller: yes
-            model-default:
-              - test-mode=true
-              - resource-tags=owner=k8sci
-          deploy:
-            reuse: no
-            bundle: $JUJU_DEPLOY_BUNDLE
-            overlay: |
-              applications:
-                kubernetes-master:
-                  options:
-                    channel: $SNAP_VERSION
-                kubernetes-worker:
-                  options:
-                    channel: $SNAP_VERSION
-            wait: yes
-            timeout: 7200
-            channel: $JUJU_DEPLOY_CHANNEL
+      - !include jobs/spec-helpers/bootstrap.yml
     script:
-      - runner:
-          timeout: 7200
-          script: |
-            #!/bin/bash
-            set -x
-            pytest $INTEGRATION_TEST_PATH/validation.py \
-               --cloud $JUJU_CLOUD \
-               --model $JUJU_MODEL \
-               --controller $JUJU_CONTROLLER 2>&1
-
+      - !include jobs/spec-helpers/pytest.yml
     after-script:
-      - |
-        #!/bin/bash
-        set -x
-        wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-        python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-
-        python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz && rm -rf results*.tar.gz
-        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-        python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
-        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-        python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-        python3 jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-        juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-        python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump*
-        python3 jobs/infra/collect-debug.py save-meta
+      - !include jobs/spec-helpers/collect.yml
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
   - <<: *BASE_JOB
     env:
