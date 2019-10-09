@@ -1,7 +1,4 @@
 plan:
-  - script:
-      - python3 jobs/microk8s/release-to-edge-on-new-upstream-release.py
-    tags: [release-microk8s-edge]
   - &BASE_JOB
     env:
       - DRY_RUN="no"

@@ -62,8 +62,6 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
-    parameters:
-      - microk8s-params
     triggers:
         - timed: "@hourly"
     properties:
