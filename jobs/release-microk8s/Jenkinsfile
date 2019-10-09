@@ -22,7 +22,6 @@ pipeline {
         timestamps()
         timeout(time: 6, unit: 'HOURS')
     }
-
     stages {
         stage('Provision VM') {
             steps {

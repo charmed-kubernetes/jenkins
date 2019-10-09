@@ -1,0 +1,147 @@
+plan:
+  - script:
+      - python3 jobs/microk8s/release-to-edge-on-new-upstream-release.py
+    tags: [release-microk8s-edge]
+  - &BASE_JOB
+    env:
+      - DRY_RUN="no"
+      - ALWAYS_RELEASE="no"
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=release-microk8s-beta
+      - JUJU_MODEL=release-microk8s-beta-model
+      - ARCH=amd64
+    before-script:
+      - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-$ARCH"
+      - |
+        #!/bin/bash
+        set -x
+
+        juju kill-controller -y "$JUJU_CONTROLLER" || true
+        juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" --debug
+
+        juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
+           -d "$JUJU_MODEL" --model-default test-mode=true \
+           --model-default resource-tags=owner=k8sci \
+           --bootstrap-constraints "arch=$ARCH"
+
+        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints 'cores=8 mem=32G root-disk=80G' ubuntu
+
+        juju-wait -e "$JUJU_CONTROLLER":"$JUJU_MODEL" -w
+
+    script:
+      - |
+        #!/bin/bash
+        set -x
+
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 'sudo snap install lxd'
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd init --auto'
+
+        DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
+          TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
+          PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
+          python3 jobs/microk8s/release-to-beta.py
+
+    after-script:
+      - |
+        #!/bin/bash
+        set -x
+        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+        python3 jobs/infra/collect-debug.py push 'metadata' metadata.db
+        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+        python3 jobs/infra/collect-debug.py save-meta
+        juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+  - <<: *BASE_JOB
+    env:
+      - DRY_RUN=no
+      - ALWAYS_RELEASE=no
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=release-microk8s-beta
+      - JUJU_MODEL=release-microk8s-beta-model
+      - ARCH=arm64
+  - <<: *BASE_JOB
+    env:
+      - DRY_RUN=no
+      - ALWAYS_RELEASE=no
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=release-microk8s-stable
+      - JUJU_MODEL=release-microk8s-stable-model
+      - ARCH=arm64
+    script:
+      - |
+        #!/bin/bash
+        set -x
+
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 'sudo snap install lxd'
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd init --auto'
+
+        DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
+          TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
+          PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
+          python3 jobs/microk8s/release-to-stable.py
+  - <<: *BASE_JOB
+    env:
+      - DRY_RUN=no
+      - ALWAYS_RELEASE=no
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=release-microk8s-stable
+      - JUJU_MODEL=release-microk8s-stable-model
+      - ARCH=amd64
+    script:
+      - |
+        #!/bin/bash
+        set -x
+
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 'sudo snap install lxd'
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd.migrate -yes'
+        juju run -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --unit ubuntu/0 --timeout=60m0s 'sudo lxd init --auto'
+
+        DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
+          TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
+          PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
+          python3 jobs/microk8s/release-to-stable.py
+  - <<: *BASE_JOB
+    env:
+      - DRY_RUN=no
+      - ALWAYS_RELEASE=no
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=release-microk8s-pre-release
+      - JUJU_MODEL=release-microk8s-pre-release-model
+      - ARCH=amd64
+    script:
+      - |
+        #!/bin/bash
+        set -x
+        DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
+          TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
+          PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
+          python3 jobs/microk8s/release-pre-releases.py
+  - <<: *BASE_JOB
+    env:
+      - DRY_RUN=no
+      - ALWAYS_RELEASE=no
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=release-microk8s-pre-release
+      - JUJU_MODEL=release-microk8s-pre-release-model
+      - ARCH=arm64
+    script:
+      - |
+        #!/bin/bash
+        set -x
+        DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
+          TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
+          PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
+          python3 jobs/microk8s/release-pre-releases.py
+
+
+meta:
+  name: Release Microk8s to Beta, Stable
+  description: |
+    Tests and releases microk8s to beta/stable/pre-releases.
+  mkdocs:
+    destination:
+      - "releases/microk8s/beta-stable.md"
+    jenkins-job-builder:
+      jobs:
+        - jobs/ci-master.yaml

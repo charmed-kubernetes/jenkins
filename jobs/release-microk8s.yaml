@@ -1,0 +1,77 @@
+# Tests and releases microk8s to beta
+
+- parameter:
+    name: microk8s-params
+    parameters:
+      - string:
+          name: DRY_RUN
+          default: "no"
+          description: |
+            Do not release. Run all tests but do not release.
+      - string:
+          name: ALWAYS_RELEASE
+          default: "no"
+          description: |
+            Run all tests and release.
+      - string:
+          name: TRACKS
+          description: |
+            The tracks you want to test and release. For example latest 1.10
+            1.11 1.12. Leave empty to iterate over all tracks.
+      - string:
+          name: TESTS_BRANCH
+          description: |
+            You might want to test with a set of tests that are in your own
+            branch. Here is where you set the branch name.
+      - string:
+          name: PROXY
+          description: |
+            Proxy endpoint
+
+- job:
+    name: 'release-microk8s'
+    description: |
+      Tests and releases microk8s. Affects all tracks on amd64/arm64.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    parameters:
+      - microk8s-params
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/release-microk8s"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/release-microk8s"
+          JOB_SPEC_FILE: "spec.yml"
+
+- job:
+    name: 'release-microk8s-edge'
+    description: |
+      Builds, releases and promotes microk8s to the snapstore on the edge channel.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    parameters:
+      - microk8s-params
+    triggers:
+        - timed: "@hourly"
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/release-microk8s"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/release-microk8s"
+          JOB_SPEC_FILE: "edge-spec.yml"

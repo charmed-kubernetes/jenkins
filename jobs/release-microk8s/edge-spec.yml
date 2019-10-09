@@ -1,0 +1,14 @@
+plan:
+  - script:
+      - python3 jobs/microk8s/release-to-edge-on-new-upstream-release.py
+
+meta:
+  name: Release Microk8s to Edge
+  description: |
+    Builds, releases and promotes microk8s to the snapstore on the edge channel.
+  mkdocs:
+    destination:
+      - "releases/microk8s/edge.md"
+    jenkins-job-builder:
+      jobs:
+        - jobs/ci-master.yaml
