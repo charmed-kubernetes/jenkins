@@ -1,0 +1,22 @@
+plan:
+  - script:
+      - python3 jobs/microk8s/update-gh-branches-and-lp-builders.py
+    after-script:
+      - |
+        #!/bin/bash
+        set -x
+        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+        python3 jobs/infra/collect-debug.py push 'metadata' metadata.db
+        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+        python3 jobs/infra/collect-debug.py save-meta
+
+meta:
+  name: Build Microk8s
+  description: |
+    On new upstream releases creates code branches and LP builders.
+  mkdocs:
+    destination:
+      - "builders/microk8s/index.md"
+    jenkins-job-builder:
+      jobs:
+        - jobs/ci-master.yaml

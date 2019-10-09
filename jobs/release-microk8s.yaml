@@ -73,3 +73,26 @@
       - ogc-execute-spec:
           JOB_SPEC_DIR: "jobs/release-microk8s"
           JOB_SPEC_FILE: "edge-spec.yml"
+
+
+- job:
+    name: 'build-microk8s'
+    description: |
+      On new upstream releases creates code branches and LP builders.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    triggers:
+        - timed: "@hourly"
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/release-microk8s"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/release-microk8s"
+          JOB_SPEC_FILE: "build-spec.yml"
