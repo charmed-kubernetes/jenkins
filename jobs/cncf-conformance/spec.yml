@@ -30,7 +30,7 @@ plan:
             sonobuoy run --mode=certified-conformance --wait
             outfile=$(sonobuoy retrieve)
             python3 jobs/infra/collect-debug.py push 'conformance' "$outfile"
-          timeout: 7200
+          timeout: 14400
     after-script:
       - !include jobs/spec-helpers/collect.yml
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
