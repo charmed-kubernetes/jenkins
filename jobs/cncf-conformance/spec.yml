@@ -18,36 +18,19 @@ plan:
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - !include jobs/spec-helpers/bootstrap.yml
     script:
-      - |
-        #!/bin/bash
-        set -eux
-        mkdir -p $HOME/.kube
-        juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
-        export RBAC_ENABLED=$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)
-        kubectl version
-        sonobuoy version
-        sonobuoy run
       - runner:
-          script: |
-            #!/bin/bash
-            set -x
-            sonobuoy status|grep 'Sonobuoy has completed'
-          timeout: 7200
-          back-off: 15
-          wait-for-success: yes
-      - runner:
-          description: Download results
           script: |
             #!/bin/bash
             set -eux
-            sonobuoy retrieve results/.
+            mkdir -p $HOME/.kube
+            juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
+            export RBAC_ENABLED=$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)
             kubectl version
-          wait-for-success: yes
-          back-off: 5
-          retries: 5
-
+            sonobuoy version
+            sonobuoy run --mode=certified-conformance --wait
+            outfile=$(sonobuoy retrieve)
+            python3 jobs/infra/collect-debug.py push 'conformance' "$outfile"
+          timeout: 7200
     after-script:
-      - ls -l results/
-      - python3 jobs/infra/collect-debug.py push 'conformance' results/*.tar.gz
       - !include jobs/spec-helpers/collect.yml
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
