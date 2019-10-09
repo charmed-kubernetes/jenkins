@@ -44,7 +44,14 @@ plan:
     after-script:
       - !include jobs/spec-helpers/collect.yml
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-      - sudo snap refresh core --stable
+      - runner:
+          description: Reset snapd core to stable
+          script: |
+            #!/bin/bash
+            sudo snap refresh core --stable
+          wait-for-success: yes
+          back-off: 5
+          retries: 5
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.16/stable
