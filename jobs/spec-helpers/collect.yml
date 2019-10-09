@@ -12,6 +12,6 @@ runner:
     python3 jobs/infra/collect-debug.py push 'job_result' *job.json
     python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
     python3 jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-    juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-    python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump*
+    # juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    # python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump*
     python3 jobs/infra/collect-debug.py save-meta
