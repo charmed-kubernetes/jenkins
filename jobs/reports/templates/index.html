@@ -2,20 +2,13 @@
 {% block validationreport %}active{% endblock %}
 {% block content %}
 <div class="container-fluid">
-
-  <div class="row">
-    <div class="col p-3">
-      <h3>Validation</h3>
-    </div>
-  </div>
-
   <div class="row">
     <div class="col">
       <div class="table-responsive">
         <table class="table table-hover table-bordered">
           <thead class="thead-dark">
             <tr>
-              <th class="align-middle">Job Name</th>
+              <th class="align-middle">Job Name <small>Last modified: {{ modified.strftime('%Y-%m-%d %H:%M:%S') }}</small></th>
               {% for day in headers %}
               <th class="align-middle text-center" style="min-width: 70px;">{{ day }}</th>
               {% endfor %}
@@ -46,13 +39,6 @@
       </div>
     </div>
     <div class="col">
-    </div>
-  </div>
-</div>
-<div class="container-fluid">
-  <div class="row">
-    <div class="col">
-      <span class="badge badge-primary">Last modified: {{ modified.strftime('%Y-%m-%d %H:%M:%S') }}</span> <span class="badge badge-danger">Fail</span> <span class="badge badge-success">Pass</span> <span class="badge badge-light">Timeout</span>
     </div>
   </div>
 </div>
