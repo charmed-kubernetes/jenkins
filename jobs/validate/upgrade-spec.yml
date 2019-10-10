@@ -8,32 +8,13 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-upgrade
       - JUJU_MODEL=validate-upgrade-model
+    before-script:
+      - juju kill-controller -y $JUJU_CONTROLLER || true
+      - !include jobs/spec-helpers/bootstrap.yml
     script:
       - |
         #!/bin/bash
         set -x
-
-        juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" --debug
-
-        juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
-           -d "$JUJU_MODEL" --model-default test-mode=true \
-           --model-default resource-tags=owner=k8sci \
-           --bootstrap-constraints 'arch=amd64'
-
-        cat > overlay.yaml <<EOF
-        applications:
-          kubernetes-master:
-            options:
-              channel: $SNAP_VERSION
-          kubernetes-worker:
-            options:
-              channel: $SNAP_VERSION
-        EOF
-
-        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" "$JUJU_DEPLOY_BUNDLE" --channel "$JUJU_DEPLOY_CHANNEL" --overlay overlay.yaml
-
-        juju-wait -e "$JUJU_CONTROLLER":"$JUJU_MODEL" -w
-
         pytest "$INTEGRATION_TEST_PATH"/validation.py \
            --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
            --upgrade-charm-channel edge \
@@ -42,25 +23,12 @@ plan:
            --controller "$JUJU_CONTROLLER"
 
     after-script:
-      - runner:
-          script: |
-            #!/bin/bash
-            set -x
-            wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-            python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-            python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-            python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-            python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
-            python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-            python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-            python3 jobs/infra/collect-debug.py set-key 'to_snap_version' "1.16/edge"
-            python3 jobs/infra/collect-debug.py set-key 'is_upgrade' "yes"
-            juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
-            python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
-            python3 jobs/infra/collect-debug.py save-meta
+      - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+      - python3 jobs/infra/collect-debug.py set-key 'to_snap_version' "$SNAP_VERSION_UPGRADE_TO"
+      - python3 jobs/infra/collect-debug.py set-key 'is_upgrade' "yes"
+      - !include jobs/spec-helpers/collect.yml
+      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
 
-            juju destroy-controller -y \
-               --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/stable
