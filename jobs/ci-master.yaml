@@ -37,29 +37,8 @@
             - "release-microk8s*"
             - "build-charms"
             - "build-bundles"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
-
-# Dont run release job if builds are happening
-- property:
-    name: block-on-release
-    properties:
-      - build-blocker:
-          use-build-blocker: true
-          blocking-jobs:
-            - ".*build.*"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
-
-
-# Dont run job if validation tests are running
-- property:
-    name: block-on-validate
-    properties:
-      - build-blocker:
-          use-build-blocker: true
-          blocking-jobs:
-            - ".*validate.*"
+            - "validate*"
+            - "conformance*"
           block-level: 'GLOBAL'
           queue-scanning: 'ALL'
 
