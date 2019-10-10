@@ -17,8 +17,10 @@ autopep8==1.4.4
 awscli==1.16.239
 backcall==0.1.0           # via ipython
 bcrypt==3.1.7             # via paramiko
+beautifulsoup4==4.8.1     # via bs4
 boto3==1.9.229
 botocore==1.12.229        # via awscli, boto3, s3transfer
+bs4==0.0.1
 canonicalwebteam.snapstoreapi==0.4.4
 certifi==2019.9.11        # via requests
 cffi==1.12.3              # via bcrypt, cryptography, pynacl
@@ -124,6 +126,7 @@ s3transfer==0.2.1         # via awscli, boto3
 semver==2.8.1             # via ogc
 sh==1.12.14
 six==1.12.0               # via bcrypt, configobj, cryptography, fasteners, jenkins-job-builder, lazr.restfulclient, livereload, macaroonbakery, packaging, prompt-toolkit, protobuf, pymacaroons, pynacl, pytest-xdist, python-dateutil, python-frontmatter, python-jenkins, stevedore, traitlets
+soupsieve==1.9.4          # via beautifulsoup4
 staticjinja==0.3.5
 stevedore==1.31.0         # via jenkins-job-builder
 tabulate==0.8.3           # via ogc
