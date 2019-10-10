@@ -1,6 +1,5 @@
 plan:
-  - &BASE_JOB
-    env:
+  - env:
       - SNAP_VERSION=1.17/edge
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
@@ -22,14 +21,6 @@ plan:
     after-script:
       - !include jobs/spec-helpers/collect.yml
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-nagios
-      - JUJU_MODEL=validate-nagios
 
 meta:
   name: Verify CK with Nagios
