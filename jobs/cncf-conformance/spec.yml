@@ -27,9 +27,9 @@ plan:
             export RBAC_ENABLED=$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)
             kubectl version
             sonobuoy version
-            sonobuoy run --mode=certified-conformance --wait
-            outfile=$(sonobuoy retrieve)
-            python3 jobs/infra/collect-debug.py push 'conformance' "$outfile"
+            sonobuoy run --mode=certified-conformance --wait 2>&1
+            sonobuoy retrieve
+            python3 jobs/infra/collect-debug.py push 'conformance' *_sonobuoy_*
           timeout: 14400
     after-script:
       - !include jobs/spec-helpers/collect.yml
