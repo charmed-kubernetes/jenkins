@@ -12,6 +12,14 @@ plan:
           --layer-index  "$LAYER_INDEX" \
           --layer-list "$LAYER_LIST" \
           --layer-branch "$LAYER_BRANCH"
+    after-script:
+      - |
+        #!/bin/bash
+        set -x
+        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+        python3 jobs/infra/collect-debug.py push 'metadata' metadata.db
+        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+        python3 jobs/infra/collect-debug.py save-meta
     tags: [build-charms]
   - script:
       - |
@@ -22,6 +30,14 @@ plan:
             --bundle-list "$BUNDLE_LIST" \
             --bundle-branch "$BUNDLE_BRANCH" \
             --filter-by-tag "$FILTER_BY_TAG"
+    after-script:
+      - |
+        #!/bin/bash
+        set -x
+        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+        python3 jobs/infra/collect-debug.py push 'metadata' metadata.db
+        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+        python3 jobs/infra/collect-debug.py save-meta
     tags: [build-bundles]
   - script:
       - |
