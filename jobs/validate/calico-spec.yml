@@ -88,24 +88,26 @@ plan:
       - JUJU_MODEL=validate-calico-model
       - TEST_BGP=1
 
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.15/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=aws/us-east-1
-  #     - JUJU_CONTROLLER=validate-calico
-  #     - JUJU_MODEL=validate-calico-model
-  #     - TEST_BGP=1
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.14/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=aws/us-east-1
-  #     - JUJU_CONTROLLER=validate-calico
-  #     - JUJU_MODEL=validate-calico-model
-  #     - TEST_BGP=1
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-calico
+      - JUJU_MODEL=validate-calico-model
+      - TEST_BGP=1
+    if: '[[ $(date +"%A") = "Friday" ]]'
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-calico
+      - JUJU_MODEL=validate-calico-model
+      - TEST_BGP=1
+    if: '[[ $(date +"%A") = "Friday" ]]'
 
   # test upgrade
   - <<: *BASE_JOB
@@ -133,20 +135,22 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-calico
       - JUJU_MODEL=validate-calico-model
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.15/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=aws/us-east-1
-  #     - JUJU_CONTROLLER=validate-calico
-  #     - JUJU_MODEL=validate-calico-model
-  #     - JOB_NAME=validate-ck-calico-no-bgp
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.14/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=aws/us-east-1
-  #     - JUJU_CONTROLLER=validate-calico
-  #     - JUJU_MODEL=validate-calico-model
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-calico
+      - JUJU_MODEL=validate-calico-model
+      - JOB_NAME=validate-ck-calico-no-bgp
+    if: '[[ $(date +"%A") = "Friday" ]]'
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-calico
+      - JUJU_MODEL=validate-calico-model
+    if: '[[ $(date +"%A") = "Friday" ]]'

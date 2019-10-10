@@ -37,22 +37,24 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-ceph
       - JUJU_MODEL=validate-model
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.15/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=aws/us-east-1
-  #     - JUJU_CONTROLLER=validate-ck-ceph
-  #     - JUJU_MODEL=validate-model
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.14/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=aws/us-east-1
-  #     - JUJU_CONTROLLER=validate-ck-ceph
-  #     - JUJU_MODEL=validate-model
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-ceph
+      - JUJU_MODEL=validate-model
+    if: '[[ $(date +"%A") = "Friday" ]]'
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-ceph
+      - JUJU_MODEL=validate-model
+    if: '[[ $(date +"%A") = "Friday" ]]'
 
 meta:
   name: Verify CK, with Ceph.
