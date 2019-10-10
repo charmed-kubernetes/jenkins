@@ -38,7 +38,7 @@ async def test_nagios(model, tools):
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 17):
         log("skipping, k8s version v" + k8s_version_str)
-        #return
+        return
 
     # 1) deploy
     log("deploying nagios and nrpe")
