@@ -34,6 +34,8 @@ plan:
       - |
         #!/bin/bash
         set -x
+
+        python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "build-bundles"
         python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
         python3 jobs/infra/collect-debug.py push 'metadata' metadata.db
         python3 jobs/infra/collect-debug.py push 'job_result' *job.json
