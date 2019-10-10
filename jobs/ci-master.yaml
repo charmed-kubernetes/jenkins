@@ -244,12 +244,8 @@
           export PATH=/snap/bin:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
-          export TOX_WORK_DIR="$WORKSPACE/.tox-$JOB_NAME-$BUILD_NUMBER"
           export PATH=venv/bin:$PATH
-          # export PATH=$TOX_WORK_DIR/py36/bin:$PATH
-          export PATH=$HOME/go/bin::$PATH
-
-          mkdir -p "$TOX_WORK_DIR"
+          export PATH=$HOME/go/bin:$PATH
 
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 
