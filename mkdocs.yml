@@ -10,7 +10,7 @@ markdown_extensions:
     - codehilite:
         linenums: True
     # - urlize # requires: pip install git+https://github.com/r0wb0t/markdown-urlize.git
-    - pymdownx.arithmatex
+    # - pymdownx.arithmatex
     - pymdownx.betterem:
         smart_enable: all
     - pymdownx.caret
