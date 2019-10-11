@@ -63,19 +63,18 @@ tox --workdir .tox -e py3 -- \
 
 ## Developing new tests
 
-(TODO): Use [OGC](https://ogc.8op.org) specs for future tests.
-
 Jenkins Job Builder is used to generate jobs for Jenkins programmatically. No
 jobs are created by hand in the Jenkins UI.
 
-To add a new test into Jenkins, it is necessary to create a Jenkinsfile that is
-a script to run for the job and then a yaml file to describe the job to Jenkins
-Job Builder. Example job:
+To add a new test into Jenkins, it is necessary to create an OGC Spec that is a
+yaml configuration on what the test looks like and then a yaml file to describe
+the job to Jenkins Job Builder. Example job:
 
-[validate Jenkinsfile](https://github.com/juju-solutions/kubernetes-jenkins/blob/master/jobs/validate/Jenkinsfile)
+[OGC Spec](https://github.com/charmed-kubernetes/jenkins/blob/master/jobs/validate/spec.yml)
 
-[validate yaml](https://github.com/juju-solutions/kubernetes-jenkins/blob/master/jobs/validate.yaml)
+[JJB Validate](https://github.com/juju-solutions/kubernetes-jenkins/blob/master/jobs/validate.yaml)
 
+Please see [OGC Website](https://ogc.8op.org) for information on how to write a specification.
 
 ## Documentation
 
