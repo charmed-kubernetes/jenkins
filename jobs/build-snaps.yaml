@@ -56,7 +56,7 @@
           description: |
             Choose a specific snap to promote
           choices:
-            - select
+            - all
             - kube-apiserver
             - kube-controller-manager
             - kube-proxy
