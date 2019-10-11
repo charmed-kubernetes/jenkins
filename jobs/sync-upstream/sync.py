@@ -18,6 +18,7 @@ def cli():
 @cli.command()
 @click.option("--layer-list", required=True, help="Path to supported layer list")
 @click.option("--charm-list", required=True, help="Path to supported charm list")
+@click.option("--ancillary-list", required=True, help="Path to additionall repos that need to be rebased.")
 @click.option(
     "--filter-by-tag",
     required=False,
@@ -25,11 +26,11 @@ def cli():
     multiple=True,
 )
 @click.option("--dry-run", is_flag=True)
-def cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
-    return _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run)
+def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
+    return _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run)
 
 
-def _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
+def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
     """ This will force push each layers master onto the stable branches.
 
     PLEASE NOTE: This step should come after each stable branch has been tagged
@@ -40,6 +41,7 @@ def _cut_stable_release(layer_list, charm_list, filter_by_tag, dry_run):
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+    ancillary_list = yaml.safe_load(Path(ancillary_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
     for layer_map in layer_list + charm_list:
         for layer_name, repos in layer_map.items():

@@ -48,6 +48,7 @@ plan:
         python3 jobs/sync-upstream/sync.py cut-stable-release \
             --layer-list jobs/includes/charm-layer-list.inc \
             --charm-list jobs/includes/charm-support-matrix.inc \
+            --ancillary-list jobs/includes/ancillary-list.inc \
             --filter-by-tag k8s $IS_DRY_RUN
     tags: [cut-stable-release]
 
