@@ -15,6 +15,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-tigera
       - JUJU_MODEL=validate-tigera-model
+    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
     script:
       - runner:
           timeout: 7200

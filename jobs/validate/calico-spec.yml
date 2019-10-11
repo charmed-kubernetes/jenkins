@@ -16,6 +16,7 @@ plan:
       - JUJU_CONTROLLER=validate-ck-calico-bgp-router
       - JUJU_MODEL=validate-calico-model
       - TEST_BGP=1
+    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
     before-script:
       - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER"
       - runner:
@@ -97,7 +98,7 @@ plan:
       - JUJU_CONTROLLER=validate-calico
       - JUJU_MODEL=validate-calico-model
       - TEST_BGP=1
-    if: '[[ $(date +"%A") = "Friday" ]]'
+    if: '[[ $(date +"%A") = "Saturday" ]]'
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
@@ -107,7 +108,7 @@ plan:
       - JUJU_CONTROLLER=validate-calico
       - JUJU_MODEL=validate-calico-model
       - TEST_BGP=1
-    if: '[[ $(date +"%A") = "Friday" ]]'
+    if: '[[ $(date +"%A") = "Sunday" ]]'
 
   # test upgrade
   - <<: *BASE_JOB
@@ -144,7 +145,7 @@ plan:
       - JUJU_CONTROLLER=validate-calico
       - JUJU_MODEL=validate-calico-model
       - JOB_NAME=validate-ck-calico-no-bgp
-    if: '[[ $(date +"%A") = "Friday" ]]'
+    if: '[[ $(date +"%A") = "Saturday" ]]'
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
@@ -153,4 +154,4 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-calico
       - JUJU_MODEL=validate-calico-model
-    if: '[[ $(date +"%A") = "Friday" ]]'
+    if: '[[ $(date +"%A") = "Sunday" ]]'

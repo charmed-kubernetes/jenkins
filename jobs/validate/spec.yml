@@ -7,6 +7,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
+    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
     before-script:
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - !include jobs/spec-helpers/bootstrap.yml
@@ -39,7 +40,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
-    if: '[[ $(date +"%A") = "Friday" ]]'
+    if: '[[ $(date +"%A") = "Saturday" ]]'
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
@@ -48,7 +49,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
-    if: '[[ $(date +"%A") = "Friday" ]]'
+    if: '[[ $(date +"%A") = "Sunday" ]]'
 
 meta:
   name: Verify CK

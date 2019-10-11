@@ -7,6 +7,7 @@ plan:
       - JUJU_CLOUD=aws
       - JUJU_CONTROLLER=validate-ck-arm
       - JUJU_MODEL=validate-ck-arm-model
+    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
     before-script:
       - juju:
           cloud: $JUJU_CLOUD
@@ -83,7 +84,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
-    if: '[[ $(date +"%A") = "Friday" ]]'
+    if: '[[ $(date +"%A") = "Saturday" ]]'
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.14/edge
@@ -92,7 +93,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
-    if: '[[ $(date +"%A") = "Friday" ]]'
+    if: '[[ $(date +"%A") = "Sunday" ]]'
 
 meta:
   name: Verify CK on ARM

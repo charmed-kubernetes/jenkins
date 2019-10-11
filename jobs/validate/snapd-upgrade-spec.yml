@@ -8,6 +8,7 @@ plan:
       - JUJU_CONTROLLER=validate-ck-snapd-upgrade
       - JUJU_MODEL=validate-snapd-upgrade-model
       - TEST_UPGRADE_SNAPD_CHANNEL=beta
+    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
     script:
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - runner:
