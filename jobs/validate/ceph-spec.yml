@@ -28,7 +28,7 @@ plan:
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-ceph
-      - JUJU_MODEL=validate-model
+      - JUJU_MODEL=validate-ceph-model
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.16/stable
@@ -36,7 +36,7 @@ plan:
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-ceph
-      - JUJU_MODEL=validate-model
+      - JUJU_MODEL=validate-ceph-model
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.15/edge
@@ -44,7 +44,7 @@ plan:
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-ceph
-      - JUJU_MODEL=validate-model
+      - JUJU_MODEL=validate-ceph-model
     if: '[[ $(date +"%A") = "Friday" ]]'
   - <<: *BASE_JOB
     env:
@@ -53,7 +53,7 @@ plan:
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-ceph
-      - JUJU_MODEL=validate-model
+      - JUJU_MODEL=validate-ceph-model
     if: '[[ $(date +"%A") = "Friday" ]]'
 
 meta:
@@ -63,7 +63,7 @@ meta:
       code: |
         ```
         # edit spec.yml and update the appropriate vars under the `env:` section
-        > ogc --spec jobs/validate/spec.yml
+        > ogc --spec jobs/validate/ceph-spec.yml
         ```
   description: |
     Verifies that CK with Ceph passes integration tests.

@@ -39,8 +39,8 @@
             - "build-bundles"
             - "validate*"
             - "conformance*"
-          block-level: 'GLOBAL'
-          queue-scanning: 'ALL'
+          block-level: 'NODE'
+          # queue-scanning: 'ALL'
 
 
 # PARAMETERS ----------------------------------------------------------------- #
