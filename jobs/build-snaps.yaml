@@ -51,6 +51,21 @@
           name: SNAP_ARCH
           default: "amd64"
           description: Architectures to promote in snap store, separated by space.
+      - choice:
+          name: SNAP_SELECTION
+          description: |
+            Choose a specific snap to promote
+          choices:
+            - select
+            - kube-apiserver
+            - kube-controller-manager
+            - kube-proxy
+            - kube-scheduler
+            - kubeadm
+            - kubectl
+            - kubelet
+            - kubernetes-test
+            - cdk-addons
     wrappers:
       - default-job-wrapper
       - ci-creds

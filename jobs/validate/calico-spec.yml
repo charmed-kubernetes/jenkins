@@ -32,7 +32,7 @@ plan:
             python3 jobs/integration/tigera_aws.py cleanup 2>&1
 
             export NUM_SUBNETS=1
-            if [ -z $TEST_BGP ]; then
+            if [ ! -z ${TEST_BGP+x} ]; then
               export NUM_SUBNETS=2
             fi
 

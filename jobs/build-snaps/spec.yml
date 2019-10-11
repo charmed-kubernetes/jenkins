@@ -10,6 +10,9 @@ plan:
       - |
         #!/bin/bash
         set -eux
+        if [ "$SNAP_SELECTION" != "select" ];
+            echo "- $SNAP_SELECTION\n" > jobs/includes/k8s-snap-list.inc
+        fi
         python3 jobs/build-snaps/snap.py promote-snaps \
                         --snap-list "jobs/includes/k8s-snap-list.inc" \
                         --arch "$SNAP_ARCH" \
