@@ -11,7 +11,7 @@ plan:
         #!/bin/bash
         set -eux
         if [ "$SNAP_SELECTION" != "all" ]; then
-            echo "- $SNAP_SELECTION\n" > "jobs/includes/k8s-snap-list.inc"
+            echo "- $SNAP_SELECTION" > "jobs/includes/k8s-snap-list.inc"
         fi
         python3 jobs/build-snaps/snap.py promote-snaps \
                         --snap-list "jobs/includes/k8s-snap-list.inc" \
