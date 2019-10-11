@@ -287,7 +287,6 @@
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
           venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
-          # tox -e py36 -- ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
 
 
 # WRAPPERS ------------------------------------------------------------------- #

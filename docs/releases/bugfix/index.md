@@ -41,6 +41,11 @@ This will build and promote the stable charms to candidate channel for testing.
 
 This validates the deployment using the charms from candidate channel.
 
+### Notify Solutions QA
+
+Notify solutions-qa that CK is ready to be run through their tests. Once
+that is complete and relayed to us, we can start the release to stable.
+
 ### Promote charms from **candidate** to **stable**
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
@@ -54,11 +59,6 @@ others are kubeflow related).
 **Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
 
 Same as charm promotion.
-
-### Notify Solutions QA
-
-Notify solutions-qa that CK is ready to be run through their tests. Once
-that is complete and relayed to us, we can start the release to stable.
 
 ### Send announcement to k8s-crew with any relevant information.
 
