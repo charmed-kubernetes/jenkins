@@ -6,6 +6,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-2
       - JUJU_CONTROLLER=validate-ck-nagios
       - JUJU_MODEL=validate-nagios
+    if: '[[ $(date +"%A") = "Friday" ]]'
     before-script:
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - !include jobs/spec-helpers/bootstrap.yml
