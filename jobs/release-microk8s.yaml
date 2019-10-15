@@ -45,6 +45,7 @@
     description: |
       Tests and releases microk8s. Affects all tracks on amd64/arm64.
     project-type: freestyle
+    node: runner-amd64
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
