@@ -1,8 +1,11 @@
 import click
 import configbag
+import sh
+import os
 from dateutil import parser
 from subprocess import check_output, check_call, CalledProcessError, run, PIPE, STDOUT
 
+sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 class Microk8sSnap:
     def __init__(self, track, channel, juju_unit=None, juju_controller=None):
@@ -92,11 +95,13 @@ class Microk8sSnap:
         # that matches the track we are going to release to.
         cmd = "rm -rf microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
+        for line in sh2.env(cmd_array):
+            click.echo(line)
 
         cmd = "git clone https://github.com/ubuntu/microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
+        for line in sh2.env(cmd_array):
+            click.echo(line)
 
         if not tests_branch:
             if self.track == "latest":
@@ -119,7 +124,8 @@ class Microk8sSnap:
         click.echo("Tests are taken from branch {}".format(tests_branch))
         cmd = "(cd microk8s; git checkout {})".format(tests_branch)
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
+        for line in sh2.env(cmd_array):
+            click.echo(line)
 
         if "under-testing" in self.under_testing_channel:
             self.release_to(self.under_testing_channel)
@@ -142,7 +148,8 @@ class Microk8sSnap:
                 cmd = "{} {}".format(cmd, proxy)
             cmd = "(cd microk8s; {} )".format(cmd)
             cmd_array = self.cmd_array_to_run(cmd)
-            run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
+            for line in sh2.env(cmd_array):
+                click.echo(line)
 
     def build_and_release(self, release=None, dry_run="no"):
         """
@@ -155,11 +162,13 @@ class Microk8sSnap:
         arch = configbag.get_arch()
         cmd = "rm -rf microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
+        for line in sh2.env(cmd_array):
+            click.echo(line)
 
         cmd = "git clone https://github.com/ubuntu/microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
+        for line in sh2.env(cmd_array):
+            click.echo(line)
 
         if release:
             if not release.startswith("v"):
@@ -176,11 +185,13 @@ class Microk8sSnap:
                     "/^set.*/a export KUBE_VERSION={}".format(release),
                     "microk8s/build-scripts/set-env-variables.sh",
                 ]
-            run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
+            for line in sh2.env(cmd_array):
+                click.echo(line)
 
         cmd = "(cd microk8s; sudo /snap/bin/snapcraft cleanbuild)"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
+        for line in sh2.env(cmd_array):
+            click.echo(line)
 
         cmd = "rm -rf microk8s_latest_{}.snap".format(arch)
         run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)

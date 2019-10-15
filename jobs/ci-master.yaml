@@ -33,14 +33,8 @@
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
-            - "release"
-            - "release-microk8s*"
-            - "build-charms"
-            - "build-bundles"
-            - "validate*"
-            - "conformance*"
+            - "validate-ck.*"
           block-level: 'NODE'
-          # queue-scanning: 'ALL'
 
 
 # PARAMETERS ----------------------------------------------------------------- #

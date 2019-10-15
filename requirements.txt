@@ -77,7 +77,7 @@ monotonic==1.5            # via fasteners
 more-itertools==7.2.0     # via pytest, zipp
 multi-key-dict==2.0.3     # via python-jenkins
 oauthlib==3.1.0           # via lazr.restfulclient
-ogc-plugins-juju==1.0.15
+ogc-plugins-juju==1.0.18
 ogc-plugins-runner==1.0.23
 ogc-plugins-spec-doc==1.0.7
 ogc==0.3.56
