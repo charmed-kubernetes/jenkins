@@ -7,6 +7,8 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-beta
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=amd64
+    tags:
+      - amd64/beta
     before-script:
       - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-$ARCH"
       - |
@@ -56,6 +58,8 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-beta
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=arm64
+    tags:
+      - arm64/beta
   - <<: *BASE_JOB
     env:
       - DRY_RUN=no
@@ -64,6 +68,8 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-stable
       - JUJU_MODEL=release-microk8s-stable-model
       - ARCH=arm64
+    tags:
+      - arm64/stable
     script:
       - |
         #!/bin/bash
@@ -85,6 +91,8 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-stable
       - JUJU_MODEL=release-microk8s-stable-model
       - ARCH=amd64
+    tags:
+      - amd64/stable
     script:
       - |
         #!/bin/bash
@@ -106,6 +114,8 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-pre-release
       - JUJU_MODEL=release-microk8s-pre-release-model
       - ARCH=amd64
+    tags:
+      - amd64/prerelease
     script:
       - |
         #!/bin/bash
@@ -122,6 +132,8 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-pre-release
       - JUJU_MODEL=release-microk8s-pre-release-model
       - ARCH=arm64
+    tags:
+      - arm64/prerelease
     script:
       - |
         #!/bin/bash

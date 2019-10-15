@@ -27,6 +27,18 @@
           name: PROXY
           description: |
             Proxy endpoint
+      - choice:
+          name: ARCH_TRACK
+          description: |
+            Choose a specific architecture and track to release against
+          choices:
+            - all
+            - amd64/beta
+            - arm64/beta
+            - amd64/stable
+            - arm64/stable
+            - amd64/prerelease
+            - arm64/prerelease
 
 - job:
     name: 'release-microk8s'
@@ -48,9 +60,22 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/release-microk8s"
-          JOB_SPEC_FILE: "spec.yml"
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          TAG=""
+          if [ "$ARCH_TRACK" != "all" ]; then
+              TAG="-t $ARCH_TRACK"
+          fi
+
+          virtualenv venv -p python3.6
+          venv/bin/python -m pip install pip-tools
+          venv/bin/pip-sync requirements.txt
+          venv/bin/ogc --spec jobs/release-microk8s/spec.yml "$TAG"
 
 - job:
     name: 'release-microk8s-edge'
