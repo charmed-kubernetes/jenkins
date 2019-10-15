@@ -270,8 +270,6 @@
           venv/bin/pip-sync requirements.txt
           venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-charms
           venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-bundles
-          # tox -e py36 -- ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-charms
-          # tox -e py36 -- ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-bundles
 
 - builder:
     name: ogc-execute-spec

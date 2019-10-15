@@ -1,3 +1,4 @@
+import click
 import configbag
 from dateutil import parser
 from subprocess import check_output, check_call, CalledProcessError, run, PIPE, STDOUT
@@ -54,7 +55,7 @@ class Microk8sSnap:
 
         """
         if self.is_prerelease:
-            print(
+            click.echo(
                 "This is a pre-release {}. Cannot release to other channels.".format(
                     self.revision
                 )
@@ -65,9 +66,9 @@ class Microk8sSnap:
         )
         cmd = "snapcraft release microk8s {} {}".format(self.revision, target)
         if dry_run == "no":
-            run(cmd.split(), check=True)
+            run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
         else:
-            print("DRY RUN - calling: {}".format(cmd))
+            click.echo("DRY RUN - calling: {}".format(cmd))
 
     def test_cross_distro(
         self,
@@ -91,11 +92,11 @@ class Microk8sSnap:
         # that matches the track we are going to release to.
         cmd = "rm -rf microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True)
+        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
 
         cmd = "git clone https://github.com/ubuntu/microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True)
+        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
 
         if not tests_branch:
             if self.track == "latest":
@@ -110,15 +111,15 @@ class Microk8sSnap:
                     ).split()
                 )
                 try:
-                    run(cmd, check=True)
+                    run(cmd, check=True, stdout=PIPE, stderr=STDOUT)
                     tests_branch = self.track
                 except CalledProcessError:
-                    print("GH branch {} does not exist.".format(self.track))
+                    click.echo("GH branch {} does not exist.".format(self.track))
                     tests_branch = "master"
-        print("Tests are taken from branch {}".format(tests_branch))
+        click.echo("Tests are taken from branch {}".format(tests_branch))
         cmd = "(cd microk8s; git checkout {})".format(tests_branch)
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True)
+        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
 
         if "under-testing" in self.under_testing_channel:
             self.release_to(self.under_testing_channel)
@@ -141,7 +142,7 @@ class Microk8sSnap:
                 cmd = "{} {}".format(cmd, proxy)
             cmd = "(cd microk8s; {} )".format(cmd)
             cmd_array = self.cmd_array_to_run(cmd)
-            run(cmd_array, check=True)
+            run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
 
     def build_and_release(self, release=None, dry_run="no"):
         """
@@ -154,11 +155,11 @@ class Microk8sSnap:
         arch = configbag.get_arch()
         cmd = "rm -rf microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True)
+        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
 
         cmd = "git clone https://github.com/ubuntu/microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True)
+        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
 
         if release:
             if not release.startswith("v"):
@@ -175,32 +176,32 @@ class Microk8sSnap:
                     "/^set.*/a export KUBE_VERSION={}".format(release),
                     "microk8s/build-scripts/set-env-variables.sh",
                 ]
-            run(cmd_array, check=True)
+            run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
 
         cmd = "(cd microk8s; sudo /snap/bin/snapcraft cleanbuild)"
         cmd_array = self.cmd_array_to_run(cmd)
-        run(cmd_array, check=True)
+        run(cmd_array, check=True, stdout=PIPE, stderr=STDOUT)
 
         cmd = "rm -rf microk8s_latest_{}.snap".format(arch)
-        run(cmd.split(), check=True)
+        run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
         if self.juju_controller:
             cmd = "juju  scp -m {} {}:/var/lib/juju/agents/unit-ubuntu-0/charm/microk8s/microk8s_latest_{}.snap .".format(
                 self.juju_controller, self.juju_unit, arch
             )
-            run(cmd.split(), check=True)
+            run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
         else:
             cmd = "mv microk8s/microk8s_latest_{}.snap .".format(arch)
-            run(cmd.split(), check=True)
+            run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
 
         target = "{}/{}".format(self.track, self.channel)
         cmd = "snapcraft push microk8s_latest_{}.snap --release {}".format(arch, target)
         if dry_run == "no":
-            run(cmd.split(), check=True)
+            run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
         else:
-            print("DRY RUN - calling: {}".format(cmd))
+            click.echo("DRY RUN - calling: {}".format(cmd))
 
         cmd = "rm -rf microk8s_latest_{}.snap".format(arch)
-        run(cmd.split(), check=True)
+        run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
 
     def cmd_array_to_run(self, cmd):
         """
@@ -213,13 +214,14 @@ class Microk8sSnap:
         """
         if self.juju_unit:
             import os
-            _controller = os.environ.get('JUJU_CONTROLLER')
-            _model = os.environ.get('JUJU_MODEL')
+
+            _controller = os.environ.get("JUJU_CONTROLLER")
+            _model = os.environ.get("JUJU_MODEL")
             cmd_array = "juju run -m {}:{} --timeout=120m0s --unit {}".format(
                 _controller, _model, self.juju_unit
             ).split()
             cmd_array.append(cmd)
         else:
             cmd_array = cmd.split()
-        print("Executing: {}".format(cmd_array))
+        click.echo("Executing: {}".format(cmd_array))
         return cmd_array

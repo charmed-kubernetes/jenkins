@@ -75,7 +75,7 @@
           virtualenv venv -p python3.6
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
-          venv/bin/ogc --spec jobs/release-microk8s/spec.yml "$TAG"
+          venv/bin/ogc --spec jobs/release-microk8s/spec.yml $TAG
 
 - job:
     name: 'release-microk8s-edge'
