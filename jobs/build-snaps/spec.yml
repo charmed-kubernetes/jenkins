@@ -1,6 +1,12 @@
 plan:
   - script:
-      - python3 jobs/build-snaps/snap.py sync-upstream --snap-list jobs/includes/k8s-snap-list.inc
+      - |
+        #!/bin/bash
+        if [ -z "$FORCE" ]; then
+            python3 jobs/build-snaps/snap.py sync-upstream --snap-list jobs/includes/k8s-snap-list.inc --force
+        else
+            python3 jobs/build-snaps/snap.py sync-upstream --snap-list jobs/includes/k8s-snap-list.inc
+        fi
     tags: [sync]
   - script:
       - python3 jobs/build-snaps/snap.py sync-upstream --snap-list jobs/includes/k8s-snap-list.inc --force --patches $SNAP_PATCHES_LIST
