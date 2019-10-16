@@ -230,10 +230,7 @@ class Microk8sSnap:
 
             _controller = os.environ.get("JUJU_CONTROLLER")
             _model = os.environ.get("JUJU_MODEL")
-            j_status = sh.juju.status("-m", f"{_controller}:{_model}", "--format", "json")
-            public_address = json.loads(j_status.stdout.decode().strip())
-            public_address = public_address['applications']['ubuntu']['units']['ubuntu/0']['public-address']
-            cmd_array = shlex.split(f"ssh -tt -i /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa ubuntu@{public_address} --")
+            cmd_array = shlex.split(f"juju ssh -m {_controller}:{_model} --pty=true ubuntu/0 --")
             # cmd_array = "juju run -m {}:{} --timeout=120m0s --unit {}".format(
             #     _controller, _model, self.juju_unit
             # ).split()
