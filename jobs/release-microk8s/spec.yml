@@ -16,10 +16,7 @@ plan:
         #!/bin/bash
         set -x
 
-        ls -l /var/lib/jenkins/.local/share/juju/ssh
-
-        juju kill-controller -y "$JUJU_CONTROLLER" || true
-        juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" --debug
+        juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" || true
 
         juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
            -d "$JUJU_MODEL" --model-default test-mode=true \
@@ -29,8 +26,6 @@ plan:
         juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints 'cores=8 mem=32G root-disk=80G' ubuntu
 
         juju-wait -e "$JUJU_CONTROLLER":"$JUJU_MODEL" -w
-
-        juju status -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --format yaml
 
         juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'sudo snap install lxd'
         juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes'
