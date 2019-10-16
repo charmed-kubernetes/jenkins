@@ -225,12 +225,18 @@ class Microk8sSnap:
         """
         if self.juju_unit:
             import os
+            import json
+            import shlex
 
             _controller = os.environ.get("JUJU_CONTROLLER")
             _model = os.environ.get("JUJU_MODEL")
-            cmd_array = "juju run -m {}:{} --timeout=120m0s --unit {}".format(
-                _controller, _model, self.juju_unit
-            ).split()
+            j_status = sh.juju.status("-m", f"{_controller}:{_model}", "--format", "json")
+            public_address = json.loads(j_status.stdout.decode().strip())
+            public_address = public_address['applications']['ubuntu']['units']['ubuntu/0']['public-address']
+            cmd_array = shlex.split(f"ssh -tt -i /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa ubuntu@{public_address} --")
+            # cmd_array = "juju run -m {}:{} --timeout=120m0s --unit {}".format(
+            #     _controller, _model, self.juju_unit
+            # ).split()
             cmd_array.append(cmd)
         else:
             cmd_array = cmd.split()

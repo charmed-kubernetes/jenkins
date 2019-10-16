@@ -40,12 +40,12 @@
             - amd64/prerelease
             - arm64/prerelease
 
-- job:
-    name: 'release-microk8s'
+- job-template:
+    name: 'release-microk8s-{arch}'
     description: |
-      Tests and releases microk8s. Affects all tracks on amd64/arm64.
+      Tests and releases microk8s. Affects all tracks on {arch}.
     project-type: freestyle
-    node: runner-amd64
+    node: runner-{arch}
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -68,7 +68,7 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          TAG=""
+          TAG="-t {arch}"
           if [ "$ARCH_TRACK" != "all" ]; then
               TAG="-t $ARCH_TRACK"
           fi
@@ -77,6 +77,14 @@
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
           venv/bin/ogc --spec jobs/release-microk8s/spec.yml $TAG
+
+- project:
+    name: release-microk8s
+    arch:
+      - amd64
+      - arm64
+    jobs:
+      - 'release-microk8s-{arch}'
 
 - job:
     name: 'release-microk8s-edge'

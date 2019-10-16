@@ -9,6 +9,7 @@ plan:
       - ARCH=amd64
     tags:
       - amd64/beta
+      - amd64
     before-script:
       - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-$ARCH"
       - |
@@ -60,6 +61,7 @@ plan:
       - ARCH=arm64
     tags:
       - arm64/beta
+      - arm64
   - <<: *BASE_JOB
     env:
       - DRY_RUN=no
@@ -70,6 +72,7 @@ plan:
       - ARCH=arm64
     tags:
       - arm64/stable
+      - arm64
     script:
       - |
         #!/bin/bash
@@ -89,6 +92,7 @@ plan:
       - ARCH=amd64
     tags:
       - amd64/stable
+      - amd64
     script:
       - |
         #!/bin/bash
@@ -108,6 +112,7 @@ plan:
       - ARCH=amd64
     tags:
       - amd64/prerelease
+      - amd64
     script:
       - |
         #!/bin/bash
@@ -126,6 +131,7 @@ plan:
       - ARCH=arm64
     tags:
       - arm64/prerelease
+      - amd64
     script:
       - |
         #!/bin/bash
