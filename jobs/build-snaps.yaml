@@ -8,11 +8,6 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
-    parameters:
-      - bool:
-          name: FORCE
-          description: |
-            Force building snaps even though branches may exist.
     wrappers:
       - default-job-wrapper
       - ci-creds
