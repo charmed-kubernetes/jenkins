@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import click
 from datetime import datetime, timezone
 from snapstore import Microk8sSnap
 from configbag import get_tracks
@@ -45,26 +46,26 @@ if __name__ == "__main__":
     Releases to stable what is under candidate on the tracks provided in $TRACKS.
     Cross distro tests should run.
     """
-    print("Check candidate maturity and release microk8s to stable.")
-    print("Dry run is set to '{}'.".format(dry_run))
+    click.echo("Check candidate maturity and release microk8s to stable.")
+    click.echo("Dry run is set to '{}'.".format(dry_run))
     for track in tracks_requested:
-        print("Looking at track {}".format(track))
+        click.echo("Looking at track {}".format(track))
         upstream = upstream_release(track)
         if not upstream:
-            print("No stable upstream release yet.")
+            click.echo("No stable upstream release yet.")
             continue
 
         candidate_snap = Microk8sSnap(track, "candidate", juju_unit, juju_controller)
         if not candidate_snap.released:
             # Nothing to release
-            print("Nothing on candidate. Nothing to release.")
+            click.echo("Nothing on candidate. Nothing to release.")
             break
 
         if (
             datetime.now(timezone.utc) - candidate_snap.release_date
         ).days < 8 and always_release == "no":
             # Candidate not mature enough
-            print(
+            click.echo(
                 "Not releasing because candidate is {} days old and 'always_release' is {}".format(
                     (datetime.now(timezone.utc) - candidate_snap.release_date).days,
                     always_release,
@@ -77,14 +78,14 @@ if __name__ == "__main__":
             # We already have a snap released on stable that is not a pre-release. Lets run some tests.
             if candidate_snap.version == stable_snap.version and always_release == "no":
                 # Candidate and stable are the same version. Nothing to release.
-                print(
+                click.echo(
                     "Stable and candidate have the same version {}. We will not release.".format(
                         stable_snap.version
                     )
                 )
                 continue
 
-            print(
+            click.echo(
                 "Candidate is at {}, stable at {}, and 'always_release' is {}.".format(
                     candidate_snap.version, stable_snap.version, always_release
                 )
@@ -94,13 +95,13 @@ if __name__ == "__main__":
             )
         else:
             if not stable_snap.released:
-                print("Stable channel is empty. Releasing without any testing.")
+                click.echo("Stable channel is empty. Releasing without any testing.")
             elif stable_snap.is_prerelease:
-                print(
+                click.echo(
                     "Stable channel holds a prerelease. Releasing without any testing."
                 )
             else:
-                print(
+                click.echo(
                     "Stable channel holds a release that is not a prerelease. We should be testing that."
                 )
                 assert False

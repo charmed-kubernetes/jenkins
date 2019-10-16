@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from launchpadlib.launchpad import Launchpad
 import configbag
-
+import click
 
 def reach_lp_builders():
     """Try to login to LP and reach the latest microk8s snap. It will prompt you
@@ -22,5 +22,5 @@ def reach_lp_builders():
 
 
 if __name__ == "__main__":
-    print("Trying to reach microk8s builders")
+    click.echo("Trying to reach microk8s builders")
     reach_lp_builders()

@@ -3,6 +3,7 @@
 import os
 import requests
 import configbag
+import click
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError
 from configbag import get_tracks
@@ -26,10 +27,10 @@ def is_latest(release):
         ersion = version[1:]
         ersion_nums = ersion.split(".")
         major_minor = "{}.{}".format(ersion_nums[0], ersion_nums[1])
-        print("Latest release is {} =?= {}".format(major_minor, release))
+        click.echo("Latest release is {} =?= {}".format(major_minor, release))
         return major_minor == release
     else:
-        print("Failed to get latest release info.")
+        click.echo("Failed to get latest release info.")
         return False
 
 
@@ -40,10 +41,10 @@ def gh_branch_exists(branch):
     ).split()
     try:
         check_call(cmd)
-        print("GH branch {} exists.".format(branch))
+        click.echo("GH branch {} exists.".format(branch))
         return True
     except CalledProcessError:
-        print("GH branch does not {} exist.".format(branch))
+        click.echo("GH branch does not {} exist.".format(branch))
         return False
 
 
@@ -116,7 +117,7 @@ class Builder:
         # get launchpad team data and ppa
         snappydev = launchpad.people[configbag.people_name]
         workingsnap = launchpad.snaps.getByName(name="microk8s", owner=snappydev)
-        print("Creating new LP builder for {}".format(self.gh_branch))
+        click.echo("Creating new LP builder for {}".format(self.gh_branch))
         launchpad.snaps.new(
             name=snap_name,
             owner=snappydev,
@@ -136,7 +137,7 @@ class Builder:
     def patch_latest(self):
         """Patch the git branch of the respective builder"""
         snap = self._get_snap()
-        print("Updating the LP builder of {}".format(self.gh_branch))
+        click.echo("Updating the LP builder of {}".format(self.gh_branch))
         snap.git_path = self.gh_branch
         snap.lp_save()
 
@@ -168,30 +169,30 @@ class Builder:
 
             try:
                 # get snap
-                print("Get snap {}".format(snap_name))
+                click.echo("Get snap {}".format(snap_name))
                 microk8s = launchpad.snaps.getByName(name=snap_name, owner=snappydev)
                 self.snap = microk8s
             except HTTPError as e:
-                print("Cannot get snap {}. ({})".format(snap_name, e.response))
+                click.echo("Cannot get snap {}. ({})".format(snap_name, e.response))
                 return None
 
         return self.snap
 
 
 if __name__ == "__main__":
-    print("Validating GH branches and LP builders of microk8s")
+    click.echo("Validating GH branches and LP builders of microk8s")
     for track in get_tracks(all=True):
-        print("Examining track {}".format(track))
+        click.echo("Examining track {}".format(track))
         upstream = upstream_release(track)
         if not upstream:
-            print("Nothing upstream for this track. Skipping.")
+            click.echo("Nothing upstream for this track. Skipping.")
             continue
 
         # Take care of the GH branches
         if not is_latest(track) and not gh_branch_exists(track):
-            print("Creating a branch for {}".format(track))
+            click.echo("Creating a branch for {}".format(track))
             create_gh_branch(track, gh_user, gh_token)
-            print("Creating GH branch from master.")
+            click.echo("Creating GH branch from master.")
             # it will take at most 5 hours for LP to get the branch so
             # trying to create the LP builders now will fail.
             # We continue to the next track and we will create the LP builders

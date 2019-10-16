@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import click
 import configbag
 from snapstore import Microk8sSnap
 from launchpadlib.launchpad import Launchpad
@@ -32,7 +33,7 @@ def trigger_lp_builders(track):
         # get snap
         microk8s = launchpad.snaps.getByName(name=snap_name, owner=snappydev)
     except HTTPError as e:
-        print("Cannot trigger build for track {}. ({})".format(track, e.response))
+        click.echo("Cannot trigger build for track {}. ({})".format(track, e.response))
         return None
 
     # trigger build
@@ -42,9 +43,9 @@ def trigger_lp_builders(track):
 
 
 if __name__ == "__main__":
-    print("Running a build and release of microk8s")
+    click.echo("Running a build and release of microk8s")
     for track in get_tracks(all=True):
-        print("Looking at track {}".format(track))
+        click.echo("Looking at track {}".format(track))
         upstream = upstream_release(track)
         if not upstream:
             continue
@@ -52,7 +53,7 @@ if __name__ == "__main__":
         if not edge_snap.released:
             # Nothing released on edge. LP builders are probably not in place
             continue
-        print(
+        click.echo(
             "Upstream has {} and snapped version is at {}".format(
                 upstream, edge_snap.version
             )
@@ -63,14 +64,14 @@ if __name__ == "__main__":
                 # For example upstream says we are on v1.12.x and the edge snap is on v1.11.y
                 # This should occur only in the "latest" track that follows the latest k8s
                 if track != "latest":
-                    print(
+                    click.echo(
                         "Track {} has an edge snap of {}.".format(
                             track, edge_snap.version
                         )
                     )
                     raise Exception("Tracks should not change releases")
 
-            print("Triggering LP builders")
+            click.echo("Triggering LP builders")
             request = trigger_lp_builders(track)
             if request:
-                print("microk8s is building under: {}".format(request))
+                click.echo("microk8s is building under: {}".format(request))
