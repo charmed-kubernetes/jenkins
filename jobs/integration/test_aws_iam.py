@@ -101,7 +101,7 @@ async def patch_kubeconfig_and_verify_aws_iam(one_master, arn):
 
 
 @pytest.mark.asyncio
-async def test_validate_aws_iam(model, tools, arn):
+async def test_validate_aws_iam(model, tools):
     # This test verifies the aws-iam charm is working
     # properly. This requires:
     # 1) Deploy aws-iam and relate
@@ -144,7 +144,7 @@ spec:
   groups:
   - view
 EOF""".format(
-        arn
+        os.environ['AWSIAMARN']
     )
     # Note that we patch a single master's kubeconfig to have the arn in it,
     # so we need to use that one master for all commands
@@ -154,7 +154,7 @@ EOF""".format(
 
     # 3 & 4) grab config and verify aws-iam is inside
     log("verifying kubeconfig")
-    await patch_kubeconfig_and_verify_aws_iam(one_master, arn)
+    await patch_kubeconfig_and_verify_aws_iam(one_master, os.environ['AWSIAMARN'])
 
     # 5) get aws-iam-authenticator binary
     log("getting aws-iam binary")
