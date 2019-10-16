@@ -96,12 +96,12 @@ class Microk8sSnap:
         cmd = "rm -rf microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
-            click.echo(line)
+            click.echo(line.strip())
 
         cmd = "git clone https://github.com/ubuntu/microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
-            click.echo(line)
+            click.echo(line.strip())
 
         if not tests_branch:
             if self.track == "latest":
@@ -125,7 +125,7 @@ class Microk8sSnap:
         cmd = "(cd microk8s; git checkout {})".format(tests_branch)
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
-            click.echo(line)
+            click.echo(line.strip())
 
         if "under-testing" in self.under_testing_channel:
             self.release_to(self.under_testing_channel)
@@ -149,7 +149,7 @@ class Microk8sSnap:
             cmd = "(cd microk8s; {} )".format(cmd)
             cmd_array = self.cmd_array_to_run(cmd)
             for line in sh2.env(cmd_array):
-                click.echo(line)
+                click.echo(line.strip())
 
     def build_and_release(self, release=None, dry_run="no"):
         """
@@ -163,12 +163,12 @@ class Microk8sSnap:
         cmd = "rm -rf microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
-            click.echo(line)
+            click.echo(line.strip())
 
         cmd = "git clone https://github.com/ubuntu/microk8s"
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
-            click.echo(line)
+            click.echo(line.strip())
 
         if release:
             if not release.startswith("v"):
@@ -186,12 +186,12 @@ class Microk8sSnap:
                     "microk8s/build-scripts/set-env-variables.sh",
                 ]
             for line in sh2.env(cmd_array):
-                click.echo(line)
+                click.echo(line.strip())
 
         cmd = "(cd microk8s; sudo /snap/bin/snapcraft cleanbuild)"
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
-            click.echo(line)
+            click.echo(line.strip())
 
         cmd = "rm -rf microk8s_latest_{}.snap".format(arch)
         run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
