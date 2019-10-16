@@ -82,7 +82,7 @@ plan:
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-aws-iam
-      - JUJU_MODEL=validate-model
+      - JUJU_MODEL=validate-aws-iam-model
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.16/stable
@@ -90,7 +90,7 @@ plan:
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-aws-iam
-      - JUJU_MODEL=validate-model
+      - JUJU_MODEL=validate-aws-iam-model
 
 meta:
   name: Verify CK with AWS IAM
