@@ -16,6 +16,8 @@ plan:
         #!/bin/bash
         set -x
 
+        ls -l /var/lib/jenkins/.local/share/juju/ssh
+
         juju kill-controller -y "$JUJU_CONTROLLER" || true
         juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" --debug
 
