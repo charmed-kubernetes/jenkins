@@ -323,6 +323,9 @@
           - file:
               credential-id: aws_creds
               variable: AWSCREDS
+          - text:
+              credential-id: aws-iam-arn
+              variable: AWSIAMARN
           - file:
               credential-id: snapcraft_cpc_creds
               variable: SNAPCRAFTCPCCREDS

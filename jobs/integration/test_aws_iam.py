@@ -8,6 +8,7 @@ from subprocess import check_output
 from shlex import split
 from configobj import ConfigObj
 import sh
+import os
 
 
 @pytest.fixture(scope="module")
@@ -15,17 +16,12 @@ def arn():
 
     log("Adding AWS IAM Role KubernetesAdmin")
 
-    caller_id = (
-        sh.aws.sts("get-caller-identity", "--output", "text", "--query", "Account")
-        .stdout.decode()
-        .strip()
-    )
     policy = {
         "Version": "2012-10-17",
         "Statement": [
             {
                 "Effect": "Allow",
-                "Principal": {"AWS": f"arn:aws:iam::{caller_id}:root"},
+                "Principal": {"AWS": os.environ['AWSIAMARN']},
                 "Action": "sts:AssumeRole",
                 "Condition": {},
             }
