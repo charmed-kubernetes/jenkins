@@ -19,13 +19,13 @@
           description: |
             Select the k8s version to apply the built snap to. This determines
             the <major.minor>/<risk> when setting the tracks to publish to.
-          choices: !include includes/k8s-snap-support-version.inc
+          choices: !include jobs/includes/k8s-snap-support-versions.inc
       - choice:
           name: SNAP_BRANCH_VERSION
           description: |
             Select the branch to build the snaps from. The branches represent
             the upstream versions we know about and can build against.
-          choices: !include includes/k8s-snap-branches-list.inc
+          choices: !include jobs/includes/k8s-snap-branches-list.inc
       - bool:
           name: TRACK_STABLE
           description: |

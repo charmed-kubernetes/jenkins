@@ -116,9 +116,10 @@ def sync_branches(snap_list, starting_ver, force, patches, dry_run):
 
 
 @cli.command()
-@click.option("--snap", help="Snap name to list remote branches for", required=True)
-@click.option("--output", help="Store output to file in YAML format", required=False)
-def list_branches(snap, output):
+@click.option("--snap", default="kubectl", help="Snap name to list remote branches for", required=True)
+@click.option("--output", default="jobs/includes/k8s-snap-branches-list.inc" help="Store output to file in YAML format", required=False)
+@click.option("--commit", is_flag=True)
+def list_branches(snap, output, commit):
     click.echo(f"Checking: git+ssh://cdkbot@git.launchpad.net/snap-{snap}")
     git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
     snap_releases = gitapi.remote_branches(git_repo)
@@ -129,6 +130,16 @@ def list_branches(snap, output):
         output.write_text(
                 yaml.dump(snap_releases, default_flow_style=False, indent=2)
         )
+        if commit:
+            env = os.environ.copy()
+            repo = f"https://{env['CDKBOT_GH_USR']}:{env['CDKBOT_GH_PSW']}@github.com/charmed-kubernetes/jenkins"
+            click.echo("Committing to jenkins repo")
+            git.config("user.email", "cdkbot@gmail.com", _env=env)
+            git.config("user.name", "cdkbot", _env=env)
+            sh.git.config("--global", "push.default", "simple")
+            git.add(str(output))
+            git.commit("-m", f"Updating k8s snap branches list")
+            git.push(repo, "origin", "master", _env=env)
     else:
         click.echo(pformat(snap_releases))
 
