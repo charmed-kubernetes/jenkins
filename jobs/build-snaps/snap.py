@@ -143,7 +143,7 @@ def sync_branches_list(snap):
             git.commit("-m", f"Updating k8s snap branches list", _env=env, _cwd=tmpdir, _err_to_out=True)
             git.push(repo, "origin", "master", _env=env, _cwd=tmpdir)
         except sh.ErrorReturnCode as error:
-            click.echo(error)
+            click.echo("Nothing to commit, skipping.")
 
 
 def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
