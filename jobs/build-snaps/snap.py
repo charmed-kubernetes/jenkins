@@ -117,7 +117,7 @@ def sync_branches(snap_list, starting_ver, force, patches, dry_run):
 
 @cli.command()
 @click.option("--snap", default="kubectl", help="Snap name to list remote branches for", required=True)
-@click.option("--output", default="jobs/includes/k8s-snap-branches-list.inc" help="Store output to file in YAML format", required=False)
+@click.option("--output", default="jobs/includes/k8s-snap-branches-list.inc", help="Store output to file in YAML format", required=False)
 @click.option("--commit", is_flag=True)
 def list_branches(snap, output, commit):
     click.echo(f"Checking: git+ssh://cdkbot@git.launchpad.net/snap-{snap}")
