@@ -19,29 +19,33 @@
           description: |
             Select the k8s version to apply the built snap to. This determines
             the <major.minor>/<risk> when setting the tracks to publish to.
-          choices: !include jobs/includes/k8s-snap-support-versions.inc
+          choices: !include: jobs/includes/k8s-snap-support-versions.inc
       - choice:
           name: SNAP_BRANCH_VERSION
           description: |
             Select the branch to build the snaps from. The branches represent
             the upstream versions we know about and can build against.
-          choices: !include jobs/includes/k8s-snap-branches-list.inc
+          choices: !include: jobs/includes/k8s-snap-branches-list.inc
       - bool:
           name: TRACK_STABLE
           description: |
-            Release to <major.minor>/stable
+            Release to MAJOR.MINOR/stable
       - bool:
           name: TRACK_CANDIDATE
           description: |
-            Release to <major.minor>/candidate
+            Release to MAJOR.MINOR/candidate
       - bool:
           name: TRACK_BETA
           description: |
-            Release to <major.minor>/beta
+            Release to MAJOR.MINOR/beta
       - bool:
           name: TRACK_EDGE
           description: |
-            Release to <major.minor>/edge
+            Release to MAJOR.MINOR/edge
+      - string:
+          name: TRACK_CUSTOM
+          description: |
+            Release to a custom ver/risk
 
     builders:
       - set-env:
@@ -68,6 +72,10 @@
 
           if [ "$TRACK_EDGE" = "true" ]; then
               TRACKS="$TRACKS --tracks $SNAP_K8S_VERSION/edge"
+          fi
+
+          if [ ! -z "${TRACK_CUSTOM+x}" ]; then
+              TRACKS="$TRACKS --tracks $TRACK_CUSTOM"
           fi
 
           export TRACKS="$TRACKS"

@@ -40,23 +40,6 @@ def revisions(snap, version_filter, arch="amd64", exclude_pre=False):
     return []
 
 
-
-def revisions(snap, version_filter, arch="amd64", exclude_pre=False):
-    """ Get revisions of snap
-
-    snap: name of snap
-    version_filter: snap version to filter on
-    """
-
-    re_comp = re.compile("[ \t+]{2,}")
-    revision_list = sh.snapcraft.revisions(snap, "--arch", arch, _err_to_out=True)
-    revision_list = revision_list.stdout.decode().splitlines()[1:]
-    revision_parsed = {}
-    revision_list = [re_comp.split(line) for line in revision_list]
-
-
-
-
 def latest(snap, version, arch="amd64", exclude_pre=False):
     """ Get latest snap revision
     """
