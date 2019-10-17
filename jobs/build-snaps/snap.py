@@ -9,13 +9,15 @@ import os
 import yaml
 import semver
 import tempfile
+import requests
 from sh.contrib import git
 from urllib.parse import urlparse
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
-from lib import lp, idm, snapapi
+from lib import lp, idm, snapapi, k8s
 from lib import git as gitapi
+from pprint import pformat
 
 
 def _render(tmpl_file, context):
@@ -30,11 +32,11 @@ def cli():
     pass
 
 
-def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
+def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
     """ Syncs the upstream k8s release tags with our snap branches
 
     Usage:
-    snaps-source.py sync-upstream --snap-list includes/k8s-snap-list.inc
+    python3 snap.py sync-branches --snap-list includes/k8s-snap-list.inc
     """
     supported_releases = []
     upstream_releases = gitapi.remote_tags("https://github.com/kubernetes/kubernetes")
@@ -66,44 +68,36 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
                     force=force,
                     patches=patches,
                 )
-                _fmt_version = semver.parse(snap_rel.lstrip("v"))
-                _fmt_version_str = f'{_fmt_version["major"]}.{_fmt_version["minor"]}'
-                tracks_to_publish = []
-                if _fmt_version["prerelease"]:
-                    if "rc" in _fmt_version["prerelease"]:
-                        click.echo(
-                            f"This is a rc release, setting candidate tracks"
-                        )
-                        tracks_to_publish = [
-                            f"{_fmt_version_str}/candidate",
-                        ]
 
-                    if "beta" in _fmt_version["prerelease"]:
-                        click.echo(f"This is a beta release, setting edge/beta tracks")
-                        tracks_to_publish = [
-                            f"{_fmt_version_str}/beta",
-                            f"{_fmt_version_str}/edge",
-                        ]
-                    if "alpha" in _fmt_version["prerelease"]:
-                        click.echo(f"This is an alpha release, setting edge tracks")
-                        tracks_to_publish = [f"{_fmt_version_str}/edge"]
-                else:
-                    tracks_to_publish = [
-                        f"{_fmt_version_str}/stable",
-                    ]
-                click.echo(f"Generating recipe for {snap}-{_fmt_version_str}")
-                if not dry_run:
-                    _create_snap_recipe(
-                        snap=snap,
-                        version=_fmt_version_str,
-                        track=tracks_to_publish,
-                        owner="k8s-jenkaas-admins",
-                        tag=snap_rel,
-                        repo=git_repo,
-                        dry_run=False,
-                        snap_recipe_email=os.environ.get("K8STEAMCI_USR"),
-                        snap_recipe_password=os.environ.get("K8STEAMCI_PSW"),
-                    )
+def _sync_snaps(snap_list, version, branch_version, tracks):
+    """ Creates the snap recipes that upload to the snap store for latest k8s and stable releases
+    """
+    latest_k8s_ver = k8s.latest()
+    snaps = yaml.safe_load(Path(snap_list).read_text(encoding="utf8"))
+    for snap in snaps:
+        git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
+        tracks_to_publish = [track for track in tracks]
+        click.echo(f"Generating recipe for {snap}-{version}")
+        _create_snap_recipe(
+            snap=snap,
+            version=version,
+            track=tracks_to_publish,
+            owner="k8s-jenkaas-admins",
+            tag=branch_version,
+            repo=git_repo,
+            dry_run=False,
+            snap_recipe_email=os.environ.get("K8STEAMCI_USR"),
+            snap_recipe_password=os.environ.get("K8STEAMCI_PSW"),
+        )
+
+
+@cli.command()
+@click.option("--snap-list", help="Path to supported snaps", required=True)
+@click.option("--version", help="Major.Minor to sync", required=True)
+@click.option("--branch-version", help="Snap branch version", required=True)
+@click.option("--tracks", help="Tracks to release to", required=True, multiple=True)
+def sync_snaps(snap_list, version, branch_version, tracks):
+    return _sync_snaps(snap_list, version, branch_version, tracks)
 
 
 @cli.command()
@@ -117,8 +111,26 @@ def _sync_upstream(snap_list, starting_ver, force, patches, dry_run):
 @click.option("--force", is_flag=True)
 @click.option("--patches", help="Path to patches list", required=False)
 @click.option("--dry-run", is_flag=True)
-def sync_upstream(snap_list, starting_ver, force, patches, dry_run):
-    return _sync_upstream(snap_list, starting_ver, force, patches, dry_run)
+def sync_branches(snap_list, starting_ver, force, patches, dry_run):
+    return _sync_branches(snap_list, starting_ver, force, patches, dry_run)
+
+
+@cli.command()
+@click.option("--snap", help="Snap name to list remote branches for", required=True)
+@click.option("--output", help="Store output to file in YAML format", required=False)
+def list_branches(snap, output):
+    click.echo(f"Checking: git+ssh://cdkbot@git.launchpad.net/snap-{snap}")
+    git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
+    snap_releases = gitapi.remote_branches(git_repo)
+    snap_releases.reverse()
+    if output:
+        output = Path(output)
+        click.echo(f"Saving to {str(output)}")
+        output.write_text(
+                yaml.dump(snap_releases, default_flow_style=False, indent=2)
+        )
+    else:
+        click.echo(pformat(snap_releases))
 
 
 def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):

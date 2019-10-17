@@ -12,7 +12,37 @@
       - default-job-wrapper
       - ci-creds
     triggers:
-        - timed: "@daily"
+      - timed: "@daily"
+    parameters:
+      - choice:
+          name: SNAP_K8S_VERSION
+          description: |
+            Select the k8s version to apply the built snap to. This determines
+            the <major.minor>/<risk> when setting the tracks to publish to.
+          choices: !include includes/k8s-snap-support-version.inc
+      - choice:
+          name: SNAP_BRANCH_VERSION
+          description: |
+            Select the branch to build the snaps from. The branches represent
+            the upstream versions we know about and can build against.
+          choices: !include includes/k8s-snap-branches-list.inc
+      - bool:
+          name: TRACK_STABLE
+          description: |
+            Release to <major.minor>/stable
+      - bool:
+          name: TRACK_CANDIDATE
+          description: |
+            Release to <major.minor>/candidate
+      - bool:
+          name: TRACK_BETA
+          description: |
+            Release to <major.minor>/beta
+      - bool:
+          name: TRACK_EDGE
+          description: |
+            Release to <major.minor>/edge
+
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-snaps"
@@ -23,15 +53,28 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          TAG="sync"
-          if [ ! -z ${SNAP_PATCHES_LIST+x} ]; then
-              TAG="sync-with-patches"
+          TRACKS=""
+          if [ "$TRACK_STABLE" = "true" ]; then
+              TRACKS="$TRACKS --tracks $SNAP_K8S_VERSION/stable"
           fi
 
+          if [ "$TRACK_CANDIDATE" = "true" ]; then
+              TRACKS="$TRACKS --tracks $SNAP_K8S_VERSION/candidate"
+          fi
+
+          if [ "$TRACK_BETA" = "true" ]; then
+              TRACKS="$TRACKS --tracks $SNAP_K8S_VERSION/beta"
+          fi
+
+          if [ "$TRACK_EDGE" = "true" ]; then
+              TRACKS="$TRACKS --tracks $SNAP_K8S_VERSION/edge"
+          fi
+
+          export TRACKS="$TRACKS"
           virtualenv venv -p python3.6
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
-          venv/bin/ogc --spec jobs/build-snaps/spec.yml -t "$TAG"
+          venv/bin/ogc --spec jobs/build-snaps/spec.yml -t sync-snaps
 
 - job:
     name: 'promote-snaps'
@@ -42,11 +85,11 @@
       - k8s-jenkins-jenkaas
     parameters:
       - string:
-          name: TO_TRACK
-          description: Snap track(s) to promote to, separated by space.
-      - string:
           name: FROM_TRACK
           description: Snap track to promote from
+      - string:
+          name: TO_TRACK
+          description: Snap track(s) to promote to, separated by space.
       - string:
           name: SNAP_ARCH
           default: "amd64"

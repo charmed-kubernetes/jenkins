@@ -23,7 +23,8 @@ def remote_branches(url):
         "-E",
         "s/^[[:xdigit:]]+[[:space:]]+refs\\/heads\\/(.+)/\\1/g",
     ).stdout.decode()
-    return _tags.split("\n")[:-1]
+    _tags = _tags.split("\n")[:-1]
+    return [tag for tag in _tags if tag != 'master']
 
 
 def branch_exists(repo, branch, env):

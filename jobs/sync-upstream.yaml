@@ -1,4 +1,24 @@
-# Syncs upstream charms, layers, whatevs
+# Syncs upstream charms, layers, snap branches, whatevs
+
+- job:
+    name: 'sync-snap-branches'
+    description: |
+      Sync all release tags from upstream.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    triggers:
+        - timed: "@daily"
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-snaps"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/build-snaps"
+          JOB_SPEC_FILE: "spec.yml"
+          JOB_TAGS: "-t sync-branches"
 
 - job:
     name: 'sync-upstream'

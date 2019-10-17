@@ -1,10 +1,14 @@
 plan:
   - script:
-      - python3 jobs/build-snaps/snap.py sync-upstream --snap-list jobs/includes/k8s-snap-list.inc
-    tags: [sync]
+      - python3 jobs/build-snaps/snap.py sync-branches --snap-list jobs/includes/k8s-snap-list.inc
+    tags: [sync-branches]
   - script:
-      - python3 jobs/build-snaps/snap.py sync-upstream --snap-list jobs/includes/k8s-snap-list.inc --force --patches $SNAP_PATCHES_LIST
-    tags: [sync-with-patches]
+      - python3 jobs/build-snaps/snap.py sync-snaps --snap-list jobs/includes/k8s-snap-list.inc --version "$SNAP_K8S_VERSION" --branch-version "$SNAP_BRANCH_VERSION" $TRACKS
+    tags: [sync-snaps]
+
+  # - script:
+  #     - python3 jobs/build-snaps/snap.py sync-upstream --snap-list jobs/includes/k8s-snap-list.inc --force --patches $SNAP_PATCHES_LIST
+  #   tags: [sync-with-patches]
 
   - script:
       - |
