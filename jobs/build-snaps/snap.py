@@ -72,7 +72,6 @@ def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
 def _sync_snaps(snap_list, version, branch_version, tracks):
     """ Creates the snap recipes that upload to the snap store for latest k8s and stable releases
     """
-    latest_k8s_ver = k8s.latest()
     snaps = yaml.safe_load(Path(snap_list).read_text(encoding="utf8"))
     for snap in snaps:
         git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
@@ -140,8 +139,11 @@ def sync_branches_list(snap):
             yaml.dump(snap_releases, default_flow_style=False, indent=2)
         )
         git.add(str(output), _env=env, _cwd=tmpdir)
-        git.commit("-m", f"Updating k8s snap branches list", _env=env, _cwd=tmpdir)
-        git.push(repo, "origin", "master", _env=env, _cwd=tmpdir)
+        try:
+            git.commit("-m", f"Updating k8s snap branches list", _env=env, _cwd=tmpdir, _err_to_out=True)
+            git.push(repo, "origin", "master", _env=env, _cwd=tmpdir)
+        except sh.ErrorReturnCode as error:
+            click.echo(error)
 
 
 def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
