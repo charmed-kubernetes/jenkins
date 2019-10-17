@@ -189,7 +189,7 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     if not dry_run:
         git.add(".", _cwd=snap_basename)
         git.commit("-m", f"Creating branch {to_branch}", _cwd=snap_basename)
-        git.push(repo, to_branch, _cwd=snap_basename, _env=env)
+        git.push("--force", repo, to_branch, _cwd=snap_basename, _env=env)
     tmpdir.cleanup()
 
 
