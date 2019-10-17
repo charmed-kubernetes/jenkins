@@ -127,19 +127,21 @@ def sync_branches_list(snap):
 
     env = os.environ.copy()
     repo = f"https://{env['CDKBOT_GH_USR']}:{env['CDKBOT_GH_PSW']}@github.com/charmed-kubernetes/jenkins"
-    git.clone(repo, "jenkins-new")
-    git.config("user.email", "cdkbot@gmail.com", _env=env, _cwd="jenkins-new")
-    git.config("user.name", "cdkbot", _env=env, _cwd="jenkins-new")
-    sh.git.config("--global", "push.default", "simple", _cwd="jenkins-new")
 
-    output = Path("jenkins-new/jobs/includes/k8s-snap-branches-list.inc")
-    click.echo(f"Saving to {str(output)}")
-    output.write_text(
-        yaml.dump(snap_releases, default_flow_style=False, indent=2)
-    )
-    git.add(str(output), _env=env, _cwd="jenkins-new")
-    git.commit("-m", f"Updating k8s snap branches list", _env=env, _cwd="jenkins-new")
-    git.push(repo, "origin", "master", _env=env, _cwd="jenkins-new")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        git.clone(repo, tmpdir)
+        git.config("user.email", "cdkbot@gmail.com", _env=env, _cwd=tmpdir)
+        git.config("user.name", "cdkbot", _env=env, _cwd=tmpdir)
+        git.config("--global", "push.default", "simple", _cwd=tmpdir)
+
+        output = Path(f"{tmpdir}/jobs/includes/k8s-snap-branches-list.inc")
+        click.echo(f"Saving to {str(output)}")
+        output.write_text(
+            yaml.dump(snap_releases, default_flow_style=False, indent=2)
+        )
+        git.add(str(output), _env=env, _cwd=tmpdir)
+        git.commit("-m", f"Updating k8s snap branches list", _env=env, _cwd=tmpdir)
+        git.push(repo, "origin", "master", _env=env, _cwd=tmpdir)
 
 
 def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
