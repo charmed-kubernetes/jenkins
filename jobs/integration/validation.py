@@ -491,15 +491,15 @@ async def test_network_policies(model, tools):
 async def test_worker_master_removal(model, tools):
     # Add a second master
     masters = model.applications["kubernetes-master"]
-    unit_count = len(masters.units)
-    if unit_count < 2:
+    original_master_count = len(masters.units)
+    if original_master_count < 2:
         await masters.add_unit(1)
         await disable_source_dest_check(tools.model_name)
 
     # Add a second worker
     workers = model.applications["kubernetes-worker"]
-    unit_count = len(workers.units)
-    if unit_count < 2:
+    original_worker_count = len(workers.units)
+    if original_worker_count < 2:
         await workers.add_unit(1)
         await disable_source_dest_check(tools.model_name)
     await tools.juju_wait()
@@ -527,8 +527,10 @@ async def test_worker_master_removal(model, tools):
     # Try and restore the cluster state
     # Tests following this were passing, but they actually
     # would fail in a multi-master situation
-    await workers.add_unit(1)
-    await masters.add_unit(1)
+    while len(workers.units) < original_worker_count:
+        await workers.add_unit(1)
+    while len(masters.units) < original_master_count:
+        await masters.add_unit(1)
     await disable_source_dest_check(tools.model_name)
     log("Waiting for new master and worker.")
     await tools.juju_wait()
