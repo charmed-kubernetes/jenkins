@@ -11,8 +11,8 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
-    triggers:
-      - timed: "@daily"
+    # triggers:
+    #   - timed: "@daily"
     parameters:
       - choice:
           name: SNAP_K8S_VERSION
