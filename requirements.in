@@ -20,7 +20,7 @@ juju>=2.6.3
 jujubundlelib
 mkdocs-material
 mkdocs
-ogc-plugins-juju>=1.0.18
+ogc-plugins-juju>=1.0.19
 ogc-plugins-runner>=1.0.23
 ogc-plugins-spec-doc>=1.0.7
 ogc>=0.3.56
