@@ -1,0 +1,77 @@
+plan:
+  - &BASE_JOB
+    env:
+      - SNAP_VERSION=1.17/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nfs
+      - JUJU_MODEL=validate-nfs-model
+    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
+    before-script:
+      - juju kill-controller -y $JUJU_CONTROLLER || true
+      - !include jobs/spec-helpers/bootstrap.yml
+    script:
+      - |
+        #!/bin/bash
+        pytest $INTEGRATION_TEST_PATH/test_nfs.py::test_nfs \
+           --cloud $JUJU_CLOUD \
+           --model $JUJU_MODEL \
+           --controller $JUJU_CONTROLLER
+
+    after-script:
+      - !include jobs/spec-helpers/collect.yml
+      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.16/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nfs
+      - JUJU_MODEL=validate-nfs-model
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.16/stable
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nfs
+      - JUJU_MODEL=validate-nfs-model
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.15/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nfs
+      - JUJU_MODEL=validate-nfs-model
+    if: '[[ $(date +"%A") = "Saturday" ]]'
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.14/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nfs
+      - JUJU_MODEL=validate-nfs-model
+    if: '[[ $(date +"%A") = "Sunday" ]]'
+
+meta:
+  name: Verify CK, with NFS.
+  synopsis:
+    - summary: Running the base validation suite against a deployed Kubernetes
+      code: |
+        ```
+        # edit spec.yml and update the appropriate vars under the `env:` section
+        > ogc --spec jobs/validate/nfs-spec.yml
+        ```
+  description: |
+    Verifies that CK with NFS passes integration tests.
+  mkdocs:
+    destination:
+      - "validations/ck/nfs.md"
+    jenkins-job-builder:
+      jobs:
+        - jobs/ci-master.yaml
+        - jobs/validate.yaml

@@ -2,121 +2,10 @@ import asyncio
 import pytest
 from .utils import (
     verify_ready,
-    verify_completed,
-    verify_deleted,
     retry_async_with_timeout,
+    validate_storage_class,
 )
 from .logger import log
-
-
-async def validate_storage_class(model, sc_name):
-    master = model.applications["kubernetes-master"].units[0]
-    # write a string to a file on the pvc
-    pod_definition = """
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {0}-pvc
-  annotations:
-   volume.beta.kubernetes.io/storage-class: {0}
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
----
-kind: Pod
-apiVersion: v1
-metadata:
-  name: {0}-write-test
-spec:
-  volumes:
-  - name: shared-data
-    persistentVolumeClaim:
-      claimName: {0}-pvc
-      readOnly: false
-  containers:
-    - name: {0}-write-test
-      image: ubuntu
-      command: ["/bin/bash", "-c", "echo 'JUJU TEST' > /data/juju"]
-      volumeMounts:
-      - name: shared-data
-        mountPath: /data
-  restartPolicy: Never
-""".format(
-        sc_name
-    )
-    cmd = "/snap/bin/kubectl create -f - << EOF{}EOF".format(pod_definition)
-    log("Ceph: {} writing test".format(sc_name))
-    output = await master.run(cmd)
-    assert output.status == "completed"
-
-    # wait for completion
-    await retry_async_with_timeout(
-        verify_completed,
-        (master, "po", ["{}-write-test".format(sc_name)]),
-        timeout_msg="Unable to create write" " pod for ceph test",
-    )
-
-    # read that string from ceph pvc
-    pod_definition = """
-kind: Pod
-apiVersion: v1
-metadata:
-  name: {0}-read-test
-spec:
-  volumes:
-  - name: shared-data
-    persistentVolumeClaim:
-      claimName: {0}-pvc
-      readOnly: false
-  containers:
-    - name: {0}-read-test
-      image: ubuntu
-      command: ["/bin/bash", "-c", "cat /data/juju"]
-      volumeMounts:
-      - name: shared-data
-        mountPath: /data
-  restartPolicy: Never
-""".format(
-        sc_name
-    )
-    cmd = "/snap/bin/kubectl create -f - << EOF{}EOF".format(pod_definition)
-    log("Ceph: {} reading test".format(sc_name))
-    output = await master.run(cmd)
-    assert output.status == "completed"
-
-    # wait for completion
-    await retry_async_with_timeout(
-        verify_completed,
-        (master, "po", ["{}-read-test".format(sc_name)]),
-        timeout_msg="Unable to create write" " pod for ceph test",
-    )
-
-    output = await master.run("/snap/bin/kubectl logs {}-read-test".format(sc_name))
-    assert output.status == "completed"
-    log("output = {}".format(output.data["results"]["Stdout"]))
-    assert "JUJU TEST" in output.data["results"]["Stdout"]
-
-    log("Ceph: {} cleanup".format(sc_name))
-    pods = "{0}-read-test {0}-write-test".format(sc_name)
-    pvcs = "{}-pvc".format(sc_name)
-    output = await master.run("/snap/bin/kubectl delete po {}".format(pods))
-    assert output.status == "completed"
-    output = await master.run("/snap/bin/kubectl delete pvc {}".format(pvcs))
-    assert output.status == "completed"
-
-    await retry_async_with_timeout(
-        verify_deleted,
-        (master, "po", pods),
-        timeout_msg="Unable to remove" " the ceph test pods",
-    )
-    await retry_async_with_timeout(
-        verify_deleted,
-        (master, "pvc", pvcs),
-        timeout_msg="Unable to remove" " the ceph test pvc",
-    )
 
 
 @pytest.mark.asyncio
@@ -150,8 +39,8 @@ async def test_ceph(model, tools):
         verify_ready, (unit, "po", ["csi-rbdplugin"]), timeout_msg="CSI pods not ready!"
     )
     # create pod that writes to a pv from ceph
-    await validate_storage_class(model, "ceph-xfs")
-    await validate_storage_class(model, "ceph-ext4")
+    await validate_storage_class(model, "ceph-xfs", "Ceph")
+    await validate_storage_class(model, "ceph-ext4", "Ceph")
     # cleanup
     (done1, pending1) = await asyncio.wait(
         {
