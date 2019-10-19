@@ -317,3 +317,113 @@ async def log_snap_versions(model, prefix="before"):
         action = await unit.run("snap list")
         snap_versions = action.data["results"]["Stdout"].strip() or "No snaps found"
         log(f"{prefix} {unit.name} {snap_versions}")
+
+
+async def validate_storage_class(model, sc_name, test_name):
+    master = model.applications["kubernetes-master"].units[0]
+    # write a string to a file on the pvc
+    pod_definition = """
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {0}-pvc
+  annotations:
+   volume.beta.kubernetes.io/storage-class: {0}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: {0}-write-test
+spec:
+  volumes:
+  - name: shared-data
+    persistentVolumeClaim:
+      claimName: {0}-pvc
+      readOnly: false
+  containers:
+    - name: {0}-write-test
+      image: ubuntu
+      command: ["/bin/bash", "-c", "echo 'JUJU TEST' > /data/juju"]
+      volumeMounts:
+      - name: shared-data
+        mountPath: /data
+  restartPolicy: Never
+""".format(
+        sc_name
+    )
+    cmd = "/snap/bin/kubectl create -f - << EOF{}EOF".format(pod_definition)
+    log("{}: {} writing test".format(test_name, sc_name))
+    output = await master.run(cmd)
+    assert output.status == "completed"
+
+    # wait for completion
+    await retry_async_with_timeout(
+        verify_completed,
+        (master, "po", ["{}-write-test".format(sc_name)]),
+        timeout_msg="Unable to create write pod for {} test".format(test_name),
+    )
+
+    # read that string from pvc
+    pod_definition = """
+kind: Pod
+apiVersion: v1
+metadata:
+  name: {0}-read-test
+spec:
+  volumes:
+  - name: shared-data
+    persistentVolumeClaim:
+      claimName: {0}-pvc
+      readOnly: false
+  containers:
+    - name: {0}-read-test
+      image: ubuntu
+      command: ["/bin/bash", "-c", "cat /data/juju"]
+      volumeMounts:
+      - name: shared-data
+        mountPath: /data
+  restartPolicy: Never
+""".format(
+        sc_name
+    )
+    cmd = "/snap/bin/kubectl create -f - << EOF{}EOF".format(pod_definition)
+    log("{}: {} reading test".format(test_name, sc_name))
+    output = await master.run(cmd)
+    assert output.status == "completed"
+
+    # wait for completion
+    await retry_async_with_timeout(
+        verify_completed,
+        (master, "po", ["{}-read-test".format(sc_name)]),
+        timeout_msg="Unable to create write" " pod for ceph test",
+    )
+
+    output = await master.run("/snap/bin/kubectl logs {}-read-test".format(sc_name))
+    assert output.status == "completed"
+    log("output = {}".format(output.data["results"]["Stdout"]))
+    assert "JUJU TEST" in output.data["results"]["Stdout"]
+
+    log("{}: {} cleanup".format(test_name, sc_name))
+    pods = "{0}-read-test {0}-write-test".format(sc_name)
+    pvcs = "{}-pvc".format(sc_name)
+    output = await master.run("/snap/bin/kubectl delete po {}".format(pods))
+    assert output.status == "completed"
+    output = await master.run("/snap/bin/kubectl delete pvc {}".format(pvcs))
+    assert output.status == "completed"
+
+    await retry_async_with_timeout(
+        verify_deleted,
+        (master, "po", pods),
+        timeout_msg="Unable to remove {} test pods".format(test_name),
+    )
+    await retry_async_with_timeout(
+        verify_deleted,
+        (master, "pvc", pvcs),
+        timeout_msg="Unable to remove {} test pvcs".format(test_name),
+    )
