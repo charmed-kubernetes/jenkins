@@ -202,6 +202,30 @@
           JOB_SPEC_FILE: "ceph-spec.yml"
 
 - job:
+    name: 'validate-ck-nfs'
+    node: runner-cloud
+    description: |
+      Validates CK, with NFS.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    triggers:
+        - timed: "@daily"
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_FILE: "nfs-spec.yml"
+
+
+- job:
     name: 'validate-ck-nvidia'
     node: runner-cloud
     description: |
