@@ -95,7 +95,7 @@ plan:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-calico
+      - JUJU_CONTROLLER=validate-ck-calico
       - JUJU_MODEL=validate-calico-model
       - TEST_BGP=1
     if: '[[ $(date +"%A") = "Saturday" ]]'
@@ -105,7 +105,7 @@ plan:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-calico
+      - JUJU_CONTROLLER=validate-ck-calico
       - JUJU_MODEL=validate-calico-model
       - TEST_BGP=1
     if: '[[ $(date +"%A") = "Sunday" ]]'
@@ -142,7 +142,7 @@ plan:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-calico
+      - JUJU_CONTROLLER=validate-ck-calico
       - JUJU_MODEL=validate-calico-model
       - JOB_NAME=validate-ck-calico-no-bgp
     if: '[[ $(date +"%A") = "Saturday" ]]'
@@ -152,6 +152,6 @@ plan:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-calico
+      - JUJU_CONTROLLER=validate-ck-calico
       - JUJU_MODEL=validate-calico-model
     if: '[[ $(date +"%A") = "Sunday" ]]'
