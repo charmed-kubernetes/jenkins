@@ -29,4 +29,4 @@ markdown_extensions:
 extra:
   social:
     - type: 'github'
-      link: 'https://github.com/charmed-kubernetes/kubernetes-jenkins'
+      link: 'https://github.com/charmed-kubernetes/jenkins'
