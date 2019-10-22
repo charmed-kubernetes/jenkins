@@ -12,12 +12,14 @@ plan:
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - !include jobs/spec-helpers/bootstrap.yml
     script:
-      - |
-        #!/bin/bash
-        pytest $INTEGRATION_TEST_PATH/test_nfs.py::test_nfs \
-           --cloud $JUJU_CLOUD \
-           --model $JUJU_MODEL \
-           --controller $JUJU_CONTROLLER
+      - runner:
+          timeout: 7200
+          script: |
+            #!/bin/bash
+            pytest $INTEGRATION_TEST_PATH/test_nfs.py::test_nfs \
+               --cloud $JUJU_CLOUD \
+               --model $JUJU_MODEL \
+               --controller $JUJU_CONTROLLER
 
     after-script:
       - !include jobs/spec-helpers/collect.yml
