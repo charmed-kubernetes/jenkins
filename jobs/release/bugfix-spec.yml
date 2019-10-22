@@ -9,6 +9,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=release-ck-bugfix
       - JUJU_MODEL=release-ck-bugfix-model
+    if: '[[ $(python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate) -ne "0" ]]'
     before-script:
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - !include jobs/spec-helpers/bootstrap.yml
@@ -17,7 +18,42 @@ plan:
     after-script:
       - !include jobs/spec-helpers/collect.yml
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+    on-success:
+      - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID set-phase --name validate --result pass
+    on-failure:
+      - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID set-phase --name validate --result fail
     tags: [validate-ck-candidate]
+  - env:
+      - SNAP_VERSION=1.15/stable
+      - SNAP_VERSION_UPGRADE_TO=1.16/stable
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=candidate
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-bugfix-upgrade
+      - JUJU_MODEL=validate-ck-bugfix-upgrade-model
+    if: '[[ $(python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate-upgrade) -ne "0" ]]'
+    before-script:
+      - juju kill-controller -y $JUJU_CONTROLLER || true
+      - !include jobs/spec-helpers/bootstrap.yml
+    script:
+      - |
+        #!/bin/bash
+        set -x
+        pytest "$INTEGRATION_TEST_PATH"/validation.py \
+           --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
+           --upgrade-charm-channel edge \
+           --cloud "$JUJU_CLOUD" \
+           --model "$JUJU_MODEL" \
+           --controller "$JUJU_CONTROLLER"
+    after-script:
+      - !include jobs/spec-helpers/collect.yml
+      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+    on-success:
+      - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID set-phase --name validate-upgrade --result pass
+    on-failure:
+      - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID set-phase --name validate-upgrade --result fail
+    tags: [validate-ck-candidate-upgrade]
+
 
 meta:
   mkdocs:
