@@ -4,14 +4,14 @@ plan:
       - DRY_RUN="no"
       - ALWAYS_RELEASE="no"
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=release-microk8s-beta
+      - JUJU_CONTROLLER=release-microk8s-beta-amd64
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=amd64
     tags:
       - amd64/beta
       - amd64
     before-script:
-      - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-$ARCH"
+      - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER"
       - |
         #!/bin/bash
         set -x
@@ -55,7 +55,7 @@ plan:
       - DRY_RUN=no
       - ALWAYS_RELEASE=no
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=release-microk8s-beta
+      - JUJU_CONTROLLER=release-microk8s-beta-arm64
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=arm64
     tags:
@@ -66,7 +66,7 @@ plan:
       - DRY_RUN=no
       - ALWAYS_RELEASE=no
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=release-microk8s-stable
+      - JUJU_CONTROLLER=release-microk8s-stable-arm64
       - JUJU_MODEL=release-microk8s-stable-model
       - ARCH=arm64
     tags:
@@ -86,7 +86,7 @@ plan:
       - DRY_RUN=no
       - ALWAYS_RELEASE=no
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=release-microk8s-stable
+      - JUJU_CONTROLLER=release-microk8s-stable-amd64
       - JUJU_MODEL=release-microk8s-stable-model
       - ARCH=amd64
     tags:
@@ -106,7 +106,7 @@ plan:
       - DRY_RUN=no
       - ALWAYS_RELEASE=no
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=release-microk8s-pre-release
+      - JUJU_CONTROLLER=release-microk8s-pre-release-amd64
       - JUJU_MODEL=release-microk8s-pre-release-model
       - ARCH=amd64
     tags:
@@ -125,7 +125,7 @@ plan:
       - DRY_RUN=no
       - ALWAYS_RELEASE=no
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=release-microk8s-pre-release
+      - JUJU_CONTROLLER=release-microk8s-pre-release-arm64
       - JUJU_MODEL=release-microk8s-pre-release-model
       - ARCH=arm64
     tags:
