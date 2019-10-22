@@ -4,6 +4,7 @@
 import argparse
 import boto3
 import sys
+import click
 
 
 def parse_options(argv):
@@ -47,8 +48,8 @@ def get_phase(db, opts):
     """ checks for existing phase and returns result
     """
     if db.get(opts.phase_name, 'fail') == 'fail':
-        sys.exit(1)
-    sys.exit(0)
+        return click.echo(1)
+    return click.echo(0)
 
 
 def set_phase(db, opts):
