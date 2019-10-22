@@ -9,7 +9,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=release-ck-bugfix
       - JUJU_MODEL=release-ck-bugfix-model
-    if: '[[ $(python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate) -eq "0" ]]'
+    if: '$(python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate)'
     before-script:
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - !include jobs/spec-helpers/bootstrap.yml
@@ -31,7 +31,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-bugfix-upgrade
       - JUJU_MODEL=validate-ck-bugfix-upgrade-model
-    if: '[[ $(python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate-upgrade) -eq "0" ]]'
+    if: '$(python3 jobs/release/release-tracker.py --release-id $RELEASE_ID get-phase --name validate-upgrade)'
     before-script:
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - !include jobs/spec-helpers/bootstrap.yml
