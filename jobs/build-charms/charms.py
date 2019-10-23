@@ -125,22 +125,24 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
                 raise SystemExit(f"Could not download charm after {retries} retries.")
             time.sleep(timeout)
             download()
-        if layer_branch != "master":
-            ltype, name = layer_name.split(":")
-            if ltype == "layer":
-                git.checkout(layer_branch, _cwd=str(charm_env.layers_dir / name))
-                repo_info = git.remote(v=True, _cwd=str(charm_env.layers_dir / name), _err_to_out=True)
-                commits_behind = git.rev_list(f"{layer_branch}..master", "--count", _cwd=str(charm_env.layers_dir / name), _err_to_out=True)
-            elif ltype == "interface":
-                git.checkout(
-                    layer_branch, _cwd=str(charm_env.interfaces_dir / name)
-                )
-                repo_info = git.remote(v=True, _cwd=str(charm_env.interfaces_dir / name), _err_to_out=True)
-                commits_behind = git.rev_list(f"{layer_branch}..master", "--count", _cwd=str(charm_env.interfaces_dir / name), _err_to_out=True)
-            else:
-                raise SystemExit(f"Unknown layer/interface: {layer_name}")
-            click.echo(f"Repo info:\n{repo_info.stdout.decode()}")
-            click.echo(f"Commits Behind {layer_branch}..master: {commits_behind.stdout.decode()}")
+
+        ltype, name = layer_name.split(":")
+        if ltype == "layer":
+            _ltype_path = str(charm_env.layers_dir / name)
+            git.checkout(layer_branch, _cwd=_ltype_path)
+        elif ltype == "interface":
+            _ltype_path = str(charm_env.interfaces_dir / name)
+            git.checkout(
+                layer_branch, _cwd=_ltype_path
+            )
+        else:
+            raise SystemExit(f"Unknown layer/interface: {layer_name}")
+
+        repo_info = git.remote(v=True, _cwd=_ltype_path)
+        click.echo(f"Repo info:\n{repo_info.stdout.decode()}")
+
+        commits_behind = git("rev-list", f"{layer_branch}..master", "--count", _cwd=_ltype_path)
+        click.echo(f"Commits Behind {layer_branch}..master: {commits_behind.stdout.decode()}")
 
 
 def _promote(charm_list, filter_by_tag, from_channel="unpublished", to_channel="edge"):
