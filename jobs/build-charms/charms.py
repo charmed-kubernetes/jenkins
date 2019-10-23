@@ -99,6 +99,10 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
 
         click.echo(f"{layer_name} - {layer_props['upstream']}")
 
+        # TODO: git rev-list master..upstream/master --count to grab the commits
+        # behind downstream is to upstream and also stable downstream is to
+        # downstream master
+
         def download():
             for line in sh.charm(
                 "pull-source",
@@ -123,10 +127,8 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
         if layer_branch != "master":
             ltype, name = layer_name.split(":")
             if ltype == "layer":
-                git.fetch(a=True, _cwd=str(charm_env.layers_dir / name))
                 git.checkout(layer_branch, _cwd=str(charm_env.layers_dir / name))
             elif ltype == "interface":
-                git.fetch(a=True, _cwd=str(charm_env.interfaces_dir / name))
                 git.checkout(
                     layer_branch, _cwd=str(charm_env.interfaces_dir / name)
                 )

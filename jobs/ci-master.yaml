@@ -241,6 +241,7 @@
           export TMPDIR="$WORKSPACE/tmp"
           export PATH=venv/bin:$PATH
           export PATH=$HOME/go/bin:$PATH
+          export PYTHONPATH=$WORKSPACE:"${{PYTHONPATH:-}}"
 
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 
