@@ -122,10 +122,10 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
         if layer_branch != "master":
             ltype, name = layer_name.split(":")
             if ltype == "layer":
-                sh.git.checkout("-b", layer_branch, _cwd=str(charm_env.layers_dir / name))
+                sh.git.checkout(layer_branch, _cwd=str(charm_env.layers_dir / name))
             elif ltype == "interface":
                 sh.git.checkout(
-                    "-b", layer_branch, _cwd=str(charm_env.interfaces_dir / name)
+                    layer_branch, _cwd=str(charm_env.interfaces_dir / name)
                 )
             else:
                 raise SystemExit(f"Unknown layer/interface: {layer_name}")
