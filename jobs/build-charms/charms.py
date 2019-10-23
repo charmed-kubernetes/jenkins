@@ -102,6 +102,7 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
         # TODO: git rev-list master..upstream/master --count to grab the commits
         # behind downstream is to upstream and also stable downstream is to
         # downstream master
+        # Also grab git remote -v
 
         def download():
             for line in sh.charm(
@@ -128,12 +129,18 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
             ltype, name = layer_name.split(":")
             if ltype == "layer":
                 git.checkout(layer_branch, _cwd=str(charm_env.layers_dir / name))
+                repo_info = git.remote(v=True, _cwd=str(charm_env.layers_dir / name), _err_to_out=True)
+                commits_behind = git.rev_list(f"{layer_branch}..master", "--count", _cwd=str(charm_env.layers_dir / name), _err_to_out=True)
             elif ltype == "interface":
                 git.checkout(
                     layer_branch, _cwd=str(charm_env.interfaces_dir / name)
                 )
+                repo_info = git.remote(v=True, _cwd=str(charm_env.interfaces_dir / name), _err_to_out=True)
+                commits_behind = git.rev_list(f"{layer_branch}..master", "--count", _cwd=str(charm_env.interfaces_dir / name), _err_to_out=True)
             else:
                 raise SystemExit(f"Unknown layer/interface: {layer_name}")
+            click.echo(f"Repo info:\n{repo_info.stdout.decode()}")
+            click.echo(f"Commits Behind {layer_branch}..master: {commits_behind.stdout.decode()}")
 
 
 def _promote(charm_list, filter_by_tag, from_channel="unpublished", to_channel="edge"):
