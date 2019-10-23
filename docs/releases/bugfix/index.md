@@ -60,5 +60,10 @@ others are kubeflow related).
 
 Same as charm promotion.
 
+### Verify no snap promotions required
+
+In some cases snaps like **cdk-addons** will need to be promote to the
+correct track/channels after the bugfix is released.
+
 ### Send announcement to k8s-crew with any relevant information.
 
