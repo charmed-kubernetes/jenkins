@@ -22,10 +22,10 @@ def get_tracks(all=False):
     arch = get_arch()
     if arch == "arm64" and not all:
         # 1.12 and 1.13 removed temporarily because of failing builds blocking our CI
-        return ["latest", "1.14", "1.15", "1.16"]
+        return ["latest", "1.14", "1.15", "1.16", "1.17", "1.18", "1.19", "1.20"]
     else:
         # 1.10, 1.11, 1.12 and 1.13 removed temporarily because of failing builds blocking our CI
-        return ["latest", "1.14", "1.15", "1.16"]
+        return ["latest", "1.14", "1.15", "1.16", "1.17", "1.18", "1.19", "1.20"]
 
 
 snap_name = "microk8s"
