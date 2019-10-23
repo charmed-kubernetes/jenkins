@@ -8,6 +8,7 @@ import uuid
 import yaml
 from pathlib import Path
 from urllib.parse import urlparse
+from sh.contrib import git
 
 
 @click.group()
@@ -59,22 +60,22 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
-                for line in sh.git.clone(downstream, identifier, _iter=True):
+                for line in git.clone(downstream, identifier, _iter=True):
                     click.echo(line)
-                git_rev_master = sh.git(
+                git_rev_master = git(
                     "rev-parse", "origin/master", _cwd=identifier
                 ).stdout.decode()
-                git_rev_stable = sh.git(
+                git_rev_stable = git(
                     "rev-parse", "origin/stable", _cwd=identifier
                 ).stdout.decode()
                 if git_rev_master == git_rev_stable:
                     click.echo(f"Skipping  :: {layer_name:^35} :: master == stable")
                     continue
-                sh.git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
-                sh.git.config("user.name", "cdkbot", _cwd=identifier)
-                sh.git.config("--global", "push.default", "simple")
-                sh.git.branch("-f", "stable", "master", _cwd=identifier)
-                for line in sh.git.push(
+                git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
+                git.config("user.name", "cdkbot", _cwd=identifier)
+                git.config("--global", "push.default", "simple")
+                git.branch("-f", "stable", "master", _cwd=identifier)
+                for line in git.push(
                     "-f", "origin", "stable", _cwd=identifier, _iter=True
                 ):
                     click.echo(line)
@@ -115,16 +116,16 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, filter_by
                 downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
-                for line in sh.git.clone(downstream, identifier, _iter=True):
+                for line in git.clone(downstream, identifier, _iter=True):
                     click.echo(line)
-                sh.git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
-                sh.git.config("user.name", "cdkbot", _cwd=identifier)
-                sh.git.config("--global", "push.default", "simple")
-                sh.git.checkout("stable", _cwd=identifier)
+                git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
+                git.config("user.name", "cdkbot", _cwd=identifier)
+                git.config("--global", "push.default", "simple")
+                git.checkout("stable", _cwd=identifier)
                 try:
-                    for line in sh.git.tag(tag, _cwd=identifier, _iter=True, _bg_exc=False):
+                    for line in git.tag(tag, _cwd=identifier, _iter=True, _bg_exc=False):
                         click.echo(line)
-                    for line in sh.git.push("origin", tag, _cwd=identifier, _bg_exc=False, _iter=True):
+                    for line in git.push("origin", tag, _cwd=identifier, _bg_exc=False, _iter=True):
                         click.echo(line)
                 except sh.ErrorReturnCode as error:
                     click.echo(f"Problem tagging: {error.stderr.decode().strip()}, will skip for now..")
@@ -177,29 +178,29 @@ def _sync_upstream(layer_list, dry_run):
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 try:
-                    for line in sh.git.clone(
+                    for line in git.clone(
                         downstream, identifier, _iter=True, _bg_exc=False
                     ):
                         click.echo(line)
                 except sh.ErrorReturnCode as e:
                     click.echo(f"Failed to clone repo: {e.stderr.decode()}")
                     sys.exit(1)
-                sh.git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
-                sh.git.config("user.name", "cdkbot", _cwd=identifier)
-                sh.git.config("--global", "push.default", "simple")
-                sh.git.remote("add", "upstream", upstream, _cwd=identifier)
-                for line in sh.git.fetch(
+                git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
+                git.config("user.name", "cdkbot", _cwd=identifier)
+                git.config("--global", "push.default", "simple")
+                git.remote("add", "upstream", upstream, _cwd=identifier)
+                for line in git.fetch(
                     "upstream", _cwd=identifier, _iter=True, _bg_exc=False
                 ):
                     click.echo(line)
-                sh.git.checkout("master", _cwd=identifier)
+                git.checkout("master", _cwd=identifier)
                 # if "layer-index" in downstream:
                 #     sh.python3("update_readme.py", _cwd=identifier)
-                for line in sh.git.merge(
+                for line in git.merge(
                     "upstream/master", _cwd=identifier, _iter=True, _bg_exc=False
                 ):
                     click.echo(line)
-                for line in sh.git.push(
+                for line in git.push(
                     "origin", _cwd=identifier, _iter=True, _bg_exc=True
                 ):
                     click.echo(line)

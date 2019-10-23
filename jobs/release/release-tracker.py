@@ -2,10 +2,11 @@
 """
 
 import argparse
-import boto3
 import sys
 import click
+from k8slib.service.aws import Store
 
+store = Store("ReleaseTracker")
 
 def parse_options(argv):
     parser = argparse.ArgumentParser(prog="release-tracker")
@@ -41,7 +42,7 @@ def parse_options(argv):
 def store_results(db):
     """ saves the current state of release
     """
-    table.put_item(Item=dict(db))
+    store.put_item(Item=dict(db))
 
 
 def get_phase(db, opts):
@@ -63,13 +64,10 @@ def set_phase(db, opts):
 
 if __name__ == "__main__":
     db = {}
-    session = boto3.Session(region_name="us-east-1")
-    dynamodb = session.resource("dynamodb")
-    table = dynamodb.Table("ReleaseTracker")
 
     opts = parse_options(sys.argv[1:])
 
-    response = table.get_item(Key={"release_id": opts.release_id})
+    response = store.get_item(Key={"release_id": opts.release_id})
     if response and "Item" in response:
         db = response["Item"]
     else:

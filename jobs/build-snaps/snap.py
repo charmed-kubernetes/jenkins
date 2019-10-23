@@ -15,8 +15,8 @@ from urllib.parse import urlparse
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
-from lib import lp, idm, snapapi, k8s
-from lib import git as gitapi
+from k8slib import lp, idm, snapapi, k8s
+from k8slib import git as gitapi
 from pprint import pformat
 
 
@@ -123,7 +123,6 @@ def sync_branches_list(snap):
     git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
     snap_releases = gitapi.remote_branches(git_repo)
     snap_releases.reverse()
-
     env = os.environ.copy()
     repo = f"https://{env['CDKBOT_GH_USR']}:{env['CDKBOT_GH_PSW']}@github.com/charmed-kubernetes/jenkins"
 
@@ -141,9 +140,9 @@ def sync_branches_list(snap):
         git.add(str(output), _env=env, _cwd=tmpdir)
         try:
             git.commit("-m", f"Updating k8s snap branches list", _env=env, _cwd=tmpdir, _err_to_out=True)
-            git.push(repo, "origin", "master", _env=env, _cwd=tmpdir)
+            git.push(repo, "master", _env=env, _cwd=tmpdir)
         except sh.ErrorReturnCode as error:
-            click.echo("Nothing to commit, skipping.")
+            click.echo(f"Nothing to commit, skipping: {error}.")
 
 
 def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
