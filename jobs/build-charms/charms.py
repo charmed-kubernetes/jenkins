@@ -20,6 +20,7 @@ import os
 from glob import glob
 from pathlib import Path
 from pprint import pformat
+from sh.contrib import git
 import click
 import sh
 import yaml
@@ -48,7 +49,7 @@ def _push(repo_path, out_path, charm_entity, is_bundle=False):
     """
 
     click.echo(f"vcs: {repo_path} build-path: {out_path} {charm_entity}")
-    git_commit = sh.git("rev-parse", "HEAD", _cwd=repo_path)
+    git_commit = git("rev-parse", "HEAD", _cwd=repo_path)
     git_commit = git_commit.stdout.decode().strip()
     click.echo(f"grabbing git revision {git_commit}")
 
@@ -121,10 +122,11 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
             download()
         if layer_branch != "master":
             ltype, name = layer_name.split(":")
+            git.fetch(a=True, _cwd=str(charm_env.layers_dir / name))
             if ltype == "layer":
-                sh.git.checkout(layer_branch, _cwd=str(charm_env.layers_dir / name))
+                git.checkout(layer_branch, _cwd=str(charm_env.layers_dir / name))
             elif ltype == "interface":
-                sh.git.checkout(
+                git.checkout(
                     layer_branch, _cwd=str(charm_env.interfaces_dir / name)
                 )
             else:
@@ -388,7 +390,7 @@ def _build_bundles(
     sh.rm("-rf", bundle_build_dir)
     os.makedirs(str(bundle_repo_dir), exist_ok=True)
     os.makedirs(str(bundle_build_dir), exist_ok=True)
-    for line in sh.git.clone(
+    for line in git.clone(
         "--branch",
         bundle_branch,
         bundle_repo,
