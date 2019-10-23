@@ -122,10 +122,11 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
             download()
         if layer_branch != "master":
             ltype, name = layer_name.split(":")
-            git.fetch(a=True, _cwd=str(charm_env.layers_dir / name))
             if ltype == "layer":
+                git.fetch(a=True, _cwd=str(charm_env.layers_dir / name))
                 git.checkout(layer_branch, _cwd=str(charm_env.layers_dir / name))
             elif ltype == "interface":
+                git.fetch(a=True, _cwd=str(charm_env.interfaces_dir / name))
                 git.checkout(
                     layer_branch, _cwd=str(charm_env.interfaces_dir / name)
                 )
