@@ -1512,3 +1512,43 @@ async def test_dns_provider(model, tools):
 
     # Cleanup
     await cleanup()
+
+
+@pytest.mark.asyncio
+async def test_sysctl(model, tools):
+    async def verify_sysctl(units, desired_values):
+        cmd = "sysctl -n"
+        desired_results = []
+        for name, val in desired_values.items():
+            cmd = cmd + " " + name
+            desired_results.append(str(val))
+        for unit in units:
+            action = await unit.run(cmd)
+            assert action.status == "completed"
+            raw_output = action.data["results"]["Stdout"]
+            lines = raw_output.splitlines()
+            assert len(lines) == len(desired_results)
+            if not lines == desired_results:
+                return False
+        return True
+
+    test_values = [{'net.ipv4.neigh.default.gc_thresh1': 64,
+                    'net.ipv4.neigh.default.gc_thresh2': 128},
+                   {'net.ipv4.neigh.default.gc_thresh1': 128,
+                    'net.ipv4.neigh.default.gc_thresh2': 256}]
+    test_applications = [model.applications['kubernetes-master'],
+                         model.applications['kubernetes-worker']]
+
+    for app in test_applications:
+        # save off config for restore later
+        config = await app.get_config()
+
+        for v in test_values:
+            await app.set_config({"sysctl": str(v)})
+            await retry_async_with_timeout(
+                verify_sysctl,
+                (app.units, v),
+                timeout_msg="Unable to find sysctl changes before timeout",
+            )
+
+        await app.set_config({"sysctl": config["sysctl"]["value"]})
