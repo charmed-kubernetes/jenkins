@@ -30,11 +30,19 @@ plan:
       - |
         #!/bin/bash
         set -x
+        snapcraft logout
+        snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds
+
         docker image prune -a --filter "until=24h" --force
         docker container prune --filter "until=24h" --force
 
-        python3 jobs/build-snaps/build-eks-snaps.py build --snap kubelet --snap kubectl --snap kube-proxy --snap kubernetes-test 2>&1
-        python3 jobs/build-snaps/build-eks-snaps.py push --version $VERSION 2>&1
+        python3 jobs/build-snaps/build-eks-snaps.py build \
+             --version $VERSION \
+             --snap kubelet \
+             --snap kubectl \
+             --snap kube-proxy \
+             --snap kubernetes-test
+        python3 jobs/build-snaps/build-eks-snaps.py push --version $VERSION
 
         docker image prune -a --filter "until=24h" --force
         docker container prune --filter "until=24h" --force

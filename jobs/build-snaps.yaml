@@ -201,7 +201,7 @@
     parameters:
       - string:
           name: VERSION
-          default: '1.12.7'
+          default: '1.14.8'
           description: snap eks version to build/promote
     properties:
       - build-discarder:
