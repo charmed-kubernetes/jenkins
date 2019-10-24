@@ -21,7 +21,7 @@ def arn():
         "Statement": [
             {
                 "Effect": "Allow",
-                "Principal": {"AWS": os.environ['AWSIAMARN']},
+                "Principal": {"AWS": os.environ["AWSIAMARN"]},
                 "Action": "sts:AssumeRole",
                 "Condition": {},
             }
@@ -144,7 +144,7 @@ spec:
   groups:
   - view
 EOF""".format(
-        os.environ['AWSIAMARN']
+        os.environ["AWSIAMARN"]
     )
     # Note that we patch a single master's kubeconfig to have the arn in it,
     # so we need to use that one master for all commands
@@ -154,7 +154,7 @@ EOF""".format(
 
     # 3 & 4) grab config and verify aws-iam is inside
     log("verifying kubeconfig")
-    await patch_kubeconfig_and_verify_aws_iam(one_master, os.environ['AWSIAMARN'])
+    await patch_kubeconfig_and_verify_aws_iam(one_master, os.environ["AWSIAMARN"])
 
     # 5) get aws-iam-authenticator binary
     log("getting aws-iam binary")

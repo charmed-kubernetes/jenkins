@@ -101,8 +101,9 @@ async def test_snapshot_restore(model, tools):
                 assert action.status == "completed"
                 src = Path(action.results["snapshot"]["path"])
                 dst = Path(action.results["snapshot"]["path"]).name
-                await unit.scp_from(str(src), str(dst),
-                                    tools.controller_name, tools.connection)
+                await unit.scp_from(
+                    str(src), str(dst), tools.controller_name, tools.connection
+                )
                 filenames[dataset] = str(dst)
                 out = ls("-l", "result*")
                 print(out.stdout.decode().strip())

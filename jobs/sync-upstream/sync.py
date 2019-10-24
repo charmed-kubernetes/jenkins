@@ -19,16 +19,19 @@ def cli():
 @cli.command()
 @click.option("--layer-list", required=True, help="Path to supported layer list")
 @click.option("--charm-list", required=True, help="Path to supported charm list")
-@click.option("--ancillary-list", required=True, help="Path to additionall repos that need to be rebased.")
 @click.option(
-    "--filter-by-tag",
-    required=False,
-    help="only build for tags",
-    multiple=True,
+    "--ancillary-list",
+    required=True,
+    help="Path to additionall repos that need to be rebased.",
+)
+@click.option(
+    "--filter-by-tag", required=False, help="only build for tags", multiple=True
 )
 @click.option("--dry-run", is_flag=True)
 def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
-    return _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run)
+    return _cut_stable_release(
+        layer_list, charm_list, ancillary_list, filter_by_tag, dry_run
+    )
 
 
 def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
@@ -81,7 +84,9 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                     click.echo(line)
 
 
-def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, filter_by_tag, bugfix, dry_run):
+def _tag_stable_forks(
+    layer_list, charm_list, k8s_version, bundle_rev, filter_by_tag, bugfix, dry_run
+):
     """ Tags stable forks to a certain bundle revision for a k8s version
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
@@ -123,13 +128,18 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, filter_by
                 git.config("--global", "push.default", "simple")
                 git.checkout("stable", _cwd=identifier)
                 try:
-                    for line in git.tag(tag, _cwd=identifier, _iter=True, _bg_exc=False):
+                    for line in git.tag(
+                        tag, _cwd=identifier, _iter=True, _bg_exc=False
+                    ):
                         click.echo(line)
-                    for line in git.push("origin", tag, _cwd=identifier, _bg_exc=False, _iter=True):
+                    for line in git.push(
+                        "origin", tag, _cwd=identifier, _bg_exc=False, _iter=True
+                    ):
                         click.echo(line)
                 except sh.ErrorReturnCode as error:
-                    click.echo(f"Problem tagging: {error.stderr.decode().strip()}, will skip for now..")
-
+                    click.echo(
+                        f"Problem tagging: {error.stderr.decode().strip()}, will skip for now.."
+                    )
 
 
 @cli.command()
@@ -142,16 +152,21 @@ def _tag_stable_forks(layer_list, charm_list, k8s_version, bundle_rev, filter_by
     "--bundle-revision", required=True, help="Bundle revision to tag stable against"
 )
 @click.option(
-    "--filter-by-tag",
-    required=False,
-    help="only build for tags",
-    multiple=True,
+    "--filter-by-tag", required=False, help="only build for tags", multiple=True
 )
 @click.option("--bugfix", is_flag=True)
 @click.option("--dry-run", is_flag=True)
-def tag_stable(layer_list, charm_list, k8s_version, bundle_revision, filter_by_tag, bugfix, dry_run):
+def tag_stable(
+    layer_list, charm_list, k8s_version, bundle_revision, filter_by_tag, bugfix, dry_run
+):
     return _tag_stable_forks(
-        layer_list, charm_list, k8s_version, bundle_revision, filter_by_tag, bugfix, dry_run
+        layer_list,
+        charm_list,
+        k8s_version,
+        bundle_revision,
+        filter_by_tag,
+        bugfix,
+        dry_run,
     )
 
 

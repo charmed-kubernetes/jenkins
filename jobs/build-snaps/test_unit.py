@@ -1,5 +1,5 @@
 import pytest
-from lib import snapapi
+from cilib import snapapi
 
 
 revisions = [

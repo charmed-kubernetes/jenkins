@@ -7,6 +7,7 @@ from subprocess import check_output, check_call, CalledProcessError, run, PIPE, 
 
 sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
+
 class Microk8sSnap:
     def __init__(self, track, channel, juju_unit=None, juju_controller=None):
         arch = configbag.get_arch()
@@ -230,7 +231,9 @@ class Microk8sSnap:
 
             _controller = os.environ.get("JUJU_CONTROLLER")
             _model = os.environ.get("JUJU_MODEL")
-            cmd_array = shlex.split(f"juju ssh -m {_controller}:{_model} --pty=true ubuntu/0 --")
+            cmd_array = shlex.split(
+                f"juju ssh -m {_controller}:{_model} --pty=true ubuntu/0 --"
+            )
             # cmd_array = "juju run -m {}:{} --timeout=120m0s --unit {}".format(
             #     _controller, _model, self.juju_unit
             # ).split()

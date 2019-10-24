@@ -38,20 +38,20 @@ async def test_nodeport_service_endpoint():
     try:
         # Create Deployment
         sh.kubectl.create(
-            "deployment",
-            "hello-world",
-            image="gcr.io/google-samples/node-hello:1.0",
+            "deployment", "hello-world", image="gcr.io/google-samples/node-hello:1.0"
         )
-        sh.kubectl.set(
-            "env",
-            "deployment/hello-world",
-            "PORT=50000",
-        )
+        sh.kubectl.set("env", "deployment/hello-world", "PORT=50000")
 
         # Create NodePort Service
-        sh.kubectl.expose("deployment", "hello-world",
-                          type="NodePort", name="hello-world",
-                          protocol="TCP", port=80, target_port=50000)
+        sh.kubectl.expose(
+            "deployment",
+            "hello-world",
+            type="NodePort",
+            name="hello-world",
+            protocol="TCP",
+            port=80,
+            target_port=50000,
+        )
 
         # Grab the port
         svc = get_svc_yaml()

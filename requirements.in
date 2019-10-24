@@ -18,6 +18,7 @@ jinja2
 juju-wait
 juju>=2.6.3
 jujubundlelib
+kv
 mkdocs-material
 mkdocs
 ogc-plugins-juju>=1.0.19

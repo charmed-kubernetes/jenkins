@@ -84,7 +84,9 @@ if __name__ == "__main__":
             if not beta_snap.released:
                 click.echo("Beta channel is empty. Releasing without any testing.")
             elif beta_snap.is_prerelease:
-                click.echo("Beta channel holds a prerelease. Releasing without any testing.")
+                click.echo(
+                    "Beta channel holds a prerelease. Releasing without any testing."
+                )
             else:
                 click.echo(
                     "Beta channel holds a release that is not a prerelease. We should be testing that."

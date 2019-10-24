@@ -346,9 +346,10 @@ async def test_dashboard(model, log_dir, tools):
         dash_ns = "kube-system"
     else:
         dash_ns = "kubernetes-dashboard"
-    url = ("{server}/api/v1/namespaces/{ns}/services/https:kubernetes-dashboard:"
-           "/proxy/#!/login").format(server=config["clusters"][0]["cluster"]["server"],
-                                     ns=dash_ns)
+    url = (
+        "{server}/api/v1/namespaces/{ns}/services/https:kubernetes-dashboard:"
+        "/proxy/#!/login"
+    ).format(server=config["clusters"][0]["cluster"]["server"], ns=dash_ns)
 
     log("Waiting for dashboard to stabilize...")
 
@@ -460,10 +461,14 @@ async def test_network_policies(model, tools):
 
     async def get_to_restricted_networkpolicy_service():
         log("Reaching out to nginx.netpolicy with restrictions")
-        query_from_bad = ("/snap/bin/kubectl exec bboxbad -n netpolicy -- "
-                          "wget --timeout=30  nginx.netpolicy -O foo.html")
-        query_from_good = ("/snap/bin/kubectl exec bboxgood -n netpolicy -- "
-                           "wget --timeout=30  nginx.netpolicy -O foo.html")
+        query_from_bad = (
+            "/snap/bin/kubectl exec bboxbad -n netpolicy -- "
+            "wget --timeout=30  nginx.netpolicy -O foo.html"
+        )
+        query_from_good = (
+            "/snap/bin/kubectl exec bboxgood -n netpolicy -- "
+            "wget --timeout=30  nginx.netpolicy -O foo.html"
+        )
         cmd_good = await unit.run(query_from_good)
         cmd_bad = await unit.run(query_from_bad)
         if (
@@ -572,7 +577,9 @@ async def test_gpu_support(model, tools):
             tools.controller_name,
             tools.connection,
         )
-        await master_unit.run("/snap/bin/kubectl delete -f /home/ubuntu/nvidia-smi.yaml")
+        await master_unit.run(
+            "/snap/bin/kubectl delete -f /home/ubuntu/nvidia-smi.yaml"
+        )
         await retry_async_with_timeout(
             verify_deleted,
             (master_unit, "po", "nvidia-smi", "-n default"),
@@ -908,6 +915,7 @@ async def test_toggle_metrics(model, tools):
     svc is started and stopped appropriately.
 
     """
+
     async def check_svc(app, enabled):
         unit = app.units[0]
         if enabled:
@@ -932,15 +940,17 @@ async def test_toggle_metrics(model, tools):
         return
 
     config = await app.get_config()
-    old_value = config['enable-metrics']['value']
+    old_value = config["enable-metrics"]["value"]
     new_value = not old_value
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=240)
+        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=240
+    )
     await check_svc(app, new_value)
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=240)
+        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=240
+    )
     await check_svc(app, old_value)
 
 
@@ -1312,10 +1322,7 @@ async def test_encryption_at_rest(model, tools):
             )
         await model.deploy(
             "cs:~openstack-charmers-next/vault",
-            config={
-                "auto-generate-root-ca-cert": True,
-                "disable-mlock": True,
-            },
+            config={"auto-generate-root-ca-cert": True, "disable-mlock": True},
         )
         try:
             await model.add_relation("vault:shared-db", "percona-cluster:shared-db")
@@ -1345,21 +1352,28 @@ async def test_encryption_at_rest(model, tools):
         await model.add_relation("kubernetes-master:vault-kv", "vault:secrets")
         await model.block_until(lambda: "vault" in model.applications)
         vault = model.applications["vault"].units[0]
-        await model.block_until(lambda: vault.workload_status_message == "Vault needs to "
-                                                                         "be initialized")
+        await model.block_until(
+            lambda: vault.workload_status_message == "Vault needs to " "be initialized"
+        )
         # unseal vault
-        output = await vault.run("VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
-                                 "operator init -key-shares=5 -key-threshold=3 "
-                                 "--format=yaml")
+        output = await vault.run(
+            "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
+            "operator init -key-shares=5 -key-threshold=3 "
+            "--format=yaml"
+        )
         assert output.status == "completed"
         vault_info = yaml.safe_load(output.results["Stdout"])
-        for key in vault_info['unseal_keys_hex'][:3]:
-            output = await vault.run("VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
-                                     "operator unseal {}".format(key))
+        for key in vault_info["unseal_keys_hex"][:3]:
+            output = await vault.run(
+                "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
+                "operator unseal {}".format(key)
+            )
             assert output.status == "completed"
-        output = await vault.run("VAULT_ADDR=http://localhost:8200 VAULT_TOKEN={} "
-                                 "/snap/bin/vault token create -ttl=10m --format=yaml"
-                                 "".format(vault_info["root_token"]))
+        output = await vault.run(
+            "VAULT_ADDR=http://localhost:8200 VAULT_TOKEN={} "
+            "/snap/bin/vault token create -ttl=10m --format=yaml"
+            "".format(vault_info["root_token"])
+        )
         assert output.status == "completed"
         vault_token_info = yaml.safe_load(output.results["Stdout"])
         charm_token = vault_token_info["auth"]["client_token"]
@@ -1532,12 +1546,20 @@ async def test_sysctl(model, tools):
                 return False
         return True
 
-    test_values = [{'net.ipv4.neigh.default.gc_thresh1': 64,
-                    'net.ipv4.neigh.default.gc_thresh2': 128},
-                   {'net.ipv4.neigh.default.gc_thresh1': 128,
-                    'net.ipv4.neigh.default.gc_thresh2': 256}]
-    test_applications = [model.applications['kubernetes-master'],
-                         model.applications['kubernetes-worker']]
+    test_values = [
+        {
+            "net.ipv4.neigh.default.gc_thresh1": 64,
+            "net.ipv4.neigh.default.gc_thresh2": 128,
+        },
+        {
+            "net.ipv4.neigh.default.gc_thresh1": 128,
+            "net.ipv4.neigh.default.gc_thresh2": 256,
+        },
+    ]
+    test_applications = [
+        model.applications["kubernetes-master"],
+        model.applications["kubernetes-worker"],
+    ]
 
     for app in test_applications:
         # save off config for restore later

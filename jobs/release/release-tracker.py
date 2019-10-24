@@ -4,9 +4,10 @@
 import argparse
 import sys
 import click
-from k8slib.service.aws import Store
+from cilib.service.aws import Store
 
 store = Store("ReleaseTracker")
+
 
 def parse_options(argv):
     parser = argparse.ArgumentParser(prog="release-tracker")
@@ -48,7 +49,7 @@ def store_results(db):
 def get_phase(db, opts):
     """ checks for existing phase and returns result
     """
-    if db.get(opts.phase_name, 'fail') == 'fail':
+    if db.get(opts.phase_name, "fail") == "fail":
         return click.echo(1)
     return click.echo(0)
 

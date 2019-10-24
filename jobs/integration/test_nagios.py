@@ -7,12 +7,12 @@ from bs4 import BeautifulSoup as bs
 
 def find_nagios_criticals(url, opener):
     url_data = opener.open(url)
-    soup = bs(url_data.read(), 'html.parser')
-    return soup.find_all('td', class_='statusBGCRITICAL')
+    soup = bs(url_data.read(), "html.parser")
+    return soup.find_all("td", class_="statusBGCRITICAL")
 
 
 async def wait_for_no_errors(url, opener):
-    criticals = ['dummy']
+    criticals = ["dummy"]
     while len(criticals) > 0:
         criticals = find_nagios_criticals(url, opener)
         await asyncio.sleep(30)
@@ -42,11 +42,10 @@ async def test_nagios(model, tools):
 
     # 1) deploy
     log("deploying nagios and nrpe")
-    nagios = await model.deploy("nagios", series='bionic')
-    await model.deploy("nrpe",
-                       series='bionic',
-                       config={'swap': '', 'swap_activity': ''},
-                       num_units=0)
+    nagios = await model.deploy("nagios", series="bionic")
+    await model.deploy(
+        "nrpe", series="bionic", config={"swap": "", "swap_activity": ""}, num_units=0
+    )
     await nagios.expose()
     await model.add_relation("nrpe", "kubernetes-master")
     await model.add_relation("nrpe", "kubernetes-worker")
@@ -65,7 +64,7 @@ async def test_nagios(model, tools):
 
     pwd_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
     url_base = "http://{}".format(nagios.units[0].public_address)
-    pwd_mgr.add_password(None, url_base, 'nagiosadmin', login_passwd)
+    pwd_mgr.add_password(None, url_base, "nagiosadmin", login_passwd)
     handler = urllib.request.HTTPBasicAuthHandler(pwd_mgr)
     opener = urllib.request.build_opener(handler)
     status_url = "{}/cgi-bin/nagios3/status.cgi?host=all".format(url_base)
@@ -89,7 +88,7 @@ async def test_nagios(model, tools):
             found_master = []
             found_worker = []
             for c in criticals:
-                for link in c.find_all('a', recursive=False):
+                for link in c.find_all("a", recursive=False):
                     if "kubernetes-master" in link.string:
                         found_master.append(link.string)
                     elif "kubernetes-worker" in link.string:
@@ -109,7 +108,7 @@ async def test_nagios(model, tools):
     # 7) break worker
     log("Breaking workers")
     workers = masters = model.applications["kubernetes-worker"]
-    await workers.set_config({'kubelet-extra-args': 'broken=true'})
+    await workers.set_config({"kubelet-extra-args": "broken=true"})
 
     # 8) verify nagios is complaining about worker
     log("Verifying complaints")
@@ -120,7 +119,7 @@ async def test_nagios(model, tools):
         if criticals:
             found_worker = []
             for c in criticals:
-                for link in c.find_all('a', recursive=False):
+                for link in c.find_all("a", recursive=False):
                     if "kubernetes-worker" in link.string:
                         found_worker.append(link.string)
                         break
@@ -132,5 +131,5 @@ async def test_nagios(model, tools):
         await asyncio.sleep(30)
 
     # 9) Fix worker and wait for complaints to go away
-    await workers.set_config({'kubelet-extra-args': ''})
+    await workers.set_config({"kubelet-extra-args": ""})
     await wait_for_no_errors(status_url, opener)

@@ -192,7 +192,7 @@ def bootstrap():
             "--model-default",
             "resource-tags=owner=k8sci",
             "--bootstrap-constraints",
-            "arch=amd64"
+            "arch=amd64",
         ]
     )
     check_call(["juju", "model-defaults", "vpc-id=" + vpc_id, "test-mode=true"])

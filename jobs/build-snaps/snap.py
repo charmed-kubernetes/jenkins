@@ -15,8 +15,8 @@ from urllib.parse import urlparse
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
-from k8slib import lp, idm, snapapi, k8s
-from k8slib import git as gitapi
+from cilib import lp, idm, snapapi, k8s
+from cilib import git as gitapi
 from pprint import pformat
 
 
@@ -69,6 +69,7 @@ def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
                     patches=patches,
                 )
 
+
 def _sync_snaps(snap_list, version, branch_version, tracks):
     """ Creates the snap recipes that upload to the snap store for latest k8s and stable releases
     """
@@ -115,7 +116,12 @@ def sync_branches(snap_list, starting_ver, force, patches, dry_run):
 
 
 @cli.command()
-@click.option("--snap", default="kubectl", help="Snap name to list remote branches for", required=True)
+@click.option(
+    "--snap",
+    default="kubectl",
+    help="Snap name to list remote branches for",
+    required=True,
+)
 def sync_branches_list(snap):
     """ Syncs the downstream snap branches to a yaml file for parsing in jobs
     """
@@ -134,12 +140,16 @@ def sync_branches_list(snap):
 
         output = Path(f"{tmpdir}/jobs/includes/k8s-snap-branches-list.inc")
         click.echo(f"Saving to {str(output)}")
-        output.write_text(
-            yaml.dump(snap_releases, default_flow_style=False, indent=2)
-        )
+        output.write_text(yaml.dump(snap_releases, default_flow_style=False, indent=2))
         git.add(str(output), _env=env, _cwd=tmpdir)
         try:
-            git.commit("-m", f"Updating k8s snap branches list", _env=env, _cwd=tmpdir, _err_to_out=True)
+            git.commit(
+                "-m",
+                f"Updating k8s snap branches list",
+                _env=env,
+                _cwd=tmpdir,
+                _err_to_out=True,
+            )
             git.push(repo, "master", _env=env, _cwd=tmpdir)
         except sh.ErrorReturnCode as error:
             click.echo(f"Nothing to commit, skipping: {error}.")
@@ -364,7 +374,7 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
         snap_list = yaml.safe_load(snap_list.read_text(encoding="utf8"))
     else:
         snap_list = []
-    snap_list.append('cdk-addons')
+    snap_list.append("cdk-addons")
     snaps_to_promote = [
         {snap: snapapi.latest(snap, from_track.split("/")[0], _arch, exclude_pre)}
         for snap in snap_list
@@ -373,7 +383,7 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
     for _snap in snaps_to_promote:
         _snap_name = next(iter(_snap))
         rev, uploaded, arch, version, channels = _snap[_snap_name]
-        for track in to_track.split(' '):
+        for track in to_track.split(" "):
             click.echo(f"Promoting ({rev}) {_snap[_snap_name]} {version} -> {track}")
             try:
                 str(sh.snapcraft.release(_snap_name, rev, track))

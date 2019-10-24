@@ -21,10 +21,30 @@ from glob import glob
 from pathlib import Path
 from pprint import pformat
 from sh.contrib import git
+from cilib.service.aws import Store
+from kv import KV
+from datetime import datetime
 import click
 import sh
 import yaml
+import json
 import time
+import requests
+
+
+store = Store("BuildCharms")
+db = KV("buildcharms.db")
+db_json = Path("buildcharms.json")
+
+now = datetime.utcnow().isoformat()
+if not db.get("build_datetime", None):
+    db["build_datetime"] = str(now)
+    db["build_date"] = now.strftime("%Y/%m/%d")
+    db["build_time"] = now.strftime("%H.%M.%S")
+
+db["build_modified_datetime"] = str(now)
+db["build_modified_date"] = now.strftime("%Y/%m/%d")
+db["build_modified_time"] = now.strftime("%H.%M.%S")
 
 
 class CharmEnv:
@@ -86,19 +106,34 @@ def _push(repo_path, out_path, charm_entity, is_bundle=False):
     click.echo(f"Setting {out['url']} metadata: {git_commit}")
     sh.charm.set(out["url"], "commit={}".format(git_commit), _bg_exc=False)
 
+    def download_artifact(entity, fname):
+        entity = entity.strip("cs:")
+        return requests.get(
+            f"https://api.jujucharms.com/charmstore/v5/{entity}/archive/{fname}"
+        )
+
+    db[charm_entity] = {"build-manifest": None}
+    build_manifest_out = download_artifact(out["url"], ".build.manifest")
+    if build_manifest_out.ok:
+        db[charm_entity]["build-manifest"] = build_manifest_out.json()
+    if is_bundle:
+        bundle_out = download_artifact(out["url"], "bundle.yaml")
+        if bundle_out.ok:
+            db[charm_entity]["bundle"] = yaml.safe_load(bundle_out.text)
+
 
 def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
     charm_env = CharmEnv()
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     num_runs = 0
+    db["pull-layer-manifest"] = []
     for layer_map in layer_list:
         layer_name = list(layer_map.keys())[0]
         layer_props = list(layer_map.values())[0]
         if layer_name == "layer:index":
             continue
 
-        click.echo(f"{layer_name} - {layer_props['upstream']}")
-
+        click.echo(f"- Getting {layer_name}")
         # TODO: git rev-list master..upstream/master --count to grab the commits
         # behind downstream is to upstream and also stable downstream is to
         # downstream master
@@ -114,15 +149,15 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
                 _iter=True,
                 _bg_exc=False,
             ):
-                click.echo(f" -- {line.strip()}")
+                click.echo(f"  {line.strip()}")
 
         try:
             num_runs += 1
             download()
         except sh.ErrorReturnCode as e:
-            click.echo(f"Problem: {e}, retrying [{num_runs}/{retries}]")
+            click.echo(f"  Problem: {e}, retrying [{num_runs}/{retries}]")
             if num_runs == retries:
-                raise SystemExit(f"Could not download charm after {retries} retries.")
+                raise SystemExit(f"  Could not download charm after {retries} retries.")
             time.sleep(timeout)
             download()
 
@@ -132,17 +167,23 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
             git.checkout(layer_branch, _cwd=_ltype_path)
         elif ltype == "interface":
             _ltype_path = str(charm_env.interfaces_dir / name)
-            git.checkout(
-                layer_branch, _cwd=_ltype_path
-            )
+            git.checkout(layer_branch, _cwd=_ltype_path)
         else:
-            raise SystemExit(f"Unknown layer/interface: {layer_name}")
+            raise SystemExit(f"  Unknown layer/interface: {layer_name}")
 
-        repo_info = git.remote(v=True, _cwd=_ltype_path)
-        click.echo(f"Repo info:\n{repo_info.stdout.decode()}")
-
-        commits_behind = git("rev-list", f"{layer_branch}..master", "--count", _cwd=_ltype_path)
-        click.echo(f"Commits Behind {layer_branch}..master: {commits_behind.stdout.decode()}")
+        layer_manifest = {
+            "rev": git("rev-parse", "HEAD", _cwd=_ltype_path).stdout.decode().strip(),
+            "url": layer_name,
+            "branch": git.branch(v=True, _cwd=_ltype_path).stdout.decode().strip(),
+            "remote": git.remote(v=True, _cwd=_ltype_path).stdout.decode().strip(),
+            "commits-behind": git(
+                "rev-list", f"{layer_branch}..master", "--count", _cwd=_ltype_path
+            )
+            .stdout.decode()
+            .strip(),
+        }
+        db["pull-layer-manifest"].append(layer_manifest)
+        click.echo(pformat(layer_manifest))
 
 
 def _promote(charm_list, filter_by_tag, from_channel="unpublished", to_channel="edge"):
@@ -356,6 +397,7 @@ def build(
                     resource_spec,
                 )
     _promote(charm_list, filter_by_tag, to_channel=to_channel)
+    db_json.write_text(json.dumps(dict(db)))
 
 
 @cli.command()

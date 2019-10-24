@@ -1,9 +1,5 @@
 import pytest
-from .utils import (
-    verify_ready,
-    retry_async_with_timeout,
-    validate_storage_class,
-)
+from .utils import verify_ready, retry_async_with_timeout, validate_storage_class
 from .logger import log
 
 
@@ -21,8 +17,9 @@ async def test_nfs(model, tools):
     log("waiting for nfs pod to settle")
     unit = model.applications["kubernetes-master"].units[0]
     await retry_async_with_timeout(
-        verify_ready, (unit, "po", ["nfs-client-provisioner"]),
-        timeout_msg="NFS pod not ready!"
+        verify_ready,
+        (unit, "po", ["nfs-client-provisioner"]),
+        timeout_msg="NFS pod not ready!",
     )
     # create pod that writes to a pv from nfs
     # yep, I called it default :-/
