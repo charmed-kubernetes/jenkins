@@ -130,7 +130,7 @@ plan:
       - ARCH=arm64
     tags:
       - arm64/prerelease
-      - amd64
+      - arm64
     script:
       - |
         #!/bin/bash
