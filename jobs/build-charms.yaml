@@ -97,6 +97,7 @@
         - timed: "@daily"
     wrappers:
       - default-job-wrapper
+      - ci-creds
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"

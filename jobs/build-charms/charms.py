@@ -36,7 +36,7 @@ store = Store("BuildCharms")
 db = KV("buildcharms.db")
 db_json = Path("buildcharms.json")
 
-now = datetime.utcnow().isoformat()
+now = datetime.utcnow()
 if not db.get("build_datetime", None):
     db["build_datetime"] = now.strftime("%Y/%m/%d")
 
@@ -385,7 +385,7 @@ def build(
                 click.echo(line)
 
             # Grab previous day build-manifest to match
-            response = store.get_item(Key={"build_datetime": yesterday()})
+            response = store.get_item(Key={"build_datetime": get_yesterday()})
             previous_build = None
             if response and "Item" in response:
                 previous_build = response["Item"]

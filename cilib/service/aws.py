@@ -3,10 +3,16 @@
 import boto3
 
 
+class AWSSessionException(Exception):
+    pass
+
+
 class AWSSession:
-    def __init__(self, region="us-east-1", resource):
+    def __init__(self, region="us-east-1", resource=None):
         self.session = boto3.Session(region_name=region)
-        self.resource = session.resource(resource)
+        if resource is None:
+            raise AWSSessionException("Must have a resource defined.")
+        self.resource = self.session.resource(resource)
 
 
 class Store(AWSSession):
