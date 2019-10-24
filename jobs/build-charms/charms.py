@@ -38,14 +38,12 @@ db_json = Path("buildcharms.json")
 
 now = datetime.utcnow().isoformat()
 if not db.get("build_datetime", None):
-    db["build_datetime"] = str(now)
-    db["build_date"] = now.strftime("%Y/%m/%d")
-    db["build_time"] = now.strftime("%H.%M.%S")
+    db["build_datetime"] = now.strftime("%Y/%m/%d")
 
-db["build_modified_datetime"] = str(now)
-db["build_modified_date"] = now.strftime("%Y/%m/%d")
-db["build_modified_time"] = now.strftime("%H.%M.%S")
-
+# Reload data from current day
+response = store.get_item(Key={"build_datetime": db["build_datetime"]})
+if response and "Item" in response:
+    db = response["Item"]
 
 class CharmEnv:
     """ Charm environment
@@ -62,6 +60,20 @@ class CharmEnv:
                 "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE: "
                 "Unable to find some or all of these charm build environment variables."
             )
+
+def download_artifact(entity, fname):
+    entity = entity.strip("cs:")
+    return requests.get(
+        f"https://api.jujucharms.com/charmstore/v5/{entity}/archive/{fname}"
+    )
+
+
+def get_yesterday():
+    """ Provides yesterday key for lookup in db store
+    """
+    now = datetime.utcnow().replace(hour=0, minute=0, second=0)
+    yesterday = now - datetime.timedelta(days=1)
+    return yesterday.stftime("%Y/%m/%d")
 
 
 def _push(repo_path, out_path, charm_entity, is_bundle=False):
@@ -105,12 +117,6 @@ def _push(repo_path, out_path, charm_entity, is_bundle=False):
     out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
     click.echo(f"Setting {out['url']} metadata: {git_commit}")
     sh.charm.set(out["url"], "commit={}".format(git_commit), _bg_exc=False)
-
-    def download_artifact(entity, fname):
-        entity = entity.strip("cs:")
-        return requests.get(
-            f"https://api.jujucharms.com/charmstore/v5/{entity}/archive/{fname}"
-        )
 
     db[charm_entity] = {"build-manifest": None}
     build_manifest_out = download_artifact(out["url"], ".build.manifest")
@@ -345,11 +351,12 @@ def build(
     to_channel,
     dry_run,
 ):
+    db["publish_channel"] = to_channel
     charm_env = CharmEnv()
     _charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
 
     _pull_layers(layer_index, layer_list, layer_branch)
-    click.echo("charm builds")
+    click.echo("Building Charms")
     for charm_map in _charm_list:
         for charm_name, charm_opts in charm_map.items():
             downstream = f"https://github.com/{charm_opts['downstream']}"
@@ -362,11 +369,12 @@ def build(
                 )
                 continue
             charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
+
             src_path = charm_name
             os.makedirs(src_path)
 
             dst_path = str(charm_env.build_dir / charm_name)
-            for line in sh.git.clone(
+            for line in git.clone(
                 "--branch",
                 charm_branch,
                 downstream,
@@ -375,6 +383,35 @@ def build(
                 _bg_exc=False,
             ):
                 click.echo(line)
+
+            # Grab previous day build-manifest to match
+            response = store.get_item(Key={"build_datetime": yesterday()})
+            previous_build = None
+            if response and "Item" in response:
+                previous_build = response["Item"]
+
+            # Only check against edge builds
+            if previous_build and previous_build['publish_channel'] == "edge":
+                previous_build_entity = previous_build[charm_entity]
+                previous_build_manifest = previous_build_entity.get('build-manifest', None)
+                current_build_manifest = [{"rev": curr['rev'], "url": curr["url"]} for curr in db["pull-layer-manifest"]]
+
+                # Check the current git cloned charm repo commit and add that to
+                # current pull-layer-manifest as that would no be known at the
+                # time of pull_layers
+                git_commit = git("rev-parse", "HEAD", _cwd=src_path)
+                git_commit = git_commit.stdout.decode().strip()
+                current_build_manifest.append({"rev": git_commit, "url": charm_name})
+
+                # If no changes we can skip this charm build but bring forward the previous build-manifest for subsequent checks
+                if previous_build_manifest:
+                    previous_charm_rev = (rev["rev"] for rev in previous_build_manifest['layers'] if rev["url"] == charm_name)
+                    if previous_build_manifest['layers'] == current_build_manifest:
+                        db[charm_entity] = {"build-manifest": previous_build_manifest}
+                        click.echo(f"  No changes detected in {charm_entity}, skipping.")
+                        continue
+
+
 
             for line in sh.charm.build(
                 r=True,
@@ -398,6 +435,7 @@ def build(
                 )
     _promote(charm_list, filter_by_tag, to_channel=to_channel)
     db_json.write_text(json.dumps(dict(db)))
+    store.put_item(Item=dict(db))
 
 
 @cli.command()
