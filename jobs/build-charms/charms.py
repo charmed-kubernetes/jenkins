@@ -23,7 +23,7 @@ from pprint import pformat
 from sh.contrib import git
 from cilib.service.aws import Store
 from kv import KV
-from datetime import datetime
+from datetime import datetime, timedelta
 import click
 import sh
 import yaml
@@ -72,8 +72,8 @@ def get_yesterday():
     """ Provides yesterday key for lookup in db store
     """
     now = datetime.utcnow().replace(hour=0, minute=0, second=0)
-    yesterday = now - datetime.timedelta(days=1)
-    return yesterday.stftime("%Y/%m/%d")
+    yesterday = now - timedelta(days=1)
+    return yesterday.strftime("%Y/%m/%d")
 
 
 def _push(repo_path, out_path, charm_entity, is_bundle=False):
@@ -189,7 +189,7 @@ def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
             .strip(),
         }
         db["pull-layer-manifest"].append(layer_manifest)
-        click.echo(pformat(layer_manifest))
+        click.echo(layer_manifest)
 
 
 def _promote(charm_list, filter_by_tag, from_channel="unpublished", to_channel="edge"):
@@ -355,8 +355,8 @@ def build(
     charm_env = CharmEnv()
     _charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
 
+    click.echo(f"Building Charms, will check against yesterday's {get_yesterday()} manifest to skip unchanged charms.")
     _pull_layers(layer_index, layer_list, layer_branch)
-    click.echo("Building Charms")
     for charm_map in _charm_list:
         for charm_name, charm_opts in charm_map.items():
             downstream = f"https://github.com/{charm_opts['downstream']}"
