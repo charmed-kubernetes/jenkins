@@ -25,6 +25,7 @@ from cilib.service.aws import Store
 from kv import KV
 from datetime import datetime, timedelta
 from enum import Enum
+from threading import Semaphore
 import click
 import sh
 import yaml
@@ -150,7 +151,7 @@ class BuildEnv:
         self.db_json.write_text(json.dumps(dict(self.db)))
         self.store.put_item(Item=dict(self.db))
 
-    def promote(from_channel="unpublished", to_channel="edge"):
+    def promote(self, from_channel="unpublished", to_channel="edge"):
         for charm_map in self.artifacts:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
@@ -190,7 +191,25 @@ class BuildEnv:
         """
         num_runs = 0
 
-        self.db["pull_layer_manifest"] = []
+        pool = Semaphore(4)
+        def done(cmd, success, exit_code):
+            pool.release()
+
+        def download():
+            pool.acquire()
+
+            click.echo(f"- Getting {layer_name}")
+            sh.charm(
+                "pull-source",
+                "-v",
+                "-i",
+                self.layer_index,
+                layer_name,
+                _bg=True,
+                _done=done
+            )
+
+        procs = []
         for layer_map in self.layers:
             layer_name = list(layer_map.keys())[0]
             layer_props = list(layer_map.values())[0]
@@ -198,35 +217,30 @@ class BuildEnv:
             if layer_name == "layer:index":
                 continue
 
-            click.echo(f"- Getting {layer_name}")
+            procs.append(download())
 
-            def download():
-                for line in sh.charm(
-                    "pull-source",
-                    "-v",
-                    "-i",
-                    self.layer_index,
-                    layer_name,
-                    _iter=True,
-                    _bg_exc=False,
-                ):
-                    click.echo(f"  {line.strip()}")
+        [p.wait() for p in procs if p]
 
-            try:
-                num_runs += 1
-                download()
-            except sh.ErrorReturnCode as e:
-                click.echo(f"  Problem: {e}, retrying [{num_runs}/{retries}]")
-                if num_runs == retries:
-                    raise SystemExit(
-                        f"  Could not download charm after {retries} retries."
-                    )
-                time.sleep(timeout)
-                download()
+            # try:
+            #     num_runs += 1
+            #     download()
+            # except sh.ErrorReturnCode as e:
+            #     click.echo(f"  Problem: {e}, retrying [{num_runs}/{retries}]")
+            #     if num_runs == retries:
+            #         raise SystemExit(
+            #             f"  Could not download charm after {retries} retries."
+            #         )
+            #     time.sleep(timeout)
+            #     download()
 
-            build_path = self.build_path(layer_name)
+
+        self.db["pull_layer_manifest"] = []
+        _paths_to_process = glob("{}/*".format(str(self.layers_dir))) + glob("{}/*".format(str(self.interfaces_dir)))
+        for _path in _paths_to_process:
+
+            build_path = _path
             if not build_path:
-                raise BuildException(f"Could not determine build path for {layer_name}")
+                raise BuildException(f"Could not determine build path for {_path}")
 
             git.checkout(self.layer_branch, _cwd=build_path)
 
@@ -277,9 +291,6 @@ class BuildEntity:
         response = sh.charm.show(
             self.entity, "--channel", self.build.db["build_args"]["to_channel"], "id"
         )
-        if not response.ok:
-            raise BuildException("Unable to grab charmstore revision url.")
-
         response = yaml.safe_load(response.stdout.decode().strip())
         return response["id"]["Id"]
 
@@ -295,6 +306,7 @@ class BuildEntity:
         """
         charmstore_build_manifest = None
         resp = self.download(".build-manifest")
+        click.echo(resp)
         if resp.ok:
             click.echo(
                 f"Grabbed charmstore build-manifest for {charm_entity} in {to_channel} channel"
@@ -302,7 +314,7 @@ class BuildEntity:
             charmstore_build_manifest = resp.json()
 
         if not charmstore_build_manifest:
-            return False
+            return True
 
         current_build_manifest = [
             {"rev": curr["rev"], "url": curr["url"]}
@@ -321,8 +333,8 @@ class BuildEntity:
         )
         if charmstore_build_manifest["layers"] == current_build_manifest:
             click.echo(f"No change detected for {self.entity}")
-            return True
-        return False
+            return False
+        return True
 
     @property
     def commit(self):
@@ -462,30 +474,6 @@ class BuildEntity:
 @click.group()
 def cli():
     pass
-
-
-@cli.command()
-@click.option(
-    "--layer-index",
-    required=True,
-    help="Charm layer index",
-    default="https://charmed-kubernetes.github.io/layer-index/",
-)
-@click.option("--layer-list", required=True, help="list of layers in YAML format")
-@click.option(
-    "--layer-branch",
-    required=True,
-    help="Branch of layer to reference",
-    default="master",
-)
-@click.option(
-    "--retries", default=15, required=True, help="how many retries to perform"
-)
-@click.option(
-    "--timeout", default=60, required=True, help="timeout between retries in seconds"
-)
-def pull_layers(layer_index, layer_list, layer_branch, retries, timeout):
-    return _pull_layers(layer_index, layer_list, layer_branch, retries, timeout)
 
 
 @cli.command()
