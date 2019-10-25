@@ -75,10 +75,10 @@ class BuildEnv:
             self.db_json = Path("buildbundles.json")
 
         if not self.db.get("build_datetime", None):
-            db["build_datetime"] = now.strftime("%Y/%m/%d")
+            self.db["build_datetime"] = self.now.strftime("%Y/%m/%d")
 
         # Reload data from current day
-        response = self.store.get_item(Key={"build_datetime": db["build_datetime"]})
+        response = self.store.get_item(Key={"build_datetime": self.db["build_datetime"]})
         if response and "Item" in response:
             self.db = response["Item"]
 
@@ -128,10 +128,9 @@ class BuildEnv:
     def from_channel(self):
         return self.db["build_args"].get("from_channel", None)
 
-    def _layer_type(self, layer):
+    def _layer_type(self, ltype):
         """ Check the type of an individual layer set in the layer list
         """
-        ltype, name = layer.split(":")
         if ltype == "layer":
             return LayerType.LAYER
         elif ltype == "interface":
@@ -139,9 +138,10 @@ class BuildEnv:
         raise BuildException(f"Unknown layer type for {layer}")
 
     def build_path(self, layer):
-        if self._layer_type(layer) == LayerType.LAYER:
+        ltype, name = layer.split(":")
+        if self._layer_type(ltype) == LayerType.LAYER:
             return str(self.layers_dir / name)
-        elif self._layer_type(layer) == LayerType.INTERFACE:
+        elif self._layer_type(ltype) == LayerType.INTERFACE:
             return str(self.interfaces_dir / name)
         else:
             return None
@@ -190,7 +190,7 @@ class BuildEnv:
         """
         num_runs = 0
 
-        self.db["pull-layer-manifest"] = []
+        self.db["pull_layer_manifest"] = []
         for layer_map in self.layers:
             layer_name = list(layer_map.keys())[0]
             layer_props = list(layer_map.values())[0]
@@ -231,17 +231,17 @@ class BuildEnv:
             git.checkout(self.layer_branch, _cwd=build_path)
 
             layer_manifest = {
-                "rev": git("rev-parse", "HEAD", _cwd=_ltype_path)
+                "rev": git("rev-parse", "HEAD", _cwd=build_path)
                 .stdout.decode()
                 .strip(),
                 "url": layer_name,
-                "branch": git.branch(v=True, _cwd=_ltype_path).stdout.decode().strip(),
-                "remote": git.remote(v=True, _cwd=_ltype_path).stdout.decode().strip(),
+                "branch": git.branch(v=True, _cwd=build_path).stdout.decode().strip(),
+                "remote": git.remote(v=True, _cwd=build_path).stdout.decode().strip(),
                 "commits-behind": git(
                     "rev-list",
                     f"{self.layer_branch}..master",
                     "--count",
-                    _cwd=_ltype_path,
+                    _cwd=build_path,
                 )
                 .stdout.decode()
                 .strip(),
@@ -343,7 +343,7 @@ class BuildEntity:
         os.makedirs(self.src_path)
         for line in git.clone(
             "--branch",
-            charm_branch,
+            self.build.db["build_args"]["charm_branch"],
             downstream,
             self.src_path,
             _iter=True,
@@ -358,7 +358,7 @@ class BuildEntity:
             r=True,
             force=True,
             i="https://localhost",
-            _cwd=build_entity.src_path,
+            _cwd=self.src_path,
             _iter=True,
             _bg_exc=False,
         ):
@@ -537,8 +537,7 @@ def build(
         "layer_branch": layer_branch,
         "resource_spec": resource_spec,
         "filter_by_tag": filter_by_tag,
-        "to_channel": to_channel,
-        "dry_run": dry_run,
+        "to_channel": to_channel
     }
 
     build_env.pull_layers()
@@ -653,7 +652,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
 def promote(charm_list, filter_by_tag, from_channel, to_channel):
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
-        "item_list": charm_list,
+        "artifact_list": charm_list,
         "filter_by_tag": filter_by_tag,
         "to_channel": to_channel,
         "from_channel": from_channel,
