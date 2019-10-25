@@ -197,8 +197,10 @@ class Microk8sSnap:
         cmd = "rm -rf microk8s_latest_{}.snap".format(arch)
         run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
         if self.juju_controller:
-            cmd = "juju  scp -m {} {}:/var/lib/juju/agents/unit-ubuntu-0/charm/microk8s/microk8s_latest_{}.snap .".format(
-                self.juju_controller, self.juju_unit, arch
+            _model = os.environ.get("JUJU_MODEL")
+            cmd = "juju  scp -m {}:{} " \
+                  "{}:/var/lib/juju/agents/unit-ubuntu-0/charm/microk8s/microk8s_latest_{}.snap .".format(
+                self.juju_controller, _model, self.juju_unit, arch
             )
             run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
         else:
