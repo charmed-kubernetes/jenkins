@@ -79,7 +79,9 @@ class BuildEnv:
             self.db["build_datetime"] = self.now.strftime("%Y/%m/%d")
 
         # Reload data from current day
-        response = self.store.get_item(Key={"build_datetime": self.db["build_datetime"]})
+        response = self.store.get_item(
+            Key={"build_datetime": self.db["build_datetime"]}
+        )
         if response and "Item" in response:
             self.db = response["Item"]
 
@@ -192,6 +194,7 @@ class BuildEnv:
         num_runs = 0
 
         pool = Semaphore(4)
+
         def done(cmd, success, exit_code):
             pool.release()
 
@@ -206,7 +209,7 @@ class BuildEnv:
                 self.layer_index,
                 layer_name,
                 _bg=True,
-                _done=done
+                _done=done,
             )
 
         procs = []
@@ -221,21 +224,22 @@ class BuildEnv:
 
         [p.wait() for p in procs if p]
 
-            # try:
-            #     num_runs += 1
-            #     download()
-            # except sh.ErrorReturnCode as e:
-            #     click.echo(f"  Problem: {e}, retrying [{num_runs}/{retries}]")
-            #     if num_runs == retries:
-            #         raise SystemExit(
-            #             f"  Could not download charm after {retries} retries."
-            #         )
-            #     time.sleep(timeout)
-            #     download()
-
+        # try:
+        #     num_runs += 1
+        #     download()
+        # except sh.ErrorReturnCode as e:
+        #     click.echo(f"  Problem: {e}, retrying [{num_runs}/{retries}]")
+        #     if num_runs == retries:
+        #         raise SystemExit(
+        #             f"  Could not download charm after {retries} retries."
+        #         )
+        #     time.sleep(timeout)
+        #     download()
 
         self.db["pull_layer_manifest"] = []
-        _paths_to_process = glob("{}/*".format(str(self.layers_dir))) + glob("{}/*".format(str(self.interfaces_dir)))
+        _paths_to_process = glob("{}/*".format(str(self.layers_dir))) + glob(
+            "{}/*".format(str(self.interfaces_dir))
+        )
         for _path in _paths_to_process:
 
             build_path = _path
@@ -296,29 +300,29 @@ class BuildEntity:
 
     def download(self, fname):
         entity_p = self.get_charmstore_rev_url().lstrip("cs:")
-        return requests.get(
-            f"https://api.jujucharms.com/charmstore/v5/{entity_p}/archive/{fname}"
-        )
+        url = f"https://api.jujucharms.com/charmstore/v5/{entity_p}/archive/{fname}"
+        click.echo(f"Downloading {fname} from {url}")
+        return requests.get(url)
 
     @property
     def has_changed(self):
         """ Determine if the charm/layers commits have changed since last publish to charmstore
         """
         charmstore_build_manifest = None
-        resp = self.download(".build-manifest")
-        click.echo(resp)
+        resp = self.download(".build.manifest")
         if resp.ok:
-            click.echo(
-                f"Grabbed charmstore build-manifest for {charm_entity} in {to_channel} channel"
-            )
+            click.echo(f"Grabbed charmstore build.manifest for {self.entity}")
             charmstore_build_manifest = resp.json()
 
         if not charmstore_build_manifest:
+            click.echo(
+                "No build.manifest located, unable to determine if any changes occurred."
+            )
             return True
 
         current_build_manifest = [
             {"rev": curr["rev"], "url": curr["url"]}
-            for curr in self.db["pull_layer_manifest"]
+            for curr in self.build.db["pull_layer_manifest"]
         ]
 
         # Check the current git cloned charm repo commit and add that to
@@ -331,10 +335,12 @@ class BuildEntity:
             for rev in charmstore_build_manifest["layers"]
             if rev["url"] == self.name
         )
-        if charmstore_build_manifest["layers"] == current_build_manifest:
-            click.echo(f"No change detected for {self.entity}")
-            return False
-        return True
+        the_diff = [i for i in current_build_manifest if i not in charmstore_build_manifest["layers"]]
+        if the_diff:
+            click.echo("Changes found:")
+            click.echo(the_diff)
+            return True
+        return False
 
     @property
     def commit(self):
@@ -525,7 +531,7 @@ def build(
         "layer_branch": layer_branch,
         "resource_spec": resource_spec,
         "filter_by_tag": filter_by_tag,
-        "to_channel": to_channel
+        "to_channel": to_channel,
     }
 
     build_env.pull_layers()
