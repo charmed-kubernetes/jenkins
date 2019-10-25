@@ -199,7 +199,7 @@ class Microk8sSnap:
         if self.juju_controller:
             _model = os.environ.get("JUJU_MODEL")
             cmd = "juju  scp -m {}:{} " \
-                  "{}:/var/lib/juju/agents/unit-ubuntu-0/charm/microk8s/microk8s_latest_{}.snap .".format(
+                  "{}:/home/ubuntu/microk8s/microk8s_latest_{}.snap .".format(
                 self.juju_controller, _model, self.juju_unit, arch
             )
             try:
