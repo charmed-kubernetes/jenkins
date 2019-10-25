@@ -24,6 +24,7 @@ from sh.contrib import git
 from cilib.service.aws import Store
 from kv import KV
 from datetime import datetime, timedelta
+from enum import Enum
 import click
 import sh
 import yaml
@@ -32,252 +33,430 @@ import time
 import requests
 
 
-store = Store("BuildCharms")
-db = KV("buildcharms.db")
-db_json = Path("buildcharms.json")
+class BuildException(Exception):
+    pass
 
-now = datetime.utcnow()
-if not db.get("build_datetime", None):
-    db["build_datetime"] = now.strftime("%Y/%m/%d")
 
-# Reload data from current day
-response = store.get_item(Key={"build_datetime": db["build_datetime"]})
-if response and "Item" in response:
-    db = response["Item"]
+class BuildType(Enum):
+    CHARM = 1
+    BUNDLE = 2
 
-class CharmEnv:
-    """ Charm environment
+
+class LayerType(Enum):
+    LAYER = 1
+    INTERFACE = 2
+
+
+class BuildEnv:
+    """ Charm or Bundle build data class
     """
 
-    def __init__(self):
-        try:
-            self.build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
-            self.layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
-            self.interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
-            self.tmp_dir = Path(os.environ.get("WORKSPACE"))
-        except TypeError:
-            raise SystemExit(
-                "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE: "
-                "Unable to find some or all of these charm build environment variables."
-            )
+    try:
+        build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
+        layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
+        interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
+        tmp_dir = Path(os.environ.get("WORKSPACE"))
+    except TypeError:
+        raise BuildException(
+            "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE: "
+            "Unable to find some or all of these charm build environment variables."
+        )
 
-def download_artifact(entity, fname):
-    entity = entity.strip("cs:")
-    return requests.get(
-        f"https://api.jujucharms.com/charmstore/v5/{entity}/archive/{fname}"
-    )
+    def __init__(self, build_type):
+        self.store = Store("BuildCharms")
+        self.now = datetime.utcnow()
+        self.build_type = build_type
 
+        if self.build_type == BuildType.CHARM:
+            self.db = KV("buildcharms.db")
+            self.db_json = Path("buildcharms.json")
+        elif self.build_type == BuildType.BUNDLE:
+            self.db = KV("buildbundles.db")
+            self.db_json = Path("buildbundles.json")
 
-def get_yesterday():
-    """ Provides yesterday key for lookup in db store
-    """
-    now = datetime.utcnow().replace(hour=0, minute=0, second=0)
-    yesterday = now - timedelta(days=1)
-    return yesterday.strftime("%Y/%m/%d")
+        if not self.db.get("build_datetime", None):
+            db["build_datetime"] = now.strftime("%Y/%m/%d")
 
+        # Reload data from current day
+        response = self.store.get_item(Key={"build_datetime": db["build_datetime"]})
+        if response and "Item" in response:
+            self.db = response["Item"]
 
-def _push(repo_path, out_path, charm_entity, is_bundle=False):
-    """ Pushes a built charm to Charmstore
-    """
+    @property
+    def layers(self):
+        """ List of layers defined in our jobs/includes/charm-layer-list.inc
+        """
+        return yaml.safe_load(
+            Path(self.db["build_args"]["layer_list"]).read_text(encoding="utf8")
+        )
 
-    click.echo(f"vcs: {repo_path} build-path: {out_path} {charm_entity}")
-    git_commit = git("rev-parse", "HEAD", _cwd=repo_path)
-    git_commit = git_commit.stdout.decode().strip()
-    click.echo(f"grabbing git revision {git_commit}")
+    @property
+    def artifacts(self):
+        """ List of charms or bundles to process
+        """
+        return yaml.safe_load(
+            Path(self.db["build_args"]["artifact_list"]).read_text(encoding="utf8")
+        )
 
-    resource_args = []
-    if not is_bundle:
-        # Build a list of `oci-image` resources that have `upstream-source` defined,
-        # which is added for this click.echoic to work.
-        resources = yaml.safe_load(
-            Path(out_path).joinpath("metadata.yaml").read_text()
-        ).get("resources", {})
-        images = {
-            name: details["upstream-source"]
-            for name, details in resources.items()
-            if details["type"] == "oci-image" and details.get("upstream-source")
-        }
-        click.echo(f"Found {len(images)} oci-image resources:\n{pformat(images)}\n")
-        for image in images.values():
-            click.echo(f"Pulling {image}...")
-            sh.docker.pull(image)
+    @property
+    def layer_index(self):
+        """ Remote Layer index
+        """
+        return self.db["build_args"].get("layer_index", None)
 
-        # Convert the image names and tags to `--resource foo=bar` format
-        # for passing to `charm push`.
-        resource_args = [
-            arg
-            for name, image in images.items()
-            for arg in ("--resource", f"{name}={image}")
-        ]
+    @property
+    def layer_branch(self):
+        """ Remote Layer branch
+        """
+        return self.db["build_args"].get("layer_branch", None)
 
-    out = sh.charm.push(out_path, charm_entity, *resource_args, _bg_exc=False)
-    click.echo(f"Charm push returned: {out}")
-    # Output includes lots of ansi escape sequences from the docker push,
-    # and we only care about the first line, which contains the url as yaml.
-    out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
-    click.echo(f"Setting {out['url']} metadata: {git_commit}")
-    sh.charm.set(out["url"], "commit={}".format(git_commit), _bg_exc=False)
+    @property
+    def filter_by_tag(self):
+        """ filter tag
+        """
+        return self.db["build_args"].get("filter_by_tag", None)
 
-    db[charm_entity] = {"build-manifest": None}
-    build_manifest_out = download_artifact(out["url"], ".build.manifest")
-    if build_manifest_out.ok:
-        db[charm_entity]["build-manifest"] = build_manifest_out.json()
-    if is_bundle:
-        bundle_out = download_artifact(out["url"], "bundle.yaml")
-        if bundle_out.ok:
-            db[charm_entity]["bundle"] = yaml.safe_load(bundle_out.text)
+    @property
+    def resource_spec(self):
+        return self.db["build_args"].get("resource_spec", None)
 
+    @property
+    def to_channel(self):
+        return self.db["build_args"].get("to_channel", None)
 
-def _pull_layers(layer_index, layer_list, layer_branch, retries=15, timeout=60):
-    charm_env = CharmEnv()
-    layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
-    num_runs = 0
-    db["pull-layer-manifest"] = []
-    for layer_map in layer_list:
-        layer_name = list(layer_map.keys())[0]
-        layer_props = list(layer_map.values())[0]
-        if layer_name == "layer:index":
-            continue
+    @property
+    def from_channel(self):
+        return self.db["build_args"].get("from_channel", None)
 
-        click.echo(f"- Getting {layer_name}")
-        # TODO: git rev-list master..upstream/master --count to grab the commits
-        # behind downstream is to upstream and also stable downstream is to
-        # downstream master
-        # Also grab git remote -v
-
-        def download():
-            for line in sh.charm(
-                "pull-source",
-                "-v",
-                "-i",
-                layer_index,
-                layer_name,
-                _iter=True,
-                _bg_exc=False,
-            ):
-                click.echo(f"  {line.strip()}")
-
-        try:
-            num_runs += 1
-            download()
-        except sh.ErrorReturnCode as e:
-            click.echo(f"  Problem: {e}, retrying [{num_runs}/{retries}]")
-            if num_runs == retries:
-                raise SystemExit(f"  Could not download charm after {retries} retries.")
-            time.sleep(timeout)
-            download()
-
-        ltype, name = layer_name.split(":")
+    def _layer_type(self, layer):
+        """ Check the type of an individual layer set in the layer list
+        """
+        ltype, name = layer.split(":")
         if ltype == "layer":
-            _ltype_path = str(charm_env.layers_dir / name)
-            git.checkout(layer_branch, _cwd=_ltype_path)
+            return LayerType.LAYER
         elif ltype == "interface":
-            _ltype_path = str(charm_env.interfaces_dir / name)
-            git.checkout(layer_branch, _cwd=_ltype_path)
+            return LayerType.INTERFACE
+        raise BuildException(f"Unknown layer type for {layer}")
+
+    def build_path(self, layer):
+        if self._layer_type(layer) == LayerType.LAYER:
+            return str(self.layers_dir / name)
+        elif self._layer_type(layer) == LayerType.INTERFACE:
+            return str(self.interfaces_dir / name)
         else:
-            raise SystemExit(f"  Unknown layer/interface: {layer_name}")
+            return None
 
-        layer_manifest = {
-            "rev": git("rev-parse", "HEAD", _cwd=_ltype_path).stdout.decode().strip(),
-            "url": layer_name,
-            "branch": git.branch(v=True, _cwd=_ltype_path).stdout.decode().strip(),
-            "remote": git.remote(v=True, _cwd=_ltype_path).stdout.decode().strip(),
-            "commits-behind": git(
-                "rev-list", f"{layer_branch}..master", "--count", _cwd=_ltype_path
-            )
-            .stdout.decode()
-            .strip(),
-        }
-        db["pull-layer-manifest"].append(layer_manifest)
-        click.echo(layer_manifest)
+    def save(self):
+        self.db_json.write_text(json.dumps(dict(self.db)))
+        self.store.put_item(Item=dict(self.db))
 
+    def promote(from_channel="unpublished", to_channel="edge"):
+        for charm_map in self.artifacts:
+            for charm_name, charm_opts in charm_map.items():
+                if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
+                    continue
 
-def _promote(charm_list, filter_by_tag, from_channel="unpublished", to_channel="edge"):
-    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+                charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
+                click.echo(
+                    f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
+                )
+                charm_id = sh.charm.show(charm_entity, "--channel", from_channel, "id")
+                charm_id = yaml.safe_load(charm_id.stdout.decode())
+                resources_args = []
+                try:
+                    resources = sh.charm(
+                        "list-resources",
+                        charm_id["id"]["Id"],
+                        channel=from_channel,
+                        format="yaml",
+                    )
+                    resources = yaml.safe_load(resources.stdout.decode())
+                    if resources:
+                        resources_args = [
+                            (
+                                "--resource",
+                                "{}-{}".format(resource["name"], resource["revision"]),
+                            )
+                            for resource in resources
+                        ]
+                except sh.ErrorReturnCode_1:
+                    click.echo("No resources for {}".format(charm_id))
+                sh.charm.release(
+                    charm_id["id"]["Id"], "--channel", to_channel, *resources_args
+                )
 
-    for charm_map in charm_list:
-        for charm_name, charm_opts in charm_map.items():
-            if not any(match in filter_by_tag for match in charm_opts["tags"]):
+    def pull_layers(self, retries=15, timeout=60):
+        """ clone all downstream layers to be processed locally when doing charm builds
+        """
+        num_runs = 0
+
+        self.db["pull-layer-manifest"] = []
+        for layer_map in self.layers:
+            layer_name = list(layer_map.keys())[0]
+            layer_props = list(layer_map.values())[0]
+
+            if layer_name == "layer:index":
                 continue
 
-            charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
-            click.echo(
-                f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
-            )
-            charm_id = sh.charm.show(charm_entity, "--channel", from_channel, "id")
-            charm_id = yaml.safe_load(charm_id.stdout.decode())
-            resources_args = []
+            click.echo(f"- Getting {layer_name}")
+
+            def download():
+                for line in sh.charm(
+                    "pull-source",
+                    "-v",
+                    "-i",
+                    self.layer_index,
+                    layer_name,
+                    _iter=True,
+                    _bg_exc=False,
+                ):
+                    click.echo(f"  {line.strip()}")
+
             try:
-                resources = sh.charm(
-                    "list-resources",
-                    charm_id["id"]["Id"],
-                    channel=from_channel,
-                    format="yaml",
-                )
-                resources = yaml.safe_load(resources.stdout.decode())
-                if resources:
-                    resources_args = [
-                        (
-                            "--resource",
-                            "{}-{}".format(resource["name"], resource["revision"]),
-                        )
-                        for resource in resources
-                    ]
-            except sh.ErrorReturnCode_1:
-                click.echo("No resources for {}".format(charm_id))
-            sh.charm.release(
-                charm_id["id"]["Id"], "--channel", to_channel, *resources_args
-            )
-
-
-def _resource(charm_entity, channel, builder, out_path, resource_spec):
-    out_path = Path(out_path)
-    resource_spec = yaml.safe_load(Path(resource_spec).read_text())
-    resource_spec_fragment = resource_spec.get(charm_entity, None)
-    click.echo(resource_spec_fragment)
-    if not resource_spec_fragment:
-        raise SystemExit("Unable to determine resource spec for entity")
-
-    os.makedirs(str(out_path), exist_ok=True)
-    charm_id = sh.charm.show(charm_entity, "--channel", channel, "id")
-    charm_id = yaml.safe_load(charm_id.stdout.decode())
-    try:
-        resources = sh.charm(
-            "list-resources", charm_id["id"]["Id"], channel=channel, format="yaml"
-        )
-    except sh.ErrorReturnCode_1:
-        click.echo("No resources found for {}".format(charm_id))
-        return
-    resources = yaml.safe_load(resources.stdout.decode())
-    builder_sh = Path(builder).absolute()
-    click.echo(builder_sh)
-    for line in sh.bash(str(builder_sh), _cwd=out_path, _iter=True, _bg_exc=False):
-        click.echo(line.strip())
-    for line in glob("{}/*".format(out_path)):
-        resource_path = Path(line)
-        resource_fn = resource_path.parts[-1]
-        resource_key = resource_spec_fragment.get(resource_fn, None)
-        if resource_key:
-            is_attached = False
-            is_attached_count = 0
-            while not is_attached:
-                try:
-                    out = sh.charm.attach(
-                        charm_entity,
-                        "--channel",
-                        channel,
-                        f"{resource_key}={resource_path}",
-                        _err_to_out=True,
+                num_runs += 1
+                download()
+            except sh.ErrorReturnCode as e:
+                click.echo(f"  Problem: {e}, retrying [{num_runs}/{retries}]")
+                if num_runs == retries:
+                    raise SystemExit(
+                        f"  Could not download charm after {retries} retries."
                     )
-                    is_attached = True
-                except sh.ErrorReturnCode_1 as e:
-                    click.echo(f"Problem attaching resources, retrying: {e}")
-                    is_attached_count += 1
-                    if is_attached_count > 10:
-                        raise SystemExit(
-                            "Could not attach resource and max retry count reached."
+                time.sleep(timeout)
+                download()
+
+            build_path = self.build_path(layer_name)
+            if not build_path:
+                raise BuildException(f"Could not determine build path for {layer_name}")
+
+            git.checkout(self.layer_branch, _cwd=build_path)
+
+            layer_manifest = {
+                "rev": git("rev-parse", "HEAD", _cwd=_ltype_path)
+                .stdout.decode()
+                .strip(),
+                "url": layer_name,
+                "branch": git.branch(v=True, _cwd=_ltype_path).stdout.decode().strip(),
+                "remote": git.remote(v=True, _cwd=_ltype_path).stdout.decode().strip(),
+                "commits-behind": git(
+                    "rev-list",
+                    f"{self.layer_branch}..master",
+                    "--count",
+                    _cwd=_ltype_path,
+                )
+                .stdout.decode()
+                .strip(),
+            }
+            self.db["pull_layer_manifest"].append(layer_manifest)
+            click.echo(layer_manifest)
+
+
+class BuildEntity:
+    """ The Build data class
+    """
+
+    def __init__(self, build, name, opts, entity):
+        # Build env
+        self.build = build
+
+        # Bundle or charm name
+        self.name = name
+
+        # Alias to name
+        self.src_path = self.name
+
+        self.dst_path = str(self.build.build_dir / self.name)
+
+        # Bundle or charm opts as defined in the layer include
+        self.opts = opts
+
+        # Entity path, ie cs:~containers/kubernetes-master
+        self.entity = entity
+
+    def get_charmstore_rev_url(self):
+        # Grab charmstore revision for channels charm
+        response = sh.charm.show(
+            self.entity, "--channel", self.build.db["build_args"]["to_channel"], "id"
+        )
+        if not response.ok:
+            raise BuildException("Unable to grab charmstore revision url.")
+
+        response = yaml.safe_load(response.stdout.decode().strip())
+        return response["id"]["Id"]
+
+    def download(self, fname):
+        entity_p = self.get_charmstore_rev_url().lstrip("cs:")
+        return requests.get(
+            f"https://api.jujucharms.com/charmstore/v5/{entity_p}/archive/{fname}"
+        )
+
+    @property
+    def has_changed(self):
+        """ Determine if the charm/layers commits have changed since last publish to charmstore
+        """
+        charmstore_build_manifest = None
+        resp = self.download(".build-manifest")
+        if resp.ok:
+            click.echo(
+                f"Grabbed charmstore build-manifest for {charm_entity} in {to_channel} channel"
+            )
+            charmstore_build_manifest = resp.json()
+
+        if not charmstore_build_manifest:
+            return False
+
+        current_build_manifest = [
+            {"rev": curr["rev"], "url": curr["url"]}
+            for curr in self.db["pull_layer_manifest"]
+        ]
+
+        # Check the current git cloned charm repo commit and add that to
+        # current pull-layer-manifest as that would no be known at the
+        # time of pull_layers
+        current_build_manifest.append({"rev": self.commit, "url": self.name})
+
+        previous_charm_rev = (
+            rev["rev"]
+            for rev in charmstore_build_manifest["layers"]
+            if rev["url"] == self.name
+        )
+        if charmstore_build_manifest["layers"] == current_build_manifest:
+            click.echo(f"No change detected for {self.entity}")
+            return True
+        return False
+
+    @property
+    def commit(self):
+        """ Commit hash of downstream repo
+        """
+        if not Path(self.src_path).exists():
+            raise BuildException(f"Could not locate {self.src_path}")
+
+        git_commit = git("rev-parse", "HEAD", _cwd=self.src_path)
+        return git_commit.stdout.decode().strip()
+
+    def setup(self):
+        """ Setup directory for charm build
+        """
+        downstream = f"https://github.com/{self.opts['downstream']}"
+        click.echo(f"Cloning repo from {downstream}")
+
+        os.makedirs(self.src_path)
+        for line in git.clone(
+            "--branch",
+            charm_branch,
+            downstream,
+            self.src_path,
+            _iter=True,
+            _bg_exc=False,
+        ):
+            click.echo(line)
+
+    def proof_build(self):
+        """ Perform charm build against charm/bundle
+        """
+        for line in sh.charm.build(
+            r=True,
+            force=True,
+            i="https://localhost",
+            _cwd=build_entity.src_path,
+            _iter=True,
+            _bg_exc=False,
+        ):
+            click.echo(line.strip())
+        sh.charm.proof(_cwd=self.dst_path)
+
+    def push(self, is_bundle=False):
+        """ Pushes a built charm to Charmstore
+        """
+
+        click.echo(f"Pushing built {self.dst_path} to {self.entity}")
+        resource_args = []
+        if not is_bundle:
+            # Build a list of `oci-image` resources that have `upstream-source` defined,
+            # which is added for this click.echoic to work.
+            resources = yaml.safe_load(
+                Path(self.dst_path).joinpath("metadata.yaml").read_text()
+            ).get("resources", {})
+            images = {
+                name: details["upstream-source"]
+                for name, details in resources.items()
+                if details["type"] == "oci-image" and details.get("upstream-source")
+            }
+            click.echo(f"Found {len(images)} oci-image resources:\n{pformat(images)}\n")
+            for image in images.values():
+                click.echo(f"Pulling {image}...")
+                sh.docker.pull(image)
+
+            # Convert the image names and tags to `--resource foo=bar` format
+            # for passing to `charm push`.
+            resource_args = [
+                arg
+                for name, image in images.items()
+                for arg in ("--resource", f"{name}={image}")
+            ]
+
+        out = sh.charm.push(self.dst_path, self.entity, *resource_args, _bg_exc=False)
+        click.echo(f"Charm push returned: {out}")
+        # Output includes lots of ansi escape sequences from the docker push,
+        # and we only care about the first line, which contains the url as yaml.
+        out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
+        click.echo(f"Setting {out['url']} metadata: {self.commit}")
+        sh.charm.set(out["url"], f"commit={self.commit}", _bg_exc=False)
+
+    def attach_resource(self, from_channel):
+        resource_builder = self.opts.get("resource_build_sh", None)
+        if not resource_builder:
+            return
+
+        builder = Path(self.src_path) / resource_builder
+        out_path = Path(self.dst_path) / "tmp"
+
+        resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
+        resource_spec_fragment = resource_spec.get(self.entity, None)
+        click.echo(resource_spec_fragment)
+        if not resource_spec_fragment:
+            raise SystemExit("Unable to determine resource spec for entity")
+
+        os.makedirs(str(out_path), exist_ok=True)
+        charm_id = sh.charm.show(self.entity, "--channel", channel, "id")
+        charm_id = yaml.safe_load(charm_id.stdout.decode())
+        try:
+            resources = sh.charm(
+                "list-resources", charm_id["id"]["Id"], channel=channel, format="yaml"
+            )
+        except sh.ErrorReturnCode:
+            click.echo("No resources found for {}".format(charm_id))
+            return
+        resources = yaml.safe_load(resources.stdout.decode())
+        builder_sh = builder.absolute()
+        click.echo(f"Using builder: {builder_sh}")
+        for line in sh.bash(str(builder_sh), _cwd=out_path, _iter=True, _bg_exc=False):
+            click.echo(line.strip())
+        for line in glob("{}/*".format(out_path)):
+            resource_path = Path(line)
+            resource_fn = resource_path.parts[-1]
+            resource_key = resource_spec_fragment.get(resource_fn, None)
+            if resource_key:
+                is_attached = False
+                is_attached_count = 0
+                while not is_attached:
+                    try:
+                        out = sh.charm.attach(
+                            self.entity,
+                            "--channel",
+                            channel,
+                            f"{resource_key}={resource_path}",
+                            _err_to_out=True,
                         )
-            click.echo(out)
+                        is_attached = True
+                    except sh.ErrorReturnCode_1 as e:
+                        click.echo(f"Problem attaching resources, retrying: {e}")
+                        is_attached_count += 1
+                        if is_attached_count > 10:
+                            raise SystemExit(
+                                "Could not attach resource and max retry count reached."
+                            )
+                click.echo(out)
 
 
 @click.group()
@@ -339,7 +518,6 @@ def pull_layers(layer_index, layer_list, layer_branch, retries, timeout):
 @click.option(
     "--to-channel", required=True, help="channel to promote charm to", default="edge"
 )
-@click.option("--dry-run", is_flag=True)
 def build(
     charm_list,
     layer_list,
@@ -349,93 +527,41 @@ def build(
     resource_spec,
     filter_by_tag,
     to_channel,
-    dry_run,
 ):
-    db["publish_channel"] = to_channel
-    charm_env = CharmEnv()
-    _charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+    build_env = BuildEnv(build_type=BuildType.CHARM)
+    build_env.db["build_args"] = {
+        "artifact_list": charm_list,
+        "layer_list": layer_list,
+        "layer_index": layer_index,
+        "charm_branch": charm_branch,
+        "layer_branch": layer_branch,
+        "resource_spec": resource_spec,
+        "filter_by_tag": filter_by_tag,
+        "to_channel": to_channel,
+        "dry_run": dry_run,
+    }
 
-    click.echo(f"Building Charms, will check against yesterday's {get_yesterday()} manifest to skip unchanged charms.")
-    _pull_layers(layer_index, layer_list, layer_branch)
-    for charm_map in _charm_list:
+    build_env.pull_layers()
+
+    for charm_map in build_env.artifacts:
         for charm_name, charm_opts in charm_map.items():
-            downstream = f"https://github.com/{charm_opts['downstream']}"
             if not any(match in filter_by_tag for match in charm_opts["tags"]):
                 continue
 
-            if dry_run:
-                click.echo(
-                    f"{charm_name:^25} :: vcs-branch: {charm_branch} to-channel: {to_channel} tags: {','.join(charm_opts['tags'])}"
-                )
-                continue
             charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
+            build_entity = BuildEntity(build_env, charm_name, charm_opts, charm_entity)
+            build_entity.setup()
 
-            src_path = charm_name
-            os.makedirs(src_path)
+            if not build_entity.has_changed:
+                continue
 
-            dst_path = str(charm_env.build_dir / charm_name)
-            for line in git.clone(
-                "--branch",
-                charm_branch,
-                downstream,
-                src_path,
-                _iter=True,
-                _bg_exc=False,
-            ):
-                click.echo(line)
+            build_entity.proof_build()
 
-            # Grab previous day build-manifest to match
-            response = store.get_item(Key={"build_datetime": get_yesterday()})
-            previous_build = None
-            if response and "Item" in response:
-                previous_build = response["Item"]
+            build_entity.push()
+            build_entity.attach_resource("unpublished")
 
-            # Only check against edge builds
-            if previous_build and previous_build['publish_channel'] == "edge":
-                previous_build_entity = previous_build[charm_entity]
-                previous_build_manifest = previous_build_entity.get('build-manifest', None)
-                current_build_manifest = [{"rev": curr['rev'], "url": curr["url"]} for curr in db["pull-layer-manifest"]]
-
-                # Check the current git cloned charm repo commit and add that to
-                # current pull-layer-manifest as that would no be known at the
-                # time of pull_layers
-                git_commit = git("rev-parse", "HEAD", _cwd=src_path)
-                git_commit = git_commit.stdout.decode().strip()
-                current_build_manifest.append({"rev": git_commit, "url": charm_name})
-
-                # If no changes we can skip this charm build but bring forward the previous build-manifest for subsequent checks
-                if previous_build_manifest:
-                    previous_charm_rev = (rev["rev"] for rev in previous_build_manifest['layers'] if rev["url"] == charm_name)
-                    if previous_build_manifest['layers'] == current_build_manifest:
-                        db[charm_entity] = {"build-manifest": previous_build_manifest}
-                        click.echo(f"  No changes detected in {charm_entity}, skipping.")
-                        continue
-
-
-
-            for line in sh.charm.build(
-                r=True,
-                force=True,
-                i="https://localhost",
-                _cwd=src_path,
-                _iter=True,
-                _bg_exc=False,
-            ):
-                click.echo(line.strip())
-            sh.charm.proof(_cwd=dst_path)
-            _push(src_path, dst_path, charm_entity)
-            resource_builder = charm_opts.get("resource_build_sh", None)
-            if resource_builder:
-                _resource(
-                    charm_entity,
-                    "unpublished",
-                    f"{src_path}/{resource_builder}",
-                    f"{dst_path}/tmp",
-                    resource_spec,
-                )
-    _promote(charm_list, filter_by_tag, to_channel=to_channel)
-    db_json.write_text(json.dumps(dict(db)))
-    store.put_item(Item=dict(db))
+    build_env.promote(to_channel=to_channel)
+    build_env.save()
 
 
 @cli.command()
@@ -461,27 +587,21 @@ def build(
 @click.option(
     "--to-channel", required=True, help="channel to promote bundle to", default="edge"
 )
-@click.option("--dry-run", is_flag=True)
-def build_bundles(
-    bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run
-):
-    return _build_bundles(
-        bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run
-    )
+def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel):
+    build_env = BuildEnv(build_type=BuildType.BUNDLE)
+    build_env.db["build_args"] = {
+        "artifact_list": bundle_list,
+        "bundle_branch": bundle_branch,
+        "filter_by_tag": filter_by_tag,
+        "to_channel": to_channel,
+    }
 
-
-def _build_bundles(
-    bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, dry_run
-):
-    charm_env = CharmEnv()
-    _bundle_list = yaml.safe_load(Path(bundle_list).read_text(encoding="utf8"))
-    click.echo("bundle builds")
-    bundle_repo_dir = charm_env.tmp_dir / "bundles-kubernetes"
-    bundle_build_dir = charm_env.tmp_dir / "tmp-bundles"
-    sh.rm("-rf", bundle_repo_dir)
-    sh.rm("-rf", bundle_build_dir)
-    os.makedirs(str(bundle_repo_dir), exist_ok=True)
-    os.makedirs(str(bundle_build_dir), exist_ok=True)
+    bundle_repo_dir = build_env.tmp_dir / "bundles-kubernetes"
+    # bundle_build_dir = build_env.tmp_dir / "tmp-bundles"
+    # sh.rm("-rf", bundle_repo_dir)
+    # sh.rm("-rf", bundle_build_dir)
+    # os.makedirs(str(bundle_repo_dir), exist_ok=True)
+    # os.makedirs(str(bundle_build_dir), exist_ok=True)
     for line in git.clone(
         "--branch",
         bundle_branch,
@@ -491,7 +611,8 @@ def _build_bundles(
         _bg_exc=False,
     ):
         click.echo(line)
-    for bundle_map in _bundle_list:
+
+    for bundle_map in build_env.artifacts:
         for bundle_name, bundle_opts in bundle_map.items():
             if not any(match in filter_by_tag for match in bundle_opts["tags"]):
                 click.echo(f"Skipping {bundle_name}")
@@ -500,7 +621,7 @@ def _build_bundles(
             cmd = [
                 str(bundle_repo_dir / "bundle"),
                 "-o",
-                str(bundle_build_dir / bundle_name),
+                bundle_name,
                 "-c",
                 to_channel,
                 bundle_opts["fragments"],
@@ -508,16 +629,15 @@ def _build_bundles(
             click.echo(f"Running {' '.join(cmd)}")
             import subprocess
 
-            subprocess.call(" ".join(cmd), shell=True)
+            subprocess.run(" ".join(cmd), shell=True)
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
-            click.echo(f"Check {bundle_entity}")
-            _push(
-                str(bundle_repo_dir),
-                str(bundle_build_dir / bundle_name),
-                bundle_entity,
-                is_bundle=True,
+
+            build_entity = BuildEntity(
+                build_env, bundle_name, bundle_opts, bundle_entity
             )
-    _promote(bundle_list, filter_by_tag, to_channel=to_channel)
+            build_entity.push(is_bundle=True)
+    build_env.promote(to_channel=to_channel)
+    build_env.save()
 
 
 @cli.command()
@@ -531,30 +651,14 @@ def _build_bundles(
 @click.option("--from-channel", required=True, help="Charm channel to publish from")
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
 def promote(charm_list, filter_by_tag, from_channel, to_channel):
-    return _promote(charm_list, filter_by_tag, from_channel, to_channel)
-
-
-@cli.command()
-@click.option(
-    "--charm-entity",
-    required=True,
-    help="Charmstore entity id (ie. cs~containers/flannel)",
-)
-@click.option(
-    "--channel",
-    required=True,
-    default="unpublished",
-    help="Charm channel to query entity",
-)
-@click.option("--builder", required=True, help="Path of resource builder")
-@click.option(
-    "--out-path", required=True, help="Temporary storage of built charm resources"
-)
-@click.option(
-    "--resource-spec", required=True, help="YAML Spec of resource keys and filenames"
-)
-def resource(charm_entity, channel, builder, out_path, resource_spec):
-    return _resource(charm_entity, channel, builder, out_path, resource_spec)
+    build_env = BuildEnv(build_type=BuildType.CHARM)
+    build_env.db["build_args"] = {
+        "item_list": charm_list,
+        "filter_by_tag": filter_by_tag,
+        "to_channel": to_channel,
+        "from_channel": from_channel,
+    }
+    return build_env.promote(to_channel=to_channel)
 
 
 if __name__ == "__main__":

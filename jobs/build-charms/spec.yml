@@ -40,8 +40,8 @@ plan:
         python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "build-bundles"
         python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
         python3 jobs/infra/collect-debug.py push 'metadata' metadata.db
-        python3 jobs/infra/collect-debug.py push 'build_bundle_metadata' buildcharms.json
-        python3 jobs/infra/collect-debug.py push 'build_bundle_metadata_db' buildcharms.db
+        python3 jobs/infra/collect-debug.py push 'build_bundle_metadata' buildbundles.json
+        python3 jobs/infra/collect-debug.py push 'build_bundle_metadata_db' buildbundles.db
         python3 jobs/infra/collect-debug.py push 'job_result' *job.json
         python3 jobs/infra/collect-debug.py save-meta
     tags: [build-bundles]
