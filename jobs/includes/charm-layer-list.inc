@@ -192,6 +192,10 @@
     downstream: "charmed-kubernetes/layer-vaultlocker.git"
     upstream: "https://github.com/juju-solutions/layer-vaultlocker.git"
     tags: ['k8s']
+- layer:cis-benchmark:
+    downstream: "charmed-kubernetes/layer-cis-benchmark.git"
+    upstream: "https://github.com/charmed-kubernetes/layer-cis-benchmark.git"
+    tags: ['k8s']
 - layer:index:
     downstream: "charmed-kubernetes/layer-index.git"
     upstream: "https://github.com/juju/layer-index.git"
