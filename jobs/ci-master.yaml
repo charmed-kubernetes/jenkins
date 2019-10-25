@@ -232,9 +232,9 @@
           rm -rf $WORKSPACE/.env || true
 
           export GIT_SSH_COMMAND='"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"'
-          export CHARM_BUILD_DIR="$WORKSPACE/${{CHARM_BUILD_DIR:-build/charms}}"
-          export CHARM_LAYERS_DIR="$WORKSPACE/${{CHARM_LAYERS_DIR:-build/layers}}"
-          export CHARM_INTERFACES_DIR="$WORKSPACE/${{CHARM_INTERFACES_DIR:-build/interfaces}}"
+          export CHARM_BUILD_DIR="$HOME/.cache/charmbuild/${{CHARM_BUILD_DIR:-build/charms}}"
+          export CHARM_LAYERS_DIR="$HOME/.cache/charmbuild/${{CHARM_LAYERS_DIR:-build/layers}}"
+          export CHARM_INTERFACES_DIR="$HOME/.cache/charmbuild/${{CHARM_INTERFACES_DIR:-build/interfaces}}"
           export CHARM_CACHE_DIR=$WORKSPACE/tmp/.charm
           export PATH=/snap/bin:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
@@ -257,9 +257,9 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          rm -rf "$CHARM_BUILD_DIR" && mkdir -p "$CHARM_BUILD_DIR"
-          rm -rf "$CHARM_LAYERS_DIR" && mkdir -p "$CHARM_LAYERS_DIR"
-          rm -rf "$CHARM_INTERFACES_DIR" && mkdir -p "$CHARM_INTERFACES_DIR"
+          mkdir -p "$CHARM_BUILD_DIR" || true
+          mkdir -p "$CHARM_LAYERS_DIR" || true
+          mkdir -p "$CHARM_INTERFACES_DIR" || true
 
           virtualenv venv -p python3.6
           venv/bin/python -m pip install pip-tools

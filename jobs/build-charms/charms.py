@@ -150,10 +150,12 @@ class BuildEnv:
             return None
 
     def save(self):
+        click.echo("Saving build")
+        click.echo(dict(self.db))
         self.db_json.write_text(json.dumps(dict(self.db)))
         self.store.put_item(Item=dict(self.db))
 
-    def promote(self, from_channel="unpublished", to_channel="edge"):
+    def promote_all(self, from_channel="unpublished", to_channel="edge"):
         for charm_map in self.artifacts:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
@@ -188,7 +190,7 @@ class BuildEnv:
                     charm_id["id"]["Id"], "--channel", to_channel, *resources_args
                 )
 
-    def pull_layers(self, retries=15, timeout=60):
+    def pull_layers(self):
         """ clone all downstream layers to be processed locally when doing charm builds
         """
         num_runs = 0
@@ -198,19 +200,24 @@ class BuildEnv:
         def done(cmd, success, exit_code):
             pool.release()
 
-        def download():
+        def download(layer_name):
             pool.acquire()
 
-            click.echo(f"- Getting {layer_name}")
-            sh.charm(
-                "pull-source",
-                "-v",
-                "-i",
-                self.layer_index,
-                layer_name,
-                _bg=True,
-                _done=done,
-            )
+            if Path(self.build_path(layer_name)).exists():
+                click.echo(f"- Refreshing {layer_name} cache.")
+                git.checkout(self.layer_branch, _cwd=self.build_path(layer_name))
+                git.pull("origin", self.layer_branch, _cwd=self.build_path(layer_name), _bg=True, _done=done)
+            else:
+                click.echo("- Downloading {layer_name}")
+                sh.charm(
+                    "pull-source",
+                    "-v",
+                    "-i",
+                    self.layer_index,
+                    layer_name,
+                    _bg=True,
+                    _done=done,
+                )
 
         procs = []
         for layer_map in self.layers:
@@ -220,52 +227,33 @@ class BuildEnv:
             if layer_name == "layer:index":
                 continue
 
-            procs.append(download())
+            procs.append(download(layer_name))
 
         [p.wait() for p in procs if p]
 
-        # try:
-        #     num_runs += 1
-        #     download()
-        # except sh.ErrorReturnCode as e:
-        #     click.echo(f"  Problem: {e}, retrying [{num_runs}/{retries}]")
-        #     if num_runs == retries:
-        #         raise SystemExit(
-        #             f"  Could not download charm after {retries} retries."
-        #         )
-        #     time.sleep(timeout)
-        #     download()
-
         self.db["pull_layer_manifest"] = []
-        _paths_to_process = glob("{}/*".format(str(self.layers_dir))) + glob(
-            "{}/*".format(str(self.interfaces_dir))
-        )
-        for _path in _paths_to_process:
+        _paths_to_process = {
+            'layer': glob("{}/*".format(str(self.layers_dir))),
+            'interface': glob(
+                "{}/*".format(str(self.interfaces_dir))
+            )
+        }
+        for prefix, paths in _paths_to_process.items():
+            for _path in paths:
+                build_path = _path
+                if not build_path:
+                    raise BuildException(f"Could not determine build path for {_path}")
 
-            build_path = _path
-            if not build_path:
-                raise BuildException(f"Could not determine build path for {_path}")
+                git.checkout(self.layer_branch, _cwd=build_path)
 
-            git.checkout(self.layer_branch, _cwd=build_path)
-
-            layer_manifest = {
-                "rev": git("rev-parse", "HEAD", _cwd=build_path)
-                .stdout.decode()
-                .strip(),
-                "url": layer_name,
-                "branch": git.branch(v=True, _cwd=build_path).stdout.decode().strip(),
-                "remote": git.remote(v=True, _cwd=build_path).stdout.decode().strip(),
-                "commits-behind": git(
-                    "rev-list",
-                    f"{self.layer_branch}..master",
-                    "--count",
-                    _cwd=build_path,
-                )
-                .stdout.decode()
-                .strip(),
-            }
-            self.db["pull_layer_manifest"].append(layer_manifest)
-            click.echo(layer_manifest)
+                layer_manifest = {
+                    "rev": git("rev-parse", "HEAD", _cwd=build_path)
+                    .stdout.decode()
+                    .strip(),
+                    "url": f"{prefix}:{Path(build_path).stem}",
+                }
+                self.db["pull_layer_manifest"].append(layer_manifest)
+                click.echo(f"- {layer_manifest['url']} at commit: {layer_manifest['rev']}")
 
 
 class BuildEntity:
@@ -311,7 +299,6 @@ class BuildEntity:
         charmstore_build_manifest = None
         resp = self.download(".build.manifest")
         if resp.ok:
-            click.echo(f"Grabbed charmstore build.manifest for {self.entity}")
             charmstore_build_manifest = resp.json()
 
         if not charmstore_build_manifest:
@@ -335,11 +322,12 @@ class BuildEntity:
             for rev in charmstore_build_manifest["layers"]
             if rev["url"] == self.name
         )
-        the_diff = [i for i in current_build_manifest if i not in charmstore_build_manifest["layers"]]
+        the_diff = [i for i in charmstore_build_manifest["layers"] if i not in current_build_manifest]
         if the_diff:
             click.echo("Changes found:")
             click.echo(the_diff)
             return True
+        click.echo(f"No changes found, not building a new {self.entity}")
         return False
 
     @property
@@ -427,7 +415,7 @@ class BuildEntity:
             return
 
         builder = Path(self.src_path) / resource_builder
-        out_path = Path(self.dst_path) / "tmp"
+        out_path = Path(self.src_path) / "tmp"
 
         resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
         resource_spec_fragment = resource_spec.get(self.entity, None)
@@ -436,21 +424,27 @@ class BuildEntity:
             raise SystemExit("Unable to determine resource spec for entity")
 
         os.makedirs(str(out_path), exist_ok=True)
-        charm_id = sh.charm.show(self.entity, "--channel", channel, "id")
+        charm_id = sh.charm.show(self.entity, "--channel", from_channel, "id")
         charm_id = yaml.safe_load(charm_id.stdout.decode())
         try:
             resources = sh.charm(
-                "list-resources", charm_id["id"]["Id"], channel=channel, format="yaml"
+                "list-resources", charm_id["id"]["Id"], channel=from_channel, format="yaml"
             )
         except sh.ErrorReturnCode:
             click.echo("No resources found for {}".format(charm_id))
             return
         resources = yaml.safe_load(resources.stdout.decode())
         builder_sh = builder.absolute()
-        click.echo(f"Using builder: {builder_sh}")
+        click.echo(f"Running {builder_sh} from {self.dst_path}")
+
+        # Grab a list of all file extensions to lookout for
+        known_resource_extensions = list(set("".join(Path(k).suffixes) for k in resource_spec_fragment.keys()))
+        click.echo(f"  attaching resources with known extensions: {', '.join(known_resource_extensions)}")
+
         for line in sh.bash(str(builder_sh), _cwd=out_path, _iter=True, _bg_exc=False):
             click.echo(line.strip())
         for line in glob("{}/*".format(out_path)):
+            click.echo(f" verifying {line}")
             resource_path = Path(line)
             resource_fn = resource_path.parts[-1]
             resource_key = resource_spec_fragment.get(resource_fn, None)
@@ -475,6 +469,35 @@ class BuildEntity:
                                 "Could not attach resource and max retry count reached."
                             )
                 click.echo(out)
+
+    def promote(self, from_channel="unpublished", to_channel="edge"):
+        click.echo(
+            f"Promoting :: {self.entity:^35} :: from:{from_channel} to: {to_channel}"
+        )
+        charm_id = sh.charm.show(self.entity, "--channel", from_channel, "id")
+        charm_id = yaml.safe_load(charm_id.stdout.decode())
+        resources_args = []
+        try:
+            resources = sh.charm(
+                "list-resources",
+                charm_id["id"]["Id"],
+                channel=from_channel,
+                format="yaml",
+            )
+            resources = yaml.safe_load(resources.stdout.decode())
+            if resources:
+                resources_args = [
+                    (
+                        "--resource",
+                        "{}-{}".format(resource["name"], resource["revision"]),
+                    )
+                    for resource in resources
+                ]
+        except sh.ErrorReturnCode:
+            click.echo("No resources for {}".format(charm_id))
+        sh.charm.release(
+            charm_id["id"]["Id"], "--channel", to_channel, *resources_args
+        )
 
 
 @click.group()
@@ -552,8 +575,7 @@ def build(
 
             build_entity.push()
             build_entity.attach_resource("unpublished")
-
-    build_env.promote(to_channel=to_channel)
+            build_entity.promote(to_channel=to_channel)
     build_env.save()
 
 
@@ -629,7 +651,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 build_env, bundle_name, bundle_opts, bundle_entity
             )
             build_entity.push(is_bundle=True)
-    build_env.promote(to_channel=to_channel)
+            build_env.promote(to_channel=to_channel)
     build_env.save()
 
 
@@ -651,7 +673,7 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel):
         "to_channel": to_channel,
         "from_channel": from_channel,
     }
-    return build_env.promote(to_channel=to_channel)
+    return build_env.promote_all(to_channel=to_channel)
 
 
 if __name__ == "__main__":
