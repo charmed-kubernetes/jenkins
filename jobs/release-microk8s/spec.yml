@@ -121,7 +121,6 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          JUJU_CONTROLLER="$JUJU_CONTROLLER:$JUJU_MODEL" \
           python3 jobs/microk8s/release-pre-releases.py
   - <<: *BASE_JOB
     env:
@@ -143,7 +142,6 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          JUJU_CONTROLLER="$JUJU_CONTROLLER:$JUJU_MODEL" \
           python3 jobs/microk8s/release-pre-releases.py
 
 
