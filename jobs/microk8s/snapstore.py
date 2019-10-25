@@ -202,7 +202,11 @@ class Microk8sSnap:
                   "{}:/var/lib/juju/agents/unit-ubuntu-0/charm/microk8s/microk8s_latest_{}.snap .".format(
                 self.juju_controller, _model, self.juju_unit, arch
             )
-            run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
+            try:
+                run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
+            except CalledProcessError as err:
+                click.echo(err.output)
+                raise err
         else:
             cmd = "mv microk8s/microk8s_latest_{}.snap .".format(arch)
             run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
