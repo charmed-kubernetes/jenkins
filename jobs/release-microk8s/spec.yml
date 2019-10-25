@@ -116,6 +116,8 @@ plan:
       - |
         #!/bin/bash
         set -x
+
+        juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic''
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
@@ -135,6 +137,8 @@ plan:
       - |
         #!/bin/bash
         set -x
+
+        juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic''
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
