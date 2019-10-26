@@ -456,7 +456,7 @@ class BuildEntity:
                         out = sh.charm.attach(
                             self.entity,
                             "--channel",
-                            channel,
+                            from_channel,
                             f"{resource_key}={resource_path}",
                             _err_to_out=True,
                         )
