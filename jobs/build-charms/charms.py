@@ -554,7 +554,7 @@ def build(
         "charm_branch": charm_branch,
         "layer_branch": layer_branch,
         "resource_spec": resource_spec,
-        "filter_by_tag": filter_by_tag,
+        "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
     }
 
@@ -608,7 +608,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
     build_env.db["build_args"] = {
         "artifact_list": bundle_list,
         "bundle_branch": bundle_branch,
-        "filter_by_tag": filter_by_tag,
+        "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
     }
 
@@ -670,7 +670,7 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel):
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
         "artifact_list": charm_list,
-        "filter_by_tag": filter_by_tag,
+        "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
         "from_channel": from_channel,
     }
