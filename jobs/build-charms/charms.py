@@ -372,35 +372,34 @@ class BuildEntity:
             click.echo(line.strip())
         sh.charm.proof(_cwd=self.dst_path)
 
-    def push(self, is_bundle=False):
+    def push(self):
         """ Pushes a built charm to Charmstore
         """
 
         click.echo(f"Pushing built {self.dst_path} to {self.entity}")
         resource_args = []
-        if not is_bundle:
-            # Build a list of `oci-image` resources that have `upstream-source` defined,
-            # which is added for this click.echoic to work.
-            resources = yaml.safe_load(
-                Path(self.dst_path).joinpath("metadata.yaml").read_text()
-            ).get("resources", {})
-            images = {
-                name: details["upstream-source"]
-                for name, details in resources.items()
-                if details["type"] == "oci-image" and details.get("upstream-source")
-            }
-            click.echo(f"Found {len(images)} oci-image resources:\n{pformat(images)}\n")
-            for image in images.values():
-                click.echo(f"Pulling {image}...")
-                sh.docker.pull(image)
+        # Build a list of `oci-image` resources that have `upstream-source` defined,
+        # which is added for this click.echoic to work.
+        resources = yaml.safe_load(
+            Path(self.dst_path).joinpath("metadata.yaml").read_text()
+        ).get("resources", {})
+        images = {
+            name: details["upstream-source"]
+            for name, details in resources.items()
+            if details["type"] == "oci-image" and details.get("upstream-source")
+        }
+        click.echo(f"Found {len(images)} oci-image resources:\n{pformat(images)}\n")
+        for image in images.values():
+            click.echo(f"Pulling {image}...")
+            sh.docker.pull(image)
 
-            # Convert the image names and tags to `--resource foo=bar` format
-            # for passing to `charm push`.
-            resource_args = [
-                arg
-                for name, image in images.items()
-                for arg in ("--resource", f"{name}={image}")
-            ]
+        # Convert the image names and tags to `--resource foo=bar` format
+        # for passing to `charm push`.
+        resource_args = [
+            arg
+            for name, image in images.items()
+            for arg in ("--resource", f"{name}={image}")
+        ]
 
         out = sh.charm.push(self.dst_path, self.entity, *resource_args, _bg_exc=False)
         click.echo(f"Charm push returned: {out}")
@@ -499,6 +498,22 @@ class BuildEntity:
         sh.charm.release(
             charm_id["id"]["Id"], "--channel", to_channel, *resources_args
         )
+
+
+class BundleBuildEntity(BuildEntity):
+
+    def push(self):
+        """ Pushes a built charm to Charmstore
+        """
+
+        click.echo(f"Pushing built {self.name} to {self.entity}")
+        out = sh.charm.push(self.name, self.entity)
+        click.echo(f"Charm push returned: {out}")
+        # Output includes lots of ansi escape sequences from the docker push,
+        # and we only care about the first line, which contains the url as yaml.
+        out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
+        click.echo(f"Setting {out['url']} metadata: {self.commit}")
+        sh.charm.set(out["url"], f"commit={self.commit}", _bg_exc=False)
 
 
 @click.group()
@@ -648,10 +663,10 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
             subprocess.run(" ".join(cmd), shell=True)
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
 
-            build_entity = BuildEntity(
+            build_entity = BundleBuildEntity(
                 build_env, bundle_name, bundle_opts, bundle_entity
             )
-            build_entity.push(is_bundle=True)
+            build_entity.push()
             build_env.promote(to_channel=to_channel)
     build_env.save()
 
