@@ -515,6 +515,24 @@ class BundleBuildEntity(BuildEntity):
         click.echo(f"Setting {out['url']} metadata: {self.commit}")
         sh.charm.set(out["url"], f"commit={self.commit}", _bg_exc=False)
 
+    @property
+    def has_changed(self):
+        charmstore_bundle = self.download('bundle.yaml')
+        charmstore_bundle = yaml.safe_load(charmstore_bundle.text)
+        charmstore_bundle_services = charmstore_bundle['services']
+
+        local_built_bundle = yaml.safe_load((Path(self.name) / 'bundle.yaml').read_text(encoding='utf8'))
+        local_built_bundle_services = local_built_bundle['services']
+        the_diff = [i['charm'] for _, i in charmstore_bundle_services.items() if i['charm'] not in local_built_bundle_services]
+        if the_diff:
+            click.echo("Changes found:")
+            click.echo(the_diff)
+            return True
+
+        click.echo(f"No charm changes found, not pushing new bundle {self.entity}")
+        return False
+
+
 
 @click.group()
 def cli():
@@ -662,12 +680,12 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
 
             subprocess.run(" ".join(cmd), shell=True)
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
-
             build_entity = BundleBuildEntity(
                 build_env, bundle_name, bundle_opts, bundle_entity
             )
             build_entity.push()
-            build_env.promote(to_channel=to_channel)
+            build_entity.promote(to_channel=to_channel)
+
     build_env.save()
 
 
