@@ -26,6 +26,7 @@ from kv import KV
 from datetime import datetime, timedelta
 from enum import Enum
 from threading import Semaphore
+from multiprocessing import cpu_count
 import click
 import sh
 import yaml
@@ -195,7 +196,7 @@ class BuildEnv:
         """
         num_runs = 0
 
-        pool = Semaphore(4)
+        pool = Semaphore(cpu_count())
 
         def done(cmd, success, exit_code):
             pool.release()
@@ -208,7 +209,7 @@ class BuildEnv:
                 git.checkout(self.layer_branch, _cwd=self.build_path(layer_name))
                 git.pull("origin", self.layer_branch, _cwd=self.build_path(layer_name), _bg=True, _done=done)
             else:
-                click.echo("- Downloading {layer_name}")
+                click.echo(f"- Downloading {layer_name}")
                 sh.charm(
                     "pull-source",
                     "-v",
