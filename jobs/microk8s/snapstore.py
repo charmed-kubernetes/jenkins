@@ -189,7 +189,7 @@ class Microk8sSnap:
             for line in sh2.env(cmd_array):
                 click.echo(line.strip())
 
-        cmd = "(cd microk8s; pwd; sudo /snap/bin/snapcraft cleanbuild)"
+        cmd = "(cd microk8s; pwd; sudo /snap/bin/snapcraft --use-lxd)"
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
             click.echo(line.strip())
