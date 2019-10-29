@@ -32,12 +32,12 @@ plan:
             python3 jobs/integration/tigera_aws.py cleanup 2>&1
 
             export NUM_SUBNETS=1
-            if [ ! -z ${TEST_BGP+x} ]; then
+            if [ -n "$TEST_BGP" ]; then
               export NUM_SUBNETS=2
             fi
 
             python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap 2>&1
-            if [ -z $TEST_BGP ]; then
+            if [ -n "$TEST_BGP" ]; then
               echo "Deploying bgp router"
               python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router 2>&1
             fi
@@ -56,7 +56,7 @@ plan:
 
             python3 jobs/integration/tigera_aws.py disable-source-dest-check 2>&1
 
-            if [ -z $TEST_BGP ]; then
+            if [ -n "$TEST_BGP" ]; then
               python3 jobs/integration/tigera_aws.py configure-bgp 2>&1
             fi
 
