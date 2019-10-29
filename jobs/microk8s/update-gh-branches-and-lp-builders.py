@@ -85,13 +85,13 @@ class Builder:
     This class encapsulated all the functionality we need to manipulate the LP builders
     """
 
-    def __init__(self, track, is_latest=False):
+    def __init__(self, track, build_from_master=False):
         self.track = track
         self.is_latest = is_latest
         # the latest and the latest stable tracks (1.12 at the time of this writing)
         # build from the master head GH repo
         self.gh_branch = (
-            "refs/heads/master" if is_latest else "refs/heads/{}".format(track)
+            "refs/heads/master" if build_from_master else "refs/heads/{}".format(track)
         )
         self.snap = None
         self.lp = None
@@ -200,7 +200,8 @@ if __name__ == "__main__":
             continue
 
         # Take care of the LP builders
-        builder = Builder(track, is_latest(track))
+        build_from_master = is_latest(track) and not gh_branch_exists(track)
+        builder = Builder(track, build_from_master)
         if not builder.exists():
             builder.create()
         else:
