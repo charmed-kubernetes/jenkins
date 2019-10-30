@@ -1034,10 +1034,15 @@ async def test_audit_webhook(model, tools):
         return count
 
     # Deploy an nginx target for webhook
-    cmd = "/snap/bin/kubectl delete --ignore-not-found po test-audit-webhook"
+    local_path = os.path.dirname(__file__) + "/templates/test-audit-webhook.yaml"
+    remote_path = "/tmp/test-audit-webhook.yaml"
+    await scp_to(
+        local_path, unit, remote_path, tools.controller_name, tools.connection
+    )
+    cmd = "/snap/bin/kubectl apply -f " + remote_path
     await run_until_success(unit, cmd)
-    cmd = "/snap/bin/kubectl run test-audit-webhook --image nginx:1.15.0-alpine --restart Never"
-    await run_until_success(unit, cmd)
+
+    # Get nginx IP
     nginx_ip = None
     while nginx_ip is None:
         cmd = "/snap/bin/kubectl get po -o json test-audit-webhook"
@@ -1075,6 +1080,8 @@ async def test_audit_webhook(model, tools):
 
     # Clean up
     await reset_audit_config(app, tools)
+    cmd = "/snap/bin/kubectl delete --ignore-not-found -f " + remote_path
+    await run_until_success(unit, cmd)
 
 
 @pytest.mark.asyncio
