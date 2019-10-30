@@ -189,7 +189,7 @@ class Microk8sSnap:
             for line in sh2.env(cmd_array):
                 click.echo(line.strip())
 
-        cmd = "(cd microk8s; pwd; sudo /snap/bin/snapcraft cleanbuild)"
+        cmd = "(cd microk8s; pwd; sudo /snap/bin/snapcraft --use-lxd)"
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
             click.echo(line.strip())
@@ -200,8 +200,8 @@ class Microk8sSnap:
             _model = os.environ.get("JUJU_MODEL")
             cmd = (
                 "juju  scp -m {}:{} "
-                "{}:/home/ubuntu/microk8s/microk8s_latest_{}.snap .".format(
-                    self.juju_controller, _model, self.juju_unit, arch
+                "{}:/home/ubuntu/microk8s/microk8s_\*_{}.snap microk8s_latest_{}.snap".format(
+                    self.juju_controller, _model, self.juju_unit, arch, arch
                 )
             )
             try:
@@ -210,7 +210,7 @@ class Microk8sSnap:
                 click.echo(err.output)
                 raise err
         else:
-            cmd = "mv microk8s/microk8s_latest_{}.snap .".format(arch)
+            cmd = "mv microk8s/microk8s_\*_{}.snap microk8s_latest_{}.snap".format(arch, arch)
             run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
 
         target = "{}/{}".format(self.track, self.channel)
