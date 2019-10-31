@@ -36,7 +36,7 @@ plan:
                   channel: $SNAP_VERSION
             EOF
 
-            pytest $INTEGRATION_TEST_PATH/validation.py \
+            pytest -m "not slow" $INTEGRATION_TEST_PATH/validation.py \
                  --cloud $JUJU_CLOUD \
                  --controller $JUJU_CONTROLLER \
                  --model $JUJU_MODEL \
