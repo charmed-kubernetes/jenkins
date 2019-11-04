@@ -13,6 +13,7 @@
           - apache2
           - apt-mirror
           - simplestreams
+          - squid
     - name: remove unused debs
       apt:
         name:
@@ -42,12 +43,12 @@
       loop:
         - 'lxdbr0'
         - 'lxdbr1'
-    - name: set lxd mtu
-      command: "lxc network set {{item}} bridge.mtu 1458"
-      ignore_errors: yes
+    - name: import local lxd images
+      command: lxc image copy ubuntu:{{item}} local: --copy-aliases
       loop:
-        - 'lxdbr0'
-        - 'lxdbr1'
+        - '18.04'
+        - '16.04'
+        - '14.04'
     - name: set lxd proxy
       ignore_errors: yes
       shell: |
