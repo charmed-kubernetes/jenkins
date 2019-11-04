@@ -1,0 +1,118 @@
+plan:
+  - &BASE_JOB
+    env:
+      - SNAP_VERSION=1.17/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-offline
+      - JUJU_MODEL=validate-offline-model
+    if: '[[ $(date +"%A") = "Saturday" ]]'
+    before-script:
+      - |
+        #!/bin/bash
+
+        set -x
+
+        juju kill-controller -y $JUJU_CONTROLLER || true
+        juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER --model-default resource-tags=owner=k8sci --model-default test-mode=true
+        juju deploy ubuntu --constraints "mem=16G root-disk=300G cores=16"
+        juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+        # call ansible somehow
+    script:
+      - |
+        #!/bin/bash
+
+        set -x
+
+        export WORKDIR=/var/spool/sstreams/juju
+        sudo sstream-mirror --no-verify --progress --max=1 \
+          --path=streams/v1/index2.sjson \
+          https://streams.canonical.com/juju/tools/ \
+          $WORKDIR 'arch=amd64' 'release~(xenial|bionic)' 'version~(2.2|2.3|2.4|2.5|2.6)'
+
+        export WORKDIR=/var/spool/sstreams/lxdkvm
+        sudo sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg \
+          --progress --max=1 --path=streams/v1/index.json \
+          https://cloud-images.ubuntu.com/releases/ \
+          $WORKDIR/_latest 'arch=amd64' 'release~(xenial|bionic)' \
+          'ftype~(lxd.tar.xz|squashfs|root.tar.xz|root.tar.gz|disk1.img|.json|.sjson)'
+
+        sudo mkdir -p /etc/pki/tls/private/
+        sudo mkdir -p /etc/pki/tls/certs/
+
+        # Ensure the following IP is correct for your mirror
+        export PRIMARYIP=`hostname -i`
+
+        sudo tee /root/$HOSTNAME.conf > /dev/null <<EOL
+        [ req ]
+        prompt = no
+        default_bits = 4096
+        distinguished_name = req_distinguished_name
+        req_extensions = req_ext
+
+        [ req_distinguished_name ]
+        C=GB
+        ST=London
+        L=London
+        O=Canonical
+        OU=Canonical
+        CN=$HOSTNAME
+
+        [ req_ext ]
+        subjectAltName = @alt_names
+
+        [alt_names]
+        DNS.1 = $HOSTNAME
+        DNS.2 = $PRIMARYIP
+        IP.1 = $PRIMARYIP
+        EOL
+
+        sudo openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 \
+          -config /root/$HOSTNAME.conf \
+          -keyout /etc/pki/tls/private/mirror.key \
+          -out /etc/pki/tls/certs/mirror.crt
+
+        sudo tee /etc/apache2/sites-available/sstreams-mirror.conf > /dev/null <<EOL
+        <VirtualHost *:443>
+            ServerName sstreams.cdk-juju
+            ServerAlias *
+            DocumentRoot /var/spool/sstreams/
+            SSLCACertificatePath /etc/ssl/certs
+            SSLCertificateFile /etc/pki/tls/certs/mirror.crt
+            SSLEngine On
+            SSLCertificateKeyFile /etc/pki/tls/private/mirror.key
+            LogLevel info
+            ErrorLog /var/log/apache2/mirror-lxdkvm-error.log
+            CustomLog /var/log/apache2/mirror-lxdkvm-access.log combined
+
+            <Directory /var/spool/sstreams/>
+              Options Indexes FollowSymLinks
+              AllowOverride None
+              Require all granted
+            </Directory>
+        </VirtualHost>
+        EOL
+
+        sudo a2enmod ssl
+        sudo a2ensite sstreams-mirror.conf
+        sudo systemctl restart apache2
+
+        EOF
+
+        chmod +x setup
+        juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" setup ubuntu/0:/setup
+        juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- '/setup'
+
+    after-script:
+      - juju kill-controller $JUJU_CONTROLLER || true
+
+
+meta:
+  name: Verify Offline CK
+  description: |
+    Verifies that CK passes integration tests in offline mode
+  mkdocs:
+    destination:
+      - "validations/ck/offline.md"

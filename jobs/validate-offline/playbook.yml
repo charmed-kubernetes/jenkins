@@ -1,0 +1,94 @@
+---
+- hosts: all
+#  connection: local
+  gather_facts: yes
+  become: true
+  vars:
+    s390x: "{{ lookup('env', 'S3LP3') }}"
+    arm64: "{{ lookup('env', 'NEADER') }}"
+  tasks:
+    - name: install apt deps
+      apt:
+        name:
+          - apache2
+          - apt-mirror
+          - simplestreams
+    - name: remove unused debs
+      apt:
+        name:
+          - juju
+          - lxd
+          - lxd-client
+          - lxcfs
+          - lxc-common
+          - liblxc1
+        state: absent
+    - name: install snap deps
+      command: "snap install {{item}}"
+      ignore_errors: yes
+      loop:
+        - "juju --classic --channel latest/stable"
+        - "juju-wait --classic"
+        - "lxd"
+    - name: update ubuntu user
+      user:
+        name: ubuntu
+        groups: lxd
+    - name: setup lxd network
+      command: "/snap/bin/lxd init --auto"
+      ignore_errors: yes
+    - name: disable ipv6 in lxd
+      command: "lxc network set {{item}} ipv6.address none"
+      loop:
+        - 'lxdbr0'
+        - 'lxdbr1'
+    - name: set lxd mtu
+      command: "lxc network set {{item}} bridge.mtu 1458"
+      ignore_errors: yes
+      loop:
+        - 'lxdbr0'
+        - 'lxdbr1'
+    - name: set lxd proxy
+      ignore_errors: yes
+      shell: |
+        lxc config set core.proxy_http http://localhost:3128
+        lxc config set core.proxy_https http://localhost:3128
+        lxc config set core.proxy_ignore_hosts localhost
+    - name: set snap proxies
+      shell: |
+        snap set system proxy.http="http://localhost:3128"
+        snap set system proxy.https="http://localhost:3128"
+    - name: copy mirror list
+      copy:
+        src: "fixtures/apt-mirror.lst"
+        dest: /etc/apt/mirror.lst
+        owner: root
+        group: root
+        mode: 0644
+        force: yes
+    - name: setup apache mirror
+      copy:
+        src: "fixtures/apache-ubuntu-mirror.conf"
+        dest: /etc/apache2/sites-available/ubuntu-mirror.conf
+        owner: root
+        group: root
+        mode: 0644
+        force: yes
+    - name: enable mirror site
+      command: a2ensite ubuntu-mirror.conf
+    - name: restart apache
+      command: systemctl restart apache2
+
+    - name: sync apt mirror
+      command: apt-mirror
+
+    # Run this after squid is setup so that juju will refer to our local proxy
+    # for blocking out external services
+    - name: update /etc/environment
+      copy:
+        src: "fixtures/environment"
+        dest: /etc/environment
+        owner: root
+        group: root
+        mode: 0644
+        force: yes
