@@ -2,4 +2,4 @@
 localhost ansible_host=localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
 
 [offline]
-offline ansible_python_interpreter=/usr/bin/python3 ansible_ssh_private_key_file=/home/ubuntu/.local/share/juju/ssh/juju_id_rsa
+18.222.117.38 ansible_python_interpreter=/usr/bin/python3 ansible_ssh_private_key_file=/Users/ninja/.local/share/juju/ssh/juju_id_rsa

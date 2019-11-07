@@ -3,9 +3,6 @@
 #  connection: local
   gather_facts: yes
   become: true
-  vars:
-    s390x: "{{ lookup('env', 'S3LP3') }}"
-    arm64: "{{ lookup('env', 'NEADER') }}"
   tasks:
     - name: install apt deps
       apt:
@@ -35,38 +32,35 @@
       user:
         name: ubuntu
         groups: lxd
+    # - name: reset ssh connection
+    #   meta: reset_connection
     - name: setup lxd network
       command: "/snap/bin/lxd init --auto"
       ignore_errors: yes
+      become: false
     - name: disable ipv6 in lxd
+      become: false
       command: "lxc network set {{item}} ipv6.address none"
       loop:
         - 'lxdbr0'
         - 'lxdbr1'
+      ignore_errors: true
     - name: import local lxd images
-      command: lxc image copy ubuntu:{{item}} local: --copy-aliases
+      become: false
+      command: "lxc image copy ubuntu:{{item}} local: --copy-aliases"
       loop:
         - '18.04'
         - '16.04'
         - '14.04'
-    - name: set lxd proxy
-      ignore_errors: yes
-      shell: |
-        lxc config set core.proxy_http http://localhost:3128
-        lxc config set core.proxy_https http://localhost:3128
-        lxc config set core.proxy_ignore_hosts localhost
-    - name: set snap proxies
-      shell: |
-        snap set system proxy.http="http://localhost:3128"
-        snap set system proxy.https="http://localhost:3128"
     - name: copy mirror list
       copy:
-        src: "fixtures/apt-mirror.lst"
-        dest: /etc/apt/mirror.lst
+        src: "fixtures/apt-mirror.list"
+        dest: /etc/apt/mirror.list
         owner: root
         group: root
         mode: 0644
         force: yes
+
     - name: setup apache mirror
       copy:
         src: "fixtures/apache-ubuntu-mirror.conf"
@@ -85,11 +79,11 @@
 
     # Run this after squid is setup so that juju will refer to our local proxy
     # for blocking out external services
-    - name: update /etc/environment
-      copy:
-        src: "fixtures/environment"
-        dest: /etc/environment
-        owner: root
-        group: root
-        mode: 0644
-        force: yes
+    # - name: update /etc/environment
+    #   copy:
+    #     src: "fixtures/environment"
+    #     dest: /etc/environment
+    #     owner: root
+    #     group: root
+    #     mode: 0644
+    #     force: yes
