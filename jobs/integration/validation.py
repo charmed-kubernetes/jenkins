@@ -1606,4 +1606,4 @@ async def test_cloud_node_labels(model, tools):
     elif 'vsphere-integrator' in model.applications:
         assert label == 'vsphere'
     else:
-        assert label == None
+        assert label is None
