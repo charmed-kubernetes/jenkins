@@ -16,7 +16,7 @@ plan:
 
         juju kill-controller -y $JUJU_CONTROLLER || true
         juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER --model-default resource-tags=owner=k8sci --model-default test-mode=true
-        juju deploy ubuntu --constraints "mem=16G root-disk=300G cores=16"
+        juju deploy ubuntu --constraints "mem=16G root-disk=500G cores=16"
         juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
         # call ansible somehow
