@@ -58,6 +58,12 @@
     properties:
       - build-discarder:
           num-to-keep: 7
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "infra.*"
+          block-level: 'NODE'
+
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"

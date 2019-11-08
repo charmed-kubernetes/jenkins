@@ -26,7 +26,6 @@ pipeline {
     stages {
         stage('Setup User') {
             steps {
-                sh "${snap_sh} --help"
                 sh "git config --global user.email 'cdkbot@juju.solutions'"
                 sh "git config --global user.name 'cdkbot'"
                 sh "docker login -u ${env.REGISTRY_CREDS_USR} -p ${env.REGISTRY_CREDS_PSW} ${env.REGISTRY_URL}"
