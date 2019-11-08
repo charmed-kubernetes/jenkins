@@ -1539,6 +1539,7 @@ async def test_dns_provider(model, tools):
 
 
 @pytest.mark.asyncio
+@pytest.mark.offline
 async def test_sysctl(model, tools):
     async def verify_sysctl(units, desired_values):
         cmd = "sysctl -n"
