@@ -493,6 +493,7 @@ async def test_network_policies(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.slow
+@pytest.mark.offline
 async def test_worker_master_removal(model, tools):
     # Add a second master
     masters = model.applications["kubernetes-master"]
