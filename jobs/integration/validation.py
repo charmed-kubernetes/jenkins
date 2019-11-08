@@ -386,6 +386,7 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
 
 
 @pytest.mark.asyncio
+@pytest.mark.offline
 @pytest.mark.skip_apps(["canal", "calico", "tigera-secure-ee"])
 async def test_network_policies(model, tools):
     """ Apply network policy and use two busyboxes to validate it. """
@@ -493,7 +494,6 @@ async def test_network_policies(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.slow
-@pytest.mark.offline
 async def test_worker_master_removal(model, tools):
     # Add a second master
     masters = model.applications["kubernetes-master"]
