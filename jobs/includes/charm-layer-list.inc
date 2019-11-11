@@ -200,6 +200,10 @@
     downstream: "charmed-kubernetes/layer-cis-benchmark.git"
     upstream: "https://github.com/charmed-kubernetes/layer-cis-benchmark.git"
     tags: ['k8s']
+- layer:coordinator:
+    downstream: "charmed-kubernetes/layer-coordinator.git"
+    upstream: "https://git.launchpad.net/layer-coordinator"
+    tags: ['k8s']
 - layer:index:
     downstream: "charmed-kubernetes/layer-index.git"
     upstream: "https://github.com/juju/layer-index.git"
