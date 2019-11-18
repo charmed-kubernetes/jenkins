@@ -122,28 +122,6 @@ plan:
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
           python3 jobs/microk8s/release-pre-releases.py
-  - <<: *BASE_JOB
-    env:
-      - DRY_RUN=no
-      - ALWAYS_RELEASE=no
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=release-microk8s-pre-release-arm64
-      - JUJU_MODEL=release-microk8s-pre-release-model
-      - ARCH=arm64
-    tags:
-      - arm64/prerelease
-      - arm64
-    script:
-      - |
-        #!/bin/bash
-        set -x
-
-        juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
-        DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
-          TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
-          PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          python3 jobs/microk8s/release-pre-releases.py
-
 
 meta:
   name: Release Microk8s to Beta, Stable
