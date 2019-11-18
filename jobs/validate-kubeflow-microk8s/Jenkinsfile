@@ -68,7 +68,7 @@ pipeline {
             steps {
                 // Copy forked mysql interface from charmed-osm into interfaces dir
                 exec 'git clone git://git.launchpad.net/canonical-osm'
-                exec 'mkdir ~/charms/interfaces'
+                exec 'mkdir -p ~/charms/interfaces'
                 exec 'cp -r canonical-osm/charms/interfaces/juju-relation-mysql ~/charms/interfaces/mysql'
 
                 // Deploy Kubeflow to MicroK8s
