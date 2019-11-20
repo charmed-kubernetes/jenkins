@@ -1,0 +1,21 @@
+[ req ]
+prompt = no
+default_bits = 4096
+distinguished_name = req_distinguished_name
+req_extensions = req_ext
+
+[ req_distinguished_name ]
+C=GB
+ST=London
+L=London
+O=Canonical
+OU=Canonical
+CN={{inventory_hostname}}
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = {{inventory_hostname}}
+DNS.2 = {{inventory_hostname}}
+IP.1 = {{inventory_hostname}}

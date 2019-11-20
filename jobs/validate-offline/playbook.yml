@@ -111,41 +111,26 @@
           'ftype~(lxd.tar.xz|squashfs|root.tar.xz|root.tar.gz|disk1.img|.json|.sjson)'
       tags:
         - enable
-
+    - name: set pki dirs
+      file:
+        path: "{{item}}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /etc/pki/tls/private/
+        - /etc/pki/tls/certs/
+      tags:
+        - enable
+    - name: copy ssl conf
+      template:
+        src: "fixtures/ssl.conf.j2"
+        dest: "/root/ssl.conf"
+      tags:
+        - enable
     - name: setup ssl for juju metadata
       shell: |
-        mkdir -p /etc/pki/tls/private/
-        mkdir -p /etc/pki/tls/certs/
-
-        # Ensure the following IP is correct for your mirror
-        export PRIMARYIP=`hostname -i`
-
-        tee /root/$HOSTNAME.conf > /dev/null <<EOL
-        [ req ]
-        prompt = no
-        default_bits = 4096
-        distinguished_name = req_distinguished_name
-        req_extensions = req_ext
-
-        [ req_distinguished_name ]
-        C=GB
-        ST=London
-        L=London
-        O=Canonical
-        OU=Canonical
-        CN=$HOSTNAME
-
-        [ req_ext ]
-        subjectAltName = @alt_names
-
-        [alt_names]
-        DNS.1 = $HOSTNAME
-        DNS.2 = $PRIMARYIP
-        IP.1 = $PRIMARYIP
-        EOL
-
         openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 \
-          -config /root/$HOSTNAME.conf \
+          -config /root/ssl.conf \
           -keyout /etc/pki/tls/private/mirror.key \
           -out /etc/pki/tls/certs/mirror.crt
       tags:
@@ -157,19 +142,29 @@
         systemctl restart apache2
       tags:
         - enable
-
-    # Run this after squid is setup so that juju will refer to our local proxy
-    # for blocking out external services
-    # - name: update /etc/environment
-    #   copy:
-    #     src: "fixtures/environment"
-    #     dest: /etc/environment
-    #     owner: root
-    #     group: root
-    #     mode: 0644
-    #     force: yes
-      # tags:
-      #   - enable
+    - name: setup squid
+      template:
+        src: "fixtures/squid.conf.j2"
+        dest: "/etc/squid/squid.conf"
+      tags:
+        - enable
+    - name: setup cloudinit userdata
+      template:
+        src: "fixtures/cloudinit.yaml.j2"
+        dest: "/home/ubuntu/cloudinit-userdata.yaml"
+      become: no
+      tags:
+        - enable
+    - name: update /etc/environment
+      copy:
+        src: "fixtures/environment"
+        dest: /etc/environment
+        owner: root
+        group: root
+        mode: 0644
+        force: yes
+      tags:
+        - enable
 
     - name: disable squid
       shell: |

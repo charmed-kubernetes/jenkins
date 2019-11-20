@@ -1,0 +1,8 @@
+cloudinit-userdata: |
+  apt:
+    primary:
+      - arches: [i386, amd64]
+        uri: http://{{inventory_hostname}}/ubuntu
+    security:
+      - arches: [i386, amd64]
+        uri: http://{{inventory_hostname}}/ubuntu

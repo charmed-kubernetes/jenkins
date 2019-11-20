@@ -1,7 +1,7 @@
-acl lxd dst  10.105.35.0/24 # whatever lxdbr0 is
+acl lxd dst  10.254.86.0/24 # whatever lxdbr0 is
 http_access allow lxd
 
-acl apt dst 172.31.1.0/24
+acl apt dst 172.31.5.0/24
 http_access allow apt
 
 acl rockscc dstdomain rocks.canonical.com
