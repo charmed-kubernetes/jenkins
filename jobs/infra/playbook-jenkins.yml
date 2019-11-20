@@ -95,7 +95,7 @@
       ignore_errors: yes
       loop:
         - "aws-cli --classic"
-        - "charm --classic --edge"
+        - "charm --classic"
         - "go --classic --channel 1.12/stable"
         - "juju --classic --channel latest/stable"
         - "juju-crashdump --classic --edge"
