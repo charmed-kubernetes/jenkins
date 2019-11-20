@@ -133,7 +133,7 @@ def _tag_stable_forks(
                     ):
                         click.echo(line)
                     for line in git.push(
-                        "origin", tag, _cwd=identifier, _bg_exc=False, _iter=True
+                        "--force", "origin", tag, _cwd=identifier, _bg_exc=False, _iter=True
                     ):
                         click.echo(line)
                 except sh.ErrorReturnCode as error:
