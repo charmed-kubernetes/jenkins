@@ -129,7 +129,7 @@ def _tag_stable_forks(
                 git.checkout("stable", _cwd=identifier)
                 try:
                     for line in git.tag(
-                        tag, _cwd=identifier, _iter=True, _bg_exc=False
+                        "--force", tag, _cwd=identifier, _iter=True, _bg_exc=False
                     ):
                         click.echo(line)
                     for line in git.push(
