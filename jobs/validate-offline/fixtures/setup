@@ -1,0 +1,60 @@
+#!/bin/bash
+#
+# This installs packages, snaps, and sets up user
+
+set -x
+
+echo "Install packages, snaps and configure user"
+
+sudo apt update
+sudo apt install -qyf apache2 apt-mirror simplestreams squid
+sudo apt remove -qyf juju lxd lxd-client lxcfs lxc-common liblxc1
+sudo snap install juju --classic
+sudo snap install lxd
+sudo usermod -a -G lxd ubuntu
+
+echo "Setting up apache for apt-mirroring"
+
+sudo tee /etc/apt/mirror.list > /dev/null <<EOL
+set nthreads     20
+set _tilde 0
+
+deb http://archive.ubuntu.com/ubuntu bionic main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu bionic-security main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu bionic-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu bionic-backports main restricted universe multiverse
+
+deb-src http://archive.ubuntu.com/ubuntu bionic main restricted universe multiverse
+deb-src http://archive.ubuntu.com/ubuntu bionic-security main restricted universe multiverse
+deb-src http://archive.ubuntu.com/ubuntu bionic-updates main restricted universe multiverse
+deb-src http://archive.ubuntu.com/ubuntu bionic-backports main restricted universe multiverse
+
+clean http://archive.ubuntu.com/ubuntu
+
+EOL
+
+echo "Running apt-mirror"
+
+sudo apt-mirror
+
+echo "Setup apt-mirror endpoint"
+
+sudo tee /etc/apache2/sites-available/ubuntu-mirror.conf > /dev/null <<EOL
+<VirtualHost *:80>
+    ServerName cdk-juju
+    ServerAlias *
+    DocumentRoot /var/spool/apt-mirror/mirror/archive.ubuntu.com/
+    LogLevel info
+    ErrorLog /var/log/apache2/mirror-archive.ubuntu.com-error.log
+    CustomLog /var/log/apache2/mirror-archive.ubuntu.com-access.log combined
+
+    <Directory /var/spool/apt-mirror/>
+      Options Indexes FollowSymLinks
+      AllowOverride None
+      Require all granted
+    </Directory>
+</VirtualHost>
+EOL
+
+sudo a2endsite ubuntu-mirror.conf
+sudo systemctl restart apache2

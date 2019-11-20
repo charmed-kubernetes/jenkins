@@ -85,7 +85,7 @@
       tags:
         - jenkins
     - name: use snap core candidate
-      command: "snap refresh --candidate core"
+      command: "snap refresh --stable core"
       ignore_errors: yes
       tags:
         - adhoc

@@ -11,6 +11,8 @@
           - apt-mirror
           - simplestreams
           - squid
+      tags:
+        - enable
     - name: remove unused debs
       apt:
         name:
@@ -21,6 +23,7 @@
           - lxc-common
           - liblxc1
         state: absent
+      tags: enable
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
@@ -28,30 +31,42 @@
         - "juju --classic --channel latest/stable"
         - "juju-wait --classic"
         - "lxd"
+      tags:
+        - enable
     - name: update ubuntu user
       user:
         name: ubuntu
         groups: lxd
-    # - name: reset ssh connection
-    #   meta: reset_connection
+      tags:
+        - enable
+    - name: reset ssh connection
+      meta: reset_connection
+      tags:
+        - enable
     - name: setup lxd network
       command: "/snap/bin/lxd init --auto"
       ignore_errors: yes
       become: false
+      tags:
+        - enable
     - name: disable ipv6 in lxd
       become: false
-      command: "lxc network set {{item}} ipv6.address none"
-      loop:
-        - 'lxdbr0'
-        - 'lxdbr1'
+      shell: |
+        export PATH=/snap/bin:$PATH
+        lxc network set lxdbr0 ipv6.address none
       ignore_errors: true
+      tags:
+        - enable
     - name: import local lxd images
       become: false
-      command: "lxc image copy ubuntu:{{item}} local: --copy-aliases"
-      loop:
-        - '18.04'
-        - '16.04'
-        - '14.04'
+      shell: |
+        export PATH=/snap/bin:$PATH
+        lxc image copy ubuntu:18.04 local: --copy-aliases
+        lxc image copy ubuntu:16.04 local: --copy-aliases
+        lxc image copy ubuntu:14.04 local: --copy-aliases
+      tags:
+        - enable
+
     - name: copy mirror list
       copy:
         src: "fixtures/apt-mirror.list"
@@ -60,22 +75,88 @@
         group: root
         mode: 0644
         force: yes
+      tags:
+        - enable
 
     - name: setup apache mirror
       copy:
-        src: "fixtures/apache-ubuntu-mirror.conf"
+        src: "fixtures/ubuntu-mirror.conf"
         dest: /etc/apache2/sites-available/ubuntu-mirror.conf
         owner: root
         group: root
         mode: 0644
         force: yes
+      tags:
+        - enable
     - name: enable mirror site
-      command: a2ensite ubuntu-mirror.conf
-    - name: restart apache
-      command: systemctl restart apache2
+      shell: |
+        a2ensite ubuntu-mirror.conf
+        systemctl restart apache2
+        apt-mirror
+      tags:
+        - enable
+    - name: setup simplestreams
+      shell: |
+        export WORKDIR=/var/spool/sstreams/juju
+        sudo sstream-mirror --no-verify --progress --max=1 \
+          --path=streams/v1/index2.sjson \
+          https://streams.canonical.com/juju/tools/ \
+          $WORKDIR 'arch=amd64' 'release~(xenial|bionic)' 'version~(2.2|2.3|2.4|2.5|2.6)'
 
-    - name: sync apt mirror
-      command: apt-mirror
+        export WORKDIR=/var/spool/sstreams/lxdkvm
+        sudo sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg \
+          --progress --max=1 --path=streams/v1/index.json \
+          https://cloud-images.ubuntu.com/releases/ \
+          $WORKDIR/_latest 'arch=amd64' 'release~(xenial|bionic)' \
+          'ftype~(lxd.tar.xz|squashfs|root.tar.xz|root.tar.gz|disk1.img|.json|.sjson)'
+      tags:
+        - enable
+
+    - name: setup ssl for juju metadata
+      shell: |
+        mkdir -p /etc/pki/tls/private/
+        mkdir -p /etc/pki/tls/certs/
+
+        # Ensure the following IP is correct for your mirror
+        export PRIMARYIP=`hostname -i`
+
+        tee /root/$HOSTNAME.conf > /dev/null <<EOL
+        [ req ]
+        prompt = no
+        default_bits = 4096
+        distinguished_name = req_distinguished_name
+        req_extensions = req_ext
+
+        [ req_distinguished_name ]
+        C=GB
+        ST=London
+        L=London
+        O=Canonical
+        OU=Canonical
+        CN=$HOSTNAME
+
+        [ req_ext ]
+        subjectAltName = @alt_names
+
+        [alt_names]
+        DNS.1 = $HOSTNAME
+        DNS.2 = $PRIMARYIP
+        IP.1 = $PRIMARYIP
+        EOL
+
+        openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 \
+          -config /root/$HOSTNAME.conf \
+          -keyout /etc/pki/tls/private/mirror.key \
+          -out /etc/pki/tls/certs/mirror.crt
+      tags:
+        - enable
+    - name: enable sstreams site
+      shell: |
+        a2enmod ssl
+        a2ensite sstreams-mirror.conf
+        systemctl restart apache2
+      tags:
+        - enable
 
     # Run this after squid is setup so that juju will refer to our local proxy
     # for blocking out external services
@@ -87,3 +168,11 @@
     #     group: root
     #     mode: 0644
     #     force: yes
+      # tags:
+      #   - enable
+
+    - name: disable squid
+      shell: |
+        systemctl stop squid
+      tags:
+        - disable
