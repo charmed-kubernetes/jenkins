@@ -90,6 +90,12 @@
       tags:
         - adhoc
         - jenkins
+    - name: use charm stable
+      command: "snap refresh --stable charm"
+      ignore_errors: yes
+      tags:
+        - adhoc
+        - jenkins
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
@@ -381,5 +387,6 @@
         owner: jenkins
         group: jenkins
         recurse: yes
+      ignore_errors: yes
       tags:
         - jenkins
