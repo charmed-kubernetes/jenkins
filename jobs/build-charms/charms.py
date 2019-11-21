@@ -392,9 +392,10 @@ class BuildEntity:
                 _cwd=self.src_path,
                 _iter=True,
                 _bg_exc=False)
-        except sh.ErrorReturnCode_100 as e:
+        except sh.ErrorReturnCode as e:
             # Until https://github.com/juju/charm-tools/pull/554 is fixed.
             click.echo(f"Ignoring proof warning: {e.stdout.decode()}")
+            return
         else:
             for line in output:
                 click.echo(line.strip())
