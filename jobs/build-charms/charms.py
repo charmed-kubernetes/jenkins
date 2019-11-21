@@ -384,10 +384,6 @@ class BuildEntity:
     def proof_build(self):
         """ Perform charm build against charm/bundle
         """
-
-        # Until charm-tools is released with https://github.com/juju/charm-tools/pull/554
-        return True
-
         for line in sh.charm.build(
             r=True,
             force=True,
@@ -397,7 +393,9 @@ class BuildEntity:
             _bg_exc=False,
         ):
             click.echo(line.strip())
-        sh.charm.proof(_cwd=self.dst_path)
+
+        # Just comment this shit out
+        # sh.charm.proof(_cwd=self.dst_path)
 
     def push(self):
         """ Pushes a built charm to Charmstore
