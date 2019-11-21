@@ -28,6 +28,7 @@ from enum import Enum
 from threading import Semaphore
 from multiprocessing import cpu_count
 import click
+import shutil
 import sh
 import yaml
 import json
@@ -132,6 +133,10 @@ class BuildEnv:
     def from_channel(self):
         return self.db["build_args"].get("from_channel", None)
 
+    @property
+    def rebuild_cache(self):
+        return self.db["build_args"].get("rebuild_cache", None)
+
     def _layer_type(self, ltype):
         """ Check the type of an individual layer set in the layer list
         """
@@ -191,7 +196,7 @@ class BuildEnv:
                     charm_id["id"]["Id"], "--channel", to_channel, *resources_args
                 )
 
-    def pull_layers(self, rebuild_cache=False):
+    def pull_layers(self):
         """ clone all downstream layers to be processed locally when doing charm builds
         """
         num_runs = 0
@@ -207,12 +212,14 @@ class BuildEnv:
             if Path(self.build_path(layer_name)).exists():
                 click.echo(f"- Refreshing {layer_name} cache.")
                 git.checkout(self.layer_branch, _cwd=self.build_path(layer_name))
-                git.pull("origin", self.layer_branch, _cwd=self.build_path(layer_name), _bg=True, _done=done)
+                git.pull(
+                    "origin",
+                    self.layer_branch,
+                    _cwd=self.build_path(layer_name),
+                    _bg=True,
+                    _done=done,
+                )
             else:
-                if rebuild_cache:
-                    click.echo("-  rebuild cache triggered, cleaning out cache.")
-                    shutil.rmtree(str(self.layers_dir))
-                    shutil.rmtree(str(self.interfaces_dir))
                 click.echo(f"- Downloading {layer_name}")
                 sh.charm(
                     "pull-source",
@@ -223,6 +230,14 @@ class BuildEnv:
                     _bg=True,
                     _done=done,
                 )
+
+
+        if self.rebuild_cache:
+            click.echo("-  rebuild cache triggered, cleaning out cache.")
+            shutil.rmtree(str(self.layers_dir))
+            shutil.rmtree(str(self.interfaces_dir))
+            os.mkdir(str(self.layers_dir))
+            os.mkdir(str(self.interfaces_dir))
 
         procs = []
         for layer_map in self.layers:
@@ -238,10 +253,8 @@ class BuildEnv:
 
         self.db["pull_layer_manifest"] = []
         _paths_to_process = {
-            'layer': glob("{}/*".format(str(self.layers_dir))),
-            'interface': glob(
-                "{}/*".format(str(self.interfaces_dir))
-            )
+            "layer": glob("{}/*".format(str(self.layers_dir))),
+            "interface": glob("{}/*".format(str(self.interfaces_dir))),
         }
         for prefix, paths in _paths_to_process.items():
             for _path in paths:
@@ -258,7 +271,9 @@ class BuildEnv:
                     "url": f"{prefix}:{Path(build_path).stem}",
                 }
                 self.db["pull_layer_manifest"].append(layer_manifest)
-                click.echo(f"- {layer_manifest['url']} at commit: {layer_manifest['rev']}")
+                click.echo(
+                    f"- {layer_manifest['url']} at commit: {layer_manifest['rev']}"
+                )
 
 
 class BuildEntity:
@@ -327,7 +342,11 @@ class BuildEntity:
             for rev in charmstore_build_manifest["layers"]
             if rev["url"] == self.name
         )
-        the_diff = [i for i in charmstore_build_manifest["layers"] if i not in current_build_manifest]
+        the_diff = [
+            i
+            for i in charmstore_build_manifest["layers"]
+            if i not in current_build_manifest
+        ]
         if the_diff:
             click.echo("Changes found:")
             click.echo(the_diff)
@@ -432,7 +451,10 @@ class BuildEntity:
         charm_id = yaml.safe_load(charm_id.stdout.decode())
         try:
             resources = sh.charm(
-                "list-resources", charm_id["id"]["Id"], channel=from_channel, format="yaml"
+                "list-resources",
+                charm_id["id"]["Id"],
+                channel=from_channel,
+                format="yaml",
             )
         except sh.ErrorReturnCode:
             click.echo("No resources found for {}".format(charm_id))
@@ -442,8 +464,12 @@ class BuildEntity:
         click.echo(f"Running {builder_sh} from {self.dst_path}")
 
         # Grab a list of all file extensions to lookout for
-        known_resource_extensions = list(set("".join(Path(k).suffixes) for k in resource_spec_fragment.keys()))
-        click.echo(f"  attaching resources with known extensions: {', '.join(known_resource_extensions)}")
+        known_resource_extensions = list(
+            set("".join(Path(k).suffixes) for k in resource_spec_fragment.keys())
+        )
+        click.echo(
+            f"  attaching resources with known extensions: {', '.join(known_resource_extensions)}"
+        )
 
         for line in sh.bash(str(builder_sh), _cwd=out_path, _iter=True, _bg_exc=False):
             click.echo(line.strip())
@@ -499,13 +525,10 @@ class BuildEntity:
                 ]
         except sh.ErrorReturnCode:
             click.echo("No resources for {}".format(charm_id))
-        sh.charm.release(
-            charm_id["id"]["Id"], "--channel", to_channel, *resources_args
-        )
+        sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
 
 
 class BundleBuildEntity(BuildEntity):
-
     def push(self):
         """ Pushes a built charm to Charmstore
         """
@@ -521,13 +544,19 @@ class BundleBuildEntity(BuildEntity):
 
     @property
     def has_changed(self):
-        charmstore_bundle = self.download('bundle.yaml')
+        charmstore_bundle = self.download("bundle.yaml")
         charmstore_bundle = yaml.safe_load(charmstore_bundle.text)
-        charmstore_bundle_services = charmstore_bundle['services']
+        charmstore_bundle_services = charmstore_bundle["services"]
 
-        local_built_bundle = yaml.safe_load((Path(self.name) / 'bundle.yaml').read_text(encoding='utf8'))
-        local_built_bundle_services = local_built_bundle['services']
-        the_diff = [i['charm'] for _, i in charmstore_bundle_services.items() if i['charm'] not in local_built_bundle_services]
+        local_built_bundle = yaml.safe_load(
+            (Path(self.name) / "bundle.yaml").read_text(encoding="utf8")
+        )
+        local_built_bundle_services = local_built_bundle["services"]
+        the_diff = [
+            i["charm"]
+            for _, i in charmstore_bundle_services.items()
+            if i["charm"] not in local_built_bundle_services
+        ]
         if the_diff:
             click.echo("Changes found:")
             click.echo(the_diff)
@@ -535,7 +564,6 @@ class BundleBuildEntity(BuildEntity):
 
         click.echo(f"No charm changes found, not pushing new bundle {self.entity}")
         return False
-
 
 
 @click.group()
@@ -583,7 +611,7 @@ def build(
     resource_spec,
     filter_by_tag,
     to_channel,
-        rebuild_cache
+    rebuild_cache,
 ):
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
@@ -595,10 +623,10 @@ def build(
         "resource_spec": resource_spec,
         "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
-        "rebuild_cache": rebuild_cache
+        "rebuild_cache": rebuild_cache,
     }
 
-    build_env.pull_layers(rebuild_cache)
+    build_env.pull_layers()
 
     for charm_map in build_env.artifacts:
         for charm_name, charm_opts in charm_map.items():
