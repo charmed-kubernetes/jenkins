@@ -204,7 +204,7 @@ class BuildEnv:
         def download(layer_name):
             pool.acquire()
 
-            if Path(self.build_path(layer_name)).exists():
+            if Path(self.build_path(layer_name)).exists() and self.layer_branch != "stable":
                 click.echo(f"- Refreshing {layer_name} cache.")
                 git.checkout(self.layer_branch, _cwd=self.build_path(layer_name))
                 git.pull("origin", self.layer_branch, _cwd=self.build_path(layer_name), _bg=True, _done=done)
