@@ -384,15 +384,20 @@ class BuildEntity:
     def proof_build(self):
         """ Perform charm build against charm/bundle
         """
-        for line in sh.charm.build(
-            r=True,
-            force=True,
-            i="https://localhost",
-            _cwd=self.src_path,
-            _iter=True,
-            _bg_exc=False,
-        ):
-            click.echo(line.strip())
+        try:
+            output = sh.charm.build(
+                r=True,
+                force=True,
+                i="https://localhost",
+                _cwd=self.src_path,
+                _iter=True,
+                _bg_exc=False)
+        except sh.ErrorReturnCode_100 as e:
+            # Until https://github.com/juju/charm-tools/pull/554 is fixed.
+            click.echo(f"Ignoring proof warning: {e.stdout.decode()}")
+        else:
+            for line in output:
+                click.echo(line.strip())
 
         # Just comment this shit out
         # sh.charm.proof(_cwd=self.dst_path)
