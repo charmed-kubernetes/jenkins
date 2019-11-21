@@ -22,6 +22,7 @@ from pathlib import Path
 from pprint import pformat
 from sh.contrib import git
 from cilib.service.aws import Store
+from cilib.run import cmd
 from kv import KV
 from datetime import datetime, timedelta
 from enum import Enum
@@ -384,24 +385,10 @@ class BuildEntity:
     def proof_build(self):
         """ Perform charm build against charm/bundle
         """
-        try:
-            output = sh.charm.build(
-                r=True,
-                force=True,
-                i="https://localhost",
-                _cwd=self.src_path,
-                _iter=True,
-                _bg_exc=True)
-        except sh.ErrorReturnCode_100 as e:
+        ret = cmd(f"charm build -r --force -i https://localhost", cwd=self.src_path)
+        if not ret.ok:
             # Until https://github.com/juju/charm-tools/pull/554 is fixed.
-            click.echo(f"Ignoring proof warning: {e.stdout.decode()}")
-            return
-        else:
-            for line in output:
-                click.echo(line.strip())
-
-        # Just comment this shit out
-        # sh.charm.proof(_cwd=self.dst_path)
+            click.echo("Ignoring proof warning")
 
     def push(self):
         """ Pushes a built charm to Charmstore
