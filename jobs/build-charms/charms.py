@@ -384,6 +384,10 @@ class BuildEntity:
     def proof_build(self):
         """ Perform charm build against charm/bundle
         """
+
+        # Until charm-tools is released with https://github.com/juju/charm-tools/pull/554
+        return True
+
         for line in sh.charm.build(
             r=True,
             force=True,
