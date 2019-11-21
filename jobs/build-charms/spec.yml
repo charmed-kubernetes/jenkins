@@ -4,6 +4,12 @@ plan:
         #!/bin/bash
         set -eux
         export PATH=/snap/bin:$PATH
+
+        IS_REBUILD_CACHE=""
+        if [ ! -z ${REBUILD_CACHE+x} ]; then
+          IS_REBUILD_CACHE="--rebuild-cache"
+        fi
+
         python3 jobs/build-charms/charms.py build --charm-list "$CHARM_LIST" \
           --charm-branch "$CHARM_BRANCH" \
           --to-channel "$TO_CHANNEL" \
@@ -11,7 +17,8 @@ plan:
           --filter-by-tag "$FILTER_BY_TAG" \
           --layer-index  "$LAYER_INDEX" \
           --layer-list "$LAYER_LIST" \
-          --layer-branch "$LAYER_BRANCH"
+          --layer-branch "$LAYER_BRANCH" \
+          $IS_REBUILD_CACHE
     after-script:
       - |
         #!/bin/bash

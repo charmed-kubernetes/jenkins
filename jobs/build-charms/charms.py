@@ -191,7 +191,7 @@ class BuildEnv:
                     charm_id["id"]["Id"], "--channel", to_channel, *resources_args
                 )
 
-    def pull_layers(self):
+    def pull_layers(self, rebuild_cache=False):
         """ clone all downstream layers to be processed locally when doing charm builds
         """
         num_runs = 0
@@ -204,11 +204,15 @@ class BuildEnv:
         def download(layer_name):
             pool.acquire()
 
-            if Path(self.build_path(layer_name)).exists() and self.layer_branch != "stable":
+            if Path(self.build_path(layer_name)).exists():
                 click.echo(f"- Refreshing {layer_name} cache.")
                 git.checkout(self.layer_branch, _cwd=self.build_path(layer_name))
                 git.pull("origin", self.layer_branch, _cwd=self.build_path(layer_name), _bg=True, _done=done)
             else:
+                if rebuild_cache:
+                    click.echo("-  rebuild cache triggered, cleaning out cache.")
+                    shutil.rmtree(str(self.layers_dir))
+                    shutil.rmtree(str(self.interfaces_dir))
                 click.echo(f"- Downloading {layer_name}")
                 sh.charm(
                     "pull-source",
@@ -569,6 +573,7 @@ def cli():
 @click.option(
     "--to-channel", required=True, help="channel to promote charm to", default="edge"
 )
+@click.option("--rebuild-cache", is_flag=True)
 def build(
     charm_list,
     layer_list,
@@ -578,6 +583,7 @@ def build(
     resource_spec,
     filter_by_tag,
     to_channel,
+        rebuild_cache
 ):
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
@@ -589,9 +595,10 @@ def build(
         "resource_spec": resource_spec,
         "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
+        "rebuild_cache": rebuild_cache
     }
 
-    build_env.pull_layers()
+    build_env.pull_layers(rebuild_cache)
 
     for charm_map in build_env.artifacts:
         for charm_name, charm_opts in charm_map.items():

@@ -207,6 +207,9 @@
       - string:
           name: CHARM_INTERFACES_DIR
           default: 'build/interfaces'
+      - bool:
+          name: REBUILD_CACHE
+          default: false
 
 
 # BUILDERS ------------------------------------------------------------------- #
