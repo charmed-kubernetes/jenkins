@@ -391,8 +391,8 @@ class BuildEntity:
                 i="https://localhost",
                 _cwd=self.src_path,
                 _iter=True,
-                _bg_exc=False)
-        except sh.ErrorReturnCode as e:
+                _bg_exc=True)
+        except sh.ErrorReturnCode_100 as e:
             # Until https://github.com/juju/charm-tools/pull/554 is fixed.
             click.echo(f"Ignoring proof warning: {e.stdout.decode()}")
             return
