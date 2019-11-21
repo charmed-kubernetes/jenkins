@@ -206,9 +206,6 @@ class BuildEnv:
 
             if Path(self.build_path(layer_name)).exists():
                 click.echo(f"- Refreshing {layer_name} cache.")
-                if self.layer_branch == "stable":
-                    click.echo("  stable branch detected, re-fetching refs.")
-                    git.fetch("--all", _cwd=self.build_path(layer_name))
                 git.checkout(self.layer_branch, _cwd=self.build_path(layer_name))
                 git.pull("origin", self.layer_branch, _cwd=self.build_path(layer_name), _bg=True, _done=done)
             else:
