@@ -22,7 +22,7 @@ from pathlib import Path
 from pprint import pformat
 from sh.contrib import git
 from cilib.service.aws import Store
-from cilib.run import cmd
+from cilib.run import cmd_ok, capture
 from kv import KV
 from datetime import datetime, timedelta
 from enum import Enum
@@ -385,7 +385,7 @@ class BuildEntity:
     def proof_build(self):
         """ Perform charm build against charm/bundle
         """
-        ret = cmd(f"charm build -r --force -i https://localhost", cwd=self.src_path)
+        ret = cmd_ok(f"charm build -r --force -i https://localhost", cwd=self.src_path)
         if not ret.ok:
             # Until https://github.com/juju/charm-tools/pull/554 is fixed.
             click.echo("Ignoring proof warning")
@@ -727,7 +727,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
     help="only build for charms matching a tag, comma separate list",
     multiple=True,
 )
-@click.option("--from-channel", required=True, help="Charm channel to publish from")
+@click.option("--from-channel", default="unpublished", required=True, help="Charm channel to publish from")
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
 def promote(charm_list, filter_by_tag, from_channel, to_channel):
     build_env = BuildEnv(build_type=BuildType.CHARM)
