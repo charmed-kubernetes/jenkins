@@ -26,6 +26,7 @@
           num-to-keep: 3
     wrappers:
       - default-job-wrapper
+      - ci-creds
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"
@@ -62,6 +63,7 @@
           num-to-keep: 3
     wrappers:
       - default-job-wrapper
+      - ci-creds
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"

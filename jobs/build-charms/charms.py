@@ -737,7 +737,7 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel):
         "to_channel": to_channel,
         "from_channel": from_channel,
     }
-    return build_env.promote_all(to_channel=to_channel)
+    return build_env.promote_all(from_channel=from_channel, to_channel=to_channel)
 
 
 if __name__ == "__main__":
