@@ -111,9 +111,9 @@ meta:
     Verify the charm manifests for the build charms matches the commit SHAs of
     the stable branches of what was built in the previous build-charms job.
 
-    ### Run **release-charm-bugfix** job
+    ### Run **validate-charm-bugfix** job
 
-    **Job**: https://jenkins.canonical.com/k8s/job/release-charm-bugfix/
+    **Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix/
 
     This validates the deployment using the charms from candidate channel.
 

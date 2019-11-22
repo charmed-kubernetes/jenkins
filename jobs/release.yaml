@@ -66,7 +66,7 @@
 
 
 - job:
-    name: 'release-charm-bugfix'
+    name: 'validate-charm-bugfix'
     description: |
       Validates charms from their stable branch/channels in order to release a
       bug/hotfix to stable.

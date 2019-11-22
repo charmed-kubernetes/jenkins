@@ -13,6 +13,15 @@ ceph.
 - Enhancements
 - Known Limitations/Issues
 
+### Verify repos, branches
+
+Make sure that all stable branches are being referenced from
+charmed-kubernetes repo and that charm pull-source is bringing in the
+correct repos/branches. This requires reporting that will provide an
+overview of the status of all forked/maintained repos and their branches in
+addition to verifying that the layer index is pointing to the correct repos
+during build.
+
 ### Tag existing stable branches with bugfix release tag
 
 **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bugfix-rev/
@@ -35,16 +44,16 @@ This will build and promote the stable charms to candidate channel for testing.
 
 ![build charm options](bugfix-options.png)
 
-### Run **release-charm-bugfix** job
+### Verify Commit SHAs of charms/layers/interfaces
 
-**Job**: https://jenkins.canonical.com/k8s/job/release-charm-bugfix/
+Verify the charm manifests for the build charms matches the commit SHAs of
+the stable branches of what was built in the previous build-charms job.
+
+### Run **validate-charm-bugfix** job
+
+**Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix/
 
 This validates the deployment using the charms from candidate channel.
-
-### Notify Solutions QA
-
-Notify solutions-qa that CK is ready to be run through their tests. Once
-that is complete and relayed to us, we can start the release to stable.
 
 ### Promote charms from **candidate** to **stable**
 
