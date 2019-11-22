@@ -39,7 +39,7 @@ plan:
       - |
         #!/bin/bash
         set -x
-        pytest "$INTEGRATION_TEST_PATH"/validation.py \
+        pytest -m "not slow" "$INTEGRATION_TEST_PATH"/validation.py \
            --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
            --upgrade-charm-channel candidate \
            --cloud "$JUJU_CLOUD" \
