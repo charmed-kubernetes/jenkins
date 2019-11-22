@@ -1,8 +1,12 @@
 """ Tracks the progress of a release through it's different stages
 """
 
-import argparse
 import sys
+import os
+
+sys.path.insert(0, os.environ['WORKSPACE'])
+
+import argparse
 import click
 from cilib.service.aws import Store
 
