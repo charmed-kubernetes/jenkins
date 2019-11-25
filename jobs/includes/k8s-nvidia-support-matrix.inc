@@ -1,9 +1,0 @@
-- 'v1.14.x':
-    version_overlay: 'jobs/overlays/1.14-edge-nvidia-overlay.yaml'
-    snap_channel: '1.14/edge'
-- 'v1.15.x':
-    version_overlay: 'jobs/overlays/1.15-edge-nvidia-overlay.yaml'
-    snap_channel: '1.15/edge'
-- 'v1.16.x':
-    version_overlay: 'jobs/overlays/1.16-edge-nvidia-overlay.yaml'
-    snap_channel: '1.16/edge'
