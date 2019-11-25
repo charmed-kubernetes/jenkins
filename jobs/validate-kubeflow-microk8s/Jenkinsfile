@@ -60,7 +60,6 @@ pipeline {
                 exec 'sudo apt update && sudo apt install -y libssl-dev'
                 exec 'sudo pip install pytest sh kfp requests pyyaml'
                 exec 'sudo usermod -a -G microk8s ubuntu'
-                exec "sed -i 's/--anonymous-auth=false/--anonymous-auth=true/g' /var/snap/microk8s/current/args/kubelet"
                 exec 'echo \'PATH=$PATH:/snap/bin\' > ~/.bashrc'
             }
         }
@@ -75,7 +74,6 @@ pipeline {
                 exec 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
                 exec 'cd bundle-kubeflow && python3 ./scripts/cli.py microk8s setup'
                 exec 'cd bundle-kubeflow && KUBEFLOW_AUTH_PASSWORD=foobar python3 ./scripts/cli.py deploy-to uk8s --build'
-                exec 'juju config argo-controller kubelet-insecure=true'
             }
         }
         stage('Validate') {
