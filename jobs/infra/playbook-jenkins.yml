@@ -85,13 +85,13 @@
       tags:
         - jenkins
     - name: use snap core candidate
-      command: "snap refresh --stable core"
+      command: "snap refresh --candidate core"
       ignore_errors: yes
       tags:
         - adhoc
         - jenkins
-    - name: use charm stable
-      command: "snap refresh --stable charm"
+    - name: use charm edge
+      command: "snap refresh --edge charm"
       ignore_errors: yes
       tags:
         - adhoc
@@ -101,7 +101,7 @@
       ignore_errors: yes
       loop:
         - "aws-cli --classic"
-        - "charm --classic"
+        - "charm --classic --edge"
         - "go --classic --channel 1.12/stable"
         - "juju --classic --channel latest/stable"
         - "juju-crashdump --classic --edge"
