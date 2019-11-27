@@ -206,7 +206,7 @@ async def test_leader_knows_all_members(model, tools):
     )
 
     # format the command, and execute on the leader
-    cmd = "{} /snap/bin/etcd.etcdctl member list".format(certs)
+    cmd = "{} ETCDCTL_API=2 /snap/bin/etcd.etcdctl member list".format(certs)
 
     etcd = model.applications["etcd"]
     for unit in etcd.units:
