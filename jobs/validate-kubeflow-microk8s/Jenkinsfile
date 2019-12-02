@@ -51,7 +51,7 @@ pipeline {
             steps {
                 exec 'sudo snap install charm --classic'
                 exec 'sudo snap install jq'
-                exec 'sudo snap install juju --classic'
+                exec "sudo snap install juju --classic --channel ${params.juju_channel}"
                 exec 'sudo snap install juju-helpers --classic --edge'
                 exec 'sudo snap install juju-wait --classic'
                 exec 'sudo snap install kubectl --classic'

@@ -16,6 +16,10 @@
           default: 'stable'
           description: microk8s snap channel
       - string:
+          name: juju_channel
+          default: 'stable'
+          description: juju snap channel
+      - string:
           name: region
           default: 'us-east-1'
           description: AWS region that microk8s will be spun up in
