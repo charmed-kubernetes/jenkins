@@ -74,7 +74,7 @@ async def api_server_with_arg(model, argument):
         search = "ps -ef | grep {} | grep apiserver".format(argument)
         action = await unit.run(search)
         assert action.status == "completed"
-        raw_output = action.data["results"]["Stdout"]
+        raw_output = action.data["results"].get("Stdout", "")
         if len(raw_output.splitlines()) != 1:
             return False
     return True
@@ -88,7 +88,7 @@ async def run_until_success(unit, cmd, timeout_insec=None):
             and "results" in action.data
             and action.data["results"]["Code"] == "0"
         ):
-            return action.data["results"]["Stdout"]
+            return action.data["results"].get("Stdout", "")
         else:
             log(
                 "Action " + action.status + ". Command failed on unit " + unit.entity_id
@@ -96,8 +96,8 @@ async def run_until_success(unit, cmd, timeout_insec=None):
             log("cmd: " + cmd)
             if "results" in action.data:
                 log("code: " + action.data["results"]["Code"])
-                log("stdout:\n" + action.data["results"]["Stdout"].strip())
-                log("stderr:\n" + action.data["results"]["Stderr"].strip())
+                log("stdout:\n" + action.data["results"].get("Stdout", "").strip())
+                log("stderr:\n" + action.data["results"].get("Stderr", "").strip())
                 log("Will retry...")
             await asyncio.sleep(0.5)
 
@@ -239,7 +239,7 @@ async def test_snap_versions(model):
         for unit in app.units:
             action = await unit.run("snap list")
             assert action.status == "completed"
-            raw_output = action.data["results"]["Stdout"]
+            raw_output = action.data["results"].get("Stdout", "")
             # Example of the `snap list` output format we're expecting:
             # Name        Version  Rev   Developer  Notes
             # conjure-up  2.1.5    352   canonical  classic
@@ -268,12 +268,12 @@ async def test_rbac(model):
     worker = model.applications["kubernetes-worker"].units[0]
     output = await worker.run(cmd)
     assert output.status == "completed"
-    assert "forbidden" in output.data["results"]["Stderr"].lower()
+    assert "forbidden" in output.data["results"].get("Stderr", "").lower()
     await app.set_config({"authorization-mode": "AlwaysAllow"})
     await wait_for_process(model, "AlwaysAllow")
     output = await worker.run(cmd)
     assert output.status == "completed"
-    assert "forbidden" not in output.data["results"]["Stderr"]
+    assert "forbidden" not in output.data["results"].get("Stderr", "")
 
 
 @pytest.mark.asyncio
@@ -442,8 +442,8 @@ async def test_network_policies(model, tools):
         if (
             cmd_good.status == "completed"
             and cmd_bad.status == "completed"
-            and "index.html" in cmd_good.data["results"]["Stderr"]
-            and "index.html" in cmd_bad.data["results"]["Stderr"]
+            and "index.html" in cmd_good.data["results"].get("Stderr", "")
+            and "index.html" in cmd_bad.data["results"].get("Stderr", "")
         ):
             return True
         return False
@@ -475,8 +475,8 @@ async def test_network_policies(model, tools):
         if (
             cmd_good.status == "completed"
             and cmd_bad.status == "completed"
-            and "foo.html" in cmd_good.data["results"]["Stderr"]
-            and "timed out" in cmd_bad.data["results"]["Stderr"]
+            and "foo.html" in cmd_good.data["results"].get("Stderr", "")
+            and "timed out" in cmd_bad.data["results"].get("Stderr", "")
         ):
             return True
         return False
@@ -550,7 +550,7 @@ async def test_gpu_support(model, tools):
     # See if the workers have nvidia
     workers = model.applications["kubernetes-worker"]
     action = await workers.units[0].run("lspci -nnk")
-    nvidia = True if action.results["Stdout"].lower().count("nvidia") > 0 else False
+    nvidia = True if action.results.get("Stdout", "").lower().count("nvidia") > 0 else False
 
     master_unit = model.applications["kubernetes-master"].units[0]
     if not nvidia:
@@ -597,8 +597,8 @@ async def test_gpu_support(model, tools):
 
         async def cuda_test(master):
             action = await master.run("/snap/bin/kubectl logs nvidia-smi")
-            log(action.results["Stdout"])
-            return action.results["Stdout"].count("NVIDIA-SMI") > 0
+            log(action.results.get("Stdout", ""))
+            return action.results.get("Stdout", "").count("NVIDIA-SMI") > 0
 
         await retry_async_with_timeout(
             cuda_test,
@@ -619,7 +619,7 @@ async def test_extra_args(model, tools):
                 assert action.status == "completed"
 
                 if action.data["results"]["Code"] == "0":
-                    raw_output = action.data["results"]["Stdout"]
+                    raw_output = action.data["results"].get("Stdout", "")
                     arg_string = raw_output.partition(" ")[2].partition(" ")[2]
                     args = {arg.strip() for arg in arg_string.split("--")[1:]}
                     results.append(args)
@@ -779,7 +779,7 @@ async def test_kubelet_extra_config(model, tools):
         cmd = "/snap/bin/kubectl -o yaml get node"
         action = await master_unit.run(str(cmd))
         if action.status == "completed" and action.results["Code"] == "0":
-            nodes = yaml.safe_load(action.results["Stdout"])
+            nodes = yaml.safe_load(action.results.get("Stdout", ""))
 
             all_nodes_updated = all(
                 [node["status"]["capacity"]["pods"] == "111" for node in nodes["items"]]
@@ -795,7 +795,7 @@ async def test_kubelet_extra_config(model, tools):
         cmd = "cat /root/cdk/kubelet/config.yaml"
         action = await worker_unit.run(cmd)
         if action.status == "completed" and action.results["Code"] == "0":
-            config = yaml.safe_load(action.results["Stdout"])
+            config = yaml.safe_load(action.results.get("Stdout", ""))
             assert config["evictionHard"]["memory.available"] == "200Mi"
             assert config["authentication"]["webhook"]["enabled"] is False
             assert "anonymous" in config["authentication"]
@@ -825,7 +825,7 @@ async def test_sans(model):
                 "openssl s_client -connect 127.0.0.1:6443 </dev/null 2>/dev/null | openssl x509 -text"
             )
             assert action.status == "completed"
-            raw_output = action.data["results"]["Stdout"]
+            raw_output = action.data["results"].get("Stdout", "")
             results.append(raw_output)
 
         # if there is a load balancer, ask it as well
@@ -835,7 +835,7 @@ async def test_sans(model):
                     "openssl s_client -connect 127.0.0.1:443 </dev/null 2>/dev/null | openssl x509 -text"
                 )
                 assert action.status == "completed"
-                raw_output = action.data["results"]["Stdout"]
+                raw_output = action.data["results"].get("Stdout", "")
                 results.append(raw_output)
 
         return results
@@ -1125,23 +1125,23 @@ async def test_keystone(model, tools):
     one_master = random.choice(masters.units)
     for i in range(60):
         action = await one_master.run("cat /home/ubuntu/config")
-        if "client-keystone-auth" in action.results["Stdout"]:
+        if "client-keystone-auth" in action.results.get("Stdout", ""):
             break
         log("Unable to find keystone information in kubeconfig, retrying...")
         await asyncio.sleep(10)
 
-    assert "client-keystone-auth" in action.results["Stdout"]
+    assert "client-keystone-auth" in action.results.get("Stdout", "")
 
     # verify kube-keystone.sh exists
     one_master = random.choice(masters.units)
     action = await one_master.run("cat /home/ubuntu/kube-keystone.sh")
-    assert "OS_AUTH_URL" in action.results["Stdout"]
+    assert "OS_AUTH_URL" in action.results.get("Stdout", "")
 
     # verify webhook enabled on apiserver
     await wait_for_process(model, "authentication-token-webhook-config-file")
     one_master = random.choice(masters.units)
     action = await one_master.run("sudo cat /root/cdk/keystone/webhook.yaml")
-    assert "webhook" in action.results["Stdout"]
+    assert "webhook" in action.results.get("Stdout", "")
 
     # verify keystone pod is running
     await retry_async_with_timeout(
@@ -1154,7 +1154,7 @@ async def test_keystone(model, tools):
     action = await one_master.run(
         "cat /snap/cdk-addons/current/templates/keystone-rbac.yaml"
     )
-    if "kind: Role" in action.results["Stdout"]:
+    if "kind: Role" in action.results.get("Stdout", ""):
         # we need to skip tests for the old template that incorrectly had a Role instead
         # of a ClusterRole
         skip_tests = True
@@ -1180,7 +1180,7 @@ async def test_keystone(model, tools):
            OS_PASSWORD=bad /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
     output = await one_master.run(cmd)
     assert output.status == "completed"
-    if "invalid user credentials" not in output.data["results"]["Stderr"].lower():
+    if "invalid user credentials" not in output.data["results"].get("Stderr", "").lower():
         log("Failing, auth did not fail as expected")
         log(pformat(output.data["results"]))
         assert False
@@ -1191,7 +1191,7 @@ async def test_keystone(model, tools):
            OS_PASSWORD=badpw /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
     output = await one_master.run(cmd)
     assert output.status == "completed"
-    if "invalid user credentials" not in output.data["results"]["Stderr"].lower():
+    if "invalid user credentials" not in output.data["results"].get("Stderr", "").lower():
         log("Failing, auth did not fail as expected")
         log(pformat(output.data["results"]))
         assert False
@@ -1236,7 +1236,7 @@ data:
             --kubeconfig /home/ubuntu/config get clusterroles"
         output = await one_master.run(cmd)
         assert output.status == "completed"
-        assert "error" in output.data["results"]["Stderr"].lower()
+        assert "error" in output.data["results"].get("Stderr", "").lower()
 
         # the config set writes out a file and updates a configmap, which is then picked up by the
         # keystone pod and updated. This all takes time and I don't know of a great way to tell
@@ -1255,8 +1255,8 @@ data:
             if (
                 output.status == "completed"
                 and "invalid user credentials"
-                not in output.data["results"]["Stderr"].lower()
-                and "error" not in output.data["results"]["Stderr"].lower()
+                not in output.data["results"].get("Stderr", "").lower()
+                and "error" not in output.data["results"].get("Stderr", "").lower()
             ):
                 break
             log("Unable to verify configmap change, retrying...")
@@ -1264,9 +1264,9 @@ data:
 
         assert output.status == "completed"
         assert (
-            "invalid user credentials" not in output.data["results"]["Stderr"].lower()
+            "invalid user credentials" not in output.data["results"].get("Stderr", "").lower()
         )
-        assert "error" not in output.data["results"]["Stderr"].lower()
+        assert "error" not in output.data["results"].get("Stderr", "").lower()
 
         # verify auth failure on pods outside of default namespace
         cmd = "source /home/ubuntu/kube-keystone.sh && \
@@ -1276,9 +1276,9 @@ data:
         output = await one_master.run(cmd)
         assert output.status == "completed"
         assert (
-            "invalid user credentials" not in output.data["results"]["Stderr"].lower()
+            "invalid user credentials" not in output.data["results"].get("Stderr", "").lower()
         )
-        assert "forbidden" in output.data["results"]["Stderr"].lower()
+        assert "forbidden" in output.data["results"].get("Stderr", "").lower()
 
     # verify auth works now that it is off
     original_auth = config["authorization-mode"]["value"]
@@ -1291,9 +1291,9 @@ data:
            --kubeconfig /home/ubuntu/config get clusterroles"
     output = await one_master.run(cmd)
     assert output.status == "completed"
-    assert "invalid user credentials" not in output.data["results"]["Stderr"].lower()
-    assert "error" not in output.data["results"]["Stderr"].lower()
-    assert "forbidden" not in output.data["results"]["Stderr"].lower()
+    assert "invalid user credentials" not in output.data["results"].get("Stderr", "").lower()
+    assert "error" not in output.data["results"].get("Stderr", "").lower()
+    assert "forbidden" not in output.data["results"].get("Stderr", "").lower()
 
     # cleanup
     (done1, pending1) = await asyncio.wait(
@@ -1371,7 +1371,7 @@ async def test_encryption_at_rest(model, tools):
             "--format=yaml"
         )
         assert output.status == "completed"
-        vault_info = yaml.safe_load(output.results["Stdout"])
+        vault_info = yaml.safe_load(output.results.get("Stdout", ""))
         for key in vault_info["unseal_keys_hex"][:3]:
             output = await vault.run(
                 "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
@@ -1384,7 +1384,7 @@ async def test_encryption_at_rest(model, tools):
             "".format(vault_info["root_token"])
         )
         assert output.status == "completed"
-        vault_token_info = yaml.safe_load(output.results["Stdout"])
+        vault_token_info = yaml.safe_load(output.results.get("Stdout", ""))
         charm_token = vault_token_info["auth"]["client_token"]
         action = await vault.run_action("authorize-charm", token=charm_token)
         await action.wait()
@@ -1397,17 +1397,17 @@ async def test_encryption_at_rest(model, tools):
             "/snap/bin/kubectl create secret generic test-secret "
             "--from-literal=username='secret-value'"
         )
-        if output.results["Stderr"]:
-            log("stderr: {}".format(output.results["Stderr"]))
+        if output.results.get("Stderr", ""):
+            log("stderr: {}".format(output.results.get("Stderr", "")))
         assert output.status == "completed"
         # read secret
         output = await one_master.run(
             "/snap/bin/kubectl get secret test-secret -o yaml"
         )
-        if output.results["Stderr"]:
-            log("stderr: {}".format(output.results["Stderr"]))
+        if output.results.get("Stderr", ""):
+            log("stderr: {}".format(output.results.get("Stderr", "")))
         assert output.status == "completed"
-        assert b64encode(b"secret-value").decode("utf8") in output.results["Stdout"]
+        assert b64encode(b"secret-value").decode("utf8") in output.results.get("Stdout", "")
         # verify secret is encrypted
         etcd = model.applications["etcd"].units[0]
         await etcd.run(
@@ -1416,7 +1416,7 @@ async def test_encryption_at_rest(model, tools):
             "get /registry/secrets/default/test-secret | strings"
         )
         assert output.status == "completed"
-        assert b64encode(b"secret-value").decode("utf8") not in output.results["Stdout"]
+        assert b64encode(b"secret-value").decode("utf8") not in output.results.get("Stdout", "")
     finally:
         # cleanup
         if "vault" in model.applications:
@@ -1550,7 +1550,7 @@ async def test_sysctl(model, tools):
         for unit in units:
             action = await unit.run(cmd)
             assert action.status == "completed"
-            raw_output = action.data["results"]["Stdout"]
+            raw_output = action.data["results"].get("Stdout", "")
             lines = raw_output.splitlines()
             assert len(lines) == len(desired_results)
             if not lines == desired_results:

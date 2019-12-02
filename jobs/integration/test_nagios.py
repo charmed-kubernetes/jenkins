@@ -60,7 +60,7 @@ async def test_nagios(model, tools):
     cmd = "cat /var/lib/juju/nagios.passwd"
     output = await nagios.units[0].run(cmd, timeout=10)
     assert output.status == "completed"
-    login_passwd = output.results["Stdout"].strip()
+    login_passwd = output.results.get("Stdout", "").strip()
 
     pwd_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
     url_base = "http://{}".format(nagios.units[0].public_address)

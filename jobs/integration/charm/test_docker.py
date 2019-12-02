@@ -13,11 +13,11 @@ async def test_docker_opts(model):
 
     async def verify_default_docker(worker, opt):
         action = await worker.run("cat /etc/default/docker")
-        return opt in action.results["Stdout"]
+        return opt in action.results.get("Stdout", "")
 
     async def verify_ps_output(worker, opt):
         action = await worker.run("ps -aux|grep dockerd")
-        return opt in action.results["Stdout"]
+        return opt in action.results.get("Stdout", "")
 
     log("validating dockerd options")
 

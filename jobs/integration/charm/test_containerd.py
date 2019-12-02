@@ -16,7 +16,7 @@ async def test_containerd_no_gpu(model, tools):
 
     async def verify_ps_output(worker, opt):
         action = await worker.run("ps -aux | grep containerd")
-        return opt in action.results["Stdout"]
+        return opt in action.results.get("Stdout", "")
 
     log("validating containerd no gpu")
 

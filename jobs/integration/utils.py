@@ -232,17 +232,17 @@ async def disable_source_dest_check(model_name):
 async def verify_deleted(unit, entity_type, name, extra_args=""):
     cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
     output = await unit.run(cmd)
-    if "error" in output.results["Stdout"]:
+    if "error" in output.results.get("Stdout", ""):
         # error resource type not found most likely. This can happen when the
         # api server is restarting. As such, don't assume this means we've
         # finished the deletion
         return False
     try:
-        out_list = json.loads(output.results["Stdout"])
+        out_list = json.loads(output.results.get("Stdout", ""))
     except json.JSONDecodeError:
         log(traceback.format_exc())
         log("WARNING: Expected json, got non-json output:")
-        log(output.results["Stdout"])
+        log(output.results.get("Stdout", ""))
         return False
     for item in out_list["items"]:
         if item["metadata"]["name"] == name:
@@ -258,7 +258,7 @@ async def find_entities(unit, entity_type, name_list, extra_args=""):
         # error resource type not found most likely. This can happen when the
         # api server is restarting. As such, don't assume this means ready.
         return False
-    out_list = json.loads(output.results["Stdout"])
+    out_list = json.loads(output.results.get("Stdout", ""))
     matches = []
     for name in name_list:
         # find all entries that match this
@@ -315,7 +315,7 @@ async def log_snap_versions(model, prefix="before"):
         if unit.dead:
             continue
         action = await unit.run("snap list")
-        snap_versions = action.data["results"]["Stdout"].strip() or "No snaps found"
+        snap_versions = action.data["results"].get("Stdout", "").strip() or "No snaps found"
         log(f"{prefix} {unit.name} {snap_versions}")
 
 
@@ -406,8 +406,8 @@ spec:
 
     output = await master.run("/snap/bin/kubectl logs {}-read-test".format(sc_name))
     assert output.status == "completed"
-    log("output = {}".format(output.data["results"]["Stdout"]))
-    assert "JUJU TEST" in output.data["results"]["Stdout"]
+    log("output = {}".format(output.data["results"].get("Stdout", "")))
+    assert "JUJU TEST" in output.data["results"].get("Stdout", "")
 
     log("{}: {} cleanup".format(test_name, sc_name))
     pods = "{0}-read-test {0}-write-test".format(sc_name)

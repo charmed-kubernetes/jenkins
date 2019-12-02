@@ -62,7 +62,7 @@ async def run_auth(one_master, args):
     )
     output = await one_master.run(cmd, timeout=15)
     assert output.status == "completed"
-    return output.data["results"]["Stderr"].lower()
+    return output.data["results"].get("Stderr", "").lower()
 
 
 async def verify_auth_success(one_master, args):
@@ -85,7 +85,7 @@ async def patch_kubeconfig_and_verify_aws_iam(one_master, arn):
     log("patching and validating generated kubectl config file")
     for i in range(6):
         output = await one_master.run("cat /home/ubuntu/config")
-        if "aws-iam-user" in output.results["Stdout"]:
+        if "aws-iam-user" in output.results.get("Stdout", ""):
             await one_master.run(
                 "cp /home/ubuntu/config " "/home/ubuntu/aws-kubeconfig"
             )
@@ -97,7 +97,7 @@ async def patch_kubeconfig_and_verify_aws_iam(one_master, arn):
             break
         log("Unable to find AWS IAM information in kubeconfig, retrying...")
         await asyncio.sleep(10)
-    assert "aws-iam-user" in output.results["Stdout"]
+    assert "aws-iam-user" in output.results.get("Stdout", "")
 
 
 @pytest.mark.asyncio

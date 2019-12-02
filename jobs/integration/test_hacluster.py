@@ -27,11 +27,11 @@ async def verify_kubeconfig_has_ip(model, ip):
     one_master = random.choice(model.applications["kubernetes-master"].units)
     for i in range(5):
         action = await one_master.run("cat /home/ubuntu/config")
-        if ip in action.results["Stdout"]:
+        if ip in action.results.get("Stdout", ""):
             break
         log("Unable to find virtual IP information in kubeconfig, retrying...")
         await asyncio.sleep(10)
-    assert ip in action.results["Stdout"]
+    assert ip in action.results.get("Stdout", "")
 
 
 async def verify_kubelet_uses_ip(model, ip):
@@ -40,11 +40,11 @@ async def verify_kubelet_uses_ip(model, ip):
         cmd = "cat /root/cdk/kubeconfig"
         for i in range(5):
             action = await worker_unit.run(cmd)
-            if ip in action.results["Stdout"]:
+            if ip in action.results.get("Stdout", ""):
                 break
             log("Unable to find virtual IP" "information in kubeconfig, retrying...")
             await asyncio.sleep(10)
-        assert ip in action.results["Stdout"]
+        assert ip in action.results.get("Stdout", "")
 
 
 async def verify_ip_valid(model, ip):
@@ -54,7 +54,7 @@ async def verify_ip_valid(model, ip):
     one_worker = random.choice(model.applications["kubernetes-worker"].units)
     for unit in [one_master, one_worker]:
         action = await unit.run(cmd)
-        assert ", 0% packet loss" in action.results["Stdout"]
+        assert ", 0% packet loss" in action.results.get("Stdout", "")
 
 
 @pytest.mark.asyncio
@@ -102,12 +102,12 @@ async def test_validate_hacluster(model, tools):
         log("verifying corosync...")
         for unit in app.units:
             action = await unit.run("corosync-cmapctl")
-            assert "runtime.totem.pg.mrp.srp.members" in action.results["Stdout"]
+            assert "runtime.totem.pg.mrp.srp.members" in action.results.get("Stdout", "")
 
         log("verifying pacemaker...")
         for unit in app.units:
             action = await unit.run("crm status")
-            assert "Stopped" not in action.results["Stdout"]
+            assert "Stopped" not in action.results.get("Stdout", "")
 
         # kubeconfig points to virtual ip
         await verify_kubeconfig_has_ip(model, ip)

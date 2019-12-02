@@ -150,8 +150,8 @@ async def test_leader_status(model, tools):
         is_leader = await unit.is_leader_from_status()
         if is_leader:
             status = await unit.run("systemctl is-active snap.etcd.etcd")
-            assert "inactive" not in status.results["Stdout"].strip()
-            assert "active" in status.results["Stdout"].strip()
+            assert "inactive" not in status.results.get("Stdout", "").strip()
+            assert "active" in status.results.get("Stdout", "").strip()
 
 
 async def test_config_snapd_refresh(model, tools):
@@ -163,12 +163,12 @@ async def test_config_snapd_refresh(model, tools):
             # default timer should be some day of the week followed by a
             # number
             timer = await unit.run("snap get core refresh.timer")
-            assert len(timer.results["Stdout"].strip()) == len("dayX")
+            assert len(timer.results.get("Stdout", "").strip()) == len("dayX")
 
             # verify a new timer value
             await etcd.set_config({"snapd_refresh": "fri5"})
             timer = await unit.run("snap get core refresh.timer")
-            assert timer.results["Stdout"].strip() == "fri5"
+            assert timer.results.get("Stdout", "").strip() == "fri5"
 
 
 async def test_cluster_health(model, tools):
@@ -184,12 +184,12 @@ async def test_cluster_health(model, tools):
     for unit in etcd.units:
         out = await unit.run("systemctl is-active snap.etcd.etcd")
         assert out.status == "completed"
-        assert "inactive" not in out.results["Stdout"].strip()
-        assert "active" in out.results["Stdout"].strip()
+        assert "inactive" not in out.results.get("Stdout", "").strip()
+        assert "active" in out.results.get("Stdout", "").strip()
         cmd = "{} /snap/bin/etcdctl cluster-health".format(certs)
         health = await unit.run(cmd)
-        assert "unhealthy" not in health.results["Stdout"].strip()
-        assert "unavailable" not in health.results["Stdout"].strip()
+        assert "unhealthy" not in health.results.get("Stdout", "").strip()
+        assert "unavailable" not in health.results.get("Stdout", "").strip()
 
 
 async def test_leader_knows_all_members(model, tools):
@@ -214,7 +214,7 @@ async def test_leader_knows_all_members(model, tools):
         if is_leader:
             out = await unit.run(cmd)
             # turn the output into a list so we can iterate
-            members = out.results["Stdout"].strip()
+            members = out.results.get("Stdout", "").strip()
             members = members.split("\n")
             for item in members:
                 # this is responded when TLS is enabled and we don't have
@@ -254,8 +254,8 @@ async def test_leader_knows_all_members(model, tools):
 #                 "{} /snap/bin/etcd.etcdctl get nested/data works".format(certs)
 #             )
 
-#             assert "rocks" in juju_key.results["Stdout"].strip()
-#             assert "works" in nested_key.results["Stdout"].strip()
+#             assert "rocks" in juju_key.results.get("Stdout", "").strip()
+#             assert "works" in nested_key.results.get("Stdout", "").strip()
 
 
 # async def validate_running_snap_daemon(etcd):
@@ -265,7 +265,7 @@ async def test_leader_knows_all_members(model, tools):
 #         is_leader = await unit.is_leader_from_status()
 #         if is_leader:
 #             daemon_status = await unit.run("systemctl is-active snap.etcd.etcd")
-#             assert "active" in daemon_status.results["Stdout"].strip()
+#             assert "active" in daemon_status.results.get("Stdout", "").strip()
 
 
 async def load_data(leader):
@@ -311,7 +311,7 @@ async def is_data_present(leader, version):
             'get "" --prefix --keys-only'.format(certs)
         )
         data = await leader.run(cmd)
-        return "etcd3key" in data.results["Stdout"].strip()
+        return "etcd3key" in data.results.get("Stdout", "").strip()
     else:
         return False
 
