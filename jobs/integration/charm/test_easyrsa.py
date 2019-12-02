@@ -60,11 +60,11 @@ async def get_relation_data(controller, model, tools):
         easyrsa = easyrsa.units[0]
 
         id = await easyrsa.run("relation-ids client")  # magic :(
-        id = id.results["Stdout"].strip()
+        id = id.results.get("Stdout", "").strip()
         raw_json = await easyrsa.run(
             "relation-get --format=json -r {} - {}".format(id, easyrsa.name)
         )
-        relation_data = json.loads(raw_json.results["Stdout"])
+        relation_data = json.loads(raw_json.results.get("Stdout", ""))
     return relation_data
 
 

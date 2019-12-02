@@ -21,7 +21,7 @@ async def log_docker_versions(model):
         for unit in app.units:
             action = await unit.run("docker --version")
             docker_version = (
-                action.data["results"]["Stdout"].strip() or "Docker not installed"
+                action.data["results"].get("Stdout", "").strip() or "Docker not installed"
             )
             log(unit.name + ": " + docker_version)
 
