@@ -1,3 +1,5 @@
+sequential: yes
+
 plan:
   - &BASE_JOB
     env:

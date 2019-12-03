@@ -1323,17 +1323,21 @@ data:
 @pytest.mark.skip_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     try:
+        log("Deploying model")
         # setup
         if "percona-cluster" not in model.applications:
+            log(" deploy percona-cluster")
             await model.deploy(
                 "percona-cluster",
                 config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
             )
+        log(" deploy vault")
         await model.deploy(
             "cs:~openstack-charmers-next/vault",
             config={"auto-generate-root-ca-cert": True, "disable-mlock": True},
         )
         try:
+            log(" adding vault:shared-db<->percona-cluster:shared_db")
             await model.add_relation("vault:shared-db", "percona-cluster:shared-db")
         except juju.errors.JujuAPIError as e:
             pc = model.applications.get("percona-cluster")
@@ -1342,6 +1346,8 @@ async def test_encryption_at_rest(model, tools):
                     e, pc.data if pc else "(percona-cluster not in model)"
                 )
             )
+        log("Adding/Removing relations")
+        log(" removing easyrsa:client<->kubernetes-*:certificates")
         await model.applications["kubernetes-master"].remove_relation(
             "easyrsa:client", "kubernetes-master:certificates"
         )
@@ -1349,21 +1355,30 @@ async def test_encryption_at_rest(model, tools):
             "easyrsa:client", "kubernetes-worker:certificates"
         )
         if "kubeapi-load-balancer" in model.applications:
+            log(" removing easyrsa:client<->kubernetes-load-balancer:certificates")
             await model.applications["kubeapi-load-balancer"].remove_relation(
                 "easyrsa:client", "kubeapi-load-balancer:certificates"
             )
+        log(" adding vault:certificates<->kubernetes-*:certificates")
         await model.add_relation("vault:certificates", "kubernetes-master:certificates")
         await model.add_relation("vault:certificates", "kubernetes-worker:certificates")
         if "kubeapi-load-balancer" in model.applications:
+            log(" adding vault:certificates<->kubernetes-load-balancer:certificates")
             await model.add_relation(
                 "vault:certificates", "kubeapi-load-balancer:certificates"
             )
+        log(" adding vault:secrets<->kubernetes-master:vault-kv")
         await model.add_relation("kubernetes-master:vault-kv", "vault:secrets")
+
+        log("Waiting for vault to be active")
         await model.block_until(lambda: "vault" in model.applications)
         vault = model.applications["vault"].units[0]
+        log("Waiting for vault to be ready to initialize")
         await model.block_until(
             lambda: vault.workload_status_message == "Vault needs to " "be initialized"
         )
+
+        log("Unsealing vault")
         # unseal vault
         output = await vault.run(
             "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
@@ -1372,6 +1387,7 @@ async def test_encryption_at_rest(model, tools):
         )
         assert output.status == "completed"
         vault_info = yaml.safe_load(output.results.get("Stdout", ""))
+        log(vault_info)
         for key in vault_info["unseal_keys_hex"][:3]:
             output = await vault.run(
                 "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
@@ -1385,12 +1401,15 @@ async def test_encryption_at_rest(model, tools):
         )
         assert output.status == "completed"
         vault_token_info = yaml.safe_load(output.results.get("Stdout", ""))
+        log(vault_token_info)
         charm_token = vault_token_info["auth"]["client_token"]
         action = await vault.run_action("authorize-charm", token=charm_token)
+        log("Finalizing vault unseal")
         await action.wait()
         assert action.status == "completed"
         # now wait for k8s to settle
         await tools.juju_wait()
+        log("Secrets")
         # create secret
         one_master = random.choice(model.applications["kubernetes-master"].units)
         output = await one_master.run(
@@ -1408,6 +1427,7 @@ async def test_encryption_at_rest(model, tools):
             log("stderr: {}".format(output.results.get("Stderr", "")))
         assert output.status == "completed"
         assert b64encode(b"secret-value").decode("utf8") in output.results.get("Stdout", "")
+        log("Verifying encryption")
         # verify secret is encrypted
         etcd = model.applications["etcd"].units[0]
         await etcd.run(
@@ -1418,14 +1438,19 @@ async def test_encryption_at_rest(model, tools):
         assert output.status == "completed"
         assert b64encode(b"secret-value").decode("utf8") not in output.results.get("Stdout", "")
     finally:
+        log("Cleaning up")
         # cleanup
         if "vault" in model.applications:
+            log("Removing vault")
             await model.applications["vault"].destroy()
             # wait for vault to go away before removing percona to prevent vault
             # from erroring from having its DB taken away
             await tools.juju_wait()
         if "percona-cluster" in model.applications:
+            log("Removing percona-cluster")
             await model.applications["percona-cluster"].destroy()
+
+        log("Re-add easyrsa and setup relations")
         # re-add easyrsa after vault is gone
         tasks = {
             model.add_relation("easyrsa:client", "kubernetes-master:certificates"),
@@ -1442,6 +1467,7 @@ async def test_encryption_at_rest(model, tools):
             # read and ignore any exception so that it doesn't get raised
             # when the task is GC'd
             task.exception()
+        log("Waiting for cluster to settle")
         await tools.juju_wait()
 
 
