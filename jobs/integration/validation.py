@@ -1388,7 +1388,7 @@ async def test_encryption_at_rest(model, tools):
         charm_token = vault_token_info["auth"]["client_token"]
         action = await vault.run_action("authorize-charm", token=charm_token)
         await action.wait()
-        assert action.status == "complete"
+        assert action.status == "completed"
         # now wait for k8s to settle
         await tools.juju_wait()
         # create secret
