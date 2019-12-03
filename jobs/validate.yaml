@@ -157,7 +157,7 @@
 
 - job:
     name: 'validate-ck-vault'
-    node: runner-cloud
+    node: runner-amd64
     description: |
       Validates CK, with vault.
     project-type: freestyle

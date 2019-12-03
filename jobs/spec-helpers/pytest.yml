@@ -6,4 +6,4 @@ runner:
     pytest -m "not slow" $INTEGRATION_TEST_PATH/validation.py \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \
-       --controller $JUJU_CONTROLLER 2>&1
+       --controller $JUJU_CONTROLLER
