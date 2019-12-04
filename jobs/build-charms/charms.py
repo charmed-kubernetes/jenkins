@@ -232,7 +232,6 @@ class BuildEnv:
                     _done=done,
                 )
 
-
         if self.rebuild_cache:
             click.echo("-  rebuild cache triggered, cleaning out cache.")
             shutil.rmtree(str(self.layers_dir))
@@ -442,18 +441,21 @@ class BuildEntity:
             raise SystemExit("Unable to determine resource spec for entity")
 
         os.makedirs(str(out_path), exist_ok=True)
-        charm_id = capture(['charm', 'show', self.entity, "--channel", from_channel, "id"])
+        charm_id = capture(
+            ["charm", "show", self.entity, "--channel", from_channel, "id"]
+        )
         charm_id = yaml.safe_load(charm_id.stdout.decode())
-        resources = capture([
-            'charm',
-            "list-resources",
-            charm_id["id"]["Id"],
-            "--channel",
-            from_channel,
-            "--format",
-            "yaml"
+        resources = capture(
+            [
+                "charm",
+                "list-resources",
+                charm_id["id"]["Id"],
+                "--channel",
+                from_channel,
+                "--format",
+                "yaml",
             ]
-            )
+        )
         if not resources.ok:
             click.echo("No resources found for {}".format(charm_id))
             return
@@ -469,7 +471,7 @@ class BuildEntity:
             f"  attaching resources with known extensions: {', '.join(known_resource_extensions)}"
         )
 
-        ret = cmd_ok(['bash', str(builder_sh)], cwd=out_path)
+        ret = cmd_ok(["bash", str(builder_sh)], cwd=out_path)
         if not ret.ok:
             raise SystemExit("Unable to build resources")
 
@@ -483,12 +485,14 @@ class BuildEntity:
                 is_attached_count = 0
                 while not is_attached:
                     out = cmd_ok(
-                        "charm",
-                        "attach",
-                        self.entity,
-                        "--channel",
-                        from_channel,
-                        f"{resource_key}={resource_path}",
+                        [
+                            "charm",
+                            "attach",
+                            self.entity,
+                            "--channel",
+                            from_channel,
+                            f"{resource_key}={resource_path}",
+                        ]
                     )
                     if out.ok:
                         is_attached = True
@@ -732,7 +736,12 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
     help="only build for charms matching a tag, comma separate list",
     multiple=True,
 )
-@click.option("--from-channel", default="unpublished", required=True, help="Charm channel to publish from")
+@click.option(
+    "--from-channel",
+    default="unpublished",
+    required=True,
+    help="Charm channel to publish from",
+)
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
 def promote(charm_list, filter_by_tag, from_channel, to_channel):
     build_env = BuildEnv(build_type=BuildType.CHARM)
