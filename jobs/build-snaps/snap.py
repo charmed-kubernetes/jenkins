@@ -17,7 +17,7 @@ from pathlib import Path
 from pymacaroons import Macaroon
 from cilib import lp, idm, snapapi, k8s
 from cilib.git import remote_branches, branch_exists, remote_tags
-from cilib.run import cmd_ok
+from cilib.run import cmd_ok, capture
 from pprint import pformat
 
 
@@ -68,7 +68,7 @@ def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
         click.echo(f"Checking: {git_repo}")
         snap_releases = remote_branches(git_repo)
         if set(supported_releases).issubset(set(snap_releases)) and not force:
-            click.echo(f"Synced, skipping: {git_repo}")
+            click.echo(f"  synced, skipping")
             continue
         if force:
             snap_releases = supported_releases
@@ -76,7 +76,7 @@ def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
             snap_releases = list(set(supported_releases).difference(set(snap_releases)))
         snap_releases.sort()
         for snap_rel in snap_releases:
-            click.echo(f"Creating branch for {snap}-{snap_rel}")
+            click.echo(f"  creating branch for {snap}-{snap_rel}")
             _create_branch(
                 git_repo,
                 "master",
@@ -158,18 +158,18 @@ def sync_branches_list(snap):
         output = Path(f"{tmpdir}/jobs/includes/k8s-snap-branches-list.inc")
         click.echo(f"Saving to {str(output)}")
         output.write_text(yaml.dump(snap_releases, default_flow_style=False, indent=2))
-        git.add(str(output), _env=env, _cwd=tmpdir)
-        try:
-            git.commit(
-                "-m",
-                f"Updating k8s snap branches list",
-                _env=env,
-                _cwd=tmpdir,
-                _err_to_out=True,
-            )
-            git.push(repo, "master", _env=env, _cwd=tmpdir)
-        except sh.ErrorReturnCode as error:
-            click.echo(f"Nothing to commit, skipping: {error}.")
+        cmd_ok(f"git add {str(output)}", cwd=tmpdir)
+        ret = cmd_ok(
+            ["git", "commit",
+             "-m",
+             "Updating k8s snap branches list"],
+            cwd=tmpdir)
+        if not ret.ok:
+            return
+        click.echo(f"Committing to {repo}.")
+        ret = cmd_ok(["git", "push", repo, "master"], cwd=tmpdir)
+        if not ret.ok:
+            raise SystemExit("Failed to commit latest snap branches.")
 
 
 def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
