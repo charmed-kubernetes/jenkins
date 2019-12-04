@@ -1403,11 +1403,13 @@ async def test_encryption_at_rest(model, tools):
         vault_token_info = yaml.safe_load(output.results.get("Stdout", ""))
         log(vault_token_info)
         charm_token = vault_token_info["auth"]["client_token"]
+        log("Authorizing charm")
         action = await vault.run_action("authorize-charm", token=charm_token)
-        log("Finalizing vault unseal")
         await action.wait()
-        assert action.status == "completed"
+        log("Finalizing vault unseal")
+        assert action.status not in ("pending", "running", "failed")
         # now wait for k8s to settle
+        log("Settling")
         await tools.juju_wait()
         log("Secrets")
         # create secret
