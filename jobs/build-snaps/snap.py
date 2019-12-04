@@ -16,8 +16,20 @@ from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
 from cilib import lp, idm, snapapi, k8s
-from cilib import git as gitapi
+from cilib.git import remote_branches, branch_exists, remote_tags
+from cilib.run import cmd_ok
 from pprint import pformat
+
+
+# go compiler version map for k8s version releases
+K8S_GO_MAP = {
+    "1.18" : "go/1.13/stable",
+    "1.17" : "go/1.13/stable",
+    "1.16" : "go/1.12/stable",
+    "1.15" : "go/1.12/stable",
+    "1.14" : "go/1.12/stable",
+    "1.13" : "go/1.12/stable"
+}
 
 
 def _render(tmpl_file, context):
@@ -38,8 +50,9 @@ def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
     Usage:
     python3 snap.py sync-branches --snap-list includes/k8s-snap-list.inc
     """
+    click.echo(force)
     supported_releases = []
-    upstream_releases = gitapi.remote_tags("https://github.com/kubernetes/kubernetes")
+    upstream_releases = remote_tags("https://github.com/kubernetes/kubernetes")
 
     for rel in upstream_releases:
         _fmt_rel = rel.lstrip("v")
@@ -49,25 +62,29 @@ def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
                 supported_releases.append(rel)
         except ValueError as error:
             click.echo(f"Skipping invalid {_fmt_rel}: {error}")
-
     snaps = yaml.safe_load(Path(snap_list).read_text(encoding="utf8"))
     for snap in snaps:
-        click.echo(f"Checking: git+ssh://cdkbot@git.launchpad.net/snap-{snap}")
         git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
-        snap_releases = gitapi.remote_branches(git_repo)
-        if not set(supported_releases).issubset(set(snap_releases)):
+        click.echo(f"Checking: {git_repo}")
+        snap_releases = remote_branches(git_repo)
+        if set(supported_releases).issubset(set(snap_releases)) and not force:
+            click.echo(f"Synced, skipping: {git_repo}")
+            continue
+        if force:
+            snap_releases = supported_releases
+        else:
             snap_releases = list(set(supported_releases).difference(set(snap_releases)))
-            snap_releases.sort()
-            for snap_rel in snap_releases:
-                click.echo(f"Creating branch for {snap}-{snap_rel}")
-                _create_branch(
-                    git_repo,
-                    "master",
-                    snap_rel,
-                    dry_run=False,
-                    force=force,
-                    patches=patches,
-                )
+        snap_releases.sort()
+        for snap_rel in snap_releases:
+            click.echo(f"Creating branch for {snap}-{snap_rel}")
+            _create_branch(
+                git_repo,
+                "master",
+                snap_rel,
+                dry_run=False,
+                force=force,
+                patches=patches,
+            )
 
 
 def _sync_snaps(snap_list, version, branch_version, tracks):
@@ -127,7 +144,7 @@ def sync_branches_list(snap):
     """
     click.echo(f"Checking: git+ssh://cdkbot@git.launchpad.net/snap-{snap}")
     git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
-    snap_releases = gitapi.remote_branches(git_repo)
+    snap_releases = remote_branches(git_repo)
     snap_releases.reverse()
     env = os.environ.copy()
     repo = f"https://{env['CDKBOT_GH_USR']}:{env['CDKBOT_GH_PSW']}@github.com/charmed-kubernetes/jenkins"
@@ -169,7 +186,7 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     """
     env = os.environ.copy()
 
-    if gitapi.branch_exists(repo, to_branch, env) and not force:
+    if branch_exists(repo, to_branch, env) and not force:
         click.echo(f"{to_branch} already exists, skipping...")
         sys.exit(0)
 
@@ -214,16 +231,20 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
                     patches_list.append(shared_path)
                     git.add(shared_path, _cwd=snap_basename)
 
+    k8s_major_minor = semver.parse(to_branch.lstrip("v"))
+    k8s_major_minor = f"{k8s_major_minor['major']}.{k8s_major_minor['minor']}"
+
+
     snapcraft_yml = snapcraft_fn_tpl.read_text()
     snapcraft_yml = _render(
         snapcraft_fn_tpl,
-        {"snap_version": to_branch.lstrip("v"), "patches": patches_list},
+        {"snap_version": to_branch.lstrip("v"), "patches": patches_list, "go_version": K8S_GO_MAP.get(k8s_major_minor, 'go/1.12/stable')},
     )
     snapcraft_fn.write_text(snapcraft_yml)
     if not dry_run:
-        git.add(".", _cwd=snap_basename)
-        git.commit("-m", f"Creating branch {to_branch}", _cwd=snap_basename)
-        git.push("--force", repo, to_branch, _cwd=snap_basename, _env=env)
+        cmd_ok("git add .", cwd=snap_basename)
+        cmd_ok(f"git commit -m 'Creating branch {to_branch}'", cwd=snap_basename)
+        cmd_ok(f"git push --force {repo} {to_branch}", cwd=snap_basename)
     tmpdir.cleanup()
 
 
