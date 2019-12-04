@@ -3,7 +3,7 @@ import click
 
 
 def log(msg):
-    click.echo(f"\n\t- {msg}")
+    click.echo(f"\n- {msg.strip()}")
 
 
 def function_call_str(f, args, kwargs):
