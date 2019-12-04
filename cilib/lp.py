@@ -1,7 +1,7 @@
 """ Launchpad module
 """
 
-from lazr.restfulclient.errors import NotFound
+from lazr.restfulclient.errors import NotFound, PreconditionFailed
 from launchpadlib.launchpad import Launchpad
 import os
 
@@ -113,5 +113,8 @@ class Client:
                 auto_build_pocket="Updates",
                 auto_build_archive=self.archive(),
             )
-        snap.lp_save()
+        try:
+            snap.lp_save()
+        except PreconditionFailed:
+            snap.lp_save()
         return snap
