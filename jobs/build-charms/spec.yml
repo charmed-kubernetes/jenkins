@@ -6,7 +6,7 @@ plan:
         export PATH=/snap/bin:$PATH
 
         IS_REBUILD_CACHE=""
-        if [ ! -z ${REBUILD_CACHE+x} ]; then
+        if [ -z ${REBUILD_CACHE+x} ]; then
           IS_REBUILD_CACHE="--rebuild-cache"
         fi
 

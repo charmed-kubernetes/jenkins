@@ -442,16 +442,17 @@ class BuildEntity:
             raise SystemExit("Unable to determine resource spec for entity")
 
         os.makedirs(str(out_path), exist_ok=True)
-        charm_id = capture('charm', 'show', self.entity, "--channel", from_channel, "id")
+        charm_id = capture(['charm', 'show', self.entity, "--channel", from_channel, "id"])
         charm_id = yaml.safe_load(charm_id.stdout.decode())
-        resources = capture(
+        resources = capture([
             'charm',
             "list-resources",
             charm_id["id"]["Id"],
             "--channel",
             from_channel,
             "--format",
-            "yaml",
+            "yaml"
+            ]
             )
         if not resources.ok:
             click.echo("No resources found for {}".format(charm_id))
@@ -468,7 +469,7 @@ class BuildEntity:
             f"  attaching resources with known extensions: {', '.join(known_resource_extensions)}"
         )
 
-        ret = cmd_ok('bash', str(builder_sh), cwd=out_path)
+        ret = cmd_ok(['bash', str(builder_sh)], cwd=out_path)
         if not ret.ok:
             raise SystemExit("Unable to build resources")
 
