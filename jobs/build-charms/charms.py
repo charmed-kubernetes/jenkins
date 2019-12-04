@@ -442,16 +442,18 @@ class BuildEntity:
             raise SystemExit("Unable to determine resource spec for entity")
 
         os.makedirs(str(out_path), exist_ok=True)
-        charm_id = sh.charm.show(self.entity, "--channel", from_channel, "id")
+        charm_id = capture('charm', 'show', self.entity, "--channel", from_channel, "id")
         charm_id = yaml.safe_load(charm_id.stdout.decode())
-        try:
-            resources = sh.charm(
-                "list-resources",
-                charm_id["id"]["Id"],
-                channel=from_channel,
-                format="yaml",
+        resources = capture(
+            'charm',
+            "list-resources",
+            charm_id["id"]["Id"],
+            "--channel",
+            from_channel,
+            "--format",
+            "yaml",
             )
-        except sh.ErrorReturnCode:
+        if not resources.ok:
             click.echo("No resources found for {}".format(charm_id))
             return
         resources = yaml.safe_load(resources.stdout.decode())
@@ -466,8 +468,10 @@ class BuildEntity:
             f"  attaching resources with known extensions: {', '.join(known_resource_extensions)}"
         )
 
-        for line in sh.bash(str(builder_sh), _cwd=out_path, _iter=True, _bg_exc=False):
-            click.echo(line.strip())
+        ret = cmd_ok('bash', str(builder_sh), cwd=out_path)
+        if not ret.ok:
+            raise SystemExit("Unable to build resources")
+
         for line in glob("{}/*".format(out_path)):
             click.echo(f" verifying {line}")
             resource_path = Path(line)
@@ -477,23 +481,23 @@ class BuildEntity:
                 is_attached = False
                 is_attached_count = 0
                 while not is_attached:
-                    try:
-                        out = sh.charm.attach(
-                            self.entity,
-                            "--channel",
-                            from_channel,
-                            f"{resource_key}={resource_path}",
-                            _err_to_out=True,
-                        )
+                    out = cmd_ok(
+                        "charm",
+                        "attach",
+                        self.entity,
+                        "--channel",
+                        from_channel,
+                        f"{resource_key}={resource_path}",
+                    )
+                    if out.ok:
                         is_attached = True
-                    except sh.ErrorReturnCode_1 as e:
+                    else:
                         click.echo(f"Problem attaching resources, retrying: {e}")
                         is_attached_count += 1
                         if is_attached_count > 10:
                             raise SystemExit(
                                 "Could not attach resource and max retry count reached."
                             )
-                click.echo(out)
 
     def promote(self, from_channel="unpublished", to_channel="edge"):
         click.echo(
