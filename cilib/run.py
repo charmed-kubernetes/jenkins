@@ -18,7 +18,8 @@ def capture(script, **kwargs):
     env = os.environ.copy()
     if not isinstance(script, list):
         script = shlex.split(script)
-    process = subprocess.run(script, capture_output=True, env=env, **kwargs)
+    process = subprocess.run(
+        script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, **kwargs)
     return SimpleNamespace(
         ok=bool(process.returncode == 0),
         returncode=process.returncode,
