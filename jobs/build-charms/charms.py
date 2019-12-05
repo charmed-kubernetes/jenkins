@@ -497,7 +497,7 @@ class BuildEntity:
                     if out.ok:
                         is_attached = True
                     else:
-                        click.echo(f"Problem attaching resources, retrying: {e}")
+                        click.echo(f"Problem attaching resources, retrying")
                         is_attached_count += 1
                         if is_attached_count > 10:
                             raise SystemExit(
