@@ -28,6 +28,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from threading import Semaphore
 from multiprocessing import cpu_count
+from retry.api import retry_call
+from subprocess import CalledProcessError
 import click
 import shutil
 import sh
@@ -418,9 +420,14 @@ class BuildEntity:
             for arg in ("--resource", f"{name}={image}")
         ]
 
-        out = capture(["charm", "push", self.dst_path, self.entity, *resource_args])
-        while not out.ok:
-            out = capture(["charm", "push", self.dst_path, self.entity, *resource_args])
+        out = retry_call(
+            capture,
+            fargs=["charm", "push", self.dst_path, self.entity, *resource_args],
+            fkwargs={"check": True},
+            delay=2,
+            backoff=2,
+            exceptions=CalledProcessError,
+        )
         click.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
@@ -483,28 +490,22 @@ class BuildEntity:
             resource_fn = resource_path.parts[-1]
             resource_key = resource_spec_fragment.get(resource_fn, None)
             if resource_key:
-                is_attached = False
-                is_attached_count = 0
-                while not is_attached:
-                    out = cmd_ok(
-                        [
-                            "charm",
-                            "attach",
-                            self.entity,
-                            "--channel",
-                            from_channel,
-                            f"{resource_key}={resource_path}",
-                        ]
-                    )
-                    if out.ok:
-                        is_attached = True
-                    else:
-                        click.echo(f"Problem attaching resources, retrying")
-                        is_attached_count += 1
-                        if is_attached_count > 10:
-                            raise SystemExit(
-                                "Could not attach resource and max retry count reached."
-                            )
+                out = retry_call(
+                    cmd_ok,
+                    fargs=[
+                        "charm",
+                        "attach",
+                        self.entity,
+                        "--channel",
+                        from_channel,
+                        f"{resource_key}={resource_path}",
+                    ],
+                    fkwargs={"check": True},
+                    delay=2,
+                    backoff=2,
+                    tries=15,
+                    exceptions=CalledProcessError,
+                )
 
     def promote(self, from_channel="unpublished", to_channel="edge"):
         click.echo(
