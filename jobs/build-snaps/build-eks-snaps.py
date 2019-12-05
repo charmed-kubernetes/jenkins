@@ -11,7 +11,7 @@ import glob
 import re
 import yaml
 import operator
-from lib import snapapi
+from cilib import snapapi
 from pathlib import Path
 from sh.contrib import git
 
