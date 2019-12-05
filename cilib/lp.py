@@ -1,6 +1,7 @@
 """ Launchpad module
 """
 
+from retry.api import retry_call
 from lazr.restfulclient.errors import NotFound, PreconditionFailed
 from launchpadlib.launchpad import Launchpad
 import os
@@ -113,8 +114,9 @@ class Client:
                 auto_build_pocket="Updates",
                 auto_build_archive=self.archive(),
             )
-        try:
-            snap.lp_save()
-        except PreconditionFailed:
-            snap.lp_save()
+        retry_call(snap.lp_save,
+                   delay=2,
+                   backoff=2,
+                   tries=5,
+                   exceptions=PreconditionFailed)
         return snap

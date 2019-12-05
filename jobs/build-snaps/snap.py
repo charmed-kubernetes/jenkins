@@ -23,12 +23,12 @@ from pprint import pformat
 
 # go compiler version map for k8s version releases
 K8S_GO_MAP = {
-    "1.18" : "go/1.13/stable",
-    "1.17" : "go/1.13/stable",
-    "1.16" : "go/1.12/stable",
-    "1.15" : "go/1.12/stable",
-    "1.14" : "go/1.12/stable",
-    "1.13" : "go/1.12/stable"
+    "1.18": "go/1.13/stable",
+    "1.17": "go/1.13/stable",
+    "1.16": "go/1.12/stable",
+    "1.15": "go/1.12/stable",
+    "1.14": "go/1.12/stable",
+    "1.13": "go/1.12/stable",
 }
 
 
@@ -160,10 +160,8 @@ def sync_branches_list(snap):
         output.write_text(yaml.dump(snap_releases, default_flow_style=False, indent=2))
         cmd_ok(f"git add {str(output)}", cwd=tmpdir)
         ret = cmd_ok(
-            ["git", "commit",
-             "-m",
-             "Updating k8s snap branches list"],
-            cwd=tmpdir)
+            ["git", "commit", "-m", "Updating k8s snap branches list"], cwd=tmpdir
+        )
         if not ret.ok:
             return
         click.echo(f"Committing to {repo}.")
@@ -234,11 +232,14 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     k8s_major_minor = semver.parse(to_branch.lstrip("v"))
     k8s_major_minor = f"{k8s_major_minor['major']}.{k8s_major_minor['minor']}"
 
-
     snapcraft_yml = snapcraft_fn_tpl.read_text()
     snapcraft_yml = _render(
         snapcraft_fn_tpl,
-        {"snap_version": to_branch.lstrip("v"), "patches": patches_list, "go_version": K8S_GO_MAP.get(k8s_major_minor, 'go/1.12/stable')},
+        {
+            "snap_version": to_branch.lstrip("v"),
+            "patches": patches_list,
+            "go_version": K8S_GO_MAP.get(k8s_major_minor, "go/1.12/stable"),
+        },
     )
     snapcraft_fn.write_text(snapcraft_yml)
     if not dry_run:
