@@ -16,7 +16,7 @@ def capture(script, **kwargs):
     """ capture command output
     """
     env = os.environ.copy()
-    if not isinstance(script, list):
+    if not isinstance(script, list) and 'shell' not in kwargs:
         script = shlex.split(script)
     process = subprocess.run(
         script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, **kwargs)
@@ -33,7 +33,7 @@ def cmd_ok(script, **kwargs):
     returns exit status
     """
     env = os.environ.copy()
-    if not isinstance(script, list):
+    if not isinstance(script, list) and 'shell' not in kwargs:
         script = shlex.split(script)
     process = subprocess.Popen(
         script, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, **kwargs
