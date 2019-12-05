@@ -418,13 +418,15 @@ class BuildEntity:
             for arg in ("--resource", f"{name}={image}")
         ]
 
-        out = sh.charm.push(self.dst_path, self.entity, *resource_args, _bg_exc=False)
+        out = capture(["charm", "push", self.dst_path, self.entity, *resource_args])
+        while not out.ok:
+            out = capture(["charm", "push", self.dst_path, self.entity, *resource_args])
         click.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
         out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
         click.echo(f"Setting {out['url']} metadata: {self.commit}")
-        sh.charm.set(out["url"], f"commit={self.commit}", _bg_exc=False)
+        cmd_ok(["charm", "set", out["url"], f"commit={self.commit}"])
 
     def attach_resource(self, from_channel):
         resource_builder = self.opts.get("resource_build_sh", None)
