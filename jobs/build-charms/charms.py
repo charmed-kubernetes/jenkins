@@ -422,7 +422,7 @@ class BuildEntity:
 
         out = retry_call(
             capture,
-            fargs=["charm", "push", self.dst_path, self.entity, *resource_args],
+            fargs=[["charm", "push", self.dst_path, self.entity, *resource_args]],
             fkwargs={"check": True},
             delay=2,
             backoff=2,
@@ -492,14 +492,14 @@ class BuildEntity:
             if resource_key:
                 out = retry_call(
                     cmd_ok,
-                    fargs=[
+                    fargs=[[
                         "charm",
                         "attach",
                         self.entity,
                         "--channel",
                         from_channel,
                         f"{resource_key}={resource_path}",
-                    ],
+                    ]],
                     fkwargs={"check": True},
                     delay=2,
                     backoff=2,
