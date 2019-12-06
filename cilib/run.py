@@ -16,10 +16,11 @@ def capture(script, **kwargs):
     """ capture command output
     """
     env = os.environ.copy()
-    if not isinstance(script, list) and 'shell' not in kwargs:
+    if not isinstance(script, list) and "shell" not in kwargs:
         script = shlex.split(script)
     process = subprocess.run(
-        script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, **kwargs)
+        script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, **kwargs
+    )
     return SimpleNamespace(
         ok=bool(process.returncode == 0),
         returncode=process.returncode,
@@ -33,7 +34,11 @@ def cmd_ok(script, **kwargs):
     returns exit status
     """
     env = os.environ.copy()
-    if not isinstance(script, list) and 'shell' not in kwargs:
+    check = None
+    if "check" in kwargs:
+        check = kwargs["check"]
+        del kwargs["check"]
+    if not isinstance(script, list) and "shell" not in kwargs:
         script = shlex.split(script)
     process = subprocess.Popen(
         script, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, **kwargs
@@ -42,4 +47,6 @@ def cmd_ok(script, **kwargs):
     with process.stdout:
         _log_sub_out(process.stdout)
     exitcode = process.wait()
+    if check and exitcode > 0:
+        raise subprocess.CalledProcessError("Check initialized, raising exception.")
     return SimpleNamespace(ok=bool(exitcode == 0), returncode=exitcode)

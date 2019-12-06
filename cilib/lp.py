@@ -114,9 +114,7 @@ class Client:
                 auto_build_pocket="Updates",
                 auto_build_archive=self.archive(),
             )
-        retry_call(snap.lp_save,
-                   delay=2,
-                   backoff=2,
-                   tries=5,
-                   exceptions=PreconditionFailed)
+        retry_call(
+            snap.lp_save, delay=2, backoff=2, tries=5, exceptions=PreconditionFailed
+        )
         return snap
