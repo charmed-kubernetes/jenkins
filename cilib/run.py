@@ -48,5 +48,5 @@ def cmd_ok(script, **kwargs):
         _log_sub_out(process.stdout)
     exitcode = process.wait()
     if check and exitcode > 0:
-        raise subprocess.CalledProcessError("Check initialized, raising exception.")
+        raise subprocess.CalledProcessError(exitcode, "", "")
     return SimpleNamespace(ok=bool(exitcode == 0), returncode=exitcode)
