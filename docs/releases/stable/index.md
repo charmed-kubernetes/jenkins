@@ -12,8 +12,9 @@ locally.
 Each step should contain the following:
 
 - Job name as seen in jenkins
-- Requirements to run the job including what environment variables need to be set
-- Example of running the OGC specification within tox.
+- Description
+- Any additional notes/caveats
+- Example jenkins screenshots if necessary on the options that should be used.
 
 ### Tag existing stable branches with the current stable bundle
 

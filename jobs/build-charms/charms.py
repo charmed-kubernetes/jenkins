@@ -30,6 +30,7 @@ from threading import Semaphore
 from multiprocessing import cpu_count
 from retry.api import retry_call
 from subprocess import CalledProcessError
+from types import SimpleNamespace
 import click
 import shutil
 import sh
@@ -302,14 +303,25 @@ class BuildEntity:
 
     def get_charmstore_rev_url(self):
         # Grab charmstore revision for channels charm
-        response = sh.charm.show(
-            self.entity, "--channel", self.build.db["build_args"]["to_channel"], "id"
+        response = capture(
+            [
+                "charm",
+                "show",
+                self.entity,
+                "--channel",
+                self.build.db["build_args"]["to_channel"],
+                "id",
+            ]
         )
+        if not response.ok:
+            return None
         response = yaml.safe_load(response.stdout.decode().strip())
         return response["id"]["Id"]
 
     def download(self, fname):
         entity_p = self.get_charmstore_rev_url().lstrip("cs:")
+        if not entity_p:
+            return SimpleNamespace(ok=False)
         url = f"https://api.jujucharms.com/charmstore/v5/{entity_p}/archive/{fname}"
         click.echo(f"Downloading {fname} from {url}")
         return requests.get(url)
@@ -492,14 +504,16 @@ class BuildEntity:
             if resource_key:
                 out = retry_call(
                     cmd_ok,
-                    fargs=[[
-                        "charm",
-                        "attach",
-                        self.entity,
-                        "--channel",
-                        from_channel,
-                        f"{resource_key}={resource_path}",
-                    ]],
+                    fargs=[
+                        [
+                            "charm",
+                            "attach",
+                            self.entity,
+                            "--channel",
+                            from_channel,
+                            f"{resource_key}={resource_path}",
+                        ]
+                    ],
                     fkwargs={"check": True},
                     delay=2,
                     backoff=2,
