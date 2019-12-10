@@ -71,13 +71,13 @@ pipeline {
         }
         stage('Release Kubeflow Bundle') {
             steps {
-                // Copy forked mysql interface from charmed-osm into interfaces dir
+                // Copy forked mysql interface from charmed-osm into bundle dir so that
+                // it gets picked up by charm build.
                 exec 'git clone git://git.launchpad.net/canonical-osm'
-                exec 'mkdir -p ~/charms/interfaces'
-                exec 'cp -r canonical-osm/charms/interfaces/juju-relation-mysql ~/charms/interfaces/mysql'
+                exec 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
+                exec 'cp -r canonical-osm/charms/interfaces/juju-relation-mysql bundle-kubeflow/mysql'
 
                 // Publish bundle to charm store
-                exec 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
                 exec 'cd bundle-kubeflow && CHARM_BUILD_DIR=/tmp/charms juju bundle publish --url cs:~kubeflow-charmers/kubeflow'
             }
             when { expression { ゴゴゴ } }
