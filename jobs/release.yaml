@@ -1,68 +1,32 @@
 # Release Job for k8s
+#
+# Doc: http://jenkaas.s3-website-us-east-1.amazonaws.com/docs/releases/stable/
 
-# Process
-# 1. Tag all current stable branches with the latest stable bundle revision
-# 2. Refresh all repos master branch onto stable, this marks the next major.minor.patch release
-# 3. Build all charms using all layers locally which is to be git cloned and utilizing the stable branch
-# 4. Promote MAJOR.MINOR.PATCH snaps from edge to beta/candidate
-# 5. Conformance test
-# 6. QA Validation
-# 7. QA Validation major to major upgrades
-# 8. QA Addon validation for Vault, NVidia, Calico, Tigera
-# 9. Manual release from beta/candidate channels/tracks to stable channels/tracks
+
 - job:
-    name: 'release'
+    name: 'validate-minor-release'
     description: |
       Promote, Validate, Release to stable. This job will run through all
       necessary steps to validate a particular version of k8s and make sure the
       charms and snaps are published accordingly.
-    project-type: pipeline
+    project-type: freestyle
     parameters:
       - global-params
-      - string:
-          name: CURRENT_STABLE_BUNDLE_REV
-          description: |
-            Input the current bundle revision associated with the stable branch.
-            The downstream repos will then be tagged with that bundle revision
-            so that fixes can still be applied to our currently supported
-            releases.
-      - string:
-          name: CURRENT_STABLE_K8S_VERSION
-          default: '1.15'
-          description: |
-            Input the current stable Kubernetes release, for example, if
-            releasing a new minor of 1.16 then this parameter would be set to
-            1.15 so that when the stable tagging occurs 1.15 will be included in
-            the name.
-      - string:
-          name: CHARM_PROMOTE_TO
-          default: 'beta'
-          description: |
-            In the format of 'beta candidate'. Until charmstore supports tracks
-            this should usually be the 'beta' channel to promote to.
-      - string:
-          name: JUJU_DEPLOY_CHANNEL
-          default: 'beta'
-          description: |
-            Bundle channel to test from, with major releases this is typically
-            the beta channel as to not overwrite any hotfix releases happening.
-      - string:
-          name: SNAP_VERSION
-          default: '1.16/stable'
-          description: |
-            Snap kubernetes channel to test from
-      - string:
-          name: SNAP_VERSION_UPGRADE_TO
-          default: '1.16/stable'
-          description: |
-            Snap kubernetes channel to upgrade too when testing prior minor releases.
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/release/Jenkinsfile
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    scm:
+      - k8s-jenkins-jenkaas
     properties:
+      - block-on-build-release
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/release"
+      - ogc-execute-spec:
+          JOB_SPEC_DIR: "jobs/release"
+          JOB_SPEC_FILE: "release-spec.yml"
 
 
 - job:
