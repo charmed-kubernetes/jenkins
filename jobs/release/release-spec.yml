@@ -42,6 +42,14 @@ meta:
     tox -e py36 -- ogc --spec jobs/sync-upstream/spec.yml -t tag-stable-rev
     ```
 
+    ### Submit PR's to bundle and charms to pin snap version on the stable branches
+
+    We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
+    are set to `<k8sver>/stable` prior to cutting a new release.
+
+    > Note: The charms themselves also need to be done as some do not use our
+      bundles for deployment.
+
     ### Rebase stable on top of master git branches
 
     Once all repositories are tagged we need to rebase what's in master git on
@@ -64,14 +72,6 @@ meta:
     ```
     tox -e py36 -- ogc --spec jobs/sync-upstream/spec.yml -t cut-stable-release
     ```
-
-    ### Submit PR's to bundle and charms to pin snap version on the stable branches
-
-    We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
-    are set to `<k8sver>/stable` prior to cutting a new release.
-
-    > Note: The charms themselves also need to be done as some do not use our
-      bundles for deployment.
 
     ### Bump snap version to next minor release
 

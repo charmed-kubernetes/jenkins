@@ -47,7 +47,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     ancillary_list = yaml.safe_load(Path(ancillary_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
-    for layer_map in layer_list + charm_list:
+    for layer_map in layer_list + charm_list + ancillary_list:
         for layer_name, repos in layer_map.items():
             downstream = repos["downstream"]
             if not repos.get("needs_stable", True):

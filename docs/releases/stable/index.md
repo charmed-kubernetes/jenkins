@@ -15,14 +15,6 @@ Each step should contain the following:
 - Requirements to run the job including what environment variables need to be set
 - Example of running the OGC specification within tox.
 
-### Submit PR's to bundle and charms to pin snap version
-
-We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
-are set to `<k8sver>/stable` prior to cutting a new release.
-
-> Note: The charms themselves also need to be done as some do not use our
-  bundles for deployment.
-
 ### Tag existing stable branches with the current stable bundle
 
 For all charm repos that make up CK tag the existing stable branches with
@@ -67,6 +59,14 @@ _Example_:
 ```
 tox -e py36 -- ogc --spec jobs/sync-upstream/spec.yml -t cut-stable-release
 ```
+
+### Submit PR's to bundle and charms to pin snap version on the stable branches
+
+We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
+are set to `<k8sver>/stable` prior to cutting a new release.
+
+> Note: The charms themselves also need to be done as some do not use our
+  bundles for deployment.
 
 ### Bump snap version to next minor release
 
