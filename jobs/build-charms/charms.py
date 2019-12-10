@@ -319,9 +319,10 @@ class BuildEntity:
         return response["id"]["Id"]
 
     def download(self, fname):
-        entity_p = self.get_charmstore_rev_url().lstrip("cs:")
+        entity_p = self.get_charmstore_rev_url()
         if not entity_p:
             return SimpleNamespace(ok=False)
+        entity_p = entity_p.lstrip("cs:")
         url = f"https://api.jujucharms.com/charmstore/v5/{entity_p}/archive/{fname}"
         click.echo(f"Downloading {fname} from {url}")
         return requests.get(url)
