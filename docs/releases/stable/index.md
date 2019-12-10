@@ -17,8 +17,11 @@ Each step should contain the following:
 
 ### Submit PR's to bundle and charms to pin snap version
 
-We need to make sure that the bundle fragments and kubernetes-worker/master
+We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
 are set to `<k8sver>/stable` prior to cutting a new release.
+
+> Note: The charms themselves also need to be done as some do not use our
+  bundles for deployment.
 
 ### Tag existing stable branches with the current stable bundle
 
