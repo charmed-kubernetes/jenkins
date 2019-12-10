@@ -77,7 +77,7 @@ candidate channels of the snapstore.
 
 With all bits in place, time to validate CK.
 
-**Job**: validate-minor-release
+**Job**: https://jenkins.canonical.com/k8s/job/validate-minor-release/
 
 ### CNCF Conformance
 
@@ -94,53 +94,28 @@ that is complete and relayed to us, we can start the release to stable.
 - Enhancements
 - Known Limitations/Issues
 
-### Promote charms from **beta** to **stable**
+### Promote charms and bundles from **beta** to **stable**
 
 This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
 it will only promote the necessary charms that make up charmed-kuberneetes (the
 others are kubeflow related).
 
-_Jenkins Job_: promote-charms
+**Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
 
-_Requirements_:
+#### Options
 
-**Environment Variables**:
+![promote charm options](promote-charms.png)
 
-- TOX_WORK_DIR=~/.tox
-- FROM_CHANNEL=beta
-- TO_CHANNEL=stable
-- CHARM_LIST=jobs/includes/charm-support-matrix.inc
-- FILTER_BY_TAG=k8s
+### Promote snaps from <stable track>/stable to latest/<risks>
 
+Once complete, the next stable release needs to be promoted into the
+**latest/<risks>** tracks as the default version for snap installs.
 
-_Example_:
+**Job**: https://jenkins.canonical.com/k8s/job/promote-snaps/
 
-```
-tox -e py36 -- ogc jobs/build-charms/spec.yml -t promote-charms
-```
+#### Options
 
-### Promote bundles from **beta** to **stable**
-
-Same as charm promotion.
-
-_Jenkins Job_: promote-bundles
-
-_Requirements_:
-
-**Environment Variables**:
-
-- TOX_WORK_DIR=~/.tox
-- FROM_CHANNEL=beta
-- TO_CHANNEL=stable
-- CHARM_LIST=jobs/includes/charm-support-matrix.inc
-- FILTER_BY_TAG=k8s
-
-
-_Example_:
-
-```
-tox -e py36 -- ogc jobs/build-charms/spec.yml -t promote-bundles
-```
+![promote snap options](promote-snaps-stable.png)
 
 ### Send announcement
 
@@ -151,8 +126,8 @@ Email annoucement to k8s-crew with any relevant information.
 Update ck bundle repo to match the current stable snap release and point the
 latest to the next minor version.
 
-For example, if 1.16 is the upcoming release, then once CK is released we
-need to update the bundle repo stable branch to reflect 1.16/stable. Also,
+For example, if 1.17 is the upcoming release, then once CK is released we
+need to update the bundle repo stable branch to reflect 1.17/stable. Also,
 update the master branch to point to the next K8S release, in this case
-1.17/edge.
+1.18/edge.
 
