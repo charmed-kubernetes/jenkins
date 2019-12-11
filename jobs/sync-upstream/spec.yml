@@ -1,6 +1,6 @@
 plan:
   - script:
-      - python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc
+      - python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc --charm-list jobs/includes/charm-support-matrix.inc
     tags: [sync]
   - script:
       - |

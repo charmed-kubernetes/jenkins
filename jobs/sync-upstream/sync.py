@@ -170,15 +170,16 @@ def tag_stable(
     )
 
 
-def _sync_upstream(layer_list, dry_run):
+def _sync_upstream(layer_list, charm_list, dry_run):
     """ Syncs any of the forked upstream repos
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
+    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
 
-    for layer_map in layer_list:
+    for layer_map in layer_list + charm_list:
         for layer_name, repos in layer_map.items():
             upstream = repos["upstream"]
             downstream = repos["downstream"]
@@ -223,14 +224,15 @@ def _sync_upstream(layer_list, dry_run):
 
 @cli.command()
 @click.option("--layer-list", required=True, help="Path to supported layer list")
+@click.option("--charm-list", required=True, help="Path to supported charm list")
 @click.option("--dry-run", is_flag=True)
-def forks(layer_list, dry_run):
+def forks(layer_list, charm_list, dry_run):
     """ Syncs all upstream forks
     """
     # Try auto-merge; if conflict: update_readme.py && git add README.md && git
     # commit. If that fails, too, then it was a JSON conflict that will have to
     # be handled manually.
-    return _sync_upstream(layer_list, dry_run)
+    return _sync_upstream(layer_list, charm_list, dry_run)
 
 
 if __name__ == "__main__":
