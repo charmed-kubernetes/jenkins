@@ -70,7 +70,7 @@
     namespace: 'containers'
     tags: ['k8s', 'tigera-secure-ee']
 - keepalived:
-    upstream: "https://github.com/charmed-kubernetes/charm-keepalived.git"
+    upstream: "https://github.com/juju-solutions/charm-keepalived.git"
     downstream: 'juju-solutions/charm-keepalived.git'
     namespace: 'containers'
     tags: ['general', 'keepalived']
