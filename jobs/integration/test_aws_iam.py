@@ -7,6 +7,7 @@ from .logger import log
 from subprocess import check_output
 from shlex import split
 from configobj import ConfigObj
+from cilib.run import capture
 import sh
 import os
 
@@ -27,7 +28,9 @@ def arn():
             }
         ],
     }
-    arn = sh.aws.iam(
+    log(f"Role Policy {policy}")
+    arn = capture(
+        ["aws", "iam",
         "create-role",
         "--role-name",
         "KubernetesAdmin",
@@ -39,7 +42,8 @@ def arn():
         "text",
         "--query",
         "Role.Arn",
-    )
+        ])
+    log(f"Created arn: {arn}")
     yield arn.stdout.decode().strip()
 
 
