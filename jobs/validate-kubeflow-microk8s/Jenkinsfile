@@ -67,11 +67,8 @@ pipeline {
             steps {
                 // Copy forked mysql interface from charmed-osm into interfaces dir
                 exec 'git clone git://git.launchpad.net/canonical-osm'
-                exec 'mkdir -p ~/charms/interfaces'
-                exec 'cp -r canonical-osm/charms/interfaces/juju-relation-mysql ~/charms/interfaces/mysql'
-
-                // Deploy Kubeflow to MicroK8s
                 exec 'git clone https://github.com/juju-solutions/bundle-kubeflow.git'
+                exec 'cp -r canonical-osm/charms/interfaces/juju-relation-mysql bundle-kubeflow/mysql'
                 exec 'cd bundle-kubeflow && python3 ./scripts/cli.py microk8s setup'
                 exec 'cd bundle-kubeflow && KUBEFLOW_AUTH_PASSWORD=foobar python3 ./scripts/cli.py deploy-to uk8s --build'
             }
