@@ -9,6 +9,7 @@ plan:
       - JUJU_MODEL=validate-aws-iam-model
     if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
     before-script:
+      - juju kill-controller -y $JUJU_CONTROLLER || true
       - juju:
           cloud: $JUJU_CLOUD
           controller: $JUJU_CONTROLLER
