@@ -22,7 +22,7 @@ def arn():
         "Statement": [
             {
                 "Effect": "Allow",
-                "Principal": {"AWS": os.environ["AWSIAMARN"]},
+                "Resource": os.environ["AWSIAMARN"],
                 "Action": "sts:AssumeRole",
                 "Condition": {},
             }
