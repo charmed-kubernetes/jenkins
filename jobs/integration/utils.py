@@ -315,7 +315,9 @@ async def log_snap_versions(model, prefix="before"):
         if unit.dead:
             continue
         action = await unit.run("snap list")
-        snap_versions = action.data["results"].get("Stdout", "").strip() or "No snaps found"
+        snap_versions = (
+            action.data["results"].get("Stdout", "").strip() or "No snaps found"
+        )
         log(f"{prefix} {unit.name} {snap_versions}")
 
 

@@ -210,7 +210,9 @@ class Microk8sSnap:
                 click.echo(err.output)
                 raise err
         else:
-            cmd = "mv microk8s/microk8s_*_{}.snap microk8s_latest_{}.snap".format(arch, arch)
+            cmd = "mv microk8s/microk8s_*_{}.snap microk8s_latest_{}.snap".format(
+                arch, arch
+            )
             run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
 
         target = "{}/{}".format(self.track, self.channel)

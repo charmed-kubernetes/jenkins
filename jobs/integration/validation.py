@@ -550,7 +550,9 @@ async def test_gpu_support(model, tools):
     # See if the workers have nvidia
     workers = model.applications["kubernetes-worker"]
     action = await workers.units[0].run("lspci -nnk")
-    nvidia = True if action.results.get("Stdout", "").lower().count("nvidia") > 0 else False
+    nvidia = (
+        True if action.results.get("Stdout", "").lower().count("nvidia") > 0 else False
+    )
 
     master_unit = model.applications["kubernetes-master"].units[0]
     if not nvidia:
@@ -1038,9 +1040,7 @@ async def test_audit_webhook(model, tools):
     # Deploy an nginx target for webhook
     local_path = os.path.dirname(__file__) + "/templates/test-audit-webhook.yaml"
     remote_path = "/tmp/test-audit-webhook.yaml"
-    await scp_to(
-        local_path, unit, remote_path, tools.controller_name, tools.connection
-    )
+    await scp_to(local_path, unit, remote_path, tools.controller_name, tools.connection)
     cmd = "/snap/bin/kubectl apply -f " + remote_path
     await run_until_success(unit, cmd)
 
@@ -1180,7 +1180,10 @@ async def test_keystone(model, tools):
            OS_PASSWORD=bad /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
     output = await one_master.run(cmd)
     assert output.status == "completed"
-    if "invalid user credentials" not in output.data["results"].get("Stderr", "").lower():
+    if (
+        "invalid user credentials"
+        not in output.data["results"].get("Stderr", "").lower()
+    ):
         log("Failing, auth did not fail as expected")
         log(pformat(output.data["results"]))
         assert False
@@ -1191,7 +1194,10 @@ async def test_keystone(model, tools):
            OS_PASSWORD=badpw /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
     output = await one_master.run(cmd)
     assert output.status == "completed"
-    if "invalid user credentials" not in output.data["results"].get("Stderr", "").lower():
+    if (
+        "invalid user credentials"
+        not in output.data["results"].get("Stderr", "").lower()
+    ):
         log("Failing, auth did not fail as expected")
         log(pformat(output.data["results"]))
         assert False
@@ -1264,7 +1270,8 @@ data:
 
         assert output.status == "completed"
         assert (
-            "invalid user credentials" not in output.data["results"].get("Stderr", "").lower()
+            "invalid user credentials"
+            not in output.data["results"].get("Stderr", "").lower()
         )
         assert "error" not in output.data["results"].get("Stderr", "").lower()
 
@@ -1276,7 +1283,8 @@ data:
         output = await one_master.run(cmd)
         assert output.status == "completed"
         assert (
-            "invalid user credentials" not in output.data["results"].get("Stderr", "").lower()
+            "invalid user credentials"
+            not in output.data["results"].get("Stderr", "").lower()
         )
         assert "forbidden" in output.data["results"].get("Stderr", "").lower()
 
@@ -1291,7 +1299,10 @@ data:
            --kubeconfig /home/ubuntu/config get clusterroles"
     output = await one_master.run(cmd)
     assert output.status == "completed"
-    assert "invalid user credentials" not in output.data["results"].get("Stderr", "").lower()
+    assert (
+        "invalid user credentials"
+        not in output.data["results"].get("Stderr", "").lower()
+    )
     assert "error" not in output.data["results"].get("Stderr", "").lower()
     assert "forbidden" not in output.data["results"].get("Stderr", "").lower()
 
@@ -1428,7 +1439,9 @@ async def test_encryption_at_rest(model, tools):
         if output.results.get("Stderr", ""):
             log("stderr: {}".format(output.results.get("Stderr", "")))
         assert output.status == "completed"
-        assert b64encode(b"secret-value").decode("utf8") in output.results.get("Stdout", "")
+        assert b64encode(b"secret-value").decode("utf8") in output.results.get(
+            "Stdout", ""
+        )
         log("Verifying encryption")
         # verify secret is encrypted
         etcd = model.applications["etcd"].units[0]
@@ -1438,7 +1451,9 @@ async def test_encryption_at_rest(model, tools):
             "get /registry/secrets/default/test-secret | strings"
         )
         assert output.status == "completed"
-        assert b64encode(b"secret-value").decode("utf8") not in output.results.get("Stdout", "")
+        assert b64encode(b"secret-value").decode("utf8") not in output.results.get(
+            "Stdout", ""
+        )
     finally:
         log("Cleaning up")
         # cleanup
@@ -1617,25 +1632,22 @@ async def test_sysctl(model, tools):
 
 @pytest.mark.asyncio
 async def test_cloud_node_labels(model, tools):
-    unit = model.applications['kubernetes-master'].units[0]
-    cmd = '/snap/bin/kubectl get no -o json'
+    unit = model.applications["kubernetes-master"].units[0]
+    cmd = "/snap/bin/kubectl get no -o json"
     raw_nodes = await run_until_success(unit, cmd)
-    nodes = json.loads(raw_nodes)['items']
-    labels = [
-        node['metadata'].get('labels', {}).get('juju.io/cloud')
-        for node in nodes
-    ]
+    nodes = json.loads(raw_nodes)["items"]
+    labels = [node["metadata"].get("labels", {}).get("juju.io/cloud") for node in nodes]
     assert all(label == labels[0] for label in labels)
     label = labels[0]
-    if 'aws-integrator' in model.applications:
-        assert label == 'ec2'
-    elif 'azure-integrator' in model.applications:
-        assert label == 'azure'
-    elif 'gcp-integrator' in model.applications:
-        assert label == 'gce'
-    elif 'openstack-integrator' in model.applications:
-        assert label == 'openstack'
-    elif 'vsphere-integrator' in model.applications:
-        assert label == 'vsphere'
+    if "aws-integrator" in model.applications:
+        assert label == "ec2"
+    elif "azure-integrator" in model.applications:
+        assert label == "azure"
+    elif "gcp-integrator" in model.applications:
+        assert label == "gce"
+    elif "openstack-integrator" in model.applications:
+        assert label == "openstack"
+    elif "vsphere-integrator" in model.applications:
+        assert label == "vsphere"
     else:
         assert label is None

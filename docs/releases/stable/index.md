@@ -103,9 +103,15 @@ others are kubeflow related).
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
 
-#### Options
+#### Promote charm Options
 
 ![promote charm options](promote-charms.png)
+
+**Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
+
+#### Promote bundle Options
+
+![promote bundle options](promote-bundles.png)
 
 ### Promote snaps from <stable track>/stable to latest/<risks>
 
@@ -120,7 +126,7 @@ Once complete, the next stable release needs to be promoted into the
 
 ### Send announcement
 
-Email annoucement to k8s-crew with any relevant information.
+Email announcement to k8s-crew with any relevant information.
 
 ### Update ck bundle repo references
 

@@ -102,7 +102,9 @@ async def test_validate_hacluster(model, tools):
         log("verifying corosync...")
         for unit in app.units:
             action = await unit.run("corosync-cmapctl")
-            assert "runtime.totem.pg.mrp.srp.members" in action.results.get("Stdout", "")
+            assert "runtime.totem.pg.mrp.srp.members" in action.results.get(
+                "Stdout", ""
+            )
 
         log("verifying pacemaker...")
         for unit in app.units:

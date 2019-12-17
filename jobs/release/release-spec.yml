@@ -165,13 +165,13 @@ meta:
 
     **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
 
-    #### Options
+    #### Promote charm Options
 
     ![promote charm options](promote-charms.png)
 
     **Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
 
-    #### Options
+    #### Promote bundle Options
 
     ![promote bundle options](promote-bundles.png)
 
@@ -188,7 +188,7 @@ meta:
 
     ### Send announcement
 
-    Email annoucement to k8s-crew with any relevant information.
+    Email announcement to k8s-crew with any relevant information.
 
     ### Update ck bundle repo references
 

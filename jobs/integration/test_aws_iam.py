@@ -30,19 +30,22 @@ def arn():
     }
     log(f"Role Policy {policy}")
     arn = capture(
-        ["aws", "iam",
-        "create-role",
-        "--role-name",
-        "KubernetesAdmin",
-        "--description",
-        "Kubernetes administrator role (for AWS IAM Authenticator for Kubernetes).",
-        "--assume-role-policy-document",
-        json.dumps(policy),
-        "--output",
-        "text",
-        "--query",
-        "Role.Arn",
-        ])
+        [
+            "aws",
+            "iam",
+            "create-role",
+            "--role-name",
+            "KubernetesAdmin",
+            "--description",
+            "Kubernetes administrator role (for AWS IAM Authenticator for Kubernetes).",
+            "--assume-role-policy-document",
+            json.dumps(policy),
+            "--output",
+            "text",
+            "--query",
+            "Role.Arn",
+        ]
+    )
     log(f"Created arn: {arn}")
     yield arn.stdout.decode().strip()
 

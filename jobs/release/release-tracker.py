@@ -4,7 +4,7 @@
 import sys
 import os
 
-sys.path.insert(0, os.environ['WORKSPACE'])
+sys.path.insert(0, os.environ["WORKSPACE"])
 
 import argparse
 import click
