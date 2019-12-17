@@ -9,7 +9,7 @@ meta:
 plan:
   - env:
       - JUJU_DEPLOY_CHANNEL=stable
-      - SNAP_VERSION=1.16/stable
+      - SNAP_VERSION=1.17/stable
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-conformance
