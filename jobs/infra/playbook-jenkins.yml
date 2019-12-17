@@ -371,7 +371,7 @@
         mkdir -p $HOME/go/src || true
         go get github.com/heptio/sonobuoy
         cd $HOME/go/src/github.com/heptio/sonobuoy && \
-        git checkout v0.16.0 && \
+        git checkout v0.17.0 && \
         /snap/bin/go install -i .
         rm -rf $HOME/go/src/github.com/heptio/sonobuoy
       args:
