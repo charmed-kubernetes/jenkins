@@ -8,7 +8,6 @@ from subprocess import check_output
 from shlex import split
 from configobj import ConfigObj
 from cilib.run import capture
-import sh
 import os
 
 
