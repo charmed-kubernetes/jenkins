@@ -15,7 +15,7 @@ def max_rev(revlist, version_filter):
     )
 
 
-def revisions(snap, version_filter, arch="amd64", exclude_pre=False):
+def revisions(snap, version_filter_track, arch="amd64", exclude_pre=False):
     """ Get revisions of snap
 
     snap: name of snap
@@ -30,9 +30,11 @@ def revisions(snap, version_filter, arch="amd64", exclude_pre=False):
     revision_list = [
         line
         for line in revision_list
-        if exclude_pre and semver.parse(line[-2])["prerelease"] is None
+        if exclude_pre
+        and semver.parse(line[-2])["prerelease"] is None
+        and any(version_filter_track in item for item in line)
     ]
-    rev = max_rev(revision_list, version_filter)
+    rev = max_rev(revision_list, version_filter_track.split("/")[0])
     rev_map = [line for line in revision_list if rev == int(line[0])]
 
     if rev_map:
@@ -40,7 +42,7 @@ def revisions(snap, version_filter, arch="amd64", exclude_pre=False):
     return []
 
 
-def latest(snap, version, arch="amd64", exclude_pre=False):
+def latest(snap, version_track, arch="amd64", exclude_pre=False):
     """ Get latest snap revision
     """
-    return revisions(snap, version, arch, exclude_pre)
+    return revisions(snap, version_track, arch, exclude_pre)

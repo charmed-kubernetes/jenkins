@@ -398,7 +398,7 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
         snap_list = []
     snap_list.append("cdk-addons")
     snaps_to_promote = [
-        {snap: snapapi.latest(snap, from_track.split("/")[0], _arch, exclude_pre)}
+        {snap: snapapi.latest(snap, from_track, _arch, exclude_pre)}
         for snap in snap_list
         for _arch in arch.split(" ")
     ]
@@ -406,7 +406,7 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
         _snap_name = next(iter(_snap))
         rev, uploaded, arch, version, channels = _snap[_snap_name]
         for track in to_track.split(" "):
-            click.echo(f"Promoting ({rev}) {_snap[_snap_name]} {version} -> {track}")
+            click.echo(f"Promoting ({rev}) {_snap} {version} -> {track}")
             try:
                 str(sh.snapcraft.release(_snap_name, rev, track))
             except sh.ErrorReturnCode as error:
