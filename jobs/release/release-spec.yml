@@ -169,6 +169,12 @@ meta:
 
     ![promote charm options](promote-charms.png)
 
+    **Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
+
+    #### Options
+
+    ![promote bundle options](promote-bundles.png)
+
     ### Promote snaps from <stable track>/stable to latest/<risks>
 
     Once complete, the next stable release needs to be promoted into the
