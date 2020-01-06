@@ -105,7 +105,7 @@
 
 - job:
     name: 'validate-ck-localhost'
-    node: runner-localhost
+    node: runner-amd64
     description: |
       Validates CDK edge, supports last three recent releases on localhost.
     project-type: freestyle
