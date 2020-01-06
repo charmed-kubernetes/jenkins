@@ -16,6 +16,8 @@ plan:
       - JUJU_MODEL=validate-conformance
       - SONOBUOY_VERSION=0.17.0
     before-script:
+      - wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+      - tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - !include jobs/spec-helpers/bootstrap.yml
     script:
@@ -23,9 +25,6 @@ plan:
           script: |
             #!/bin/bash
             set -eux
-            wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.17.0/sonobuoy_$SONOBUOY_VERSION_linux_amd64.tar.gz
-            tar xvf sonobuoy_$SONOBUOY_VERSION_linux_amd64.tar.gz
-
             mkdir -p $HOME/.kube
             juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
             export RBAC_ENABLED=$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)
