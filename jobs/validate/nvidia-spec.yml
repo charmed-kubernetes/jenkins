@@ -1,7 +1,7 @@
 plan:
   - &BASE_JOB
     env:
-      - SNAP_VERSION=1.17/edge
+      - SNAP_VERSION=1.18/edge
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
@@ -68,23 +68,23 @@ plan:
                --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
   - <<: *BASE_JOB
     env:
+      - SNAP_VERSION=1.17/edge
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nvidia
+      - JUJU_MODEL=validate-model
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.17/stable
+      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - JUJU_DEPLOY_CHANNEL=edge
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-nvidia
+      - JUJU_MODEL=validate-model
+  - <<: *BASE_JOB
+    env:
       - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-nvidia
-      - JUJU_MODEL=validate-model
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.16/stable
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-nvidia
-      - JUJU_MODEL=validate-model
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.15/edge
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
@@ -93,7 +93,7 @@ plan:
     if: '[[ $(date +"%A") = "Saturday" ]]'
   - <<: *BASE_JOB
     env:
-      - SNAP_VERSION=1.14/edge
+      - SNAP_VERSION=1.15/edge
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
