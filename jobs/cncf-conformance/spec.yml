@@ -16,6 +16,7 @@ plan:
       - JUJU_MODEL=validate-conformance
       - SONOBUOY_VERSION=0.17.1
     before-script:
+      - rm -rf sonobuoy.*
       - wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
       - tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
       - juju kill-controller -y $JUJU_CONTROLLER || true
