@@ -1,7 +1,7 @@
 plan:
   - &BASE_JOB
     env:
-      - JUJU_VERSION=2.6/edge
+      - JUJU_VERSION=stable
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_MODEL=validate-aws
       - REGION=us-east-2
@@ -47,8 +47,8 @@ plan:
         git clone https://github.com/juju-solutions/bundle-kubeflow.git
         cd bundle-kubeflow
         git checkout "$BUNDLE_REVISION"
-        python3 ./scripts/cli.py cdk setup --region "$REGION" --channel edge
-        KUBEFLOW_AUTH_PASSWORD=foobar python3 scripts/cli.py deploy-to cdkkf --build --channel $JUJU_DEPLOY_CHANNEL
+        python3 ./scripts/cli.py ck setup --region "$REGION" --channel edge
+        KUBEFLOW_AUTH_PASSWORD=foobar python3 scripts/cli.py deploy-to ckkf --build --channel $JUJU_DEPLOY_CHANNEL
         ./tests/run.sh
         ./tests/dump-pipeline-logs.sh || true
 
@@ -67,8 +67,8 @@ plan:
 
         cat >kubeflow-cleanup<<EOF
         #!/bin/bash
-        /snap/bin/juju destroy-model cdkkf:kubeflow -y --destroy-storage --force || true
-        /snap/bin/juju destroy-controller -y --destroy-all-models --destroy-storage cdkkf || true
+        /snap/bin/juju destroy-model ckkf:kubeflow -y --destroy-storage --force || true
+        /snap/bin/juju destroy-controller -y --destroy-all-models --destroy-storage ckkf || true
         EOF
 
         chmod +x kubeflow-cleanup
