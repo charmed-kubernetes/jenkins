@@ -14,6 +14,13 @@ def get_test_ips():
         return ["10.96.117.5", "10.96.117.200"]
 
 
+def get_master_name(model):
+    if "kubeapi-load-balancer" in model.applications:
+        return "kubeapi-load-balancer"
+    else:
+        return "kubernetes-master"
+
+
 def is_app_in_model(app_str, model):
     """Searches for app names in the juju model containing app_str."""
     for app in model.applications.keys():
@@ -57,14 +64,46 @@ async def verify_ip_valid(model, ip):
         assert ", 0% packet loss" in action.results.get("Stdout", "")
 
 
+async def do_verification(model, app, ip):
+    """Basic hacluster verification
+
+    Verifies:
+      corosync and pacemaker
+      kubeconfig and kubelet config point to vip
+      VIP is pingable
+    """
+    log("verifying corosync...")
+    for unit in app.units:
+        action = await unit.run("corosync-cmapctl")
+        assert "runtime.totem.pg.mrp.srp.members" in action.results.get("Stdout", "")
+
+    log("verifying pacemaker...")
+    for unit in app.units:
+        action = await unit.run("crm status")
+        assert "Stopped" not in action.results.get("Stdout", "")
+
+    # kubeconfig points to virtual ip
+    await verify_kubeconfig_has_ip(model, ip)
+    # kubelet config points to virtual ip
+    await verify_kubelet_uses_ip(model, ip)
+    # virtual ip is pingable
+    await verify_ip_valid(model, ip)
+
+
+@pytest.mark.asyncio
+async def test_validate_existing_hacluster(model, tools):
+    """Assume hacluster is already set up and do not modify the deploy"""
+    name = get_master_name(model)
+    app = model.applications[name]
+
+    for ip in get_test_ips():
+        await do_verification(model, app, ip)
+
+
 @pytest.mark.asyncio
 async def test_validate_hacluster(model, tools):
-    if "kubeapi-load-balancer" in model.applications:
-        name = "kubeapi-load-balancer"
-        app = model.applications[name]
-    else:
-        name = "kubernetes-master"
-        app = model.applications[name]
+    name = get_master_name(model)
+    app = model.applications[name]
 
     masters = model.applications["kubernetes-master"]
     k8s_version_str = masters.data["workload-version"]
@@ -98,22 +137,4 @@ async def test_validate_hacluster(model, tools):
         log("waiting for cluster to settle...")
         await tools.juju_wait()
 
-        # tests:
-        log("verifying corosync...")
-        for unit in app.units:
-            action = await unit.run("corosync-cmapctl")
-            assert "runtime.totem.pg.mrp.srp.members" in action.results.get(
-                "Stdout", ""
-            )
-
-        log("verifying pacemaker...")
-        for unit in app.units:
-            action = await unit.run("crm status")
-            assert "Stopped" not in action.results.get("Stdout", "")
-
-        # kubeconfig points to virtual ip
-        await verify_kubeconfig_has_ip(model, ip)
-        # kubelet config points to virtual ip
-        await verify_kubelet_uses_ip(model, ip)
-        # virtual ip is pingable
-        await verify_ip_valid(model, ip)
+        await do_verification(model, app, ip)
