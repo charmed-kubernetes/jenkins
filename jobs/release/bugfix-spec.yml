@@ -3,7 +3,7 @@ sequential: yes
 
 plan:
   - env:
-      - SNAP_VERSION=1.16/stable
+      - SNAP_VERSION=1.17/stable
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=candidate
       - JUJU_CLOUD=aws/us-east-1
@@ -24,7 +24,7 @@ plan:
       - python3 jobs/release/release-tracker.py --release-id $RELEASE_ID set-phase --name validate --result fail
     tags: [validate-ck-candidate]
   - env:
-      - SNAP_VERSION=1.15/stable
+      - SNAP_VERSION=1.16/stable
       - SNAP_VERSION_UPGRADE_TO=1.16/stable
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=stable
