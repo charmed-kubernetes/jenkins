@@ -41,10 +41,18 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/sync-upstream"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t sync"
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+          go get -u github.com/battlemidget/mf/...
+          mf repo sync --spec jobs/includes/repos.yaml
+      # - ogc-execute-spec:
+      #     JOB_SPEC_DIR: "jobs/sync-upstream"
+      #     JOB_SPEC_FILE: "spec.yml"
+      #     JOB_TAGS: "-t sync"
 
 - job:
     name: 'sync-stable-tag-bundle-rev'

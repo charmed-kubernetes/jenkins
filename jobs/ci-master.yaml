@@ -240,11 +240,17 @@
           export CHARM_LAYERS_DIR="$HOME/.cache/charmbuild/${{CHARM_LAYERS_DIR:-build/layers}}"
           export CHARM_INTERFACES_DIR="$HOME/.cache/charmbuild/${{CHARM_INTERFACES_DIR:-build/interfaces}}"
           export CHARM_CACHE_DIR=$WORKSPACE/tmp/.charm
+
+          export GOPATH=$HOME/go
+          export GOBIN=$HOME/go/bin
+          export PATH=$HOME/go/bin:$PATH
+
+          mkdir -p $HOME/go/bin || true
+
           export PATH=/snap/bin:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
           export PATH=venv/bin:$PATH
-          export PATH=$HOME/go/bin:$PATH
           export PYTHONPATH=$WORKSPACE:"${{PYTHONPATH:-}}"
 
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
