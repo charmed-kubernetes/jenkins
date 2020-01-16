@@ -27,6 +27,7 @@
       (github/charmed-kubernetes). This allows more control over release
       process.
     project-type: freestyle
+    node: runner-amd64
     scm:
       - k8s-jenkins-jenkaas
     properties:
@@ -47,8 +48,10 @@
           set -o allexport
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
-          go get -u github.com/battlemidget/mf/...
-          mf repo sync --spec jobs/includes/repos.yaml
+          wget https://github.com/battlemidget/mf/releases/download/0.2/mf_linux_amd64.tar.gz
+          tar xvf mf_linux_amd64.tar.gz
+          mv mf_linux_amd64 mf
+          ./mf repo sync --spec jobs/includes/repos.yaml
       # - ogc-execute-spec:
       #     JOB_SPEC_DIR: "jobs/sync-upstream"
       #     JOB_SPEC_FILE: "spec.yml"
