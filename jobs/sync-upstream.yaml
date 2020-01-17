@@ -48,7 +48,7 @@
           set -o allexport
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
-          wget https://github.com/battlemidget/mf/releases/download/0.2/mf_linux_amd64.tar.gz
+          wget https://github.com/battlemidget/mf/releases/download/0.3/mf_linux_amd64.tar.gz
           tar xvf mf_linux_amd64.tar.gz
           mv mf_linux_amd64 mf
           ./mf repo sync --spec jobs/includes/repos.yaml
