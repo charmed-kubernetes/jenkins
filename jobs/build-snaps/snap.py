@@ -193,12 +193,12 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     if snap_basename.endswith(".git"):
         snap_basename = snap_basename.rstrip(".git")
     tmpdir = tempfile.TemporaryDirectory()
-    snap_basename = f"{tmpdir.name}/{snap_basename}"
-    git.clone(repo, snap_basename, _env=env)
-    git.remote("prune", "origin", _env=env, _cwd=snap_basename)
-    git.config("user.email", "cdkbot@gmail.com", _env=env, _cwd=snap_basename)
-    git.config("user.name", "cdkbot", _env=env, _cwd=snap_basename)
-    git.checkout("-b", to_branch, _env=env, _cwd=snap_basename)
+    snap_basename = tmpdir.name
+    capture(["git", "clone", repo, snap_basename])
+    capture(["git", "remote", "prune", "origin"], cwd=snap_basename)
+    capture(["git", "config" "user.email", "cdkbot@gmail.com"], cwd=snap_basename)
+    capture(["git", "config", "user.name", "cdkbot"], cwd=snap_basename)
+    capture(["git", "checkout", "-b", to_branch], cwd=snap_basename)
 
     snapcraft_fn = Path(snap_basename) / "snapcraft.yaml"
     snapcraft_fn_tpl = Path(snap_basename) / "snapcraft.yaml.in"
@@ -246,7 +246,6 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
         cmd_ok("git add .", cwd=snap_basename)
         cmd_ok(f"git commit -m 'Creating branch {to_branch}'", cwd=snap_basename)
         cmd_ok(f"git push --force {repo} {to_branch}", cwd=snap_basename)
-    tmpdir.cleanup()
 
 
 @cli.command()
