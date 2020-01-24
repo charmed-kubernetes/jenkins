@@ -27,6 +27,7 @@
       (github/charmed-kubernetes). This allows more control over release
       process.
     project-type: freestyle
+    node: runner-amd64
     scm:
       - k8s-jenkins-jenkaas
     properties:
@@ -41,10 +42,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/sync-upstream"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t sync"
+      - download-mf
+      - run-cmd:
+          COMMAND: "mf repo sync --spec jobs/includes/repos.yaml"
 
 - job:
     name: 'sync-stable-tag-bundle-rev'
