@@ -260,26 +260,6 @@
           env > $WORKSPACE/.env
 
 - builder:
-    name: download-mf
-    builders:
-      - shell: |-
-          #!/bin/bash
-          #
-          # arm64 - aarch64
-          # amd64 - x86_64
-          # ppc64le - ppc64le
-          set -eux
-          set -o allexport
-          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-          set +o allexport
-
-          export MF_VERSION="0.6.0"
-
-          wget https://github.com/battlemidget/mf/releases/download/v"$MF_VERSION"/mf_"$MF_VERSION"_linux_$(arch).tar.gz
-          tar xvf mf_"$MF_VERSION"_linux_$(arch).tar.gz
-          mv mf $HOME/go/bin/mf
-
-- builder:
     name: run-cmd
     builders:
       - shell: |-
