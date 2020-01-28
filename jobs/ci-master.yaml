@@ -35,6 +35,7 @@
           blocking-jobs:
             - "validate-ck.*"
             - "release-microk8s.*"
+            - "validate-kubeflow.*"
           block-level: 'NODE'
 
 
