@@ -7,7 +7,7 @@ import os
 import uuid
 import yaml
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 from sh.contrib import git
 
 
@@ -183,6 +183,8 @@ def _sync_upstream(layer_list, charm_list, dry_run):
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
+    username = quote(new_env['CDKBOT_GH_USR'])
+    password = quote(new_env['CDKBOT_GH_PSW'])
 
     for layer_map in layer_list + charm_list:
         for layer_name, repos in layer_map.items():
@@ -195,7 +197,7 @@ def _sync_upstream(layer_list, charm_list, dry_run):
                 f"Syncing {layer_name} :: {repos['upstream']} -> {repos['downstream']}"
             )
             if not dry_run:
-                downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
+                downstream = f"https://{username}:{password}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 try:
@@ -208,8 +210,9 @@ def _sync_upstream(layer_list, charm_list, dry_run):
                     sys.exit(1)
                 git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
                 git.config("user.name", "cdkbot", _cwd=identifier)
-                git.config("--global", "push.default", "simple")
+                git.config("push.default", "simple")
                 git.remote("add", "upstream", upstream, _cwd=identifier)
+                git.remote("set-url", "origin", downstream, _cwd=identifier)
                 for line in git.fetch(
                     "upstream", _cwd=identifier, _iter=True, _bg_exc=False
                 ):
@@ -222,7 +225,7 @@ def _sync_upstream(layer_list, charm_list, dry_run):
                 ):
                     click.echo(line)
                 for line in git.push(
-                    "origin", _cwd=identifier, _iter=True, _bg_exc=True
+                        "origin", _cwd=identifier, _iter=True, _bg_exc=True
                 ):
                     click.echo(line)
 

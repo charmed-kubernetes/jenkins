@@ -248,9 +248,10 @@
           export GOBIN=$HOME/go/bin
           export PATH=$HOME/go/bin:$PATH
 
+          mkdir -p $HOME/bin || true
           mkdir -p $HOME/go/bin || true
 
-          export PATH=/snap/bin:$PATH
+          export PATH=/snap/bin:$HOME/bin/:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
           export TMPDIR="$WORKSPACE/tmp"
           export PATH=venv/bin:$PATH
@@ -259,6 +260,11 @@
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 
           env > $WORKSPACE/.env
+
+          if ! test -f $HOME/bin/cpm; then
+              curl -fsSL --compressed https://git.io/cpm > $HOME/bin/cpm
+              chmod +x $HOME/bin/cpm
+          fi
 
 - builder:
     name: run-cmd
