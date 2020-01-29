@@ -58,7 +58,7 @@ pipeline {
                 exec "sudo snap install microk8s --classic --channel ${params.microk8s_channel}"
                 exec 'sudo snap install yq'
                 exec 'sudo apt update && sudo apt install -y libssl-dev'
-                exec 'sudo pip install pytest sh kfp requests pyyaml'
+                exec 'sudo pip3 install pytest sh kfp requests pyyaml'
                 exec 'sudo usermod -a -G microk8s ubuntu'
                 exec 'echo \'PATH=$PATH:/snap/bin\' > ~/.bashrc'
             }
