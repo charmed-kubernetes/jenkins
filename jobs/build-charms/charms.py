@@ -17,6 +17,7 @@ Usage:
 """
 
 import os
+import concurrent.futures
 from glob import glob
 from pathlib import Path
 from pprint import pformat
@@ -203,37 +204,16 @@ class BuildEnv:
     def pull_layers(self):
         """ clone all downstream layers to be processed locally when doing charm builds
         """
-        num_runs = 0
-
-        pool = Semaphore(cpu_count())
-
-        def done(cmd, success, exit_code):
-            pool.release()
-
         def download(layer_name):
-            pool.acquire()
-
             if Path(self.build_path(layer_name)).exists():
                 click.echo(f"- Refreshing {layer_name} cache.")
-                git.checkout(self.layer_branch, _cwd=self.build_path(layer_name))
-                git.pull(
-                    "origin",
-                    self.layer_branch,
-                    _cwd=self.build_path(layer_name),
-                    _bg=True,
-                    _done=done,
+                cmd_ok(f"git checkout {self.layer_branch}", cwd=self.build_path(layer_name))
+                cmd_ok(f"git.pull origin {self.layer_branch}",
+                    cwd=self.build_path(layer_name),
                 )
             else:
                 click.echo(f"- Downloading {layer_name}")
-                sh.charm(
-                    "pull-source",
-                    "-v",
-                    "-i",
-                    self.layer_index,
-                    layer_name,
-                    _bg=True,
-                    _done=done,
-                )
+                cmd_ok(f"charm pull-source -i {self.layer_index} {layer_name}")
 
         if self.rebuild_cache:
             click.echo("-  rebuild cache triggered, cleaning out cache.")
@@ -242,7 +222,7 @@ class BuildEnv:
             os.mkdir(str(self.layers_dir))
             os.mkdir(str(self.interfaces_dir))
 
-        procs = []
+        layers_to_pull = []
         for layer_map in self.layers:
             layer_name = list(layer_map.keys())[0]
             layer_props = list(layer_map.values())[0]
@@ -250,9 +230,15 @@ class BuildEnv:
             if layer_name == "layer:index":
                 continue
 
-            procs.append(download(layer_name))
+            layers_to_pull.append(layer_name)
 
-        [p.wait() for p in procs if p]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
+            pulls = {tp.submit(download, layer_name): layer_name for layer_name in layers_to_pull}
+            for future in concurrent.futures.as_completed(pulls):
+                try:
+                    data = future.result()
+                except Exception as exc:
+                    click.echo(f"Failed thread: {exc}")
 
         self.db["pull_layer_manifest"] = []
         _paths_to_process = {
@@ -650,23 +636,37 @@ def build(
 
     build_env.pull_layers()
 
+    entities = []
     for charm_map in build_env.artifacts:
         for charm_name, charm_opts in charm_map.items():
             if not any(match in filter_by_tag for match in charm_opts["tags"]):
                 continue
 
             charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
-            build_entity = BuildEntity(build_env, charm_name, charm_opts, charm_entity)
-            build_entity.setup()
+            entities.append(BuildEntity(build_env, charm_name, charm_opts, charm_entity))
+            click.echo(f"Queued {charm_entity} for building")
 
-            if not build_entity.has_changed:
-                continue
+    def _run_build(build_entity):
+        build_entity.setup()
 
-            build_entity.proof_build()
+        if not build_entity.has_changed:
+            return
 
-            build_entity.push()
-            build_entity.attach_resource("unpublished")
-            build_entity.promote(to_channel=to_channel)
+        build_entity.proof_build()
+
+        build_entity.push()
+        build_entity.attach_resource("unpublished")
+        build_entity.promote(to_channel=to_channel)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
+        builds = {tp.submit(_run_build, entity): entity for entity in entities}
+        for future in concurrent.futures.as_completed(builds):
+            try:
+                data = future.result()
+            except Exception as exc:
+                click.echo(f"Failed thread: {exc}")
+
+
     build_env.save()
 
 
