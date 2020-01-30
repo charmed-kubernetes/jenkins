@@ -195,6 +195,7 @@ def __run_git(args):
     cmd_ok("git checkout master", cwd=identifier)
     cmd_ok("git merge upstream/master", cwd=identifier)
     cmd_ok("git push origin", cwd=identifier)
+    cmd_ok("rm -rf {identifier}")
 
 
 def _sync_upstream(layer_list, charm_list, dry_run):
