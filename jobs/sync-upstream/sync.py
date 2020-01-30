@@ -1,6 +1,7 @@
 """ sync repo script
 """
 import sys
+import concurrent.futures
 import click
 import sh
 import os
@@ -9,6 +10,7 @@ import yaml
 from pathlib import Path
 from urllib.parse import urlparse, quote
 from sh.contrib import git
+from cilib.run import capture, cmd_ok
 
 
 @click.group()
@@ -175,6 +177,26 @@ def tag_stable(
     )
 
 
+def __run_git(args):
+    username, password, layer_name, upstream, downstream = args
+    click.echo(f"Syncing {layer_name} :: {upstream} -> {downstream}")
+    downstream = f"https://{username}:{password}@github.com/{downstream}"
+    identifier = str(uuid.uuid4())
+    os.makedirs(identifier)
+    ret = capture(f"git clone {downstream} {identifier}")
+    if not ret.ok:
+        click.echo(f"Failed to clone repo: {ret.stderr.decode()}")
+        sys.exit(1)
+    cmd_ok("git config user.email 'cdkbot@juju.solutions'", cwd=identifier)
+    cmd_ok("git config user.name cdkbot", cwd=identifier)
+    cmd_ok("git config push.default simple", cwd=identifier)
+    cmd_ok(f"git remote add upstream {upstream}", cwd=identifier)
+    cmd_ok("git fetch upstream", cwd=identifier)
+    cmd_ok("git checkout master", cwd=identifier)
+    cmd_ok("git merge upstream/master", cwd=identifier)
+    cmd_ok("git push origin", cwd=identifier)
+
+
 def _sync_upstream(layer_list, charm_list, dry_run):
     """ Syncs any of the forked upstream repos
 
@@ -183,9 +205,10 @@ def _sync_upstream(layer_list, charm_list, dry_run):
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
-    username = quote(new_env['CDKBOT_GH_USR'])
-    password = quote(new_env['CDKBOT_GH_PSW'])
+    username = quote(new_env["CDKBOT_GH_USR"])
+    password = quote(new_env["CDKBOT_GH_PSW"])
 
+    repos_to_process = []
     for layer_map in layer_list + charm_list:
         for layer_name, repos in layer_map.items():
             upstream = repos["upstream"]
@@ -193,41 +216,18 @@ def _sync_upstream(layer_list, charm_list, dry_run):
             if urlparse(upstream).path.lstrip("/") == downstream:
                 click.echo(f"Skipping {layer_name} :: {upstream} == {downstream}")
                 continue
-            click.echo(
-                f"Syncing {layer_name} :: {repos['upstream']} -> {repos['downstream']}"
-            )
-            if not dry_run:
-                downstream = f"https://{username}:{password}@github.com/{downstream}"
-                identifier = str(uuid.uuid4())
-                os.makedirs(identifier)
+            items = (username, password, layer_name, upstream, downstream)
+            click.echo(f"Adding {layer_name} to queue")
+            repos_to_process.append(items)
+
+    if not dry_run:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
+            git_runs = {tp.submit(__run_git, args): args for args in repos_to_process}
+            for future in concurrent.futures.as_completed(git_runs):
                 try:
-                    for line in git.clone(
-                        downstream, identifier, _iter=True, _bg_exc=False
-                    ):
-                        click.echo(line)
-                except sh.ErrorReturnCode as e:
-                    click.echo(f"Failed to clone repo: {e.stderr.decode()}")
-                    sys.exit(1)
-                git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
-                git.config("user.name", "cdkbot", _cwd=identifier)
-                git.config("push.default", "simple")
-                git.remote("add", "upstream", upstream, _cwd=identifier)
-                git.remote("set-url", "origin", downstream, _cwd=identifier)
-                for line in git.fetch(
-                    "upstream", _cwd=identifier, _iter=True, _bg_exc=False
-                ):
-                    click.echo(line)
-                git.checkout("master", _cwd=identifier)
-                # if "layer-index" in downstream:
-                #     sh.python3("update_readme.py", _cwd=identifier)
-                for line in git.merge(
-                    "upstream/master", _cwd=identifier, _iter=True, _bg_exc=False
-                ):
-                    click.echo(line)
-                for line in git.push(
-                        "origin", _cwd=identifier, _iter=True, _bg_exc=True
-                ):
-                    click.echo(line)
+                    data = future.result()
+                except Exception as exc:
+                    click.echo(f"Failed thread: {exc}")
 
 
 @cli.command()
