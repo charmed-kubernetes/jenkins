@@ -25,10 +25,8 @@ from sh.contrib import git
 from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture
 from kv import KV
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from threading import Semaphore
-from multiprocessing import cpu_count
 from retry.api import retry_call
 from subprocess import CalledProcessError
 from types import SimpleNamespace
@@ -37,7 +35,6 @@ import shutil
 import sh
 import yaml
 import json
-import time
 import requests
 
 
@@ -149,7 +146,7 @@ class BuildEnv:
             return LayerType.LAYER
         elif ltype == "interface":
             return LayerType.INTERFACE
-        raise BuildException(f"Unknown layer type for {layer}")
+        raise BuildException(f"Unknown layer type for {ltype}")
 
     def build_path(self, layer):
         ltype, name = layer.split(":")
@@ -204,11 +201,15 @@ class BuildEnv:
     def pull_layers(self):
         """ clone all downstream layers to be processed locally when doing charm builds
         """
+
         def download(layer_name):
             if Path(self.build_path(layer_name)).exists():
                 click.echo(f"- Refreshing {layer_name} cache.")
-                cmd_ok(f"git checkout {self.layer_branch}", cwd=self.build_path(layer_name))
-                cmd_ok(f"git.pull origin {self.layer_branch}",
+                cmd_ok(
+                    f"git checkout {self.layer_branch}", cwd=self.build_path(layer_name)
+                )
+                cmd_ok(
+                    f"git.pull origin {self.layer_branch}",
                     cwd=self.build_path(layer_name),
                 )
             else:
@@ -225,7 +226,6 @@ class BuildEnv:
         layers_to_pull = []
         for layer_map in self.layers:
             layer_name = list(layer_map.keys())[0]
-            layer_props = list(layer_map.values())[0]
 
             if layer_name == "layer:index":
                 continue
@@ -233,10 +233,13 @@ class BuildEnv:
             layers_to_pull.append(layer_name)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
-            pulls = {tp.submit(download, layer_name): layer_name for layer_name in layers_to_pull}
+            pulls = {
+                tp.submit(download, layer_name): layer_name
+                for layer_name in layers_to_pull
+            }
             for future in concurrent.futures.as_completed(pulls):
                 try:
-                    data = future.result()
+                    future.result()
                 except Exception as exc:
                     click.echo(f"Failed thread: {exc}")
 
@@ -338,11 +341,6 @@ class BuildEntity:
         # time of pull_layers
         current_build_manifest.append({"rev": self.commit, "url": self.name})
 
-        previous_charm_rev = (
-            rev["rev"]
-            for rev in charmstore_build_manifest["layers"]
-            if rev["url"] == self.name
-        )
         the_diff = [
             i
             for i in charmstore_build_manifest["layers"]
@@ -489,7 +487,7 @@ class BuildEntity:
             resource_fn = resource_path.parts[-1]
             resource_key = resource_spec_fragment.get(resource_fn, None)
             if resource_key:
-                out = retry_call(
+                retry_call(
                     cmd_ok,
                     fargs=[
                         [
@@ -643,7 +641,9 @@ def build(
                 continue
 
             charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
-            entities.append(BuildEntity(build_env, charm_name, charm_opts, charm_entity))
+            entities.append(
+                BuildEntity(build_env, charm_name, charm_opts, charm_entity)
+            )
             click.echo(f"Queued {charm_entity} for building")
 
     def _run_build(build_entity):
@@ -662,10 +662,9 @@ def build(
         builds = {tp.submit(_run_build, entity): entity for entity in entities}
         for future in concurrent.futures.as_completed(builds):
             try:
-                data = future.result()
+                future.result()
             except Exception as exc:
                 click.echo(f"Failed thread: {exc}")
-
 
     build_env.save()
 

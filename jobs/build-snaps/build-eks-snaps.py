@@ -3,15 +3,11 @@ Interface for building and publishing snaps
 
 """
 
-import sys
 import click
 import sh
 import os
 import glob
-import re
 import yaml
-import operator
-from cilib import snapapi
 from pathlib import Path
 from sh.contrib import git
 

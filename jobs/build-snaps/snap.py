@@ -9,16 +9,14 @@ import os
 import yaml
 import semver
 import tempfile
-import requests
 from sh.contrib import git
 from urllib.parse import urlparse
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
-from cilib import lp, idm, snapapi, k8s
+from cilib import lp, idm, snapapi
 from cilib.git import remote_branches, branch_exists, remote_tags
 from cilib.run import cmd_ok, capture
-from pprint import pformat
 
 
 # go compiler version map for k8s version releases
