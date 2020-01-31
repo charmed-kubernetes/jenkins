@@ -113,7 +113,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
-    if: '[[ $(date +"%A") = "Saturday" ]]'
+    # if: '[[ $(date +"%A") = "Saturday" ]]'
     before-script:
       - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-focal"
       - juju kill-controller -y $JUJU_CONTROLLER || true
