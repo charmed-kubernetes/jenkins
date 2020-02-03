@@ -121,6 +121,7 @@ plan:
           cloud: $JUJU_CLOUD
           controller: $JUJU_CONTROLLER
           model: $JUJU_MODEL
+          force: yes
           bootstrap:
             series: "focal"
             constraints: "arch=amd64"
@@ -129,6 +130,7 @@ plan:
             model-default:
               - test-mode=true
               - resource-tags=owner=k8sci
+              - image-stream=daily
           deploy:
             reuse: no
             bundle: $JUJU_DEPLOY_BUNDLE
