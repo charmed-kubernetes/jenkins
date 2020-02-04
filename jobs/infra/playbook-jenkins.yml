@@ -370,22 +370,22 @@
       tags:
         - jenkins
 
-    - name: install sonobuoy
-      tags:
-        - adhoc
-        - jenkins
-      become: no
-      shell: |
-        export GOPATH=$HOME/go
-        mkdir -p $HOME/go/bin || true
-        mkdir -p $HOME/go/src || true
-        go get github.com/heptio/sonobuoy
-        cd $HOME/go/src/github.com/heptio/sonobuoy && \
-        git checkout v0.17.0 && \
-        /snap/bin/go install -i .
-        rm -rf $HOME/go/src/github.com/heptio/sonobuoy
-      args:
-        executable: /bin/bash
+    # - name: install sonobuoy
+    #   tags:
+    #     - adhoc
+    #     - jenkins
+    #   become: no
+    #   shell: |
+    #     export GOPATH=$HOME/go
+    #     mkdir -p $HOME/go/bin || true
+    #     mkdir -p $HOME/go/src || true
+    #     go get github.com/heptio/sonobuoy
+    #     cd $HOME/go/src/github.com/heptio/sonobuoy && \
+    #     git checkout v0.17.0 && \
+    #     /snap/bin/go install -i .
+    #     rm -rf $HOME/go/src/github.com/heptio/sonobuoy
+    #   args:
+    #     executable: /bin/bash
     - name: cleanup leftover artifacts
       command: bash fixtures/cleanup-env.sh
       ignore_errors: yes
