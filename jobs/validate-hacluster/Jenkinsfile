@@ -23,8 +23,8 @@ pipeline {
                 timeout(time: 2, unit: 'HOURS')
             }
             steps {
-                sh "juju add-cloud scapestack /var/lib/jenkins/.scapestack/scapestack-cloud || true"
-                sh "juju add-credential scapestack -f /var/lib/jenkins/.scapestack/scapestack-creds || true"
+                sh "juju add-cloud --client scapestack /var/lib/jenkins/.scapestack/scapestack-cloud || true"
+                sh "juju add-credential --client scapestack -f /var/lib/jenkins/.scapestack/scapestack-creds || true"
                 sh "juju bootstrap scapestack ${params.controller}"
                 sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-http-proxy=http://squid.internal:3128"
                 sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-https-proxy=http://squid.internal:3128"

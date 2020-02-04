@@ -17,6 +17,8 @@ bucket = s3.Bucket("jenkaas")
 
 OBJECTS = bucket.objects.all()
 
+SUPPORTED_VERSIONS = ['1.15', '1.16', '1.17', '1.18']
+
 
 def upload_html():
     sh.aws.s3.sync("reports/_build", "s3://jenkaas")
@@ -79,6 +81,12 @@ def _gen_metadata():
 
         if "build_endtime" not in obj:
             continue
+
+        if "snap_version" in obj:
+            snap_ver, channel = obj['snap_version'].split('/')
+            if snap_ver not in SUPPORTED_VERSIONS:
+                click.echo(f"Skipping {snap_ver} -> {obj['snap_version']}")
+                continue
 
         if "test_result" not in obj:
             result_bg_class = "bg-light"
