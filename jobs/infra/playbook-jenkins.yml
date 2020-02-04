@@ -360,6 +360,16 @@
         mode: 0644
       tags:
         - jenkins
+    - name: copy openstack creds
+      copy:
+        src: "{{ lookup('env', 'OPENSTACK_CREDS') }}"
+        dest: /var/lib/jenkins/openstack-creds
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+      tags:
+        - jenkins
+
     - name: install sonobuoy
       tags:
         - adhoc

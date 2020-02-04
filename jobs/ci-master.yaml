@@ -221,8 +221,6 @@
           #!/bin/bash
           set -eux
 
-          arch
-
           rm -rf /var/lib/jenkins/venvs || true
 
           # TODO: Switch to this repo when ready
@@ -260,11 +258,6 @@
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 
           env > $WORKSPACE/.env
-
-          if ! test -f $HOME/bin/cpm; then
-              curl -fsSL --compressed https://git.io/cpm > $HOME/bin/cpm
-              chmod +x $HOME/bin/cpm
-          fi
 
 - builder:
     name: run-cmd
@@ -381,3 +374,6 @@
           - file:
               credential-id: tigera-private-registry-credentials
               variable: TIGERA_PRIVATE_REGISTRY_CREDENTIALS_FILE
+          - file:
+              credential-id: openstack-creds
+              variable: OPENSTACK_CREDS
