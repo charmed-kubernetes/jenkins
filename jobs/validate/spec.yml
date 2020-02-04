@@ -115,6 +115,7 @@ plan:
       - JUJU_MODEL=validate-model
     # if: '[[ $(date +"%A") = "Saturday" ]]'
     before-script:
+      - sudo snap refresh juju --channel=2.7/candidate --classic
       - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-focal"
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - juju:
@@ -151,6 +152,7 @@ plan:
     after-script:
       - !include jobs/spec-helpers/collect.yml
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+      - sudo snap refresh juju --stable --classic
 
 
 meta:
