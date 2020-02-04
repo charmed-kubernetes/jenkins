@@ -84,12 +84,6 @@
         state: absent
       tags:
         - jenkins
-    - name: use snap core candidate
-      command: "snap refresh --candidate core"
-      ignore_errors: yes
-      tags:
-        - adhoc
-        - jenkins
     - name: use charm edge
       command: "snap refresh --edge charm"
       ignore_errors: yes
@@ -120,30 +114,6 @@
         - "bundletester"
       tags:
         - jenkins
-    - name: remove py juju-wait
-      command: "rm -rf /usr/local/bin/juju-wait"
-      tags:
-        - jenkins
-      ignore_errors: yes
-    # - name: clone juju-wait script
-    #   git:
-    #     repo: 'https://git.launchpad.net/juju-wait'
-    #     dest: /srv/juju-wait
-    #   when: ansible_architecture != "x86_64"
-    #   tags:
-    #     - adhoc
-    #     - jenkins
-    # - name: copy juju-wait to bindir
-    #   copy:
-    #     src: /srv/juju-wait/juju_wait/__init__.py
-    #     dest: /usr/local/bin/juju-wait
-    #     mode: 0777
-    #     force: yes
-    #     remote_src: yes
-    #   tags:
-    #     - adhoc
-    #     - jenkins
-    #   when: ansible_architecture != "x86_64"
     - name: copy bashrc
       copy:
         src: "fixtures/bashrc"
