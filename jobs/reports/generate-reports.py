@@ -9,6 +9,7 @@ import click
 import sh
 from staticjinja import Site
 from pathlib import Path
+from pprint import pformat
 
 session = boto3.Session(region_name="us-east-1")
 s3 = session.resource("s3")
@@ -16,8 +17,6 @@ dynamodb = session.resource("dynamodb")
 bucket = s3.Bucket("jenkaas")
 
 OBJECTS = bucket.objects.all()
-
-SUPPORTED_VERSIONS = ['1.15', '1.16', '1.17', '1.18']
 
 
 def upload_html():
@@ -82,12 +81,6 @@ def _gen_metadata():
         if "build_endtime" not in obj:
             continue
 
-        if "snap_version" in obj:
-            snap_ver, channel = obj['snap_version'].split('/')
-            if snap_ver not in SUPPORTED_VERSIONS:
-                click.echo(f"Skipping {snap_ver} -> {obj['snap_version']}")
-                continue
-
         if "test_result" not in obj:
             result_bg_class = "bg-light"
             result_btn_class = "btn-light"
@@ -103,11 +96,16 @@ def _gen_metadata():
         try:
             day = datetime.strptime(
                 obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f"
-            ).strftime("%Y-%m-%d")
+            )
         except:
             day = datetime.strptime(
                 obj["build_endtime"], "%Y-%m-%d %H:%M:%S.%f"
-            ).strftime("%Y-%m-%d")
+            )
+
+        date_of_last_30 = datetime.today() - timedelta(days=30)
+        if day < date_of_last_30:
+            continue
+        day = day.strftime("%Y-%m-%d")
 
         # set obj url
         debug_host_url = "https://jenkaas.s3.amazonaws.com/"
@@ -131,15 +129,19 @@ def _gen_rows():
     for jobname, jobdays in sorted(metadata.items()):
         sub_item = [jobname]
         for day in days:
-            if day in jobdays:
-                max_build_number = max(
-                    int(item["build_number"]) for item in jobdays[day]
-                )
+            try:
+                dates_to_test = [datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f") for obj in jobdays[day]]
+                max_date_for_day = max(dates_to_test)
+                click.echo(f"Testing {max_date_for_day}")
                 for job in jobdays[day]:
-                    if job["build_number"] == str(max_build_number):
+                    _day = datetime.strptime(
+                        job["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f"
+                    )
+                    click.echo(f"{_day} == {max_date_for_day}")
+                    if _day == max_date_for_day:
                         sub_item.append(job)
-            else:
-                sub_item.append({"job_name": jobname, "bg_class": ""})
+            except:
+                sub_item.append({"job_name": jobname, "bg_class": "", "build_endtime": day, "build_datetime": day})
         rows.append(sub_item)
     return rows
 
