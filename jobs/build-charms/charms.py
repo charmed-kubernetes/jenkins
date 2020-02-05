@@ -24,7 +24,6 @@ from pprint import pformat
 from sh.contrib import git
 from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture
-from kv import KV
 from datetime import datetime
 from enum import Enum
 from retry.api import retry_call
@@ -71,12 +70,11 @@ class BuildEnv:
         self.store = Store("BuildCharms")
         self.now = datetime.utcnow()
         self.build_type = build_type
+        self.db = {}
 
         if self.build_type == BuildType.CHARM:
-            self.db = KV("buildcharms.db")
             self.db_json = Path("buildcharms.json")
         elif self.build_type == BuildType.BUNDLE:
-            self.db = KV("buildbundles.db")
             self.db_json = Path("buildbundles.json")
 
         if not self.db.get("build_datetime", None):
