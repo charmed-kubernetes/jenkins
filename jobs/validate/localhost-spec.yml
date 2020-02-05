@@ -12,6 +12,9 @@ plan:
     if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
     before-script:
       - sudo lxc list
+      - sudo lxc network show lxdbr1
+      - sudo lxc config unset core.proxy_ignore_hosts
+      - sudo lxc config show
       - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-"$(uname -m)
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - juju:

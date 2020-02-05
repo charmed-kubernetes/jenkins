@@ -83,6 +83,14 @@ meta:
   name: Verify CK with Vault
   description: |
     Verifies that CK with Vault passes integration tests
+  long-description: |
+    ## Requirements
+
+    A valid AWS VPC must be created prior to running this test with a single
+    subnet. That VPC-ID is then passed to the bootstrap config and
+    model-defaults during the run.
+
+    See: https://old-docs.jujucharms.com/2.5/en/charms-fan-aws-vpc
   mkdocs:
     destination:
       - "validations/ck/vault.md"
