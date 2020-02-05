@@ -24,6 +24,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck
       - JUJU_MODEL=validate-model
+    if: '[[ $(date +"%A") = "Sunday" ]]'
   - <<: *BASE_JOB
     env:
       - SNAP_VERSION=1.17/edge
@@ -67,11 +68,10 @@ plan:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck
+      - JUJU_CONTROLLER=validate-ck-xenial
       - JUJU_MODEL=validate-model
     if: '[[ $(date +"%A") = "Saturday" ]]'
     before-script:
-      - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-xenial"
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - juju:
           cloud: $JUJU_CLOUD
@@ -111,12 +111,10 @@ plan:
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck
+      - JUJU_CONTROLLER=validate-ck-focal
       - JUJU_MODEL=validate-model
     # if: '[[ $(date +"%A") = "Saturday" ]]'
     before-script:
-      - sudo snap refresh juju --channel=2.7/candidate --classic
-      - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-focal"
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - juju:
           cloud: $JUJU_CLOUD
@@ -152,7 +150,6 @@ plan:
     after-script:
       - !include jobs/spec-helpers/collect.yml
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-      - sudo snap refresh juju --stable --classic
 
 
 meta:

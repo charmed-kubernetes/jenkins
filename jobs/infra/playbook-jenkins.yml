@@ -23,6 +23,7 @@
         snap set system proxy.https="http://squid.internal:3128"
       tags:
         - adhoc
+        - jenkins
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
@@ -84,8 +85,14 @@
         state: absent
       tags:
         - jenkins
-    - name: use charm edge
-      command: "snap refresh --edge charm"
+    # - name: use charm edge
+    #   command: "snap refresh --edge charm"
+    #   ignore_errors: yes
+    #   tags:
+    #     - adhoc
+    #     - jenkins
+    - name: use juju candidate
+      command: "snap refresh --channel 2.7/candidate juju"
       ignore_errors: yes
       tags:
         - adhoc
@@ -339,23 +346,6 @@
         mode: 0644
       tags:
         - jenkins
-
-    # - name: install sonobuoy
-    #   tags:
-    #     - adhoc
-    #     - jenkins
-    #   become: no
-    #   shell: |
-    #     export GOPATH=$HOME/go
-    #     mkdir -p $HOME/go/bin || true
-    #     mkdir -p $HOME/go/src || true
-    #     go get github.com/heptio/sonobuoy
-    #     cd $HOME/go/src/github.com/heptio/sonobuoy && \
-    #     git checkout v0.17.0 && \
-    #     /snap/bin/go install -i .
-    #     rm -rf $HOME/go/src/github.com/heptio/sonobuoy
-    #   args:
-    #     executable: /bin/bash
     - name: cleanup leftover artifacts
       command: bash fixtures/cleanup-env.sh
       ignore_errors: yes
