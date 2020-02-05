@@ -43,17 +43,25 @@ pipeline {
         }
         stage('Setup LXC') {
             steps {
+                sh "sudo lxc config show"
+                sh "sudo lxc network show lxdbr0"
+                sh "sudo lxc config set core.proxy_http http://squid.internal:3128"
+                sh "sudo lxc config set core.proxy_https http://squid.internal:3128"
+                sh "sudo lxc config set core.proxy_ignore_hosts localhost"
+                sh 'sudo lxc profile show default'
                 sh 'sudo lxc profile show kfpush || sudo lxc profile copy default kfpush'
                 sh 'sudo lxc profile edit kfpush < jobs/build-charms/lxc.profile'
                 sh "sudo lxc launch -p default -p kfpush ubuntu:18.04 ${CONTAINER}"
                 sh "sudo lxc file push -p ~/.go-cookies ${CONTAINER}/root/.go-cookies"
                 sh "sudo lxc file push -p ~/.local/share/juju/store-usso-token ${CONTAINER}/root/.local/share/juju/store-usso-token"
+                exec "sudo snap set system proxy.http='http://squid.internal:3128'"
+                exec "sudo snap set system proxy.https='http://squid.internal:3128'"
             }
             when { expression { ゴゴゴ } }
         }
         stage('Wait for snap') {
             options {
-                retry(10)
+                retry(20)
             }
             steps {
                 exec 'sudo snap install core'
