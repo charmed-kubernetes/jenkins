@@ -6,7 +6,6 @@
 #
 aioify==0.3.2
 apipkg==1.5               # via execnet
-appnope==0.1.0            # via ipython
 argh==0.26.2              # via watchdog
 asn1crypto==0.24.0        # via cryptography
 async-generator==1.10
@@ -28,7 +27,7 @@ chardet==3.0.4            # via requests
 click==7.0                # via mkdocs, ogc, ogc-plugins-juju, ogc-plugins-runner, ogc-plugins-spec-doc
 colorama==0.3.9           # via awscli, ogc
 configobj==5.0.6
-cryptography==2.7         # via paramiko
+cryptography==2.7         # via paramiko, secretstorage
 decorator==4.4.0          # via ipython, retry, traitlets
 defusedxml==0.6.0         # via python3-openid
 dict-deep==2.0.2          # via ogc
@@ -50,6 +49,7 @@ ipdb==0.12.2
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.8.0            # via ipdb
 jedi==0.15.1              # via ipython
+jeepney==0.4.2            # via secretstorage
 jenkins-job-builder==3.0.2
 jinja2==2.10.1
 jmespath==0.9.4           # via boto3, botocore
@@ -77,7 +77,7 @@ monotonic==1.5            # via fasteners
 more-itertools==7.2.0     # via pytest, zipp
 multi-key-dict==2.0.3     # via python-jenkins
 oauthlib==3.1.0           # via lazr.restfulclient
-ogc-plugins-juju==1.0.22
+ogc-plugins-juju==1.0.23
 ogc-plugins-runner==1.0.24
 ogc-plugins-spec-doc==1.0.8
 ogc==1.0.0
@@ -124,6 +124,7 @@ requests==2.22.0
 retry==0.9.2
 rsa==3.4.2                # via awscli
 s3transfer==0.2.1         # via awscli, boto3
+secretstorage==3.1.2      # via keyring
 semver==2.8.1             # via ogc
 sh==1.12.14
 six==1.12.0               # via bcrypt, configobj, cryptography, fasteners, jenkins-job-builder, lazr.restfulclient, livereload, macaroonbakery, packaging, prompt-toolkit, protobuf, pymacaroons, pynacl, pytest-xdist, python-dateutil, python-frontmatter, python-jenkins, stevedore, traitlets

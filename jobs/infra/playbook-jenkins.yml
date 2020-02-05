@@ -286,6 +286,7 @@
         lxc config set core.proxy_ignore_hosts localhost
       tags:
         - adhoc
+        - jenkins
     - name: set docker daemon config
       copy:
         src: "fixtures/docker.daemon.json"
