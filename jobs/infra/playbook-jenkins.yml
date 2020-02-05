@@ -278,25 +278,14 @@
       tags:
         - adhoc
         - jenkins
-    - name: clear lxd proxy
-      ignore_errors: yes
+    - name: set lxd proxy
       shell: |
-        lxc config unset core.proxy_http
-        lxc config unset core.proxy_https
-        lxc config unset core.proxy_ignore_hosts
+        lxc config set core.proxy_http http://squid.internal:3128
+        lxc config set core.proxy_https http://squid.internal:3128
+        lxc config set core.proxy_ignore_hosts localhost
       tags:
         - adhoc
         - jenkins
-    # - name: set lxd proxy
-    #   ignore_errors: yes
-    #   shell: |
-    #     lxc config set core.proxy_http http://squid.internal:3128
-    #     lxc config set core.proxy_https http://squid.internal:3128
-    #     lxc config set core.proxy_ignore_hosts localhost
-    #   tags:
-    #     - adhoc
-    #     - jenkins
-
     - name: set docker daemon config
       copy:
         src: "fixtures/docker.daemon.json"
