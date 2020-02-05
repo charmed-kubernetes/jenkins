@@ -26,6 +26,8 @@ plan:
             replace-controller: yes
             model-default:
               - test-mode=true
+              - snap-http-proxy=http://squid.internal:3128
+              - snap-https-proxy=http://squid.internal:3128
           deploy:
             reuse: no
             bundle: $JUJU_DEPLOY_BUNDLE
