@@ -4,9 +4,8 @@ plan:
   - &BASE_JOB
     env:
       - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=localhost/localhost
+      - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-localhost
       - JUJU_MODEL=validate-model-localhost
     # if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
@@ -23,7 +22,7 @@ plan:
             model-default:
               - test-mode=true
           deploy:
-            charm: ubuntu
+            charm: "ubuntu"
             constraints: "mem=32G root-disk=100G cores=16"
             wait: yes
             timeout: 7200

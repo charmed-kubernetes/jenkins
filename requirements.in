@@ -21,7 +21,7 @@ jujubundlelib
 kv
 mkdocs-material
 mkdocs
-ogc-plugins-juju>=1.0.25
+ogc-plugins-juju>=1.0.26
 ogc-plugins-runner>=1.0.24
 ogc-plugins-spec-doc>=1.0.8
 ogc>=1.0.0
