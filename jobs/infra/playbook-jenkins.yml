@@ -92,7 +92,7 @@
     #     - adhoc
     #     - jenkins
     - name: use juju candidate
-      command: "snap refresh --channel 2.7/candidate juju"
+      command: "snap refresh --stable juju"
       ignore_errors: yes
       tags:
         - adhoc
