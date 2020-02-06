@@ -11,6 +11,7 @@ plan:
       - JUJU_MODEL=validate-model-localhost
     # if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
     before-script:
+      - juju kill-controller -y $JUJU_CONTROLLER || true
       - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-"$(uname -m)
       - juju:
           cloud: $JUJU_CLOUD
@@ -38,7 +39,7 @@ plan:
         import sys
         import yaml
 
-        status_yaml=yaml.load(sys.stdin)
+        status_yaml=yaml.safe_load(sys.stdin)
         unit = status_yaml['applications']['$1']['units']
         units = list(unit.keys())
         print(unit[units[0]]['public-address'])
@@ -46,12 +47,14 @@ plan:
             juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" "$1" --format yaml | env python3 -c "$py_script"
         }
 
+
         ansible-playbook -i $(unitAddress ubuntu), \
                      --tags 'enable' \
-                     --private-key /var/lib/jenkins/.local/share/juju/ssh/id_rsa \
+                     --ssh-common-args '-o StrictHostKeyChecking=no'
+                     --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
                      -u ubuntu \
                      jobs/validate/playbooks/single-system.yml
-      - !include jobs/spec-helpers/pytest.yml
+      # - !include jobs/spec-helpers/pytest.yml
     after-script:
       # - !include jobs/spec-helpers/collect.yml
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
