@@ -49,7 +49,7 @@ plan:
         ansible-playbook -i '$(unitAddress ubuntu),' \
                      --tags 'enable' \
                      --private-key /var/lib/jenkins/.local/share/juju/ssh/id_rsa \
-                     -u ubuntu
+                     -u ubuntu \
                      jobs/validate/playbooks/single-system.yml
       - !include jobs/spec-helpers/pytest.yml
     after-script:
