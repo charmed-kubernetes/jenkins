@@ -22,7 +22,6 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh "snapcraft logout || true"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds"
                 sh "virtualenv /var/lib/jenkins/venvs/eks -p python3.6"
                 sh "/var/lib/jenkins/venvs/eks/bin/pip install click sh pyyaml"

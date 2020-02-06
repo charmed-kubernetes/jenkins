@@ -232,7 +232,7 @@
 
           # Login to snapstore
           cp $SNAPCRAFTCREDS /var/lib/jenkins/snapcraft-creds
-          snapcraft login --with /var/lib/jenkins/snapcraft-creds || true
+          cp $SNAPCRAFTCPCCREDS /var/lib/jenkins/snapcraft-cpc-creds
 
           rm -rf $WORKSPACE/.env || true
 
