@@ -21,10 +21,10 @@ jujubundlelib
 kv
 mkdocs-material
 mkdocs
-ogc-plugins-juju>=1.0.32
+ogc-plugins-juju>=1.0.34
 ogc-plugins-runner>=1.0.24
 ogc-plugins-spec-doc>=1.0.8
-ogc>=1.0.0
+ogc>=1.0.1
 requests
 poetry-version>=0.1.5
 pynacl==1.1.2
