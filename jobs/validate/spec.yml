@@ -113,7 +113,7 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-focal
       - JUJU_MODEL=validate-model
-    # if: '[[ $(date +"%A") = "Saturday" ]]'
+    if: '[[ $(date +"%A") = "Saturday" ]]'
     before-script:
       - juju kill-controller -y $JUJU_CONTROLLER || true
       - juju:
