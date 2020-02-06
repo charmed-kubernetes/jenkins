@@ -5,6 +5,7 @@
 #    pip-compile
 #
 aioify==0.3.2
+ansible==2.9.4
 apipkg==1.5               # via execnet
 argh==0.26.2              # via watchdog
 asn1crypto==0.24.0        # via cryptography
@@ -27,7 +28,7 @@ chardet==3.0.4            # via requests
 click==7.0                # via mkdocs, ogc, ogc-plugins-juju, ogc-plugins-runner, ogc-plugins-spec-doc
 colorama==0.3.9           # via awscli, ogc
 configobj==5.0.6
-cryptography==2.7         # via paramiko, secretstorage
+cryptography==2.7         # via ansible, paramiko, secretstorage
 decorator==4.4.0          # via ipython, retry, traitlets
 defusedxml==0.6.0         # via python3-openid
 dict-deep==2.0.2          # via ogc
@@ -77,7 +78,7 @@ monotonic==1.5            # via fasteners
 more-itertools==7.2.0     # via pytest, zipp
 multi-key-dict==2.0.3     # via python-jenkins
 oauthlib==3.1.0           # via lazr.restfulclient
-ogc-plugins-juju==1.0.34
+ogc-plugins-juju==1.0.35
 ogc-plugins-runner==1.0.24
 ogc-plugins-spec-doc==1.0.8
 ogc==1.0.1

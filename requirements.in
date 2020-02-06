@@ -4,6 +4,7 @@ async-generator
 asyncio-extras
 autopep8
 awscli
+ansible
 # black
 boto3
 bs4
@@ -21,7 +22,7 @@ jujubundlelib
 kv
 mkdocs-material
 mkdocs
-ogc-plugins-juju>=1.0.34
+ogc-plugins-juju>=1.0.35
 ogc-plugins-runner>=1.0.24
 ogc-plugins-spec-doc>=1.0.8
 ogc>=1.0.1

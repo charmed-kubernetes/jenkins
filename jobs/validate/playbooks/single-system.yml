@@ -1,0 +1,58 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: install apt deps
+      apt:
+        name:
+          - apache2
+          - apt-mirror
+          - simplestreams
+          - squid
+      tags:
+        - enable
+    - name: remove unused debs
+      apt:
+        name:
+          - juju
+          - lxd
+          - lxd-client
+          - lxcfs
+          - lxc-common
+          - liblxc1
+        state: absent
+      tags: enable
+    - name: install snap deps
+      command: "snap install {{item}}"
+      ignore_errors: yes
+      loop:
+        - "juju --classic --channel latest/stable"
+        - "juju-wait --classic"
+        - "lxd"
+      tags:
+        - enable
+    - name: update ubuntu user
+      user:
+        name: ubuntu
+        groups: lxd
+      tags:
+        - enable
+    - name: reset ssh connection
+      meta: reset_connection
+      tags:
+        - enable
+    - name: setup lxd network
+      command: "/snap/bin/lxd init --auto"
+      ignore_errors: yes
+      become: false
+      tags:
+        - enable
+    - name: disable ipv6 in lxd
+      become: false
+      shell: |
+        export PATH=/snap/bin:$PATH
+        lxc network set lxdbr0 ipv6.address none
+      ignore_errors: true
+      tags:
+        - enable
