@@ -50,7 +50,7 @@ plan:
 
         ansible-playbook -i $(unitAddress ubuntu), \
                      --tags 'enable' \
-                     --ssh-common-args '-o StrictHostKeyChecking=no'
+                     --ssh-common-args '-o StrictHostKeyChecking=no' \
                      --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
                      -u ubuntu \
                      jobs/validate/playbooks/single-system.yml
