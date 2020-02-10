@@ -22,6 +22,7 @@ plan:
             replace-controller: yes
             model-default:
               - test-mode=true
+              - resource-tags=owner=k8sci
           deploy:
             charm: $JUJU_DEPLOY_CHARM
             constraints: "mem=32G root-disk=100G cores=16"
@@ -49,7 +50,6 @@ plan:
 
 
         ansible-playbook -i $(unitAddress ubuntu), \
-                     --tags 'enable' \
                      --ssh-common-args '-o StrictHostKeyChecking=no' \
                      --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
                      -u ubuntu \
