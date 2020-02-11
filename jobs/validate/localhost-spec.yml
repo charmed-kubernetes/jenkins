@@ -9,9 +9,8 @@ plan:
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-localhost
       - JUJU_MODEL=validate-localhost
-    # if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
+      - PLAYBOOK=jobs/validate/playbooks/single-system.yml
     before-script:
-      - juju kill-controller -y $JUJU_CONTROLLER || true
       - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-"$(uname -m)
       - juju:
           cloud: $JUJU_CLOUD
@@ -25,7 +24,7 @@ plan:
               - resource-tags=owner=k8sci
           deploy:
             charm: $JUJU_DEPLOY_CHARM
-            constraints: "mem=32G root-disk=100G cores=32"
+            constraints: "mem=32G root-disk=100G cores=16"
             wait: yes
             timeout: 7200
             channel: $JUJU_DEPLOY_CHANNEL
@@ -53,7 +52,11 @@ plan:
                      --ssh-common-args '-o StrictHostKeyChecking=no' \
                      --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
                      -u ubuntu \
-                     jobs/validate/playbooks/single-system.yml
+                     $PLAYBOOK
+      - |
+        #!/bin/bash
+
+        set -x
 
         tee setup <<EOF
         #!/bin/bash
@@ -71,6 +74,9 @@ plan:
             --cloud localhost/localhost \
             --model $JUJU_MODEL \
             --controller $JUJU_CONTROLLER
+
+        wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+        python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
         popd
         EOF
 
@@ -78,60 +84,33 @@ plan:
         juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" setup ubuntu/0:setup
         juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'bash setup'
 
-      # - !include jobs/spec-helpers/pytest.yml
+        juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz .
+
     after-script:
-      # - !include jobs/spec-helpers/collect.yml
+      - |
+        #!/bin/bash
+        python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
+        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
+        python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
+        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
+        python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+        python3 jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+        python3 jobs/infra/collect-debug.py save-meta
       - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.17/stable
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=stable
-  #     - JUJU_CLOUD=localhost/localhost
-  #     - JUJU_CONTROLLER=validate-ck-localhost
-  #     - JUJU_MODEL=validate-model-localhost
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.17/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=stable
-  #     - JUJU_CLOUD=localhost/localhost
-  #     - JUJU_CONTROLLER=validate-ck-localhost
-  #     - JUJU_MODEL=validate-model-localhost
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.18/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=localhost/localhost
-  #     - JUJU_CONTROLLER=validate-ck-localhost
-  #     - JUJU_MODEL=validate-model-localhost
-  #   script:
-  #     - !include jobs/spec-helpers/pytest-slow.yml
-  #   if: '[[ $(date +"%A") = "Saturday" ]]'
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.16/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=localhost/localhost
-  #     - JUJU_CONTROLLER=validate-ck-localhost
-  #     - JUJU_MODEL=validate-model-localhost
-  #   if: '[[ $(date +"%A") = "Saturday" ]]'
-  # - <<: *BASE_JOB
-  #   env:
-  #     - SNAP_VERSION=1.15/edge
-  #     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-  #     - JUJU_DEPLOY_CHANNEL=edge
-  #     - JUJU_CLOUD=localhost/localhost
-  #     - JUJU_CONTROLLER=validate-ck-localhost
-  #     - JUJU_MODEL=validate-model-localhost
-  #   if: '[[ $(date +"%A") = "Sunday" ]]'
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.17/stable
+      - JUJU_DEPLOY_CHARM=ubuntu
+      - JUJU_DEPLOY_CHANNEL=stable
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-localhost
+      - JUJU_MODEL=validate-localhost
+      - PLAYBOOK=jobs/validate/playbooks/single-system.yml
 
 meta:
   name: Verify CK on Localhost
   description: |
-    Verifies that CK on localhost passes integration tests for all architectures
+    Verifies that CK on localhost passes integration tests
   mkdocs:
     destination:
       - "validations/ck/index.md"
