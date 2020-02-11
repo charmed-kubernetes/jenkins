@@ -15,9 +15,12 @@ async def test_ceph(model, tools):
     }
     log("deploying ceph osd")
     await model.deploy("ceph-osd", storage=cs, num_units=3)
+    log("deploying ceph fs")
+    await model.deploy("ceph-fs", num_units=1)
 
     log("adding relations")
     await model.add_relation("ceph-mon", "ceph-osd")
+    await model.add_relation("ceph-mon", "ceph-fs")
     await model.add_relation("ceph-mon:admin", "kubernetes-master")
     await model.add_relation("ceph-mon:client", "kubernetes-master")
     log("waiting...")
@@ -37,11 +40,13 @@ async def test_ceph(model, tools):
     # create pod that writes to a pv from ceph
     await validate_storage_class(model, "ceph-xfs", "Ceph")
     await validate_storage_class(model, "ceph-ext4", "Ceph")
+    await validate_storage_class(model, "cephfs", "Ceph")
     # cleanup
     (done1, pending1) = await asyncio.wait(
         {
             model.applications["ceph-mon"].destroy(),
             model.applications["ceph-osd"].destroy(),
+            model.applications["ceph-fs"].destroy(),
         }
     )
     for task in done1:
