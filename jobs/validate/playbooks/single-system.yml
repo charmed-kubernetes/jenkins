@@ -36,10 +36,3 @@
         export PATH=/snap/bin:$PATH
         lxc network set lxdbr0 ipv6.address none
       ignore_errors: true
-    - name: deploy kubernetes
-      shell: |
-        export PATH=/snap/bin:$PATH
-        juju bootstrap localhost/localhost
-        juju deploy cs:~containers/charmed-kubernetes
-        juju-wait -w
-      become: false
