@@ -32,6 +32,8 @@ plan:
 
         cat >kubeflow-deploy<<EOF
         #!/bin/bash
+        sudo snap set system proxy.http='http://squid.internal:3128'
+        sudo snap set system proxy.https='http://squid.internal:3128'
         sudo snap install core
         sudo snap install charm --classic
         sudo snap install jq
