@@ -7,8 +7,9 @@ plan:
       - JUJU_DEPLOY_CHARM=ubuntu
       - JUJU_DEPLOY_CHANNEL=stable
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-localhost
+      - JUJU_CONTROLLER=validate-ck-localhost-bionic
       - JUJU_MODEL=validate-localhost
+      - SERIES=bionic
       - PLAYBOOK=jobs/validate/playbooks/single-system.yml
     before-script:
       - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-"$(uname -m)
@@ -66,8 +67,8 @@ plan:
         pushd jenkins
         sudo pip3 install -rrequirements.txt
 
-        juju bootstrap localhost/localhost $JUJU_CONTROLLER -d $JUJU_MODEL
-        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" cs:~containers/charmed-kubernetes
+        juju bootstrap localhost/localhost $JUJU_CONTROLLER -d $JUJU_MODEL --bootstrap-series $SERIES --force
+        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --series $SERIES --force cs:~containers/charmed-kubernetes
         juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
         pytest -m "not slow" jobs/integration/validation.py \
@@ -103,8 +104,29 @@ plan:
       - JUJU_DEPLOY_CHARM=ubuntu
       - JUJU_DEPLOY_CHANNEL=stable
       - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-localhost
+      - JUJU_CONTROLLER=validate-ck-localhost-bionic
+      - SERIES=bionic
       - JUJU_MODEL=validate-localhost
+      - PLAYBOOK=jobs/validate/playbooks/single-system.yml
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.18/edge
+      - JUJU_DEPLOY_CHARM=ubuntu
+      - JUJU_DEPLOY_CHANNEL=stable
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-localhost-focal
+      - JUJU_MODEL=validate-localhost
+      - SERIES=focal
+      - PLAYBOOK=jobs/validate/playbooks/single-system.yml
+  - <<: *BASE_JOB
+    env:
+      - SNAP_VERSION=1.18/edge
+      - JUJU_DEPLOY_CHARM=ubuntu
+      - JUJU_DEPLOY_CHANNEL=stable
+      - JUJU_CLOUD=aws/us-east-1
+      - JUJU_CONTROLLER=validate-ck-localhost-xenial
+      - JUJU_MODEL=validate-localhost
+      - SERIES=xenial
       - PLAYBOOK=jobs/validate/playbooks/single-system.yml
 
 meta:
