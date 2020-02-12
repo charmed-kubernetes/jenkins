@@ -41,10 +41,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/sync-upstream"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t sync"
+      - run-cmd:
+          COMMAND: |
+            ./mf repo sync --spec jobs/includes/repos.yaml
 
 - job:
     name: 'sync-stable-tag-bundle-rev'

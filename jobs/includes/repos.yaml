@@ -281,16 +281,6 @@ repos:
     resource_build_sh: 'build-resources.sh'
     namespace: 'containers'
     tags: ['k8s', 'tigera-secure-ee']
-  - name: keepalived
-    upstream: "https://github.com/juju-solutions/charm-keepalived.git"
-    downstream: 'juju-solutions/charm-keepalived.git'
-    namespace: 'containers'
-    tags: ['general', 'keepalived']
-  - name: docker-registry
-    upstream: "https://github.com/CanonicalLtd/docker-registry-charm.git"
-    downstream: 'CanonicalLtd/docker-registry-charm.git'
-    namespace: 'containers'
-    tags: ['general', 'docker-registry']
   - name: aws-iam
     upstream: "https://github.com/charmed-kubernetes/charm-aws-iam.git"
     namespace: 'containers'
