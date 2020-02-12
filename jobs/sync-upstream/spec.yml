@@ -1,10 +1,6 @@
 plan:
   - script:
-      # - python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc --charm-list jobs/includes/charm-support-matrix.inc
-      - rm -rf mf_*tar.gz
-      - wget https://github.com/battlemidget/mf/releases/download/v0.7.4/mf_0.7.4_linux_$(arch).tar.gz
-      - tar xvf mf_0.7.4_linux_$(arch).tar.gz
-      - ./mf repo sync --spec jobs/includes/repos.yaml
+      - python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc --charm-list jobs/includes/charm-support-matrix.inc
     tags: [sync]
   - script:
       - |
