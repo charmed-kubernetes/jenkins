@@ -92,7 +92,7 @@
     #     - adhoc
     #     - jenkins
     - name: use juju candidate
-      command: "snap refresh --stable juju"
+      command: "snap refresh --stable go"
       ignore_errors: yes
       tags:
         - adhoc
@@ -103,7 +103,7 @@
       loop:
         - "aws-cli --classic"
         - "charm --classic --edge"
-        - "go --classic --channel 1.12/stable"
+        - "go --classic --stable"
         - "juju --classic --channel latest/stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
