@@ -1,9 +1,9 @@
 plan:
   - script:
-      - python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc --charm-list jobs/includes/charm-support-matrix.inc
-      # - wget https://github.com/battlemidget/mf/releases/download/v0.7.1/mf_0.7.1_linux_$(arch).tar.gz
-      # - tar xvf mf_0.7.1_linux_$(arch).tar.gz
-      # - ./mf repo sync --spec jobs/includes/repos.yaml --dry-run
+      # - python3 jobs/sync-upstream/sync.py forks --layer-list jobs/includes/charm-layer-list.inc --charm-list jobs/includes/charm-support-matrix.inc
+      - wget https://github.com/battlemidget/mf/releases/download/v0.7.2/mf_0.7.2_linux_$(arch).tar.gz
+      - tar xvf mf_0.7.2_linux_$(arch).tar.gz
+      - ./mf repo sync --spec jobs/includes/repos.yaml
     tags: [sync]
   - script:
       - |
