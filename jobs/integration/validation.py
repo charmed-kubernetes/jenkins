@@ -1456,36 +1456,36 @@ async def test_encryption_at_rest(model, tools):
         )
     finally:
         log("Cleaning up")
-        # cleanup
-        # if "vault" in model.applications:
-        #     log("Removing vault")
-        #     await model.applications["vault"].destroy()
-        #     # wait for vault to go away before removing percona to prevent vault
-        #     # from erroring from having its DB taken away
-        #     await tools.juju_wait()
-        # if "percona-cluster" in model.applications:
-        #     log("Removing percona-cluster")
-        #     await model.applications["percona-cluster"].destroy()
+        cleanup
+        if "vault" in model.applications:
+            log("Removing vault")
+            await model.applications["vault"].destroy()
+            # wait for vault to go away before removing percona to prevent vault
+            # from erroring from having its DB taken away
+            await tools.juju_wait()
+        if "percona-cluster" in model.applications:
+            log("Removing percona-cluster")
+            await model.applications["percona-cluster"].destroy()
 
-        # log("Re-add easyrsa and setup relations")
-        # # re-add easyrsa after vault is gone
-        # tasks = {
-        #     model.add_relation("easyrsa:client", "kubernetes-master:certificates"),
-        #     model.add_relation("easyrsa:client", "kubernetes-worker:certificates"),
-        # }
-        # if "kubeapi-load-balancer" in model.applications:
-        #     tasks.add(
-        #         model.add_relation(
-        #             "easyrsa:client", "kubeapi-load-balancer:certificates"
-        #         )
-        #     )
-        # (done2, pending2) = await asyncio.wait(tasks)
-        # for task in done2:
-        #     # read and ignore any exception so that it doesn't get raised
-        #     # when the task is GC'd
-        #     task.exception()
-        # log("Waiting for cluster to settle")
-        # await tools.juju_wait()
+        log("Re-add easyrsa and setup relations")
+        # re-add easyrsa after vault is gone
+        tasks = {
+            model.add_relation("easyrsa:client", "kubernetes-master:certificates"),
+            model.add_relation("easyrsa:client", "kubernetes-worker:certificates"),
+        }
+        if "kubeapi-load-balancer" in model.applications:
+            tasks.add(
+                model.add_relation(
+                    "easyrsa:client", "kubeapi-load-balancer:certificates"
+                )
+            )
+        (done2, pending2) = await asyncio.wait(tasks)
+        for task in done2:
+            # read and ignore any exception so that it doesn't get raised
+            # when the task is GC'd
+            task.exception()
+        log("Waiting for cluster to settle")
+        await tools.juju_wait()
 
 
 @pytest.mark.asyncio
