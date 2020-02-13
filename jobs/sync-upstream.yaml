@@ -41,10 +41,11 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/sync-upstream"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t sync"
+      - run-venv:
+          COMMAND: |
+            python3 jobs/sync-upstream/sync.py forks \
+               --layer-list jobs/includes/charm-layer-list.inc \
+               --charm-list jobs/includes/charm-support-matrix.inc
 
 - job:
     name: 'sync-stable-tag-bundle-rev'

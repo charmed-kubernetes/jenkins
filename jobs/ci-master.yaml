@@ -311,6 +311,21 @@
           venv/bin/pip-sync requirements.txt
           venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
 
+- builder:
+    name: run-venv
+    builders:
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          virtualenv venv -p python3.6
+          venv/bin/python -m pip install pip-tools
+          venv/bin/pip-sync requirements.txt
+
+          {COMMAND}
 
 # WRAPPERS ------------------------------------------------------------------- #
 - wrapper:
