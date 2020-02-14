@@ -35,6 +35,7 @@ pytest-asyncio
 pytest-forked
 pytest-sugar
 pytest-xdist
+pytest-timeout
 pytest
 python-dotenv
 python-frontmatter
