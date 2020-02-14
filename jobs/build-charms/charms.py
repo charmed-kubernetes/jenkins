@@ -656,13 +656,15 @@ def build(
         build_entity.attach_resource("unpublished")
         build_entity.promote(to_channel=to_channel)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
-        builds = {tp.submit(_run_build, entity): entity for entity in entities}
-        for future in concurrent.futures.as_completed(builds):
-            try:
-                future.result()
-            except Exception as exc:
-                click.echo(f"Failed thread: {exc}")
+    for entity in entities:
+        _run_build(entity)
+    # with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
+    #     builds = {tp.submit(_run_build, entity): entity for entity in entities}
+    #     for future in concurrent.futures.as_completed(builds):
+    #         try:
+    #             future.result()
+    #         except Exception as exc:
+    #             click.echo(f"Failed thread: {exc}")
 
     build_env.save()
 
