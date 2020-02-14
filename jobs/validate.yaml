@@ -26,7 +26,7 @@
 
 - job:
     name: 'validate-ck-next'
-    node: runner-cloud
+    node: runner-s390x
     description: |
       Validates CDK edge, supports last three recent releases.
     project-type: freestyle
@@ -43,6 +43,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
+            pip install boto3 kv
             pip install https://github.com/battlemidget/ogc/archive/master.zip
             ogc --spec jobs/validate/spec-v2.yml
 
