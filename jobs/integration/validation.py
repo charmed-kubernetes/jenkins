@@ -1445,7 +1445,7 @@ async def test_encryption_at_rest(model, tools):
         log("Verifying encryption")
         # verify secret is encrypted
         etcd = model.applications["etcd"].units[0]
-        await etcd.run(
+        output = await etcd.run(
             "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
             "--endpoints http://127.0.0.1:4001 "
             "get /registry/secrets/default/test-secret | strings"
