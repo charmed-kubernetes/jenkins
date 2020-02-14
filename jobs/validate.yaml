@@ -25,6 +25,29 @@
           JOB_SPEC_FILE: "spec.yml"
 
 - job:
+    name: 'validate-ck-next'
+    node: runner-cloud
+    description: |
+      Validates CDK edge, supports last three recent releases.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-venv:
+          COMMAND: |
+            pip install https://github.com/battlemidget/ogc/archive/master.zip
+            ogc --spec jobs/validate/spec-v2.yml
+
+
+- job:
     name: 'validate-ck-arm64'
     node: runner-arm64
     description: |
