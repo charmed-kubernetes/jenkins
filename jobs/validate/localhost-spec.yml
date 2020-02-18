@@ -45,7 +45,7 @@ plan:
     }
 
 
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-ck-localhost-$SERIES-$SNAP_VERSION"
+    ogc-collect set-key 'job_name_custom' "validate-ck-localhost-$SERIES-$SNAP_VERSION"
 
     juju bootstrap aws/us-east-2 $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
@@ -65,7 +65,7 @@ plan:
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
 
-    $WORKSPACE/venv/bin/ansible-playbook -i $(unitAddress ubuntu), \
+    ansible-playbook -i $(unitAddress ubuntu), \
                      --ssh-common-args '-o StrictHostKeyChecking=no' \
                      --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
                      -u ubuntu \
@@ -112,6 +112,5 @@ plan:
     $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'build_log' ogc.log
     $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'metadata' metadata.json
     $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'job_result' *job.json
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py save-meta
+    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
+    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"

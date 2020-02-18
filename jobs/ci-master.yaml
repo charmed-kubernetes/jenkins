@@ -308,6 +308,7 @@
           virtualenv venv -p python3.6
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
+          source venv/bin/activate
 
           {COMMAND}
 
