@@ -111,9 +111,11 @@ plan:
         --model $JUJU_MODEL \
         --controller $JUJU_CONTROLLER
 
+    popd
+
     wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
     python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-    popd
+
     EOF
 
     chmod +x setup
@@ -121,7 +123,7 @@ plan:
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" overlay.yaml ubuntu/0:overlay.yaml
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'bash setup'
 
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz .
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
 
     python $WORKSPACE/jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
     python $WORKSPACE/jobs/infra/collect-debug.py push 'build_log' ogc.log
