@@ -42,12 +42,7 @@ plan:
 
     export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(uuid -v4 | cut -f1 -d-)"
 
-    echo "PYTHON PATH"
-    echo $PYTHONPATH
-    pwd
-    echo "PYTHON PATH"
-
-    $HOME/venv/bin/python3 $WORKSPACE/jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-ck-$SERIES-$SNAP_VERSION"
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-ck-$SERIES-$SNAP_VERSION"
 
     juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
@@ -55,7 +50,8 @@ plan:
          --force \
          --bootstrap-constraints arch=$ARCH \
          --model-default test-mode=true \
-         --model-default resource-tags=owner=k8sci
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
 
     tee overlay.yaml <<EOF> /dev/null
     applications:
@@ -73,20 +69,20 @@ plan:
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
-    $HOME/venv/bin/pytest -m "not slow" jobs/integration/validation.py \
+    $WORKSPACE/venv/bin/pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \
        --controller $JUJU_CONTROLLER
 
     wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-    $HOME/venv/bin/python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+    $WORKSPACE/venv/bin/python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
 
-    $HOME/venv/bin/python3 $WORKSPACE/jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-    $HOME/venv/bin/python3 $WORKSPACE/jobs/infra/collect-debug.py push 'build_log' ogc.log
-    $HOME/venv/bin/python3 $WORKSPACE/jobs/infra/collect-debug.py push 'metadata' metadata.json
-    $HOME/venv/bin/python3 $WORKSPACE/jobs/infra/collect-debug.py push 'job_result' *job.json
-    $HOME/venv/bin/python3 $WORKSPACE/jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-    $HOME/venv/bin/python3 $WORKSPACE/jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-    $HOME/venv/bin/python3 $WORKSPACE/jobs/infra/collect-debug.py save-meta
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'build_log' ogc.log
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'metadata' metadata.json
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'job_result' *job.json
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py save-meta
 
     juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
