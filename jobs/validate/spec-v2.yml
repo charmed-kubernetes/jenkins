@@ -43,7 +43,7 @@ plan:
     export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(uuid -v4 | cut -f1 -d-)"
     export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(uuid -v4 | cut -f1 -d-)"
 
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-ck-$SERIES-$SNAP_VERSION"
+    ogc-collect set-key 'job_name_custom' "validate-ck-$SERIES-$SNAP_VERSION"
 
     juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
@@ -71,20 +71,20 @@ plan:
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
-    $WORKSPACE/venv/bin/pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
+    pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \
        --controller $JUJU_CONTROLLER
 
     wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-    $WORKSPACE/venv/bin/python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+    python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
 
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'build_log' ogc.log
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'metadata' metadata.json
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'job_result' *job.json
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py save-meta
+    python $WORKSPACE/jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
+    python $WORKSPACE/jobs/infra/collect-debug.py push 'build_log' ogc.log
+    python $WORKSPACE/jobs/infra/collect-debug.py push 'metadata' metadata.json
+    python $WORKSPACE/jobs/infra/collect-debug.py push 'job_result' *job.json
+    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
+    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+    python $WORKSPACE/jobs/infra/collect-debug.py save-meta
 
     juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
