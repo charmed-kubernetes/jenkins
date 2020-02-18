@@ -1,142 +1,117 @@
-sequential: yes
-
-plan:
-  - &BASE_JOB
-    env:
-      - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_CHARM=ubuntu
-      - JUJU_DEPLOY_CHANNEL=stable
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-localhost-bionic
-      - JUJU_MODEL=validate-localhost
-      - SERIES=bionic
-      - PLAYBOOK=jobs/validate/playbooks/single-system.yml
-    before-script:
-      - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER-"$(uname -m)
-      - juju:
-          cloud: $JUJU_CLOUD
-          controller: $JUJU_CONTROLLER
-          model: $JUJU_MODEL
-          bootstrap:
-            debug: no
-            replace-controller: yes
-            model-default:
-              - test-mode=true
-              - resource-tags=owner=k8sci
-          deploy:
-            charm: $JUJU_DEPLOY_CHARM
-            constraints: "mem=32G root-disk=100G cores=16"
-            wait: yes
-            timeout: 7200
-            channel: $JUJU_DEPLOY_CHANNEL
-    script:
-      - |
-        #!/bin/bash
-
-        set -x
-        unitAddress()
-        {
-            py_script="
-        import sys
-        import yaml
-
-        status_yaml=yaml.safe_load(sys.stdin)
-        unit = status_yaml['applications']['$1']['units']
-        units = list(unit.keys())
-        print(unit[units[0]]['public-address'])
-        "
-            juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" "$1" --format yaml | env python3 -c "$py_script"
-        }
-
-
-        ansible-playbook -i $(unitAddress ubuntu), \
-                     --ssh-common-args '-o StrictHostKeyChecking=no' \
-                     --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
-                     -u ubuntu \
-                     $PLAYBOOK
-      - |
-        #!/bin/bash
-
-        set -x
-
-        tee setup <<EOF
-        #!/bin/bash
-        set -x
-        export PATH=/snap/bin:$PATH
-        git clone https://github.com/charmed-kubernetes/jenkins
-        pushd jenkins
-        sudo pip3 install -rrequirements.txt
-
-        juju bootstrap localhost/localhost $JUJU_CONTROLLER -d $JUJU_MODEL --bootstrap-series $SERIES --force
-        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --series $SERIES --force cs:~containers/charmed-kubernetes
-        juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
-
-        pytest -m "not slow" jobs/integration/validation.py \
-            --cloud localhost/localhost \
-            --model $JUJU_MODEL \
-            --controller $JUJU_CONTROLLER
-
-        wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-        python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-        popd
-        EOF
-
-        chmod +x setup
-        juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" setup ubuntu/0:setup
-        juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'bash setup'
-
-        juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz .
-
-    after-script:
-      - |
-        #!/bin/bash
-        python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-        python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
-        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-        python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-        python3 jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-        python3 jobs/infra/collect-debug.py save-meta
-      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/stable
-      - JUJU_DEPLOY_CHARM=ubuntu
-      - JUJU_DEPLOY_CHANNEL=stable
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-localhost-bionic
-      - SERIES=bionic
-      - JUJU_MODEL=validate-localhost
-      - PLAYBOOK=jobs/validate/playbooks/single-system.yml
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_CHARM=ubuntu
-      - JUJU_DEPLOY_CHANNEL=stable
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-localhost-focal
-      - JUJU_MODEL=validate-localhost
-      - SERIES=focal
-      - PLAYBOOK=jobs/validate/playbooks/single-system.yml
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_CHARM=ubuntu
-      - JUJU_DEPLOY_CHANNEL=stable
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-localhost-xenial
-      - JUJU_MODEL=validate-localhost
-      - SERIES=xenial
-      - PLAYBOOK=jobs/validate/playbooks/single-system.yml
-
 meta:
   name: Verify CK on Localhost
   description: |
     Verifies that CK on localhost passes integration tests
   mkdocs:
     destination:
-      - "validations/ck/index.md"
-    jenkins-job-builder:
-      jobs:
-        - jobs/ci-master.yaml
-        - jobs/validate.yaml
+      - "validations/ck/localhost.md"
+
+matrix:
+  snap_version:
+    - 1.18/edge
+    - 1.17/edge
+    - 1.16/edge
+    - 1.15/edge
+  series:
+    - focal
+    - bionic
+    - xenial
+  channel:
+    - edge
+
+
+plan:
+  execute: |
+    #!/bin/bash
+
+    set -x
+
+    export JUJU_CONTROLLER=validate-localhost"-$(uuid -v4 | cut -f1 -d-)"
+    export JUJU_MODEL=validate-localhost-"$SERIES-$(uuid -v4 | cut -f1 -d-)"
+    export JUJU_DEPLOY_CHANNEL=edge
+
+    unitAddress()
+    {
+        py_script="
+    import sys
+    import yaml
+
+    status_yaml=yaml.safe_load(sys.stdin)
+    unit = status_yaml['applications']['$1']['units']
+    units = list(unit.keys())
+    print(unit[units[0]]['public-address'])
+    "
+        juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" "$1" --format yaml | env python3 -c "$py_script"
+    }
+
+
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-ck-localhost-$SERIES-$SNAP_VERSION"
+
+    juju bootstrap aws/us-east-2 $JUJU_CONTROLLER \
+         -d $JUJU_MODEL \
+         --bootstrap-series $SERIES \
+         --force \
+         --bootstrap-constraints arch="amd64" \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+        --series $SERIES \
+        --force \
+        --constraints "mem=32G root-disk=100G cores=16" \
+        ubuntu
+
+    juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+
+    $WORKSPACE/venv/bin/ansible-playbook -i $(unitAddress ubuntu), \
+                     --ssh-common-args '-o StrictHostKeyChecking=no' \
+                     --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
+                     -u ubuntu \
+                     $WORKSPACE/jobs/validate/playbooks/single-system.yml
+
+    tee setup <<EOF> /dev/null
+    #!/bin/bash
+    set -x
+    export PATH=/snap/bin:$PATH
+    git clone https://github.com/charmed-kubernetes/jenkins
+    pushd jenkins
+    sudo pip3 install -rrequirements.txt
+
+    juju bootstrap localhost/localhost \
+        $JUJU_CONTROLLER \
+        -d $JUJU_MODEL \
+        --bootstrap-series $SERIES \
+        --force
+    juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
+        --series $SERIES \
+        --force \
+        --channel $JUJU_DEPLOY_CHANNEL \
+        cs:~containers/charmed-kubernetes
+
+    juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+    pytest -m "not slow" jobs/integration/validation.py \
+        --cloud localhost/localhost \
+        --model $JUJU_MODEL \
+        --controller $JUJU_CONTROLLER
+
+    wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+    python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+    popd
+    EOF
+
+    chmod +x setup
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" setup ubuntu/0:setup
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'bash setup'
+
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz .
+
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'build_log' ogc.log
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'metadata' metadata.json
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py push 'job_result' *job.json
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+    $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py save-meta
