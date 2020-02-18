@@ -90,7 +90,8 @@ plan:
     export PATH=/snap/bin:$PATH
     git clone https://github.com/charmed-kubernetes/jenkins
     pushd jenkins
-    sudo pip3 install -rrequirements.txt 2>&1
+    sudo pip3 install pip-tools
+    sudo pip-sync
 
     juju bootstrap localhost/localhost \
         $JUJU_CONTROLLER \
@@ -100,7 +101,7 @@ plan:
         --model-default image-stream=daily
     juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
         --channel $JUJU_DEPLOY_CHANNEL \
-        --overlay overlay.yaml \
+        --overlay ../overlay.yaml \
         cs:~containers/charmed-kubernetes
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
