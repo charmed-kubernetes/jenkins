@@ -34,13 +34,14 @@ plan:
     - JUJU_DEPLOY_CHANNEL=$CHANNEL
     - JUJU_CLOUD=aws/us-east-1
     - JUJU_CONTROLLER=validate-ck
-    - JUJU_MODEL=validate-model
+    - JUJU_MODEL=validate-ck
 
   execute: |
     #!/bin/bash
     set -x
 
     export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(uuid -v4 | cut -f1 -d-)"
+    export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(uuid -v4 | cut -f1 -d-)"
 
     $WORKSPACE/venv/bin/python $WORKSPACE/jobs/infra/collect-debug.py set-key 'job_name_custom' "validate-ck-$SERIES-$SNAP_VERSION"
 
@@ -54,6 +55,7 @@ plan:
          --model-default image-stream=daily
 
     tee overlay.yaml <<EOF> /dev/null
+    series: $SERIES
     applications:
       kubernetes-master:
         options:

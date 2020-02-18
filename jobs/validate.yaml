@@ -42,10 +42,10 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
+          JOB_SPEC_DIR: "jobs/validate"
           COMMAND: |
-            pip install boto3 kv
-            pip install https://github.com/battlemidget/ogc/archive/master.zip
-            ogc --spec jobs/validate/spec-v2.yml
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/validate/spec-v2.yml
 
 
 - job:

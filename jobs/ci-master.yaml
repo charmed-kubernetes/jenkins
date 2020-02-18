@@ -259,22 +259,6 @@
 
           env > $WORKSPACE/.env
 
-- builder:
-    name: run-cmd
-    builders:
-      - shell: |-
-          #!/bin/bash
-          set -eux
-          set -o allexport
-          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-          set +o allexport
-
-          rm -rf mf_*tar.gz
-          MF_VERSION=0.7.5
-          wget https://github.com/battlemidget/mf/releases/download/v"$MF_VERSION"/mf_"$MF_VERSION"_linux_$(arch).tar.gz
-          tar xvf mf_"$MF_VERSION"_linux_$(arch).tar.gz
-
-          {COMMAND}
 
 - builder:
     name: charm-build
@@ -323,7 +307,7 @@
 
           virtualenv venv -p python3.6
           venv/bin/python -m pip install pip-tools
-          # venv/bin/pip-sync requirements.txt
+          venv/bin/pip-sync requirements.txt
 
           {COMMAND}
 

@@ -9,16 +9,18 @@
       - k8s-jenkins-jenkaas
     wrappers:
       - default-job-wrapper
+      - timestamps
       - ci-creds
     triggers:
         - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-snaps"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/build-snaps"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t sync-branches"
+      - run-venv:
+          COMMAND: |
+            $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py sync-branches \
+                --snap-list jobs/includes/k8s-snap-list.inc
+            $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py sync-branches-list
 
 - job:
     name: 'sync-upstream'
@@ -35,6 +37,7 @@
     wrappers:
       - ansicolor
       - workspace-cleanup
+      - timestamps
       - ci-creds
     triggers:
         - timed: "@daily"
@@ -43,7 +46,7 @@
           JOB_SPEC_DIR: "jobs/sync-upstream"
       - run-venv:
           COMMAND: |
-            python3 jobs/sync-upstream/sync.py forks \
+            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py forks \
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc
 
@@ -71,10 +74,18 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/sync-upstream"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t tag-stable-rev"
+      - run-venv:
+          COMMAND: |
+            IS_DRY_RUN=""
+            if [ ! -z ${DRY_RUN+x} ]; then
+              IS_DRY_RUN="--dry-run"
+            fi
+            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py tag-stable \
+                     --layer-list jobs/includes/charm-layer-list.inc \
+                     --charm-list jobs/includes/charm-support-matrix.inc \
+                     --bundle-revision $BUNDLE_REV \
+                     --k8s-version $K8S_VERSION \
+                     --filter-by-tag k8s
 
 - job:
     name: 'sync-stable-tag-bugfix-rev'
@@ -100,11 +111,20 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/sync-upstream"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t tag-bugfix-rev"
-
+      - run-venv:
+          COMMAND: |
+            IS_DRY_RUN=""
+            if [ ! -z ${DRY_RUN+x} ]; then
+              IS_DRY_RUN="--dry-run"
+            fi
+            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py tag-stable \
+              --layer-list jobs/includes/charm-layer-list.inc \
+              --charm-list jobs/includes/charm-support-matrix.inc \
+              --bundle-revision $BUGFIX_REV \
+              --k8s-version $K8S_VERSION \
+              --filter-by-tag k8s \
+              --bugfix
+o
 - job:
     name: 'cut-stable-release'
     description: |
@@ -122,7 +142,14 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/sync-upstream"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t cut-stable-release"
+      - run-venv:
+          COMMAND: |
+            IS_DRY_RUN=""
+            if [ ! -z ${DRY_RUN+x} ]; then
+              IS_DRY_RUN="--dry-run"
+            fi
+            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py cut-stable-release \
+               --layer-list jobs/includes/charm-layer-list.inc \
+               --charm-list jobs/includes/charm-support-matrix.inc \
+               --ancillary-list jobs/includes/ancillary-list.inc \
+               --filter-by-tag k8s $IS_DRY_RUN
