@@ -71,23 +71,36 @@ plan:
                      -u ubuntu \
                      $WORKSPACE/jobs/validate/playbooks/single-system.yml
 
+
+    tee overlay.yaml <<EOF> /dev/null
+    series: $SERIES
+    applications:
+      kubernetes-master:
+        options:
+          channel: $SNAP_VERSION
+      kubernetes-worker:
+        options:
+          channel: $SNAP_VERSION
+    EOF
+
+
     tee setup <<EOF> /dev/null
     #!/bin/bash
     set -x
     export PATH=/snap/bin:$PATH
     git clone https://github.com/charmed-kubernetes/jenkins
     pushd jenkins
-    sudo pip3 install -rrequirements.txt
+    sudo pip3 install -rrequirements.txt 2>&1
 
     juju bootstrap localhost/localhost \
         $JUJU_CONTROLLER \
         -d $JUJU_MODEL \
         --bootstrap-series $SERIES \
-        --force
-    juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
-        --series $SERIES \
         --force \
+        --model-default image-stream=daily
+    juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
         --channel $JUJU_DEPLOY_CHANNEL \
+        --overlay overlay.yaml \
         cs:~containers/charmed-kubernetes
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
@@ -104,6 +117,7 @@ plan:
 
     chmod +x setup
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" setup ubuntu/0:setup
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" overlay.yaml ubuntu/0:overlay.yaml
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'bash setup'
 
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz .
