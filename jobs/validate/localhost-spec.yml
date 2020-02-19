@@ -19,8 +19,6 @@ matrix:
   channel:
     - edge
 
-concurrent: no
-
 plan:
   execute: |
     #!/bin/bash
@@ -48,7 +46,6 @@ plan:
     trap "juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER" EXIT
 
     ogc-collect set-key 'job_name_custom' "validate-ck-localhost-$SERIES-$SNAP_VERSION"
-    ogc-collect push 'build_log' ogc.log
 
     juju bootstrap aws/us-east-2 $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
