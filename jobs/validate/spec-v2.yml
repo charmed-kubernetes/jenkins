@@ -79,10 +79,10 @@ plan:
     wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
     python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
 
-    python $WORKSPACE/jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-    python $WORKSPACE/jobs/infra/collect-debug.py push 'build_log' ogc.log
-    python $WORKSPACE/jobs/infra/collect-debug.py push 'metadata' metadata.json
-    python $WORKSPACE/jobs/infra/collect-debug.py push 'job_result' *job.json
+    ogc-collect push 'cdk_field_agent' results*.tar.gz
+    ogc-collect push 'build_log' ogc.log
+    ogc-collect push 'metadata' metadata.json
+    ogc-collect push 'job_result' *job.json
     ogc-collect set-key 'snap_version' "$SNAP_VERSION"
     ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
     python $WORKSPACE/jobs/infra/collect-debug.py save-meta
