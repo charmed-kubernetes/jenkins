@@ -45,6 +45,8 @@ plan:
     export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(uuid -v4 | cut -f1 -d-)"
     export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(uuid -v4 | cut -f1 -d-)"
 
+    trap "juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER" EXIT
+
     ogc-collect set-key 'job_name_custom' "validate-ck-$SERIES-$SNAP_VERSION"
 
     juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
@@ -87,5 +89,3 @@ plan:
     ogc-collect push 'job_result' *job.json
     ogc-collect set-key 'snap_version' "$SNAP_VERSION"
     ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-
-    juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
