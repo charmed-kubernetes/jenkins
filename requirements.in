@@ -45,3 +45,4 @@ lazr.restfulclient
 launchpadlib
 sh
 retry
+macaroonbakery>=1.3.1
