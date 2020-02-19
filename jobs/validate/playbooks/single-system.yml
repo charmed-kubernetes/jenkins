@@ -12,8 +12,12 @@
           - lxcfs
           - lxc-common
           - liblxc1
-          - python3-dev
         state: absent
+    - name: add necessary debs
+      apt:
+        name:
+          - libffi-dev
+          - python3-dev
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
