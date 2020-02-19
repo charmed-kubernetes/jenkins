@@ -24,12 +24,16 @@
                   {{ day.build_number}}
                 </a>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                  {% if not day.artifacts %}
                   <a class="dropdown-item" href="{{ day.build_log }}">Job Log</a>
                   <a class="dropdown-item" href="{{ day.job_result }}">Job Results</a>
                   <a class="dropdown-item" href="{{ day.metadata }}">Job Metadata</a>
                   {% if day.results_file %}<a class="dropdown-item" href="{{ day.results_file }}">Juju Crashdump</a>{% endif %}
                   {% if day.cdk_field_agent %}<a class="dropdown-item" href="{{ day.cdk_field_agent }}">CDK Field Agent</a>{% endif %}
                   {% if day.conformance %}<a class="dropdown-item" href="{{ day.conformance }}">CNCF Conformance</a>{% endif %}
+                  {% else %}
+                  <a class="dropdown-item" href="{{ day.artifacts }}">Job Artifacts</a>
+                  {% endif %}
                 </div>
               </div>
             </td>

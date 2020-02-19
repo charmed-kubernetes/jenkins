@@ -9,13 +9,13 @@ meta:
 matrix:
   snap_version:
     - 1.18/edge
-    # - 1.17/edge
-    # - 1.16/edge
-    # - 1.15/edge
+    - 1.17/edge
+    - 1.16/edge
+    - 1.15/edge
   series:
-    # - focal
+    - focal
     - bionic
-    # - xenial
+    - xenial
   channel:
     - edge
 
@@ -125,7 +125,7 @@ plan:
 
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
 
-    ogc-collect push 'cdk_field_agent' results*.tar.gz
-    ogc-collect push 'build_log' ogc.log
+    tar cvjf artifacts.tar.gz *
+    ogc-collect push 'artifacts' artifacts.tar.gz
     ogc-collect set-key 'snap_version' "$SNAP_VERSION"
     ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
