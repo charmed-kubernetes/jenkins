@@ -89,10 +89,6 @@ plan:
     #!/bin/bash
     set -x
     export PATH=/snap/bin:$PATH
-    git clone https://github.com/charmed-kubernetes/jenkins
-    pushd jenkins
-    sudo pip3 install pip-tools
-    sudo pip-sync
 
     juju bootstrap localhost/localhost \
         $JUJU_CONTROLLER \
@@ -107,6 +103,7 @@ plan:
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
+    pushd jenkins
     pytest -m "not slow" jobs/integration/validation.py \
         --cloud localhost/localhost \
         --model $JUJU_MODEL \

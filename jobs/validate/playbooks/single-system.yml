@@ -12,6 +12,7 @@
           - lxcfs
           - lxc-common
           - liblxc1
+          - python3-dev
         state: absent
     - name: install snap deps
       command: "snap install {{item}}"
@@ -36,3 +37,13 @@
         export PATH=/snap/bin:$PATH
         lxc network set lxdbr0 ipv6.address none
       ignore_errors: true
+    - name: grab jenkins ci repo
+      command: "git clone https://github.com/charmed-kubernetes/jenkins"
+      become: false
+    - name: install python deps
+      become: true
+      shell: |
+        pip3 install pip-tools
+        pip-sync
+      args:
+        chdir: jenkins
