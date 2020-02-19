@@ -100,7 +100,7 @@ plan:
         --model-default image-stream=daily
     juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
         --channel $JUJU_DEPLOY_CHANNEL \
-        --overlay ../overlay.yaml \
+        --overlay overlay.yaml \
         cs:~containers/charmed-kubernetes
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
@@ -127,6 +127,5 @@ plan:
 
     ogc-collect push 'cdk_field_agent' results*.tar.gz
     ogc-collect push 'build_log' ogc.log
-    ogc-collect push 'job_result' *job.json
     ogc-collect set-key 'snap_version' "$SNAP_VERSION"
     ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"

@@ -16,13 +16,13 @@ meta:
 matrix:
   snap_version:
     - 1.18/edge
-    - 1.17/edge
-    - 1.16/edge
-    - 1.15/edge
+    # - 1.17/edge
+    # - 1.16/edge
+    # - 1.15/edge
   series:
-    - focal
+    # - focal
     - bionic
-    - xenial
+    # - xenial
   channel:
     - edge
   arch:
@@ -83,8 +83,8 @@ plan:
     wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
     python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
 
+    ls -l
     ogc-collect push 'cdk_field_agent' results*.tar.gz
     ogc-collect push 'build_log' ogc.log
-    ogc-collect push 'job_result' *job.json
     ogc-collect set-key 'snap_version' "$SNAP_VERSION"
     ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
