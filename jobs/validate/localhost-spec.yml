@@ -19,6 +19,7 @@ matrix:
   channel:
     - edge
 
+concurrent: no
 
 plan:
   execute: |
