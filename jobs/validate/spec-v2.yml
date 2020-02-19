@@ -40,7 +40,7 @@ plan:
 
   execute: |
     #!/bin/bash
-    set -x
+    set -eux
 
     export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(uuid -v4 | cut -f1 -d-)"
     export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(uuid -v4 | cut -f1 -d-)"
