@@ -1456,7 +1456,6 @@ async def test_encryption_at_rest(model, tools):
         )
     finally:
         log("Cleaning up")
-        cleanup
         if "vault" in model.applications:
             log("Removing vault")
             await model.applications["vault"].destroy()
