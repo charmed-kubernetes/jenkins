@@ -89,7 +89,7 @@ plan:
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
-    timeout 2h pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
+    timeout 45m pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \
        --controller $JUJU_CONTROLLER
