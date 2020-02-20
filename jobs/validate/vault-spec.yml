@@ -47,7 +47,19 @@ plan:
     export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(uuid -v4 | cut -f1 -d-)"
     export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(uuid -v4 | cut -f1 -d-)"
 
-    trap "juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER" EXIT
+    cleanup()
+    {
+        wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+        python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+
+        tar cvjf artifacts.tar.gz *
+        ogc-collect push 'artifacts' artifacts.tar.gz
+        ogc-collect set-key 'snap_version' "$SNAP_VERSION"
+        ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+
+        juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+    }
+    trap cleanup EXIT
 
     ogc-collect set-key 'job_name_custom' "validate-ck-vault-$SERIES-$SNAP_VERSION"
 
@@ -83,12 +95,3 @@ plan:
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \
        --controller $JUJU_CONTROLLER
-
-    wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-    python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-
-    tar cvjf artifacts.tar.gz *
-    ogc-collect push 'artifacts' artifacts.tar.gz
-
-    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
-    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"

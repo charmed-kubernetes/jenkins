@@ -43,7 +43,19 @@ plan:
         juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" "$1" --format yaml | env python3 -c "$py_script"
     }
 
-    trap "juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER" EXIT
+    cleanup()
+    {
+
+        juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz .
+
+        tar cvjf artifacts.tar.gz *
+        ogc-collect push 'artifacts' artifacts.tar.gz
+        ogc-collect set-key 'snap_version' "$SNAP_VERSION"
+        ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+
+        juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+    }
+    trap cleanup EXIT
 
     ogc-collect set-key 'job_name_custom' "validate-ck-localhost-$SERIES-$SNAP_VERSION"
 
@@ -119,10 +131,3 @@ plan:
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" setup ubuntu/0:setup
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" overlay.yaml ubuntu/0:overlay.yaml
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'bash setup'
-
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
-
-    tar cvjf artifacts.tar.gz *
-    ogc-collect push 'artifacts' artifacts.tar.gz
-    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
-    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
