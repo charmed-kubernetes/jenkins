@@ -35,7 +35,7 @@ plan:
     ogc-collect set-key 'snap_version' "$SNAP_VERSION"
     ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
 
-    juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+    juju destroy-controller -y --destroy-all-models --destroy-storage $(ogc-collect get-key juju_controller)
 
   execute: |
     #!/bin/bash
@@ -43,6 +43,8 @@ plan:
     set -eux
 
     export JUJU_CONTROLLER=validate-localhost"-$(uuid -v4 | cut -f1 -d-)"
+    ogc-collect set-key 'juju_controller' "$JUJU_CONTROLLER"
+
     export JUJU_MODEL=validate-localhost-"$SERIES-$(uuid -v4 | cut -f1 -d-)"
     export JUJU_DEPLOY_CHANNEL=edge
 
