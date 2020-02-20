@@ -187,9 +187,9 @@ pipeline {
             steps {
                 script {
                     if(params.dry_run) {
-                        echo "Dry run; would have pushed cdk-addons/*.snap to ${params.version}/edge"
+                        echo "Dry run; would have pushed cdk-addons/*.snap to ${params.channels}"
                     } else {
-                        sh "snapcraft push cdk-addons/*.snap --release ${params.version}/edge"
+                        sh "snapcraft push cdk-addons/*.snap --release ${params.channels}"
                     }
                 }
             }
