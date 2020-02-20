@@ -647,8 +647,8 @@ def build(
     def _run_build(build_entity):
         build_entity.setup()
 
-        # if not build_entity.has_changed:
-        #     return
+        if not build_entity.has_changed:
+            return
 
         build_entity.proof_build()
 
