@@ -271,9 +271,11 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "nfs-spec.yml"
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/validate/nfs-spec.yml
 
 
 - job:
