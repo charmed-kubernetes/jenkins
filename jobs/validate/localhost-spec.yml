@@ -46,7 +46,10 @@ plan:
     cleanup()
     {
 
-        juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz .
+        juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+        juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+
+        juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
 
         tar cvjf artifacts.tar.gz *
         ogc-collect push 'artifacts' artifacts.tar.gz
@@ -122,9 +125,6 @@ plan:
         --controller $JUJU_CONTROLLER
 
     popd
-
-    wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-    python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
 
     EOF
 
