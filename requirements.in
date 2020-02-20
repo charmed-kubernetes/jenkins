@@ -3,7 +3,7 @@ aioify>=0.3.2
 async-generator
 asyncio-extras
 autopep8
-awscli
+awscli>=1.18.3
 ansible
 # black
 boto3
