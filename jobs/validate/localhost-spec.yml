@@ -66,13 +66,13 @@ plan:
          --bootstrap-constraints arch="amd64" \
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
-         --model-default image-stream=daily
+         --model-default image-stream=daily 1>&2
 
     juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
         --series $SERIES \
         --force \
         --constraints "mem=32G root-disk=100G cores=16" \
-        ubuntu
+        ubuntu 1>&2
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
@@ -106,11 +106,12 @@ plan:
         -d $JUJU_MODEL \
         --bootstrap-series $SERIES \
         --force \
-        --model-default image-stream=daily
+        --model-default image-stream=daily 1>&2
+
     juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
         --channel $JUJU_DEPLOY_CHANNEL \
         --overlay overlay.yaml \
-        cs:~containers/charmed-kubernetes
+        cs:~containers/charmed-kubernetes 1>&2
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 

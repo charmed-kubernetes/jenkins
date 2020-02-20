@@ -16,19 +16,17 @@ meta:
 matrix:
   snap_version:
     - 1.18/edge
-    # - 1.17/edge
-    # - 1.16/edge
-    # - 1.15/edge
+    - 1.17/edge
+    - 1.16/edge
+    - 1.15/edge
   series:
-    # - focal
+    - focal
     - bionic
-    # - xenial
+    - xenial
   channel:
     - edge
   arch:
     - amd64
-
-concurrent: no
 
 plan:
   env:
@@ -40,7 +38,7 @@ plan:
 
   execute: |
     #!/bin/bash
-    set -eux
+    set -eu
 
     export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(uuid -v4 | cut -f1 -d-)"
     export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(uuid -v4 | cut -f1 -d-)"
@@ -68,7 +66,7 @@ plan:
          --bootstrap-constraints arch=$ARCH \
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
-         --model-default image-stream=daily
+         --model-default image-stream=daily  1>&2
 
     tee overlay.yaml <<EOF> /dev/null
     series: $SERIES
@@ -83,7 +81,7 @@ plan:
 
     juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
           --overlay overlay.yaml \
-          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE 1>&2
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
