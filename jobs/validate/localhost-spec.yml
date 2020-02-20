@@ -20,6 +20,21 @@ matrix:
     - edge
 
 plan:
+  post-execute: |
+    #!/bin/bash
+    set -x
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
+
+    tar cvjf artifacts.tar.gz * || [[ $? -eq 1 ]]
+    ogc-collect push 'artifacts' artifacts.tar.gz
+    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
+    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+
+    juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+
   execute: |
     #!/bin/bash
 
@@ -42,23 +57,6 @@ plan:
     "
         juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" "$1" --format yaml | env python3 -c "$py_script"
     }
-
-    cleanup()
-    {
-
-        juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-        juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-
-        juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
-
-        tar cvjf artifacts.tar.gz * || [[ $? -eq 1 ]]
-        ogc-collect push 'artifacts' artifacts.tar.gz
-        ogc-collect set-key 'snap_version' "$SNAP_VERSION"
-        ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-
-        juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-    }
-    trap cleanup EXIT
 
     ogc-collect set-key 'job_name_custom' "validate-ck-localhost-$SERIES-$SNAP_VERSION"
 
