@@ -81,6 +81,7 @@ plan:
 
     juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
           --overlay overlay.yaml \
+          --force \
           --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE 1>&2
 
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
