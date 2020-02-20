@@ -22,7 +22,7 @@
       command: "snap install {{item}}"
       ignore_errors: yes
       loop:
-        - "juju --classic --channel 2.7/candidate"
+        - "juju --classic --stable"
         - "juju-wait --classic"
         - "lxd"
     - name: update ubuntu user
