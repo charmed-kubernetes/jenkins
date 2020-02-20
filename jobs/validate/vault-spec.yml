@@ -48,11 +48,11 @@ plan:
     wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
     python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
 
-    tar cvjf artifacts.tar.gz * || [[ $? -eq 1 ]]
-    ogc-collect push 'artifacts' artifacts.tar.gz
     ogc-collect set-key 'snap_version' "$SNAP_VERSION"
     ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
 
+    tar cvjf artifacts.tar.gz * || [[ $? -eq 1 ]]
+    ogc-collect push 'artifacts' artifacts.tar.gz
     juju destroy-controller -y --destroy-all-models --destroy-storage $(ogc-collect get-key juju_controller)
 
   execute: |

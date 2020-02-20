@@ -30,10 +30,11 @@ plan:
 
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
 
-    tar cvjf artifacts.tar.gz * || [[ $? -eq 1 ]]
-    ogc-collect push 'artifacts' artifacts.tar.gz
     ogc-collect set-key 'snap_version' "$SNAP_VERSION"
     ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+
+    tar cvjf artifacts.tar.gz * || [[ $? -eq 1 ]]
+    ogc-collect push 'artifacts' artifacts.tar.gz
 
     juju destroy-controller -y --destroy-all-models --destroy-storage $(ogc-collect get-key juju_controller)
 
@@ -64,7 +65,6 @@ plan:
 
     ogc-collect set-key 'job_name_custom' "validate-ck-localhost-$SERIES-$SNAP_VERSION"
 
-    ogc-log --msg "Bootstrapping $JUJU_CONTROLLER"
     juju bootstrap aws/us-east-2 $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
          --bootstrap-series $SERIES \
@@ -74,18 +74,15 @@ plan:
          --model-default resource-tags=owner=k8sci \
          --model-default image-stream=daily 1>&2
 
-    ogc-log --msg "Deploying ubuntu charm"
     juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
         --series $SERIES \
         --force \
         --constraints "mem=32G root-disk=100G cores=16" \
         ubuntu 1>&2
 
-    ogc-log --msg "Waiting to settle"
     juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
 
-    ogc-log --msg "Setup via ansible"
     ansible-playbook -i $(unitAddress ubuntu), \
                      --ssh-common-args '-o StrictHostKeyChecking=no' \
                      --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
@@ -137,5 +134,4 @@ plan:
     chmod +x setup
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" setup ubuntu/0:setup
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" overlay.yaml ubuntu/0:overlay.yaml
-    ogc-log --msg "Running setup and test on instance, could take a few minutes..."
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'bash setup'
