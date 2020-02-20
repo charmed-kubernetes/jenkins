@@ -55,10 +55,10 @@ plan:
     #!/bin/bash
     set -eu
 
-    export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(uuid -v4 | cut -f1 -d-)"
+    export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(ogc-collect get-key job_id | cut -f1 -d-)"
     ogc-collect set-key 'juju_controller' "$JUJU_CONTROLLER"
 
-    export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(uuid -v4 | cut -f1 -d-)"
+    export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(ogc-collect get-key job_id | cut -f1 -d-)"
 
     ogc-collect set-key 'job_name_custom' "validate-ck-$SERIES-$SNAP_VERSION"
 
