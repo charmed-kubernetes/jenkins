@@ -7,16 +7,21 @@ from .logger import log
 @pytest.mark.asyncio
 async def test_ceph(model, tools):
     # setup
+    log("adding cloud:train to k8s-master")
+    await model.applications['kubernetes-master'].set_config({
+        'install_sources': '[cloud:train]',
+    })
+    await tools.juju_wait()
     log("deploying ceph mon")
-    await model.deploy("ceph-mon", num_units=3)
+    await model.deploy("ceph-mon", num_units=3, config={'source': 'cloud:train'})
     cs = {
         "osd-devices": {"size": 8 * 1024, "count": 1},
         "osd-journals": {"size": 8 * 1024, "count": 1},
     }
     log("deploying ceph osd")
-    await model.deploy("ceph-osd", storage=cs, num_units=3)
+    await model.deploy("ceph-osd", storage=cs, num_units=3, config={'source': 'cloud:train'})
     log("deploying ceph fs")
-    await model.deploy("ceph-fs", num_units=1)
+    await model.deploy("ceph-fs", num_units=1, config={'source': 'cloud:train'})
 
     log("adding relations")
     await model.add_relation("ceph-mon", "ceph-osd")
