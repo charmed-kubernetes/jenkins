@@ -2,9 +2,11 @@
 set -x
 
 for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
-    echo "$i"
-    if ! juju destroy-controller -y --destroy-all-models --destroy-storage "$i" 2>&1; then
-        juju kill-controller -y "$i" 2>&1
+    if [ "$i" != "jaas" ]; then
+        echo "$i"
+        if ! juju destroy-controller -y --destroy-all-models --destroy-storage "$i" 2>&1; then
+            juju kill-controller -y "$i" 2>&1
+        fi
     fi
 done
 
@@ -19,7 +21,7 @@ for sid in $(aws --region us-east-2 ec2 describe-subnets --query 'Subnets[].Subn
     aws --region us-east-2 ec2 delete-tags --resources "$sid" --tags Value=owned
 done
 
-for sg in $(aws --region us-east-1 ec2 describe-security-groups --filters Name=owner-id,Values=018302341396  Name=tag:Name,Values='!kpi' --query "SecurityGroups[*].{Name:GroupId}" --output text); do
+for sg in $(aws --region us-east-1 ec2 describe-security-groups --filters Name=owner-id,Values=018302341396 --query "SecurityGroups[*].{Name:GroupId}" --output text); do
     aws --region us-east-1 ec2 delete-security-group --group-id "$sg"
 done
 
