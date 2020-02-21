@@ -69,7 +69,7 @@ plan:
          --bootstrap-constraints arch=$ARCH \
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
-         --model-default image-stream=daily  1>&2
+         --model-default image-stream=daily
 
     tee overlay.yaml <<EOF> /dev/null
     series: $SERIES
@@ -85,9 +85,9 @@ plan:
     juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
           --overlay overlay.yaml \
           --force \
-          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE 1>&2
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
 
-    juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
     timeout 45m pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \

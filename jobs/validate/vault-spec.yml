@@ -93,7 +93,7 @@ plan:
           --force \
           --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
 
-    juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
     timeout 45m pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \

@@ -80,7 +80,7 @@ plan:
         --constraints "mem=32G root-disk=100G cores=16" \
         ubuntu
 
-    juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
 
     ansible-playbook -i $(unitAddress ubuntu), \
@@ -120,7 +120,7 @@ plan:
         --overlay overlay.yaml \
         cs:~containers/charmed-kubernetes 1>&2
 
-    juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
     pushd jenkins
     timeout 45m pytest -m "not slow" jobs/integration/validation.py \
