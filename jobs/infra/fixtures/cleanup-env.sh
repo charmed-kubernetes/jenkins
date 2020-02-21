@@ -19,6 +19,10 @@ for sid in $(aws --region us-east-2 ec2 describe-subnets --query 'Subnets[].Subn
     aws --region us-east-2 ec2 delete-tags --resources "$sid" --tags Value=owned
 done
 
+for sg in $(aws --region us-east-1 ec2 describe-security-groups --filters Name=owner-id,Values=018302341396 --query "SecurityGroups[*].{Name:GroupId}" --output text); do
+    aws --region us-east-1 ec2 delete-security-group --group-id "$sg"
+done
+
 for cntr in $(sudo lxc list --format json | jq -r ".[] | .name"); do
     echo "Removing $cntr"
     sudo lxc delete --force "$cntr"
