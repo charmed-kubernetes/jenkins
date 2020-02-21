@@ -33,9 +33,6 @@ plan:
 
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
 
-    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
-    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-
     juju destroy-controller -y --destroy-all-models --destroy-storage $(ogc-collect get-key juju_controller)
 
   execute: |
@@ -65,6 +62,9 @@ plan:
     ogc-collect set-key 'juju_controller' "$JUJU_CONTROLLER"
     ogc-collect set-key 'juju_model' "$JUJU_MODEL"
     ogc-collect set-key 'job_name_custom' "validate-ck-localhost-$SERIES-$SNAP_VERSION"
+    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
+    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+
     juju bootstrap aws/us-east-2 $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
          --bootstrap-series $SERIES \

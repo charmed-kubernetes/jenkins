@@ -51,9 +51,6 @@ plan:
     wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
     python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
 
-    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
-    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
-
     juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
 
   execute: |
@@ -66,6 +63,8 @@ plan:
     ogc-collect set-key 'juju_controller' "$JUJU_CONTROLLER"
     ogc-collect set-key 'juju_model' "$JUJU_MODEL"
     ogc-collect set-key 'job_name_custom' "validate-ck-vault-$SERIES-$SNAP_VERSION"
+    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
+    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
 
     juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
