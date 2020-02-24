@@ -1,3 +1,4 @@
+import os
 import asyncio
 import pytest
 from .utils import verify_ready, retry_async_with_timeout, validate_storage_class
@@ -9,24 +10,30 @@ async def test_ceph(model, tools):
     # setup
     log("adding cloud:train to k8s-master")
     series = 'bionic'
+    check_cephfs = os.environ['SNAP_VERSION'].split('/')[0] not in ('1.15', '1.16')
     await model.applications['kubernetes-master'].set_config({
         'install_sources': '[cloud:{}-train]'.format(series),
     })
     await tools.juju_wait()
     log("deploying ceph mon")
-    await model.deploy("ceph-mon", num_units=3, series=series, config={'source': 'cloud:{}-train'.format(series)})
+    await model.deploy("ceph-mon", num_units=3, series=series,
+                       config={'source': 'cloud:{}-train'.format(series)})
     cs = {
         "osd-devices": {"size": 8 * 1024, "count": 1},
         "osd-journals": {"size": 8 * 1024, "count": 1},
     }
     log("deploying ceph osd")
-    await model.deploy("ceph-osd", storage=cs, num_units=3, series=series, config={'source': 'cloud:{}-train'.format(series)})
-    log("deploying ceph fs")
-    await model.deploy("ceph-fs", num_units=1, series=series, config={'source': 'cloud:{}-train'.format(series)})
+    await model.deploy("ceph-osd", storage=cs, num_units=3, series=series,
+                       config={'source': 'cloud:{}-train'.format(series)})
+    if check_cephfs:
+        log("deploying ceph fs")
+        await model.deploy("ceph-fs", num_units=1, series=series,
+                           config={'source': 'cloud:{}-train'.format(series)})
 
     log("adding relations")
     await model.add_relation("ceph-mon", "ceph-osd")
-    await model.add_relation("ceph-mon", "ceph-fs")
+    if check_cephfs:
+        await model.add_relation("ceph-mon", "ceph-fs")
     await model.add_relation("ceph-mon:admin", "kubernetes-master")
     await model.add_relation("ceph-mon:client", "kubernetes-master")
     log("waiting...")
@@ -46,15 +53,16 @@ async def test_ceph(model, tools):
     # create pod that writes to a pv from ceph
     await validate_storage_class(model, "ceph-xfs", "Ceph")
     await validate_storage_class(model, "ceph-ext4", "Ceph")
-    await validate_storage_class(model, "cephfs", "Ceph")
+    if check_cephfs:
+        await validate_storage_class(model, "cephfs", "Ceph")
     # cleanup
-    (done1, pending1) = await asyncio.wait(
-        {
-            model.applications["ceph-mon"].destroy(),
-            model.applications["ceph-osd"].destroy(),
-            model.applications["ceph-fs"].destroy(),
-        }
-    )
+    tasks = {
+        model.applications["ceph-mon"].destroy(),
+        model.applications["ceph-osd"].destroy(),
+    }
+    if check_cephfs:
+        tasks.add(model.applications["ceph-fs"].destroy())
+    (done1, pending1) = await asyncio.wait(tasks)
     for task in done1:
         # read and ignore any exception so that it doesn't get raised
         # when the task is GC'd
