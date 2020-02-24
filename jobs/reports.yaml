@@ -13,11 +13,12 @@
     triggers:
         - timed: "@hourly"
     wrappers:
-      - ansicolor
-      - workspace-cleanup
+      - default-job-wrapper
+      - ci-creds
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/reports"
       - run-venv:
+          JOB_SPEC_DIR: "jobs/reports"
           COMMAND: |
-            $WORKSPACE/venv/bin/python jobs/reports/generate-reports.py build
+            venv/bin/python jobs/reports/generate-reports.py build
