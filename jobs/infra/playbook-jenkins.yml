@@ -346,11 +346,6 @@
         mode: 0644
       tags:
         - jenkins
-    - name: cleanup leftover artifacts
-      command: bash fixtures/cleanup-env.sh
-      ignore_errors: yes
-      tags:
-        - jenkins
     - name: make sure permissions are correct
       file:
         path: /var/lib/jenkins/slaves
