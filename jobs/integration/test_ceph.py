@@ -8,20 +8,21 @@ from .logger import log
 async def test_ceph(model, tools):
     # setup
     log("adding cloud:train to k8s-master")
+    series = 'bionic'
     await model.applications['kubernetes-master'].set_config({
-        'install_sources': '[cloud:bionic-train]',
+        'install_sources': '[cloud:{}-train]'.format(series),
     })
     await tools.juju_wait()
     log("deploying ceph mon")
-    await model.deploy("ceph-mon", num_units=3, config={'source': 'cloud:bionic-train'})
+    await model.deploy("ceph-mon", num_units=3, series=series, config={'source': 'cloud:{}-train'.format(series)})
     cs = {
         "osd-devices": {"size": 8 * 1024, "count": 1},
         "osd-journals": {"size": 8 * 1024, "count": 1},
     }
     log("deploying ceph osd")
-    await model.deploy("ceph-osd", storage=cs, num_units=3, config={'source': 'cloud:bionic-train'})
+    await model.deploy("ceph-osd", storage=cs, num_units=3, series=series, config={'source': 'cloud:{}-train'.format(series)})
     log("deploying ceph fs")
-    await model.deploy("ceph-fs", num_units=1, config={'source': 'cloud:train'})
+    await model.deploy("ceph-fs", num_units=1, series=series, config={'source': 'cloud:{}-train'.format(series)})
 
     log("adding relations")
     await model.add_relation("ceph-mon", "ceph-osd")
