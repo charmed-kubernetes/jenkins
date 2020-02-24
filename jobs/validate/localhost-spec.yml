@@ -123,7 +123,7 @@ plan:
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
     pushd jenkins
-    timeout 45m pytest -m "not slow" jobs/integration/validation.py \
+    timeout 2h pytest -m "not slow" jobs/integration/validation.py \
         --cloud localhost/localhost \
         --model $JUJU_MODEL \
         --controller $JUJU_CONTROLLER
