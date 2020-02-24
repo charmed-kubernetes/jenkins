@@ -45,24 +45,6 @@ plan:
 
     setup_env
 
-  post-execute: |
-    #!/bin/bash
-    . $WORKSPACE/cilib.sh
-
-    inject_env
-
-    collect_env
-
-    teardown_env
-
-  execute: |
-    #!/bin/bash
-    set -eu
-
-    . $WORKSPACE/cilib.sh
-
-    inject_env
-
     juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
          --bootstrap-series $SERIES \
@@ -92,7 +74,26 @@ plan:
 
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
     timeout 2h pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \
        --controller $JUJU_CONTROLLER
+
+  post-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    collect_env
+
+    teardown_env
+
