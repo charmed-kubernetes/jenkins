@@ -22,48 +22,37 @@ matrix:
 concurrent: no
 
 plan:
+  env:
+    - JUJU_CONTROLLER=validate-ck-localhost
+    - JUJU_MODEL=validate-localhost
+  pre-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    setup_env
   post-execute: |
     #!/bin/bash
     set -x
-    export JUJU_CONTROLLER=$(ogc-collect get-key juju_controller)
-    export JUJU_MODEL=$(ogc-collect get-key juju_model)
 
-    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
 
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
 
-    juju destroy-controller -y --destroy-all-models --destroy-storage $(ogc-collect get-key juju_controller)
+    teardown_env
 
   execute: |
     #!/bin/bash
+    set -eu
 
-    set -eux
+    . $WORKSPACE/cilib.sh
 
-    export JUJU_CONTROLLER=validate-localhost"-$(ogc-collect get-key job_id | cut -f1 -d-)"
-    export JUJU_MODEL=validate-localhost-"$SERIES-$(ogc-collect get-key job_id | cut -f1 -d-)"
+    inject_env
+
     export JUJU_DEPLOY_CHANNEL=edge
-
-
-    unitAddress()
-    {
-        py_script="
-    import sys
-    import yaml
-
-    status_yaml=yaml.safe_load(sys.stdin)
-    unit = status_yaml['applications']['$1']['units']
-    units = list(unit.keys())
-    print(unit[units[0]]['public-address'])
-    "
-        juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" "$1" --format yaml | env python3 -c "$py_script"
-    }
-
-    ogc-collect set-key 'juju_controller' "$JUJU_CONTROLLER"
-    ogc-collect set-key 'juju_model' "$JUJU_MODEL"
-    ogc-collect set-key 'job_name_custom' "validate-ck-localhost-$SERIES-$SNAP_VERSION"
-    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
-    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
 
     juju bootstrap aws/us-east-2 $JUJU_CONTROLLER \
          -d $JUJU_MODEL \

@@ -9,7 +9,6 @@
       - k8s-jenkins-jenkaas
     wrappers:
       - default-job-wrapper
-      - timestamps
       - ci-creds
     triggers:
         - timed: "@daily"
@@ -37,7 +36,6 @@
     wrappers:
       - ansicolor
       - workspace-cleanup
-      - timestamps
       - ci-creds
     triggers:
         - timed: "@daily"

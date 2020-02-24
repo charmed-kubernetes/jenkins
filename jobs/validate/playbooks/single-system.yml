@@ -24,6 +24,7 @@
       loop:
         - "juju --classic --stable"
         - "juju-wait --classic"
+        - "juju-crashdump --classic --edge"
         - "lxd"
     - name: update ubuntu user
       user:

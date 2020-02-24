@@ -38,29 +38,11 @@ plan:
     - JUJU_CONTROLLER=validate-ck
     - JUJU_MODEL=validate-ck
 
-  post-execute: |
+  pre-execute: |
     #!/bin/bash
-    set -x
-    export JUJU_CONTROLLER=$(ogc-collect get-key juju_controller)
-    export JUJU_MODEL=$(ogc-collect get-key juju_model)
+    . $WORKSPACE/cilib.sh
 
-    wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-    python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-
-    juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-
-  execute: |
-    #!/bin/bash
-    set -eu
-
-    export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(ogc-collect get-key job_id | cut -f1 -d-)"
-    export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(ogc-collect get-key job_id | cut -f1 -d-)"
-
-    ogc-collect set-key 'juju_controller' "$JUJU_CONTROLLER"
-    ogc-collect set-key 'juju_model' "$JUJU_MODEL"
-    ogc-collect set-key 'job_name_custom' "validate-ck-$SERIES-$SNAP_VERSION"
-    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
-    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+    setup_env
 
     juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
@@ -89,7 +71,25 @@ plan:
 
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
     timeout 2h pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \
        --controller $JUJU_CONTROLLER
+
+  post-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    collect_env
+
+    teardown_env

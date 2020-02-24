@@ -13,9 +13,6 @@ meta:
   mkdocs:
     destination:
       - "validations/ck/vault.md"
-    jenkins-job-builder:
-      jobs:
-        - jobs/ci-master.yaml
 
 matrix:
   snap_version:
@@ -42,29 +39,29 @@ plan:
     - JUJU_CONTROLLER=validate-ck-vault
     - JUJU_MODEL=validate-vault
 
+  pre-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    setup_env
+
   post-execute: |
     #!/bin/bash
-    set -x
-    export JUJU_CONTROLLER=$(ogc-collect get-key juju_controller)
-    export JUJU_MODEL=$(ogc-collect get-key juju_model)
+    . $WORKSPACE/cilib.sh
 
-    wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-    python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+    inject_env
 
-    juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+    collect_env
+
+    teardown_env
 
   execute: |
     #!/bin/bash
-    set -x
+    set -eu
 
-    export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(ogc-collect get-key job_id | cut -f1 -d-)"
-    export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(ogc-collect get-key job_id | cut -f1 -d-)"
+    . $WORKSPACE/cilib.sh
 
-    ogc-collect set-key 'juju_controller' "$JUJU_CONTROLLER"
-    ogc-collect set-key 'juju_model' "$JUJU_MODEL"
-    ogc-collect set-key 'job_name_custom' "validate-ck-vault-$SERIES-$SNAP_VERSION"
-    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
-    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+    inject_env
 
     juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
