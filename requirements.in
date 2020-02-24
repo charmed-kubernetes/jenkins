@@ -10,6 +10,7 @@ boto3
 bs4
 configobj
 canonicalwebteam.snapstoreapi
+loguru
 flake8
 flaky
 invoke

@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlparse, quote
 from sh.contrib import git
 from cilib.run import capture, cmd_ok
+from cilib import log
 
 
 @click.group()
@@ -60,13 +61,13 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 if not any(match in filter_by_tag for match in tags):
                     continue
 
-            click.echo(f"Releasing :: {layer_name:^35} :: from: master to: stable")
+            log.info(f"Releasing :: {layer_name:^35} :: from: master to: stable")
             if not dry_run:
                 downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 for line in git.clone(downstream, identifier, _iter=True):
-                    click.echo(line)
+                    log.info(line)
                 git_rev_master = git(
                     "rev-parse", "origin/master", _cwd=identifier
                 ).stdout.decode()
@@ -74,7 +75,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                     "rev-parse", "origin/stable", _cwd=identifier
                 ).stdout.decode()
                 if git_rev_master == git_rev_stable:
-                    click.echo(f"Skipping  :: {layer_name:^35} :: master == stable")
+                    log.info(f"Skipping  :: {layer_name:^35} :: master == stable")
                     continue
                 git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
                 git.config("user.name", "cdkbot", _cwd=identifier)
@@ -83,7 +84,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 for line in git.push(
                     "-f", "origin", "stable", _cwd=identifier, _iter=True
                 ):
-                    click.echo(line)
+                    log.info(line)
 
 
 def _tag_stable_forks(
@@ -115,16 +116,16 @@ def _tag_stable_forks(
             else:
                 tag = f"ck-{k8s_version}-{bundle_rev}"
             if not repos.get("needs_tagging", True):
-                click.echo(f"Skipping {layer_name} :: does not require tagging")
+                log.info(f"Skipping {layer_name} :: does not require tagging")
                 continue
 
-            click.echo(f"Tagging {layer_name} ({tag}) :: {repos['downstream']}")
+            log.info(f"Tagging {layer_name} ({tag}) :: {repos['downstream']}")
             if not dry_run:
                 downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 for line in git.clone(downstream, identifier, _iter=True):
-                    click.echo(line)
+                    log.info(line)
                 git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
                 git.config("user.name", "cdkbot", _cwd=identifier)
                 git.config("--global", "push.default", "simple")
@@ -133,7 +134,7 @@ def _tag_stable_forks(
                     for line in git.tag(
                         "--force", tag, _cwd=identifier, _iter=True, _bg_exc=False
                     ):
-                        click.echo(line)
+                        log.info(line)
                     for line in git.push(
                         "--force",
                         "origin",
@@ -142,9 +143,9 @@ def _tag_stable_forks(
                         _bg_exc=False,
                         _iter=True,
                     ):
-                        click.echo(line)
+                        log.info(line)
                 except sh.ErrorReturnCode as error:
-                    click.echo(
+                    log.info(
                         f"Problem tagging: {error.stderr.decode().strip()}, will skip for now.."
                     )
 
@@ -179,13 +180,13 @@ def tag_stable(
 
 def __run_git(args):
     username, password, layer_name, upstream, downstream = args
-    click.echo(f"Syncing {layer_name} :: {upstream} -> {downstream}")
+    log.info(f"Syncing {layer_name} :: {upstream} -> {downstream}")
     downstream = f"https://{username}:{password}@github.com/{downstream}"
     identifier = str(uuid.uuid4())
     os.makedirs(identifier)
     ret = capture(f"git clone {downstream} {identifier}")
     if not ret.ok:
-        click.echo(f"Failed to clone repo: {ret.stderr.decode()}")
+        log.info(f"Failed to clone repo: {ret.stderr.decode()}")
         sys.exit(1)
     cmd_ok("git config user.email 'cdkbot@juju.solutions'", cwd=identifier)
     cmd_ok("git config user.name cdkbot", cwd=identifier)
@@ -215,10 +216,10 @@ def _sync_upstream(layer_list, charm_list, dry_run):
             upstream = repos["upstream"]
             downstream = repos["downstream"]
             if urlparse(upstream).path.lstrip("/") == downstream:
-                click.echo(f"Skipping {layer_name} :: {upstream} == {downstream}")
+                log.info(f"Skipping {layer_name} :: {upstream} == {downstream}")
                 continue
             items = (username, password, layer_name, upstream, downstream)
-            click.echo(f"Adding {layer_name} to queue")
+            log.info(f"Adding {layer_name} to queue")
             repos_to_process.append(items)
 
     if not dry_run:
@@ -228,7 +229,7 @@ def _sync_upstream(layer_list, charm_list, dry_run):
                 try:
                     data = future.result()
                 except Exception as exc:
-                    click.echo(f"Failed thread: {exc}")
+                    log.info(f"Failed thread: {exc}")
 
 
 @cli.command()

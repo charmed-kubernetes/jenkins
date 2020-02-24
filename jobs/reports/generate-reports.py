@@ -10,6 +10,7 @@ import sh
 from staticjinja import Site
 from pathlib import Path
 from pprint import pformat
+from cilib import log
 
 session = boto3.Session(region_name="us-east-1")
 s3 = session.resource("s3")
@@ -52,7 +53,7 @@ def _gen_days(numdays=30):
 def _gen_metadata():
     """ Generates metadata
     """
-    click.echo("Generating metadata...")
+    log.info("Generating metadata...")
     items = []
     table = dynamodb.Table("CIBuilds")
 
@@ -67,6 +68,9 @@ def _gen_metadata():
             items.append(item)
     db = OrderedDict()
     for obj in items:
+        if "validate" not in obj["job_name"]:
+            continue
+
         job_name = obj["job_name"]
         if "snap_version" in obj:
             job_name = f"{job_name}-{obj['snap_version']}"
@@ -133,12 +137,12 @@ def _gen_rows():
             try:
                 dates_to_test = [datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f") for obj in jobdays[day]]
                 max_date_for_day = max(dates_to_test)
-                click.echo(f"Testing {max_date_for_day}")
+                log.info(f"Testing {max_date_for_day}")
                 for job in jobdays[day]:
                     _day = datetime.strptime(
                         job["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f"
                     )
-                    click.echo(f"{_day} == {max_date_for_day}")
+                    log.info(f"{_day} == {max_date_for_day}")
                     if _day == max_date_for_day:
                         sub_item.append(job)
             except:

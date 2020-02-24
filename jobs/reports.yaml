@@ -18,6 +18,6 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/reports"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/reports"
-          JOB_SPEC_FILE: "spec.yml"
+      - run-venv:
+          COMMAND: |
+            $WORKSPACE/venv/bin/python jobs/reports/generate-reports.py build
