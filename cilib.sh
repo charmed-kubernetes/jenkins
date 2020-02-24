@@ -10,6 +10,7 @@ setup_env()
 
   ogc-collect set-key 'juju_controller' "$JUJU_CONTROLLER"
   ogc-collect set-key 'juju_model' "$JUJU_MODEL"
+  ogc-collect set-key 'juju_cloud' "$JUJU_CLOUD"
   ogc-collect set-key 'job_name_custom' "validate-ck-nfs-$SERIES-$SNAP_VERSION"
   ogc-collect set-key 'snap_version' "$SNAP_VERSION"
   ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
@@ -21,6 +22,7 @@ inject_env()
 {
     export JUJU_CONTROLLER=$(ogc-collect get-key juju_controller)
     export JUJU_MODEL=$(ogc-collect get-key juju_model)
+    export JUJU_CLOUD=$(ogc-collect get-key juju_cloud)
 }
 
 collect_env()
