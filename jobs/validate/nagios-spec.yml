@@ -1,28 +1,3 @@
-plan:
-  - env:
-      - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-nagios
-      - JUJU_MODEL=validate-nagios
-    if: '[[ $(date +"%A") = "Friday" ]]'
-    before-script:
-      - juju kill-controller -y $JUJU_CONTROLLER || true
-      - !include jobs/spec-helpers/bootstrap.yml
-    script:
-      - |
-        #!/bin/bash
-        set -x
-        pytest $INTEGRATION_TEST_PATH/test_nagios.py::test_nagios \
-           --cloud $JUJU_CLOUD \
-           --model $JUJU_MODEL \
-           --controller $JUJU_CONTROLLER 2>&1
-
-    after-script:
-      - !include jobs/spec-helpers/collect.yml
-      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-
 meta:
   name: Verify CK with Nagios
   description: |
@@ -30,6 +5,82 @@ meta:
   mkdocs:
     destination:
       - "validations/ck/nagios.md"
-    jenkins-job-builder:
-      jobs:
-        - jobs/ci-master.yaml
+
+matrix:
+  snap_version:
+    - 1.18/edge
+    - 1.17/edge
+    - 1.16/edge
+  series:
+    - focal
+    - bionic
+  channel:
+    - edge
+  arch:
+    - amd64
+
+concurrent: no
+
+plan:
+  env:
+    - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+    - JUJU_DEPLOY_CHANNEL=$CHANNEL
+    - JUJU_CLOUD=aws/us-west-1
+    - JUJU_CONTROLLER=validate-ck-nagios
+    - JUJU_MODEL=validate-nagios
+  post-execute: |
+    #!/bin/bash
+    set -x
+    export JUJU_CONTROLLER=$(ogc-collect get-key juju_controller)
+    export JUJU_MODEL=$(ogc-collect get-key juju_model)
+
+    wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+    python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+
+    juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    export JUJU_CONTROLLER="$JUJU_CONTROLLER-$(ogc-collect get-key job_id | cut -f1 -d-)"
+
+    export JUJU_MODEL="$JUJU_MODEL-$SERIES-$(ogc-collect get-key job_id | cut -f1 -d-)"
+
+    ogc-collect set-key 'juju_controller' "$JUJU_CONTROLLER"
+    ogc-collect set-key 'juju_model' "$JUJU_MODEL"
+    ogc-collect set-key 'job_name_custom' "validate-ck-nfs-$SERIES-$SNAP_VERSION"
+    ogc-collect set-key 'snap_version' "$SNAP_VERSION"
+    ogc-collect set-key 'juju_deploy_channel' "$JUJU_DEPLOY_CHANNEL"
+
+    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+         -d $JUJU_MODEL \
+         --bootstrap-series $SERIES \
+         --force \
+         --bootstrap-constraints arch=$ARCH \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+
+    tee overlay.yaml <<EOF> /dev/null
+    series: $SERIES
+    applications:
+      kubernetes-master:
+        options:
+          channel: $SNAP_VERSION
+      kubernetes-worker:
+        options:
+          channel: $SNAP_VERSION
+    EOF
+
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+          --overlay overlay.yaml \
+          --force \
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+    timeout 2h pytest $WORKSPACE/jobs/integration/test_nagios.py::test_nagios \
+        --cloud $JUJU_CLOUD \
+        --model $JUJU_MODEL \
+        --controller $JUJU_CONTROLLER
