@@ -44,8 +44,10 @@ plan:
     export JUJU_CONTROLLER=$(ogc-collect get-key juju_controller)
     export JUJU_MODEL=$(ogc-collect get-key juju_model)
 
-    wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-    python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
+    juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+
+    # wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+    # python collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
 
     juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
 
