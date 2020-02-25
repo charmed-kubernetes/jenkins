@@ -32,7 +32,7 @@ collect_env()
 
 teardown_env()
 {
-    juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+    juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" -o "$OGC_JOB_WORKDIR"
 }
 
 
