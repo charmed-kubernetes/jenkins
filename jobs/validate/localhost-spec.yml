@@ -15,7 +15,6 @@ matrix:
   series:
     - focal
     - bionic
-    - xenial
   channel:
     - edge
 
