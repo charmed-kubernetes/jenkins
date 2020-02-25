@@ -28,7 +28,7 @@ from enum import Enum
 from retry.api import retry_call
 from subprocess import CalledProcessError
 from types import SimpleNamespace
-from pathos.multiprocessing import ProcessPool
+from pathos.threading import ThreadPool
 import click
 import shutil
 import sh
@@ -230,7 +230,7 @@ class BuildEnv:
 
             layers_to_pull.append(layer_name)
 
-        pool = ProcessPool()
+        pool = ThreadPool()
         pool.map(self.download, layers_to_pull)
 
         self.db["pull_layer_manifest"] = []
@@ -648,7 +648,7 @@ def build(
         build_entity.attach_resource("unpublished")
         build_entity.promote(to_channel=to_channel)
 
-    pool = ProcessPool()
+    pool = ThreadPool()
     pool.map(_run_build, entities)
     build_env.save()
 
