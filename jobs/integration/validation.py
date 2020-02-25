@@ -290,7 +290,7 @@ async def test_rbac_flag(model):
 
 @pytest.mark.asyncio
 @pytest.mark.skip_arch(["s390x", "arm64", "aarch64"])
-@pytest.mark.skip("Will retry with different dns resolver")
+@pytest.mark.flaky
 async def test_microbot(model, tools):
     """ Validate the microbot action """
     unit = model.applications["kubernetes-worker"].units[0]
