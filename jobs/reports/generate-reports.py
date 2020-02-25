@@ -89,7 +89,7 @@ def _gen_metadata():
         if "test_result" not in obj:
             result_bg_class = "bg-light"
             result_btn_class = "btn-light"
-        elif not obj["test_result"]:
+        elif not obj["test_result"] or int(obj["test_result"]) == 0:
             result_bg_class = "bg-danger"
             result_btn_class = "btn-danger"
         else:
