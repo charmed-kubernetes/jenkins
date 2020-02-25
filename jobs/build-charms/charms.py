@@ -17,7 +17,6 @@ Usage:
 """
 
 import os
-import concurrent.futures
 from glob import glob
 from pathlib import Path
 from pprint import pformat
@@ -29,6 +28,7 @@ from enum import Enum
 from retry.api import retry_call
 from subprocess import CalledProcessError
 from types import SimpleNamespace
+from pathos.threading import ThreadPool
 import click
 import shutil
 import sh
@@ -196,24 +196,24 @@ class BuildEnv:
                     charm_id["id"]["Id"], "--channel", to_channel, *resources_args
                 )
 
+    def download(self, layer_name):
+        if Path(self.build_path(layer_name)).exists():
+            click.echo(f"- Refreshing {layer_name} cache.")
+            cmd_ok(
+                f"git checkout {self.layer_branch}", cwd=self.build_path(layer_name)
+            )
+            cmd_ok(
+                f"git.pull origin {self.layer_branch}",
+                cwd=self.build_path(layer_name),
+            )
+        else:
+            click.echo(f"- Downloading {layer_name}")
+            cmd_ok(f"charm pull-source -i {self.layer_index} {layer_name}")
+        return True
+
     def pull_layers(self):
         """ clone all downstream layers to be processed locally when doing charm builds
         """
-
-        def download(layer_name):
-            if Path(self.build_path(layer_name)).exists():
-                click.echo(f"- Refreshing {layer_name} cache.")
-                cmd_ok(
-                    f"git checkout {self.layer_branch}", cwd=self.build_path(layer_name)
-                )
-                cmd_ok(
-                    f"git.pull origin {self.layer_branch}",
-                    cwd=self.build_path(layer_name),
-                )
-            else:
-                click.echo(f"- Downloading {layer_name}")
-                cmd_ok(f"charm pull-source -i {self.layer_index} {layer_name}")
-
         if self.rebuild_cache:
             click.echo("-  rebuild cache triggered, cleaning out cache.")
             shutil.rmtree(str(self.layers_dir))
@@ -230,16 +230,8 @@ class BuildEnv:
 
             layers_to_pull.append(layer_name)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
-            pulls = {
-                tp.submit(download, layer_name): layer_name
-                for layer_name in layers_to_pull
-            }
-            for future in concurrent.futures.as_completed(pulls):
-                try:
-                    future.result()
-                except Exception as exc:
-                    click.echo(f"Failed thread: {exc}")
+        pool = ThreadPool()
+        pool.map(self.download, layers_to_pull)
 
         self.db["pull_layer_manifest"] = []
         _paths_to_process = {
@@ -656,14 +648,8 @@ def build(
         build_entity.attach_resource("unpublished")
         build_entity.promote(to_channel=to_channel)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
-        builds = {tp.submit(_run_build, entity): entity for entity in entities}
-        for future in concurrent.futures.as_completed(builds):
-            try:
-                future.result()
-            except Exception as exc:
-                click.echo(f"Failed thread: {exc}")
-
+    pool = ThreadPool()
+    pool.map(_run_build, entities)
     build_env.save()
 
 

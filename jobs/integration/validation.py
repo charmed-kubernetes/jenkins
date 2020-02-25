@@ -200,6 +200,7 @@ async def test_auth_file_propagation(model):
 
 
 @pytest.mark.asyncio
+@pytest.mark.flaky
 async def test_status_messages(model, tools):
     """ Validate that the status messages are correct. """
     expected_messages = {
@@ -259,6 +260,7 @@ async def test_snap_versions(model):
 
 
 @pytest.mark.asyncio
+@pytest.mark.flaky
 async def test_rbac(model):
     """ Validate RBAC is actually on """
     app = model.applications["kubernetes-master"]

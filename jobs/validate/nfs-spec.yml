@@ -28,7 +28,7 @@ matrix:
   arch:
     - amd64
 
-concurrent: no
+concurrent: yes
 
 
 plan:
