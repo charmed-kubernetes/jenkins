@@ -19,8 +19,6 @@ matrix:
   channel:
     - edge
 
-concurrent: no
-
 plan:
   env:
     - JUJU_CONTROLLER=validate-ck-localhost
