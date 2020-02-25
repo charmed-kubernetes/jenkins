@@ -259,6 +259,7 @@ async def test_snap_versions(model):
 
 
 @pytest.mark.asyncio
+@pytest.mark.flaky
 async def test_rbac(model):
     """ Validate RBAC is actually on """
     app = model.applications["kubernetes-master"]
