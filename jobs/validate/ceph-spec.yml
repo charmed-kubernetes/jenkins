@@ -1,62 +1,3 @@
-plan:
-  - &BASE_JOB
-    env:
-      - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-ceph
-      - JUJU_MODEL=validate-ceph-model
-    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
-    before-script:
-      - juju kill-controller -y $JUJU_CONTROLLER || true
-      - !include jobs/spec-helpers/bootstrap.yml
-    script:
-      - |
-        #!/bin/bash
-        pytest $INTEGRATION_TEST_PATH/test_ceph.py::test_ceph \
-           --cloud $JUJU_CLOUD \
-           --model $JUJU_MODEL \
-           --controller $JUJU_CONTROLLER
-
-    after-script:
-      - !include jobs/spec-helpers/collect.yml
-      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-ceph
-      - JUJU_MODEL=validate-ceph-model
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/stable
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-ceph
-      - JUJU_MODEL=validate-ceph-model
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-ceph
-      - JUJU_MODEL=validate-ceph-model
-    if: '[[ $(date +"%A") = "Saturday" ]]'
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-ceph
-      - JUJU_MODEL=validate-ceph-model
-    if: '[[ $(date +"%A") = "Sunday" ]]'
-
 meta:
   name: Verify CK, with Ceph.
   synopsis:
@@ -71,7 +12,84 @@ meta:
   mkdocs:
     destination:
       - "validations/ck/ceph.md"
-    jenkins-job-builder:
-      jobs:
-        - jobs/ci-master.yaml
-        - jobs/validate.yaml
+
+matrix:
+  snap_version:
+    - 1.18/edge
+    - 1.17/edge
+    - 1.16/edge
+    - 1.15/edge
+  series:
+    - focal
+    - bionic
+    - xenial
+  channel:
+    - edge
+  arch:
+    - amd64
+
+concurrent: no
+
+plan:
+  env:
+    - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+    - JUJU_DEPLOY_CHANNEL=$CHANNEL
+    - JUJU_CLOUD=aws/us-east-2
+    - JUJU_CONTROLLER=validate-ck-ceph
+    - JUJU_MODEL=validate-ceph
+
+  pre-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    setup_env
+
+    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+         -d $JUJU_MODEL \
+         --bootstrap-series $SERIES \
+         --force \
+         --bootstrap-constraints arch=$ARCH \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+
+    tee overlay.yaml <<EOF> /dev/null
+    series: $SERIES
+    applications:
+      kubernetes-master:
+        options:
+          channel: $SNAP_VERSION
+      kubernetes-worker:
+        options:
+          channel: $SNAP_VERSION
+    EOF
+
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+          --overlay overlay.yaml \
+          --force \
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    timeout 2h pytest $WORKSPACE/jobs/integration/test_ceph.py::test_ceph \
+       --cloud $JUJU_CLOUD \
+       --model $JUJU_MODEL \
+       --controller $JUJU_CONTROLLER
+
+  post-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    collect_env
+
+    teardown_env

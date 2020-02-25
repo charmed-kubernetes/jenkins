@@ -1,106 +1,3 @@
-plan:
-  - &BASE_JOB
-    env:
-      - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-nvidia
-      - JUJU_MODEL=validate-nvidia-model
-    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
-    before-script:
-      - juju:
-          cloud: $JUJU_CLOUD
-          controller: $JUJU_CONTROLLER
-          model: $JUJU_MODEL
-          bootstrap:
-            constraints: "arch=amd64"
-            debug: no
-            replace-controller: yes
-            model-default:
-              - test-mode=true
-              - resource-tags=owner=k8sci
-          deploy:
-            reuse: no
-            bundle: $JUJU_DEPLOY_BUNDLE
-            overlay: |
-              applications:
-                kubernetes-master:
-                  constraints: cores=2 mem=8G root-disk=16G
-                  options:
-                    channel: $SNAP_VERSION
-                kubernetes-worker:
-                  constraints: instance-type=p2.xlarge
-                  options:
-                    channel: $SNAP_VERSION
-            wait: yes
-            timeout: 7200
-            channel: $JUJU_DEPLOY_CHANNEL
-    script:
-      - runner:
-          timeout: 7200
-          script: |
-            #!/bin/bash
-            set -x
-
-            pytest -m "not slow" $INTEGRATION_TEST_PATH/validation.py \
-               --cloud $JUJU_CLOUD \
-               --model $JUJU_MODEL \
-               --controller $JUJU_CONTROLLER 2>&1
-
-    after-script:
-      - runner:
-          script: |
-            #!/bin/bash
-            set -x
-            wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
-            python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
-            python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz
-            python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-            python3 jobs/infra/collect-debug.py push 'metadata' metadata.json
-            python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-            python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-            juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" || true
-            python3 jobs/infra/collect-debug.py push 'results_file' juju-crashdump* || true
-            python3 jobs/infra/collect-debug.py save-meta
-
-            juju destroy-controller -y \
-               --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-nvidia
-      - JUJU_MODEL=validate-model
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/stable
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-nvidia
-      - JUJU_MODEL=validate-model
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-nvidia
-      - JUJU_MODEL=validate-model
-    if: '[[ $(date +"%A") = "Saturday" ]]'
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-nvidia
-      - JUJU_MODEL=validate-model
-    if: '[[ $(date +"%A") = "Sunday" ]]'
-
 meta:
   name: Verify CK with NVidia
   description: |
@@ -108,6 +5,87 @@ meta:
   mkdocs:
     destination:
       - "validations/ck/nvidia.md"
-    jenkins-job-builder:
-      jobs:
-        - jobs/ci-master.yaml
+
+
+matrix:
+  snap_version:
+    - 1.18/edge
+    - 1.17/edge
+    - 1.16/edge
+    - 1.15/edge
+  series:
+    - focal
+    - bionic
+    - xenial
+  channel:
+    - edge
+  arch:
+    - amd64
+
+concurrent: no
+
+plan:
+  env:
+    - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+    - JUJU_DEPLOY_CHANNEL=$CHANNEL
+    - JUJU_CLOUD=aws/us-east-2
+    - JUJU_CONTROLLER=validate-ck-nvidia
+    - JUJU_MODEL=validate-nvidia
+
+  pre-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    setup_env
+
+    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+         -d $JUJU_MODEL \
+         --bootstrap-series $SERIES \
+         --force \
+         --bootstrap-constraints arch=$ARCH \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+
+    tee overlay.yaml <<EOF> /dev/null
+    series: $SERIES
+    applications:
+      kubernetes-master:
+        constraints: cores=2 mem=8G root-disk=16G
+        options:
+          channel: $SNAP_VERSION
+      kubernetes-worker:
+        constraints: instance-type=p2.xlarge
+        options:
+          channel: $SNAP_VERSION
+    EOF
+
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+          --overlay overlay.yaml \
+          --force \
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    timeout 2h pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
+       --cloud $JUJU_CLOUD \
+       --model $JUJU_MODEL \
+       --controller $JUJU_CONTROLLER
+
+  post-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    collect_env
+
+    teardown_env
