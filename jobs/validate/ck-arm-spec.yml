@@ -27,8 +27,6 @@ matrix:
   arch:
     - arm64
 
-concurrent: no
-
 plan:
   env:
     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes

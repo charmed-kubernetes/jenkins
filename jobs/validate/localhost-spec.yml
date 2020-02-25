@@ -15,7 +15,6 @@ matrix:
   series:
     - focal
     - bionic
-    - xenial
   channel:
     - edge
 
@@ -23,6 +22,7 @@ plan:
   env:
     - JUJU_CONTROLLER=validate-ck-localhost
     - JUJU_MODEL=validate-localhost
+    - JUJU_CLOUD=us-east-2
   pre-execute: |
     #!/bin/bash
     . $WORKSPACE/cilib.sh
@@ -38,7 +38,7 @@ plan:
 
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
 
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:results*.tar.gz . || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:* . || true
 
     teardown_env
 
