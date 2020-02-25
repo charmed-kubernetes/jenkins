@@ -17,6 +17,14 @@ docker container prune --filter until=24h --force
 rm -rf /var/lib/jenkins/venvs
 
 
+for iid in $(aws --region us-east-1 ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId'); do
+    aws --region us-east-1 ec2 delete-instance --instance-id "$iid"
+done
+
+for iid in $(aws --region us-east-2 ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId'); do
+    aws --region us-east-2 ec2 delete-instance --instance-id "$iid"
+done
+
 for sid in $(aws --region us-east-2 ec2 describe-subnets --query 'Subnets[].SubnetId' --output text); do
     aws --region us-east-2 ec2 delete-tags --resources "$sid" --tags Value=owned
 done
