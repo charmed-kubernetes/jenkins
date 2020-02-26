@@ -99,13 +99,9 @@ def _gen_metadata():
         obj["bg_class"] = result_bg_class
         obj["btn_class"] = result_btn_class
         try:
-            day = datetime.strptime(
-                obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f"
-            )
+            day = datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
         except:
-            day = datetime.strptime(
-                obj["build_endtime"], "%Y-%m-%d %H:%M:%S.%f"
-            )
+            day = datetime.strptime(obj["build_endtime"], "%Y-%m-%d %H:%M:%S.%f")
 
         date_of_last_30 = datetime.today() - timedelta(days=30)
         if day < date_of_last_30:
@@ -135,7 +131,10 @@ def _gen_rows():
         sub_item = [jobname]
         for day in days:
             try:
-                dates_to_test = [datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f") for obj in jobdays[day]]
+                dates_to_test = [
+                    datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
+                    for obj in jobdays[day]
+                ]
                 max_date_for_day = max(dates_to_test)
                 log.info(f"Testing {max_date_for_day}")
                 for job in jobdays[day]:
@@ -146,7 +145,14 @@ def _gen_rows():
                     if _day == max_date_for_day:
                         sub_item.append(job)
             except:
-                sub_item.append({"job_name": jobname, "bg_class": "", "build_endtime": day, "build_datetime": day})
+                sub_item.append(
+                    {
+                        "job_name": jobname,
+                        "bg_class": "",
+                        "build_endtime": day,
+                        "build_datetime": day,
+                    }
+                )
         rows.append(sub_item)
     return rows
 

@@ -5,7 +5,7 @@ asyncio-extras
 autopep8
 awscli>=1.18.3
 ansible
-# black
+black
 boto3
 bs4
 configobj
