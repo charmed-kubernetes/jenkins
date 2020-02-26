@@ -12,11 +12,9 @@ matrix:
     - 1.18/edge
     - 1.17/edge
     - 1.16/edge
-    - 1.15/edge
   series:
     - focal
     - bionic
-    - xenial
   channel:
     - edge
   arch:
