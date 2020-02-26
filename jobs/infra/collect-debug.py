@@ -63,7 +63,13 @@ def push(bucket, db_key, results_file):
         job_name = db["job_name_custom"]
     else:
         job_name = db["job_name"]
-    s3_path = Path(job_name) / current_date / db["build_number"] / db["build_endtime"] / newest_result_file
+    s3_path = (
+        Path(job_name)
+        / current_date
+        / db["build_number"]
+        / db["build_endtime"]
+        / newest_result_file
+    )
     s3.upload_file(str(newest_result_file), bucket, str(s3_path))
     db[db_key] = str(s3_path)
 
