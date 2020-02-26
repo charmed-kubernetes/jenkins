@@ -545,6 +545,7 @@ async def test_worker_master_removal(model, tools):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip_model("validate-nvidia")
 async def test_gpu_support(model, tools):
     """ Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
@@ -1491,6 +1492,7 @@ async def test_encryption_at_rest(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.offline
+@pytest.mark.flaky
 async def test_dns_provider(model, tools):
     master_app = model.applications["kubernetes-master"]
     master_unit = master_app.units[0]
