@@ -27,12 +27,12 @@ inject_env()
 
 collect_env()
 {
-    juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    juju-crashdump -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"  -o "$OGC_JOB_WORKDIR"
 }
 
 teardown_env()
 {
-    juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" -o "$OGC_JOB_WORKDIR"
+    juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"
 }
 
 
