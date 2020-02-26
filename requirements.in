@@ -34,7 +34,6 @@ pymacaroons
 pyyaml>=5.1.2
 pytest-asyncio
 pytest-forked
-pytest-sugar
 pytest-xdist
 pytest-timeout
 pytest
