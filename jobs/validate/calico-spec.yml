@@ -12,8 +12,8 @@ matrix:
     - 1.17/edge
     - 1.16/edge
   test_bgp:
-    - 0
-    - 1
+    - "0"
+    - "1"
   series:
     - focal
     - bionic
