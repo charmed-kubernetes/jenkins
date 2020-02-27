@@ -28,15 +28,14 @@ concurrent: no
 plan:
   env:
     - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-    - JUJU_DEPLOY_CHANNEL=edge
+    - JUJU_DEPLOY_CHANNEL=$CHANNEL
     - JUJU_CLOUD=aws/us-east-2
     - JUJU_CONTROLLER=validate-ck-calico
     - JUJU_MODEL=validate-calico
   pre-execute: |
     #!/bin/bash
-    set -eux
-
     . $WORKSPACE/cilib.sh
+
     setup_env
 
     python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
@@ -48,6 +47,7 @@ plan:
     fi
 
     python $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
+
     if [ -n "$TEST_BGP" ]; then
       echo "Deploying bgp router"
       python $WORKSPACE/jobs/integration/tigera_aws.py deploy-bgp-router

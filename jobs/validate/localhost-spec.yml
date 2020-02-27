@@ -23,6 +23,7 @@ plan:
     - JUJU_CONTROLLER=validate-ck-localhost
     - JUJU_MODEL=validate-localhost
     - JUJU_CLOUD=us-east-2
+    - JUJU_DEPLOY_CHANNEL=$CHANNEL
   pre-execute: |
     #!/bin/bash
     . $WORKSPACE/cilib.sh
