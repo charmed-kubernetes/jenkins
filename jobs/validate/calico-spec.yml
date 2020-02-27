@@ -41,14 +41,14 @@ plan:
     python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
 
     export NUM_SUBNETS=1
-    if [ -n "$TEST_BGP" ]; then
+    if [ "$TEST_BGP" = "1" ]; then
       export NUM_SUBNETS=2
       ogc-collect set-key 'job_name_custom' "validate-ck-calico-bgp-router-$SERIES-$SNAP_VERSION"
     fi
 
     python $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
 
-    if [ -n "$TEST_BGP" ]; then
+    if [ "$TEST_BGP" = "1" ]; then
       echo "Deploying bgp router"
       python $WORKSPACE/jobs/integration/tigera_aws.py deploy-bgp-router
     fi
@@ -70,7 +70,7 @@ plan:
 
     python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
 
-    if [ -n "$TEST_BGP" ]; then
+    if [ "$TEST_BGP" = "1" ]; then
       python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
     fi
 
