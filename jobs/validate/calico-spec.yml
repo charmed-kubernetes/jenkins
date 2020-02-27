@@ -34,8 +34,9 @@ plan:
     - JUJU_MODEL=validate-calico
   pre-execute: |
     #!/bin/bash
-    . $WORKSPACE/cilib.sh
+    set -eux
 
+    . $WORKSPACE/cilib.sh
     setup_env
 
     python $WORKSPACE/jobs/integration/tigera_aws.py cleanup

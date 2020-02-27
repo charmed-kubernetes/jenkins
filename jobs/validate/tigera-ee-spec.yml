@@ -31,6 +31,8 @@ plan:
     - JUJU_MODEL=validate-tigera-ee
   pre-execute: |
     #!/bin/bash
+    set -eux
+
     . $WORKSPACE/cilib.sh
 
     setup_env
