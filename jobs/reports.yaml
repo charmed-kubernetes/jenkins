@@ -2,6 +2,7 @@
 
 - job:
     name: 'generate-reports-overview'
+    node: runner-cloud
     description: |
       generates a report overview
     project-type: freestyle

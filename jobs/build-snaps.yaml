@@ -1,6 +1,7 @@
 # Builds and releases latest snaps
 - job:
     name: 'build-snaps'
+    node: runner-cloud
     description: |
       Sync all release tags from upstream, then create snap recipes to be built
       and promoted into the snap store.
