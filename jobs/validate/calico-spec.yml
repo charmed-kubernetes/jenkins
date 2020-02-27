@@ -6,152 +6,96 @@ meta:
     destination:
       - "validations/ck/calico.md"
 
+matrix:
+  snap_version:
+    - 1.18/edge
+    - 1.17/edge
+    - 1.16/edge
+  test_bgp:
+    - 0
+    - 1
+  series:
+    - focal
+    - bionic
+    - xenial
+  channel:
+    - edge
+  arch:
+    - amd64
+
+concurrent: no
+
 plan:
-  - &BASE_JOB
-    env:
-      - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico-bgp-router
-      - JUJU_MODEL=validate-calico-model
-      - TEST_BGP=1
-    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
-    before-script:
-      - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER"
-      - runner:
-          timeout: 7200
-          script: |
-            #!/bin/bash
-            set -x
+  env:
+    - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
+    - JUJU_DEPLOY_CHANNEL=edge
+    - JUJU_CLOUD=aws/us-east-2
+    - JUJU_CONTROLLER=validate-ck-calico
+    - JUJU_MODEL=validate-calico
+  pre-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
 
-            if ! juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER 2>&1; then
-               juju kill-controller -y $JUJU_CONTROLLER 2>&1
-            fi
+    setup_env
 
-            python3 jobs/integration/tigera_aws.py cleanup 2>&1
+    python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
 
-            export NUM_SUBNETS=1
-            if [ -n "$TEST_BGP" ]; then
-              export NUM_SUBNETS=2
-            fi
+    export NUM_SUBNETS=1
+    if [ -n "$TEST_BGP" ]; then
+      export NUM_SUBNETS=2
+      ogc-collect set-key 'job_name_custom' "validate-ck-calico-bgp-router-$SERIES-$SNAP_VERSION"
+    fi
 
-            python3 $INTEGRATION_TEST_PATH/tigera_aws.py bootstrap 2>&1
-            if [ -n "$TEST_BGP" ]; then
-              echo "Deploying bgp router"
-              python3 $INTEGRATION_TEST_PATH/tigera_aws.py deploy-bgp-router 2>&1
-            fi
+    python $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
+    if [ -n "$TEST_BGP" ]; then
+      echo "Deploying bgp router"
+      python $WORKSPACE/jobs/integration/tigera_aws.py deploy-bgp-router
+    fi
 
-            cat > overlay.yaml <<EOF
-            applications:
-              kubernetes-master:
-                options:
-                  channel: $SNAP_VERSION
-              kubernetes-worker:
-                options:
-                  channel: $SNAP_VERSION
-            EOF
+    cat > overlay.yaml <<EOF
+    applications:
+      kubernetes-master:
+        options:
+          channel: $SNAP_VERSION
+      kubernetes-worker:
+        options:
+          channel: $SNAP_VERSION
+    EOF
 
-            juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL $JUJU_DEPLOY_BUNDLE --overlay overlay.yaml --channel $JUJU_DEPLOY_CHANNEL 2>&1
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+          --overlay overlay.yaml \
+          --force \
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
 
-            python3 jobs/integration/tigera_aws.py disable-source-dest-check 2>&1
+    python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
 
-            if [ -n "$TEST_BGP" ]; then
-              python3 jobs/integration/tigera_aws.py configure-bgp 2>&1
-            fi
+    if [ -n "$TEST_BGP" ]; then
+      python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
+    fi
 
-            echo "Waiting for deployment"
-            juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w 2>&1
-      - !include jobs/spec-helpers/pytest.yml
-    after-script:
-      - python3 jobs/integration/tigera_aws.py cleanup
-      - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-      - !include jobs/spec-helpers/collect.yml
-      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico-bgp-router
-      - JUJU_MODEL=validate-calico-model
-      - TEST_BGP=1
+  execute: |
+    #!/bin/bash
+    set -eu
 
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/stable
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico-bgp-router
-      - JUJU_MODEL=validate-calico-model
-      - TEST_BGP=1
+    . $WORKSPACE/cilib.sh
 
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico
-      - JUJU_MODEL=validate-calico-model
-      - TEST_BGP=1
-    if: '[[ $(date +"%A") = "Saturday" ]]'
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico
-      - JUJU_MODEL=validate-calico-model
-      - TEST_BGP=1
-    if: '[[ $(date +"%A") = "Sunday" ]]'
+    inject_env
 
-  # test upgrade
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico
-      - JUJU_MODEL=validate-calico-model
+    timeout 2h pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
+       --cloud $JUJU_CLOUD \
+       --model $JUJU_MODEL \
+       --controller $JUJU_CONTROLLER
 
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico
-      - JUJU_MODEL=validate-calico-model
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/stable
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico
-      - JUJU_MODEL=validate-calico-model
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.16/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico
-      - JUJU_MODEL=validate-calico-model
-      - JOB_NAME=validate-ck-calico-no-bgp
-    if: '[[ $(date +"%A") = "Saturday" ]]'
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.15/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-calico
-      - JUJU_MODEL=validate-calico-model
-    if: '[[ $(date +"%A") = "Sunday" ]]'
+  post-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    collect_env
+
+    python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
+
+    teardown_env

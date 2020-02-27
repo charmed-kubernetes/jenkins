@@ -1,70 +1,3 @@
-sequential: yes
-
-plan:
-  - &BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/stable
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-snapd-upgrade
-      - JUJU_MODEL=validate-snapd-upgrade-model
-      - TEST_UPGRADE_SNAPD_CHANNEL=beta
-    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
-    script:
-      - juju kill-controller -y $JUJU_CONTROLLER || true
-      - runner:
-          timeout: 7200
-          script: |
-            #!/bin/bash
-            set -x
-
-            sudo snap refresh core --$TEST_UPGRADE_SNAPD_CHANNEL 2>&1
-
-            juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER --debug 2>&1
-
-            juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-               -d $JUJU_MODEL --model-default test-mode=true \
-               --model-default resource-tags=owner=k8sci \
-               --bootstrap-constraints 'arch=amd64' 2>&1
-
-            cat > overlay.yaml <<EOF
-            applications:
-              kubernetes-master:
-                options:
-                  channel: $SNAP_VERSION
-              kubernetes-worker:
-                options:
-                  channel: $SNAP_VERSION
-            EOF
-
-            pytest -m "not slow" $INTEGRATION_TEST_PATH/validation.py \
-                 --cloud $JUJU_CLOUD \
-                 --controller $JUJU_CONTROLLER \
-                 --model $JUJU_MODEL \
-                 --snapd-upgrade \
-                 --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL
-    after-script:
-      - !include jobs/spec-helpers/collect.yml
-      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-      - runner:
-          description: Reset snapd core to stable
-          script: |
-            #!/bin/bash
-            sudo snap refresh core --stable
-          wait-for-success: yes
-          back-off: 5
-          retries: 5
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=edge
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-snapd-upgrade
-      - JUJU_MODEL=validate-snapd-upgrade-model
-      - TEST_UPGRADE_SNAPD_CHANNEL=beta
-
 meta:
   name: Verify CK with Snapd upgrade
   description: |
@@ -73,6 +6,82 @@ meta:
   mkdocs:
     destination:
       - "validations/ck/snapd-upgrade.md"
-    jenkins-job-builder:
-      job: ../validate.yaml
-      name: validate-ck-snapd-upgrade
+
+matrix:
+  snap_version:
+    - 1.17/stable
+  series:
+    - focal
+    - bionic
+  channel:
+    - edge
+  arch:
+    - amd64
+
+
+plan:
+  env:
+    - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+    - JUJU_DEPLOY_CHANNEL=$CHANNEL
+    - JUJU_CLOUD=aws/us-east-1
+    - JUJU_CONTROLLER=validate-ck-snapd-upgrade
+    - JUJU_MODEL=validate-snapd
+    - TEST_UPGRADE_SNAPD_CHANNEL=beta
+
+  pre-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    setup_env
+
+    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+         -d $JUJU_MODEL \
+         --bootstrap-series $SERIES \
+         --force \
+         --bootstrap-constraints arch=$ARCH \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+
+    tee overlay.yaml <<EOF> /dev/null
+    series: $SERIES
+    applications:
+      kubernetes-master:
+        options:
+          channel: $SNAP_VERSION
+      kubernetes-worker:
+        options:
+          channel: $SNAP_VERSION
+    EOF
+
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+          --overlay overlay.yaml \
+          --force \
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    timeout 2h pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
+       --cloud $JUJU_CLOUD \
+       --model $JUJU_MODEL \
+       --controller $JUJU_CONTROLLER \
+       --snapd-upgrade \
+       --snapd-channel $TEST_UPGRADE_SNAPD_CHANNEL
+
+  post-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    collect_env
+
+    teardown_env

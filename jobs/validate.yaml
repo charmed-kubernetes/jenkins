@@ -3,7 +3,7 @@
 # V2 ------------------------------------------------------------------------- #
 - job:
     name: 'validate-ck'
-    node: runner-cloud
+    node: runner-validate
     description: |
       Validates CDK edge, supports last three recent releases.
     project-type: freestyle
@@ -24,7 +24,7 @@
           JOB_SPEC_DIR: "jobs/validate"
           COMMAND: |
             venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/spec-v2.yml
+            venv/bin/ogc --spec jobs/validate/spec.yml
 
 
 - job:
@@ -55,7 +55,7 @@
 
 - job:
     name: 'validate-ck-upgrade'
-    node: runner-cloud
+    node: runner-validate
     description: |
       Validates CDK minor release upgrades, supports last three recent releases.
     project-type: freestyle
@@ -77,13 +77,15 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "upgrade-spec.yml"
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/validate/upgrade-spec.yml
 
 - job:
     name: 'validate-ck-snapd-upgrade'
-    node: runner-amd64
+    node: runner-validate
     description: |
       Validates CK release using an upgrade snapcore.
     project-type: freestyle
@@ -100,9 +102,11 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "snapd-upgrade-spec.yml"
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/validate/snapd-upgrade-spec.yml
 
 
 # ADDONS --------------------------------------------------------------------- #
@@ -110,7 +114,7 @@
 
 - job:
     name: 'validate-ck-localhost'
-    node: runner-amd64
+    node: runner-validate
     description: |
       Validates CDK edge, supports last three recent releases on localhost.
     project-type: freestyle
@@ -137,7 +141,7 @@
     name: 'validate-ck-calico'
     description: |
       Validates CK, with calico.
-    node: runner-cloud
+    node: runner-validate
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -152,15 +156,17 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "calico-spec.yml"
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/validate/calico-spec.yml
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
     description: |
       Validates CK, with tigera.
-    node: runner-cloud
+    node: runner-validate
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -181,13 +187,15 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "tigera-ee-spec.yml"
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/validate/tigera-ee-spec.yml
 
 - job:
     name: 'validate-ck-vault'
-    node: runner-amd64
+    node: runner-validate
     description: |
       Validates CK, with vault.
     project-type: freestyle
@@ -212,7 +220,7 @@
 
 - job:
     name: 'validate-ck-ceph'
-    node: runner-cloud
+    node: runner-validate
     description: |
       Validates CK, with Ceph.
     project-type: freestyle
@@ -237,7 +245,7 @@
 
 - job:
     name: 'validate-ck-nfs'
-    node: runner-cloud
+    node: runner-validate
     description: |
       Validates CK, with NFS.
     project-type: freestyle
@@ -263,7 +271,7 @@
 
 - job:
     name: 'validate-ck-nvidia'
-    node: runner-cloud
+    node: runner-validate
     description: |
       Validates CK, with NVidia.
     project-type: freestyle
@@ -290,7 +298,7 @@
     name: 'validate-ck-aws-iam'
     description: |
       Validates CK, with AWS IAM.
-    node: runner-cloud
+    node: runner-validate
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -305,16 +313,18 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/validate"
-          JOB_SPEC_FILE: "aws-iam-spec.yml"
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/validate/aws-iam-spec.yml
 
 
 - job:
     name: 'validate-ck-nagios'
     description: |
       Validates CK, with Nagios.
-    node: runner-cloud
+    node: runner-validate
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas

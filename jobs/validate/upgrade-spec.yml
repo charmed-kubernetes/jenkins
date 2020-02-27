@@ -1,54 +1,3 @@
-plan:
-  - &BASE_JOB
-    env:
-      - SNAP_VERSION=1.15/stable
-      - SNAP_VERSION_UPGRADE_TO=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=stable
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-upgrade
-      - JUJU_MODEL=validate-upgrade-model
-    if: '[[ $(date +"%A") != "Sunday" ]] && [[ $(date +"%A") != "Saturday" ]]'
-    before-script:
-      - juju kill-controller -y $JUJU_CONTROLLER || true
-      - !include jobs/spec-helpers/bootstrap.yml
-    script:
-      - |
-        #!/bin/bash
-        set -x
-        pytest -m "not slow" "$INTEGRATION_TEST_PATH"/validation.py \
-           --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
-           --upgrade-charm-channel edge \
-           --cloud "$JUJU_CLOUD" \
-           --model "$JUJU_MODEL" \
-           --controller "$JUJU_CONTROLLER"
-
-    after-script:
-      - python3 jobs/infra/collect-debug.py set-key 'snap_version' "$SNAP_VERSION"
-      - python3 jobs/infra/collect-debug.py set-key 'to_snap_version' "$SNAP_VERSION_UPGRADE_TO"
-      - python3 jobs/infra/collect-debug.py set-key 'is_upgrade' "yes"
-      - !include jobs/spec-helpers/collect.yml
-      - juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
-
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.16/stable
-      - SNAP_VERSION_UPGRADE_TO=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=stable
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-upgrade
-      - JUJU_MODEL=validate-model
-  - <<: *BASE_JOB
-    env:
-      - SNAP_VERSION=1.17/stable
-      - SNAP_VERSION_UPGRADE_TO=1.18/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-      - JUJU_DEPLOY_CHANNEL=stable
-      - JUJU_CLOUD=aws/us-east-1
-      - JUJU_CONTROLLER=validate-ck-upgrade
-      - JUJU_MODEL=validate-model
-
 meta:
   name: Verify CK with minor upgrade
   description: |
@@ -56,7 +5,87 @@ meta:
   mkdocs:
     destination:
       - "validations/ck/minor-upgrade.md"
-    jenkins-job-builder:
-      jobs:
-        - jobs/ci-master.yaml
-        - jobs/build-charms.yaml
+
+matrix:
+  snap_version:
+    - 1.15/stable
+    - 1.16/stable
+    - 1.17/stable
+  series:
+    - focal
+    - bionic
+    - xenial
+  channel:
+    - stable
+  arch:
+    - amd64
+
+plan:
+  env:
+    - SNAP_VERSION_UPGRADE_TO=1.18/edge
+    - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+    - JUJU_DEPLOY_CHANNEL=$CHANNEL
+    - JUJU_CLOUD=aws/us-east-2
+    - JUJU_CONTROLLER=validate-ck-upgrade
+    - JUJU_MODEL=validate-upgrade
+
+  pre-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    setup_env
+
+    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+         -d $JUJU_MODEL \
+         --bootstrap-series $SERIES \
+         --force \
+         --bootstrap-constraints arch=$ARCH \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+
+    tee overlay.yaml <<EOF> /dev/null
+    series: $SERIES
+    applications:
+      kubernetes-master:
+        options:
+          channel: $SNAP_VERSION
+      kubernetes-worker:
+        options:
+          channel: $SNAP_VERSION
+    EOF
+
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+          --overlay overlay.yaml \
+          --force \
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    timeout 2h pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
+           --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
+           --upgrade-charm-channel edge \
+           --cloud "$JUJU_CLOUD" \
+           --model "$JUJU_MODEL" \
+           --controller "$JUJU_CONTROLLER"
+
+  post-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    ogc-collect set-key 'to_snap_version' "$SNAP_VERSION_UPGRADE_TO"
+    ogc-collect set-key 'is_upgrade' 1
+
+    collect_env
+
+    teardown_env
