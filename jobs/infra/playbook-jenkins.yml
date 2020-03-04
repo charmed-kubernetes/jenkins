@@ -111,6 +111,7 @@
         - "kubectl --classic"
         - "lxd"
         - "multipass"
+        - "yq"
       tags:
         - jenkins
         - adhoc
