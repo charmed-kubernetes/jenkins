@@ -19,6 +19,7 @@ bucket = s3.Bucket("jenkaas")
 
 OBJECTS = bucket.objects.all()
 
+SEREIS = ['focal', 'bionic', 'xenial']
 
 def upload_html():
     sh.aws.s3.sync("reports/_build", "s3://jenkaas")
@@ -79,6 +80,9 @@ def _gen_metadata():
 
         if "job_name_custom" in obj:
             job_name = obj["job_name_custom"]
+
+        if not any(ser in job_name for ser in SERIES):
+            continue
 
         if job_name not in db:
             db[job_name] = {}
