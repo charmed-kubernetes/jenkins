@@ -109,3 +109,8 @@
     namespace: 'containers'
     downstream: 'charmed-kubernetes/charm-vsphere-integrator'
     tags: ['k8s', 'charm-vsphere-integrator']
+- nfs:
+    upstream: "https://github.com/hyperbolic2346/nfs-charm.git"
+    namespace: 'containers'
+    downstream: 'charmed-kubernetes/nfs-charm'
+    tags: ['k8s', 'nfs']
