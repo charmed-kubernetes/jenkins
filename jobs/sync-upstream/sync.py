@@ -80,9 +80,10 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
                 git.config("user.name", "cdkbot", _cwd=identifier)
                 git.config("--global", "push.default", "simple")
-                git.branch("-f", "stable", "master", _cwd=identifier)
+                git.checkout("-f", "stable", _cwd=identifier)
+                git.merge("master", "--no-ff", _cwd=identifier)
                 for line in git.push(
-                    "-f", "origin", "stable", _cwd=identifier, _iter=True
+                    "origin", "stable", _cwd=identifier, _iter=True
                 ):
                     log.info(line)
 
