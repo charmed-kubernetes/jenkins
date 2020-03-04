@@ -70,7 +70,9 @@ plan:
 
     inject_env
 
-    timeout 2h pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
+    timeout 2h pytest -m "not slow" \
+           --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
+           $WORKSPACE/jobs/integration/validation.py \
            --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
            --upgrade-charm-channel edge \
            --cloud "$JUJU_CLOUD" \

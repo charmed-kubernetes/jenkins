@@ -75,7 +75,9 @@ plan:
 
     inject_env
 
-    timeout 2h pytest $WORKSPACE/jobs/integration/test_ceph.py::test_ceph \
+    timeout 2h pytest \
+       --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
+       $WORKSPACE/jobs/integration/test_ceph.py::test_ceph \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \
        --controller $JUJU_CONTROLLER

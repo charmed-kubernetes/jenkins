@@ -71,7 +71,9 @@ plan:
 
     inject_env
 
-    timeout 2h pytest -m "not slow" $WORKSPACE/jobs/integration/validation.py \
+    timeout 2h pytest -m "not slow" \
+       --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
+       $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \
        --controller $JUJU_CONTROLLER
