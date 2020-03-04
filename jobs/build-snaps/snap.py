@@ -23,7 +23,7 @@ from cilib.run import cmd_ok, capture
 K8S_GO_MAP = {
     "1.18": "go/1.13/stable",
     "1.17": "go/1.13/stable",
-    "1.16": "go/1.12/stable",
+    "1.16": "go/1.13/stable",
     "1.15": "go/1.12/stable",
     "1.14": "go/1.12/stable",
     "1.13": "go/1.12/stable",
