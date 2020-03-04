@@ -127,7 +127,7 @@ def sync_snaps(snap_list, version, branch_version, tracks):
 @click.option("--patches", help="Path to patches list", required=False)
 @click.option("--dry-run", is_flag=True)
 def sync_branches(snap_list, starting_ver, force, patches, dry_run):
-    return _sync_branches(snap_list, starting_ver, force, patches, dry_run)
+    return _sync_branches(snap_list, starting_ver, True, patches, dry_run)
 
 
 @cli.command()
