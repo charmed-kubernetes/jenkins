@@ -3,6 +3,14 @@
   gather_facts: yes
   become: true
   tasks:
+    - name: update /etc/environment
+      copy:
+        src: "files/environment"
+        dest: /etc/environment
+        owner: root
+        group: root
+        mode: 0644
+        force: yes
     - name: remove unused debs
       apt:
         name:
