@@ -19,7 +19,8 @@ bucket = s3.Bucket("jenkaas")
 
 OBJECTS = bucket.objects.all()
 
-SERIES = ['focal', 'bionic', 'xenial']
+SERIES = ["focal", "bionic", "xenial"]
+
 
 def upload_html():
     sh.aws.s3.sync("reports/_build", "s3://jenkaas")

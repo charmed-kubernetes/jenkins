@@ -35,7 +35,9 @@ def format(c):
 def flake8(c):
     """ Runs flake8 against project
     """
-    c.run("flake8 --ignore=E501,W503 jobs/integration jobs/build-charms jobs/build-snaps")
+    c.run(
+        "flake8 --ignore=E501,W503 jobs/integration jobs/build-charms jobs/build-snaps"
+    )
 
 
 @task(pre=[flake8])

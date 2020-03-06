@@ -82,9 +82,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 git.config("--global", "push.default", "simple")
                 git.checkout("-f", "stable", _cwd=identifier)
                 git.merge("master", "--no-ff", _cwd=identifier)
-                for line in git.push(
-                    "origin", "stable", _cwd=identifier, _iter=True
-                ):
+                for line in git.push("origin", "stable", _cwd=identifier, _iter=True):
                     log.info(line)
 
 
