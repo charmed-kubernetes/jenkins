@@ -2,6 +2,7 @@ import sh
 import pytest
 import requests
 import yaml
+import juju
 from .utils import asyncify, retry_async_with_timeout
 
 
@@ -30,35 +31,45 @@ async def is_pod_cleaned():
     return False
 
 
+async def setup_svc(svc_type):
+    # Create Deployment
+    sh.kubectl.create(
+        "deployment", "hello-world", image="gcr.io/google-samples/node-hello:1.0"
+    )
+    sh.kubectl.set("env", "deployment/hello-world", "PORT=50000")
+
+    # Create Service
+    sh.kubectl.expose(
+        "deployment",
+        "hello-world",
+        type=f"{svc_type}",
+        name="hello-world",
+        protocol="TCP",
+        port=80,
+        target_port=50000,
+    )
+
+    # Wait for Pods to stabilize
+    await retry_async_with_timeout(is_pod_running, ())
+
+
+async def cleanup():
+    sh.kubectl.delete("deployment", "hello-world")
+    sh.kubectl.delete("service", "hello-world")
+    await retry_async_with_timeout(is_pod_cleaned, ())
+
+
 @pytest.mark.asyncio
 async def test_nodeport_service_endpoint():
     """Create k8s Deployement and NodePort service, send request to NodePort
     """
 
     try:
-        # Create Deployment
-        sh.kubectl.create(
-            "deployment", "hello-world", image="gcr.io/google-samples/node-hello:1.0"
-        )
-        sh.kubectl.set("env", "deployment/hello-world", "PORT=50000")
-
-        # Create NodePort Service
-        sh.kubectl.expose(
-            "deployment",
-            "hello-world",
-            type="NodePort",
-            name="hello-world",
-            protocol="TCP",
-            port=80,
-            target_port=50000,
-        )
+        await setup_svc("NodePort")
 
         # Grab the port
         svc = get_svc_yaml()
         port = svc["items"][0]["spec"]["ports"][0]["nodePort"]
-
-        # Wait for Pods to stabilize
-        await retry_async_with_timeout(is_pod_running, ())
 
         # Grab Pod IP
         pod = get_pod_yaml()
@@ -71,7 +82,33 @@ async def test_nodeport_service_endpoint():
         assert "Hello Kubernetes!" in html.content.decode()
 
     finally:
-        # Cleanup
-        sh.kubectl.delete("deployment", "hello-world")
-        sh.kubectl.delete("service", "hello-world")
-        await retry_async_with_timeout(is_pod_cleaned, ())
+        await cleanup()
+
+
+@pytest.mark.asyncio
+async def test_clusterip_service_endpoint(model):
+    """Create k8s Deployement and ClusterIP service, send request to ClusterIP
+    from each kubernetes master and worker
+    """
+
+    try:
+        await setup_svc("ClusterIP")
+
+        # Grab ClusterIP from svc
+        pod = get_svc_yaml()
+        ip = pod["items"][0]["spec"]["clusterIP"]
+
+        # Build the url
+        set_url = f"http://{ip}:80"
+        cmd = f"curl -vk {set_url}"
+
+        # Curl the ClusterIP from each kubernetes master and worker
+        master = model.applications["kubernetes-master"]
+        worker = model.applications["kubernetes-worker"]
+        nodes_lst = master.units + worker.units
+        for unit in nodes_lst:
+            action = await unit.run(cmd)
+            assert "Hello Kubernetes!" in action.results.get("Stdout", "")
+
+    finally:
+        await cleanup()
