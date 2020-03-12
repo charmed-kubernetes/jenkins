@@ -1655,3 +1655,16 @@ async def test_cloud_node_labels(model, tools):
         assert label == "vsphere"
     else:
         assert label is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.preupgrade
+async def test_preupgrade_stub(model, tools):
+    log('Pre-upgrade')
+    assert True
+
+@pytest.mark.asyncio
+@pytest.mark.postupgrade
+async def test_postupgrade_stub(model, tools):
+    log('Post-upgrade')
+    assert True
