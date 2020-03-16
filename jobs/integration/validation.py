@@ -1668,3 +1668,113 @@ async def test_preupgrade_stub(model, tools):
 async def test_postupgrade_stub(model, tools):
     log('Post-upgrade')
     assert True
+
+
+@pytest.mark.asyncio
+async def test_multus(model, tools, addons_model):
+    if "multus" not in addons_model.applications:
+        pytest.skip("multus is not deployed")
+
+    unit = model.applications['kubernetes-master'].units[0]
+
+    async def cleanup():
+        resources = ['net-attach-def flannel', 'pod multus-test']
+        for resource in resources:
+            await run_until_success(
+                unit, '/snap/bin/kubectl delete --ignore-not-found ' + resource
+            )
+
+    await cleanup()
+
+    # Create NetworkAttachmentDefinition for Flannel
+    network_attachment_definition = {
+        "apiVersion": "k8s.cni.cncf.io/v1",
+        "kind": "NetworkAttachmentDefinition",
+        "metadata": {
+            "name": "flannel"
+        },
+        "spec": {
+            "config": json.dumps({
+                "cniVersion": "0.3.1",
+                "plugins": [
+                    {
+                        "type": "flannel",
+                        "delegate": {
+                            "hairpinMode": True,
+                            "isDefaultGateway": True
+                        }
+                    },
+                    {
+                        "type": "portmap",
+                        "capabilities": {"portMappings": True},
+                        "snat": True
+                    }
+                ]
+            })
+        }
+    }
+    remote_path = '/tmp/network-attachment-definition.yaml'
+    with NamedTemporaryFile('w') as f:
+        yaml.dump(network_attachment_definition, f)
+        await scp_to(
+            f.name, unit, remote_path,
+            tools.controller_name, tools.connection
+        )
+    await run_until_success(unit, '/snap/bin/kubectl apply -f ' + remote_path)
+
+    # Create pod with 2 extra flannel interfaces
+    pod_definition = {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {
+            "name": "multus-test",
+            "annotations": {
+                "k8s.v1.cni.cncf.io/networks": "flannel, flannel"
+            }
+        },
+        "spec": {
+            "containers": [{
+                "name": "ubuntu",
+                "image": "ubuntu",
+                "command": ["sleep", "3600"]
+            }]
+        }
+    }
+    remote_path = '/tmp/pod.yaml'
+    with NamedTemporaryFile('w') as f:
+        yaml.dump(pod_definition, f)
+        await scp_to(
+            f.name, unit, remote_path,
+            tools.controller_name, tools.connection
+        )
+    await run_until_success(unit, '/snap/bin/kubectl apply -f ' + remote_path)
+
+    # Verify pod has the expected interfaces
+    await run_until_success(
+        unit, '/snap/bin/kubectl exec multus-test -- apt update'
+    )
+    await run_until_success(
+        unit, '/snap/bin/kubectl exec multus-test -- apt install -y iproute2'
+    )
+    output = await run_until_success(
+        unit, '/snap/bin/kubectl exec multus-test -- ip addr'
+    )
+    # behold, ugly output parsing :(
+    lines = output.splitlines()
+    active_interfaces = set()
+    while lines:
+        line = lines.pop(0)
+        interface = line.split()[1].rstrip(':').split('@')[0]
+        while lines and lines[0].startswith(' '):
+            line = lines.pop(0)
+            if line.split()[0] == "inet":
+                # interface has an address, we'll call that good enough
+                active_interfaces.add(interface)
+    expected_interfaces = ['eth0', 'net1', 'net2']
+    for interface in expected_interfaces:
+        if interface not in active_interfaces:
+            pytest.fail('Interface %s is missing from ip addr output:\n%s' % (
+                interface, output
+            ))
+
+    await cleanup()
