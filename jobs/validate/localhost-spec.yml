@@ -39,7 +39,7 @@ plan:
 
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
 
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" ubuntu/0:* . || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:* . || true
 
     teardown_env
 
