@@ -2,6 +2,7 @@
 
 - job-template:
     name: 'validate-kubeflow-microk8s'
+    node: runner-cloud
     description: |
       Validates Kubeflow support on microk8s
     project-type: pipeline

@@ -94,6 +94,7 @@
 
 - job:
     name: 'release-microk8s-edge'
+    node: runner-cloud
     description: |
       Builds, releases and promotes microk8s to the snapstore on the edge channel.
     project-type: freestyle
@@ -117,6 +118,7 @@
 
 - job:
     name: 'build-microk8s'
+    node: runner-cloud
     description: |
       On new upstream releases creates code branches and LP builders.
     project-type: freestyle
