@@ -48,6 +48,8 @@
       become: false
       shell: |
         export PATH=/snap/bin:$PATH
+        lxc network set lxdbr0 ipv4.nat true
+        lxc network set lxdbr0 ipv4.dhcp true
         lxc network set lxdbr0 ipv6.address none
       ignore_errors: true
     - name: grab jenkins ci repo
