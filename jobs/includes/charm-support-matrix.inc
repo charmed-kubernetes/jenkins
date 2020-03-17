@@ -109,14 +109,14 @@
     namespace: 'containers'
     downstream: 'charmed-kubernetes/charm-vsphere-integrator'
     tags: ['k8s', 'charm-vsphere-integrator']
-- multus:
-    upstream: "https://github.com/charmed-kubernetes/charm-multus.git"
-    namespace: 'containers'
-    downstream: 'charmed-kubernetes/charm-multus'
-    tags: ['k8s', 'charm-multus']
-    override-build: |
-      git submodule init
-      git submodule update
+# - multus:
+#     upstream: "https://github.com/charmed-kubernetes/charm-multus.git"
+#     namespace: 'containers'
+#     downstream: 'charmed-kubernetes/charm-multus'
+#     tags: ['k8s', 'charm-multus']
+#     override-build: |
+#       git submodule init
+#       git submodule update
 
 # - nfs:
 #     upstream: "https://github.com/hyperbolic2346/nfs-charm.git"
