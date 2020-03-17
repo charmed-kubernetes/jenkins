@@ -10,7 +10,7 @@ import sh
 from staticjinja import Site
 from pathlib import Path
 from pprint import pformat
-from cilib import log
+from cilib import log, run
 
 session = boto3.Session(region_name="us-east-1")
 s3 = session.resource("s3")
@@ -196,4 +196,6 @@ def build():
 
 
 if __name__ == "__main__":
+    log.info("Host information:")
+    run.cmd_ok("ip addr", shell=True)
     cli()
