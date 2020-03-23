@@ -1681,7 +1681,7 @@ async def test_multus(model, tools, addons_model):
         resources = ['net-attach-def flannel', 'pod multus-test']
         for resource in resources:
             await run_until_success(
-                unit, '/snap/bin/kubectl delete --ignore-not-found ' + resource
+                unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found ' + resource
             )
 
     await cleanup()
@@ -1720,7 +1720,7 @@ async def test_multus(model, tools, addons_model):
             f.name, unit, remote_path,
             tools.controller_name, tools.connection
         )
-    await run_until_success(unit, '/snap/bin/kubectl apply -f ' + remote_path)
+    await run_until_success(unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f ' + remote_path)
 
     # Create pod with 2 extra flannel interfaces
     pod_definition = {
@@ -1747,17 +1747,17 @@ async def test_multus(model, tools, addons_model):
             f.name, unit, remote_path,
             tools.controller_name, tools.connection
         )
-    await run_until_success(unit, '/snap/bin/kubectl apply -f ' + remote_path)
+    await run_until_success(unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f ' + remote_path)
 
     # Verify pod has the expected interfaces
     await run_until_success(
-        unit, '/snap/bin/kubectl exec multus-test -- apt update'
+        unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt update'
     )
     await run_until_success(
-        unit, '/snap/bin/kubectl exec multus-test -- apt install -y iproute2'
+        unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt install -y iproute2'
     )
     output = await run_until_success(
-        unit, '/snap/bin/kubectl exec multus-test -- ip addr'
+        unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- ip addr'
     )
     # behold, ugly output parsing :(
     lines = output.splitlines()
