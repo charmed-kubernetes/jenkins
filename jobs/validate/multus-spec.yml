@@ -105,7 +105,7 @@ plan:
     export PATH="$WORKSPACE/juju-snap/bin:$PATH"
     source venv/bin/activate
 
-    timeout 2h pytest -m "not slow" \
+    timeout 2h python -m pytest -m "not slow" \
        --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
        $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \
@@ -116,10 +116,6 @@ plan:
   post-execute: |
     #!/bin/bash
     . $WORKSPACE/cilib.sh
-
-    export JUJU_DATA="$WORKSPACE/juju-data"
-    export PATH="$WORKSPACE/juju-snap/bin:$PATH"
-    source venv/bin/activate
 
     inject_env
 
