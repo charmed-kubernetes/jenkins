@@ -139,7 +139,7 @@ async def test_validate_aws_iam(model, tools):
 
     # 2) deploy CRD for test
     log("deploying crd")
-    cmd = """/snap/bin/kubectl apply -f - << EOF
+    cmd = """/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f - << EOF
 apiVersion: iamauthenticator.k8s.aws/v1alpha1
 kind: IAMIdentityMapping
 metadata:
@@ -192,7 +192,7 @@ EOF""".format(
     await verify_auth_failure(one_master, "get po")
 
     # 9) grant user access
-    cmd = """/snap/bin/kubectl apply -f - << EOF
+    cmd = """/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f - << EOF
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

@@ -397,7 +397,7 @@ async def test_network_policies(model, tools):
     unit = model.applications["kubernetes-master"].units[0]
 
     # Clean-up namespace from any previous runs.
-    cmd = await unit.run("/snap/bin/kubectl delete ns netpolicy")
+    cmd = await unit.run("/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy")
     assert cmd.status == "completed"
     log("Waiting for pods to finish terminating...")
 
@@ -422,7 +422,7 @@ async def test_network_policies(model, tools):
         tools.controller_name,
         tools.connection,
     )
-    cmd = await unit.run("/snap/bin/kubectl create -f /home/ubuntu/netpolicy-test.yaml")
+    cmd = await unit.run("/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/netpolicy-test.yaml")
     if not cmd.results["Code"] == "0":
         log("Failed to create netpolicy test!")
         log(cmd.results)
@@ -438,8 +438,8 @@ async def test_network_policies(model, tools):
     # We expect no failures since we have not applied the policy yet.
     async def get_to_networkpolicy_service():
         log("Reaching out to nginx.netpolicy with no restrictions")
-        query_from_bad = "/snap/bin/kubectl exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy"
-        query_from_good = "/snap/bin/kubectl exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy"
+        query_from_bad = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy"
+        query_from_good = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy"
         cmd_good = await unit.run(query_from_good)
         cmd_bad = await unit.run(query_from_bad)
         if (
@@ -459,18 +459,18 @@ async def test_network_policies(model, tools):
 
     # Apply network policy and retry getting to nginx.
     # This time the policy should block us.
-    cmd = await unit.run("/snap/bin/kubectl create -f /home/ubuntu/restrict.yaml")
+    cmd = await unit.run("/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/restrict.yaml")
     assert cmd.status == "completed"
     await asyncio.sleep(10)
 
     async def get_to_restricted_networkpolicy_service():
         log("Reaching out to nginx.netpolicy with restrictions")
         query_from_bad = (
-            "/snap/bin/kubectl exec bboxbad -n netpolicy -- "
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxbad -n netpolicy -- "
             "wget --timeout=30  nginx.netpolicy -O foo.html"
         )
         query_from_good = (
-            "/snap/bin/kubectl exec bboxgood -n netpolicy -- "
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxgood -n netpolicy -- "
             "wget --timeout=30  nginx.netpolicy -O foo.html"
         )
         cmd_good = await unit.run(query_from_good)
@@ -491,7 +491,7 @@ async def test_network_policies(model, tools):
     )
 
     # Clean-up namespace from next runs.
-    cmd = await unit.run("/snap/bin/kubectl delete ns netpolicy")
+    cmd = await unit.run("/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy")
     assert cmd.status == "completed"
 
 
@@ -585,7 +585,7 @@ async def test_gpu_support(model, tools):
             tools.connection,
         )
         await master_unit.run(
-            "/snap/bin/kubectl delete -f /home/ubuntu/nvidia-smi.yaml"
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete -f /home/ubuntu/nvidia-smi.yaml"
         )
         await retry_async_with_timeout(
             verify_deleted,
@@ -594,7 +594,7 @@ async def test_gpu_support(model, tools):
         )
         # Run the cuda addition
         cmd = await master_unit.run(
-            "/snap/bin/kubectl create -f /home/ubuntu/nvidia-smi.yaml"
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/nvidia-smi.yaml"
         )
         if not cmd.results["Code"] == "0":
             log("Failed to create nvidia-smi pod test!")
@@ -602,7 +602,7 @@ async def test_gpu_support(model, tools):
             assert False
 
         async def cuda_test(master):
-            action = await master.run("/snap/bin/kubectl logs nvidia-smi")
+            action = await master.run("/snap/bin/kubectl --kubeconfig /root/.kube/config logs nvidia-smi")
             log(action.results.get("Stdout", ""))
             return action.results.get("Stdout", "").count("NVIDIA-SMI") > 0
 
@@ -782,7 +782,7 @@ async def test_kubelet_extra_config(model, tools):
     log("waiting for nodes to show new pod capacity")
     master_unit = model.applications["kubernetes-master"].units[0]
     while True:
-        cmd = "/snap/bin/kubectl -o yaml get node"
+        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node"
         action = await master_unit.run(str(cmd))
         if action.status == "completed" and action.results["Code"] == "0":
             nodes = yaml.safe_load(action.results.get("Stdout", ""))
@@ -899,7 +899,7 @@ async def test_audit_default_config(model, tools):
     unit = app.units[0]
     before_date = await get_last_audit_entry_date(unit)
     await asyncio.sleep(0.5)
-    await run_until_success(unit, "/snap/bin/kubectl get po")
+    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po")
     after_date = await get_last_audit_entry_date(unit)
     assert after_date > before_date
 
@@ -973,7 +973,7 @@ async def test_audit_empty_policy(model, tools):
     unit = app.units[0]
     before_date = await get_last_audit_entry_date(unit)
     await asyncio.sleep(0.5)
-    await run_until_success(unit, "/snap/bin/kubectl get po")
+    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po")
     after_date = await get_last_audit_entry_date(unit)
     assert after_date == before_date
 
@@ -999,7 +999,7 @@ async def test_audit_custom_policy(model, tools):
     unit = app.units[0]
     before_date = await get_last_audit_entry_date(unit)
     await asyncio.sleep(0.5)
-    await run_until_success(unit, "/snap/bin/kubectl get po")
+    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po")
     after_date = await get_last_audit_entry_date(unit)
     assert after_date == before_date
 
@@ -1014,17 +1014,17 @@ async def test_audit_custom_policy(model, tools):
         json.dump(namespace_definition, f)
         f.flush()
         await scp_to(f.name, unit, path, tools.controller_name, tools.connection)
-    await run_until_success(unit, "/snap/bin/kubectl create -f " + path)
+    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f " + path)
 
     # Verify our very special request gets logged
     before_date = await get_last_audit_entry_date(unit)
     await asyncio.sleep(0.5)
-    await run_until_success(unit, "/snap/bin/kubectl get po -n " + namespace)
+    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -n " + namespace)
     after_date = await get_last_audit_entry_date(unit)
     assert after_date > before_date
 
     # Clean up
-    await run_until_success(unit, "/snap/bin/kubectl delete ns " + namespace)
+    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns " + namespace)
     await reset_audit_config(app, tools)
 
 
@@ -1035,7 +1035,7 @@ async def test_audit_webhook(model, tools):
     unit = app.units[0]
 
     async def get_webhook_server_entry_count():
-        cmd = "/snap/bin/kubectl logs test-audit-webhook"
+        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config logs test-audit-webhook"
         raw = await run_until_success(unit, cmd)
         lines = raw.splitlines()
         count = len(lines)
@@ -1045,13 +1045,13 @@ async def test_audit_webhook(model, tools):
     local_path = os.path.dirname(__file__) + "/templates/test-audit-webhook.yaml"
     remote_path = "/tmp/test-audit-webhook.yaml"
     await scp_to(local_path, unit, remote_path, tools.controller_name, tools.connection)
-    cmd = "/snap/bin/kubectl apply -f " + remote_path
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path
     await run_until_success(unit, cmd)
 
     # Get nginx IP
     nginx_ip = None
     while nginx_ip is None:
-        cmd = "/snap/bin/kubectl get po -o json test-audit-webhook"
+        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -o json test-audit-webhook"
         raw = await run_until_success(unit, cmd)
         pod = json.loads(raw)
         nginx_ip = pod["status"].get("podIP", None)
@@ -1080,13 +1080,13 @@ async def test_audit_webhook(model, tools):
 
     # Ensure webhook log is growing
     before_count = await get_webhook_server_entry_count()
-    await run_until_success(unit, "/snap/bin/kubectl get po")
+    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po")
     after_count = await get_webhook_server_entry_count()
     assert after_count > before_count
 
     # Clean up
     await reset_audit_config(app, tools)
-    cmd = "/snap/bin/kubectl delete --ignore-not-found -f " + remote_path
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found -f " + remote_path
     await run_until_success(unit, cmd)
 
 
@@ -1430,7 +1430,7 @@ async def test_encryption_at_rest(model, tools):
         # create secret
         one_master = random.choice(model.applications["kubernetes-master"].units)
         output = await one_master.run(
-            "/snap/bin/kubectl create secret generic test-secret "
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config create secret generic test-secret "
             "--from-literal=username='secret-value'"
         )
         if output.results.get("Stderr", ""):
@@ -1438,7 +1438,7 @@ async def test_encryption_at_rest(model, tools):
         assert output.status == "completed"
         # read secret
         output = await one_master.run(
-            "/snap/bin/kubectl get secret test-secret -o yaml"
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config get secret test-secret -o yaml"
         )
         if output.results.get("Stderr", ""):
             log("stderr: {}".format(output.results.get("Stderr", "")))
@@ -1499,13 +1499,13 @@ async def test_dns_provider(model, tools):
     master_unit = master_app.units[0]
 
     async def cleanup():
-        cmd = "/snap/bin/kubectl delete po validate-dns-provider-ubuntu --ignore-not-found"
+        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config delete po validate-dns-provider-ubuntu --ignore-not-found"
         await run_until_success(master_unit, cmd)
 
     async def wait_for_pod_removal(prefix):
         log("Waiting for %s pods to be removed" % prefix)
         while True:
-            cmd = "/snap/bin/kubectl get po -n kube-system -o json"
+            cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -n kube-system -o json"
             output = await run_until_success(master_unit, cmd)
             pods = json.loads(output)
             exists = False
@@ -1520,7 +1520,7 @@ async def test_dns_provider(model, tools):
     async def verify_dns_resolution():
         names = ["www.ubuntu.com", "kubernetes.default.svc.cluster.local"]
         for name in names:
-            cmd = "/snap/bin/kubectl exec validate-dns-provider-ubuntu nslookup " + name
+            cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec validate-dns-provider-ubuntu nslookup " + name
             await run_until_success(master_unit, cmd)
 
     # Only run this test against k8s 1.14+
@@ -1568,7 +1568,7 @@ async def test_dns_provider(model, tools):
         await scp_to(
             f.name, master_unit, remote_path, tools.controller_name, tools.connection
         )
-        cmd = "/snap/bin/kubectl apply -f " + remote_path
+        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path
         await run_until_success(master_unit, cmd)
 
     # Verify DNS resolution
@@ -1637,7 +1637,7 @@ async def test_sysctl(model, tools):
 @pytest.mark.asyncio
 async def test_cloud_node_labels(model, tools):
     unit = model.applications["kubernetes-master"].units[0]
-    cmd = "/snap/bin/kubectl get no -o json"
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get no -o json"
     raw_nodes = await run_until_success(unit, cmd)
     nodes = json.loads(raw_nodes)["items"]
     labels = [node["metadata"].get("labels", {}).get("juju.io/cloud") for node in nodes]
