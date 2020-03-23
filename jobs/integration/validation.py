@@ -9,6 +9,7 @@ import random
 import pytest
 import juju
 import logging
+import hunter
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from base64 import b64encode
@@ -27,6 +28,7 @@ from .utils import (
     validate_storage_class,
 )
 
+hunter.trace(~hunter.Q(kind="line"),~hunter.Q(filename_startswith="/"), stdlib=False, depth_lt=5)
 
 # Quiet the noise
 ws_logger = logging.getLogger("websockets.protocol")
