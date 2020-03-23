@@ -52,9 +52,7 @@ def script(script_data, **kwargs):
     exitcode = process.wait()
     subprocess.run(["rm", "-rf", str(tmp_script_path)])
     return SimpleNamespace(
-        ok=bool(exitcode == 0),
-        returncode=exitcode,
-        stderr=process.stderr
+        ok=bool(exitcode == 0), returncode=exitcode, stderr=process.stderr
     )
 
 

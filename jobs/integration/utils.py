@@ -13,6 +13,32 @@ from .logger import log, log_calls
 from subprocess import check_output, check_call
 
 
+def tracefunc(frame, event, arg):
+    if event != "call":
+        return
+
+    package_name = __name__.split(".")[0]
+
+    if package_name in str(frame):
+        co = frame.f_code
+        func_name = co.co_name
+        if func_name == "write":
+            # Ignore write() calls from print statements
+            return
+        func_line_no = frame.f_lineno
+        func_filename = co.co_filename
+        if "conftest" in func_filename:
+            return
+        caller = frame.f_back
+        caller_line_no = caller.f_lineno
+        caller_filename = caller.f_code.co_filename
+        print(f"Call to {func_name} on line {func_line_no}:{func_filename}")
+        for i in range(frame.f_code.co_argcount):
+            name = frame.f_code.co_varnames[i]
+            print("    Argument", name, "is", frame.f_locals[name])
+    return
+
+
 @contextmanager
 def timeout_for_current_task(timeout):
     """ Create a context with a timeout.
@@ -230,7 +256,9 @@ async def disable_source_dest_check(model_name):
 
 
 async def verify_deleted(unit, entity_type, name, extra_args=""):
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {} --output json get {}".format(extra_args, entity_type)
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {} --output json get {}".format(
+        extra_args, entity_type
+    )
     output = await unit.run(cmd)
     if "error" in output.results.get("Stdout", ""):
         # error resource type not found most likely. This can happen when the
@@ -359,7 +387,9 @@ spec:
 """.format(
         sc_name
     )
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(pod_definition)
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
+        pod_definition
+    )
     log("{}: {} writing test".format(test_name, sc_name))
     output = await master.run(cmd)
     assert output.status == "completed"
@@ -394,7 +424,9 @@ spec:
 """.format(
         sc_name
     )
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(pod_definition)
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
+        pod_definition
+    )
     log("{}: {} reading test".format(test_name, sc_name))
     output = await master.run(cmd)
     assert output.status == "completed"
@@ -406,7 +438,11 @@ spec:
         timeout_msg="Unable to create write" " pod for ceph test",
     )
 
-    output = await master.run("/snap/bin/kubectl --kubeconfig /root/.kube/config logs {}-read-test".format(sc_name))
+    output = await master.run(
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config logs {}-read-test".format(
+            sc_name
+        )
+    )
     assert output.status == "completed"
     log("output = {}".format(output.data["results"].get("Stdout", "")))
     assert "JUJU TEST" in output.data["results"].get("Stdout", "")
@@ -414,9 +450,13 @@ spec:
     log("{}: {} cleanup".format(test_name, sc_name))
     pods = "{0}-read-test {0}-write-test".format(sc_name)
     pvcs = "{}-pvc".format(sc_name)
-    output = await master.run("/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {}".format(pods))
+    output = await master.run(
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {}".format(pods)
+    )
     assert output.status == "completed"
-    output = await master.run("/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {}".format(pvcs))
+    output = await master.run(
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {}".format(pvcs)
+    )
     assert output.status == "completed"
 
     await retry_async_with_timeout(

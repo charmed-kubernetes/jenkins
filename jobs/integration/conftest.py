@@ -41,7 +41,7 @@ def pytest_addoption(parser):
         "--addons-model",
         action="store",
         required=False,
-        help="Juju k8s model for addons"
+        help="Juju k8s model for addons",
     )
 
     # Set when performing upgrade tests

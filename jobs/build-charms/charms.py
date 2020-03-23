@@ -370,11 +370,13 @@ class BuildEntity:
     def proof_build(self):
         """ Perform charm build against charm/bundle
         """
-        if 'override-build' in self.opts:
+        if "override-build" in self.opts:
             click.echo("Override build found, running in place of charm build.")
-            ret = script(self.opts['override-build'])
+            ret = script(self.opts["override-build"])
         else:
-            ret = cmd_ok(f"charm build -r --force -i https://localhost", cwd=self.src_path)
+            ret = cmd_ok(
+                f"charm build -r --force -i https://localhost", cwd=self.src_path
+            )
 
         if not ret.ok:
             # Until https://github.com/juju/charm-tools/pull/554 is fixed.

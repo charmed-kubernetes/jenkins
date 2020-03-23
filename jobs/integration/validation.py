@@ -9,7 +9,6 @@ import random
 import pytest
 import juju
 import logging
-import hunter
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from base64 import b64encode
@@ -26,9 +25,11 @@ from .utils import (
     verify_deleted,
     verify_ready,
     validate_storage_class,
+    tracefunc,
 )
+import sys
 
-hunter.trace(~hunter.Q(kind="line"),~hunter.Q(filename_startswith="/"), stdlib=False, depth_lt=5)
+sys.settrace(tracefunc)
 
 # Quiet the noise
 ws_logger = logging.getLogger("websockets.protocol")
@@ -399,7 +400,9 @@ async def test_network_policies(model, tools):
     unit = model.applications["kubernetes-master"].units[0]
 
     # Clean-up namespace from any previous runs.
-    cmd = await unit.run("/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy")
+    cmd = await unit.run(
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy"
+    )
     assert cmd.status == "completed"
     log("Waiting for pods to finish terminating...")
 
@@ -424,7 +427,9 @@ async def test_network_policies(model, tools):
         tools.controller_name,
         tools.connection,
     )
-    cmd = await unit.run("/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/netpolicy-test.yaml")
+    cmd = await unit.run(
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/netpolicy-test.yaml"
+    )
     if not cmd.results["Code"] == "0":
         log("Failed to create netpolicy test!")
         log(cmd.results)
@@ -461,7 +466,9 @@ async def test_network_policies(model, tools):
 
     # Apply network policy and retry getting to nginx.
     # This time the policy should block us.
-    cmd = await unit.run("/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/restrict.yaml")
+    cmd = await unit.run(
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/restrict.yaml"
+    )
     assert cmd.status == "completed"
     await asyncio.sleep(10)
 
@@ -493,7 +500,9 @@ async def test_network_policies(model, tools):
     )
 
     # Clean-up namespace from next runs.
-    cmd = await unit.run("/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy")
+    cmd = await unit.run(
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy"
+    )
     assert cmd.status == "completed"
 
 
@@ -604,7 +613,9 @@ async def test_gpu_support(model, tools):
             assert False
 
         async def cuda_test(master):
-            action = await master.run("/snap/bin/kubectl --kubeconfig /root/.kube/config logs nvidia-smi")
+            action = await master.run(
+                "/snap/bin/kubectl --kubeconfig /root/.kube/config logs nvidia-smi"
+            )
             log(action.results.get("Stdout", ""))
             return action.results.get("Stdout", "").count("NVIDIA-SMI") > 0
 
@@ -901,7 +912,9 @@ async def test_audit_default_config(model, tools):
     unit = app.units[0]
     before_date = await get_last_audit_entry_date(unit)
     await asyncio.sleep(0.5)
-    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po")
+    await run_until_success(
+        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
+    )
     after_date = await get_last_audit_entry_date(unit)
     assert after_date > before_date
 
@@ -975,7 +988,9 @@ async def test_audit_empty_policy(model, tools):
     unit = app.units[0]
     before_date = await get_last_audit_entry_date(unit)
     await asyncio.sleep(0.5)
-    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po")
+    await run_until_success(
+        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
+    )
     after_date = await get_last_audit_entry_date(unit)
     assert after_date == before_date
 
@@ -1001,7 +1016,9 @@ async def test_audit_custom_policy(model, tools):
     unit = app.units[0]
     before_date = await get_last_audit_entry_date(unit)
     await asyncio.sleep(0.5)
-    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po")
+    await run_until_success(
+        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
+    )
     after_date = await get_last_audit_entry_date(unit)
     assert after_date == before_date
 
@@ -1016,17 +1033,23 @@ async def test_audit_custom_policy(model, tools):
         json.dump(namespace_definition, f)
         f.flush()
         await scp_to(f.name, unit, path, tools.controller_name, tools.connection)
-    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f " + path)
+    await run_until_success(
+        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f " + path
+    )
 
     # Verify our very special request gets logged
     before_date = await get_last_audit_entry_date(unit)
     await asyncio.sleep(0.5)
-    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -n " + namespace)
+    await run_until_success(
+        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -n " + namespace
+    )
     after_date = await get_last_audit_entry_date(unit)
     assert after_date > before_date
 
     # Clean up
-    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns " + namespace)
+    await run_until_success(
+        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns " + namespace
+    )
     await reset_audit_config(app, tools)
 
 
@@ -1037,7 +1060,9 @@ async def test_audit_webhook(model, tools):
     unit = app.units[0]
 
     async def get_webhook_server_entry_count():
-        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config logs test-audit-webhook"
+        cmd = (
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config logs test-audit-webhook"
+        )
         raw = await run_until_success(unit, cmd)
         lines = raw.splitlines()
         count = len(lines)
@@ -1082,13 +1107,18 @@ async def test_audit_webhook(model, tools):
 
     # Ensure webhook log is growing
     before_count = await get_webhook_server_entry_count()
-    await run_until_success(unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po")
+    await run_until_success(
+        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
+    )
     after_count = await get_webhook_server_entry_count()
     assert after_count > before_count
 
     # Clean up
     await reset_audit_config(app, tools)
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found -f " + remote_path
+    cmd = (
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found -f "
+        + remote_path
+    )
     await run_until_success(unit, cmd)
 
 
@@ -1522,7 +1552,10 @@ async def test_dns_provider(model, tools):
     async def verify_dns_resolution():
         names = ["www.ubuntu.com", "kubernetes.default.svc.cluster.local"]
         for name in names:
-            cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec validate-dns-provider-ubuntu nslookup " + name
+            cmd = (
+                "/snap/bin/kubectl --kubeconfig /root/.kube/config exec validate-dns-provider-ubuntu nslookup "
+                + name
+            )
             await run_until_success(master_unit, cmd)
 
     # Only run this test against k8s 1.14+
@@ -1570,7 +1603,9 @@ async def test_dns_provider(model, tools):
         await scp_to(
             f.name, master_unit, remote_path, tools.controller_name, tools.connection
         )
-        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path
+        cmd = (
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path
+        )
         await run_until_success(master_unit, cmd)
 
     # Verify DNS resolution
@@ -1662,13 +1697,14 @@ async def test_cloud_node_labels(model, tools):
 @pytest.mark.asyncio
 @pytest.mark.preupgrade
 async def test_preupgrade_stub(model, tools):
-    log('Pre-upgrade')
+    log("Pre-upgrade")
     assert True
+
 
 @pytest.mark.asyncio
 @pytest.mark.postupgrade
 async def test_postupgrade_stub(model, tools):
-    log('Post-upgrade')
+    log("Post-upgrade")
     assert True
 
 
@@ -1677,13 +1713,15 @@ async def test_multus(model, tools, addons_model):
     if "multus" not in addons_model.applications:
         pytest.skip("multus is not deployed")
 
-    unit = model.applications['kubernetes-master'].units[0]
+    unit = model.applications["kubernetes-master"].units[0]
 
     async def cleanup():
-        resources = ['net-attach-def flannel', 'pod multus-test']
+        resources = ["net-attach-def flannel", "pod multus-test"]
         for resource in resources:
             await run_until_success(
-                unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found ' + resource
+                unit,
+                "/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found "
+                + resource,
             )
 
     await cleanup()
@@ -1692,37 +1730,34 @@ async def test_multus(model, tools, addons_model):
     network_attachment_definition = {
         "apiVersion": "k8s.cni.cncf.io/v1",
         "kind": "NetworkAttachmentDefinition",
-        "metadata": {
-            "name": "flannel"
-        },
+        "metadata": {"name": "flannel"},
         "spec": {
-            "config": json.dumps({
-                "cniVersion": "0.3.1",
-                "plugins": [
-                    {
-                        "type": "flannel",
-                        "delegate": {
-                            "hairpinMode": True,
-                            "isDefaultGateway": True
-                        }
-                    },
-                    {
-                        "type": "portmap",
-                        "capabilities": {"portMappings": True},
-                        "snat": True
-                    }
-                ]
-            })
-        }
+            "config": json.dumps(
+                {
+                    "cniVersion": "0.3.1",
+                    "plugins": [
+                        {
+                            "type": "flannel",
+                            "delegate": {"hairpinMode": True, "isDefaultGateway": True},
+                        },
+                        {
+                            "type": "portmap",
+                            "capabilities": {"portMappings": True},
+                            "snat": True,
+                        },
+                    ],
+                }
+            )
+        },
     }
-    remote_path = '/tmp/network-attachment-definition.yaml'
-    with NamedTemporaryFile('w') as f:
+    remote_path = "/tmp/network-attachment-definition.yaml"
+    with NamedTemporaryFile("w") as f:
         yaml.dump(network_attachment_definition, f)
-        await scp_to(
-            f.name, unit, remote_path,
-            tools.controller_name, tools.connection
-        )
-    await run_until_success(unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f ' + remote_path)
+        await scp_to(f.name, unit, remote_path, tools.controller_name, tools.connection)
+    await run_until_success(
+        unit,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path,
+    )
 
     # Create pod with 2 extra flannel interfaces
     pod_definition = {
@@ -1730,53 +1765,52 @@ async def test_multus(model, tools, addons_model):
         "kind": "Pod",
         "metadata": {
             "name": "multus-test",
-            "annotations": {
-                "k8s.v1.cni.cncf.io/networks": "flannel, flannel"
-            }
+            "annotations": {"k8s.v1.cni.cncf.io/networks": "flannel, flannel"},
         },
         "spec": {
-            "containers": [{
-                "name": "ubuntu",
-                "image": "ubuntu",
-                "command": ["sleep", "3600"]
-            }]
-        }
+            "containers": [
+                {"name": "ubuntu", "image": "ubuntu", "command": ["sleep", "3600"]}
+            ]
+        },
     }
-    remote_path = '/tmp/pod.yaml'
-    with NamedTemporaryFile('w') as f:
+    remote_path = "/tmp/pod.yaml"
+    with NamedTemporaryFile("w") as f:
         yaml.dump(pod_definition, f)
-        await scp_to(
-            f.name, unit, remote_path,
-            tools.controller_name, tools.connection
-        )
-    await run_until_success(unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f ' + remote_path)
+        await scp_to(f.name, unit, remote_path, tools.controller_name, tools.connection)
+    await run_until_success(
+        unit,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path,
+    )
 
     # Verify pod has the expected interfaces
     await run_until_success(
-        unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt update'
+        unit,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt update",
     )
     await run_until_success(
-        unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt install -y iproute2'
+        unit,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt install -y iproute2",
     )
     output = await run_until_success(
-        unit, '/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- ip addr'
+        unit,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- ip addr",
     )
     # behold, ugly output parsing :(
     lines = output.splitlines()
     active_interfaces = set()
     while lines:
         line = lines.pop(0)
-        interface = line.split()[1].rstrip(':').split('@')[0]
-        while lines and lines[0].startswith(' '):
+        interface = line.split()[1].rstrip(":").split("@")[0]
+        while lines and lines[0].startswith(" "):
             line = lines.pop(0)
             if line.split()[0] == "inet":
                 # interface has an address, we'll call that good enough
                 active_interfaces.add(interface)
-    expected_interfaces = ['eth0', 'net1', 'net2']
+    expected_interfaces = ["eth0", "net1", "net2"]
     for interface in expected_interfaces:
         if interface not in active_interfaces:
-            pytest.fail('Interface %s is missing from ip addr output:\n%s' % (
-                interface, output
-            ))
+            pytest.fail(
+                "Interface %s is missing from ip addr output:\n%s" % (interface, output)
+            )
 
     await cleanup()
