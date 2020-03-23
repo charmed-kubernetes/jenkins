@@ -37,6 +37,12 @@ def pytest_addoption(parser):
         required=False,
         help="Snap channel to use eg 1.16/edge",
     )
+    parser.addoption(
+        "--addons-model",
+        action="store",
+        required=False,
+        help="Juju k8s model for addons"
+    )
 
     # Set when performing upgrade tests
     parser.addoption(
@@ -223,3 +229,16 @@ async def deploy(request, tools):
     yield (tools.controller_name, _model_obj)
     await _model_obj.disconnect()
     await tools.run("juju", "destroy-model", "-y", nonce_model)
+
+
+@pytest.fixture(scope="module")
+async def addons_model(request):
+    controller_name = request.config.getoption("--controller")
+    model_name = request.config.getoption("--addons-model")
+    if not model_name:
+        pytest.skip("--addons-model not specified")
+        return
+    model = Model()
+    await model.connect(controller_name + ":" + model_name)
+    yield model
+    await model.disconnect()

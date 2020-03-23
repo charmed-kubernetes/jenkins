@@ -1,0 +1,128 @@
+meta:
+  name: Verify CK, with Multus.
+  synopsis:
+    - summary: Running the base validation suite against a deployed Kubernetes
+      code: |
+        ```
+        # edit spec.yml and update the appropriate vars under the `env:` section
+        > ogc --spec jobs/validate/multus-spec.yml
+        ```
+  description: |
+    Verifies that CK with Multus passes integration tests
+  mkdocs:
+    destination:
+      - "validations/ck/multus.md"
+
+matrix:
+  snap_version:
+    - 1.18/edge
+    - 1.17/edge
+    - 1.16/edge
+  series:
+    - focal
+    - bionic
+    - xenial
+  channel:
+    - edge
+  arch:
+    - amd64
+
+plan:
+  env:
+    - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+    - JUJU_DEPLOY_CHANNEL=$CHANNEL
+    - JUJU_CLOUD=aws/us-east-2
+    - JUJU_CONTROLLER=validate-ck-multus
+    - JUJU_MODEL=validate-multus
+
+  pre-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    setup_env
+
+    # use juju client from edge because we need 2.8
+    # use a copy of juju data to minimize risk to system-wide data
+    cp -r "${JUJU_DATA:-$HOME/.local/share/juju}" juju-data
+    snap download juju --channel edge
+    unsquashfs -d "$WORKSPACE/juju-snap" juju*.snap
+    export JUJU_DATA="$WORKSPACE/juju-data"
+    export PATH="$WORKSPACE/juju-snap/bin:$PATH"
+
+    # use libjuju from master for juju 2.8 support
+    virtualenv --system-site-packages venv
+    source venv/bin/activate
+    pip3 install -U git+https://github.com/juju/python-libjuju
+
+    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+         -d $JUJU_MODEL \
+         --bootstrap-series $SERIES \
+         --force \
+         --bootstrap-constraints arch=$ARCH \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+
+    tee overlay.yaml <<EOF> /dev/null
+    series: $SERIES
+    applications:
+      kubernetes-master:
+        options:
+          channel: $SNAP_VERSION
+      kubernetes-worker:
+        options:
+          channel: $SNAP_VERSION
+    EOF
+
+    wget https://raw.githubusercontent.com/charmed-kubernetes/bundle/master/overlays/ceph-rbd.yaml
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+          --overlay overlay.yaml \
+          --overlay ceph-rbd.yaml \
+          --force \
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL \
+          kubernetes-master/0:config "$WORKSPACE/kubeconfig"
+    export KUBECONFIG="$WORKSPACE/kubeconfig"
+    juju add-k8s k8s --controller $JUJU_CONTROLLER
+    juju add-model -c $JUJU_CONTROLLER addons k8s
+    juju deploy -m $JUJU_CONTROLLER:addons \
+          --channel $JUJU_DEPLOY_CHANNEL cs:~containers/multus
+
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:addons -w
+
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    export JUJU_DATA="$WORKSPACE/juju-data"
+    export PATH="$WORKSPACE/juju-snap/bin:$PATH"
+    source venv/bin/activate
+
+    timeout 2h python -m pytest -m "not slow" \
+       --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
+       $WORKSPACE/jobs/integration/validation.py \
+       --cloud $JUJU_CLOUD \
+       --model $JUJU_MODEL \
+       --controller $JUJU_CONTROLLER \
+       --addons-model addons
+
+  post-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    export JUJU_DATA="$WORKSPACE/juju-data"
+    export PATH="$WORKSPACE/juju-snap/bin:$PATH"
+    source venv/bin/activate
+
+    collect_env
+
+    teardown_env
