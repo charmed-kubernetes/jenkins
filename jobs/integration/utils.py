@@ -230,7 +230,7 @@ async def disable_source_dest_check(model_name):
 
 
 async def verify_deleted(unit, entity_type, name, extra_args=""):
-    cmd = "/snap/bin/kubectl {} --output json get {}".format(extra_args, entity_type)
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {} --output json get {}".format(extra_args, entity_type)
     output = await unit.run(cmd)
     if "error" in output.results.get("Stdout", ""):
         # error resource type not found most likely. This can happen when the
@@ -251,7 +251,7 @@ async def verify_deleted(unit, entity_type, name, extra_args=""):
 
 
 async def find_entities(unit, entity_type, name_list, extra_args=""):
-    cmd = "/snap/bin/kubectl {} --output json get {}"
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {} --output json get {}"
     cmd = cmd.format(extra_args, entity_type)
     output = await unit.run(cmd)
     if output.results["Code"] != "0":
@@ -359,7 +359,7 @@ spec:
 """.format(
         sc_name
     )
-    cmd = "/snap/bin/kubectl create -f - << EOF{}EOF".format(pod_definition)
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(pod_definition)
     log("{}: {} writing test".format(test_name, sc_name))
     output = await master.run(cmd)
     assert output.status == "completed"
@@ -394,7 +394,7 @@ spec:
 """.format(
         sc_name
     )
-    cmd = "/snap/bin/kubectl create -f - << EOF{}EOF".format(pod_definition)
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(pod_definition)
     log("{}: {} reading test".format(test_name, sc_name))
     output = await master.run(cmd)
     assert output.status == "completed"
@@ -406,7 +406,7 @@ spec:
         timeout_msg="Unable to create write" " pod for ceph test",
     )
 
-    output = await master.run("/snap/bin/kubectl logs {}-read-test".format(sc_name))
+    output = await master.run("/snap/bin/kubectl --kubeconfig /root/.kube/config logs {}-read-test".format(sc_name))
     assert output.status == "completed"
     log("output = {}".format(output.data["results"].get("Stdout", "")))
     assert "JUJU TEST" in output.data["results"].get("Stdout", "")
@@ -414,9 +414,9 @@ spec:
     log("{}: {} cleanup".format(test_name, sc_name))
     pods = "{0}-read-test {0}-write-test".format(sc_name)
     pvcs = "{}-pvc".format(sc_name)
-    output = await master.run("/snap/bin/kubectl delete po {}".format(pods))
+    output = await master.run("/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {}".format(pods))
     assert output.status == "completed"
-    output = await master.run("/snap/bin/kubectl delete pvc {}".format(pvcs))
+    output = await master.run("/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {}".format(pvcs))
     assert output.status == "completed"
 
     await retry_async_with_timeout(
