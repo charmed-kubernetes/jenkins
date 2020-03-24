@@ -29,7 +29,7 @@ from .utils import (
 )
 import sys
 
-sys.settrace(tracefunc)
+sys.setprofile(tracefunc)
 
 # Quiet the noise
 ws_logger = logging.getLogger("websockets.protocol")
