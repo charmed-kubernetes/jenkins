@@ -13,7 +13,7 @@ from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from base64 import b64encode
 from datetime import datetime
-from .logger import log
+from cilib import log
 from pprint import pformat
 from tempfile import NamedTemporaryFile
 from .utils import (
@@ -94,15 +94,15 @@ async def run_until_success(unit, cmd, timeout_insec=None):
         ):
             return action.data["results"].get("Stdout", "")
         else:
-            log(
+            log.debug(
                 "Action " + action.status + ". Command failed on unit " + unit.entity_id
             )
-            log("cmd: " + cmd)
+            log.debug("cmd: " + cmd)
             if "results" in action.data:
-                log("code: " + action.data["results"]["Code"])
-                log("stdout:\n" + action.data["results"].get("Stdout", "").strip())
-                log("stderr:\n" + action.data["results"].get("Stderr", "").strip())
-                log("Will retry...")
+                log.debug("code: " + action.data["results"]["Code"])
+                log.debug("stdout:\n" + action.data["results"].get("Stdout", "").strip())
+                log.debug("stderr:\n" + action.data["results"].get("Stderr", "").strip())
+                log.debug("Will retry...")
             await asyncio.sleep(0.5)
 
 
@@ -139,7 +139,7 @@ async def assert_hook_occurs_on_all_units(app, hook):
 
     await yield_()
 
-    log("assert_hook_occurs_on_all_units: waiting for " + hook + " hook")
+    log.debug("assert_hook_occurs_on_all_units: waiting for " + hook + " hook")
     while len(finished_units) < len(app.units):
         await asyncio.sleep(0.5)
 
@@ -148,7 +148,7 @@ async def set_config_and_wait(app, config, tools, timeout_secs=None):
     current_config = await app.get_config()
 
     if all(config[key] == current_config[key]["value"] for key in config):
-        log("set_config_and_wait: new config identical to current, skipping")
+        log.debug("set_config_and_wait: new config identical to current, skipping")
         return
 
     async with assert_hook_occurs_on_all_units(app, "config-changed"):
@@ -238,7 +238,7 @@ async def test_snap_versions(model):
         if "/" not in channel:
             message = "validate_snap_versions: skipping %s, channel=%s"
             message = message % (app_name, channel)
-            log(message)
+            log.debug(message)
             continue
         track = channel.split("/")[0]
         for unit in app.units:
@@ -255,7 +255,7 @@ async def test_snap_versions(model):
             for snap in snaps:
                 snap_version = snap_versions[snap]
                 if not snap_version.startswith(track + "."):
-                    log(
+                    log.debug(
                         "Snap {} is version {} and not {}".format(
                             snap, snap_version, track + "."
                         )
@@ -311,11 +311,11 @@ async def test_microbot(model, tools):
             if resp.status_code == 200:
                 return
         except requests.exceptions.ConnectionError:
-            log(
+            log.debug(
                 "Caught connection error attempting to hit xip.io, "
                 "retrying. Error follows:"
             )
-            log(traceback.print_exc())
+            log.debug(traceback.print_exc())
         await asyncio.sleep(0.5)
     raise MicrobotError("Microbot failed to start.")
 
@@ -357,7 +357,7 @@ async def test_dashboard(model, log_dir, tools):
         "/proxy/#!/login"
     ).format(server=config["clusters"][0]["cluster"]["server"], ns=dash_ns)
 
-    log("Waiting for dashboard to stabilize...")
+    log.debug("Waiting for dashboard to stabilize...")
 
     async def dashboard_present(url):
         resp = await tools.requests.get(url, auth=auth, verify=False)
@@ -404,7 +404,7 @@ async def test_network_policies(model, tools):
         "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy"
     )
     assert cmd.status == "completed"
-    log("Waiting for pods to finish terminating...")
+    log.debug("Waiting for pods to finish terminating...")
 
     await retry_async_with_timeout(
         verify_deleted,
@@ -431,10 +431,10 @@ async def test_network_policies(model, tools):
         "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/netpolicy-test.yaml"
     )
     if not cmd.results["Code"] == "0":
-        log("Failed to create netpolicy test!")
-        log(cmd.results)
+        log.debug("Failed to create netpolicy test!")
+        log.debug(cmd.results)
     assert cmd.status == "completed" and cmd.results["Code"] == "0"
-    log("Waiting for pods to show up...")
+    log.debug("Waiting for pods to show up...")
     await retry_async_with_timeout(
         verify_ready,
         (unit, "po", ["bboxgood", "bboxbad"], "-n netpolicy"),
@@ -444,7 +444,7 @@ async def test_network_policies(model, tools):
     # Try to get to nginx from both busyboxes.
     # We expect no failures since we have not applied the policy yet.
     async def get_to_networkpolicy_service():
-        log("Reaching out to nginx.netpolicy with no restrictions")
+        log.debug("Reaching out to nginx.netpolicy with no restrictions")
         query_from_bad = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy"
         query_from_good = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy"
         cmd_good = await unit.run(query_from_good)
@@ -473,7 +473,7 @@ async def test_network_policies(model, tools):
     await asyncio.sleep(10)
 
     async def get_to_restricted_networkpolicy_service():
-        log("Reaching out to nginx.netpolicy with restrictions")
+        log.debug("Reaching out to nginx.netpolicy with restrictions")
         query_from_bad = (
             "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxbad -n netpolicy -- "
             "wget --timeout=30  nginx.netpolicy -O foo.html"
@@ -531,7 +531,7 @@ async def test_worker_master_removal(model, tools):
 
     while len(workers.units) == unit_count:
         await asyncio.sleep(15)
-        log("Waiting for worker removal. (%d/%d)" % (len(workers.units), unit_count))
+        log.debug("Waiting for worker removal. (%d/%d)" % (len(workers.units), unit_count))
 
     # Remove the master leader
     unit_count = len(masters.units)
@@ -542,7 +542,7 @@ async def test_worker_master_removal(model, tools):
 
     while len(masters.units) == unit_count:
         await asyncio.sleep(15)
-        log("Waiting for master removal. (%d/%d)" % (len(masters.units), unit_count))
+        log.debug("Waiting for master removal. (%d/%d)" % (len(masters.units), unit_count))
 
     # Try and restore the cluster state
     # Tests following this were passing, but they actually
@@ -552,7 +552,7 @@ async def test_worker_master_removal(model, tools):
     while len(masters.units) < original_master_count:
         await masters.add_unit(1)
     await disable_source_dest_check(tools.model_name)
-    log("Waiting for new master and worker.")
+    log.debug("Waiting for new master and worker.")
     await tools.juju_wait()
 
 
@@ -608,15 +608,15 @@ async def test_gpu_support(model, tools):
             "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/nvidia-smi.yaml"
         )
         if not cmd.results["Code"] == "0":
-            log("Failed to create nvidia-smi pod test!")
-            log(cmd.results)
+            log.debug("Failed to create nvidia-smi pod test!")
+            log.debug(cmd.results)
             assert False
 
         async def cuda_test(master):
             action = await master.run(
                 "/snap/bin/kubectl --kubeconfig /root/.kube/config logs nvidia-smi"
             )
-            log(action.results.get("Stdout", ""))
+            log.debug(action.results.get("Stdout", ""))
             return action.results.get("Stdout", "").count("NVIDIA-SMI") > 0
 
         await retry_async_with_timeout(
@@ -679,7 +679,7 @@ async def test_extra_args(model, tools):
                             break
                         await asyncio.sleep(0.5)
             except asyncio.CancelledError:
-                log("Dumping locals:\n" + pformat(locals()))
+                log.debug("Dumping locals:\n" + pformat(locals()))
                 raise
 
         filtered_original_config = {
@@ -697,7 +697,7 @@ async def test_extra_args(model, tools):
                             break
                         await asyncio.sleep(0.5)
             except asyncio.CancelledError:
-                log("Dumping locals:\n" + pformat(locals()))
+                log.debug("Dumping locals:\n" + pformat(locals()))
                 raise
 
     master_task = run_extra_args_test(
@@ -769,7 +769,7 @@ async def test_kubelet_extra_config(model, tools):
     k8s_version_str = worker_app.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 10):
-        log("skipping, k8s version v" + k8s_version_str)
+        log.debug("skipping, k8s version v" + k8s_version_str)
         return
 
     config = await worker_app.get_config()
@@ -792,7 +792,7 @@ async def test_kubelet_extra_config(model, tools):
     )
 
     # wait for and validate new maxPods value
-    log("waiting for nodes to show new pod capacity")
+    log.debug("waiting for nodes to show new pod capacity")
     master_unit = model.applications["kubernetes-master"].units[0]
     while True:
         cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node"
@@ -809,7 +809,7 @@ async def test_kubelet_extra_config(model, tools):
         await asyncio.sleep(0.5)
 
     # validate config.yaml on each worker
-    log("validating generated config.yaml files")
+    log.debug("validating generated config.yaml files")
     for worker_unit in worker_app.units:
         cmd = "cat /root/cdk/kubelet/config.yaml"
         action = await worker_unit.run(cmd)
@@ -921,7 +921,7 @@ async def test_audit_default_config(model, tools):
     # Verify total log size is less than 1 GB
     raw = await run_until_success(unit, "du -bs /root/cdk/audit")
     size_in_bytes = int(raw.split()[0])
-    log("Audit log size in bytes: %d" % size_in_bytes)
+    log.debug("Audit log size in bytes: %d" % size_in_bytes)
     max_size_in_bytes = 1000 * 1000 * 1000 * 1.01  # 1 GB, plus some tolerance
     assert size_in_bytes <= max_size_in_bytes
 
@@ -958,7 +958,7 @@ async def test_toggle_metrics(model, tools):
     k8s_version_str = app.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 16):
-        log("skipping, k8s version v" + k8s_version_str)
+        log.debug("skipping, k8s version v" + k8s_version_str)
         return
 
     config = await app.get_config()
@@ -1130,7 +1130,7 @@ async def test_keystone(model, tools):
     k8s_version_str = masters.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 12):
-        log("skipping, k8s version v" + k8s_version_str)
+        log.debug("skipping, k8s version v" + k8s_version_str)
         return
 
     # save off config
@@ -1163,7 +1163,7 @@ async def test_keystone(model, tools):
         action = await one_master.run("cat /home/ubuntu/config")
         if "client-keystone-auth" in action.results.get("Stdout", ""):
             break
-        log("Unable to find keystone information in kubeconfig, retrying...")
+        log.debug("Unable to find keystone information in kubeconfig, retrying...")
         await asyncio.sleep(10)
 
     assert "client-keystone-auth" in action.results.get("Stdout", "")
@@ -1220,8 +1220,8 @@ async def test_keystone(model, tools):
         "invalid user credentials"
         not in output.data["results"].get("Stderr", "").lower()
     ):
-        log("Failing, auth did not fail as expected")
-        log(pformat(output.data["results"]))
+        log.debug("Failing, auth did not fail as expected")
+        log.debug(pformat(output.data["results"]))
         assert False
 
     # verify auth fail - bad password
@@ -1234,8 +1234,8 @@ async def test_keystone(model, tools):
         "invalid user credentials"
         not in output.data["results"].get("Stderr", "").lower()
     ):
-        log("Failing, auth did not fail as expected")
-        log(pformat(output.data["results"]))
+        log.debug("Failing, auth did not fail as expected")
+        log.debug(pformat(output.data["results"]))
         assert False
 
     if not skip_tests:
@@ -1301,7 +1301,7 @@ data:
                 and "error" not in output.data["results"].get("Stderr", "").lower()
             ):
                 break
-            log("Unable to verify configmap change, retrying...")
+            log.debug("Unable to verify configmap change, retrying...")
             await asyncio.sleep(10)
 
         assert output.status == "completed"
@@ -1370,21 +1370,21 @@ data:
 @pytest.mark.skip_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     try:
-        log("Deploying model")
+        log.debug("Deploying model")
         # setup
         if "percona-cluster" not in model.applications:
-            log(" deploy percona-cluster")
+            log.debug(" deploy percona-cluster")
             await model.deploy(
                 "percona-cluster",
                 config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
             )
-        log(" deploy vault")
+        log.debug(" deploy vault")
         await model.deploy(
             "cs:~openstack-charmers-next/vault",
             config={"auto-generate-root-ca-cert": True, "disable-mlock": True},
         )
         try:
-            log(" adding vault:shared-db<->percona-cluster:shared_db")
+            log.debug(" adding vault:shared-db<->percona-cluster:shared_db")
             await model.add_relation("vault:shared-db", "percona-cluster:shared-db")
         except juju.errors.JujuAPIError as e:
             pc = model.applications.get("percona-cluster")
@@ -1393,8 +1393,8 @@ async def test_encryption_at_rest(model, tools):
                     e, pc.data if pc else "(percona-cluster not in model)"
                 )
             )
-        log("Adding/Removing relations")
-        log(" removing easyrsa:client<->kubernetes-*:certificates")
+        log.debug("Adding/Removing relations")
+        log.debug(" removing easyrsa:client<->kubernetes-*:certificates")
         await model.applications["kubernetes-master"].remove_relation(
             "easyrsa:client", "kubernetes-master:certificates"
         )
@@ -1402,30 +1402,30 @@ async def test_encryption_at_rest(model, tools):
             "easyrsa:client", "kubernetes-worker:certificates"
         )
         if "kubeapi-load-balancer" in model.applications:
-            log(" removing easyrsa:client<->kubernetes-load-balancer:certificates")
+            log.debug(" removing easyrsa:client<->kubernetes-load-balancer:certificates")
             await model.applications["kubeapi-load-balancer"].remove_relation(
                 "easyrsa:client", "kubeapi-load-balancer:certificates"
             )
-        log(" adding vault:certificates<->kubernetes-*:certificates")
+        log.debug(" adding vault:certificates<->kubernetes-*:certificates")
         await model.add_relation("vault:certificates", "kubernetes-master:certificates")
         await model.add_relation("vault:certificates", "kubernetes-worker:certificates")
         if "kubeapi-load-balancer" in model.applications:
-            log(" adding vault:certificates<->kubernetes-load-balancer:certificates")
+            log.debug(" adding vault:certificates<->kubernetes-load-balancer:certificates")
             await model.add_relation(
                 "vault:certificates", "kubeapi-load-balancer:certificates"
             )
-        log(" adding vault:secrets<->kubernetes-master:vault-kv")
+        log.debug(" adding vault:secrets<->kubernetes-master:vault-kv")
         await model.add_relation("kubernetes-master:vault-kv", "vault:secrets")
 
-        log("Waiting for vault to be active")
+        log.debug("Waiting for vault to be active")
         await model.block_until(lambda: "vault" in model.applications)
         vault = model.applications["vault"].units[0]
-        log("Waiting for vault to be ready to initialize")
+        log.debug("Waiting for vault to be ready to initialize")
         await model.block_until(
             lambda: vault.workload_status_message == "Vault needs to " "be initialized"
         )
 
-        log("Unsealing vault")
+        log.debug("Unsealing vault")
         # unseal vault
         output = await vault.run(
             "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
@@ -1434,7 +1434,7 @@ async def test_encryption_at_rest(model, tools):
         )
         assert output.status == "completed"
         vault_info = yaml.safe_load(output.results.get("Stdout", ""))
-        log(vault_info)
+        log.debug(vault_info)
         for key in vault_info["unseal_keys_hex"][:3]:
             output = await vault.run(
                 "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
@@ -1448,17 +1448,17 @@ async def test_encryption_at_rest(model, tools):
         )
         assert output.status == "completed"
         vault_token_info = yaml.safe_load(output.results.get("Stdout", ""))
-        log(vault_token_info)
+        log.debug(vault_token_info)
         charm_token = vault_token_info["auth"]["client_token"]
-        log("Authorizing charm")
+        log.debug("Authorizing charm")
         action = await vault.run_action("authorize-charm", token=charm_token)
         await action.wait()
-        log("Finalizing vault unseal")
+        log.debug("Finalizing vault unseal")
         assert action.status not in ("pending", "running", "failed")
         # now wait for k8s to settle
-        log("Settling")
+        log.debug("Settling")
         await tools.juju_wait()
-        log("Secrets")
+        log.debug("Secrets")
         # create secret
         one_master = random.choice(model.applications["kubernetes-master"].units)
         output = await one_master.run(
@@ -1466,19 +1466,19 @@ async def test_encryption_at_rest(model, tools):
             "--from-literal=username='secret-value'"
         )
         if output.results.get("Stderr", ""):
-            log("stderr: {}".format(output.results.get("Stderr", "")))
+            log.debug("stderr: {}".format(output.results.get("Stderr", "")))
         assert output.status == "completed"
         # read secret
         output = await one_master.run(
             "/snap/bin/kubectl --kubeconfig /root/.kube/config get secret test-secret -o yaml"
         )
         if output.results.get("Stderr", ""):
-            log("stderr: {}".format(output.results.get("Stderr", "")))
+            log.debug("stderr: {}".format(output.results.get("Stderr", "")))
         assert output.status == "completed"
         assert b64encode(b"secret-value").decode("utf8") in output.results.get(
             "Stdout", ""
         )
-        log("Verifying encryption")
+        log.debug("Verifying encryption")
         # verify secret is encrypted
         etcd = model.applications["etcd"].units[0]
         output = await etcd.run(
@@ -1491,18 +1491,18 @@ async def test_encryption_at_rest(model, tools):
             "Stdout", ""
         )
     finally:
-        log("Cleaning up")
+        log.debug("Cleaning up")
         if "vault" in model.applications:
-            log("Removing vault")
+            log.debug("Removing vault")
             await model.applications["vault"].destroy()
             # wait for vault to go away before removing percona to prevent vault
             # from erroring from having its DB taken away
             await tools.juju_wait()
         if "percona-cluster" in model.applications:
-            log("Removing percona-cluster")
+            log.debug("Removing percona-cluster")
             await model.applications["percona-cluster"].destroy()
 
-        log("Re-add easyrsa and setup relations")
+        log.debug("Re-add easyrsa and setup relations")
         # re-add easyrsa after vault is gone
         tasks = {
             model.add_relation("easyrsa:client", "kubernetes-master:certificates"),
@@ -1519,7 +1519,7 @@ async def test_encryption_at_rest(model, tools):
             # read and ignore any exception so that it doesn't get raised
             # when the task is GC'd
             task.exception()
-        log("Waiting for cluster to settle")
+        log.debug("Waiting for cluster to settle")
         await tools.juju_wait()
 
 
@@ -1535,7 +1535,7 @@ async def test_dns_provider(model, tools):
         await run_until_success(master_unit, cmd)
 
     async def wait_for_pod_removal(prefix):
-        log("Waiting for %s pods to be removed" % prefix)
+        log.debug("Waiting for %s pods to be removed" % prefix)
         while True:
             cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -n kube-system -o json"
             output = await run_until_success(master_unit, cmd)
@@ -1565,7 +1565,7 @@ async def test_dns_provider(model, tools):
         version_string = channel.split("/")[0]
         k8s_version = tuple(int(q) for q in re.findall("[0-9]+", version_string)[:2])
         if k8s_version < (1, 14):
-            log("Skipping validate_dns_provider for k8s version " + version_string)
+            log.debug("Skipping validate_dns_provider for k8s version " + version_string)
             return
 
     # Cleanup
@@ -1697,14 +1697,14 @@ async def test_cloud_node_labels(model, tools):
 @pytest.mark.asyncio
 @pytest.mark.preupgrade
 async def test_preupgrade_stub(model, tools):
-    log("Pre-upgrade")
+    log.debug("Pre-upgrade")
     assert True
 
 
 @pytest.mark.asyncio
 @pytest.mark.postupgrade
 async def test_postupgrade_stub(model, tools):
-    log("Post-upgrade")
+    log.debug("Post-upgrade")
     assert True
 
 
