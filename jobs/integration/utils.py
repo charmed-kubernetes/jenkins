@@ -32,10 +32,10 @@ def tracefunc(frame, event, arg):
         caller = frame.f_back
         caller_line_no = caller.f_lineno
         caller_filename = caller.f_code.co_filename
-        print(f"Call to {func_name} on line {func_line_no}:{func_filename}")
+        log(f"Call to {func_name} on line {func_line_no}:{func_filename}")
         for i in range(frame.f_code.co_argcount):
             name = frame.f_code.co_varnames[i]
-            print("    Argument", name, "is", frame.f_locals[name])
+            log("    Argument", name, "is", frame.f_locals[name])
     return
 
 
