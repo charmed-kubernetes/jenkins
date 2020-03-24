@@ -1,9 +1,15 @@
 import os
 import asyncio
 import pytest
-from .utils import verify_ready, retry_async_with_timeout, validate_storage_class
+from .utils import (
+    verify_ready,
+    retry_async_with_timeout,
+    validate_storage_class,
+    tracefunc)
+import sys
 from .logger import log
 
+sys.settrace(tracefunc)
 
 @pytest.mark.asyncio
 async def test_ceph(model, tools):
