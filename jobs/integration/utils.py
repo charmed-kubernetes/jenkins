@@ -9,8 +9,8 @@ import traceback
 from contextlib import contextmanager
 from juju.controller import Controller
 from juju.errors import JujuError, JujuAPIError
-from .logger import log, log_calls
 from subprocess import check_output, check_call
+from cilib import log
 
 
 def tracefunc(frame, event, arg):
@@ -32,10 +32,10 @@ def tracefunc(frame, event, arg):
         caller = frame.f_back
         caller_line_no = caller.f_lineno
         caller_filename = caller.f_code.co_filename
-        log(f"Call to {func_name} on line {func_line_no}:{func_filename}")
+        log.debug(f"Call to {func_name} on line {func_line_no}:{func_filename}")
         for i in range(frame.f_code.co_argcount):
             name = frame.f_code.co_varnames[i]
-            log("    Argument", name, "is", frame.f_locals[name])
+            log.debug(f"    Argument {name} is {frame.f_locals[name]}")
     return
 
 
@@ -57,7 +57,6 @@ def timeout_for_current_task(timeout):
         handle.cancel()
 
 
-@log_calls
 def apply_profile(model_name):
     """
     Apply the lxd profile
@@ -136,7 +135,7 @@ async def upgrade_charms(model, channel, tools):
             "containerd:containerd", "kubernetes-master:container-runtime"
         )
     except (JujuError, JujuAPIError) as e:
-        log(f"Docker and containerd already configured as required: {e}")
+        log.info(f"Docker and containerd already configured as required: {e}")
     await tools.juju_wait()
 
 
@@ -268,9 +267,9 @@ async def verify_deleted(unit, entity_type, name, extra_args=""):
     try:
         out_list = json.loads(output.results.get("Stdout", ""))
     except json.JSONDecodeError:
-        log(traceback.format_exc())
-        log("WARNING: Expected json, got non-json output:")
-        log(output.results.get("Stdout", ""))
+        log.info(traceback.format_exc())
+        log.info("WARNING: Expected json, got non-json output:")
+        log.info(output.results.get("Stdout", ""))
         return False
     for item in out_list["items"]:
         if item["metadata"]["name"] == name:
@@ -338,7 +337,7 @@ async def verify_completed(unit, entity_type, name_list, extra_args=""):
 
 
 async def log_snap_versions(model, prefix="before"):
-    log("Logging snap versions")
+    log.info("Logging snap versions")
     for unit in model.units.values():
         if unit.dead:
             continue
@@ -346,7 +345,7 @@ async def log_snap_versions(model, prefix="before"):
         snap_versions = (
             action.data["results"].get("Stdout", "").strip() or "No snaps found"
         )
-        log(f"{prefix} {unit.name} {snap_versions}")
+        log.info(f"{prefix} {unit.name} {snap_versions}")
 
 
 async def validate_storage_class(model, sc_name, test_name):
@@ -390,7 +389,7 @@ spec:
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
         pod_definition
     )
-    log("{}: {} writing test".format(test_name, sc_name))
+    log.info("{}: {} writing test".format(test_name, sc_name))
     output = await master.run(cmd)
     assert output.status == "completed"
 
@@ -427,7 +426,7 @@ spec:
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
         pod_definition
     )
-    log("{}: {} reading test".format(test_name, sc_name))
+    log.info("{}: {} reading test".format(test_name, sc_name))
     output = await master.run(cmd)
     assert output.status == "completed"
 
@@ -444,10 +443,10 @@ spec:
         )
     )
     assert output.status == "completed"
-    log("output = {}".format(output.data["results"].get("Stdout", "")))
+    log.info("output = {}".format(output.data["results"].get("Stdout", "")))
     assert "JUJU TEST" in output.data["results"].get("Stdout", "")
 
-    log("{}: {} cleanup".format(test_name, sc_name))
+    log.info("{}: {} cleanup".format(test_name, sc_name))
     pods = "{0}-read-test {0}-write-test".format(sc_name)
     pvcs = "{}-pvc".format(sc_name)
     output = await master.run(
