@@ -106,20 +106,22 @@ async def run_until_success(unit, cmd, timeout_insec=None):
             await asyncio.sleep(0.5)
 
 
-async def get_last_audit_entry_date(unit):
-    cmd = "cat /root/cdk/audit/audit.log | tail -n 1"
-    raw = await run_until_success(unit, cmd)
-    data = json.loads(raw)
-    if "timestamp" in data:
-        timestamp = data["timestamp"]
-        time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
-    elif "requestReceivedTimestamp" in data:
-        timestamp = data["requestReceivedTimestamp"]
-        time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
-    else:
-        raise AuditTimestampError("Unable to find timestamp in {}".format(data))
-
-    return time
+async def get_last_audit_entry_date(application):
+    times = []
+    for unit in application.units:
+        cmd = "cat /root/cdk/audit/audit.log | tail -n 1"
+        raw = await run_until_success(unit, cmd)
+        data = json.loads(raw)
+        if "timestamp" in data:
+            timestamp = data["timestamp"]
+            time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
+        elif "requestReceivedTimestamp" in data:
+            timestamp = data["requestReceivedTimestamp"]
+            time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+        else:
+            raise AuditTimestampError("Unable to find timestamp in {}".format(data))
+        times.append(time)
+    return sorted(times)[-1]
 
 
 @async_contextmanager
@@ -910,12 +912,12 @@ async def test_audit_default_config(model, tools):
 
     # Verify new entries are being logged
     unit = app.units[0]
-    before_date = await get_last_audit_entry_date(unit)
+    before_date = await get_last_audit_entry_date(app)
     await asyncio.sleep(0.5)
     await run_until_success(
         unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
     )
-    after_date = await get_last_audit_entry_date(unit)
+    after_date = await get_last_audit_entry_date(app)
     assert after_date > before_date
 
     # Verify total log size is less than 1 GB
@@ -986,12 +988,12 @@ async def test_audit_empty_policy(model, tools):
 
     # Verify no entries are being logged
     unit = app.units[0]
-    before_date = await get_last_audit_entry_date(unit)
+    before_date = await get_last_audit_entry_date(app)
     await asyncio.sleep(0.5)
     await run_until_success(
         unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
     )
-    after_date = await get_last_audit_entry_date(unit)
+    after_date = await get_last_audit_entry_date(app)
     assert after_date == before_date
 
     # Clean up
@@ -1014,12 +1016,12 @@ async def test_audit_custom_policy(model, tools):
 
     # Verify no entries are being logged
     unit = app.units[0]
-    before_date = await get_last_audit_entry_date(unit)
+    before_date = await get_last_audit_entry_date(app)
     await asyncio.sleep(0.5)
     await run_until_success(
         unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
     )
-    after_date = await get_last_audit_entry_date(unit)
+    after_date = await get_last_audit_entry_date(app)
     assert after_date == before_date
 
     # Create our special namespace
@@ -1038,12 +1040,12 @@ async def test_audit_custom_policy(model, tools):
     )
 
     # Verify our very special request gets logged
-    before_date = await get_last_audit_entry_date(unit)
+    before_date = await get_last_audit_entry_date(app)
     await asyncio.sleep(0.5)
     await run_until_success(
         unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -n " + namespace
     )
-    after_date = await get_last_audit_entry_date(unit)
+    after_date = await get_last_audit_entry_date(app)
     assert after_date > before_date
 
     # Clean up
