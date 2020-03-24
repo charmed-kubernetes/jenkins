@@ -7,21 +7,21 @@ from .utils import (
     validate_storage_class,
     tracefunc)
 import sys
-from .logger import log
+from cilib import log
 
 sys.settrace(tracefunc)
 
 @pytest.mark.asyncio
 async def test_ceph(model, tools):
     # setup
-    log("adding cloud:train to k8s-master")
+    log.info("adding cloud:train to k8s-master")
     series = "bionic"
     check_cephfs = os.environ["SNAP_VERSION"].split("/")[0] not in ("1.15", "1.16")
     await model.applications["kubernetes-master"].set_config(
         {"install_sources": "[cloud:{}-train]".format(series),}
     )
     await tools.juju_wait()
-    log("deploying ceph mon")
+    log.info("deploying ceph mon")
     await model.deploy(
         "ceph-mon",
         num_units=3,
@@ -32,7 +32,7 @@ async def test_ceph(model, tools):
         "osd-devices": {"size": 8 * 1024, "count": 1},
         "osd-journals": {"size": 8 * 1024, "count": 1},
     }
-    log("deploying ceph osd")
+    log.info("deploying ceph osd")
     await model.deploy(
         "ceph-osd",
         storage=cs,
@@ -41,7 +41,7 @@ async def test_ceph(model, tools):
         config={"source": "cloud:{}-train".format(series)},
     )
     if check_cephfs:
-        log("deploying ceph fs")
+        log.info("deploying ceph fs")
         await model.deploy(
             "ceph-fs",
             num_units=1,
@@ -49,13 +49,13 @@ async def test_ceph(model, tools):
             config={"source": "cloud:{}-train".format(series)},
         )
 
-    log("adding relations")
+    log.info("adding relations")
     await model.add_relation("ceph-mon", "ceph-osd")
     if check_cephfs:
         await model.add_relation("ceph-mon", "ceph-fs")
     await model.add_relation("ceph-mon:admin", "kubernetes-master")
     await model.add_relation("ceph-mon:client", "kubernetes-master")
-    log("waiting...")
+    log.info("waiting...")
     await tools.juju_wait()
 
     # until bug https://bugs.launchpad.net/charm-kubernetes-master/+bug/1824035 fixed
@@ -64,7 +64,7 @@ async def test_ceph(model, tools):
     await action.wait()
     assert action.status == "completed"
 
-    log("waiting for csi to settle")
+    log.info("waiting for csi to settle")
     unit = model.applications["kubernetes-master"].units[0]
     await retry_async_with_timeout(
         verify_ready, (unit, "po", ["csi-rbdplugin"]), timeout_msg="CSI pods not ready!"
