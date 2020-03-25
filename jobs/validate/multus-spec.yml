@@ -46,6 +46,10 @@ plan:
     # use juju client from edge because we need 2.8
     # use a copy of juju data to minimize risk to system-wide data
     cp -r "${JUJU_DATA:-$HOME/.local/share/juju}" juju-data
+
+    snap set system proxy.http="http://squid.internal:3128"
+    snap set system proxy.https="http://squid.internal:3128"
+
     snap download juju --channel edge
     unsquashfs -d "$WORKSPACE/juju-snap" juju*.snap
     export JUJU_DATA="$WORKSPACE/juju-data"
