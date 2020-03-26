@@ -24,10 +24,12 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/release"
-          JOB_SPEC_FILE: "release-spec.yml"
-
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/release/validate-stable.yml
+            venv/bin/ogc --spec jobs/release/validate-upgrade-stable.yml
 
 - job:
     name: 'validate-charm-bugfix'
