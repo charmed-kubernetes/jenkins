@@ -95,6 +95,8 @@ plan:
     set -eux
     export PATH=/snap/bin:$PATH
 
+    ip addr
+
     juju bootstrap localhost/localhost \
         $JUJU_CONTROLLER \
         -d $JUJU_MODEL \
