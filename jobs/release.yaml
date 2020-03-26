@@ -9,6 +9,7 @@
       Promote, Validate, Release to stable. This job will run through all
       necessary steps to validate a particular version of k8s and make sure the
       charms and snaps are published accordingly.
+    node: runner-validate
     project-type: freestyle
     parameters:
       - global-params
