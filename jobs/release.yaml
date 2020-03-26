@@ -19,7 +19,6 @@
     scm:
       - k8s-jenkins-jenkaas
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 3
     builders:
@@ -46,7 +45,6 @@
     scm:
       - k8s-jenkins-jenkaas
     properties:
-      - block-on-build-release
       - build-discarder:
           num-to-keep: 3
     builders:
