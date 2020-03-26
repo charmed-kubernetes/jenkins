@@ -51,6 +51,8 @@
         lxc network set lxdbr0 ipv4.nat true
         lxc network set lxdbr0 ipv4.dhcp true
         lxc network set lxdbr0 ipv6.address none
+        lxc profile device remove default eth0
+        lxc profile device add default eth0 nic name=ens5 nictype=bridged parent=lxdbr0
       ignore_errors: true
     - name: grab jenkins ci repo
       command: "git clone https://github.com/charmed-kubernetes/jenkins"
