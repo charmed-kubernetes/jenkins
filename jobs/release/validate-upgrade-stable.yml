@@ -75,7 +75,7 @@ plan:
            --model "$JUJU_MODEL" \
            --controller "$JUJU_CONTROLLER"
 
-    timeout 2h pytest -m "not slow or not preupgrade or not postupgrade" \
+    timeout 2h pytest -m "not preupgrade or not postupgrade" \
            --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
            $WORKSPACE/jobs/integration/validation.py \
            --is-upgrade \
