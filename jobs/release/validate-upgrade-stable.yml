@@ -19,7 +19,7 @@ matrix:
 
 plan:
   env:
-    - SNAP_VERSION_UPGRADE_TO=1.18/stable
+    - SNAP_VERSION_UPGRADE_TO=1.18/beta
     - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
     - JUJU_DEPLOY_CHANNEL=$CHANNEL
     - JUJU_CLOUD=aws/us-east-1
@@ -75,7 +75,7 @@ plan:
            --model "$JUJU_MODEL" \
            --controller "$JUJU_CONTROLLER"
 
-    timeout 2h pytest -m "not preupgrade or not postupgrade" \
+    timeout 2h pytest --instafail -m "not preupgrade or not postupgrade" \
            --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
            $WORKSPACE/jobs/integration/validation.py \
            --is-upgrade \
