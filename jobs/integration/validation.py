@@ -1555,7 +1555,7 @@ async def test_dns_provider(model, tools):
         names = ["www.ubuntu.com", "kubernetes.default.svc.cluster.local"]
         for name in names:
             cmd = (
-                "/snap/bin/kubectl --kubeconfig /root/.kube/config exec validate-dns-provider-ubuntu nslookup "
+                "/snap/bin/kubectl --kubeconfig /root/.kube/config exec validate-dns-provider-ubuntu -- nslookup "
                 + name
             )
             await run_until_success(master_unit, cmd)
