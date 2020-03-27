@@ -77,7 +77,7 @@ plan:
 
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
-    timeout 2h pytest \
+    timeout 2h pytest --instafail \
         --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
         $WORKSPACE/jobs/integration/test_nagios.py::test_nagios \
         --cloud $JUJU_CLOUD \

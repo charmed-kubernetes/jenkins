@@ -113,7 +113,7 @@ plan:
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
     pushd jenkins
-    timeout 2h pytest -m "not slow" \
+    timeout 2h pytest --instafail \
         --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
         jobs/integration/validation.py \
         --cloud localhost/localhost \
