@@ -27,7 +27,6 @@ inject_env()
 
 collect_env()
 {
-    cp "$WORKSPACE/ci.log" "$OGC_JOB_WORKDIR" || true
     juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"  -o "$OGC_JOB_WORKDIR"
 }
 
