@@ -123,8 +123,8 @@ pipeline {
         stage('Setup LXD container for ctr'){
             steps {
                 ssh "sudo lxc launch ubuntu:18.04 image-processor"
-                exec "image-processor" "apt update"
-                exec "image-processor" "apt install containerd -y"
+                lxd_exec "image-processor" "apt update"
+                lxd_exec "image-processor" "apt install containerd -y"
             }
         }
         stage('Process Images'){
@@ -151,12 +151,8 @@ pipeline {
                             continue
                         fi
 
-                        # Skip images that dont exist (usually due to non-existing arch). Other
-                        # pull failures will manifest themselves when we attempt to tag.
-                        if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms 2>&1 | grep -qi 'failed to resolve reference'
-                        then
-                            continue
-                        fi
+                        # Pull the the fat manifest
+                        sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms
 
                         # Massage image names
                         RAW_IMAGE=\${i}
@@ -165,15 +161,6 @@ pipeline {
                             if echo \${RAW_IMAGE} | grep -qi \${repl}
                             then
                                 RAW_IMAGE=\$(echo \${RAW_IMAGE} | sed -e "s|\${repl}||g")
-                                break
-                            fi
-                        done
-                        for multi in \${MULTI_ARCH_IMAGES}
-                        do
-                            if echo \${RAW_IMAGE} | grep -qi \${multi}
-                            then
-                                # inject '-arch:' between the image name and version, as our templates expect
-                                RAW_IMAGE=\${RAW_IMAGE%%:*}-${params.arch}:\${RAW_IMAGE#*:}
                                 break
                             fi
                         done
