@@ -19,7 +19,7 @@ help output from `pytest` under the **custom options** section.
 > **Note**: Required minimum Python version is 3.6.
 
 ```
-> pytest jobs/integration/validation.py --help
+> tox -e py3 --workdir .tox -- pytest jobs/integration/validation.py --help
 
 custom options:
   --no-flaky-report     Suppress the report at the end of the run detailing

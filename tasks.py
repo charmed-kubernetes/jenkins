@@ -16,8 +16,7 @@ def update_deps(c):
 def build_docs(c):
     c.run("rm -rf site")
     c.run("cp README.md docs/index.md")
-    c.run("ogc --spec maintainer-spec.yml")
-
+    c.run("mkdocs build")
 
 @task(pre=[build_docs])
 def upload_docs(c):

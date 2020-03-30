@@ -23,14 +23,6 @@ the most recently released stable bundle revision.
 
 **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
 
-### Submit PR's to bundle and charms to pin snap version on the stable branches
-
-We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
-are set to `<k8sver>/stable` prior to cutting a new release.
-
-> Note: The charms themselves also need to be done as some do not use our
-  bundles for deployment.
-
 ### Rebase stable on top of master git branches
 
 Once all repositories are tagged we need to rebase what's in master git on
@@ -39,10 +31,19 @@ promote to stable.
 
 **Job**: https://jenkins.canonical.com/k8s/job/cut-stable-release/
 
+### Submit PR's to bundle and charms to pin snap version on the stable branches
+
+We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
+are set to `<k8sver>/stable` prior to cutting a new release. This should be done
+on each of the relevant git stable branches
+
+> Note: The charms themselves also need to be done as some do not use our
+  bundles for deployment.
+
 ### Bump snap version to next minor release
 
 Once the rebase has occurred we need to bump the charms and bundle fragments
-to the next k8s minor version, ie 1.17/edge.
+to the next k8s minor version in the master git branches, ie 1.19/edge.
 
 ### Build new CK Charms from stable git branches
 
