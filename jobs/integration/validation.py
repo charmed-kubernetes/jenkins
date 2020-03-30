@@ -111,7 +111,11 @@ async def get_last_audit_entry_date(application):
     for unit in application.units:
         cmd = "cat /root/cdk/audit/audit.log | tail -n 1"
         raw = await run_until_success(unit, cmd)
-        data = json.loads(raw)
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            print(raw)
+            raise
         if "timestamp" in data:
             timestamp = data["timestamp"]
             time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
