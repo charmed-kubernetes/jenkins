@@ -99,43 +99,6 @@ async def upgrade_charms(model, channel, tools):
         except JujuError as e:
             if "already running charm" not in str(e):
                 raise
-    # Only keep here until 1.13/1.14 go out of support scope
-    try:
-        await model.deploy("cs:~containers/docker", num_units=0, channel=channel)
-
-        await model.applications["docker"].add_relation(
-            "docker:docker", "kubernetes-worker:container-runtime"
-        )
-
-        await model.applications["docker"].add_relation(
-            "docker:docker", "kubernetes-master:container-runtime"
-        )
-
-        await tools.juju_wait()
-
-        await model.applications["docker"].remove_relation(
-            "docker:docker", "kubernetes-master:container-runtime"
-        )
-
-        await model.applications["docker"].remove_relation(
-            "docker:docker", "kubernetes-worker:container-runtime"
-        )
-
-        await model.applications["docker"].destroy()
-
-        if "containerd" not in model.applications:
-            await model.deploy(
-                "cs:~containers/containerd", num_units=0, channel=channel
-            )
-
-        await model.applications["containerd"].add_relation(
-            "containerd:containerd", "kubernetes-worker:container-runtime"
-        )
-        await model.applications["containerd"].add_relation(
-            "containerd:containerd", "kubernetes-master:container-runtime"
-        )
-    except (JujuError, JujuAPIError) as e:
-        click.echo(f"Docker and containerd already configured as required: {e}")
     await tools.juju_wait()
 
 
