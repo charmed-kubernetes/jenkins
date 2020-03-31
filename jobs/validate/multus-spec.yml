@@ -53,10 +53,6 @@ plan:
     export PATH="$WORKSPACE/juju-snap/bin:$PATH"
 
     # use libjuju from master for juju 2.8 support
-    virtualenv --system-site-packages venv
-    set +u
-    source venv/bin/activate
-    set -u
     pip3 install -U git+https://github.com/juju/python-libjuju
 
     juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
@@ -108,9 +104,6 @@ plan:
 
     export JUJU_DATA="$WORKSPACE/juju-data"
     export PATH="$WORKSPACE/juju-snap/bin:$PATH"
-    set +u
-    source venv/bin/activate
-    set -u
 
     timeout 2h python -m pytest -m "not slow" \
        --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
@@ -128,9 +121,6 @@ plan:
 
     export JUJU_DATA="$WORKSPACE/juju-data"
     export PATH="$WORKSPACE/juju-snap/bin:$PATH"
-    set +u
-    source venv/bin/activate
-    set -u
 
     collect_env
 
