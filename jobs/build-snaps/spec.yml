@@ -15,9 +15,13 @@ plan:
       - |
         #!/bin/bash
         set -eux
+
         if [ "$SNAP_SELECTION" != "all" ]; then
             echo "- $SNAP_SELECTION" > "jobs/includes/k8s-snap-list.inc"
         fi
+
+        snapcraft login --with /var/lib/jenkins/snapcraft-creds
+
         python3 jobs/build-snaps/snap.py promote-snaps \
                         --snap-list "jobs/includes/k8s-snap-list.inc" \
                         --arch "$SNAP_ARCH" \
