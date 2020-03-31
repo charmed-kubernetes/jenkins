@@ -47,10 +47,7 @@ plan:
     # use a copy of juju data to minimize risk to system-wide data
     cp -r "${JUJU_DATA:-$HOME/.local/share/juju}" juju-data
 
-    sudo snap set system proxy.http="http://squid.internal:3128"
-    sudo snap set system proxy.https="http://squid.internal:3128"
-
-    snap download juju --channel edge
+    HTTP_PROXY=http://squid.internal:3128 HTTPS_PROXY=http://squid.internal:3128 snap download juju --channel edge
     unsquashfs -d "$WORKSPACE/juju-snap" juju*.snap
     export JUJU_DATA="$WORKSPACE/juju-data"
     export PATH="$WORKSPACE/juju-snap/bin:$PATH"
