@@ -347,7 +347,7 @@
 
 - job:
     name: 'validate-ck-multus'
-    node: runner-validate
+    node: runner-amd64
     description: |
       Validates CK, with Multus.
     project-type: freestyle
