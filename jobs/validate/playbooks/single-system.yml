@@ -48,10 +48,10 @@
       become: false
       shell: |
         export PATH=/snap/bin:$PATH
-        lxc profile device remove default eth0
-        lxc profile device add default eth0 nic name=ens5 nictype=bridged parent=lxdbr0
-        lxc network set lxdbr0 ipv4.nat true
-        lxc network set lxdbr0 ipv4.dhcp true
+        # lxc profile device remove default eth0
+        # lxc profile device add default eth0 nic name=ens5 nictype=bridged parent=lxdbr0
+        # lxc network set lxdbr0 ipv4.nat true
+        # lxc network set lxdbr0 ipv4.dhcp true
         lxc network set lxdbr0 ipv6.address none
       ignore_errors: true
     - name: grab jenkins ci repo

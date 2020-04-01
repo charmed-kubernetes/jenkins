@@ -65,7 +65,7 @@ plan:
     juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
         --series $SERIES \
         --force \
-        --constraints "mem=32G root-disk=100G cores=16" \
+        --constraints "mem=32G root-disk=100G cores=8" \
         ubuntu
 
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
