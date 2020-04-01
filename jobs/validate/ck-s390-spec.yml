@@ -40,10 +40,10 @@ plan:
 
     inject_env
 
-    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@$S3LP3 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- /bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
 
-    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@$S3LP3:*.log . || true
-    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@$S3LP3:juju-crashdump* . || true
+    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:*.log . || true
+    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:juju-crashdump* . || true
 
     teardown_env
 
@@ -112,6 +112,6 @@ plan:
 
     chmod +x setup
     ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- uname -a
-    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@$S3LP3 -- setup ubuntu/0:setup
-    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@$S3LP3:overlay.yaml
-    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@$S3LP3 -- 'bash setup'
+    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- setup ubuntu/0:setup
+    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@10.13.6.3:overlay.yaml
+    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- 'bash setup'
