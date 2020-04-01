@@ -49,7 +49,7 @@ plan:
 
   execute: |
     #!/bin/bash
-    set -eu
+    set -eux
 
     cp $CDKBOTSSHCREDS /var/lib/jenkins/.ssh/cdkbot_rsa
     chmod 600 /var/lib/jenkins/.ssh/cdkbot_rsa
@@ -111,6 +111,7 @@ plan:
     EOF
 
     chmod +x setup
+    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- uname -a
     ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@$S3LP3 -- setup ubuntu/0:setup
     scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@$S3LP3:overlay.yaml
     ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@$S3LP3 -- 'bash setup'
