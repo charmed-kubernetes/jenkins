@@ -299,7 +299,7 @@ async def test_rbac_flag(model):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip_arch(["s390x", "aarch64"])
+@pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.flaky
 async def test_microbot(model, tools):
     """ Validate the microbot action """
@@ -327,7 +327,7 @@ async def test_microbot(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip_arch(["s390x", "aarch64"])
+@pytest.mark.skip_arch(["aarch64"])
 async def test_dashboard(model, log_dir, tools):
     """ Validate that the dashboard is operational """
     unit = model.applications["kubernetes-master"].units[0]
@@ -1129,7 +1129,7 @@ async def test_audit_webhook(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip_arch(["s390x", "aarch64"])
+@pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.skip_model("validate-vault")
 async def test_keystone(model, tools):
     masters = model.applications["kubernetes-master"]
@@ -1372,7 +1372,7 @@ data:
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip_arch(["s390x", "aarch64"])
+@pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.skip_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     try:
