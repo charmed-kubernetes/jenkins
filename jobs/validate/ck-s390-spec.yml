@@ -19,8 +19,6 @@ matrix:
   channel:
     - edge
 
-concurrent: no
-
 plan:
   env:
     - JUJU_CONTROLLER=validate-ck-s390x
@@ -40,10 +38,10 @@ plan:
 
     inject_env
 
-    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- /bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- /bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
 
-    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:*.log . || true
-    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:juju-crashdump* . || true
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:*.log . || true
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:juju-crashdump* . || true
 
     teardown_env
 
@@ -97,7 +95,7 @@ plan:
         --overlay overlay.yaml \
         cs:~containers/charmed-kubernetes 1>&2
 
-    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -v
 
     pushd jenkins
     timeout 2h pytest --instafail \
@@ -111,6 +109,6 @@ plan:
     EOF
 
     chmod +x setup
-    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa setup ubuntu@10.13.6.3:setup
-    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@10.13.6.3:overlay.yaml
-    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- 'bash setup'
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa setup ubuntu@10.13.6.3:setup
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@10.13.6.3:overlay.yaml
+    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- 'bash setup'
