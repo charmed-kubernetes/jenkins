@@ -124,4 +124,5 @@ plan:
 
     collect_env
 
+    juju destroy-model -y --destroy-storage $JUJU_CONTROLLER:addons || true
     teardown_env
