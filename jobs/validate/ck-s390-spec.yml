@@ -57,7 +57,7 @@ plan:
 
     ansible-playbook -i $S3LP3, \
                      --ssh-common-args '-o StrictHostKeyChecking=no' \
-                     --key-file /var/lib/jenkins/.ssh/juju_id_rsa \
+                     --key-file $CDKBOTSSHCREDS \
                      -u ubuntu \
                      $WORKSPACE/jobs/validate/playbooks/single-system.yml
 
