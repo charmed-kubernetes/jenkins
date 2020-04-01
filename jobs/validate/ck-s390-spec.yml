@@ -1,10 +1,10 @@
 meta:
-  name: Verify CK on Localhost
+  name: Verify CK on s390x
   description: |
-    Verifies that CK on localhost passes integration tests
+    Verifies that CK on s390x localhost passes integration tests
   mkdocs:
     destination:
-      - "validations/ck/localhost.md"
+      - "validations/ck/s390x.md"
 
 matrix:
   snap_version:
@@ -15,13 +15,14 @@ matrix:
   series:
     - focal
     - bionic
+    - xenial
   channel:
     - edge
 
 plan:
   env:
-    - JUJU_CONTROLLER=validate-ck-localhost
-    - JUJU_MODEL=validate-localhost
+    - JUJU_CONTROLLER=validate-ck-s390x
+    - JUJU_MODEL=validate-s390x
     - JUJU_CLOUD=us-east-2
     - JUJU_DEPLOY_CHANNEL=$CHANNEL
   pre-execute: |
@@ -37,9 +38,10 @@ plan:
 
     inject_env
 
-    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    ssh -tt ubuntu@$S3LP3 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
 
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:* . || true
+    scp -r ubuntu@$S3LP3:*.log . || true
+    scp -r ubuntu@$S3LP3:juju-crashdump* . || true
 
     teardown_env
 
@@ -53,27 +55,9 @@ plan:
 
     export JUJU_DEPLOY_CHANNEL=edge
 
-    juju bootstrap aws/us-east-2 $JUJU_CONTROLLER \
-         -d $JUJU_MODEL \
-         --bootstrap-series $SERIES \
-         --force \
-         --bootstrap-constraints arch="amd64" \
-         --model-default test-mode=true \
-         --model-default resource-tags=owner=k8sci \
-         --model-default image-stream=daily
-
-    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
-        --series $SERIES \
-        --force \
-        --constraints "mem=32G root-disk=100G cores=8" \
-        ubuntu
-
-    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
-
-
-    ansible-playbook -i $(unitAddress ubuntu), \
+    ansible-playbook -i $S3LP3, \
                      --ssh-common-args '-o StrictHostKeyChecking=no' \
-                     --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
+                     --key-file /var/lib/jenkins/.ssh/juju_id_rsa \
                      -u ubuntu \
                      $WORKSPACE/jobs/validate/playbooks/single-system.yml
 
@@ -122,6 +106,6 @@ plan:
     EOF
 
     chmod +x setup
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" setup ubuntu/0:setup
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" overlay.yaml ubuntu/0:overlay.yaml
-    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'bash setup'
+    ssh -tt ubuntu@$S3LP3 -- setup ubuntu/0:setup
+    scp overlay.yaml ubuntu@$S3LP3:overlay.yaml
+    ssh -tt ubuntu@$S3LP3 -- 'bash setup'

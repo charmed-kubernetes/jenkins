@@ -138,6 +138,32 @@
             venv/bin/ogc --spec jobs/validate/localhost-spec.yml
 
 - job:
+    name: 'validate-ck-s390x'
+    node: runner-validate
+    description: |
+      Validates CDK edge, supports last three recent releases on s390x localhost.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    triggers:
+        - timed: "@daily"
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-venv:
+          JOB_SPEC_DIR: "jobs/validate"
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/validate/ck-s390-spec.yml
+
+
+- job:
     name: 'validate-ck-calico'
     description: |
       Validates CK, with calico.
