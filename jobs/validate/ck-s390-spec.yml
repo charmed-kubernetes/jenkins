@@ -38,10 +38,10 @@ plan:
 
     inject_env
 
-    ssh -tt ubuntu@$S3LP3 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    ssh -i $CDKBOTSSHCREDS -tt ubuntu@$S3LP3 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
 
-    scp -r ubuntu@$S3LP3:*.log . || true
-    scp -r ubuntu@$S3LP3:juju-crashdump* . || true
+    scp -i $CDKBOTSSHCREDS -r ubuntu@$S3LP3:*.log . || true
+    scp -i $CDKBOTSSHCREDS -r ubuntu@$S3LP3:juju-crashdump* . || true
 
     teardown_env
 
@@ -55,11 +55,11 @@ plan:
 
     export JUJU_DEPLOY_CHANNEL=edge
 
-    ansible-playbook -i $S3LP3, \
-                     --ssh-common-args '-o StrictHostKeyChecking=no' \
-                     --key-file $CDKBOTSSHCREDS \
-                     -u ubuntu \
-                     $WORKSPACE/jobs/validate/playbooks/single-system.yml
+    # ansible-playbook -i $S3LP3, \
+    #                  --ssh-common-args '-o StrictHostKeyChecking=no' \
+    #                  --key-file $CDKBOTSSHCREDS \
+    #                  -u ubuntu \
+    #                  $WORKSPACE/jobs/validate/playbooks/single-system.yml
 
 
     tee overlay.yaml <<EOF> /dev/null
@@ -106,6 +106,6 @@ plan:
     EOF
 
     chmod +x setup
-    ssh -tt ubuntu@$S3LP3 -- setup ubuntu/0:setup
-    scp overlay.yaml ubuntu@$S3LP3:overlay.yaml
-    ssh -tt ubuntu@$S3LP3 -- 'bash setup'
+    ssh -i $CDKBOTSSHCREDS -tt ubuntu@$S3LP3 -- setup ubuntu/0:setup
+    scp -i $CDKBOTSSHCREDS overlay.yaml ubuntu@$S3LP3:overlay.yaml
+    ssh -i $CDKBOTSSHCREDS -tt ubuntu@$S3LP3 -- 'bash setup'
