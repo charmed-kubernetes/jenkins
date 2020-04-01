@@ -75,12 +75,17 @@ plan:
           channel: $SNAP_VERSION
     EOF
 
-    wget https://raw.githubusercontent.com/charmed-kubernetes/bundle/master/overlays/ceph-rbd.yaml
     juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
           --overlay overlay.yaml \
-          --overlay ceph-rbd.yaml \
           --force \
           --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL -n 3 ceph-mon
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL -n 3 ceph-osd \
+          --storage osd-devices=32G,2 \
+          --storage osd-journals=8G,1
+    juju add-relation -m $JUJU_CONTROLLER:$JUJU_MODEL ceph-osd ceph-mon
+    juju add-relation -m $JUJU_CONTROLLER:$JUJU_MODEL ceph-mon:admin kubernetes-master
+    juju add-relation -m $JUJU_CONTROLLER:$JUJU_MODEL ceph-mon:client kubernetes-master
 
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
