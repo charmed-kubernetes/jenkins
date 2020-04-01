@@ -111,7 +111,6 @@ plan:
     EOF
 
     chmod +x setup
-    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- uname -a
-    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- setup ubuntu/0:setup
+    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt setup ubuntu@s3lp3:setup
     scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@10.13.6.3:overlay.yaml
     ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- 'bash setup'
