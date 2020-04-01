@@ -37,7 +37,7 @@
     - name: update ubuntu user
       user:
         name: ubuntu
-        groups: lxd
+        groups: lxd,sudo
     - name: reset ssh connection
       meta: reset_connection
     - name: setup lxd network
