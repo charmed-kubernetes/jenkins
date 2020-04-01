@@ -19,6 +19,8 @@ matrix:
   channel:
     - edge
 
+concurrent: no
+
 plan:
   env:
     - JUJU_CONTROLLER=validate-ck-s390x
@@ -38,16 +40,19 @@ plan:
 
     inject_env
 
-    ssh -i $CDKBOTSSHCREDS -tt ubuntu@$S3LP3 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@$S3LP3 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
 
-    scp -i $CDKBOTSSHCREDS -r ubuntu@$S3LP3:*.log . || true
-    scp -i $CDKBOTSSHCREDS -r ubuntu@$S3LP3:juju-crashdump* . || true
+    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@$S3LP3:*.log . || true
+    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@$S3LP3:juju-crashdump* . || true
 
     teardown_env
 
   execute: |
     #!/bin/bash
     set -eu
+
+    cp $CDKBOTSSHCREDS /var/lib/jenkins/.ssh/cdkbot_rsa
+    chmod 600 /var/lib/jenkins/.ssh/cdkbot_rsa
 
     . $WORKSPACE/cilib.sh
 
@@ -106,6 +111,6 @@ plan:
     EOF
 
     chmod +x setup
-    ssh -i $CDKBOTSSHCREDS -tt ubuntu@$S3LP3 -- setup ubuntu/0:setup
-    scp -i $CDKBOTSSHCREDS overlay.yaml ubuntu@$S3LP3:overlay.yaml
-    ssh -i $CDKBOTSSHCREDS -tt ubuntu@$S3LP3 -- 'bash setup'
+    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@$S3LP3 -- setup ubuntu/0:setup
+    scp -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@$S3LP3:overlay.yaml
+    ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@$S3LP3 -- 'bash setup'
