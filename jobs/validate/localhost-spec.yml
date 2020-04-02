@@ -37,9 +37,8 @@ plan:
 
     inject_env
 
-    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:* . || true
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o $OGC_JOB_WORKDIR
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:$OGC_JOB_WORKDIR . || true
 
     teardown_env
 
