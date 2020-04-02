@@ -84,7 +84,6 @@ plan:
     export JUJU_CLOUD=$JUJU_CLOUD
     export JUJU_DEPLOY_CHANNEL=$JUJU_DEPLOY_CHANNEL
     export SERIES=$SERIES
-    http_proxy=http://squid.internal:3128
 
     juju bootstrap localhost/localhost \
         $JUJU_CONTROLLER \
@@ -92,11 +91,11 @@ plan:
         --bootstrap-series $SERIES \
         --force \
         --model-default image-stream=daily \
-        --config juju-http-proxy=$http_proxy \
-        --config juju-https-proxy=$https_proxy \
+        --config juju-http-proxy=http://squid.internal:3128 \
+        --config juju-https-proxy=http://squid.internal:3128 \
         --config juju-no-proxy=localhost,127.0.0.1,::1,10.23.105.0/24 \
-        --model-default juju-http-proxy=$http_proxy \
-        --model-default juju-https-proxy=$https_proxy \
+        --model-default juju-http-proxy=http://squid.internal:3128 \
+        --model-default juju-https-proxy=http://squid.internal:3128 \
         --model-default juju-no-proxy=localhost,127.0.0.1,::1,10.23.105.0/24
 
     juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
