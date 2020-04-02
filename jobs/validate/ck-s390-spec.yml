@@ -19,6 +19,8 @@ matrix:
   channel:
     - edge
 
+concurrent: no
+
 plan:
   env:
     - JUJU_CONTROLLER=validate-ck-s390x
@@ -38,10 +40,10 @@ plan:
 
     inject_env
 
-    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- /bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
 
-    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:*.log . || true
-    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:juju-crashdump* . || true
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:*.log . || true
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:juju-crashdump* . || true
 
     teardown_env
 
@@ -109,6 +111,6 @@ plan:
     EOF
 
     chmod +x setup
-    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa setup ubuntu@10.13.6.3:setup
-    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@10.13.6.3:overlay.yaml
-    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=600 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- 'bash setup'
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa setup ubuntu@10.13.6.3:setup
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@10.13.6.3:overlay.yaml
+    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- 'bash setup'
