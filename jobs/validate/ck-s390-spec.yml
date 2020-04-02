@@ -104,7 +104,7 @@ plan:
         --overlay overlay.yaml \
         cs:~containers/charmed-kubernetes 1>&2
 
-    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -r 5
 
     pushd jenkins
     timeout 2h pytest --instafail \
