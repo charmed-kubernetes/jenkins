@@ -94,6 +94,11 @@ plan:
     #!/bin/bash
     set -eux
     export PATH=/snap/bin:$PATH
+    export JUJU_CONTROLLER=$JUJU_CONTROLLER
+    export JUJU_MODEL=$JUJU_MODEL
+    export JUJU_CLOUD=$JUJU_CLOUD
+    export JUJU_DEPLOY_CHANNEL=$JUJU_DEPLOY_CHANNEL
+    export SERIES=$SERIES
 
     juju bootstrap localhost/localhost \
         $JUJU_CONTROLLER \

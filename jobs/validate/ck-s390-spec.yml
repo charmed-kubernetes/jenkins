@@ -51,9 +51,6 @@ plan:
     #!/bin/bash
     set -eux
 
-    cp $CDKBOTSSHCREDS /var/lib/jenkins/.ssh/cdkbot_rsa
-    chmod 600 /var/lib/jenkins/.ssh/cdkbot_rsa
-
     . $WORKSPACE/cilib.sh
 
     inject_env
