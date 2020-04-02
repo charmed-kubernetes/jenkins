@@ -40,10 +40,8 @@ plan:
 
     inject_env
 
-    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-
-    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:*.log . || true
-    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:juju-crashdump* . || true
+    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o $OGC_JOB_WORKDIR
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:$OGC_JOB_WORKDIR . || true
 
     teardown_env
 
@@ -80,6 +78,11 @@ plan:
     #!/bin/bash
     set -eux
     export PATH=/snap/bin:$PATH
+    export JUJU_CONTROLLER=$JUJU_CONTROLLER
+    export JUJU_MODEL=$JUJU_MODEL
+    export JUJU_CLOUD=$JUJU_CLOUD
+    export JUJU_DEPLOY_CHANNEL=$JUJU_DEPLOY_CHANNEL
+    export SERIES=$SERIES
 
     juju bootstrap localhost/localhost \
         $JUJU_CONTROLLER \
@@ -108,6 +111,6 @@ plan:
     EOF
 
     chmod +x setup
-    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa setup ubuntu@10.13.6.3:setup
-    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@10.13.6.3:overlay.yaml
-    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- 'bash setup'
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa setup ubuntu@10.13.6.3:$OGC_JOB_WORKDIR/setup
+    scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@10.13.6.3:$OGC_JOB_WORKDIR/overlay.yaml
+    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- bash $OGC_JOB_WORKDIR/setup
