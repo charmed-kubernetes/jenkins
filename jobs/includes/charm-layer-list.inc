@@ -162,7 +162,7 @@
     tags: ['k8s']
 - layer:metrics:
     downstream: "charmed-kubernetes/layer-metrics.git"
-    upstream: "https://github.com/CanonicalLtd/layer-metrics.git"
+    upstream: "https://github.com/canonical/layer-metrics.git"
     tags: ['k8s']
 - layer:nagios:
     downstream: "charmed-kubernetes/layer-nagios.git"
