@@ -26,7 +26,7 @@
             <td class="align-middle">{{ row.finished }}</td>
             <td class="align-middle">{{ row.channels|join(', ') }}</td>
             <td class="align-middle">{{ row.buildstate }}</td>
-            <td class="align-middle">{{ row.build_log_url }}</td>
+            <td class="align-middle"><a href="{{ row.build_log_url }}" target="_blank">Log</a></td>
             <td class="align-middle">{{ row.store_upload_status }}</td>
             <td class="align-middle">{{ row.store_upload_errors|join(' :: ') }}</td>
             <td class="align-middle">{{ row.upload_log_url }}</td>
