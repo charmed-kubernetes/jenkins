@@ -21,6 +21,9 @@
             $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py sync-branches \
                 --snap-list jobs/includes/k8s-snap-list.inc
             $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py sync-branches-list
+            $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py build-summaries \
+                --snap-list jobs/includes/k8s-snap-list.inc \
+                --snap-versions jobs/includes/k8s-snap-support-versions.inc
 
 - job:
     name: 'sync-upstream'

@@ -1,0 +1,40 @@
+{% extends "_base.html" %}
+{% block content %}
+<div class="container-fluid">
+  <h3>Recent store builds and uploads</h3>
+  <div class="row">
+    <div class="col">
+      <div class="table">
+        <table class="table table-hover table-bordered">
+          <thead class="thead-dark">
+            <tr>
+              <th class="align-middle">Snap</small></th>
+              <th class="align-middle text-center">Started</th>
+              <th class="align-middle text-center">Finished</th>
+              <th class="align-middle text-center">Channels</th>
+              <th class="align-middle text-center">Build State</th>
+              <th class="align-middle text-center">Build Log</th>
+              <th class="align-middle text-center">Upload Status</th>
+              <th class="align-middle text-center">Errors</th>
+              <th class="align-middle text-center">Error Log</th>
+            </tr>
+          </thead>
+          {% for row in rows %}
+          <tr>
+            <td class="align-middle">{{ row.name }}</td>
+            <td class="align-middle">{{ row.started }}</td>
+            <td class="align-middle">{{ row.finished }}</td>
+            <td class="align-middle">{{ row.channels|join(', ') }}</td>
+            <td class="align-middle">{{ row.buildstate }}</td>
+            <td class="align-middle">{{ row.build_log_url }}</td>
+            <td class="align-middle">{{ row.store_upload_status }}</td>
+            <td class="align-middle">{{ row.store_upload_errors|join(' :: ') }}</td>
+            <td class="align-middle">{{ row.upload_log_url }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

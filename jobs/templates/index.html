@@ -1,0 +1,50 @@
+{% extends "_base.html" %}
+{% block validationreport %}active{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+          <thead class="thead-dark">
+            <tr>
+              <th class="align-middle">Job Name <small>Last modified: {{ modified.strftime('%Y-%m-%d %H:%M:%S') }}</small></th>
+              {% for day in headers %}
+              <th class="align-middle text-center" style="min-width: 70px;">{{ day }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          {% for row in rows %}
+          <tr>
+            <td class="align-middle">{{ row[0] }}</td>
+            {% for day in row[1:] %}
+            <td class="text-center align-middle" style="height: 50px;">
+              <div class="dropdown">
+                <a class="btn {{ day.btn_class }} dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  {{ day.build_number}}
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                  {% if not day.artifacts %}
+                  <a class="dropdown-item" href="{{ day.build_log }}">Job Log</a>
+                  <a class="dropdown-item" href="{{ day.job_result }}">Job Results</a>
+                  <a class="dropdown-item" href="{{ day.metadata }}">Job Metadata</a>
+                  {% if day.results_file %}<a class="dropdown-item" href="{{ day.results_file }}">Juju Crashdump</a>{% endif %}
+                  {% if day.cdk_field_agent %}<a class="dropdown-item" href="{{ day.cdk_field_agent }}">CDK Field Agent</a>{% endif %}
+                  {% if day.conformance %}<a class="dropdown-item" href="{{ day.conformance }}">CNCF Conformance</a>{% endif %}
+                  {% else %}
+                  <a class="dropdown-item" href="{{ day.artifacts }}">Job Artifacts</a>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+    <div class="col">
+    </div>
+  </div>
+</div>
+{% endblock %}
