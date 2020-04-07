@@ -522,7 +522,7 @@ def build_summaries(snap_list, snap_versions, owner):
 
     summary_html_p = Path("snap_summary.html")
     summary_html_p.write_text(rendered)
-    cmd_ok("aws s3 cp snap_summary.html s3://jenkaas/snap_summary.html", shell=True)
+    # cmd_ok("aws s3 cp snap_summary.html s3://jenkaas/snap_summary.html", shell=True)
 
 
 if __name__ == "__main__":

@@ -2,25 +2,42 @@
 {% block content %}
 <div class="container-fluid">
   <h3>Published snaps</h3>
-  <div clas="row-fluid">
-    {% for snap in published_snaps %}
+
+  <div class="row">
     <div class="col">
-      <strong>{{ snap[0] }}</strong>
-      <ul>
-        {% for arch, versions in snap[1].items() %}
-        <li><strong>{{arch}}</strong></li>
-        <ul>
-          {% for version, channels in versions.items() %}
-          <li><strong>{{version}}</strong>: {{ channels|join(', ') }}</li>
+      <div class="table">
+        <table class="table table-hover table-bordered">
+          <thead class="thead-dark">
+            <tr>
+              <th class="align-middle">Snap</small></th>
+              <th class="align-middle text-center">Status</th>
+            </tr>
+          </thead>
+          {% for snap in published_snaps %}
+          <tr>
+            <td class="align-middle">{{ snap[0] }}</td>
+            <td class="align-middle">
+              <div class="row">
+                {% for arch, versions in snap[1].items() %}
+                <div class="col">
+                 <p><strong>{{arch}}</strong></p>
+                 <ul class="list-group list-group-flush">
+                 {% for version, channels in versions.items() %}
+
+                 <li class="list-group-item"><strong>{{version}}</strong>: {{ channels|join(', ') }}</li>
+                 {% endfor %}
+                 </ul>
+                </div>
+                {% endfor %}
+            </td>
+          </tr>
           {% endfor %}
-        </ul>
-        {% endfor %}
-      </ul>
+        </table>
+      </div>
     </div>
-    {% endfor %}
   </div>
   <h3>Recent store builds and uploads</h3>
-  <div class="row-fluid">
+  <div class="row">
     <div class="col">
       <div class="table">
         <table class="table table-hover table-bordered">
