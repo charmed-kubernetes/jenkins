@@ -53,7 +53,6 @@
           - python3-pip
           - python3.6
           - python3.6-dev
-          - snapcraft
           - snapd
           - sosreport
           - squashfuse
@@ -83,20 +82,9 @@
           - liblxc1
           - juju-wait
           - libsodium-dev
+          - snapcraft
         state: absent
       tags:
-        - jenkins
-    # - name: use charm edge
-    #   command: "snap refresh --edge charm"
-    #   ignore_errors: yes
-    #   tags:
-    #     - adhoc
-    #     - jenkins
-    - name: use juju candidate
-      command: "snap refresh --stable juju"
-      ignore_errors: yes
-      tags:
-        - adhoc
         - jenkins
     - name: install snap deps
       command: "snap install {{item}}"
@@ -112,6 +100,7 @@
         - "lxd"
         - "multipass"
         - "yq"
+        - "snapcraft --classic"
       tags:
         - jenkins
         - adhoc
