@@ -489,6 +489,12 @@ def build_summaries(snap_list, snap_versions, owner):
         for name, ver in list(itertools.product(*[snap_iter, snap_versions_iter]))
     ]
 
+    # Generate published snaps from snapstore
+    click.echo("Retrieving snapstore revisions and publishing information")
+    published_snaps = [
+        (snap, snapapi.all_published(snap))
+        for snap in snap_iter
+    ]
 
     summaries = []
     for item in snaps_to_process:
@@ -511,7 +517,8 @@ def build_summaries(snap_list, snap_versions, owner):
             })
 
     tmpl = html.template("snap_summary.html")
-    rendered = tmpl.render({'rows': summaries})
+    rendered = tmpl.render({'rows': summaries,
+                            'published_snaps': published_snaps})
 
     summary_html_p = Path("snap_summary.html")
     summary_html_p.write_text(rendered)

@@ -2,7 +2,8 @@ import sh
 import re
 import operator
 import semver
-from pprint import pformat
+from pprint import pprint, pformat
+from cilib.run import capture
 
 
 def max_rev(revlist, version_filter):
@@ -14,6 +15,24 @@ def max_rev(revlist, version_filter):
         ]
     )
 
+
+def all_published(snap):
+    """ Get all known published snap versions, tracks, arch
+    """
+    re_comp = re.compile("[ \t+]{2,}")
+    revision_list = capture(["snapcraft", "revisions", snap])
+    revision_list = revision_list.stdout.decode().splitlines()[1:]
+    revision_list = [re_comp.split(line) for line in revision_list]
+    publish_map = {'arm64': {}, 'ppc64el': {}, 'amd64': {}, 's390x': {}}
+    for line in revision_list:
+        rev, uploaded, arch, version, channels = line
+        channels = channels.split(",")
+        for chan in channels:
+            if chan.endswith("*") and version in publish_map[arch]:
+                publish_map[arch][version].append(chan)
+            elif chan.endswith("*"):
+                publish_map[arch][version] = [chan]
+    return publish_map
 
 def revisions(snap, version_filter_track, arch="amd64", exclude_pre=False):
     """ Get revisions of snap
