@@ -7,7 +7,6 @@ from boto3.dynamodb.conditions import Key, Attr
 import boto3
 import click
 import sh
-from staticjinja import Site
 from pathlib import Path
 from pprint import pformat
 from cilib import log, run, html
