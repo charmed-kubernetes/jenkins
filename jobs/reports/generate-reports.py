@@ -22,16 +22,6 @@ OBJECTS = bucket.objects.all()
 SERIES = ["focal", "bionic", "xenial"]
 
 
-def upload_html():
-    sh.aws.s3.sync("reports/_build", "s3://jenkaas")
-
-
-def download_file(key, filename):
-    """ Downloads file
-    """
-    s3.meta.client.download_file(bucket.name, key, filename)
-
-
 def _parent_dirs():
     """ Returns list of paths
     """
@@ -180,6 +170,8 @@ def list():
 def build():
     """ Generate a report
     """
+    tmpl = html.template("index.html")
+
     ci_results_context = {
         "rows": _gen_rows(),
         "headers": [
@@ -187,15 +179,11 @@ def build():
         ],
         "modified": datetime.now(),
     }
-
-    site = Site.make_site(
-        contexts=[("index.html", ci_results_context)], outpath="reports/_build"
-    )
-    site.render()
-    upload_html()
+    rendered = tmpl.render(ci_results_context)
+    index_html_p = Path("index.html")
+    index_html_p.write_text(rendered)
+    cmd_ok("aws s3 cp index.html s3://jenkaas/index.html", shell=True)
 
 
 if __name__ == "__main__":
-    log.info("Host information:")
-    run.cmd_ok("ip addr", shell=True)
     cli()
