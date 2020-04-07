@@ -10,7 +10,7 @@ import sh
 from staticjinja import Site
 from pathlib import Path
 from pprint import pformat
-from cilib import log, run
+from cilib import log, run, html
 
 session = boto3.Session(region_name="us-east-1")
 s3 = session.resource("s3")
@@ -182,7 +182,7 @@ def build():
     rendered = tmpl.render(ci_results_context)
     index_html_p = Path("index.html")
     index_html_p.write_text(rendered)
-    cmd_ok("aws s3 cp index.html s3://jenkaas/index.html", shell=True)
+    run.cmd_ok("aws s3 cp index.html s3://jenkaas/index.html", shell=True)
 
 
 if __name__ == "__main__":

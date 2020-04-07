@@ -42,7 +42,6 @@ pytest-instafail
 pytest
 python-dotenv
 python-frontmatter
-staticjinja
 theblues
 lazr.restfulclient
 launchpadlib
