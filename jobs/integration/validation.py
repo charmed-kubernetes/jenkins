@@ -100,8 +100,12 @@ async def run_until_success(unit, cmd, timeout_insec=None):
             click.echo("cmd: " + cmd)
             if "results" in action.data:
                 click.echo("code: " + action.data["results"]["Code"])
-                click.echo("stdout:\n" + action.data["results"].get("Stdout", "").strip())
-                click.echo("stderr:\n" + action.data["results"].get("Stderr", "").strip())
+                click.echo(
+                    "stdout:\n" + action.data["results"].get("Stdout", "").strip()
+                )
+                click.echo(
+                    "stderr:\n" + action.data["results"].get("Stderr", "").strip()
+                )
                 click.echo("Will retry...")
             await asyncio.sleep(0.5)
 
@@ -312,7 +316,8 @@ async def test_microbot(model, tools):
     for i in range(60):
         try:
             resp = await tools.requests.get(
-                "http://" + action.data["results"]["address"]
+                "http://" + action.data["results"]["address"],
+                proxies={"http": None, "https": None},
             )
             if resp.status_code == 200:
                 return
@@ -537,7 +542,9 @@ async def test_worker_master_removal(model, tools):
 
     while len(workers.units) == unit_count:
         await asyncio.sleep(15)
-        click.echo("Waiting for worker removal. (%d/%d)" % (len(workers.units), unit_count))
+        click.echo(
+            "Waiting for worker removal. (%d/%d)" % (len(workers.units), unit_count)
+        )
 
     # Remove the master leader
     unit_count = len(masters.units)
@@ -548,7 +555,9 @@ async def test_worker_master_removal(model, tools):
 
     while len(masters.units) == unit_count:
         await asyncio.sleep(15)
-        click.echo("Waiting for master removal. (%d/%d)" % (len(masters.units), unit_count))
+        click.echo(
+            "Waiting for master removal. (%d/%d)" % (len(masters.units), unit_count)
+        )
 
     # Try and restore the cluster state
     # Tests following this were passing, but they actually
@@ -1408,7 +1417,9 @@ async def test_encryption_at_rest(model, tools):
             "easyrsa:client", "kubernetes-worker:certificates"
         )
         if "kubeapi-load-balancer" in model.applications:
-            click.echo(" removing easyrsa:client<->kubernetes-load-balancer:certificates")
+            click.echo(
+                " removing easyrsa:client<->kubernetes-load-balancer:certificates"
+            )
             await model.applications["kubeapi-load-balancer"].remove_relation(
                 "easyrsa:client", "kubeapi-load-balancer:certificates"
             )
@@ -1416,7 +1427,9 @@ async def test_encryption_at_rest(model, tools):
         await model.add_relation("vault:certificates", "kubernetes-master:certificates")
         await model.add_relation("vault:certificates", "kubernetes-worker:certificates")
         if "kubeapi-load-balancer" in model.applications:
-            click.echo(" adding vault:certificates<->kubernetes-load-balancer:certificates")
+            click.echo(
+                " adding vault:certificates<->kubernetes-load-balancer:certificates"
+            )
             await model.add_relation(
                 "vault:certificates", "kubeapi-load-balancer:certificates"
             )
@@ -1571,7 +1584,9 @@ async def test_dns_provider(model, tools):
         version_string = channel.split("/")[0]
         k8s_version = tuple(int(q) for q in re.findall("[0-9]+", version_string)[:2])
         if k8s_version < (1, 14):
-            click.echo("Skipping validate_dns_provider for k8s version " + version_string)
+            click.echo(
+                "Skipping validate_dns_provider for k8s version " + version_string
+            )
             return
 
     # Cleanup
