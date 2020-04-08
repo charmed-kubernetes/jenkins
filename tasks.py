@@ -18,6 +18,7 @@ def build_docs(c):
     c.run("cp README.md docs/index.md")
     c.run("mkdocs build")
 
+
 @task(pre=[build_docs])
 def upload_docs(c):
     c.run("aws s3 sync site/ s3://jenkaas/docs")

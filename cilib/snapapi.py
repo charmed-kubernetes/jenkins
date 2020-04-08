@@ -23,7 +23,7 @@ def all_published(snap):
     revision_list = capture(["snapcraft", "revisions", snap])
     revision_list = revision_list.stdout.decode().splitlines()[1:]
     revision_list = [re_comp.split(line) for line in revision_list]
-    publish_map = {'arm64': {}, 'ppc64el': {}, 'amd64': {}, 's390x': {}}
+    publish_map = {"arm64": {}, "ppc64el": {}, "amd64": {}, "s390x": {}}
     for line in revision_list:
         rev, uploaded, arch, version, channels = line
         channels = channels.split(",")
@@ -33,6 +33,7 @@ def all_published(snap):
             elif chan.endswith("*"):
                 publish_map[arch][version] = [chan]
     return publish_map
+
 
 def revisions(snap, version_filter_track, arch="amd64", exclude_pre=False):
     """ Get revisions of snap

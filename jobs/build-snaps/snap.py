@@ -469,7 +469,12 @@ def release(name, channel, version, dry_run):
 @cli.command()
 @click.option("--snap-list", help="Path to supported snaps", required=True)
 @click.option("--snap-versions", help="Path to supported snap versions", required=True)
-@click.option("--owner", help="Owner who can access builds", required=True, default="k8s-jenkaas-admins")
+@click.option(
+    "--owner",
+    help="Owner who can access builds",
+    required=True,
+    default="k8s-jenkaas-admins",
+)
 def build_summaries(snap_list, snap_versions, owner):
     """ Return snap build summaries
     """
@@ -491,10 +496,7 @@ def build_summaries(snap_list, snap_versions, owner):
 
     # Generate published snaps from snapstore
     click.echo("Retrieving snapstore revisions and publishing information")
-    published_snaps = [
-        (snap, snapapi.all_published(snap))
-        for snap in snap_iter
-    ]
+    published_snaps = [(snap, snapapi.all_published(snap)) for snap in snap_iter]
 
     summaries = []
     for item in snaps_to_process:
@@ -503,22 +505,23 @@ def build_summaries(snap_list, snap_versions, owner):
         for build in builds:
             arch = build.distro_arch_series.architecture_tag
             click.echo(f"Summarizing {item} - {arch}")
-            summaries.append({
-                "name": f"{item}-{arch}",
-                "created": build.datecreated.strftime("%Y-%m-%d %H:%M:%S"),
-                "started": build.date_started.strftime("%Y-%m-%d %H:%M:%S"),
-                "finished": build.datebuilt.strftime("%Y-%m-%d %H:%M:%S"),
-                "buildstate": build.buildstate,
-                "build_log_url": build.build_log_url,
-                "store_upload_status": build.store_upload_status,
-                "store_upload_errors": build.store_upload_error_messages,
-                "upload_log_url": build.upload_log_url,
-                "channels": build.snap.store_channels
-            })
+            summaries.append(
+                {
+                    "name": f"{item}-{arch}",
+                    "created": build.datecreated.strftime("%Y-%m-%d %H:%M:%S"),
+                    "started": build.date_started.strftime("%Y-%m-%d %H:%M:%S"),
+                    "finished": build.datebuilt.strftime("%Y-%m-%d %H:%M:%S"),
+                    "buildstate": build.buildstate,
+                    "build_log_url": build.build_log_url,
+                    "store_upload_status": build.store_upload_status,
+                    "store_upload_errors": build.store_upload_error_messages,
+                    "upload_log_url": build.upload_log_url,
+                    "channels": build.snap.store_channels,
+                }
+            )
 
     tmpl = html.template("snap_summary.html")
-    rendered = tmpl.render({'rows': summaries,
-                            'published_snaps': published_snaps})
+    rendered = tmpl.render({"rows": summaries, "published_snaps": published_snaps})
 
     summary_html_p = Path("snap_summary.html")
     summary_html_p.write_text(rendered)

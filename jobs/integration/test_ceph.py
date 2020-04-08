@@ -5,11 +5,13 @@ from .utils import (
     verify_ready,
     retry_async_with_timeout,
     validate_storage_class,
-    tracefunc)
+    tracefunc,
+)
 import sys
 from cilib import log
 
 sys.settrace(tracefunc)
+
 
 @pytest.mark.asyncio
 async def test_ceph(model, tools):
