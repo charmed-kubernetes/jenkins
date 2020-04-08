@@ -72,6 +72,9 @@ plan:
       kubernetes-worker:
         options:
           channel: $SNAP_VERSION
+      etcd:
+        options:
+          channel: 3.3/edge
     EOF
 
 
@@ -84,6 +87,9 @@ plan:
     export JUJU_CLOUD=$JUJU_CLOUD
     export JUJU_DEPLOY_CHANNEL=$JUJU_DEPLOY_CHANNEL
     export SERIES=$SERIES
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    export TOX_WORK_DIR=$HOME/jenkins/.tox
 
     juju bootstrap localhost/localhost \
         $JUJU_CONTROLLER \
@@ -107,7 +113,8 @@ plan:
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w -r 5
 
     pushd jenkins
-    timeout 2h pytest --instafail \
+    git pull || true
+    timeout 2h tox -e py36 -- pytest --instafail \
         --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
         jobs/integration/validation.py \
         --cloud localhost/localhost \
