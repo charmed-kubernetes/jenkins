@@ -73,21 +73,6 @@
           JOB_TAGS: "-t promote-bundles"
 
 - job:
-    name: 'build-kubeflow-bundles'
-    description: |
-      Builds and releases Kubeflow bundle to charmstore.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/build-charms/kubeflow.groovy
-    properties:
-      - build-discarder:
-          num-to-keep: 36
-    triggers:
-      - timed: "@hourly"
-
-- job:
     name: 'build-charms'
     node: runner-amd64
     project-type: freestyle
