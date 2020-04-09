@@ -26,6 +26,7 @@ from .utils import (
     verify_ready,
     validate_storage_class,
     tracefunc,
+    is_localhost
 )
 import sys
 
@@ -1646,6 +1647,9 @@ async def test_dns_provider(model, tools):
 @pytest.mark.asyncio
 @pytest.mark.offline
 async def test_sysctl(model, tools):
+    if await is_localhost(tools.controller_name):
+        pytest.skip("sysctl options not available on localhost")
+
     async def verify_sysctl(units, desired_values):
         cmd = "sysctl -n"
         desired_results = []
