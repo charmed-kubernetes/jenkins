@@ -487,17 +487,12 @@ def build_summaries(snap_list, snap_versions, owner):
     snap_iter = yaml.safe_load(snap_list_p.read_text())
     snap_versions_iter = yaml.safe_load(snap_versions_p.read_text())
 
-    owner_link = _client.owner(owner)
-
     snaps_to_process = [
         f"{name}-{ver}"
         for name, ver in list(itertools.product(*[snap_iter, snap_versions_iter]))
     ]
 
-    # Generate published snaps from snapstore
-    click.echo("Retrieving snapstore revisions and publishing information")
-    published_snaps = [(snap, snapapi.all_published(snap)) for snap in snap_iter]
-
+    owner_link = _client.owner(owner)
     summaries = []
     for item in snaps_to_process:
         builds = _client.snaps.getByName(name=item, owner=owner_link).builds[:4]
@@ -519,6 +514,12 @@ def build_summaries(snap_list, snap_versions, owner):
                     "channels": build.snap.store_channels,
                 }
             )
+
+    # Generate published snaps from snapstore
+    click.echo("Retrieving snapstore revisions and publishing information")
+    # Add cdk-addons here since we need to check that snap as well from snapstore
+    snap_iter.append('cdk-addons')
+    published_snaps = [(snap, snapapi.all_published(snap)) for snap in snap_iter]
 
     tmpl = html.template("snap_summary.html")
     rendered = tmpl.render({"rows": summaries, "published_snaps": published_snaps})
