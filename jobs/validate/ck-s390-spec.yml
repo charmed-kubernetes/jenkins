@@ -89,7 +89,6 @@ plan:
     export SERIES=$SERIES
     export LC_ALL=C.UTF-8
     export LANG=C.UTF-8
-    export TOX_WORK_DIR=$HOME/jenkins/.tox
 
     juju bootstrap localhost/localhost \
         $JUJU_CONTROLLER \
@@ -114,7 +113,7 @@ plan:
 
     pushd jenkins
     git pull || true
-    timeout 2h tox -e py36 -- pytest --instafail \
+    TOX_WORK_DIR=.tox timeout 2h tox -e py36 -- pytest --instafail \
         --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
         jobs/integration/validation.py \
         --cloud localhost/localhost \
