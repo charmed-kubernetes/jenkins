@@ -31,29 +31,6 @@ plan:
     . $WORKSPACE/cilib.sh
 
     setup_env
-  post-execute: |
-    #!/bin/bash
-    set -x
-
-    . $WORKSPACE/cilib.sh
-
-    inject_env
-
-    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- ls -l
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:juju-crashdump* . || true
-
-    teardown_env
-
-  execute: |
-    #!/bin/bash
-    set -eu
-
-    . $WORKSPACE/cilib.sh
-
-    inject_env
-
-    export JUJU_DEPLOY_CHANNEL=edge
 
     juju bootstrap aws/us-east-2 $JUJU_CONTROLLER \
          -d $JUJU_MODEL \
@@ -79,6 +56,27 @@ plan:
                      -u ubuntu \
                      $WORKSPACE/jobs/validate/playbooks/single-system.yml
 
+  post-execute: |
+    #!/bin/bash
+    set -x
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- ls -l
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:juju-crashdump* . || true
+
+    teardown_env
+
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
 
     tee overlay.yaml <<EOF> /dev/null
     series: $SERIES

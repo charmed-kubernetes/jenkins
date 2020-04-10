@@ -18,6 +18,7 @@
           JOB_SPEC_DIR: "jobs/build-snaps"
       - run-venv:
           COMMAND: |
+            snapcraft login --with /var/lib/jenkins/snapcraft-creds
             $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py sync-branches \
                 --snap-list jobs/includes/k8s-snap-list.inc
             $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py sync-branches-list
