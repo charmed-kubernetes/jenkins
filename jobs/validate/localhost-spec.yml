@@ -9,14 +9,16 @@ meta:
 matrix:
   snap_version:
     - 1.18/edge
-    - 1.17/edge
-    - 1.16/edge
-    - 1.15/edge
+    # - 1.17/edge
+    # - 1.16/edge
+    # - 1.15/edge
   series:
-    - focal
+    # - focal
     - bionic
   channel:
     - edge
+
+concurrent: no
 
 plan:
   env:
@@ -38,6 +40,7 @@ plan:
     inject_env
 
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- ls -l
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:juju-crashdump* . || true
 
     teardown_env
