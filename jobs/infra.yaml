@@ -59,7 +59,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
       - shell: |
-          tee cleanup.sh <<EOF> /dev/null
+          tee cleanup.sh <<'EOF'> /dev/null
           #!/bin/bash -x
           for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
               if [ "$i" != "jaas" ]; then
