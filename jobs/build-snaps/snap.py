@@ -23,6 +23,7 @@ from datetime import datetime
 
 # go compiler version map for k8s version releases
 K8S_GO_MAP = {
+    "1.19": "go/1.13/stable",
     "1.18": "go/1.13/stable",
     "1.17": "go/1.13/stable",
     "1.16": "go/1.13/stable",
