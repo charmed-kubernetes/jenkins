@@ -238,6 +238,6 @@
     name: build-release-snaps
     # arch: ['amd64', 's390x', 'arm64', 'ppc64le']
     arch: ['amd64']
-    version: ['1.15', '1.16', '1.17', '1.18']
+    version: ['1.15', '1.16', '1.17', '1.18', '1.19']
     jobs:
       - 'build-release-cdk-addons-{arch}-{version}'
