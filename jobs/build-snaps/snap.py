@@ -505,8 +505,8 @@ def build_summaries(snap_list, snap_versions, owner):
                 {
                     "name": f"{item}-{arch}",
                     "created": build.datecreated.strftime("%Y-%m-%d %H:%M:%S"),
-                    "started": build.date_started.strftime("%Y-%m-%d %H:%M:%S"),
-                    "finished": build.datebuilt.strftime("%Y-%m-%d %H:%M:%S"),
+                    "started": build.date_started.strftime("%Y-%m-%d %H:%M:%S") if build.date_started else "n/a",
+                    "finished": build.datebuilt.strftime("%Y-%m-%d %H:%M:%S") if build.datebuilt else "n/a",
                     "buildstate": build.buildstate,
                     "build_log_url": build.build_log_url,
                     "store_upload_status": build.store_upload_status,
