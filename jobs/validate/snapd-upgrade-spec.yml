@@ -9,7 +9,7 @@ meta:
 
 matrix:
   snap_version:
-    - 1.17/stable
+    - 1.18/stable
   series:
     - bionic
   channel:

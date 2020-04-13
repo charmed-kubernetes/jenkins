@@ -8,9 +8,9 @@ meta:
 
 matrix:
   snap_version:
-    - 1.15/stable
     - 1.16/stable
     - 1.17/stable
+    - 1.18/stable
   series:
     - focal
     - bionic

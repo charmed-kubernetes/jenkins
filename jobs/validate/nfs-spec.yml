@@ -15,10 +15,10 @@ meta:
 
 matrix:
   snap_version:
+    - 1.19/edge
     - 1.18/edge
     - 1.17/edge
     - 1.16/edge
-    - 1.15/edge
   series:
     - focal
     - bionic
