@@ -8,7 +8,7 @@ import traceback
 
 from contextlib import contextmanager
 from juju.controller import Controller
-from juju.errors import JujuError, JujuAPIError
+from juju.errors import JujuError
 from subprocess import check_output, check_call
 import click
 
@@ -29,9 +29,6 @@ def tracefunc(frame, event, arg):
         func_filename = co.co_filename
         if "conftest" in func_filename:
             return
-        caller = frame.f_back
-        caller_line_no = caller.f_lineno
-        caller_filename = caller.f_code.co_filename
         click.echo(f"Call to {func_name} on line {func_line_no}:{func_filename}")
         for i in range(frame.f_code.co_argcount):
             name = frame.f_code.co_varnames[i]

@@ -24,9 +24,8 @@ from .utils import (
     disable_source_dest_check,
     verify_deleted,
     verify_ready,
-    validate_storage_class,
     tracefunc,
-    is_localhost
+    is_localhost,
 )
 import sys
 
@@ -396,7 +395,9 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
         await unit.run("open-port 10250")
         address = unit.public_address
         url = "https://%s:10250/pods/" % address
-        response = await tools.requests.get(url, verify=False, proxies={"http": None, "https": None})
+        response = await tools.requests.get(
+            url, verify=False, proxies={"http": None, "https": None}
+        )
         assert response.status_code == 401  # Unauthorized
 
     units = model.applications["kubernetes-worker"].units

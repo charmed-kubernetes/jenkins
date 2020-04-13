@@ -2,7 +2,6 @@ import sh
 import pytest
 import requests
 import yaml
-import juju
 from .utils import asyncify, retry_async_with_timeout
 
 
