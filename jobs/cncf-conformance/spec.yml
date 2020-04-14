@@ -9,12 +9,12 @@ meta:
 plan:
   - env:
       - JUJU_DEPLOY_CHANNEL=stable
-      - SNAP_VERSION=1.17/stable
+      - SNAP_VERSION=1.18/stable
       - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-conformance
       - JUJU_MODEL=validate-conformance
-      - SONOBUOY_VERSION=0.17.1
+      - SONOBUOY_VERSION=0.18.0
     before-script:
       - rm -rf sonobuoy.*
       - wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
