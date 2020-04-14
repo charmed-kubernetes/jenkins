@@ -13,6 +13,7 @@ import click
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from base64 import b64encode
+from cilib import log
 from datetime import datetime
 from pprint import pformat
 from tempfile import NamedTemporaryFile
@@ -1840,3 +1841,34 @@ async def test_multus(model, tools, addons_model):
             )
 
     await cleanup()
+
+
+@pytest.mark.clouds(['openstack'])
+@pytest.mark.asyncio
+async def test_cinder(model, tools):
+    # setup
+    log.info("deploying openstack-integrator")
+    series = 'bionic'
+    await model.deploy(
+        "openstack-integrator",
+        num_units=1,
+        series=series,
+        trust=True,
+    )
+
+    log.info("adding relations")
+    await model.add_relation("openstack-integrator", "kubernetes-master")
+    await model.add_relation("openstack-integrator", "kubernetes-worker")
+    log.info("waiting...")
+    await tools.juju_wait()
+
+    log.info("waiting for csi to settle")
+    unit = model.applications["kubernetes-master"].units[0]
+    await retry_async_with_timeout(
+        verify_ready, (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
+        timeout_msg="CSI pod not ready!"
+    )
+    # create pod that writes to a pv from cinder
+    await validate_storage_class(model, "cdk-cinder", "Cinder")
+    # cleanup
+    await model.applications["openstack-integrator"].destroy()

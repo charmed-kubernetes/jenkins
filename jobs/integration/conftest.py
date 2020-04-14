@@ -242,3 +242,15 @@ async def addons_model(request):
     await model.connect(controller_name + ":" + model_name)
     yield model
     await model.disconnect()
+
+
+@pytest.fixture
+def cloud():
+    return 'unknown'  # TODO: get the actual cloud
+
+
+@pytest.fixture(autouse=True)
+def skip_by_cloud(request, cloud):
+    clouds_marker = request.node.get_closest_marker("clouds")
+    if clouds_marker and cloud not in clouds_marker.args[0]:
+        pytest.skip("skipped on this cloud: {}".format(cloud))
