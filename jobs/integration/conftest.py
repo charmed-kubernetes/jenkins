@@ -246,7 +246,8 @@ async def addons_model(request):
 
 @pytest.fixture
 def cloud():
-    return 'unknown'  # TODO: get the actual cloud
+    cloud_name = request.config.getoption("--cloud")
+    return cloud_name.split("/")[0]
 
 
 @pytest.fixture(autouse=True)
