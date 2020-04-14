@@ -30,9 +30,12 @@
           num-to-keep: 4
     wrappers:
       - default-job-wrapper
+      - ci-creds
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/cncf-conformance"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/cncf-conformance"
-          JOB_SPEC_FILE: "spec.yml"
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/cncf-conformance/spec.yml
