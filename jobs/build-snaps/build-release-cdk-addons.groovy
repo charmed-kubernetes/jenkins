@@ -137,13 +137,18 @@ pipeline {
                     STATIC_KEY=v${params.version}-static:
                     UPSTREAM_KEY=${kube_version}-upstream:
 
-                    # Multi-arch manifests are not currently supported by our registry (needs experimental).
-                    # The cdk-addons templates will inject an -arch suffix on the name when configured for
-                    # our registry. We need to pull the non-suffixed multiarch image during each arch job,
-                    # then re-tag that image with the suffix that the template is going to expect.
-                    MULTI_ARCH_IMAGES="coredns k8s-dns-kube-dns k8s-dns-dnsmasq-nanny k8s-dns-sidecar"
+                    ALL_IMAGES=""
+                    ARCHES=(amd64 arm64 ppc64le s390x)
+                    for arch in \${ARCHES}
+                    do
+                        ARCH_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|\${arch}|g")
+                        ALL_IMAGES="\${ALL_IMAGES} \${ARCH_IMAGES}"
+                    done
 
-                    ALL_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|${params.arch}|g" -e "s|{{ multiarch_workaround }}||g")
+                    # clean up dupes by making a sortable list, uniq it, and turn it back to a string
+                    ALL_IMAGES=\$(echo "\${ALL_IMAGES}" | xargs -n1 | sort -u | xargs)
+                    
+                    # All CK images are stored under ./cdk in our registry
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
 
                     for i in \${ALL_IMAGES}
