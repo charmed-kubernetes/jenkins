@@ -125,7 +125,7 @@ pipeline {
         }
         stage('Setup LXD container for ctr'){
             steps {
-                ssh "sudo lxc launch ubuntu:18.04 image-processor"
+                sh "sudo lxc launch ubuntu:18.04 image-processor"
                 lxd_exec "image-processor" "apt update"
                 lxd_exec "image-processor" "apt install containerd -y"
             }
@@ -190,7 +190,7 @@ pipeline {
         }
         stage('Remove LXD container for ctr'){
             steps {
-                ssh "sudo lxc delete -f image-processor"
+                sh "sudo lxc delete -f image-processor"
             }
         }
         stage('Push cdk-addons snap'){
