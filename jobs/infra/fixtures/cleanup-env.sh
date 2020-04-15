@@ -43,3 +43,9 @@ for cntr in $(sudo lxc list --format json | jq -r ".[] | .name"); do
     sudo lxc delete --force "$cntr"
 done
 
+for cntr in $(sudo lxc profile list --format json | jq -r ".[] | .name"); do
+    if [[ $cntr != "default" ]]; then
+	    echo "Removing $cntr"
+	    sudo lxc profile delete "$cntr"
+    fi
+done
