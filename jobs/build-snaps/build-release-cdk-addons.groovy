@@ -3,7 +3,7 @@
 def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
-def lxd_exec(container, cmd) {
+def lxd_exec(String container, String cmd) {
     sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
 }
 
@@ -126,8 +126,8 @@ pipeline {
         stage('Setup LXD container for ctr'){
             steps {
                 sh "sudo lxc launch ubuntu:18.04 image-processor"
-                lxd_exec "image-processor" "apt update"
-                lxd_exec "image-processor" "apt install containerd -y"
+                lxd_exec("image-processor", "apt update")
+                lxd_exec("image-processor", "apt install containerd -y")
             }
         }
         stage('Process Images'){
