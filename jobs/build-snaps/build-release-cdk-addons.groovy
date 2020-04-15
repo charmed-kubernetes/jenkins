@@ -28,9 +28,11 @@ pipeline {
     stages {
         stage('Setup User') {
             steps {
+                sh "sudo lxc storage list"
+                sh "sudo lxc profile list"
+                sh "sudo lxc network list"
                 sh "git config --global user.email 'cdkbot@juju.solutions'"
                 sh "git config --global user.name 'cdkbot'"
-                sh "docker login -u ${env.REGISTRY_CREDS_USR} -p ${env.REGISTRY_CREDS_PSW} ${env.REGISTRY_URL}"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
