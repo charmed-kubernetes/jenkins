@@ -91,35 +91,35 @@ pipeline {
                         cd cdk-addons
                         make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} default
                         cd -
-
-                        echo "Processing upstream images."
-                        UPSTREAM_KEY=${kube_version}-upstream:
-                        UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY})
-
-                        echo "Updating bundle with upstream images."
-                        if grep -q ^\${UPSTREAM_KEY} ${bundle_image_file}
-                        then
-                            sed -i -e "s|^\${UPSTREAM_KEY}.*|\${UPSTREAM_LINE}|g" ${bundle_image_file}
-                        else
-                            echo \${UPSTREAM_LINE} >> ${bundle_image_file}
-                        fi
-                        sort -o ${bundle_image_file} ${bundle_image_file}
-
-                        cd bundle
-                        if git status | grep -qi "nothing to commit"
-                        then
-                            echo "No image changes; nothing to commit"
-                        else
-                            git commit -am "Updating \${UPSTREAM_KEY} images"
-                            if ${params.dry_run}
-                            then
-                                echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
-                            else
-                                git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
-                            fi
-                        fi
-                        cd -
                     done
+
+                    echo "Processing upstream images."
+                    UPSTREAM_KEY=${kube_version}-upstream:
+                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_VERSION=${kube_version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY})
+
+                    echo "Updating bundle with upstream images."
+                    if grep -q ^\${UPSTREAM_KEY} ${bundle_image_file}
+                    then
+                        sed -i -e "s|^\${UPSTREAM_KEY}.*|\${UPSTREAM_LINE}|g" ${bundle_image_file}
+                    else
+                        echo \${UPSTREAM_LINE} >> ${bundle_image_file}
+                    fi
+                    sort -o ${bundle_image_file} ${bundle_image_file}
+
+                    cd bundle
+                    if git status | grep -qi "nothing to commit"
+                    then
+                        echo "No image changes; nothing to commit"
+                    else
+                        git commit -am "Updating \${UPSTREAM_KEY} images"
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
+                        else
+                            git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
+                        fi
+                    fi
+                    cd -
                 """
             }
         }
