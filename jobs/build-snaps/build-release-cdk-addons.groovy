@@ -3,7 +3,6 @@
 def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
-def snap_sh = "TOX_WORK_DIR='.tox-cdk-addons' tox -e py36 -- python3 jobs/build-snaps/snap.py"
 def lxd_exec(container, cmd) {
     sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
 }
@@ -85,38 +84,42 @@ pipeline {
         stage('Build cdk-addons and image list'){
             steps {
                 sh """
-                    echo "Building cdk-addons snap."
-                    cd cdk-addons
-                    make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} default
-                    cd -
+                    ARCHES=(amd64 arm64 ppc64le s390x)
+                    for arch in \${ARCHES}
+                    do
+                        echo "Building cdk-addons snap for arch \${arch}."
+                        cd cdk-addons
+                        make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} default
+                        cd -
 
-                    echo "Processing upstream images."
-                    UPSTREAM_KEY=${kube_version}-upstream:
-                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=${params.arch} KUBE_VERSION=${kube_version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY})
+                        echo "Processing upstream images."
+                        UPSTREAM_KEY=${kube_version}-upstream:
+                        UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY})
 
-                    echo "Updating bundle with upstream images."
-                    if grep -q ^\${UPSTREAM_KEY} ${bundle_image_file}
-                    then
-                        sed -i -e "s|^\${UPSTREAM_KEY}.*|\${UPSTREAM_LINE}|g" ${bundle_image_file}
-                    else
-                        echo \${UPSTREAM_LINE} >> ${bundle_image_file}
-                    fi
-                    sort -o ${bundle_image_file} ${bundle_image_file}
-
-                    cd bundle
-                    if git status | grep -qi "nothing to commit"
-                    then
-                        echo "No image changes; nothing to commit"
-                    else
-                        git commit -am "Updating \${UPSTREAM_KEY} images"
-                        if ${params.dry_run}
+                        echo "Updating bundle with upstream images."
+                        if grep -q ^\${UPSTREAM_KEY} ${bundle_image_file}
                         then
-                            echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
+                            sed -i -e "s|^\${UPSTREAM_KEY}.*|\${UPSTREAM_LINE}|g" ${bundle_image_file}
                         else
-                            git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
+                            echo \${UPSTREAM_LINE} >> ${bundle_image_file}
                         fi
-                    fi
-                    cd -
+                        sort -o ${bundle_image_file} ${bundle_image_file}
+
+                        cd bundle
+                        if git status | grep -qi "nothing to commit"
+                        then
+                            echo "No image changes; nothing to commit"
+                        else
+                            git commit -am "Updating \${UPSTREAM_KEY} images"
+                            if ${params.dry_run}
+                            then
+                                echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
+                            else
+                                git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
+                            fi
+                        fi
+                        cd -
+                    done
                 """
             }
         }
@@ -196,30 +199,12 @@ pipeline {
                 }
             }
         }
-        // stage('Promote cdk-addons snap'){
-        //     steps {
-        //         script {
-        //             def kube_ersion = kube_version.substring(1)
-        //             def snaps_to_release = ['cdk-addons']
-        //             params.channels.split().each { channel ->
-        //                 snaps_to_release.each  { snap ->
-        //                     if(params.dry_run) {
-        //                         sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion} --dry-run"
-        //                     } else {
-        //                         sh "${snap_sh} release --name ${snap} --channel ${channel} --version ${kube_ersion}"
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     }
     post {
         always {
             sh "sudo rm -rf cdk-addons/build"
             sh "docker image prune -a --filter \"until=24h\" --force"
             sh "docker container prune --filter \"until=24h\" --force"
-            // sh "docker logout ${env.REGISTRY_URL}"
             sh "snapcraft logout"
         }
     }
