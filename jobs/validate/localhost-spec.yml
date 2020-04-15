@@ -66,10 +66,7 @@ plan:
     inject_env
 
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- ls -l
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:juju-crashdump* $OGC_JOB_WORKDIR/. || true
-    pwd
-    ls -l
 
     teardown_env
 
@@ -110,7 +107,7 @@ plan:
         -d $JUJU_MODEL \
         --bootstrap-series $SERIES \
         --force \
-        --model-default image-stream=daily 1>&2
+        --model-default image-stream=daily
 
     juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
         --channel $JUJU_DEPLOY_CHANNEL \
@@ -122,7 +119,7 @@ plan:
 
     pushd jenkins
     timeout 2h pytest --instafail \
-        --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
+        --html=report.html --self-contained-html \
         jobs/integration/validation.py \
         --cloud localhost/localhost \
         --model $JUJU_MODEL \
