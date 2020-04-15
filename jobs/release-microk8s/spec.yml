@@ -7,6 +7,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-beta-amd64
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=amd64
+      - INSTANCE_TYPE=m5.large
     tags:
       - amd64/beta
       - amd64
@@ -19,9 +20,10 @@ plan:
         juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER" || true
 
         juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
-           -d "$JUJU_MODEL" --model-default test-mode=true \
+           -d "$JUJU_MODEL" \
+           --model-default test-mode=true \
            --model-default resource-tags=owner=k8sci \
-           --bootstrap-constraints "arch=$ARCH"
+           --bootstrap-constraints "instance-type=$INSTANCE_TYPE"
 
         juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "cores=8 mem=32G root-disk=80G arch=$ARCH" ubuntu
 
@@ -58,6 +60,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-beta-arm64
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=arm64
+      - INSTANCE_TYPE=a1.large
     tags:
       - arm64/beta
       - arm64
@@ -69,6 +72,8 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-stable-arm64
       - JUJU_MODEL=release-microk8s-stable-model
       - ARCH=arm64
+      - INSTANCE_TYPE=a1.large
+
     tags:
       - arm64/stable
       - arm64
@@ -89,6 +94,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-stable-amd64
       - JUJU_MODEL=release-microk8s-stable-model
       - ARCH=amd64
+      - INSTANCE_TYPE=m5.large
     tags:
       - amd64/stable
       - amd64
@@ -109,6 +115,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-pre-release-amd64
       - JUJU_MODEL=release-microk8s-pre-release-model
       - ARCH=amd64
+      - INSTANCE_TYPE=m5.large
     tags:
       - amd64/prerelease
       - amd64
