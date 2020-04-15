@@ -84,7 +84,7 @@ pipeline {
         stage('Build cdk-addons and image list'){
             steps {
                 sh """
-                    ARCHES=(amd64 arm64 ppc64le s390x)
+                    ARCHES="amd64 arm64 ppc64le s390x"
                     for arch in \${ARCHES}
                     do
                         echo "Building cdk-addons snap for arch \${arch}."
@@ -138,7 +138,7 @@ pipeline {
                     UPSTREAM_KEY=${kube_version}-upstream:
 
                     ALL_IMAGES=""
-                    ARCHES=(amd64 arm64 ppc64le s390x)
+                    ARCHES="amd64 arm64 ppc64le s390x"
                     for arch in \${ARCHES}
                     do
                         ARCH_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|\${arch}|g")
@@ -147,7 +147,7 @@ pipeline {
 
                     # clean up dupes by making a sortable list, uniq it, and turn it back to a string
                     ALL_IMAGES=\$(echo "\${ALL_IMAGES}" | xargs -n1 | sort -u | xargs)
-                    
+
                     # All CK images are stored under ./cdk in our registry
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
 
