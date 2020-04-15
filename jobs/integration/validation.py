@@ -27,6 +27,7 @@ from .utils import (
     verify_ready,
     tracefunc,
     is_localhost,
+    validate_storage_class,
 )
 import sys
 
