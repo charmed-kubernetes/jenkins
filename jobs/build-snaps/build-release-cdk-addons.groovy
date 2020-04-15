@@ -171,7 +171,7 @@ pipeline {
                         then
                             echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
                         else
-                            sudo lxc exec image-processor -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE}
+                            sudo lxc exec image-processor -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                         fi
                     done
 
