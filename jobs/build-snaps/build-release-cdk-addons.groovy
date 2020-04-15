@@ -4,6 +4,9 @@ def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
 def snap_sh = "TOX_WORK_DIR='.tox-cdk-addons' tox -e py36 -- python3 jobs/build-snaps/snap.py"
+def lxd_exec(container, cmd) {
+    sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
+}
 
 pipeline {
     agent {
@@ -117,6 +120,13 @@ pipeline {
                 """
             }
         }
+        stage('Setup LXD container for ctr'){
+            steps {
+                ssh "sudo lxc launch ubuntu:18.04 image-processor"
+                lxd_exec "image-processor" "apt update"
+                lxd_exec "image-processor" "apt install containerd -y"
+            }
+        }
         stage('Process Images'){
             steps {
                 sh """
@@ -141,12 +151,8 @@ pipeline {
                             continue
                         fi
 
-                        # Skip images that dont exist (usually due to non-existing arch). Other
-                        # pull failures will manifest themselves when we attempt to tag.
-                        if docker pull \${i} 2>&1 | grep -qi 'no matching manifest for'
-                        then
-                            continue
-                        fi
+                        # Pull the the fat manifest
+                        sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms
 
                         # Massage image names
                         RAW_IMAGE=\${i}
@@ -158,29 +164,25 @@ pipeline {
                                 break
                             fi
                         done
-                        for multi in \${MULTI_ARCH_IMAGES}
-                        do
-                            if echo \${RAW_IMAGE} | grep -qi \${multi}
-                            then
-                                # inject '-arch:' between the image name and version, as our templates expect
-                                RAW_IMAGE=\${RAW_IMAGE%%:*}-${params.arch}:\${RAW_IMAGE#*:}
-                                break
-                            fi
-                        done
 
                         # Tag and push
-                        docker tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
+                        sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
                         else
-                            docker push \${TAG_PREFIX}/\${RAW_IMAGE}
+                            sudo lxc exec image-processor -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                         fi
                     done
 
                     echo "All images known to this builder:"
-                    docker images
+                    sudo lxc exec image-processor -- ctr image ls
                 """
+            }
+        }
+        stage('Remove LXD container for ctr'){
+            steps {
+                ssh "sudo lxc delete -f image-processor"
             }
         }
         stage('Push cdk-addons snap'){
