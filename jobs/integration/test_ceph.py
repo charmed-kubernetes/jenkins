@@ -17,7 +17,7 @@ sys.settrace(tracefunc)
 async def test_ceph(model, tools):
     # setup
     log.info("adding cloud:train to k8s-master")
-    series = "bionic"
+    series = os.environ["SERIES"]
     check_cephfs = os.environ["SNAP_VERSION"].split("/")[0] not in ("1.15", "1.16")
     await model.applications["kubernetes-master"].set_config(
         {"install_sources": "[cloud:{}-train]".format(series)}
