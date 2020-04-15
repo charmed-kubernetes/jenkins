@@ -245,7 +245,7 @@ async def addons_model(request):
 
 
 @pytest.fixture
-def cloud():
+def cloud(request):
     cloud_name = request.config.getoption("--cloud")
     return cloud_name.split("/")[0]
 
