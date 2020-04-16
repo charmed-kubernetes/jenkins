@@ -1,0 +1,8 @@
+python-dateutil
+semver
+requests
+launchpadlib
+click
+sh
+lazr.restfulclient
+urllib3
