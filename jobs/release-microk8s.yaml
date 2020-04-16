@@ -111,9 +111,10 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-          JOB_SPEC_FILE: "edge-spec.yml"
+          COMMAND: |
+            venv/bin/python jobs/microk8s/release-to-edge-on-new-upstream-release.py
 
 
 - job:
@@ -135,6 +136,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-          JOB_SPEC_FILE: "build-spec.yml"
+          COMMAND: |
+            venv/bin/python jobs/microk8s/update-gh-branches-and-lp-builders.py
