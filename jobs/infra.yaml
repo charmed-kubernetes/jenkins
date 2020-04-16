@@ -59,27 +59,5 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
       - shell: |
-          tee cleanup.sh <<EOF> /dev/null
-          #!/bin/bash -x
-          for i in \$(juju controllers --format json | jq -r '.controllers | keys[]'); do
-              if [[ "\$i" != "jaas" ]]; then
-                  echo "\$i"
-                  if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "\$i"; then
-                      timeout 2m juju kill-controller -y "\$i" 2>&1
-                  fi
-              fi
-          done
-          for cntr in \$(sudo lxc list --format json | jq -r ".[] | .name"); do
-              echo "Removing \$cntr"
-              sudo lxc delete --force "\$cntr"
-          done
-
-          for cntr in \$(sudo lxc profile list --format json | jq -r ".[] | .name"); do
-              if [[ "\$cntr" != "default" ]]; then
-                  echo "Removing \$cntr"
-                  sudo lxc profile delete "\$cntr"
-              fi
-          done
-          EOF
-          scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa cleanup.sh  ubuntu@10.13.6.3:cleanup.sh
+          scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa jobs/infra/fixtures/cleanup-s390x-env.sh  ubuntu@10.13.6.3:cleanup.sh
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- bash cleanup.sh
