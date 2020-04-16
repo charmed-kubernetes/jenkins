@@ -183,6 +183,37 @@ async def reset_audit_config(master_app, tools):
 
 # START TESTS
 @pytest.mark.asyncio
+@pytest.mark.clouds(['openstack'])
+async def test_cinder(model, tools):
+    # setup
+    log.info("deploying openstack-integrator")
+    series = 'bionic'
+    await model.deploy(
+        "openstack-integrator",
+        num_units=1,
+        series=series,
+        trust=True,
+    )
+
+    log.info("adding relations")
+    await model.add_relation("openstack-integrator", "kubernetes-master")
+    await model.add_relation("openstack-integrator", "kubernetes-worker")
+    log.info("waiting...")
+    await tools.juju_wait()
+
+    log.info("waiting for csi to settle")
+    unit = model.applications["kubernetes-master"].units[0]
+    await retry_async_with_timeout(
+        verify_ready, (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
+        timeout_msg="CSI pod not ready!"
+    )
+    # create pod that writes to a pv from cinder
+    await validate_storage_class(model, "cdk-cinder", "Cinder")
+    # cleanup
+    await model.applications["openstack-integrator"].destroy()
+
+
+@pytest.mark.asyncio
 async def test_auth_file_propagation(model):
     """Validate that changes to /root/cdk/basic_auth.csv on the leader master
     unit are propagated to the other master units.
@@ -1844,32 +1875,3 @@ async def test_multus(model, tools, addons_model):
     await cleanup()
 
 
-@pytest.mark.asyncio
-@pytest.mark.clouds(['openstack'])
-async def test_cinder(model, tools):
-    # setup
-    log.info("deploying openstack-integrator")
-    series = 'bionic'
-    await model.deploy(
-        "openstack-integrator",
-        num_units=1,
-        series=series,
-        trust=True,
-    )
-
-    log.info("adding relations")
-    await model.add_relation("openstack-integrator", "kubernetes-master")
-    await model.add_relation("openstack-integrator", "kubernetes-worker")
-    log.info("waiting...")
-    await tools.juju_wait()
-
-    log.info("waiting for csi to settle")
-    unit = model.applications["kubernetes-master"].units[0]
-    await retry_async_with_timeout(
-        verify_ready, (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
-        timeout_msg="CSI pod not ready!"
-    )
-    # create pod that writes to a pv from cinder
-    await validate_storage_class(model, "cdk-cinder", "Cinder")
-    # cleanup
-    await model.applications["openstack-integrator"].destroy()
