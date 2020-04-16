@@ -2,3 +2,6 @@ python-dateutil==2.8.0
 semver==2.8.1
 requests==2.22.0
 launchpadlib==1.10.7
+click==7.0
+sh==1.12.14
+lazr.restfulclient==0.14.2
