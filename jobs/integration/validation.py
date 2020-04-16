@@ -1844,8 +1844,8 @@ async def test_multus(model, tools, addons_model):
     await cleanup()
 
 
-@pytest.mark.clouds(['openstack'])
 @pytest.mark.asyncio
+@pytest.mark.clouds(['openstack'])
 async def test_cinder(model, tools):
     # setup
     log.info("deploying openstack-integrator")
