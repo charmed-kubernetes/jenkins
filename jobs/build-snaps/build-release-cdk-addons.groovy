@@ -89,6 +89,7 @@ pipeline {
                         echo "Building cdk-addons snap for arch \${arch}."
                         cd cdk-addons
                         make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} default
+                        cd build && snapcraft remote-build --build-on=amd64,arm64,ppc64el,s390x --launchpad-accept-public-upload
                         cd -
                     done
 
