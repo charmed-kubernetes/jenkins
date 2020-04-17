@@ -3,6 +3,7 @@
 def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
+def kube_ersion = null
 def lxd_exec(String container, String cmd) {
     sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
 }
@@ -47,8 +48,9 @@ pipeline {
                     if(kube_version.indexOf('Error') > 0) {
                         error("Could not determine K8s version for ${params.version}")
                     }
+                    kube_ersion = kube_version.substring(1);
                 }
-                echo "Set K8s version to: ${kube_version}"
+                echo "Set K8s version to: ${kube_version} and K8s ersion: ${kube_ersion}"
             }
         }
         stage('Setup Source') {
@@ -88,8 +90,13 @@ pipeline {
                     do
                         echo "Building cdk-addons snap for arch \${arch}."
                         cd cdk-addons
-                        make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} default
-                        cd build && snapcraft build --target-arch=\${arch}
+                        make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} prep
+                	wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
+                	chmod +x build/kubectl
+                	sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
+                	sed -i "s/KUBE_ARCH/\${arch}/g" build/snapcraft.yaml
+                        (cd build && snapcraft build --target-arch=\${arch})
+                        mv build/*.snap .
                         cd -
                     done
 
