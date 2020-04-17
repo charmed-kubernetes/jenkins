@@ -251,6 +251,9 @@
 
           mkdir -p $HOME/bin || true
           mkdir -p $HOME/go/bin || true
+          mkdir -p "$CHARM_BUILD_DIR" || true
+          mkdir -p "$CHARM_LAYERS_DIR" || true
+          mkdir -p "$CHARM_INTERFACES_DIR" || true
 
           export PATH=/snap/bin:$HOME/bin/:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
@@ -262,26 +265,6 @@
 
           env > $WORKSPACE/.env
 
-
-- builder:
-    name: charm-build
-    builders:
-      - shell: |-
-          #!/bin/bash
-          set -eux
-          set -o allexport
-          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-          set +o allexport
-
-          mkdir -p "$CHARM_BUILD_DIR" || true
-          mkdir -p "$CHARM_LAYERS_DIR" || true
-          mkdir -p "$CHARM_INTERFACES_DIR" || true
-
-          virtualenv venv -p python3.6
-          venv/bin/python -m pip install pip-tools
-          venv/bin/pip-sync requirements.txt
-          venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-charms
-          venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} --debug -t build-bundles
 
 - builder:
     name: ogc-execute-spec
@@ -323,11 +306,7 @@
     name: default-job-wrapper
     wrappers:
       - ansicolor
-      # - timestamps
       - workspace-cleanup
-      # - timeout:
-      #     timeout: 360
-      #     fail: true
 
 - wrapper:
     name: ci-creds

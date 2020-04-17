@@ -88,6 +88,41 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"
-      - charm-build:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/build-charms"
-          JOB_SPEC_FILE: "spec.yml"
+          COMMAND: |
+            #!/bin/bash
+            set -eux
+            export PATH=/snap/bin:$PATH
+
+            IS_REBUILD_CACHE=""
+            if [[ $REBUILD_CACHE = "true" ]]; then
+              IS_REBUILD_CACHE="--rebuild-cache"
+            fi
+
+            IS_FORCE=""
+            if [[ $FORCE = "true" ]]; then
+              IS_FORCE="--force"
+            fi
+
+            python jobs/build-charms/charms.py build \
+              --charm-list "$CHARM_LIST" \
+              --charm-branch "$CHARM_BRANCH" \
+              --to-channel "$TO_CHANNEL" \
+              --resource-spec "$RESOURCE_SPEC" \
+              --filter-by-tag "$FILTER_BY_TAG" \
+              --layer-index  "$LAYER_INDEX" \
+              --layer-list "$LAYER_LIST" \
+              --layer-branch "$LAYER_BRANCH" \
+              $IS_REBUILD_CACHE $FORCE
+
+      - run-venv:
+          JOB_SPEC_DIR: "jobs/build-charms"
+          COMMAND: |
+            #!/bin/bash
+            set -eux
+            python3 jobs/build-charms/charms.py build-bundles \
+                --to-channel "$TO_CHANNEL" \
+                --bundle-list "$BUNDLE_LIST" \
+                --bundle-branch "$BUNDLE_BRANCH" \
+                --filter-by-tag "$FILTER_BY_TAG"

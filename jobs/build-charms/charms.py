@@ -139,7 +139,7 @@ class BuildEnv:
 
     @property
     def force(self):
-        return self.db["force"].get("force", None)
+        return self.db["build_args"].get("force", None)
 
     def _layer_type(self, ltype):
         """ Check the type of an individual layer set in the layer list
