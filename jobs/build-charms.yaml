@@ -114,7 +114,7 @@
               --layer-index  "$LAYER_INDEX" \
               --layer-list "$LAYER_LIST" \
               --layer-branch "$LAYER_BRANCH" \
-              $IS_REBUILD_CACHE $FORCE
+              $IS_REBUILD_CACHE $IS_FORCE
 
       - run-venv:
           JOB_SPEC_DIR: "jobs/build-charms"

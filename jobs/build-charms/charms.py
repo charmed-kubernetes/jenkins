@@ -205,7 +205,7 @@ class BuildEnv:
             click.echo(f"- Refreshing {layer_name} cache.")
             cmd_ok(f"git checkout {self.layer_branch}", cwd=self.build_path(layer_name))
             cmd_ok(
-                f"git.pull origin {self.layer_branch}", cwd=self.build_path(layer_name),
+                f"git pull origin {self.layer_branch}", cwd=self.build_path(layer_name),
             )
         else:
             click.echo(f"- Downloading {layer_name}")
