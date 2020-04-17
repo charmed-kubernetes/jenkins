@@ -30,13 +30,18 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/build-charms"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t promote-charms"
+          COMMAND: |
+            #!/bin/bash
+            set -eux
+            python jobs/build-charms/charms.py promote \
+                --from-channel $FROM_CHANNEL \
+                --to-channel $TO_CHANNEL \
+                --charm-list $CHARM_LIST \
+                --filter-by-tag $FILTER_BY_TAG
 
 # Builds and releases latest bundles
-
 - job:
     name: 'promote-bundles'
     description: |
@@ -67,10 +72,16 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"
-      - ogc-execute-spec:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/build-charms"
-          JOB_SPEC_FILE: "spec.yml"
-          JOB_TAGS: "-t promote-bundles"
+          COMMAND: |
+            #!/bin/bash
+            set -eux
+            python3 jobs/build-charms/charms.py promote \
+                --to-channel $TO_CHANNEL \
+                --from-channel $FROM_CHANNEL \
+                --charm-list $BUNDLE_LIST \
+                --filter-by-tag $FILTER_BY_TAG
 
 - job:
     name: 'build-charms'
