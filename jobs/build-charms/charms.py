@@ -137,6 +137,10 @@ class BuildEnv:
     def rebuild_cache(self):
         return self.db["build_args"].get("rebuild_cache", None)
 
+    @property
+    def force(self):
+        return self.db["force"].get("force", None)
+
     def _layer_type(self, ltype):
         """ Check the type of an individual layer set in the layer list
         """
@@ -602,6 +606,7 @@ def cli():
     "--to-channel", required=True, help="channel to promote charm to", default="edge"
 )
 @click.option("--rebuild-cache", is_flag=True)
+@click.option("--force", is_flag=True)
 def build(
     charm_list,
     layer_list,
@@ -612,6 +617,7 @@ def build(
     filter_by_tag,
     to_channel,
     rebuild_cache,
+        force
 ):
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
@@ -624,6 +630,7 @@ def build(
         "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
         "rebuild_cache": rebuild_cache,
+        "force": force
     }
 
     build_env.pull_layers()
@@ -643,7 +650,7 @@ def build(
     def _run_build(build_entity):
         build_entity.setup()
 
-        if not build_entity.has_changed:
+        if not build_entity.has_changed and not build_env.force:
             return
 
         build_entity.proof_build()

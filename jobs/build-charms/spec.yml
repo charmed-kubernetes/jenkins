@@ -5,6 +5,8 @@ plan:
         set -eux
         export PATH=/snap/bin:$PATH
 
+        echo $FORCE
+        echo $REBUILD_CACHE
         IS_REBUILD_CACHE=""
         if [ -z ${REBUILD_CACHE+x} ]; then
           IS_REBUILD_CACHE="--rebuild-cache"
@@ -18,7 +20,8 @@ plan:
           --layer-index  "$LAYER_INDEX" \
           --layer-list "$LAYER_LIST" \
           --layer-branch "$LAYER_BRANCH" \
-          --rebuild-cache
+          --rebuild-cache \
+          --force
     after-script:
       - |
         #!/bin/bash

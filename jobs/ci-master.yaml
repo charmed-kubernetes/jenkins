@@ -211,6 +211,9 @@
       - bool:
           name: REBUILD_CACHE
           default: false
+      - bool:
+          name: FORCE
+          default: false
 
 
 # BUILDERS ------------------------------------------------------------------- #
