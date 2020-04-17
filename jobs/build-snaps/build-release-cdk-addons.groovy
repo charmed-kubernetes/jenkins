@@ -101,7 +101,7 @@ pipeline {
                           cd build && snapcraft --target-arch=ppc64el && mv *.snap .. && cd ..
                         else
                           sed -i "s/KUBE_ARCH/\${arch}/g" build/snapcraft.yaml
-                          cd build && snapcraft --target-arch=\${arch} && mv *.snap .. && cd ..
+                          cd build && snapcraft --target-arch=\${arch} --provider=host && mv *.snap .. && cd ..
                         fi
                     done
                     cd ..
