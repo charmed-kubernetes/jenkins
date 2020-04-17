@@ -89,7 +89,7 @@ pipeline {
                         echo "Building cdk-addons snap for arch \${arch}."
                         cd cdk-addons
                         make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} default
-                        cd build && snapcraft remote-build --build-on=amd64,arm64,ppc64el,s390x --launchpad-accept-public-upload
+                        cd build && snapcraft build --target-arch=\${arch}
                         cd -
                     done
 
@@ -126,8 +126,8 @@ pipeline {
         stage('Setup LXD container for ctr'){
             steps {
                 sh "sudo lxc launch ubuntu:18.04 image-processor"
-                lxd_exec("image-processor", "apt update")
-                lxd_exec("image-processor", "apt install containerd -y")
+                lxd_exec("image-processor", "HTTPS_PROXY=http://squid.internal:3128 HTTP_PROXY=http://squid.internal:3128 apt update")
+                lxd_exec("image-processor", "HTTPS_PROXY=http://squid.internal:3128 HTTP_PROXY=http://squid.internal:3128 apt install containerd -y")
             }
         }
         stage('Process Images'){
@@ -199,7 +199,10 @@ pipeline {
                     if(params.dry_run) {
                         echo "Dry run; would have pushed cdk-addons/*.snap to ${params.channels}"
                     } else {
-                        sh "snapcraft push cdk-addons/*.snap --release ${params.channels}"
+                        sh "snapcraft push cdk-addons/cdk-addons_amd64.snap --release ${params.channels}"
+                        sh "snapcraft push cdk-addons/cdk-addons_arm64.snap --release ${params.channels}"
+                        sh "snapcraft push cdk-addons/cdk-addons_ppc64el.snap --release ${params.channels}"
+                        sh "snapcraft push cdk-addons/cdk-addons_s390x.snap --release ${params.channels}"
                     }
                 }
             }
