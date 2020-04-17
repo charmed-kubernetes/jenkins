@@ -85,20 +85,26 @@ pipeline {
         stage('Build cdk-addons and image list'){
             steps {
                 sh """
+
+                    cd cdk-addons
                     ARCHES="amd64 arm64 ppc64le s390x"
                     for arch in \${ARCHES}
                     do
                         echo "Building cdk-addons snap for arch \${arch}."
-                        cd cdk-addons
                         make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} prep
                 	wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
                 	chmod +x build/kubectl
                 	sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
-                	sed -i "s/KUBE_ARCH/\${arch}/g" build/snapcraft.yaml
-                        (cd build && snapcraft build --target-arch=\${arch})
-                        mv build/*.snap .
-                        cd -
+                        if [ "\${arch}" = "ppc64le" ]
+                        then
+                          sed -i "s/KUBE_ARCH/ppc64el/g" build/snapcraft.yaml
+                          cd build && snapcraft --target-arch=ppc64el && mv *.snap .. && cd ..
+                        else
+                          sed -i "s/KUBE_ARCH/\${arch}/g" build/snapcraft.yaml
+                          cd build && snapcraft --target-arch=\${arch} && mv *.snap .. && cd ..
+                        fi
                     done
+                    cd ..
 
                     echo "Processing upstream images."
                     UPSTREAM_KEY=${kube_version}-upstream:
@@ -206,10 +212,10 @@ pipeline {
                     if(params.dry_run) {
                         echo "Dry run; would have pushed cdk-addons/*.snap to ${params.channels}"
                     } else {
-                        sh "snapcraft push cdk-addons/cdk-addons_amd64.snap --release ${params.channels}"
-                        sh "snapcraft push cdk-addons/cdk-addons_arm64.snap --release ${params.channels}"
-                        sh "snapcraft push cdk-addons/cdk-addons_ppc64el.snap --release ${params.channels}"
-                        sh "snapcraft push cdk-addons/cdk-addons_s390x.snap --release ${params.channels}"
+                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_amd64.snap --release ${params.channels}"
+                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_arm64.snap --release ${params.channels}"
+                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_ppc64el.snap --release ${params.channels}"
+                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_s390x.snap --release ${params.channels}"
                     }
                 }
             }
