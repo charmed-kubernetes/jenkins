@@ -139,6 +139,7 @@ pipeline {
         stage('Setup LXD container for ctr'){
             steps {
                 sh "sudo lxc launch ubuntu:18.04 image-processor"
+                lxd_exec("image-processor", "https_proxy=http://squid.internal:3128 http_proxy=http://squid.internal:3128 apt update")
                 lxd_exec("image-processor", "HTTPS_PROXY=http://squid.internal:3128 HTTP_PROXY=http://squid.internal:3128 apt update")
                 lxd_exec("image-processor", "HTTPS_PROXY=http://squid.internal:3128 HTTP_PROXY=http://squid.internal:3128 apt install containerd -y")
             }
