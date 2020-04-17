@@ -87,21 +87,21 @@ pipeline {
                 sh """
 
                     cd cdk-addons
+                    make KUBE_VERSION=${kube_version} prep
                     ARCHES="amd64 arm64 ppc64le s390x"
                     for arch in \${ARCHES}
                     do
                         echo "Building cdk-addons snap for arch \${arch}."
-                        make KUBE_ARCH=\${arch} KUBE_VERSION=${kube_version} prep
                 	wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
                 	chmod +x build/kubectl
                 	sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
                         if [ "\${arch}" = "ppc64le" ]
                         then
                           sed -i "s/KUBE_ARCH/ppc64el/g" build/snapcraft.yaml
-                          cd build && snapcraft --target-arch=ppc64el && mv *.snap .. && cd ..
+                          cd build && snapcraft --target-arch=ppc64el --provider=host --destructive-mode && mv *.snap .. && cd ..
                         else
                           sed -i "s/KUBE_ARCH/\${arch}/g" build/snapcraft.yaml
-                          cd build && snapcraft --target-arch=\${arch} --provider=host && mv *.snap .. && cd ..
+                          cd build && snapcraft --target-arch=\${arch} --provider=host --destructive-mode && mv *.snap .. && cd ..
                         fi
                     done
                     cd ..
