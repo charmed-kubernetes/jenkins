@@ -116,12 +116,7 @@
               --layer-branch "$LAYER_BRANCH" \
               $IS_REBUILD_CACHE $IS_FORCE
 
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/build-charms"
-          COMMAND: |
-            #!/bin/bash
-            set -eux
-            python3 jobs/build-charms/charms.py build-bundles \
+            python jobs/build-charms/charms.py build-bundles \
                 --to-channel "$TO_CHANNEL" \
                 --bundle-list "$BUNDLE_LIST" \
                 --bundle-branch "$BUNDLE_BRANCH" \
