@@ -202,11 +202,6 @@ pipeline {
                 """
             }
         }
-        stage('Remove LXD container for ctr'){
-            steps {
-                sh "sudo lxc delete -f image-processor"
-            }
-        }
         stage('Push cdk-addons snap'){
             steps {
                 script {
@@ -224,6 +219,7 @@ pipeline {
     }
     post {
         always {
+            sh "sudo lxc delete -f image-processor"
             sh "sudo rm -rf cdk-addons/build"
             sh "docker image prune -a --filter \"until=24h\" --force"
             sh "docker container prune --filter \"until=24h\" --force"
