@@ -141,15 +141,7 @@ pipeline {
                 sh "sudo lxc launch ubuntu:18.04 image-processor"
                 lxd_exec("image-processor", "sleep 5")
                 lxd_exec("image-processor", "apt update")
-                lxd_exec("image-processor", "env")
-                lxd_exec("image-processor", "https_proxy=http://squid.internal:3128 http_proxy=http://squid.internal:3128 apt update")
-                lxd_exec("image-processor", "echo 'export http_proxy=http://squid.internal:3128' >> /etc/environment")
-                lxd_exec("image-processor", "echo 'export https_proxy=http://squid.internal:3128' >> /etc/environment")
-                lxd_exec("image-processor", "cat /etc/environment")
-                lxd_exec("image-processor", "env")
-                lxd_exec("image-processor", "https_proxy=http://squid.internal:3128 http_proxy=http://squid.internal:3128 apt update")
-                lxd_exec("image-processor", "HTTPS_PROXY=http://squid.internal:3128 HTTP_PROXY=http://squid.internal:3128 apt update")
-                lxd_exec("image-processor", "HTTPS_PROXY=http://squid.internal:3128 HTTP_PROXY=http://squid.internal:3128 apt install containerd -y")
+                lxd_exec("image-processor", "apt install containerd -y")
             }
         }
         stage('Process Images'){
@@ -163,7 +155,7 @@ pipeline {
                     ARCHES="amd64 arm64 ppc64le s390x"
                     for arch in \${ARCHES}
                     do
-                        ARCH_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|\${arch}|g -e "s|{{ multiarch_workaround }}|\${arch}|g")
+                        ARCH_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|\${arch}|g" -e "s|{{ multiarch_workaround }}|\${arch}|g")
                         ALL_IMAGES="\${ALL_IMAGES} \${ARCH_IMAGES}"
                     done
 
