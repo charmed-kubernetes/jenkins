@@ -173,8 +173,12 @@ pipeline {
                             continue
                         fi
 
-                        # Pull the the fat manifest
-                        if ! sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms; then continue; fi
+                        # Skip images that dont exist (usually due to non-existing arch). Other
+                        # pull failures will manifest themselves when we attempt to tag.
+                        if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms | grep -qi 'failed to resolve reference'
+                        then
+                            continue
+                        fi
 
                         # Massage image names
                         RAW_IMAGE=\${i}
