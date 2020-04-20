@@ -98,10 +98,10 @@ pipeline {
                         if [ "\${arch}" = "ppc64le" ]
                         then
                           sed -i "s/KUBE_ARCH/ppc64el/g" build/snapcraft.yaml
-                          cd build && snapcraft --target-arch=ppc64el --provider=host --destructive-mode && mv *.snap .. && cd ..
+                          cd build && /snap/bin/snapcraft --target-arch=ppc64el --provider=host --destructive-mode && mv *.snap .. && cd ..
                         else
                           sed -i "s/KUBE_ARCH/\${arch}/g" build/snapcraft.yaml
-                          cd build && snapcraft --target-arch=\${arch} --provider=host --destructive-mode && mv *.snap .. && cd ..
+                          cd build && /snap/bin/snapcraft --target-arch=\${arch} --provider=host --destructive-mode && mv *.snap .. && cd ..
                         fi
                     done
                     cd ..
