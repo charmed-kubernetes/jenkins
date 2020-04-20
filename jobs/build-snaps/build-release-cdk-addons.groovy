@@ -174,7 +174,7 @@ pipeline {
                         fi
 
                         # Pull the the fat manifest
-                        if ! "sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms"; then continue; fi
+                        if ! sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms; then continue; fi
 
                         # Massage image names
                         RAW_IMAGE=\${i}
