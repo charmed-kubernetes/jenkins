@@ -31,7 +31,6 @@ pipeline {
             steps {
                 sh "git config --global user.email 'cdkbot@juju.solutions'"
                 sh "git config --global user.name 'cdkbot'"
-                sh "sudo snap refresh snapcraft --stable"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
             }
         }
@@ -99,10 +98,10 @@ pipeline {
                         if [ "\${arch}" = "ppc64le" ]
                         then
                           sed -i "s/KUBE_ARCH/ppc64el/g" build/snapcraft.yaml
-                          cd build && /snap/bin/snapcraft --target-arch=ppc64el --provider=host --destructive-mode && mv *.snap .. && cd ..
+                          cd build && SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft --target-arch=ppc64el && mv *.snap .. && cd ..
                         else
                           sed -i "s/KUBE_ARCH/\${arch}/g" build/snapcraft.yaml
-                          cd build && /snap/bin/snapcraft --target-arch=\${arch} --provider=host --destructive-mode && mv *.snap .. && cd ..
+                          cd build && SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft --target-arch=\${arch} && mv *.snap .. && cd ..
                         fi
                     done
                     cd ..
