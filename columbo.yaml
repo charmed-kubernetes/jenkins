@@ -1,0 +1,8 @@
+- id: python-tb-exception
+  description: python tracebacks
+  start_marker: "^Traceback.*"
+  end_marker: "^Exception|Error|InvalidRequest:"
+- id: pytest-tb
+  description: grab errors from pytest
+  start_marker: "test\\ssession\\sstarts"
+  end_marker: "Captured\\slog\\scall"

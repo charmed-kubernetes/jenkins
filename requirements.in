@@ -9,6 +9,7 @@ ansible
 black
 boto3
 bs4
+columbo>=0.0.4
 configobj
 canonicalwebteam.snapstoreapi
 loguru
