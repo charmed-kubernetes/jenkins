@@ -5,4 +5,4 @@
 - id: pytest-tb
   description: grab errors from pytest
   start_marker: "test\\ssession\\sstarts"
-  end_marker: "Captured\\slog\\scall"
+  end_marker: "summary\\sinfo"

@@ -1,0 +1,32 @@
+{% extends "_base.html" %}
+{% block content %}
+<div class="container-fluid">
+  <h3>Job Report</h3>
+
+  <div class="row">
+    <div class="col">
+      <ul class="list-group">
+        <li class="list-group-item">ID: {{ obj.job_id }}</li>
+        {% if obj.job_name_custom %}
+        <li class="list-group-item">Name: {{ obj.job_name_custom }}</li>
+        {% else %}
+        <li class="list-group-item">Name: {{ obj.job_name }}</li>
+        {% endif %}
+        <li class="list-group-item">Start: {{ obj.build_datetime }}</li>
+        <li class="list-group-item">End: {{ obj.build_endtime }}</li>
+        {% if obj.artifacts %}
+        <li class="list-group-item"><a href="{{obj.job_id}/artifacts.tar.gz">Download Artifacts</a></li>
+        {% endif %}
+      </ul>
+    </div>
+    <div class="col">
+      {% for item in columbo_results %}
+      <h3>{{item.name}}</h3>
+      <p><strong>{{item.filename}}</strong></p>
+      <pre>{{item.results}}</pre>
+      <hr>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

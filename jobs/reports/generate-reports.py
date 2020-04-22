@@ -7,6 +7,8 @@ from boto3.dynamodb.conditions import Key, Attr
 import boto3
 import click
 import sh
+import json
+import uuid
 from pathlib import Path
 from pprint import pformat
 from cilib import log, run, html
@@ -109,11 +111,26 @@ def _gen_metadata():
             build_log = str(Path(obj["build_log"]).parent)
         obj["debug_url"] = f"{debug_host_url}" f"{obj['job_name']}/" f"{build_log}"
 
+        # set columbo results
+        if "columbo_results" in obj:
+            _gen_columbo(obj)
+
         if day not in db[job_name]:
             db[job_name][day] = []
         db[job_name][day].append(obj)
     return db
 
+def _gen_columbo(obj):
+    tmpl = html.template("columbo.html")
+    results = json.loads(obj['columbo_results'])
+    context = {
+        "obj":obj,
+        "columbo_results": results
+    }
+    rendered = tmpl.render(context)
+    html_p = Path(f"{obj['job_id']}-columbo.html")
+    html_p.write_text(rendered)
+    run.cmd_ok(f"aws s3 cp {obj['job_id']}-columbo.html s3://jenkaas/{obj['job_id']}/index.html", shell=True)
 
 def _gen_rows():
     """ Generates reports
