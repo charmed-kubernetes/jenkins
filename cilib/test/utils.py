@@ -493,3 +493,28 @@ async def setup_ev():
     model = Model(event_loop)
     await model.connect(f"{os.environ['JUJU_CONTROLLER']}:{os.environ['JUJU_MODEL']}")
     return model
+
+async def run_until_success(unit, cmd, timeout_insec=None):
+    while True:
+        action = await unit.run(cmd, timeout=timeout_insec)
+        if (
+            action.status == "completed"
+            and "results" in action.data
+            and action.data["results"]["Code"] == "0"
+        ):
+            return action.data["results"].get("Stdout", "")
+        else:
+            click.echo(
+                "Action " + action.status + ". Command failed on unit " + unit.entity_id
+            )
+            click.echo("cmd: " + cmd)
+            if "results" in action.data:
+                click.echo("code: " + action.data["results"]["Code"])
+                click.echo(
+                    "stdout:\n" + action.data["results"].get("Stdout", "").strip()
+                )
+                click.echo(
+                    "stderr:\n" + action.data["results"].get("Stderr", "").strip()
+                )
+                click.echo("Will retry...")
+            await asyncio.sleep(0.5)
