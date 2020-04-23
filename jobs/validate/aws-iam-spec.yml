@@ -81,8 +81,7 @@ plan:
     # create a role named KubernetesAdmin (will print the new role's ARN)
     # export TEST_ARN=$(aws iam create-role --role-name KubernetesAdmin --description "Kubernetes administrator role (for AWS IAM Authenticator for Kubernetes)." --assume-role-policy-document "$POLICY" --output text --query 'Role.Arn')
 
-    pytest --instafail \
-       --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
+    pytest \
        $INTEGRATION_TEST_PATH/test_aws_iam.py \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \

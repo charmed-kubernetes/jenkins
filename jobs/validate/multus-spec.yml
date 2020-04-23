@@ -13,6 +13,8 @@ meta:
     destination:
       - "validations/ck/multus.md"
 
+concurrent: no
+
 matrix:
   snap_version:
     - 1.19/edge
@@ -110,7 +112,6 @@ plan:
     export PATH="$WORKSPACE/juju-snap/bin:$PATH"
 
     timeout 2h python -m pytest -m "not slow" \
-       --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
        $WORKSPACE/jobs/integration/validation.py \
        --cloud $JUJU_CLOUD \
        --model $JUJU_MODEL \

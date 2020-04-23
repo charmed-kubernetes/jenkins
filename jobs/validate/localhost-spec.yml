@@ -67,6 +67,9 @@ plan:
 
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:juju-crashdump* $OGC_JOB_WORKDIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.log $OGC_JOB_WORKDIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.xml $OGC_JOB_WORKDIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.xls $OGC_JOB_WORKDIR/. || true
 
     teardown_env
 
@@ -118,8 +121,7 @@ plan:
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
     pushd jenkins
-    timeout 2h tox --workdir .tox -e py3 -- pytest --instafail \
-        --html=report.html --self-contained-html \
+    timeout 2h tox --workdir .tox -e py3 -- pytest \
         jobs/integration/validation.py \
         --cloud localhost/localhost \
         --model $JUJU_MODEL \
