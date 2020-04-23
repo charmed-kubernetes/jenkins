@@ -15,11 +15,9 @@
         <li class="list-group-item">Start: {{ obj.build_datetime }}</li>
         <li class="list-group-item">End: {{ obj.build_endtime }}</li>
         {% if obj.artifacts %}
-        <li class="list-group-item"><a href="{{obj.job_id}}/artifacts.tar.gz">Download Artifacts</a></li>
+        <li class="list-group-item"><a href="/{{obj.job_id}}/artifacts.tar.gz">Download Artifacts</a></li>
         {% endif %}
       </ul>
-    </div>
-    <div class="col">
       {% for item in columbo_results %}
       <h3>{{item.name}}</h3>
       <p><strong>{{item.filename}}</strong></p>
