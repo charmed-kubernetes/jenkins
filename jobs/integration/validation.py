@@ -984,7 +984,6 @@ async def test_toggle_metrics(model, tools):
     """Turn metrics on/off via the 'enable-metrics' config on kubernetes-master,
     and check that workload status returns to 'active', and that the metrics-server
     svc is started and stopped appropriately.
-
     """
 
     async def check_svc(app, enabled):

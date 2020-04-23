@@ -8,6 +8,7 @@ awscli>=1.18.3
 ansible
 black
 boto3
+behave
 bs4
 columbo>=0.0.4
 configobj
@@ -40,6 +41,7 @@ pytest-xdist
 pytest-timeout
 pytest-html
 pytest-instafail
+pytest-excel
 pytest
 python-dotenv
 python-frontmatter
