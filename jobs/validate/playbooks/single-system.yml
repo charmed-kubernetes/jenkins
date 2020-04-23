@@ -73,6 +73,7 @@
     - name: install python deps
       become: true
       shell: |
+        pip3 install tox
         pip3 install pip-tools
         pip-sync
       args:

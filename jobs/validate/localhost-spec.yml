@@ -118,7 +118,7 @@ plan:
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
     pushd jenkins
-    timeout 2h pytest --instafail \
+    timeout 2h tox --workdir .tox -e py3 -- pytest --instafail \
         --html=report.html --self-contained-html \
         jobs/integration/validation.py \
         --cloud localhost/localhost \
