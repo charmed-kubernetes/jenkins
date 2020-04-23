@@ -980,7 +980,6 @@ async def test_audit_default_config(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip("TODO: Not running reliably need to investigate")
 async def test_toggle_metrics(model, tools):
     """Turn metrics on/off via the 'enable-metrics' config on kubernetes-master,
     and check that workload status returns to 'active', and that the metrics-server
