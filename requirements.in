@@ -38,8 +38,8 @@ pytest-asyncio
 pytest-forked
 pytest-xdist
 pytest-timeout
-pytest-html
 pytest-instafail
+pytest-excel
 pytest
 python-dotenv
 python-frontmatter

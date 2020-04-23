@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from juju.controller import Controller
 from juju.errors import JujuError
 from subprocess import check_output, check_call
+from cilib import log
 import click
 
 
@@ -29,10 +30,10 @@ def tracefunc(frame, event, arg):
         func_filename = co.co_filename
         if "conftest" in func_filename:
             return
-        click.echo(f"Call to {func_name} on line {func_line_no}:{func_filename}")
+        log.debug(f"Call to {func_name} on line {func_line_no}:{func_filename}")
         for i in range(frame.f_code.co_argcount):
             name = frame.f_code.co_varnames[i]
-            click.echo(f"    Argument {name} is {frame.f_locals[name]}")
+            log.debug(f"    Argument {name} is {frame.f_locals[name]}")
     return
 
 
