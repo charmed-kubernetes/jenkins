@@ -114,7 +114,7 @@ def _gen_metadata():
         if build_log:
             build_log = str(Path(obj["build_log"]).parent)
         obj["debug_url"] = f"{debug_host_url}" f"{obj['job_name']}/" f"{build_log}"
-
+        obj["debug_host"] = debug_host_url
         # set columbo results
         if "columbo_results" in obj:
             _gen_columbo(obj)
