@@ -85,15 +85,19 @@ def _gen_metadata():
         if "test_result" not in obj:
             result_bg_class = "bg-light"
             result_btn_class = "btn-light"
+            result_bg_color = "#d4dee8!important;"
         elif not obj["test_result"] or int(obj["test_result"]) == 0:
             result_bg_class = "bg-danger"
             result_btn_class = "btn-danger"
+            result_bg_color = "#ff0018!important;"
         else:
             result_btn_class = "btn-success"
             result_bg_class = "bg-success"
+            result_bg_color = "#00cc00!important;"
 
         obj["bg_class"] = result_bg_class
         obj["btn_class"] = result_btn_class
+        obj["bg_color"] = result_bg_color
         try:
             day = datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
         except:

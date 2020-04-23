@@ -18,26 +18,14 @@
           <tr>
             <td class="align-middle">{{ row[0] }}</td>
             {% for day in row[1:] %}
-            <td class="text-center align-middle" style="height: 50px;">
-              <div class="dropdown">
-                <a class="btn {{ day.btn_class }} dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  {{ day.build_number}}
-                </a>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                  {% if not day.artifacts %}
-                  <a class="dropdown-item" href="{{ day.build_log }}">Job Log</a>
-                  <a class="dropdown-item" href="{{ day.job_result }}">Job Results</a>
-                  <a class="dropdown-item" href="{{ day.metadata }}">Job Metadata</a>
-                  {% if day.results_file %}<a class="dropdown-item" href="{{ day.results_file }}">Juju Crashdump</a>{% endif %}
-                  {% if day.cdk_field_agent %}<a class="dropdown-item" href="{{ day.cdk_field_agent }}">CDK Field Agent</a>{% endif %}
-                  {% if day.conformance %}<a class="dropdown-item" href="{{ day.conformance }}">CNCF Conformance</a>{% endif %}
-                  {% elif day.columbo_results %}
-                  <a class="dropdown-item" href="/{{ day.job_id }}/index.html">View Report</a>
-                  {% else %}
-                  <a class="dropdown-item" href="{{ day.artifacts }}">Job Artifacts</a>
-                  {% endif %}
-                </div>
-              </div>
+            <td class="text-center align-middle" style="background-color: {{day.bg_color}}">
+              {% if day.columbo_results %}
+              <a class="download-link" href="/{{ day.job_id }}/index.html"><i class="fas fa-file-alt"></i></a>
+              {% elif day.artifacts %}
+              <a class="download-link" href="{{ day.artifacts }}"><i class="fas fa-download"></i></a>
+              {% else %}
+              -
+              {% endif %}
             </td>
             {% endfor %}
           </tr>
