@@ -28,6 +28,9 @@ inject_env()
 collect_env()
 {
     juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"  -o "$OGC_JOB_WORKDIR"
+    cp *.log "$OGC_JOB_WORKDIR" || true
+    cp *.xls "$OGC_JOB_WORKDIR" || true
+    cp *.xml "$OGC_JOB_WORKDIR" || true
 }
 
 teardown_env()
