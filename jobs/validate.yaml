@@ -109,6 +109,32 @@
             venv/bin/ogc --spec jobs/validate/snapd-upgrade-spec.yml
 
 
+- job:
+    name: 'validate-ck-series-upgrade'
+    node: runner-validate
+    description: |
+      Validates CK machine series upgrades.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    triggers:
+        - timed: "@weekly"
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-venv:
+          JOB_SPEC_DIR: "jobs/validate"
+          COMMAND: |
+            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
+            venv/bin/ogc --spec jobs/validate/series-upgrade-spec.yml
+
+
 # ADDONS --------------------------------------------------------------------- #
 
 

@@ -1,0 +1,84 @@
+meta:
+  name: Verify CK with machine series upgrade
+  description: |
+    Verifies that CK minor upgrades from previous stable to upcoming edge passes integration tests
+  mkdocs:
+    destination:
+      - "validations/ck/minor-upgrade.md"
+
+matrix:
+  snap_version:
+    - 1.18/stable
+  series:
+    - xenial
+  channel:
+    - stable
+  arch:
+    - amd64
+
+plan:
+  env:
+    - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+    - JUJU_DEPLOY_CHANNEL=$CHANNEL
+    - JUJU_CLOUD=aws/us-east-2
+    - JUJU_CONTROLLER=validate-ck-series-upgrade
+    - JUJU_MODEL=validate-series-upgrade
+
+  pre-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    setup_env
+
+    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+         -d $JUJU_MODEL \
+         --bootstrap-series $SERIES \
+         --force \
+         --bootstrap-constraints arch=$ARCH \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+
+    tee overlay.yaml <<EOF> /dev/null
+    series: $SERIES
+    applications:
+      kubernetes-master:
+        options:
+          channel: $SNAP_VERSION
+      kubernetes-worker:
+        options:
+          channel: $SNAP_VERSION
+    EOF
+
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+          --overlay overlay.yaml \
+          --force \
+          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+  execute: |
+    #!/bin/bash
+    set -eu
+
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    timeout 2h pytest $WORKSPACE/jobs/integration/validation.py::test_series_upgrade \
+           --html=$OGC_JOB_WORKDIR/report.html --self-contained-html \
+           --is-series-upgrade \
+           --cloud "$JUJU_CLOUD" \
+           --model "$JUJU_MODEL" \
+           --controller "$JUJU_CONTROLLER"
+
+  post-execute: |
+    #!/bin/bash
+    . $WORKSPACE/cilib.sh
+
+    inject_env
+
+    collect_env
+
+    teardown_env
+

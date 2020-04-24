@@ -28,6 +28,10 @@ from .utils import (
     tracefunc,
     is_localhost,
     validate_storage_class,
+    SERIES_ORDER,
+    prep_series_upgrade,
+    do_series_upgrade,
+    finish_series_upgrade,
 )
 import sys
 
@@ -248,7 +252,7 @@ async def test_auth_file_propagation(model):
 
 @pytest.mark.asyncio
 @pytest.mark.flaky
-async def test_status_messages(model, tools):
+async def test_status_messages(model):
     """ Validate that the status messages are correct. """
     expected_messages = {
         "kubernetes-master": "Kubernetes master running.",
@@ -1874,3 +1878,21 @@ async def test_multus(model, tools, addons_model):
     await cleanup()
 
 
+@pytest.mark.asyncio
+async def test_series_upgrade(model, tools):
+    if not tools.is_series_upgrade:
+        pytest.skip()
+    k8s_master_0 = model.applications['kubernetes-master'].units[0]
+    old_series = k8s_master_0.machine.series
+    try:
+        new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
+    except IndexError:
+        pytest.skip("no supported series to upgrade to")
+    except ValueError:
+        pytest.skip("unrecognized series to upgrade from: {old_series}")
+    for machine in model.machines.values():
+        prep_series_upgrade(machine, new_series, tools)
+        do_series_upgrade(machine)
+        finish_series_upgrade(machine, tools)
+        assert machine.series == new_series
+    test_status_messages(model)

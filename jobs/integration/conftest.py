@@ -79,6 +79,14 @@ def pytest_addoption(parser):
         help="Snap channel to install snapcore from",
     )
 
+    # Set when performing series upgrade tests
+    parser.addoption(
+        "--is-series-upgrade",
+        action="store_true",
+        default=False,
+        help="This test should perform a series upgrade",
+    )
+
 
 class Tools:
     """ Utility class for accessing juju related tools
@@ -91,6 +99,7 @@ class Tools:
         self.series = request.config.getoption("--series")
         self.cloud = request.config.getoption("--cloud")
         self.connection = f"{self.controller_name}:{self.model_name}"
+        self.is_series_upgrade = request.config.getoption('--is-series-upgrade')
 
     async def run(self, *cmd):
         proc = await asyncio.create_subprocess_shell(
