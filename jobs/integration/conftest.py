@@ -99,7 +99,7 @@ class Tools:
         self.series = request.config.getoption("--series")
         self.cloud = request.config.getoption("--cloud")
         self.connection = f"{self.controller_name}:{self.model_name}"
-        self.is_series_upgrade = request.getoption('--is-series-upgrade')
+        self.is_series_upgrade = request.config.getoption('--is-series-upgrade')
 
     async def run(self, *cmd):
         proc = await asyncio.create_subprocess_shell(
