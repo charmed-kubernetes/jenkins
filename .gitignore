@@ -11,3 +11,4 @@ site/
 jobs/reports/_build
 reports/_build
 *.db
+report.*

@@ -6,7 +6,6 @@ import subprocess
 import time
 import traceback
 
-from cilib import log
 from contextlib import contextmanager
 from juju.controller import Controller
 from juju.errors import JujuError
