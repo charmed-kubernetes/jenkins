@@ -31,6 +31,7 @@ collect_env()
     cp *.log "$OGC_JOB_WORKDIR" || true
     cp *.xls "$OGC_JOB_WORKDIR" || true
     cp *.xml "$OGC_JOB_WORKDIR" || true
+    cp *.html "$OGC_JOB_WORKDIR" || true
 }
 
 teardown_env()
