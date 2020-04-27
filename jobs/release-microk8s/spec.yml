@@ -27,7 +27,7 @@ plan:
            --model-default resource-tags=owner=k8sci \
            --bootstrap-constraints "instance-type=$INSTANCE_TYPE"
 
-        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "arch=$ARCH root-disk=80G mem=16G" ubuntu
+        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "instance-type=$INSTANCE_TYPE" ubuntu
 
         juju-wait -e "$JUJU_CONTROLLER":"$JUJU_MODEL" -w
 
@@ -62,7 +62,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-beta-arm64
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=arm64
-      - INSTANCE_TYPE=a1.large
+      - INSTANCE_TYPE=a1.2xlarge
     tags:
       - arm64/beta
       - arm64
@@ -74,7 +74,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-stable-arm64
       - JUJU_MODEL=release-microk8s-stable-model
       - ARCH=arm64
-      - INSTANCE_TYPE=a1.large
+      - INSTANCE_TYPE=a1.2xlarge
 
     tags:
       - arm64/stable
