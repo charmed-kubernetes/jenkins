@@ -25,9 +25,9 @@ plan:
            -d "$JUJU_MODEL" \
            --model-default test-mode=true \
            --model-default resource-tags=owner=k8sci \
-           --bootstrap-constraints "instance-type=$INSTANCE_TYPE"
+           --bootstrap-constraints "arch=$ARCH"
 
-        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "instance-type=$INSTANCE_TYPE root-disk=80G mem=16G" ubuntu
+        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "arch=$ARCH root-disk=80G mem=16G" ubuntu
 
         juju-wait -e "$JUJU_CONTROLLER":"$JUJU_MODEL" -w
 
