@@ -6,7 +6,6 @@
 #
 aioify==0.3.2             # via -r requirements.in
 ansible==2.9.4            # via -r requirements.in
-apipkg==1.5               # via execnet
 appdirs==1.4.3            # via black
 asn1crypto==0.24.0        # via cryptography
 async-generator==1.10     # via -r requirements.in, asyncio-extras
@@ -39,7 +38,6 @@ distro==1.4.0             # via lazr.restfulclient
 docutils==0.15.2          # via awscli, botocore
 entrypoints==0.3          # via flake8, keyring
 et-xmlfile==1.0.1         # via openpyxl
-execnet==1.7.1            # via pytest-xdist
 fasteners==0.15           # via jenkins-job-builder
 flake8==3.7.8             # via -r requirements.in
 flaky==3.6.1              # via -r requirements.in
@@ -120,12 +118,10 @@ pyparsing==2.4.2          # via packaging
 pyrfc3339==1.1            # via juju, macaroonbakery
 pytest-asyncio==0.10.0    # via -r requirements.in
 pytest-excel==1.2.3       # via -r requirements.in
-pytest-forked==1.0.2      # via -r requirements.in, pytest-xdist
 pytest-html==2.1.1        # via -r requirements.in
 pytest-metadata==1.8.0    # via pytest-html
 pytest-timeout==1.3.4     # via -r requirements.in
-pytest-xdist==1.29.0      # via -r requirements.in
-pytest==5.1.2             # via -r requirements.in, pytest-asyncio, pytest-excel, pytest-forked, pytest-html, pytest-metadata, pytest-timeout, pytest-xdist
+pytest==5.1.2             # via -r requirements.in, pytest-asyncio, pytest-excel, pytest-html, pytest-metadata, pytest-timeout
 python-dateutil==2.8.0    # via botocore, canonicalwebteam.snapstoreapi
 python-dotenv==0.10.3     # via -r requirements.in, ogc
 python-frontmatter==0.4.5  # via -r requirements.in
@@ -143,7 +139,7 @@ s3transfer==0.3.3         # via awscli, boto3
 secretstorage==3.1.2      # via keyring
 semver==2.8.1             # via ogc
 sh==1.12.14               # via -r requirements.in, ogc, ogc-plugins-juju, ogc-plugins-runner, ogc-plugins-spec-doc
-six==1.12.0               # via bcrypt, configobj, cryptography, fasteners, jenkins-job-builder, lazr.restfulclient, livereload, macaroonbakery, packaging, ppft, prompt-toolkit, protobuf, pymacaroons, pynacl, pytest-xdist, python-dateutil, python-frontmatter, python-jenkins, stevedore, traitlets
+six==1.12.0               # via bcrypt, configobj, cryptography, fasteners, jenkins-job-builder, lazr.restfulclient, livereload, macaroonbakery, packaging, ppft, prompt-toolkit, protobuf, pymacaroons, pynacl, python-dateutil, python-frontmatter, python-jenkins, stevedore, traitlets
 soupsieve==1.9.4          # via beautifulsoup4
 stevedore==1.31.0         # via jenkins-job-builder
 tabulate==0.8.3           # via ogc

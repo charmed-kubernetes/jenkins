@@ -35,8 +35,6 @@ pynacl==1.1.2
 pymacaroons
 pyyaml>=5.1.2
 pytest-asyncio
-pytest-forked
-pytest-xdist
 pytest-timeout
 pytest-excel
 pytest-html

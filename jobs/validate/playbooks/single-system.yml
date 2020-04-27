@@ -26,6 +26,7 @@
         name:
           - libffi-dev
           - python3-dev
+          - parallel
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
