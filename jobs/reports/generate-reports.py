@@ -126,7 +126,8 @@ def _gen_metadata():
 
 def _gen_columbo(obj):
     tmpl = html.template("columbo.html")
-    results = json.loads(obj['columbo_results'])
+    run.cmd_ok(f"aws s3 cp s3://jenkaas/{obj['job_id']}/columbo-report.json columbo-report.json", shell=True)
+    results = json.loads(Path('columbo-report.json').read_text())
     context = {
         "obj":obj,
         "columbo_results": results
