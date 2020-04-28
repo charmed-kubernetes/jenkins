@@ -7,7 +7,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-beta-amd64
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=amd64
-      - INSTANCE_TYPE=m5.large
+      - INSTANCE_TYPE=m5.xlarge
     tags:
       - amd64/beta
       - amd64
@@ -96,7 +96,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-stable-amd64
       - JUJU_MODEL=release-microk8s-stable-model
       - ARCH=amd64
-      - INSTANCE_TYPE=m5.large
+      - INSTANCE_TYPE=m5.xlarge
     tags:
       - amd64/stable
       - amd64
@@ -117,7 +117,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-pre-release-amd64
       - JUJU_MODEL=release-microk8s-pre-release-model
       - ARCH=amd64
-      - INSTANCE_TYPE=m5.large
+      - INSTANCE_TYPE=m5.xlarge
     tags:
       - amd64/prerelease
       - amd64
