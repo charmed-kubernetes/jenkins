@@ -132,6 +132,10 @@ def _gen_metadata():
     return db
 
 def _gen_columbo(obj):
+    has_index = requests.get(f"{obj['debug_host']}/{obj['job_id']}/columbo-report.json")
+    if has_index.ok:
+        click.echo(f"No report file, skipping")
+        return
     tmpl = html.template("columbo.html")
     run.cmd_ok(f"aws s3 cp s3://jenkaas/{obj['job_id']}/columbo-report.json columbo-report.json", shell=True)
     results = json.loads(Path('columbo-report.json').read_text())
