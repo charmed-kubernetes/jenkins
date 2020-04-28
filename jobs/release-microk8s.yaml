@@ -57,7 +57,7 @@
         - timed: "@daily"
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
@@ -107,7 +107,7 @@
         - timed: "@hourly"
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"
@@ -132,7 +132,7 @@
         - timed: "@hourly"
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"

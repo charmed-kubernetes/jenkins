@@ -59,4 +59,4 @@ EOF
 
     exit $ret
 
-} 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee $JUJU_CONTROLLER.txt
+} 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee $JUJU_CONTROLLER.log
