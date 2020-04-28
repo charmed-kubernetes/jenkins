@@ -9,6 +9,7 @@ import click
 import sh
 import json
 import uuid
+import requests
 from pathlib import Path
 from pprint import pformat
 from cilib import log, run, html
@@ -60,7 +61,15 @@ def _gen_metadata():
         for item in response["Items"]:
             items.append(item)
     db = OrderedDict()
+    debug_host_url = "https://jenkaas.s3.amazonaws.com/"
     for obj in items:
+        obj["debug_host"] = debug_host_url
+        has_index = requests.get(f"{obj['debug_host']}/{obj['job_id']}/index.html")
+        if has_index.ok:
+            click.echo(f"Index already generated for {obj['job_id']}, skipping.")
+            continue
+
+
         if "validate" not in obj["job_name"]:
             continue
 
@@ -109,12 +118,10 @@ def _gen_metadata():
         day = day.strftime("%Y-%m-%d")
 
         # set obj url
-        debug_host_url = "https://jenkaas.s3.amazonaws.com/"
         build_log = obj.get("build_log", None)
         if build_log:
             build_log = str(Path(obj["build_log"]).parent)
         obj["debug_url"] = f"{debug_host_url}" f"{obj['job_name']}/" f"{build_log}"
-        obj["debug_host"] = debug_host_url
         # set columbo results
         if "columbo_results" in obj:
             _gen_columbo(obj)
