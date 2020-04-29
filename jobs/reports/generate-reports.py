@@ -141,7 +141,12 @@ def _gen_columbo(obj):
         return
     tmpl = html.template("columbo.html")
     run.cmd_ok(f"aws s3 cp s3://jenkaas/{obj['job_id']}/columbo-report.json columbo-report.json", shell=True)
-    results = json.loads(Path('columbo-report.json').read_text())
+    columbo_report_p = Path('columbo-report.json')
+    if columbo_report_p.stat().st_size >= 1048576:
+        run.cmd_ok(f"aws s3 rm s3://jenkaas/{obj['job_id']}/columbo-report.json", shell=True)
+        click.echo("Columbo report to big, skipping")
+        return
+    results = json.loads(columbo_report_p.read_text())
     context = {
         "obj":obj,
         "columbo_results": results
@@ -150,6 +155,7 @@ def _gen_columbo(obj):
     html_p = Path(f"{obj['job_id']}-columbo.html")
     html_p.write_text(rendered)
     run.cmd_ok(f"aws s3 cp {obj['job_id']}-columbo.html s3://jenkaas/{obj['job_id']}/index.html", shell=True)
+    run.cmd_ok(f"rm -rf {html_p}")
 
 def _gen_rows():
     """ Generates reports
