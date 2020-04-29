@@ -10,8 +10,9 @@ import sh
 import json
 import uuid
 import requests
+import dill
 from pathlib import Path
-from pprint import pformat
+from pprint import pformat, pprint
 from cilib import log, run, html
 
 session = boto3.Session(region_name="us-east-1")
@@ -23,6 +24,14 @@ OBJECTS = bucket.objects.all()
 
 SERIES = ["focal", "bionic", "xenial"]
 
+
+def get_all_s3_prefixes(numdays=30):
+    """ Grabs all s3 prefixes for at most `numdays`
+    """
+    date_of_last_30 = datetime.today() - timedelta(days=numdays)
+    date_of_last_30 = date_of_last_30.strftime("%Y-%m-%d")
+    output = run.capture(f"aws s3api list-objects-v2 --bucket jenkaas --query 'Contents[?LastModified > `{date_of_last_30}`]'", shell=True)
+    return output
 
 def _parent_dirs():
     """ Returns list of paths
@@ -44,35 +53,55 @@ def _gen_days(numdays=30):
     return date_list
 
 
-def _gen_metadata():
-    """ Generates metadata
-    """
+def get_data():
+    storage_p = Path("storage_dill.pkl")
     log.info("Generating metadata...")
     items = []
-    table = dynamodb.Table("CIBuilds")
 
-    # Required because only 1MB are returned
-    # See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.04.html
-    response = table.scan()
-    for item in response["Items"]:
-        items.append(item)
-    while "LastEvaluatedKey" in response:
-        response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
+
+    if storage_p.exists():
+        log.info("Loading local copy")
+        items = dill.loads(storage_p.read_bytes())
+
+    else:
+        log.info("Pulling from dynamo")
+        table = dynamodb.Table("CIBuilds")
+
+        # Required because only 1MB are returned
+        # See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.04.html
+        response = table.scan()
         for item in response["Items"]:
             items.append(item)
+        while "LastEvaluatedKey" in response:
+            response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
+            for item in response["Items"]:
+                items.append(item)
+
+        log.info("Storing local copy")
+        storage_p.write_bytes(dill.dumps(items))
+    return items
+
+
+def _gen_metadata(items):
+    """ Generates metadata
+    """
+
     db = OrderedDict()
-    debug_host_url = "https://jenkaas.s3.amazonaws.com/"
+    debug_host_url = "https://jenkaas.s3.amazonaws.com"
+
     for obj in items:
+        if "build_endtime" not in obj:
+            continue
         if 'job_id' not in obj:
             continue
 
-        obj["debug_host"] = debug_host_url
-        has_index = requests.get(f"{obj['debug_host']}/{obj['job_id']}/index.html")
-        if has_index.ok:
-            click.echo(f"Index already generated for {obj['job_id']}, skipping.")
+        day = datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
+        date_of_last_30 = datetime.today() - timedelta(days=30)
+        if day < date_of_last_30:
             continue
+        day = day.strftime("%Y-%m-%d")
 
-
+        obj["debug_host"] = debug_host_url
         if "validate" not in obj["job_name"]:
             continue
 
@@ -91,8 +120,6 @@ def _gen_metadata():
         if job_name not in db:
             db[job_name] = {}
 
-        if "build_endtime" not in obj:
-            continue
 
         if "test_result" not in obj:
             result_bg_class = "bg-light"
@@ -110,21 +137,7 @@ def _gen_metadata():
         obj["bg_class"] = result_bg_class
         obj["btn_class"] = result_btn_class
         obj["bg_color"] = result_bg_color
-        try:
-            day = datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
-        except:
-            day = datetime.strptime(obj["build_endtime"], "%Y-%m-%d %H:%M:%S.%f")
 
-        date_of_last_30 = datetime.today() - timedelta(days=30)
-        if day < date_of_last_30:
-            continue
-        day = day.strftime("%Y-%m-%d")
-
-        # set obj url
-        build_log = obj.get("build_log", None)
-        if build_log:
-            build_log = str(Path(obj["build_log"]).parent)
-        obj["debug_url"] = f"{debug_host_url}" f"{obj['job_name']}/" f"{build_log}"
         # set columbo results
         if "columbo_results" in obj:
             _gen_columbo(obj)
@@ -135,17 +148,25 @@ def _gen_metadata():
     return db
 
 def _gen_columbo(obj):
-    has_index = requests.get(f"{obj['debug_host']}/{obj['job_id']}/columbo-report.json")
+    has_index = requests.get(f"{obj['debug_host']}/{obj['job_id']}/index.html")
     if has_index.ok:
-        click.echo(f"No report file, skipping")
+        log.info(f"Report already generated for {obj['job_id']}, skipping.")
         return
+
+    report_url = f"{obj['debug_host']}/{obj['job_id']}/columbo-report.json"
+    log.info(f"Processing {report_url}")
+    has_index = requests.get(report_url, stream=True)
+    if not has_index.ok:
+        log.info(f"- no report file, skipping")
+        return
+    if int(has_index.headers['Content-length']) >= 1048576:
+        log.info("- Columbo report to big, skipping")
+        run.cmd_ok(f"aws s3 rm s3://jenkaas/{obj['job_id']}/columbo-report.json", shell=True)
+        return
+
     tmpl = html.template("columbo.html")
     run.cmd_ok(f"aws s3 cp s3://jenkaas/{obj['job_id']}/columbo-report.json columbo-report.json", shell=True)
     columbo_report_p = Path('columbo-report.json')
-    if columbo_report_p.stat().st_size >= 1048576:
-        run.cmd_ok(f"aws s3 rm s3://jenkaas/{obj['job_id']}/columbo-report.json", shell=True)
-        click.echo("Columbo report to big, skipping")
-        return
     results = json.loads(columbo_report_p.read_text())
     context = {
         "obj":obj,
@@ -161,7 +182,8 @@ def _gen_rows():
     """ Generates reports
     """
     days = _gen_days()
-    metadata = _gen_metadata()
+    data = get_data()
+    metadata = _gen_metadata(data)
     rows = []
     for jobname, jobdays in sorted(metadata.items()):
         sub_item = [jobname]
@@ -204,7 +226,7 @@ def list():
     """
     table = dynamodb.Table("CIBuilds")
     response = table.scan()
-    click.echo(response["Items"])
+    log.info(response["Items"])
 
 
 @cli.command()
