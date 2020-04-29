@@ -27,10 +27,8 @@ mkdocs-material
 mkdocs
 ogc-plugins-juju>=1.0.35
 ogc-plugins-runner>=1.0.24
-ogc-plugins-spec-doc>=1.0.8
 ogc>=1.0.1
 requests
-poetry-version>=0.1.5
 pynacl==1.1.2
 pymacaroons
 pyyaml>=5.1.2

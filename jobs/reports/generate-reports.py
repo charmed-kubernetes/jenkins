@@ -63,6 +63,9 @@ def _gen_metadata():
     db = OrderedDict()
     debug_host_url = "https://jenkaas.s3.amazonaws.com/"
     for obj in items:
+        if 'job_id' not in obj:
+            continue
+
         obj["debug_host"] = debug_host_url
         has_index = requests.get(f"{obj['debug_host']}/{obj['job_id']}/index.html")
         if has_index.ok:
