@@ -7,7 +7,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-beta-amd64
       - JUJU_MODEL=release-microk8s-beta-model
       - ARCH=amd64
-      - INSTANCE_TYPE=m5.2xlarge
+      - INSTANCE_TYPE=m5.large
     tags:
       - amd64/beta
       - amd64
@@ -27,7 +27,11 @@ plan:
            --model-default resource-tags=owner=k8sci \
            --bootstrap-constraints "instance-type=$INSTANCE_TYPE"
 
-        juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "instance-type=$INSTANCE_TYPE" ubuntu
+        if [ "$ARC" == "amd64" ]; then
+           juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "mem=16G root-disk=80G arch=$ARCH" ubuntu
+        else
+           juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "instance-type=$INSTANCE_TYPE" ubuntu
+        fi
 
         juju-wait -e "$JUJU_CONTROLLER":"$JUJU_MODEL" -w
 
@@ -96,7 +100,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-stable-amd64
       - JUJU_MODEL=release-microk8s-stable-model
       - ARCH=amd64
-      - INSTANCE_TYPE=m5.2xlarge
+      - INSTANCE_TYPE=m5.large
     tags:
       - amd64/stable
       - amd64
@@ -117,7 +121,7 @@ plan:
       - JUJU_CONTROLLER=release-microk8s-pre-release-amd64
       - JUJU_MODEL=release-microk8s-pre-release-model
       - ARCH=amd64
-      - INSTANCE_TYPE=m5.2xlarge
+      - INSTANCE_TYPE=m5.large
     tags:
       - amd64/prerelease
       - amd64
