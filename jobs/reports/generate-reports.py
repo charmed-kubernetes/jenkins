@@ -11,6 +11,7 @@ import json
 import uuid
 import requests
 import dill
+from pathos.threading import ThreadPool
 from pathlib import Path
 from pprint import pformat, pprint
 from cilib import log, run, html
@@ -24,23 +25,83 @@ OBJECTS = bucket.objects.all()
 
 SERIES = ["focal", "bionic", "xenial"]
 
+REPORT_HOST = "https://jenkaas.s3.amazonaws.com"
 
-def get_all_s3_prefixes(numdays=30):
-    """ Grabs all s3 prefixes for at most `numdays`
-    """
-    date_of_last_30 = datetime.today() - timedelta(days=numdays)
-    date_of_last_30 = date_of_last_30.strftime("%Y-%m-%d")
-    output = run.capture(f"aws s3api list-objects-v2 --bucket jenkaas --query 'Contents[?LastModified > `{date_of_last_30}`]'", shell=True)
-    return output
+class Storage:
+    def __init__(self):
+        self.objects = self.get_all_s3_prefixes()
 
-def _parent_dirs():
-    """ Returns list of paths
-    """
-    items = set()
-    for obj in OBJECTS:
-        if obj.key != "index.html":
-            items.add(obj.key)
-    return list(sorted(items))
+    def get_all_s3_prefixes(self, numdays=30):
+        """ Grabs all s3 prefixes for at most `numdays`
+        """
+        date_of_last_30 = datetime.today() - timedelta(days=numdays)
+        date_of_last_30 = date_of_last_30.strftime("%Y-%m-%d")
+        output = run.capture(f"aws s3api list-objects-v2 --bucket jenkaas --query 'Contents[?LastModified > `{date_of_last_30}`]'",
+                             shell=True)
+        if output.ok:
+            return json.loads(output.stdout.decode())
+        return []
+
+    @property
+    def reports(self):
+        """ Return mapping of report files
+        """
+        _report_map = {}
+        for item in self.objects:
+            key_p = Path(item['Key'])
+            if key_p.parent in _report_map:
+                _report_map[key_p.parent].append((key_p.name, int(item['Size'])))
+            else:
+                _report_map[key_p.parent] = [(key_p.name, int(item['Size']))]
+        return _report_map
+
+
+def build_columbo_reports(data):
+    prefix_id, files = data
+    has_columbo = [
+        (name, size)
+        for name, size in files
+        if name == "columbo-report.json"
+    ]
+
+    if not has_columbo:
+        log.debug(f"{prefix_id} :: no report found, skipping")
+        return
+
+    name, size = has_columbo[0]
+    if size >= 1048576:
+        log.debug(f"{prefix_id} :: columbo report to big, skipping")
+        return
+
+    has_index = requests.get(f"{REPORT_HOST}/{prefix_id}/index.html")
+    if has_index.ok:
+        log.debug(f"Report already generated for {prefix_id}, skipping.")
+        return
+
+    obj = {}
+    has_metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
+    if has_metadata.ok:
+        log.info(f"{prefix_id} :: grabbing metadata for report")
+        obj = has_metadata.json()
+
+    has_artifacts = requests.get(f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz")
+    if has_artifacts.ok:
+        log.debug(f"{prefix_id} :: found artifacts")
+        obj['artifacts'] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
+
+    log.info(f"{prefix_id} :: processing report {name} ({size})")
+
+    tmpl = html.template("columbo.html")
+    columbo_results = requests.get(f"{REPORT_HOST}/{prefix_id}/{name}").json()
+    context = {
+        "obj":obj,
+        "columbo_results": columbo_results
+    }
+    rendered = tmpl.render(context)
+    html_p = Path(f"{prefix_id}-columbo.html")
+    html_p.write_text(rendered)
+    run.cmd_ok(f"aws s3 cp {prefix_id}-columbo.html s3://jenkaas/{prefix_id}/index.html", shell=True)
+    run.cmd_ok(f"rm -rf {html_p}")
 
 
 def _gen_days(numdays=30):
@@ -54,31 +115,20 @@ def _gen_days(numdays=30):
 
 
 def get_data():
-    storage_p = Path("storage_dill.pkl")
     log.info("Generating metadata...")
     items = []
+    log.info("Pulling from dynamo")
+    table = dynamodb.Table("CIBuilds")
 
-
-    if storage_p.exists():
-        log.info("Loading local copy")
-        items = dill.loads(storage_p.read_bytes())
-
-    else:
-        log.info("Pulling from dynamo")
-        table = dynamodb.Table("CIBuilds")
-
-        # Required because only 1MB are returned
-        # See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.04.html
-        response = table.scan()
+    # Required because only 1MB are returned
+    # See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.04.html
+    response = table.scan()
+    for item in response["Items"]:
+        items.append(item)
+    while "LastEvaluatedKey" in response:
+        response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
         for item in response["Items"]:
             items.append(item)
-        while "LastEvaluatedKey" in response:
-            response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
-            for item in response["Items"]:
-                items.append(item)
-
-        log.info("Storing local copy")
-        storage_p.write_bytes(dill.dumps(items))
     return items
 
 
@@ -120,7 +170,6 @@ def _gen_metadata(items):
         if job_name not in db:
             db[job_name] = {}
 
-
         if "test_result" not in obj:
             result_bg_class = "bg-light"
             result_btn_class = "btn-light"
@@ -138,45 +187,11 @@ def _gen_metadata(items):
         obj["btn_class"] = result_btn_class
         obj["bg_color"] = result_bg_color
 
-        # set columbo results
-        if "columbo_results" in obj:
-            _gen_columbo(obj)
-
         if day not in db[job_name]:
             db[job_name][day] = []
         db[job_name][day].append(obj)
     return db
 
-def _gen_columbo(obj):
-    has_index = requests.get(f"{obj['debug_host']}/{obj['job_id']}/index.html")
-    if has_index.ok:
-        log.info(f"Report already generated for {obj['job_id']}, skipping.")
-        return
-
-    report_url = f"{obj['debug_host']}/{obj['job_id']}/columbo-report.json"
-    log.info(f"Processing {report_url}")
-    has_index = requests.get(report_url, stream=True)
-    if not has_index.ok:
-        log.info(f"- no report file, skipping")
-        return
-    if int(has_index.headers['Content-length']) >= 1048576:
-        log.info("- Columbo report to big, skipping")
-        run.cmd_ok(f"aws s3 rm s3://jenkaas/{obj['job_id']}/columbo-report.json", shell=True)
-        return
-
-    tmpl = html.template("columbo.html")
-    run.cmd_ok(f"aws s3 cp s3://jenkaas/{obj['job_id']}/columbo-report.json columbo-report.json", shell=True)
-    columbo_report_p = Path('columbo-report.json')
-    results = json.loads(columbo_report_p.read_text())
-    context = {
-        "obj":obj,
-        "columbo_results": results
-    }
-    rendered = tmpl.render(context)
-    html_p = Path(f"{obj['job_id']}-columbo.html")
-    html_p.write_text(rendered)
-    run.cmd_ok(f"aws s3 cp {obj['job_id']}-columbo.html s3://jenkaas/{obj['job_id']}/index.html", shell=True)
-    run.cmd_ok(f"rm -rf {html_p}")
 
 def _gen_rows():
     """ Generates reports
@@ -227,6 +242,16 @@ def list():
     table = dynamodb.Table("CIBuilds")
     response = table.scan()
     log.info(response["Items"])
+
+
+@cli.command()
+def columbo():
+    """ Update columbo reports
+    """
+    obj = Storage()
+    pool = ThreadPool()
+    pool.map(build_columbo_reports, [(prefix_id, files)
+                                     for prefix_id, files in obj.reports.items()])
 
 
 @cli.command()
