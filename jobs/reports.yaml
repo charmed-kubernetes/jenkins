@@ -12,7 +12,7 @@
       - build-discarder:
           num-to-keep: 1
     triggers:
-        - timed: "@hourly"
+        - timed: "0 */3 * * *"
     wrappers:
       - default-job-wrapper
       - ci-creds

@@ -152,11 +152,11 @@ def get_data():
 def _gen_metadata():
     """ Generates metadata
     """
-    reports = Storage()
+    _storage = Storage()
     db = OrderedDict()
     debug_host_url = "https://jenkaas.s3.amazonaws.com"
 
-    for prefix_id, files in reports.items():
+    for prefix_id, files in _storage.reports.items():
         has_metadata = any([
             name == "metadata.json"
             for name, _ in files
@@ -278,12 +278,15 @@ def migrate():
     """
     data = get_data()
     def _migrate(obj):
+        if 'build_endtime' not in obj:
+            return
+
         day = datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
         date_of_last_30 = datetime.today() - timedelta(days=30)
         if day < date_of_last_30:
             return
 
-        if 'job_id'not in obj:
+        if 'job_id' not in obj:
             return
 
         job_id = obj['job_id']
