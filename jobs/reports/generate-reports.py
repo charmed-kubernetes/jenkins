@@ -115,31 +115,59 @@ def _gen_days(numdays=30):
 
 
 def get_data():
+    storage_p = Path("storage_dill.pkl")
     log.info("Generating metadata...")
     items = []
-    log.info("Pulling from dynamo")
-    table = dynamodb.Table("CIBuilds")
 
-    # Required because only 1MB are returned
-    # See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.04.html
-    response = table.scan()
-    for item in response["Items"]:
-        items.append(item)
-    while "LastEvaluatedKey" in response:
-        response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
+    if storage_p.exists():
+        log.info("Loading local copy")
+        items = dill.loads(storage_p.read_bytes())
+    else:
+        log.info("Pulling from dynamo")
+        table = dynamodb.Table("CIBuilds")
+
+        # Required because only 1MB are returned
+        # See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.04.html
+        response = table.scan()
         for item in response["Items"]:
             items.append(item)
+        while "LastEvaluatedKey" in response:
+            response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
+            for item in response["Items"]:
+                if 'build_endtime' not in item:
+                    continue
+                day = datetime.strptime(item["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
+                date_of_last_30 = datetime.today() - timedelta(days=30)
+                if 'job_id' not in item:
+                    continue
+                if day < date_of_last_30:
+                    continue
+                log.debug(f"Adding record {item}")
+                items.append(item)
+        log.info("Storing local copy")
+        storage_p.write_bytes(dill.dumps(items))
     return items
 
 
-def _gen_metadata(items):
+def _gen_metadata():
     """ Generates metadata
     """
-
+    reports = Storage()
     db = OrderedDict()
     debug_host_url = "https://jenkaas.s3.amazonaws.com"
 
-    for obj in items:
+    for prefix_id, files in reports.items():
+        has_metadata = any([
+            name == "metadata.json"
+            for name, _ in files
+        ])
+        if not has_metadata:
+            log.debug(f"{prefix_id} :: missing metadata, skipping")
+            continue
+
+        metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
+        obj = metadata.json()
+
         if "build_endtime" not in obj:
             continue
         if 'job_id' not in obj:
@@ -150,6 +178,7 @@ def _gen_metadata(items):
         if day < date_of_last_30:
             continue
         day = day.strftime("%Y-%m-%d")
+        log.info(f"{prefix_id} :: grabbing metadata for {obj['job_name']} @ {day} report")
 
         obj["debug_host"] = debug_host_url
         if "validate" not in obj["job_name"]:
@@ -197,8 +226,7 @@ def _gen_rows():
     """ Generates reports
     """
     days = _gen_days()
-    data = get_data()
-    metadata = _gen_metadata(data)
+    metadata = _gen_metadata()
     rows = []
     for jobname, jobdays in sorted(metadata.items()):
         sub_item = [jobname]
@@ -242,6 +270,35 @@ def list():
     table = dynamodb.Table("CIBuilds")
     response = table.scan()
     log.info(response["Items"])
+
+
+@cli.command()
+def migrate():
+    """ Migrate dynamodb data
+    """
+    data = get_data()
+    def _migrate(obj):
+        day = datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
+        date_of_last_30 = datetime.today() - timedelta(days=30)
+        if day < date_of_last_30:
+            return
+
+        if 'job_id'not in obj:
+            return
+
+        job_id = obj['job_id']
+        has_metadata = requests.get(f"{REPORT_HOST}/{job_id}/metadata.json")
+        if has_metadata.ok:
+            log.debug(f"{job_id} :: metadata exists, skipping migration of {obj['job_name']} @ {day}")
+            return
+
+        metadata_p = Path(f"{job_id}-metadata.json")
+        metadata_p.write_text(json.dumps(obj))
+        log.info(f"Migrating {job_id} :: {obj['job_name']} @ {day} :: to metadata.json")
+        run.cmd_ok(f"aws s3 cp {job_id}-metadata.json s3://jenkaas/{job_id}/metadata.json", shell=True)
+        run.cmd_ok(f"rm -rf {job_id}-metadata.json", shell=True)
+    pool = ThreadPool()
+    pool.map(_migrate, data)
 
 
 @cli.command()
