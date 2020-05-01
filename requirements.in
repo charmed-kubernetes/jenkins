@@ -14,7 +14,6 @@ configobj
 canonicalwebteam.snapstoreapi
 loguru
 flake8
-flaky
 invoke
 ipdb
 jenkins-job-builder
@@ -33,7 +32,6 @@ pynacl==1.1.2
 pymacaroons
 pyyaml>=5.1.2
 pytest-asyncio==0.10.0
-pytest-timeout
 pytest-html
 pytest<5.4.0
 python-dotenv

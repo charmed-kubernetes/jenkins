@@ -56,6 +56,13 @@ class Storage:
         return _report_map
 
 
+def has_file(filename, files):
+        return any([
+            name == filename
+            for name, _ in files
+        ])
+
+
 def build_columbo_reports(data):
     prefix_id, files = data
     has_columbo = [
@@ -157,10 +164,7 @@ def _gen_metadata():
     debug_host_url = "https://jenkaas.s3.amazonaws.com"
 
     for prefix_id, files in _storage.reports.items():
-        has_metadata = any([
-            name == "metadata.json"
-            for name, _ in files
-        ])
+        has_metadata = has_file("metadata.json", files)
         if not has_metadata:
             log.debug(f"{prefix_id} :: missing metadata, skipping")
             continue
@@ -184,17 +188,11 @@ def _gen_metadata():
         if "validate" not in obj["job_name"]:
             continue
 
-        has_artifacts = any([
-            name == "artifacts.tar.gz"
-            for name, _ in files
-        ])
+        has_artifacts = has_file("artifacts.tar.gz", files)
         if has_artifacts:
             obj['artifacts'] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
 
-        has_index = any([
-            name == "index.html"
-            for name, _ in files
-        ])
+        has_index = has_file("index.html", files)
         if has_index:
             obj['columbo_results'] = f"{REPORT_HOST}/{prefix_id}/index.html"
 
