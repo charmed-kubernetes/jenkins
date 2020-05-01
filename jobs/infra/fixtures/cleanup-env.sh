@@ -1,7 +1,6 @@
 #!/bin/bash
 set -x
 
-rm -rf .tox
 
 for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
     if [ "$i" != "jaas" ]; then
@@ -17,6 +16,7 @@ sudo rm -rf /var/log/*
 docker image prune -a --filter until=24h --force
 docker container prune --filter until=24h --force
 rm -rf /var/lib/jenkins/venvs
+rm -rf /var/lib/jenkins/.tox
 
 aws --region us-east-1 ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId' | parallel aws --region us-east-1 ec2 terminate-instances --instance-ids {}
 aws --region us-east-2 ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId' | parallel aws --region us-east-2 ec2 terminate-instances --instance-ids {}
