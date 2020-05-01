@@ -186,163 +186,163 @@ async def reset_audit_config(master_app, tools):
 
 
 # START TESTS
-@pytest.mark.asyncio
-async def test_multus(model, tools, addons_model):
-    if "multus" not in addons_model.applications:
-        pytest.skip("multus is not deployed")
+# @pytest.mark.asyncio
+# async def test_multus(model, tools, addons_model):
+#     if "multus" not in addons_model.applications:
+#         pytest.skip("multus is not deployed")
 
-    unit = model.applications["kubernetes-master"].units[0]
+#     unit = model.applications["kubernetes-master"].units[0]
 
-    async def cleanup():
-        resources = ["net-attach-def flannel", "pod multus-test"]
-        for resource in resources:
-            await run_until_success(
-                unit,
-                "/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found "
-                + resource,
-            )
+#     async def cleanup():
+#         resources = ["net-attach-def flannel", "pod multus-test"]
+#         for resource in resources:
+#             await run_until_success(
+#                 unit,
+#                 "/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found "
+#                 + resource,
+#             )
 
-    await cleanup()
+#     await cleanup()
 
-    # Create NetworkAttachmentDefinition for Flannel
-    network_attachment_definition = {
-        "apiVersion": "k8s.cni.cncf.io/v1",
-        "kind": "NetworkAttachmentDefinition",
-        "metadata": {"name": "flannel"},
-        "spec": {
-            "config": json.dumps(
-                {
-                    "cniVersion": "0.3.1",
-                    "plugins": [
-                        {
-                            "type": "flannel",
-                            "delegate": {"hairpinMode": True, "isDefaultGateway": True},
-                        },
-                        {
-                            "type": "portmap",
-                            "capabilities": {"portMappings": True},
-                            "snat": True,
-                        },
-                    ],
-                }
-            )
-        },
-    }
-    remote_path = "/tmp/network-attachment-definition.yaml"
-    with NamedTemporaryFile("w") as f:
-        yaml.dump(network_attachment_definition, f)
-        await scp_to(f.name, unit, remote_path, tools.controller_name, tools.connection)
-    await run_until_success(
-        unit,
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path,
-    )
+#     # Create NetworkAttachmentDefinition for Flannel
+#     network_attachment_definition = {
+#         "apiVersion": "k8s.cni.cncf.io/v1",
+#         "kind": "NetworkAttachmentDefinition",
+#         "metadata": {"name": "flannel"},
+#         "spec": {
+#             "config": json.dumps(
+#                 {
+#                     "cniVersion": "0.3.1",
+#                     "plugins": [
+#                         {
+#                             "type": "flannel",
+#                             "delegate": {"hairpinMode": True, "isDefaultGateway": True},
+#                         },
+#                         {
+#                             "type": "portmap",
+#                             "capabilities": {"portMappings": True},
+#                             "snat": True,
+#                         },
+#                     ],
+#                 }
+#             )
+#         },
+#     }
+#     remote_path = "/tmp/network-attachment-definition.yaml"
+#     with NamedTemporaryFile("w") as f:
+#         yaml.dump(network_attachment_definition, f)
+#         await scp_to(f.name, unit, remote_path, tools.controller_name, tools.connection)
+#     await run_until_success(
+#         unit,
+#         "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path,
+#     )
 
-    # Create pod with 2 extra flannel interfaces
-    pod_definition = {
-        "apiVersion": "v1",
-        "kind": "Pod",
-        "metadata": {
-            "name": "multus-test",
-            "annotations": {"k8s.v1.cni.cncf.io/networks": "flannel, flannel"},
-        },
-        "spec": {
-            "containers": [
-                {"name": "ubuntu", "image": "ubuntu", "command": ["sleep", "3600"]}
-            ]
-        },
-    }
-    remote_path = "/tmp/pod.yaml"
-    with NamedTemporaryFile("w") as f:
-        yaml.dump(pod_definition, f)
-        await scp_to(f.name, unit, remote_path, tools.controller_name, tools.connection)
-    await run_until_success(
-        unit,
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path,
-    )
+#     # Create pod with 2 extra flannel interfaces
+#     pod_definition = {
+#         "apiVersion": "v1",
+#         "kind": "Pod",
+#         "metadata": {
+#             "name": "multus-test",
+#             "annotations": {"k8s.v1.cni.cncf.io/networks": "flannel, flannel"},
+#         },
+#         "spec": {
+#             "containers": [
+#                 {"name": "ubuntu", "image": "ubuntu", "command": ["sleep", "3600"]}
+#             ]
+#         },
+#     }
+#     remote_path = "/tmp/pod.yaml"
+#     with NamedTemporaryFile("w") as f:
+#         yaml.dump(pod_definition, f)
+#         await scp_to(f.name, unit, remote_path, tools.controller_name, tools.connection)
+#     await run_until_success(
+#         unit,
+#         "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path,
+#     )
 
-    # Verify pod has the expected interfaces
-    await run_until_success(
-        unit,
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt update",
-    )
-    await run_until_success(
-        unit,
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt install -y iproute2",
-    )
-    output = await run_until_success(
-        unit,
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- ip addr",
-    )
-    # behold, ugly output parsing :(
-    lines = output.splitlines()
-    active_interfaces = set()
-    while lines:
-        line = lines.pop(0)
-        interface = line.split()[1].rstrip(":").split("@")[0]
-        while lines and lines[0].startswith(" "):
-            line = lines.pop(0)
-            if line.split()[0] == "inet":
-                # interface has an address, we'll call that good enough
-                active_interfaces.add(interface)
-    expected_interfaces = ["eth0", "net1", "net2"]
-    for interface in expected_interfaces:
-        if interface not in active_interfaces:
-            pytest.fail(
-                "Interface %s is missing from ip addr output:\n%s" % (interface, output)
-            )
+#     # Verify pod has the expected interfaces
+#     await run_until_success(
+#         unit,
+#         "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt update",
+#     )
+#     await run_until_success(
+#         unit,
+#         "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt install -y iproute2",
+#     )
+#     output = await run_until_success(
+#         unit,
+#         "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- ip addr",
+#     )
+#     # behold, ugly output parsing :(
+#     lines = output.splitlines()
+#     active_interfaces = set()
+#     while lines:
+#         line = lines.pop(0)
+#         interface = line.split()[1].rstrip(":").split("@")[0]
+#         while lines and lines[0].startswith(" "):
+#             line = lines.pop(0)
+#             if line.split()[0] == "inet":
+#                 # interface has an address, we'll call that good enough
+#                 active_interfaces.add(interface)
+#     expected_interfaces = ["eth0", "net1", "net2"]
+#     for interface in expected_interfaces:
+#         if interface not in active_interfaces:
+#             pytest.fail(
+#                 "Interface %s is missing from ip addr output:\n%s" % (interface, output)
+#             )
 
-    await cleanup()
-
-
-@pytest.mark.asyncio
-async def test_series_upgrade(model, tools):
-    if not tools.is_series_upgrade:
-        pytest.skip("No series upgrade argument found")
-    k8s_master_0 = model.applications['kubernetes-master'].units[0]
-    old_series = k8s_master_0.machine.series
-    try:
-        new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
-    except IndexError:
-        pytest.skip("no supported series to upgrade to")
-    except ValueError:
-        pytest.skip("unrecognized series to upgrade from: {old_series}")
-    for machine in model.machines.values():
-        prep_series_upgrade(machine, new_series, tools)
-        do_series_upgrade(machine)
-        finish_series_upgrade(machine, tools)
-        assert machine.series == new_series
-    test_status_messages(model)
+#     await cleanup()
 
 
-@pytest.mark.asyncio
-@pytest.mark.clouds(['openstack'])
-async def test_cinder(model, tools):
-    # setup
-    log.info("deploying openstack-integrator")
-    series = 'bionic'
-    await model.deploy(
-        "openstack-integrator",
-        num_units=1,
-        series=series,
-        trust=True,
-    )
+# @pytest.mark.asyncio
+# async def test_series_upgrade(model, tools):
+#     if not tools.is_series_upgrade:
+#         pytest.skip("No series upgrade argument found")
+#     k8s_master_0 = model.applications['kubernetes-master'].units[0]
+#     old_series = k8s_master_0.machine.series
+#     try:
+#         new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
+#     except IndexError:
+#         pytest.skip("no supported series to upgrade to")
+#     except ValueError:
+#         pytest.skip("unrecognized series to upgrade from: {old_series}")
+#     for machine in model.machines.values():
+#         prep_series_upgrade(machine, new_series, tools)
+#         do_series_upgrade(machine)
+#         finish_series_upgrade(machine, tools)
+#         assert machine.series == new_series
+#     test_status_messages(model)
 
-    log.info("adding relations")
-    await model.add_relation("openstack-integrator", "kubernetes-master")
-    await model.add_relation("openstack-integrator", "kubernetes-worker")
-    log.info("waiting...")
-    await tools.juju_wait()
 
-    log.info("waiting for csi to settle")
-    unit = model.applications["kubernetes-master"].units[0]
-    await retry_async_with_timeout(
-        verify_ready, (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
-        timeout_msg="CSI pod not ready!"
-    )
-    # create pod that writes to a pv from cinder
-    await validate_storage_class(model, "cdk-cinder", "Cinder")
-    # cleanup
-    await model.applications["openstack-integrator"].destroy()
+# @pytest.mark.asyncio
+# @pytest.mark.clouds(['openstack'])
+# async def test_cinder(model, tools):
+#     # setup
+#     log.info("deploying openstack-integrator")
+#     series = 'bionic'
+#     await model.deploy(
+#         "openstack-integrator",
+#         num_units=1,
+#         series=series,
+#         trust=True,
+#     )
+
+#     log.info("adding relations")
+#     await model.add_relation("openstack-integrator", "kubernetes-master")
+#     await model.add_relation("openstack-integrator", "kubernetes-worker")
+#     log.info("waiting...")
+#     await tools.juju_wait()
+
+#     log.info("waiting for csi to settle")
+#     unit = model.applications["kubernetes-master"].units[0]
+#     await retry_async_with_timeout(
+#         verify_ready, (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
+#         timeout_msg="CSI pod not ready!"
+#     )
+#     # create pod that writes to a pv from cinder
+#     await validate_storage_class(model, "cdk-cinder", "Cinder")
+#     # cleanup
+#     await model.applications["openstack-integrator"].destroy()
 
 
 @pytest.mark.asyncio
