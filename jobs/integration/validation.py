@@ -311,7 +311,7 @@ async def test_series_upgrade(model, tools):
         do_series_upgrade(machine)
         finish_series_upgrade(machine, tools)
         assert machine.series == new_series
-    test_status_messages(model)
+    await test_status_messages(model)
 
 
 @pytest.mark.asyncio

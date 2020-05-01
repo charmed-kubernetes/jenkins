@@ -13,8 +13,6 @@ meta:
     destination:
       - "validations/ck/index.md"
 
-concurrent: no
-
 matrix:
   snap_version:
     - 1.19/edge
