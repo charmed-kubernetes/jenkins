@@ -25,7 +25,6 @@ from .utils import (
     disable_source_dest_check,
     verify_deleted,
     verify_ready,
-    tracefunc,
     is_localhost,
     validate_storage_class,
     SERIES_ORDER,
@@ -33,9 +32,6 @@ from .utils import (
     do_series_upgrade,
     finish_series_upgrade,
 )
-import sys
-
-sys.setprofile(tracefunc)
 
 # Quiet the noise
 ws_logger = logging.getLogger("websockets.protocol")
