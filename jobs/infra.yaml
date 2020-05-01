@@ -26,9 +26,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
-      - shell: |
-          #!/bin/bash
-          bash $WORKSPACE/jobs/infra/fixtures/cleanup-env.sh
+      - run-venv:
+          COMMAND: |
+            bash $WORKSPACE/jobs/infra/fixtures/cleanup-env.sh
       - shell: |
           #!/bin/bash
           set -eux
