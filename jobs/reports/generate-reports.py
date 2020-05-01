@@ -170,7 +170,10 @@ def _gen_metadata():
             continue
 
         metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
-        obj = metadata.json()
+        try:
+            obj = metadata.json()
+        except json.decoder.JSONDecodeError:
+            continue
 
         if "build_endtime" not in obj:
             continue
