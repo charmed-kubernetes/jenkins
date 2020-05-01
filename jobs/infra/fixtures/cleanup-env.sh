@@ -1,6 +1,8 @@
 #!/bin/bash
 set -x
 
+rm -rf .tox
+
 for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
     if [ "$i" != "jaas" ]; then
         echo "$i"
