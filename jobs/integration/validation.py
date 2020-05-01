@@ -307,9 +307,9 @@ async def test_series_upgrade(model, tools):
     except ValueError:
         pytest.skip("unrecognized series to upgrade from: {old_series}")
     for machine in model.machines.values():
-        prep_series_upgrade(machine, new_series, tools)
-        do_series_upgrade(machine)
-        finish_series_upgrade(machine, tools)
+        await prep_series_upgrade(machine, new_series, tools)
+        await do_series_upgrade(machine)
+        await finish_series_upgrade(machine, tools)
         assert machine.series == new_series
     await test_status_messages(model)
 
