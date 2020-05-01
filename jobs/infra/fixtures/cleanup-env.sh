@@ -18,10 +18,7 @@ docker image prune -a --filter until=24h --force
 docker container prune --filter until=24h --force
 rm -rf /var/lib/jenkins/venvs
 
-
-for iid in $(aws --region us-east-1 ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId'); do
-    aws --region us-east-1 ec2 terminate-instances --instance-ids "$iid"
-done
+aws --region us-east-1 ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId' | parallel -n10 aws --region us-east-1 ec2 terminate-instances --instance-ids {}
 
 for iid in $(aws --region us-east-2 ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId'); do
     aws --region us-east-2 ec2 terminate-instances --instance-ids "$iid"
