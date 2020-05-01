@@ -379,7 +379,6 @@ async def test_auth_file_propagation(model):
 
 
 @pytest.mark.asyncio
-@pytest.mark.flaky
 async def test_status_messages(model):
     """ Validate that the status messages are correct. """
     expected_messages = {
@@ -439,7 +438,6 @@ async def test_snap_versions(model):
 
 
 @pytest.mark.asyncio
-@pytest.mark.flaky
 async def test_rbac(model):
     """ Validate RBAC is actually on """
     app = model.applications["kubernetes-master"]
@@ -469,7 +467,6 @@ async def test_rbac_flag(model):
 
 @pytest.mark.asyncio
 @pytest.mark.skip_arch(["aarch64"])
-@pytest.mark.flaky
 async def test_microbot(model, tools):
     """ Validate the microbot action """
     unit = model.applications["kubernetes-worker"].units[0]
@@ -1710,7 +1707,6 @@ async def test_encryption_at_rest(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.offline
-@pytest.mark.flaky
 async def test_dns_provider(model, tools):
     master_app = model.applications["kubernetes-master"]
     master_unit = master_app.units[0]
