@@ -184,6 +184,14 @@ def _gen_metadata():
         if "validate" not in obj["job_name"]:
             continue
 
+        has_artifacts = requests.get(f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz").ok
+        if has_artifacts:
+            obj['artifacts'] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
+
+        has_index = requests.get(f"{REPORT_HOST}/{prefix_id}/index.html").ok
+        if has_index:
+            obj['columbo_results'] = f"{REPORT_HOST}/{prefix_id}/index.html"
+
         job_name = obj["job_name"]
         if "snap_version" in obj:
             job_name = f"{job_name}-{obj['snap_version']}"
