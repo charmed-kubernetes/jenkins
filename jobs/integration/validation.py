@@ -947,6 +947,7 @@ async def test_audit_default_config(model, tools):
 
 
 @pytest.mark.asyncio
+@pytest.mark.flaky(max_runs=5, min_passes=1)
 async def test_toggle_metrics(model, tools):
     """Turn metrics on/off via the 'enable-metrics' config on kubernetes-master,
     and check that workload status returns to 'active', and that the metrics-server
