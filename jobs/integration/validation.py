@@ -342,7 +342,7 @@ async def test_cinder(model, tools):
 
 
 @pytest.mark.asyncio
-async def test_auth_file_propagation(model):
+async def test_auth_file_propagation(event_loop, model):
     """Validate that changes to /root/cdk/basic_auth.csv on the leader master
     unit are propagated to the other master units.
 
@@ -679,7 +679,7 @@ async def test_network_policies(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.slow
-async def test_worker_master_removal(model, tools):
+async def test_worker_master_removal(event_loop, model, tools):
     # Add a second master
     masters = model.applications["kubernetes-master"]
     original_master_count = len(masters.units)

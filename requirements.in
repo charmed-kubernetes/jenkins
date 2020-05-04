@@ -31,9 +31,9 @@ requests
 pynacl==1.1.2
 pymacaroons
 pyyaml>=5.1.2
-pytest-asyncio==0.10.0
+pytest-asyncio
 pytest-html
-pytest<5.4.0
+pytest
 python-dotenv
 python-frontmatter
 theblues
