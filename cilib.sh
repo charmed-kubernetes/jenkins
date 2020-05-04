@@ -53,15 +53,15 @@ bootstrap_env()
 deploy_env()
 {
     tee overlay.yaml <<EOF> /dev/null
-    series: $SERIES
-    applications:
-      kubernetes-master:
-        options:
-          channel: $SNAP_VERSION
-      kubernetes-worker:
-        options:
-          channel: $SNAP_VERSION
-    EOF
+series: $SERIES
+applications:
+  kubernetes-master:
+    options:
+      channel: $SNAP_VERSION
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+EOF
 
     juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
           --overlay overlay.yaml \
