@@ -216,6 +216,7 @@ async def test_auth_file_propagation(event_loop, model):
 
 
 @pytest.mark.asyncio
+@pytest.mark.flaky(max_runs=5, min_passes=1)
 async def test_status_messages(model):
     """ Validate that the status messages are correct. """
     expected_messages = {

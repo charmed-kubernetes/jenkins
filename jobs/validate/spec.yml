@@ -67,7 +67,7 @@ plan:
           --force \
           --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
 
-    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+    wait_env
 
   execute: |
     #!/bin/bash

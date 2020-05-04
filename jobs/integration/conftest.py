@@ -7,6 +7,8 @@ import asyncio
 import uuid
 import yaml
 import requests
+from datetime import datetime
+from py.xml import html
 from juju.model import Model
 from aioify import aioify
 from .utils import upgrade_charms, upgrade_snaps, arch, log_snap_versions
@@ -264,3 +266,28 @@ def skip_by_cloud(request, cloud):
     clouds_marker = request.node.get_closest_marker("clouds")
     if clouds_marker and cloud not in clouds_marker.args[0]:
         pytest.skip("skipped on this cloud: {}".format(cloud))
+
+
+# def pytest_itemcollected(item):
+#     par = item.parent.obj
+#     node = item.obj
+#     pref = par.__doc__.strip() if par.__doc__ else par.__class__.__name__
+#     suf = node.__doc__.strip() if node.__doc__ else node.__name__
+#     if pref or suf:
+#         item._nodeid = ' '.join((pref, suf))
+
+def pytest_html_results_table_header(cells):
+    cells.insert(2, html.th('Description'))
+    cells.insert(1, html.th('Time', class_='sortable time', col='time'))
+    cells.pop()
+
+def pytest_html_results_table_row(report, cells):
+    cells.insert(2, html.td(report.description))
+    cells.insert(1, html.td(datetime.utcnow(), class_='col-time'))
+    cells.pop()
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    report.description = str(item.function.__doc__)
