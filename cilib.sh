@@ -28,9 +28,10 @@ inject_env()
 collect_env()
 {
     juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"  -o "$OGC_JOB_WORKDIR"
-    cp *.log "$OGC_JOB_WORKDIR" || true
+    cp ogc.log "$OGC_JOB_WORKDIR" || true
     cp *.xml "$OGC_JOB_WORKDIR" || true
     cp *.html "$OGC_JOB_WORKDIR" || true
+    aws s3 cp report.html s3://jenkaas/"$OGC_JOB_ID"/index.html || true
 }
 
 teardown_env()

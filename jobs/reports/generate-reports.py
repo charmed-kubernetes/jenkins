@@ -107,7 +107,7 @@ def build_columbo_reports(data):
     rendered = tmpl.render(context)
     html_p = Path(f"{prefix_id}-columbo.html")
     html_p.write_text(rendered)
-    run.cmd_ok(f"aws s3 cp {prefix_id}-columbo.html s3://jenkaas/{prefix_id}/index.html", shell=True)
+    run.cmd_ok(f"aws s3 cp {prefix_id}-columbo.html s3://jenkaas/{prefix_id}/columbo.html", shell=True)
     run.cmd_ok(f"rm -rf {html_p}")
 
 
