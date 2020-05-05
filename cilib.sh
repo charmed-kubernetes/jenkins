@@ -31,6 +31,10 @@ collect_env()
     cp ogc.log "$OGC_JOB_WORKDIR" || true
     cp *.xml "$OGC_JOB_WORKDIR" || true
     cp *.html "$OGC_JOB_WORKDIR" || true
+
+    # Run at end of collection
+    ogc-collect stats
+    aws s3 cp "$OGC_JOB_WORKDIR"/metadata.json s3://jenkaas/"$OGC_JOB_ID"/metadata.json || true
     aws s3 cp report.html s3://jenkaas/"$OGC_JOB_ID"/index.html || true
 }
 
