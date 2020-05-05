@@ -4,6 +4,7 @@ aioify>=0.3.2
 async-generator
 asyncio-extras
 autopep8
+aiocontextvars
 awscli>=1.18.3
 ansible
 black
@@ -22,6 +23,7 @@ juju-wait
 juju>=2.7.1
 jujubundlelib
 kv
+loguru
 mkdocs-material
 mkdocs
 ogc-plugins-juju>=1.0.35

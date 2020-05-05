@@ -4,6 +4,7 @@
 #
 #    pip-compile
 #
+aiocontextvars==0.2.2     # via -r requirements.in
 aioify==0.3.2             # via -r requirements.in
 ansible==2.9.7            # via -r requirements.in
 appdirs==1.4.3            # via black
@@ -12,13 +13,13 @@ async-generator==1.10     # via -r requirements.in, asyncio-extras
 asyncio-extras==1.3.2     # via -r requirements.in
 attrs==19.3.0             # via black, pytest
 autopep8==1.5.2           # via -r requirements.in
-awscli==1.18.51           # via -r requirements.in
+awscli==1.18.52           # via -r requirements.in
 backcall==0.1.0           # via ipython
 bcrypt==3.1.7             # via paramiko
 beautifulsoup4==4.9.0     # via bs4
 black==19.10b0            # via -r requirements.in
-boto3==1.13.1             # via -r requirements.in
-botocore==1.16.1          # via awscli, boto3, s3transfer
+boto3==1.13.2             # via -r requirements.in
+botocore==1.16.2          # via awscli, boto3, s3transfer
 bs4==0.0.1                # via -r requirements.in
 canonicalwebteam.snapstoreapi==0.4.4  # via -r requirements.in
 certifi==2020.4.5.1       # via requests
@@ -112,7 +113,7 @@ pyparsing==2.4.7          # via packaging
 pyrfc3339==1.1            # via juju, macaroonbakery
 pytest-asyncio==0.12.0    # via -r requirements.in
 pytest-html==2.1.1        # via -r requirements.in
-pytest-metadata==1.8.0    # via pytest-html
+pytest-metadata==1.9.0    # via pytest-html
 pytest==5.4.1             # via -r requirements.in, pytest-asyncio, pytest-html, pytest-metadata
 python-dateutil==2.8.1    # via botocore, canonicalwebteam.snapstoreapi
 python-dotenv==0.10.3     # via -r requirements.in, ogc
