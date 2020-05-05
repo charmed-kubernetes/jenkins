@@ -16,6 +16,7 @@ canonicalwebteam.snapstoreapi
 loguru
 flake8
 invoke
+importlib-metadata
 ipdb
 jenkins-job-builder
 jinja2
