@@ -11,6 +11,7 @@ black
 boto3
 bs4
 columbo>=0.0.4
+contextvars
 configobj
 canonicalwebteam.snapstoreapi
 loguru
