@@ -12,6 +12,7 @@ from py.xml import html
 from juju.model import Model
 from aioify import aioify
 from .utils import upgrade_charms, upgrade_snaps, arch, log_snap_versions
+from cilib import run
 
 
 def pytest_addoption(parser):
@@ -276,6 +277,9 @@ def skip_by_cloud(request, cloud):
 #     if pref or suf:
 #         item._nodeid = ' '.join((pref, suf))
 
+def pytest_html_report_title(report)
+   report.title = "Validation Result"
+
 def pytest_html_results_table_header(cells):
     cells.insert(2, html.th('Description'))
     cells.insert(1, html.th('Time', class_='sortable time', col='time'))
@@ -291,3 +295,9 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
     report.description = str(item.function.__doc__)
+
+@pytest.mark.optionalhook
+def pytest_metadata(metadata):
+    custom_name = run.capture("ogc-collect get-key job_name_custom")
+    if custom_name.ok:
+        metadata['JOB_NAME'] = custom_name.stdout.decode()
