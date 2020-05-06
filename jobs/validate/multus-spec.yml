@@ -44,11 +44,11 @@ plan:
 
     setup_env
 
-    # use juju client from edge because we need 2.8
+    # use juju client from beta because we need 2.8
     # use a copy of juju data to minimize risk to system-wide data
     cp -r "${JUJU_DATA:-$HOME/.local/share/juju}" juju-data
 
-    HTTP_PROXY=http://squid.internal:3128 HTTPS_PROXY=http://squid.internal:3128 snap download juju --channel edge
+    HTTP_PROXY=http://squid.internal:3128 HTTPS_PROXY=http://squid.internal:3128 snap download juju --channel beta
     unsquashfs -d "$WORKSPACE/juju-snap" juju*.snap
     export JUJU_DATA="$WORKSPACE/juju-data"
     export PATH="$WORKSPACE/juju-snap/bin:$PATH"
