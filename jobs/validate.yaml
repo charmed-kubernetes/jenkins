@@ -20,11 +20,8 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
-          COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/spec.yml
+      - shell: |
+          parallel bash jobs/validate/spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 
 - job:

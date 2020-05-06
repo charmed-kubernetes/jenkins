@@ -1,0 +1,83 @@
+#!/bin/bash
+
+set -x
+
+LONG_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+ID=$(echo $LONG_ID | cut -f1 -d-)
+export SNAP_VERSION=${1:-1.19/edge}
+export SERIES=${2:-bionic}
+export JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+export JUJU_DEPLOY_CHANNEL=${3:-edge}
+export JUJU_CLOUD=aws/us-east-2
+export JUJU_CONTROLLER=validate-$ID
+export JUJU_MODEL=validate-ck
+export ARCH=${4:-amd64}
+export JOB_NAME_CUSTOM="validate-ck-$SERIES-$SNAP_VERSION"
+
+tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX)
+echo "Building in $tmp_dir"
+
+function cleanup
+{
+    if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
+            timeout 2m juju kill-controller -y "$JUJU_CONTROLLER" || true
+    fi
+    juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$tmp_dir"
+    (cd $tmp_dir && tar cvzf artifacts.tar.gz * || true)
+    tox --workdir .tox -e py3 -- columbo --output-dir "$tmp_dir/_out" "$tmp_dir/artifacts.tar.gz"
+    aws s3 cp "$tmp_dir/_out/columbo-report.json" s3://jenkaas/$LONG_ID/columbo-report.json || true
+    aws s3 cp "$tmp_dir/metadata.json" s3://jenkaas/$LONG_ID/metadata.json || true
+    aws s3 cp "$tmp_dir/report.html" s3://jenkaas/$LONG_ID/index.html || true
+    aws s3 cp "$tmp_dir/artifacts.tar.gz" s3://jenkaas/$LONG_ID/artifacts.tar.gz || true
+    rm -rf $tmp_dir
+}
+trap cleanup EXIT
+
+
+{
+    build_starttime=$(python -c "from datetime import datetime; print(datetime.utcnow().isoformat())")
+
+    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
+         -d $JUJU_MODEL \
+         --bootstrap-series $SERIES \
+         --force \
+         --bootstrap-constraints arch=$ARCH \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+
+    tee overlay.yaml <<EOF> /dev/null
+series: $SERIES
+applications:
+  kubernetes-master:
+    options:
+      channel: $SNAP_VERSION
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+EOF
+
+    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+         --overlay overlay.yaml \
+         --force \
+         --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
+
+    echo "Waiting for deployment to settle..."
+    timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+    deploy_endtime=$(python -c "from datetime import datetime; print(datetime.utcnow().isoformat())")
+
+    timeout 2h tox --workdir .tox -e py3 -- pytest \
+            --html="$tmp_dir/report.html" \
+            jobs/integration/validation.py \
+            --cloud $JUJU_CLOUD \
+            --model $JUJU_MODEL \
+            --controller $JUJU_CONTROLLER
+
+    ret=$?
+    result="True"
+    if (( $ret > 0 )); then
+        result="False"
+    fi
+    python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$LONG_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': $build_starttime, 'deploy_endtime': $deploy_endtime}))" | tee "$tmp_dir/metadata.json"
+
+} 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$tmp_dir/ci.log"
