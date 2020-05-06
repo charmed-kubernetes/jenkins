@@ -195,9 +195,9 @@ def _gen_metadata():
         if has_artifacts:
             obj['artifacts'] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
 
-        has_index = has_file("index.html", files)
+        has_index = has_file("columbo.html", files)
         if has_index:
-            obj['columbo_results'] = f"{REPORT_HOST}/{prefix_id}/index.html"
+            obj['columbo_results'] = f"{REPORT_HOST}/{prefix_id}/columbo.html"
 
         job_name = obj["job_name"]
         if "snap_version" in obj:
