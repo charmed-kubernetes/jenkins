@@ -21,7 +21,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - shell: |
-          parallel bash jobs/validate/spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+          parallel --ungroup bash jobs/validate/spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 
 - job:

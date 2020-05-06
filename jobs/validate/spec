@@ -13,6 +13,7 @@ export JUJU_CONTROLLER=validate-$ID
 export JUJU_MODEL=validate-ck
 export ARCH=${4:-amd64}
 export JOB_NAME_CUSTOM="validate-ck-$SERIES-$SNAP_VERSION"
+export PATH=/snap/bin:$PATH
 
 tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX)
 echo "Building in $tmp_dir"
