@@ -14,6 +14,7 @@ export JUJU_MODEL=validate-ck
 export ARCH=${4:-amd64}
 export JOB_NAME_CUSTOM="validate-ck-$SERIES-$SNAP_VERSION"
 export PATH=/snap/bin:$PATH
+export TOX_WORK_DIR=.tox
 
 tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX)
 echo "Building in $tmp_dir"
@@ -67,7 +68,7 @@ EOF
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
     deploy_endtime=$(python -c "from datetime import datetime; print(datetime.utcnow().isoformat())")
 
-    timeout 2h tox --workdir .tox -e py3 -- pytest \
+    timeout 2h tox -e py3 -- pytest \
             --html="$tmp_dir/report.html" \
             jobs/integration/validation.py \
             --cloud $JUJU_CLOUD \
@@ -79,6 +80,6 @@ EOF
     if (( $ret > 0 )); then
         result="False"
     fi
-    python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$LONG_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': $build_starttime, 'deploy_endtime': $deploy_endtime}))" | tee "$tmp_dir/metadata.json"
+    python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$LONG_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': '$build_starttime', 'deploy_endtime': '$deploy_endtime'}))" | tee "$tmp_dir/metadata.json"
 
 } 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$tmp_dir/ci.log"
