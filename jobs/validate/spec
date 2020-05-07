@@ -14,7 +14,6 @@ export JUJU_MODEL=validate-ck
 export ARCH=${4:-amd64}
 export JOB_NAME_CUSTOM="validate-ck-$SERIES-$SNAP_VERSION"
 export PATH=/snap/bin:$PATH
-export TOX_WORK_DIR=.tox
 
 tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX)
 echo "Building in $tmp_dir"
@@ -26,7 +25,7 @@ function cleanup
     fi
     juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$tmp_dir"
     (cd $tmp_dir && tar cvzf artifacts.tar.gz * || true)
-    tox --workdir .tox -e py3 -- columbo --output-dir "$tmp_dir/_out" "$tmp_dir/artifacts.tar.gz"
+    TOX_WORK_DIR=.tox tox -e py3 -- columbo --output-dir "$tmp_dir/_out" "$tmp_dir/artifacts.tar.gz"
     aws s3 cp "$tmp_dir/_out/columbo-report.json" s3://jenkaas/$LONG_ID/columbo-report.json || true
     aws s3 cp "$tmp_dir/metadata.json" s3://jenkaas/$LONG_ID/metadata.json || true
     aws s3 cp "$tmp_dir/report.html" s3://jenkaas/$LONG_ID/index.html || true
@@ -68,7 +67,7 @@ EOF
     timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
     deploy_endtime=$(python -c "from datetime import datetime; print(datetime.utcnow().isoformat())")
 
-    timeout 2h tox -e py3 -- pytest \
+    TOX_WORK_DIR=.tox timeout 2h tox -e py3 -- pytest \
             --html="$tmp_dir/report.html" \
             jobs/integration/validation.py \
             --cloud $JUJU_CLOUD \
