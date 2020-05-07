@@ -19,6 +19,7 @@ set -ex
 # Override test::execute from sourced juju.bash to account for snap upgrades
 function test::execute
 {
+    declare -n is_pass=$1
     TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py3 -- pytest \
                 --html="$TMP_DIR/report.html" \
                 jobs/integration/validation.py \
@@ -29,11 +30,10 @@ function test::execute
                 --model "$JUJU_MODEL" \
                 --controller "$JUJU_CONTROLLER"
     ret=$?
-    result="True"
+    is_pass="True"
     if (( $ret > 0 )); then
-        result="False"
+        is_pass="False"
     fi
-    echo "$result"
 }
 
 # Setup Environment
@@ -62,7 +62,7 @@ compile::env
 
     deploy_endtime=$(timestamp)
 
-    result=$(test::execute)
+    test::execute result
     test::report "$result" "$build_starttime" "$deploy_endtime"
 
 } 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$TMP_DIR/ci.log"

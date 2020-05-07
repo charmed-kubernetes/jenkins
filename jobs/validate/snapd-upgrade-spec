@@ -11,6 +11,7 @@ set -ex
 
 function test::execute
 {
+    declare -n is_pass=$1
     TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py3 -- pytest \
                 --html="$TMP_DIR/report.html" \
                 jobs/integration/validation.py \
@@ -21,11 +22,10 @@ function test::execute
                 --snapd-channel "$TEST_UPGRADE_SNAPD_CHANNEL"
 
     ret=$?
-    result="True"
+    is_pass="True"
     if (( $ret > 0 )); then
-        result="False"
+        is_pass="False"
     fi
-    printf "%s" "$result"
 }
 
 # Setup Environment
@@ -50,7 +50,7 @@ compile::env
 
     juju::bootstrap
 
-    result=$(test::execute)
+    test::execute result
     deploy_endtime=$(timestamp)
 
     test::report "$result" "$build_starttime" "$deploy_endtime"

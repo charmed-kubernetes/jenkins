@@ -35,7 +35,7 @@ compile::env
 
     deploy_endtime=$(timestamp)
 
-    result=$(test::execute)
+    test::execute result
     test::report "$result" "$build_starttime" "$deploy_endtime"
 
 } 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$TMP_DIR/ci.log"

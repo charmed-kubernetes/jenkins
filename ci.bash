@@ -37,8 +37,11 @@ function timestamp
 }
 
 # Run pytest
+#
+# Returns str: True or False
 function test::execute
 {
+    declare -n is_pass=$1
     TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py3 -- pytest \
                 --html="$TMP_DIR/report.html" \
                 jobs/integration/validation.py \
@@ -46,11 +49,10 @@ function test::execute
                 --model "$JUJU_MODEL" \
                 --controller "$JUJU_CONTROLLER"
     ret=$?
-    result="True"
+    is_pass="True"
     if (( $ret > 0 )); then
-        result="False"
+        is_pass="False"
     fi
-    echo "$result"
 }
 
 # store test report
