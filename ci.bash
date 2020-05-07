@@ -70,6 +70,8 @@ function test::report
 function ci::run
 {
     compile::env
+
+    local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
         build_starttime=$(timestamp)
 
@@ -82,7 +84,7 @@ function ci::run
         test::execute result
         test::report "$result" "$build_starttime" "$deploy_endtime"
 
-    } 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$TMP_DIR/ci.log"
+    } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee "$TMP_DIR/ci.log"
 }
 
 
