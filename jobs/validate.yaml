@@ -23,33 +23,8 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --ungroup bash jobs/validate/spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: arm64 amd64
-            parallel --ungroup bash jobs/validate/upgrade-spec {1} {2} ::: 1.18/stable 1.17/stable 1.16/stable ::: focal bionic xenial ::: edge ::: arm64 amd64
-
-- job:
-    name: 'validate-ck-arm64'
-    node: runner-arm64
-    description: |
-      Validates CDK edge on ARM, supports last three recent releases.
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    properties:
-      - build-discarder:
-          num-to-keep: 3
-    triggers:
-        - timed: "@daily"
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
-          COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/ck-arm-spec.yml
+            parallel --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: arm64 amd64
+            parallel --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} ::: 1.18/stable 1.17/stable 1.16/stable ::: focal bionic xenial ::: edge ::: arm64 amd64
 
 - job:
     name: 'validate-ck-snapd-upgrade'
@@ -102,8 +77,6 @@
 
 
 # ADDONS --------------------------------------------------------------------- #
-
-
 - job:
     name: 'validate-ck-localhost'
     node: runner-validate

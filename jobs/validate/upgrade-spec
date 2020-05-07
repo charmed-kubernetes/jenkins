@@ -1,22 +1,72 @@
 #!/bin/bash
-#
-# Upgrade spec
-#
-# Tests upgrading from current stable versions to latest edge
-
-
 # shellcheck disable=SC2034,SC1090
 
 set -ex
 
-# Init
+###############################################################################
+# INITIALIZE
+###############################################################################
 : "${WORKSPACE:=$(pwd)}"
 
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
 
-# Override test::execute from sourced juju.bash to account for snap upgrades
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function juju::bootstrap
+{
+    local constraints
+    if [[ "$ARCH" = "arm64" ]]; then
+        constraints="instance-type=a1.large arch=$ARCH"
+    else
+        constraints="arch=$ARCH"
+    fi
+
+    juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
+         -d "$JUJU_MODEL" \
+         --bootstrap-series "$SERIES" \
+         --force \
+         --bootstrap-constraints "$constraints" \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+}
+
+function juju::deploy
+{
+    local constraints
+    if [[ "$ARCH" = "arm64" ]]; then
+        constraints="instance-type=a1.large arch=$ARCH"
+    else
+        constraints="arch=$ARCH"
+    fi
+
+    tee overlay.yaml <<EOF> /dev/null
+series: $SERIES
+applications:
+  easyrsa:
+    constraints: $constraints root-disk=8G
+  etcd:
+    constraints: $constraints root-disk=8G
+  kubeapi-load-balancer:
+    constraints: $constraints
+  kubernetes-master:
+    constraints: $constraints root-disk=16G
+    options:
+      channel: $SNAP_VERSION
+  kubernetes-worker:
+    constraints: $constraints root-disk=16G
+    options:
+      channel: $SNAP_VERSION
+EOF
+    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
+         --overlay overlay.yaml \
+         --force \
+         --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
+}
+
 function test::execute
 {
     declare -n is_pass=$1
@@ -36,7 +86,9 @@ function test::execute
     fi
 }
 
-# Setup Environment
+###############################################################################
+# ENV
+###############################################################################
 LONG_ID=$(identifier)
 ID=$(echo "$LONG_ID" | cut -f1 -d-)
 
@@ -52,4 +104,7 @@ ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-upgrade-$SERIES-$SNAP_VERSION"
 TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
+###############################################################################
+# START
+###############################################################################
 ci::run
