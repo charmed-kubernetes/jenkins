@@ -5,7 +5,7 @@
     name: 'validate-ck'
     node: runner-validate
     description: |
-      Validates CDK edge, supports last three recent releases additionally
+      Validates CDK edge on amd64 and arm64, supports last three recent releases additionally
       validates upgrades from current stables to latest edge.
     project-type: freestyle
     scm:
@@ -23,9 +23,8 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --ungroup bash jobs/validate/spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
-            parallel --ungroup bash jobs/validate/upgrade-spec {1} {2} ::: 1.18/stable 1.17/stable 1.16/stable ::: focal bionic xenial
-
+            parallel --ungroup bash jobs/validate/spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: arm64 amd64
+            parallel --ungroup bash jobs/validate/upgrade-spec {1} {2} ::: 1.18/stable 1.17/stable 1.16/stable ::: focal bionic xenial ::: edge ::: arm64 amd64
 
 - job:
     name: 'validate-ck-arm64'
@@ -40,7 +39,7 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
     triggers:
         - timed: "@daily"
     builders:
@@ -254,11 +253,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/ceph-spec.yml
+            parallel --ungroup bash jobs/validate/ceph-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic
 
 - job:
     name: 'validate-ck-nfs'
@@ -279,11 +276,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/nfs-spec.yml
+            parallel --ungroup bash jobs/validate/nfs-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 
 - job:
@@ -299,17 +294,16 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
     triggers:
         - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/nvidia-spec.yml
+            parallel --ungroup bash jobs/validate/nvidia-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+
 
 - job:
     name: 'validate-ck-aws-iam'
@@ -356,11 +350,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/nagios-spec.yml
+            parallel --ungroup bash jobs/validate/nagios-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 - job:
     name: 'validate-ck-multus'

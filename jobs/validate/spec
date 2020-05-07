@@ -3,14 +3,39 @@
 
 set -ex
 
-# Init
+###############################################################################
+# INITIALIZE
+###############################################################################
 : "${WORKSPACE:=$(pwd)}"
 
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function juju::bootstrap
+{
+    local constraints
+    if [[ "$ARCH" = "arm64" ]]; then
+        constraints="instance-type=a1.large"
+    else
+        constraints="arch=$ARCH"
+    fi
 
-# Setup Environment
+    juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
+         -d "$JUJU_MODEL" \
+         --bootstrap-series "$SERIES" \
+         --force \
+         --bootstrap-constraints "$constraints" \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily
+}
+
+###############################################################################
+# ENV
+###############################################################################
 LONG_ID=$(identifier)
 ID=$(echo "$LONG_ID" | cut -f1 -d-)
 
@@ -22,20 +47,11 @@ JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$ID
 JUJU_MODEL=validate-ck
 ARCH=${4:-amd64}
-JOB_NAME_CUSTOM="validate-ck-$SERIES-$SNAP_VERSION"
+JOB_NAME_CUSTOM="validate-ck-$ARCH-$SERIES-$SNAP_VERSION"
 TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
-compile::env
-{
-    build_starttime=$(timestamp)
 
-    juju::bootstrap
-    juju::deploy
-    juju::wait
-
-    deploy_endtime=$(timestamp)
-
-    test::execute result
-    test::report "$result" "$build_starttime" "$deploy_endtime"
-
-} 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$TMP_DIR/ci.log"
+###############################################################################
+# START
+###############################################################################
+ci::run

@@ -66,12 +66,30 @@ function test::report
 }
 
 
-# cleanup function
-function cleanup
+# Entrypoint to start the deployment, testing, reporting
+function ci::run
 {
-    if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
-            timeout 2m juju kill-controller -y "$JUJU_CONTROLLER" || true
-    fi
+    compile::env
+    {
+        build_starttime=$(timestamp)
+
+        juju::bootstrap
+        juju::deploy
+        juju::wait
+
+        deploy_endtime=$(timestamp)
+
+        test::execute result
+        test::report "$result" "$build_starttime" "$deploy_endtime"
+
+    } 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$TMP_DIR/ci.log"
+}
+
+
+
+# cleanup function
+function ci::cleanup
+{
     if which juju-crashdump; then
         juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMP_DIR"
     fi
@@ -85,7 +103,12 @@ function cleanup
     "$aws_cli" s3 cp "$TMP_DIR/metadata.json" s3://jenkaas/"$LONG_ID"/metadata.json || true
     "$aws_cli" s3 cp "$TMP_DIR/report.html" s3://jenkaas/"$LONG_ID"/index.html || true
     "$aws_cli" s3 cp "$TMP_DIR/artifacts.tar.gz" s3://jenkaas/"$LONG_ID"/artifacts.tar.gz || true
+
+    if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
+            timeout 2m juju kill-controller -y "$JUJU_CONTROLLER" || true
+    fi
+
     rm -rf "$TMP_DIR"
 }
-trap cleanup EXIT
+trap ci::cleanup EXIT
 

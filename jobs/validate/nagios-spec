@@ -1,10 +1,4 @@
 #!/bin/bash
-#
-# Upgrade spec
-#
-# Tests upgrading from current stable versions to latest edge
-
-
 # shellcheck disable=SC2034,SC1090
 
 set -ex
@@ -16,16 +10,12 @@ set -ex
 . "$WORKSPACE/juju.bash"
 
 
-# Override test::execute from sourced juju.bash to account for snap upgrades
 function test::execute
 {
     declare -n is_pass=$1
     TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py3 -- pytest \
                 --html="$TMP_DIR/report.html" \
-                jobs/integration/validation.py \
-                --is-upgrade \
-                --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
-                --upgrade-charm-channel edge \
+                jobs/integration/test_nagios.py::test_nagios \
                 --cloud "$JUJU_CLOUD" \
                 --model "$JUJU_MODEL" \
                 --controller "$JUJU_CONTROLLER"
@@ -36,20 +26,20 @@ function test::execute
     fi
 }
 
+
 # Setup Environment
 LONG_ID=$(identifier)
 ID=$(echo "$LONG_ID" | cut -f1 -d-)
 
-SNAP_VERSION_UPGRADE_TO=1.19/edge
-SNAP_VERSION=${1:-1.16/stable}
+SNAP_VERSION=${1:-1.19/edge}
 SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${3:-stable}
+JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$ID
-JUJU_MODEL=validate-upgrade
+JUJU_MODEL=validate-ck
 ARCH=${4:-amd64}
-JOB_NAME_CUSTOM="validate-ck-upgrade-$SERIES-$SNAP_VERSION"
+JOB_NAME_CUSTOM="validate-ck-nagios-$SERIES-$SNAP_VERSION"
 TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 ci::run
