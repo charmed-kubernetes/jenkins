@@ -298,8 +298,8 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.mark.optionalhook
 def pytest_metadata(metadata):
-    custom_name = run.capture("ogc-collect get-key job_name_custom", shell=True)
-    if custom_name.ok:
-        metadata['JOB_NAME'] = custom_name.stdout.decode()
+    custom_name = os.environ.get('JOB_NAME_CUSTOM', None)
+    if custom_name:
+        metadata['JOB_NAME'] = custom_name
         metadata['ARTIFACTS'] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['OGC_JOB_ID']}/artifacts.tar.gz'>Download Artifacts</a>"
         metadata['ANALYTICS'] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['OGC_JOB_ID']}/columbo.html'>View Report</a>"
