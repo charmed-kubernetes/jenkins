@@ -9,6 +9,24 @@ set -ex
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
+function test::execute
+{
+    TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py3 -- pytest \
+                --html="$TMP_DIR/report.html" \
+                jobs/integration/validation.py \
+                --cloud "$JUJU_CLOUD" \
+                --model "$JUJU_MODEL" \
+                --controller "$JUJU_CONTROLLER" \
+                --snapd-upgrade \
+                --snapd-channel "$TEST_UPGRADE_SNAPD_CHANNEL"
+
+    ret=$?
+    result="True"
+    if (( $ret > 0 )); then
+        result="False"
+    fi
+    printf "%s" "$result"
+}
 
 # Setup Environment
 LONG_ID=$(identifier)
@@ -21,8 +39,9 @@ JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$ID
 JUJU_MODEL=validate-ck
+TEST_UPGRADE_SNAPD_CHANNEL=beta
 ARCH=${4:-amd64}
-JOB_NAME_CUSTOM="validate-ck-$SERIES-$SNAP_VERSION"
+JOB_NAME_CUSTOM="validate-ck-snapd-upgrade-$SERIES-$SNAP_VERSION"
 TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 compile::env
@@ -30,12 +49,10 @@ compile::env
     build_starttime=$(timestamp)
 
     juju::bootstrap
-    juju::deploy
-    juju::wait
-
-    deploy_endtime=$(timestamp)
 
     result=$(test::execute)
+    deploy_endtime=$(timestamp)
+
     test::report "$result" "$build_starttime" "$deploy_endtime"
 
 } 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$TMP_DIR/ci.log"

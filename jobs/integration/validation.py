@@ -1386,6 +1386,8 @@ data:
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.skip_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
+    """ Testing integrating vault secrets into cluster
+    """
     try:
         click.echo("Deploying model")
         # setup

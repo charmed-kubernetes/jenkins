@@ -282,6 +282,19 @@
           venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
 
 - builder:
+    name: run-env
+    builders:
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          {COMMAND}
+
+
+- builder:
     name: run-venv
     builders:
       - shell: |-
@@ -306,6 +319,7 @@
     name: default-job-wrapper
     wrappers:
       - ansicolor
+      - timestamps
       - workspace-cleanup
 
 - wrapper:

@@ -5,7 +5,8 @@
     name: 'validate-ck'
     node: runner-validate
     description: |
-      Validates CDK edge, supports last three recent releases.
+      Validates CDK edge, supports last three recent releases additionally
+      validates upgrades from current stables to latest edge.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -14,14 +15,16 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
     triggers:
         - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - shell: |
-          parallel --ungroup bash jobs/validate/spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+      - run-env:
+          COMMAND: |
+            parallel --ungroup bash jobs/validate/spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+            parallel --ungroup bash jobs/validate/upgrade-spec {1} {2} ::: 1.18/stable 1.17/stable 1.16/stable ::: focal bionic xenial
 
 
 - job:
@@ -49,37 +52,6 @@
             venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
             venv/bin/ogc --spec jobs/validate/ck-arm-spec.yml
 
-
-- job:
-    name: 'validate-ck-upgrade'
-    node: runner-validate
-    description: |
-      Validates CDK minor release upgrades, supports last three recent releases.
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    triggers:
-        - timed: "@daily"
-    parameters:
-      - string:
-          name: SNAP_VERSION_UPGRADE_TO
-          description: |
-            Version of snap to upgrade to and test against, ie 1.16/stable
-    properties:
-      - build-discarder:
-          num-to-keep: 7
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
-          COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/upgrade-spec.yml
-
 - job:
     name: 'validate-ck-snapd-upgrade'
     node: runner-validate
@@ -99,11 +71,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/snapd-upgrade-spec.yml
+            parallel --ungroup bash jobs/validate/snapd-upgrade-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 
 - job:
@@ -255,17 +225,15 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
     triggers:
         - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/vault-spec.yml
+            parallel --ungroup bash jobs/validate/vault-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 - job:
     name: 'validate-ck-ceph'
@@ -280,7 +248,7 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
     triggers:
         - timed: "@daily"
     builders:

@@ -94,3 +94,11 @@ print(unit[units[0]]['public-address'])
 "
     juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" "$1" --format yaml | env python3 -c "$py_script"
 }
+
+# Grabs current directory housing script ($0)
+#
+# Arguments:
+# $0: current script
+scriptPath() {
+    env python3 -c "import os,sys; print(os.path.dirname(os.path.abspath(\"$0\")))"
+}
