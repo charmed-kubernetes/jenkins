@@ -76,6 +76,11 @@ function test::report
 # Entrypoint to start the deployment, testing, reporting
 function ci::run
 {
+    ci::venv venv_p
+    set +u
+    source "$venv_p"/bin/activate
+    set -u
+
     compile::env
 
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
@@ -98,28 +103,33 @@ function ci::run
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "$TMP_DIR/ci.log"
 }
 
+# get latest python on system
+function ci::py
+{
+    local python_p="python3"
+
+    if [[ -f /usr/bin/python3.6 ]]; then
+        python_p="python3.6"
+    elif [[ -f /usr/bin/python3.7 ]]; then
+        python_p="python3.7"
+    fi
+    echo "$python_p"
+}
+
 # create a virtualenv for python
 function ci::venv
 {
     declare -n _venv_p=$1
     _venv_p="$TMP_DIR/$(identifier::short)"
 
-    local python_p="python3"
-
-    if which python3.6; then
-        python_p="python3.6"
-    elif which python3.7; then
-        python_p="python3.7"
-    fi
-    echo "$python_p"
-    virtualenv "$_venv_p" -p "$python_p"
+    virtualenv "$_venv_p" -p "$(ci::py)"
 }
 
 # tox environment to use
 function ci::toxpy
 {
     local python_p="py36"
-    if which python3.7; then
+    if [[ -f /usr/bin/python3.7 ]]; then
         python_p="py37"
     fi
     echo "$python_p"
