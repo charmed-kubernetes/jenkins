@@ -28,18 +28,17 @@ function test::execute
 
 
 # Setup Environment
-LONG_ID=$(identifier)
-ID=$(echo "$LONG_ID" | cut -f1 -d-)
 
 SNAP_VERSION=${1:-1.19/edge}
 SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
-JUJU_CONTROLLER=validate-$ID
+JUJU_CONTROLLER=validate
 JUJU_MODEL=validate-ck
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-nfs-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
 TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 ci::run

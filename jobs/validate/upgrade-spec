@@ -89,19 +89,17 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-LONG_ID=$(identifier)
-ID=$(echo "$LONG_ID" | cut -f1 -d-)
-
 SNAP_VERSION_UPGRADE_TO=1.19/edge
 SNAP_VERSION=${1:-1.16/stable}
 SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-stable}
 JUJU_CLOUD=aws/us-east-2
-JUJU_CONTROLLER=validate-$ID
+JUJU_CONTROLLER=validate
 JUJU_MODEL=validate-upgrade
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-upgrade-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
 TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 ###############################################################################
