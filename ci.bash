@@ -94,6 +94,31 @@ function ci::run
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "$TMP_DIR/ci.log"
 }
 
+# create a virtualenv for python
+function ci::venv
+{
+    local python_p="python3"
+    local venv_p="$TMP_DIR/$(identifier::short)"
+
+    if which python3.6; then
+        python_p="python3.6"
+    elif which python3.7; then
+        python_p="python3.7"
+    fi
+    echo "$python_p"
+    virtualenv "$venv_p" -p "$python_p"
+    echo "$venv_p"
+}
+
+# tox environment to use
+function ci::toxpy
+{
+    local python_p="py36"
+    if which python3.7; then
+        python_p="py37"
+    fi
+    echo "$python_p"
+}
 
 
 # cleanup function
@@ -105,14 +130,7 @@ function ci::cleanup
             juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMP_DIR"
         fi
         (cd "$TMP_DIR" && tar cvzf artifacts.tar.gz *)
-        venv_p="$TMP_DIR/cleanupvenv"
-        python_p="python3"
-        if which python3.6; then
-            python_p="python3.6"
-        elif which python3.7; then
-            python_p="python3.7"
-        fi
-        virtualenv "$venv_p" -p "$python_p"
+        venv_p=$(ci::venv)
         "$venv_p"/bin/python -m pip install awscli columbo
         "$venv_p"/bin/columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz" || true
         aws_cli="$venv_p/bin/aws"

@@ -1,0 +1,45 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -ex
+
+# Init
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+
+function test::execute
+{
+    declare -n is_pass=$1
+
+    TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e $(ci::toxpy) -- pytest \
+                --html="$TMP_DIR/report.html" \
+                jobs/integration/test_aws_iam.py \
+                --cloud "$JUJU_CLOUD" \
+                --model "$JUJU_MODEL" \
+                --controller "$JUJU_CONTROLLER"
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+
+# Setup Environment
+
+SNAP_VERSION=${1:-1.19/edge}
+SERIES=${2:-bionic}
+JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_CLOUD=aws/us-east-2
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-ck
+ARCH=${4:-amd64}
+JOB_NAME_CUSTOM="validate-ck-aws-iam-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
+TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
+
+ci::run
