@@ -19,8 +19,8 @@
             <td class="align-middle">{{ row[0] }}</td>
             {% for day in row[1:] %}
             <td class="text-center align-middle" style="background-color: {{day.bg_color}}">
-              {% if day.columbo_results %}
-              <a class="download-link" href="/{{ day.job_id }}/index.html"><i class="fas fa-file-alt"></i></a>
+              {% if day.index %}
+              <a class="download-link" href="{{day.index}}"><i class="fas fa-file-alt"></i></a>
               {% elif day.artifacts %}
               <a class="download-link" href="{{ day.artifacts }}"><i class="fas fa-download"></i></a>
               {% else %}
