@@ -32,6 +32,11 @@ function identifier
     uuidgen | tr '[:upper:]' '[:lower:]'
 }
 
+function identifier::short
+{
+    uuidgen | tr '[:upper:]' '[:lower:]' | cut -f1 -d-
+}
+
 # Generate a isoformat timetsamp
 function timestamp
 {
@@ -86,7 +91,7 @@ function ci::run
         test::execute result
         test::report "$result" "$build_starttime" "$deploy_endtime"
 
-    } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee "$TMP_DIR/ci.log"
+    } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "$TMP_DIR/ci.log"
 }
 
 
@@ -94,25 +99,28 @@ function ci::run
 # cleanup function
 function ci::cleanup
 {
-    if which juju-crashdump; then
-        juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMP_DIR"
-    fi
-    (cd "$TMP_DIR" && tar cvzf artifacts.tar.gz *)
-    venv_p="$TMP_DIR/cleanupvenv"
-    virtualenv "$venv_p" -p python3.6
-    "$venv_p"/bin/python -m pip install awscli columbo
-    "$venv_p"/bin/columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz" || true
-    aws_cli="$venv_p/bin/aws"
-    "$aws_cli" s3 cp "$TMP_DIR/_out/columbo-report.json" s3://jenkaas/"$JOB_ID"/columbo-report.json || true
-    "$aws_cli" s3 cp "$TMP_DIR/metadata.json" s3://jenkaas/"$JOB_ID"/metadata.json || true
-    "$aws_cli" s3 cp "$TMP_DIR/report.html" s3://jenkaas/"$JOB_ID"/index.html || true
-    "$aws_cli" s3 cp "$TMP_DIR/artifacts.tar.gz" s3://jenkaas/"$JOB_ID"/artifacts.tar.gz || true
+    local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
+    {
+        if which juju-crashdump; then
+            juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMP_DIR"
+        fi
+        (cd "$TMP_DIR" && tar cvzf artifacts.tar.gz *)
+        venv_p="$TMP_DIR/cleanupvenv"
+        virtualenv "$venv_p" -p python3.6
+        "$venv_p"/bin/python -m pip install awscli columbo
+        "$venv_p"/bin/columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz" || true
+        aws_cli="$venv_p/bin/aws"
+        "$aws_cli" s3 cp "$TMP_DIR/_out/columbo-report.json" s3://jenkaas/"$JOB_ID"/columbo-report.json || true
+        "$aws_cli" s3 cp "$TMP_DIR/metadata.json" s3://jenkaas/"$JOB_ID"/metadata.json || true
+        "$aws_cli" s3 cp "$TMP_DIR/report.html" s3://jenkaas/"$JOB_ID"/index.html || true
+        "$aws_cli" s3 cp "$TMP_DIR/artifacts.tar.gz" s3://jenkaas/"$JOB_ID"/artifacts.tar.gz || true
 
-    if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
+        if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
             timeout 2m juju kill-controller -y "$JUJU_CONTROLLER" || true
-    fi
+        fi
 
-    rm -rf "$TMP_DIR"
+        rm -rf "$TMP_DIR"
+    } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "$TMP_DIR/ci.log"
 }
 trap ci::cleanup EXIT
 
