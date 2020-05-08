@@ -123,7 +123,7 @@ function ci::py
 function ci::venv
 {
     declare -n _venv_p=$1
-    _venv_p="$TMP_DIR/$(identifier::short)"
+    _venv_p="$TMP_DIR/venv"
 
     virtualenv "$_venv_p" -p "$(ci::py)"
 }
@@ -152,11 +152,8 @@ function ci::cleanup
         if which juju-crashdump; then
             juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMP_DIR"
         fi
-        (cd "$TMP_DIR" && tar cvzf artifacts.tar.gz *)
+        (cd "$TMP_DIR" && tar --exclude='./venv' cvzf artifacts.tar.gz *)
 
-        ci::venv venv_p
-
-        "$venv_p"/bin/python -m pip install awscli columbo
         "$venv_p"/bin/columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz" || true
         aws_cli="$venv_p/bin/aws"
         "$aws_cli" s3 cp "$TMP_DIR/_out/columbo-report.json" s3://jenkaas/"$JOB_ID"/columbo-report.json || true

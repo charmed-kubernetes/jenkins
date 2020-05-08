@@ -40,24 +40,24 @@ function juju::deploy
     if [[ "$ARCH" = "arm64" ]]; then
         constraints="instance-type=a1.2xlarge arch=$ARCH"
     else
-        constraints="arch=$ARCH"
+        constraints="arch=$ARCH mem=16G cores=4 root-disk=16G"
     fi
 
     tee overlay.yaml <<EOF> /dev/null
 series: $SERIES
 applications:
   easyrsa:
-    constraints: $constraints root-disk=8G
+    constraints: $constraints
   etcd:
-    constraints: $constraints root-disk=8G
+    constraints: $constraints
   kubeapi-load-balancer:
     constraints: $constraints
   kubernetes-master:
-    constraints: $constraints root-disk=16G mem=8G cores=4
+    constraints: $constraints
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:
-    constraints: $constraints root-disk=16G mem=8G cores=4
+    constraints: $constraints
     options:
       channel: $SNAP_VERSION
 EOF
