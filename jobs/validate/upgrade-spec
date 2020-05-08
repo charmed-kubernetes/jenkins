@@ -53,11 +53,11 @@ applications:
   kubeapi-load-balancer:
     constraints: $constraints
   kubernetes-master:
-    constraints: $constraints root-disk=16G
+    constraints: $constraints root-disk=16G mem=8G cores=4
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:
-    constraints: $constraints root-disk=16G
+    constraints: $constraints root-disk=16G mem=8G cores=4
     options:
       channel: $SNAP_VERSION
 EOF

@@ -106,7 +106,13 @@ function ci::cleanup
         fi
         (cd "$TMP_DIR" && tar cvzf artifacts.tar.gz *)
         venv_p="$TMP_DIR/cleanupvenv"
-        virtualenv "$venv_p" -p python3.6
+        python_p="python3"
+        if which python3.6; then
+            python_p="python3.6"
+        elif which python3.7; then
+            python_p="python3.7"
+        fi
+        virtualenv "$venv_p" -p "$python_p"
         "$venv_p"/bin/python -m pip install awscli columbo
         "$venv_p"/bin/columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz" || true
         aws_cli="$venv_p/bin/aws"
