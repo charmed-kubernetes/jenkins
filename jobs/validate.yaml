@@ -141,17 +141,15 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
     triggers:
         - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/calico-spec.yml
+            parallel --jobs 1 --ungroup bash jobs/validate/snapd-upgrade-spec {1} {2} {3} {4} {5} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: amd64 ::: 0 1
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
@@ -178,11 +176,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/tigera-ee-spec.yml
+            parallel --jobs 1 --ungroup bash jobs/validate/snapd-upgrade-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 - job:
     name: 'validate-ck-vault'

@@ -2,6 +2,17 @@
 #
 # Juju helpers
 
+function juju::bootstrap::before
+{
+    echo "> skipping before tasks"
+}
+
+function juju::bootstrap::after
+{
+    echo "> skipping after tasks"
+}
+
+
 function juju::bootstrap
 {
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
@@ -12,6 +23,16 @@ function juju::bootstrap
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
          --model-default image-stream=daily
+}
+
+function juju::deploy::before
+{
+    echo "> skipping before tasks"
+}
+
+function juju::deploy::after
+{
+    echo "> skipping after tasks"
 }
 
 function juju::deploy
