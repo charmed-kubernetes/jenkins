@@ -80,7 +80,7 @@ def build_columbo_reports(data):
         log.debug(f"{prefix_id} :: columbo report to big, skipping")
         return
 
-    has_index = requests.get(f"{REPORT_HOST}/{prefix_id}/index.html")
+    has_index = requests.get(f"{REPORT_HOST}/{prefix_id}/columbo.html")
     if has_index.ok:
         log.debug(f"Report already generated for {prefix_id}, skipping.")
         return

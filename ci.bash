@@ -92,8 +92,8 @@ function ci::run
         juju::bootstrap::after
         juju::deploy::before
         juju::deploy
-        juju::deploy::after
         juju::wait
+        juju::deploy::after
 
         deploy_endtime=$(timestamp)
 
