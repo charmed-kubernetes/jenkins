@@ -42,7 +42,7 @@ function timestamp
 function test::execute
 {
     declare -n is_pass=$1
-    TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py3 -- pytest \
+    TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py36 -- pytest \
                 --html="$TMP_DIR/report.html" \
                 jobs/integration/validation.py \
                 --cloud "$JUJU_CLOUD" \
@@ -96,7 +96,7 @@ function ci::cleanup
         juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMP_DIR"
     fi
     (cd "$TMP_DIR" && tar cvzf artifacts.tar.gz *)
-    TOX_WORK_DIR="$WORKSPACE/.tox" tox -e py3 -- columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz"
+    TOX_WORK_DIR="$WORKSPACE/.tox" tox -e py36 -- columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz" || true
     aws_cli="aws"
     if [[ -f $HOME/venvs/venv/aws ]]; then
         aws_cli="$HOME/venvs/venv/aws"
