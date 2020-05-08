@@ -89,7 +89,10 @@ def build_columbo_reports(data):
     has_metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
     if has_metadata.ok:
         log.info(f"{prefix_id} :: grabbing metadata for report")
-        obj = has_metadata.json()
+        try:
+            obj = has_metadata.json()
+        except json.decoder.JSONDecodeError:
+            return
 
     has_artifacts = requests.get(f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz")
     if has_artifacts.ok:

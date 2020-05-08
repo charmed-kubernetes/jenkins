@@ -49,12 +49,12 @@ function timestamp
 function test::execute
 {
     declare -n is_pass=$1
-    TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py36 -- pytest \
-                --html="$TMP_DIR/report.html" \
-                jobs/integration/validation.py \
-                --cloud "$JUJU_CLOUD" \
-                --model "$JUJU_MODEL" \
-                --controller "$JUJU_CONTROLLER"
+    pytest \
+        --html="$TMP_DIR/report.html" \
+        jobs/integration/validation.py \
+        --cloud "$JUJU_CLOUD" \
+        --model "$JUJU_MODEL" \
+        --controller "$JUJU_CONTROLLER"
     ret=$?
     is_pass="True"
     if (( $ret > 0 )); then
@@ -80,6 +80,9 @@ function ci::run
     set +u
     source "$venv_p"/bin/activate
     set -u
+
+    pip install tox pip-tools
+    pip-sync requirements.txt
 
     compile::env
 
