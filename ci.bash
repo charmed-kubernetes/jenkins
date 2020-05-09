@@ -152,7 +152,7 @@ function ci::cleanup
         if which juju-crashdump; then
             juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMP_DIR"
         fi
-        (cd "$TMP_DIR" && tar --exclude='./venv' cvzf artifacts.tar.gz *)
+        (cd "$TMP_DIR" && tar --exclude='./venv' -cvzf artifacts.tar.gz *)
 
         "$venv_p"/bin/columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz" || true
         aws_cli="$venv_p/bin/aws"
