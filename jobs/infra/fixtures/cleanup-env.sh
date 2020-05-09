@@ -1,15 +1,27 @@
 #!/bin/bash
 set -x
 
-
-for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
-    if [ "$i" != "jaas" ]; then
-        echo "$i"
-        if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$i"; then
-            timeout 2m juju kill-controller -y "$i" 2>&1
+function purge::controllers
+{
+    if [ "$1" != "jaas" ]; then
+        echo "$1"
+        if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$1"; then
+            timeout 2m juju kill-controller -y "$1" 2>&1
         fi
     fi
-done
+}
+export -f purge::controllers
+
+juju controllers --format json | jq -r '.controllers | keys[]' | parallel --ungroup purge::controllers
+
+# for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
+#     if [ "$i" != "jaas" ]; then
+#         echo "$i"
+#         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$i"; then
+#             timeout 2m juju kill-controller -y "$i" 2>&1
+#         fi
+#     fi
+# done
 
 sudo apt clean
 sudo rm -rf /var/log/*
