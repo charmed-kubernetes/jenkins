@@ -118,6 +118,7 @@ function ci::run
         test::execute result
         test::report "$result" "$build_starttime" "$deploy_endtime"
         test::capture
+        ci::cleanup::before
 
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "$TMP_DIR/ci.log"
 }
