@@ -1,4 +1,5 @@
 import asyncio
+import ipaddress
 import json
 import os
 import requests
@@ -878,6 +879,38 @@ async def test_kubelet_extra_config(model, tools):
     await set_config_and_wait(
         worker_app, {"kubelet-extra-config": old_extra_config}, tools
     )
+
+
+@pytest.mark.asyncio
+async def test_service_cidr_expansion(model):
+    """Expand the service cidr by 1 and verify if kubernetes service is
+    updated with the new cluster IP.
+
+    Note the cluster cannot be revert back to the oiriginal service cidr.
+    """
+    app = model.applications["kubernetes-master"]
+    original_config = await app.get_config()
+    original_service_cidr = original_config["service-cidr"]["value"]
+
+    # Expand the service CIDR by 1
+    new_service_cidr = ipaddress.ip_network(original_service_cidr).supernet()
+    ips = new_service_cidr.hosts()
+    new_service_ip_str = str(next(ips))
+
+    new_config = {"service-cidr": str(new_service_cidr)}
+    service_cluster_ip_range = "service-cluster-ip-range=" + str(new_service_cidr)
+    await app.set_config(new_config)
+    await wait_for_process(model, service_cluster_ip_range)
+
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get service kubernetes"
+    master = model.applications["kubernetes-master"].units[0]
+    output = await master.run(cmd)
+    assert output.status == "completed"
+
+    # Check if k8s service ip is changed as per new service cidr
+    raw_output = output.data["results"].get("Stdout", "")
+    if new_service_ip_str not in raw_output:
+        raise
 
 
 @pytest.mark.asyncio
