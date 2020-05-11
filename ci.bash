@@ -72,6 +72,21 @@ function test::report
     python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$JOB_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': '$build_starttime', 'deploy_endtime': '$deploy_endtime'}))" | tee "$TMP_DIR/metadata.json"
 }
 
+function test::capture
+{
+    if which juju-crashdump; then
+        juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMP_DIR"
+    fi
+    (cd "$TMP_DIR" && tar --exclude='venv' -cvzf artifacts.tar.gz *)
+
+    "$venv_p"/bin/columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz" || true
+    aws_cli="$venv_p/bin/aws"
+    "$aws_cli" s3 cp "$TMP_DIR/_out/columbo-report.json" s3://jenkaas/"$JOB_ID"/columbo-report.json || true
+    "$aws_cli" s3 cp "$TMP_DIR/metadata.json" s3://jenkaas/"$JOB_ID"/metadata.json || true
+    "$aws_cli" s3 cp "$TMP_DIR/report.html" s3://jenkaas/"$JOB_ID"/index.html || true
+    "$aws_cli" s3 cp "$TMP_DIR/artifacts.tar.gz" s3://jenkaas/"$JOB_ID"/artifacts.tar.gz || true
+}
+
 
 # Entrypoint to start the deployment, testing, reporting
 function ci::run
@@ -102,6 +117,7 @@ function ci::run
 
         test::execute result
         test::report "$result" "$build_starttime" "$deploy_endtime"
+        test::capture
 
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "$TMP_DIR/ci.log"
 }
@@ -149,18 +165,6 @@ function ci::cleanup
 {
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
-        if which juju-crashdump; then
-            juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMP_DIR"
-        fi
-        (cd "$TMP_DIR" && tar --exclude='./venv' -cvzf artifacts.tar.gz *)
-
-        "$venv_p"/bin/columbo --output-dir "$TMP_DIR/_out" "$TMP_DIR/artifacts.tar.gz" || true
-        aws_cli="$venv_p/bin/aws"
-        "$aws_cli" s3 cp "$TMP_DIR/_out/columbo-report.json" s3://jenkaas/"$JOB_ID"/columbo-report.json || true
-        "$aws_cli" s3 cp "$TMP_DIR/metadata.json" s3://jenkaas/"$JOB_ID"/metadata.json || true
-        "$aws_cli" s3 cp "$TMP_DIR/report.html" s3://jenkaas/"$JOB_ID"/index.html || true
-        "$aws_cli" s3 cp "$TMP_DIR/artifacts.tar.gz" s3://jenkaas/"$JOB_ID"/artifacts.tar.gz || true
-
         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
             timeout 2m juju kill-controller -y "$JUJU_CONTROLLER" || true
         fi
