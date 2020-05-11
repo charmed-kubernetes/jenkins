@@ -16,8 +16,8 @@ import click
 
 # note: we can't upgrade to focal until after it's released
 SERIES_ORDER = [
-    'xenial',
-    'bionic',
+    "xenial",
+    "bionic",
 ]
 
 
@@ -448,41 +448,65 @@ async def wait_for_status(workload_status, units):
     log.info(f'waiting for {workload_status} status on {", ".join(units)}')
     model = units[0].model
     try:
-        await model.block_until(lambda: all(unit.workload_status == workload_status for unit in units),
-                                timeout=120)
+        await model.block_until(
+            lambda: all(unit.workload_status == workload_status for unit in units),
+            timeout=120,
+        )
     except asyncio.TimeoutError as e:
-        unmatched_units = [f'{unit.name}={unit.workload_status}'
-                           for unit in units if unit.workload_status != workload_status]
-        raise AssertionError(f'Units with unexpected status: {",".join(unmatched_units)}') from e
+        unmatched_units = [
+            f"{unit.name}={unit.workload_status}"
+            for unit in units
+            if unit.workload_status != workload_status
+        ]
+        raise AssertionError(
+            f'Units with unexpected status: {",".join(unmatched_units)}'
+        ) from e
 
 
 async def prep_series_upgrade(machine, new_series, tools):
-    log.info(f'preparing series upgrade for machine {machine.id}')
-    await tools.run('juju', 'upgrade-series', '--yes', '-m', tools.connection,
-                    machine.id, 'prepare', new_series)
-    await wait_for_status('blocked', _units(machine))
+    log.info(f"preparing series upgrade for machine {machine.id}")
+    await tools.run(
+        "juju",
+        "upgrade-series",
+        "--yes",
+        "-m",
+        tools.connection,
+        machine.id,
+        "prepare",
+        new_series,
+    )
+    await wait_for_status("blocked", _units(machine))
 
 
 async def do_series_upgrade(machine):
-    file_name = '/etc/apt/apt.conf.d/50unattended-upgrades'
-    option = '--force-confdef'
-    log.info(f'doing series upgrade for machine {machine.id}')
-    await machine.ssh(f"""
+    file_name = "/etc/apt/apt.conf.d/50unattended-upgrades"
+    option = "--force-confdef"
+    log.info(f"doing series upgrade for machine {machine.id}")
+    await machine.ssh(
+        f"""
         if ! grep -q -- '{option}' {file_name}; then
           echo 'DPkg::options {{ "{option}"; }};' | sudo tee -a {file_name}
         fi
         sudo DEBIAN_FRONTEND=noninteractive do-release-upgrade -f DistUpgradeViewNonInteractive
-    """)
-    log.info(f'rebooting machine {machine.id}')
+    """
+    )
+    log.info(f"rebooting machine {machine.id}")
     try:
-        await machine.ssh('sudo reboot && exit')
+        await machine.ssh("sudo reboot && exit")
     except JujuError:
         # We actually expect this to "fail" because the reboot closes the session prematurely.
         pass
 
 
 async def finish_series_upgrade(machine, tools):
-    log.info(f'completing series upgrade for machine {machine.id}')
-    await tools.run('juju', 'upgrade-series', '--yes', '-m', tools.connection,
-                    machine.id, 'complete')
-    await wait_for_status('active', _units(machine))
+    log.info(f"completing series upgrade for machine {machine.id}")
+    await tools.run(
+        "juju",
+        "upgrade-series",
+        "--yes",
+        "-m",
+        tools.connection,
+        machine.id,
+        "complete",
+    )
+    await wait_for_status("active", _units(machine))

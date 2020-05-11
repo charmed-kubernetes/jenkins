@@ -28,6 +28,7 @@ SERIES = ["focal", "bionic", "xenial"]
 
 REPORT_HOST = "https://jenkaas.s3.amazonaws.com"
 
+
 class Storage:
     def __init__(self):
         self.objects = self.get_all_s3_prefixes()
@@ -37,8 +38,10 @@ class Storage:
         """
         date_of_last_30 = datetime.today() - timedelta(days=numdays)
         date_of_last_30 = date_of_last_30.strftime("%Y-%m-%d")
-        output = run.capture(f"aws s3api list-objects-v2 --bucket jenkaas --query 'Contents[?LastModified > `{date_of_last_30}`]'",
-                             shell=True)
+        output = run.capture(
+            f"aws s3api list-objects-v2 --bucket jenkaas --query 'Contents[?LastModified > `{date_of_last_30}`]'",
+            shell=True,
+        )
         if output.ok:
             return json.loads(output.stdout.decode())
         return []
@@ -49,27 +52,22 @@ class Storage:
         """
         _report_map = {}
         for item in self.objects:
-            key_p = Path(item['Key'])
+            key_p = Path(item["Key"])
             if key_p.parent in _report_map:
-                _report_map[key_p.parent].append((key_p.name, int(item['Size'])))
+                _report_map[key_p.parent].append((key_p.name, int(item["Size"])))
             else:
-                _report_map[key_p.parent] = [(key_p.name, int(item['Size']))]
+                _report_map[key_p.parent] = [(key_p.name, int(item["Size"]))]
         return _report_map
 
 
 def has_file(filename, files):
-        return any([
-            name == filename
-            for name, _ in files
-        ])
+    return any([name == filename for name, _ in files])
 
 
 def build_columbo_reports(data):
     prefix_id, files = data
     has_columbo = [
-        (name, size)
-        for name, size in files
-        if name == "columbo-report.json"
+        (name, size) for name, size in files if name == "columbo-report.json"
     ]
 
     if not has_columbo:
@@ -98,20 +96,20 @@ def build_columbo_reports(data):
     has_artifacts = requests.get(f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz")
     if has_artifacts.ok:
         log.debug(f"{prefix_id} :: found artifacts")
-        obj['artifacts'] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
+        obj["artifacts"] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
 
     log.info(f"{prefix_id} :: processing report {name} ({size})")
 
     tmpl = html.template("columbo.html")
     columbo_results = requests.get(f"{REPORT_HOST}/{prefix_id}/{name}").json()
-    context = {
-        "obj":obj,
-        "columbo_results": columbo_results
-    }
+    context = {"obj": obj, "columbo_results": columbo_results}
     rendered = tmpl.render(context)
     html_p = Path(f"{prefix_id}-columbo.html")
     html_p.write_text(rendered)
-    run.cmd_ok(f"aws s3 cp {prefix_id}-columbo.html s3://jenkaas/{prefix_id}/columbo.html", shell=True)
+    run.cmd_ok(
+        f"aws s3 cp {prefix_id}-columbo.html s3://jenkaas/{prefix_id}/columbo.html",
+        shell=True,
+    )
     run.cmd_ok(f"rm -rf {html_p}")
 
 
@@ -145,11 +143,11 @@ def get_data():
         while "LastEvaluatedKey" in response:
             response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
             for item in response["Items"]:
-                if 'build_endtime' not in item:
+                if "build_endtime" not in item:
                     continue
                 day = datetime.strptime(item["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
                 date_of_last_30 = datetime.today() - timedelta(days=30)
-                if 'job_id' not in item:
+                if "job_id" not in item:
                     continue
                 if day < date_of_last_30:
                     continue
@@ -187,15 +185,18 @@ def _gen_metadata():
         os.mkdir("metadatas")
 
     pool = ThreadPool()
-    pool.map(_download_metadata, [(prefix_id, files) for prefix_id, files in _storage.reports.items()])
+    pool.map(
+        _download_metadata,
+        [(prefix_id, files) for prefix_id, files in _storage.reports.items()],
+    )
 
     for item in metadatas.glob("*.json"):
         obj = json.loads(item.read_text())
 
-        prefix_id = obj['job_id']
+        prefix_id = obj["job_id"]
         if "build_endtime" not in obj:
             continue
-        if 'job_id' not in obj:
+        if "job_id" not in obj:
             continue
 
         day = datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
@@ -203,15 +204,17 @@ def _gen_metadata():
         if day < date_of_last_30:
             continue
         day = day.strftime("%Y-%m-%d")
-        log.info(f"{prefix_id} :: grabbing metadata for {obj['job_name']} @ {day} report")
+        log.info(
+            f"{prefix_id} :: grabbing metadata for {obj['job_name']} @ {day} report"
+        )
 
         obj["debug_host"] = debug_host_url
         if "validate" not in obj["job_name"]:
             continue
 
-        obj['artifacts'] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
-        obj['index'] = f"{REPORT_HOST}/{prefix_id}/index.html"
-        obj['columbo_results'] = f"{REPORT_HOST}/{prefix_id}/columbo.html"
+        obj["artifacts"] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
+        obj["index"] = f"{REPORT_HOST}/{prefix_id}/index.html"
+        obj["columbo_results"] = f"{REPORT_HOST}/{prefix_id}/columbo.html"
 
         job_name = obj["job_name"]
         if "snap_version" in obj:
@@ -307,8 +310,9 @@ def migrate():
     """ Migrate dynamodb data
     """
     data = get_data()
+
     def _migrate(obj):
-        if 'build_endtime' not in obj:
+        if "build_endtime" not in obj:
             return
 
         day = datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
@@ -316,20 +320,26 @@ def migrate():
         if day < date_of_last_30:
             return
 
-        if 'job_id' not in obj:
+        if "job_id" not in obj:
             return
 
-        job_id = obj['job_id']
+        job_id = obj["job_id"]
         has_metadata = requests.get(f"{REPORT_HOST}/{job_id}/metadata.json")
         if has_metadata.ok:
-            log.debug(f"{job_id} :: metadata exists, skipping migration of {obj['job_name']} @ {day}")
+            log.debug(
+                f"{job_id} :: metadata exists, skipping migration of {obj['job_name']} @ {day}"
+            )
             return
 
         metadata_p = Path(f"{job_id}-metadata.json")
         metadata_p.write_text(json.dumps(obj))
         log.info(f"Migrating {job_id} :: {obj['job_name']} @ {day} :: to metadata.json")
-        run.cmd_ok(f"aws s3 cp {job_id}-metadata.json s3://jenkaas/{job_id}/metadata.json", shell=True)
+        run.cmd_ok(
+            f"aws s3 cp {job_id}-metadata.json s3://jenkaas/{job_id}/metadata.json",
+            shell=True,
+        )
         run.cmd_ok(f"rm -rf {job_id}-metadata.json", shell=True)
+
     pool = ThreadPool()
     pool.map(_migrate, data)
 
@@ -340,8 +350,10 @@ def columbo():
     """
     obj = Storage()
     pool = ThreadPool()
-    pool.map(build_columbo_reports, [(prefix_id, files)
-                                     for prefix_id, files in obj.reports.items()])
+    pool.map(
+        build_columbo_reports,
+        [(prefix_id, files) for prefix_id, files in obj.reports.items()],
+    )
 
 
 @cli.command()

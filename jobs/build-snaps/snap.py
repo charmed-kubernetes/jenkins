@@ -233,20 +233,18 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     k8s_major_minor = f"{k8s_major_minor['major']}.{k8s_major_minor['minor']}"
 
     snapcraft_yml_context = {
-            "snap_version": to_branch.lstrip("v"),
-            "patches": patches_list,
-            "go_version": K8S_GO_MAP.get(k8s_major_minor, "go/1.12/stable"),
+        "snap_version": to_branch.lstrip("v"),
+        "patches": patches_list,
+        "go_version": K8S_GO_MAP.get(k8s_major_minor, "go/1.12/stable"),
     }
 
     # Starting with 1.19 and beyond, build snaps with a base snap of core18 or
     # whatever the fresh catch of the day is
     if semver.compare(k8s_major_minor_patch, "1.19.0") >= 0:
-        snapcraft_yml_context['base'] = "core18"
+        snapcraft_yml_context["base"] = "core18"
 
     snapcraft_yml = snapcraft_fn_tpl.read_text()
-    snapcraft_yml = _render(
-        snapcraft_fn_tpl, snapcraft_yml_context
-    )
+    snapcraft_yml = _render(snapcraft_fn_tpl, snapcraft_yml_context)
     snapcraft_fn.write_text(snapcraft_yml)
     if not dry_run:
         cmd_ok("git add .", cwd=snap_basename)

@@ -617,7 +617,7 @@ def build(
     filter_by_tag,
     to_channel,
     rebuild_cache,
-        force
+    force,
 ):
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
@@ -630,7 +630,7 @@ def build(
         "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
         "rebuild_cache": rebuild_cache,
-        "force": force
+        "force": force,
     }
 
     build_env.pull_layers()

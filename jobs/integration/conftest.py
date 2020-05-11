@@ -12,7 +12,6 @@ from py.xml import html
 from juju.model import Model
 from aioify import aioify
 from .utils import upgrade_charms, upgrade_snaps, arch, log_snap_versions
-from cilib import run
 
 
 def pytest_addoption(parser):
@@ -102,7 +101,7 @@ class Tools:
         self.series = request.config.getoption("--series")
         self.cloud = request.config.getoption("--cloud")
         self.connection = f"{self.controller_name}:{self.model_name}"
-        self.is_series_upgrade = request.config.getoption('--is-series-upgrade')
+        self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
 
     async def run(self, *cmd):
         proc = await asyncio.create_subprocess_shell(
@@ -277,18 +276,22 @@ def skip_by_cloud(request, cloud):
 #     if pref or suf:
 #         item._nodeid = ' '.join((pref, suf))
 
+
 def pytest_html_report_title(report):
-   report.title = "Validation Result"
+    report.title = "Validation Result"
+
 
 def pytest_html_results_table_header(cells):
-    cells.insert(2, html.th('Description'))
-    cells.insert(1, html.th('Time', class_='sortable time', col='time'))
+    cells.insert(2, html.th("Description"))
+    cells.insert(1, html.th("Time", class_="sortable time", col="time"))
     cells.pop()
+
 
 def pytest_html_results_table_row(report, cells):
     cells.insert(2, html.td(report.description))
-    cells.insert(1, html.td(datetime.utcnow(), class_='col-time'))
+    cells.insert(1, html.td(datetime.utcnow(), class_="col-time"))
     cells.pop()
+
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
@@ -296,10 +299,15 @@ def pytest_runtest_makereport(item, call):
     report = outcome.get_result()
     report.description = str(item.function.__doc__)
 
+
 @pytest.mark.optionalhook
 def pytest_metadata(metadata):
-    custom_name = os.environ.get('JOB_NAME_CUSTOM', None)
+    custom_name = os.environ.get("JOB_NAME_CUSTOM", None)
     if custom_name:
-        metadata['JOB_NAME'] = custom_name
-        metadata['ARTIFACTS'] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/artifacts.tar.gz'>Download Artifacts</a>"
-        metadata['ANALYTICS'] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/columbo.html'>View Report</a>"
+        metadata["JOB_NAME"] = custom_name
+        metadata[
+            "ARTIFACTS"
+        ] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/artifacts.tar.gz'>Download Artifacts</a>"
+        metadata[
+            "ANALYTICS"
+        ] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/columbo.html'>View Report</a>"
