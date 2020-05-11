@@ -98,7 +98,7 @@ JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-upgrade
 ARCH=${4:-amd64}
-JOB_NAME_CUSTOM="validate-ck-upgrade-$SERIES-$SNAP_VERSION"
+JOB_NAME_CUSTOM="validate-ck-upgrade-$ARCH-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 

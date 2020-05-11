@@ -23,8 +23,8 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: arm64 amd64
-            parallel --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} ::: 1.18/stable 1.17/stable 1.16/stable ::: focal bionic xenial ::: edge ::: arm64 amd64
+            parallel --eta --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: arm64 amd64
+            parallel --eta --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} ::: 1.18/stable 1.17/stable 1.16/stable ::: focal bionic xenial ::: edge ::: arm64 amd64
 
 - job:
     name: 'validate-ck-snapd-upgrade'
@@ -247,7 +247,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --ungroup bash jobs/validate/nfs-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+            parallel --eta --timeout 200% --ungroup bash jobs/validate/nfs-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 
 - job:

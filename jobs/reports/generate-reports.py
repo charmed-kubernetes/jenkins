@@ -11,6 +11,7 @@ import json
 import uuid
 import requests
 import dill
+import os
 from pathos.threading import ThreadPool
 from pathlib import Path
 from pprint import pformat, pprint
@@ -166,18 +167,32 @@ def _gen_metadata():
     db = OrderedDict()
     debug_host_url = "https://jenkaas.s3.amazonaws.com"
 
-    for prefix_id, files in _storage.reports.items():
+    def _download_metadata(item):
+        prefix_id, files = item
         has_metadata = has_file("metadata.json", files)
         if not has_metadata:
             log.debug(f"{prefix_id} :: missing metadata, skipping")
-            continue
+            return
 
         metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
         try:
             obj = metadata.json()
         except json.decoder.JSONDecodeError:
-            continue
+            return
+        log.info(f"Storing {prefix_id} metadata")
+        Path(f"metadatas/{prefix_id}-metadata.json").write_text(json.dumps(obj))
 
+    metadatas = Path("metadatas")
+    if not metadatas.exists():
+        os.mkdir("metadatas")
+
+    pool = ThreadPool()
+    pool.map(_download_metadata, [(prefix_id, files) for prefix_id, files in _storage.reports.items()])
+
+    for item in metadatas.glob("*.json"):
+        obj = json.loads(item.read_text())
+
+        prefix_id = obj['job_id']
         if "build_endtime" not in obj:
             continue
         if 'job_id' not in obj:
@@ -194,17 +209,9 @@ def _gen_metadata():
         if "validate" not in obj["job_name"]:
             continue
 
-        has_artifacts = has_file("artifacts.tar.gz", files)
-        if has_artifacts:
-            obj['artifacts'] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
-
-        has_index = has_file("index.html", files)
-        if has_index:
-            obj['index'] = f"{REPORT_HOST}/{prefix_id}/index.html"
-
-        has_columbo = has_file("columbo.html", files)
-        if has_columbo:
-            obj['columbo_results'] = f"{REPORT_HOST}/{prefix_id}/columbo.html"
+        obj['artifacts'] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
+        obj['index'] = f"{REPORT_HOST}/{prefix_id}/index.html"
+        obj['columbo_results'] = f"{REPORT_HOST}/{prefix_id}/columbo.html"
 
         job_name = obj["job_name"]
         if "snap_version" in obj:
@@ -241,6 +248,7 @@ def _gen_metadata():
         if day not in db[job_name]:
             db[job_name][day] = []
         db[job_name][day].append(obj)
+    Path("index.json").write_text(json.dumps(db))
     return db
 
 
@@ -353,6 +361,7 @@ def build():
     index_html_p = Path("index.html")
     index_html_p.write_text(rendered)
     run.cmd_ok("aws s3 cp index.html s3://jenkaas/index.html", shell=True)
+    run.cmd_ok("aws s3 cp index.json s3://jenkaas/index.json", shell=True)
 
 
 if __name__ == "__main__":
