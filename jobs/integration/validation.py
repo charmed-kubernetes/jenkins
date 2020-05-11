@@ -845,6 +845,7 @@ async def test_kubelet_extra_config(model, tools):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip("Enable once https://github.com/charmed-kubernetes/charm-kubernetes-master/pull/93 is merged")
 async def test_service_cidr_expansion(model):
     """Expand the service cidr by 1 and verify if kubernetes service is
     updated with the new cluster IP.
