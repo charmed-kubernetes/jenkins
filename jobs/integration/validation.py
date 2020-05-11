@@ -1876,24 +1876,30 @@ async def test_multus(model, tools, addons_model):
     await cleanup()
 
 
-# @pytest.mark.asyncio
-# async def test_series_upgrade(model, tools):
-#     if not tools.is_series_upgrade:
-#         pytest.skip("No series upgrade argument found")
-#     k8s_master_0 = model.applications['kubernetes-master'].units[0]
-#     old_series = k8s_master_0.machine.series
-#     try:
-#         new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
-#     except IndexError:
-#         pytest.skip("no supported series to upgrade to")
-#     except ValueError:
-#         pytest.skip("unrecognized series to upgrade from: {old_series}")
-#     for machine in model.machines.values():
-#         await prep_series_upgrade(machine, new_series, tools)
-#         await do_series_upgrade(machine)
-#         await finish_series_upgrade(machine, tools)
-#         assert machine.series == new_series
-#     await test_status_messages(model)
+@pytest.mark.asyncio
+async def test_series_upgrade(model, tools):
+    if not tools.is_series_upgrade:
+        pytest.skip("No series upgrade argument found")
+    k8s_master_0 = model.applications['kubernetes-master'].units[0]
+    old_series = k8s_master_0.machine.series
+    try:
+        new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
+    except IndexError:
+        pytest.skip("no supported series to upgrade to")
+    except ValueError:
+        pytest.skip("unrecognized series to upgrade from: {old_series}")
+    for machine in model.machines.values():
+        await prep_series_upgrade(machine, new_series, tools)
+        await do_series_upgrade(machine)
+        await finish_series_upgrade(machine, tools)
+        assert machine.series == new_series
+    expected_messages = {
+        "kubernetes-master": "Kubernetes master running.",
+        "kubernetes-worker": "Kubernetes worker running.",
+    }
+    for app, message in expected_messages.items():
+        for unit in model.applications[app].units:
+            assert unit.workload_status_message == message
 
 
 # @pytest.mark.asyncio
