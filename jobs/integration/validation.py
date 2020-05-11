@@ -909,8 +909,7 @@ async def test_service_cidr_expansion(model):
 
     # Check if k8s service ip is changed as per new service cidr
     raw_output = output.data["results"].get("Stdout", "")
-    if new_service_ip_str not in raw_output:
-        raise
+    assert new_service_ip_str in raw_output
 
 
 @pytest.mark.asyncio
