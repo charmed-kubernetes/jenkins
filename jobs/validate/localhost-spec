@@ -1,0 +1,115 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+# Init
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+
+function juju::deploy
+{
+        juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
+        --series $SERIES \
+        --force \
+        --constraints "mem=32G root-disk=100G cores=8" \
+        ubuntu
+}
+
+function juju::deploy::after
+{
+    ansible-playbook -i $(juju::unitAddress ubuntu), \
+                     --ssh-common-args '-o StrictHostKeyChecking=no' \
+                     --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
+                     -u ubuntu \
+                     "$WORKSPACE/jobs/validate/playbooks/single-system.yml"
+    tee overlay.yaml <<EOF> /dev/null
+series: $SERIES
+applications:
+  kubernetes-master:
+    options:
+      channel: $SNAP_VERSION
+      proxy-extra-args: "proxy-mode=userspace"
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+      proxy-extra-args: "proxy-mode=userspace"
+EOF
+
+
+    tee setup <<EOF> /dev/null
+#!/bin/bash
+set -eux
+export PATH=/snap/bin:$PATH
+export JUJU_CONTROLLER=$JUJU_CONTROLLER
+export JUJU_MODEL=$JUJU_MODEL
+export JUJU_CLOUD=$JUJU_CLOUD
+export JUJU_DEPLOY_CHANNEL=$JUJU_DEPLOY_CHANNEL
+export SERIES=$SERIES
+
+juju bootstrap localhost/localhost \
+    $JUJU_CONTROLLER \
+    -d $JUJU_MODEL \
+    --bootstrap-series $SERIES \
+    --force \
+    --model-default image-stream=daily
+
+juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
+    --channel $JUJU_DEPLOY_CHANNEL \
+    --force \
+    --overlay overlay.yaml \
+    cs:~containers/charmed-kubernetes 1>&2
+
+timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+
+pushd jenkins
+timeout 2h tox --workdir .tox -e py3 -- pytest \
+    jobs/integration/validation.py \
+    --cloud localhost/localhost \
+    --model $JUJU_MODEL \
+    --controller $JUJU_CONTROLLER
+popd
+
+EOF
+
+    chmod +x setup
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" setup ubuntu/0:setup
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" overlay.yaml ubuntu/0:overlay.yaml
+}
+
+function test::execute {
+    declare -n is_pass=$1
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- 'bash setup'
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+function ci::cleanup::before
+{
+    juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:juju-crashdump* $TMP_DIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.log $TMP_DIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.xml $TMP_DIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.html $TMP_DIR/. || true
+}
+
+# Setup Environment
+SNAP_VERSION=${1:-1.19/edge}
+SERIES=${2:-bionic}
+JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_CLOUD=aws/us-east-2
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-ck
+ARCH=${4:-amd64}
+JOB_NAME_CUSTOM="validate-ck-localhost-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
+TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
+
+ci::run
