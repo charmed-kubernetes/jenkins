@@ -178,7 +178,10 @@ def _gen_metadata():
         except json.decoder.JSONDecodeError:
             return
         log.info(f"Storing {prefix_id} metadata")
-        Path(f"metadatas/{prefix_id}-metadata.json").write_text(json.dumps(obj))
+        try:
+            Path(f"metadatas/{prefix_id}-metadata.json").write_text(json.dumps(obj))
+        except FileNotFoundError:
+            return
 
     metadatas = Path("metadatas")
     if not metadatas.exists():
