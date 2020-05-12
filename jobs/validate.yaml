@@ -23,8 +23,32 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: arm64 amd64
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} ::: 1.18/stable 1.17/stable 1.16/stable ::: focal bionic xenial ::: edge ::: arm64 amd64
+            parallel --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: arm64 amd64
+
+- job:
+    name: 'validate-ck-upgrade'
+    node: runner-validate
+    description: |
+      Validates CDK edge on amd64 and arm64, supports last three recent releases additionally
+      validates upgrades from current stables to latest edge.
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+    triggers:
+        - timed: "@daily"
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
+          COMMAND: |
+            parallel --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} ::: 1.18/stable 1.17/stable 1.16/stable ::: focal bionic xenial ::: edge ::: arm64 amd64
+
 
 - job:
     name: 'validate-ck-snapd-upgrade'
@@ -47,7 +71,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/snapd-upgrade-spec {1} {2} ::: 1.19/edge 1.18/edge ::: focal bionic
+            parallel --timeout 200% --ungroup bash jobs/validate/snapd-upgrade-spec {1} {2} ::: 1.19/edge 1.18/edge ::: focal bionic
 
 
 - job:
@@ -98,7 +122,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/localhost-spec {1} ::: 1.18/edge
+            parallel --timeout 200% --ungroup bash jobs/validate/localhost-spec {1} ::: 1.18/edge
 
 - job:
     name: 'validate-ck-s390x'
@@ -147,7 +171,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --jobs 1 --ungroup bash jobs/validate/calico-spec {1} {2} {3} {4} {5} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: amd64 ::: 0 1
+            parallel --jobs 1 --ungroup bash jobs/validate/calico-spec {1} {2} {3} {4} {5} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial ::: edge ::: amd64 ::: 0 1
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
@@ -176,7 +200,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --jobs 1 --ungroup bash jobs/validate/tigera-ee-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+            parallel --jobs 1 --ungroup bash jobs/validate/tigera-ee-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 - job:
     name: 'validate-ck-vault'
@@ -199,7 +223,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/vault-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+            parallel --timeout 200% --ungroup bash jobs/validate/vault-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 - job:
     name: 'validate-ck-ceph'
@@ -222,7 +246,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/ceph-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic
+            parallel --timeout 200% --ungroup bash jobs/validate/ceph-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic
 
 - job:
     name: 'validate-ck-nfs'
@@ -245,7 +269,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/nfs-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+            parallel --timeout 200% --ungroup bash jobs/validate/nfs-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 
 - job:
@@ -269,7 +293,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/nvidia-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+            parallel --timeout 200% --ungroup bash jobs/validate/nvidia-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 
 - job:
@@ -293,7 +317,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/aws-iam-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+            parallel --timeout 200% --ungroup bash jobs/validate/aws-iam-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 
 - job:
@@ -317,7 +341,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            parallel --eta --timeout 200% --ungroup bash jobs/validate/nagios-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
+            parallel --timeout 200% --ungroup bash jobs/validate/nagios-spec {1} {2} ::: 1.19/edge 1.18/edge 1.17/edge 1.16/edge ::: focal bionic xenial
 
 - job:
     name: 'validate-ck-multus'
