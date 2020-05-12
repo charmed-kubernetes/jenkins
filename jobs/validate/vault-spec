@@ -37,6 +37,5 @@ JUJU_MODEL=validate-vault
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-vault-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 ci::run

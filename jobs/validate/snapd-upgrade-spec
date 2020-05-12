@@ -13,7 +13,7 @@ function test::execute
 {
     declare -n is_pass=$1
     TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py36 -- pytest \
-                --html="$TMP_DIR/report.html" \
+                --html="$TMPDIR/report.html" \
                 jobs/integration/validation.py \
                 --cloud "$JUJU_CLOUD" \
                 --model "$JUJU_MODEL" \
@@ -40,7 +40,6 @@ TEST_UPGRADE_SNAPD_CHANNEL=beta
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-snapd-upgrade-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 ci::venv venv_p
 set +u
@@ -62,4 +61,4 @@ compile::env
     test::report "$result" "$build_starttime" "$deploy_endtime"
     test::capture
 
-} 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$TMP_DIR/ci.log"
+} 2>&1 | sed -u -e "s/^/[$JUJU_CONTROLLER] /" | tee "$TMPDIR/ci.log"

@@ -60,7 +60,7 @@ ARCH=${4:-amd64}
 TEST_BGP=${5:0}
 JOB_NAME_CUSTOM="validate-ck-calico-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
+
 
 
 ###############################################################################

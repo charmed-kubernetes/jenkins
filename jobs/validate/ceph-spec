@@ -14,7 +14,7 @@ function test::execute
 {
     declare -n is_pass=$1
     TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e $(ci::toxpy) -- pytest \
-                --html="$TMP_DIR/report.html" \
+                --html="$TMPDIR/report.html" \
                 jobs/integration/test_ceph.py::test_ceph \
                 --cloud "$JUJU_CLOUD" \
                 --model "$JUJU_MODEL" \
@@ -38,6 +38,5 @@ JUJU_MODEL=validate-ceph
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-ceph-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 ci::run

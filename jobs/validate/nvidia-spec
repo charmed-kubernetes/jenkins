@@ -42,6 +42,5 @@ JUJU_MODEL=validate-nvidia
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-nvidia-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 ci::run

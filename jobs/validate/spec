@@ -81,7 +81,6 @@ JUJU_MODEL=validate-ck
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-$ARCH-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 
 ###############################################################################

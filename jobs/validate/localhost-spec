@@ -93,10 +93,10 @@ function test::execute {
 function ci::cleanup::before
 {
     juju ssh -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --pty=true ubuntu/0 -- /snap/bin/juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:juju-crashdump* $TMP_DIR/. || true
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.log $TMP_DIR/. || true
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.xml $TMP_DIR/. || true
-    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.html $TMP_DIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:juju-crashdump* $TMPDIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.log $TMPDIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.xml $TMPDIR/. || true
+    juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.html $TMPDIR/. || true
 }
 
 # Setup Environment
@@ -110,6 +110,5 @@ JUJU_MODEL=validate-localhost
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-localhost-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 ci::run

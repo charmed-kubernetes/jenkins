@@ -71,7 +71,7 @@ function test::execute
 {
     declare -n is_pass=$1
     TOX_WORK_DIR="$WORKSPACE/.tox" timeout 2h tox -e py36 -- pytest \
-                --html="$TMP_DIR/report.html" \
+                --html="$TMPDIR/report.html" \
                 jobs/integration/validation.py \
                 --is-upgrade \
                 --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
@@ -100,7 +100,6 @@ JUJU_MODEL=validate-upgrade
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-upgrade-$ARCH-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
 ###############################################################################
 # START
