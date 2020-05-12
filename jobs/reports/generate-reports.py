@@ -16,6 +16,7 @@ from pathos.threading import ThreadPool
 from pathlib import Path
 from pprint import pformat, pprint
 from cilib import log, run, html
+from prettytable import PrettyTable
 
 session = boto3.Session(region_name="us-east-1")
 s3 = session.resource("s3")
@@ -30,16 +31,16 @@ REPORT_HOST = "https://jenkaas.s3.amazonaws.com"
 
 
 class Storage:
-    def __init__(self):
-        self.objects = self.get_all_s3_prefixes()
+    def __init__(self, numdays=30):
+        self.objects = self.get_all_s3_prefixes(numdays)
 
     def get_all_s3_prefixes(self, numdays=30):
         """ Grabs all s3 prefixes for at most `numdays`
         """
-        date_of_last_30 = datetime.today() - timedelta(days=numdays)
-        date_of_last_30 = date_of_last_30.strftime("%Y-%m-%d")
+        date_of_last = datetime.today() - timedelta(days=numdays)
+        date_of_last = date_of_last.strftime("%Y-%m-%d")
         output = run.capture(
-            f"aws s3api list-objects-v2 --bucket jenkaas --query 'Contents[?LastModified > `{date_of_last_30}`]'",
+            f"aws s3api list-objects-v2 --bucket jenkaas --query 'Contents[?LastModified > `{date_of_last}`]'",
             shell=True,
         )
         if output.ok:
@@ -298,6 +299,39 @@ def _gen_rows():
 def cli():
     pass
 
+
+@cli.command()
+@click.option("--max-days", help="Max number of previous days to report on", default=10)
+@click.option("--job-filter", help="Job to filter on")
+def summary(max_days, job_filter):
+    """ Get summary of last X days
+    """
+    obj = Storage(numdays=int(max_days))
+    table = PrettyTable()
+    table.field_names = ["Job", "Test Result", "Datetime"]
+    table.align = 'l'
+
+    for prefix_id, files in obj.reports.items():
+        has_metadata = has_file("metadata.json", files)
+        if not has_metadata:
+            log.debug(f"{prefix_id} :: missing metadata, skipping")
+            continue
+
+        metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
+        try:
+            metadata = metadata.json()
+        except json.decoder.JSONDecodeError:
+            continue
+
+        job_name = metadata.get('job_name_custom', metadata['job_name'])
+        if job_filter and job_filter not in job_name:
+            continue
+
+        try:
+            table.add_row([job_name, "PASS" if metadata['test_result'] else "FAIL", metadata['build_endtime']])
+        except KeyError:
+            click.echo(metadata)
+    click.echo(table)
 
 @cli.command()
 def list():
