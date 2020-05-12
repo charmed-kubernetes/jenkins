@@ -42,6 +42,14 @@ JOB_NAME_CUSTOM="validate-ck-snapd-upgrade-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
+ci::venv venv_p
+set +u
+source "$venv_p"/bin/activate
+set -u
+
+pip install tox pip-tools
+pip-sync requirements.txt
+
 compile::env
 {
     build_starttime=$(timestamp)
