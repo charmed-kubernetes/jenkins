@@ -13,7 +13,6 @@ function test::execute
 {
     declare -n is_pass=$1
     timeout 2h pytest \
-                --html="$TMPDIR/report.html" \
                 jobs/integration/validation.py \
                 --cloud "$JUJU_CLOUD" \
                 --model "$JUJU_MODEL" \
@@ -41,14 +40,6 @@ ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-snapd-upgrade-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
-ci::venv venv_p
-set +u
-source "$venv_p"/bin/activate
-set -u
-
-pip install tox pip-tools
-pip-sync requirements.txt
-
 compile::env
 log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
 {
@@ -62,4 +53,4 @@ log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     test::report "$result" "$build_starttime" "$deploy_endtime"
     test::capture
 
-} 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee "$TMPDIR/ci.log"
+} 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee "ci.log"

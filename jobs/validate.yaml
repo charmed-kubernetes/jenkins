@@ -56,7 +56,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/spec $snap_version $series $channel $arch
+            tox -e py36 -- bash jobs/validate/spec $snap_version $series $channel $arch
 
 - job:
     name: 'validate-ck-upgrade'
@@ -110,7 +110,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/upgrade-spec $snap_version $series $channel $arch
+           tox -e py36 -- bash jobs/validate/upgrade-spec $snap_version $series $channel $arch
 
 
 - job:
@@ -151,7 +151,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/snapd-upgrade-spec $snap_version $series
+           tox -e py36 -- bash jobs/validate/snapd-upgrade-spec $snap_version $series
 
 
 - job:
@@ -223,7 +223,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/localhost-spec $snap_version $series
+           tox -e py36 -- bash jobs/validate/localhost-spec $snap_version $series
 
 - job:
     name: 'validate-ck-s390x'
@@ -304,7 +304,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/calico-spec $snap_version $series $channel arch $test_bgp
+           tox -e py36 -- bash jobs/validate/calico-spec $snap_version $series $channel arch $test_bgp
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
@@ -343,7 +343,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/tigera-ee-spec $snap_version $series
+           tox -e py36 -- bash jobs/validate/tigera-ee-spec $snap_version $series
 
 - job:
     name: 'validate-ck-vault'
@@ -387,7 +387,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/vault-spec $snap_version $series
+           tox -e py36 -- bash jobs/validate/vault-spec $snap_version $series
 
 - job:
     name: 'validate-ck-ceph'
@@ -430,7 +430,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/ceph-spec $snap_version $series
+           tox -e py36 -- bash jobs/validate/ceph-spec $snap_version $series
 
 - job:
     name: 'validate-ck-nfs'
@@ -474,7 +474,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/nfs-spec $snap_version $series
+           tox -e py36 -- bash jobs/validate/nfs-spec $snap_version $series
 
 
 - job:
@@ -519,7 +519,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/nvidia-spec $snap_version $series
+           tox -e py36 -- bash jobs/validate/nvidia-spec $snap_version $series
 
 
 - job:
@@ -564,7 +564,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/aws-iam-spec $snap_version $series
+           tox -e py36 -- bash jobs/validate/aws-iam-spec $snap_version $series
 
 
 - job:
@@ -609,7 +609,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-            bash jobs/validate/nagios-spec $snap_version $series
+           tox -e py36 -- bash jobs/validate/nagios-spec $snap_version $series
 
 - job:
     name: 'validate-ck-multus'
