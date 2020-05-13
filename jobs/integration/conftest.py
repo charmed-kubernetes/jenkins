@@ -118,10 +118,12 @@ class Tools:
                 f"{stdout.decode()}\nstderr: {stderr.decode()}"
             )
 
-    async def juju_wait(self, timeout_secs=None):
+    async def juju_wait(self, *args, **kwargs):
         cmd = f"juju wait -e {self.connection} -w"
-        if timeout_secs:
-            cmd = f"{cmd} -t {timeout_secs}"
+        if args:
+            cmd = f"{cmd} ' '.join(args)"
+        if "timeout_secs" in kwargs:
+            cmd = f"{cmd} -t {kwargs['timeout_secs']}"
         return await self.run(cmd)
 
 
