@@ -305,7 +305,6 @@ async def test_rbac_flag(model):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip_arch(["aarch64"])
 async def test_microbot(model, tools):
     """ Validate the microbot action """
     unit = model.applications["kubernetes-worker"].units[0]
@@ -314,7 +313,7 @@ async def test_microbot(model, tools):
     action = await unit.run_action("microbot", replicas=3)
     await action.wait()
     assert action.status == "completed"
-    for i in range(60):
+    while True:
         try:
             resp = await tools.requests.get(
                 "http://" + action.data["results"]["address"],
@@ -328,12 +327,9 @@ async def test_microbot(model, tools):
                 "retrying. Error follows:"
             )
             click.echo(traceback.print_exc())
-        await asyncio.sleep(0.5)
-    raise MicrobotError("Microbot failed to start.")
-
+        await asyncio.sleep(60)
 
 @pytest.mark.asyncio
-@pytest.mark.skip_arch(["aarch64"])
 async def test_dashboard(model, log_dir, tools):
     """ Validate that the dashboard is operational """
     unit = model.applications["kubernetes-master"].units[0]
