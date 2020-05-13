@@ -122,7 +122,7 @@ class Tools:
         cmd = f"juju wait -e {self.connection} -w"
         if args:
             cmd = f"{cmd} ' '.join(args)"
-        if "timeout_secs" in kwargs:
+        if "timeout_secs" in kwargs and kwargs['timeout_secs']:
             cmd = f"{cmd} -t {kwargs['timeout_secs']}"
         return await self.run(cmd)
 

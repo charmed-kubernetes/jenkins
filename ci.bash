@@ -94,7 +94,7 @@ function test::capture
     if which juju-crashdump; then
         juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
-    tar --exclude='venv' -cvzf artifacts.tar.gz *
+    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.*
     columbo --output-dir "_out" "artifacts.tar.gz" || true
     aws s3 cp "_out/columbo-report.json" s3://jenkaas/"$JOB_ID"/columbo-report.json || true
     aws s3 cp "metadata.json" s3://jenkaas/"$JOB_ID"/metadata.json || true
