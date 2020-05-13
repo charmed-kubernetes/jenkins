@@ -22,7 +22,8 @@ function juju::bootstrap
          --bootstrap-constraints arch="$ARCH" \
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
-         --model-default image-stream=daily
+         --model-default image-stream=daily \
+         --model-default automatically-retry-hooks=false
 }
 
 function juju::deploy::before
