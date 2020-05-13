@@ -37,13 +37,10 @@ function compile::env
     snap_version_format=$(echo "$SNAP_VERSION" | tr '/' '-')
 
     touch "meta/name-$job_name_format"
-    ci::upload_file "meta/name-$job_name_format" "$JOB_ID/meta/"
     touch "meta/channel-$JUJU_DEPLOY_CHANNEL"
-    ci::upload_file "meta/channel-$JUJU_DEPLOY_CHANNEL" "$JOB_ID/meta/"
     touch "meta/series-$SERIES"
-    ci::upload_file "meta/series-$SERIES" "$JOB_ID/meta/"
     touch "meta/snap_version-$snap_version_format"
-    ci::upload_file "meta/snap_version-$snap_version_format" "$JOB_ID/meta/"
+    /snap/bin/aws s3 sync "meta" "s3://jenkaas/$JOB_ID/meta"
     popd || exit
 }
 
@@ -107,17 +104,6 @@ function test::capture
     popd || exit
 }
 
-
-function ci::upload_file
-{
-    py_script="
-import boto3
-session = boto3.Session(profile_name='default', region_name='us-east-1')
-s3 = session.client('s3')
-s3.upload_file('$1', 'jenkaas', '$2')
-"
-    python -c "$py_script"
-}
 
 # Entrypoint to start the deployment, testing, reporting
 function ci::run
