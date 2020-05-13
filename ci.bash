@@ -40,7 +40,7 @@ function compile::env
     touch "meta/channel-$JUJU_DEPLOY_CHANNEL"
     touch "meta/series-$SERIES"
     touch "meta/snap_version-$snap_version_format"
-    /snap/bin/aws s3 sync "meta" "s3://jenkaas/$JOB_ID/meta"
+    aws s3 sync "meta" "s3://jenkaas/$JOB_ID/meta"
     popd || exit
 }
 
