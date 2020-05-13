@@ -21,6 +21,7 @@ function juju::bootstrap
          --model-default resource-tags=owner=k8sci \
          --model-default image-stream=daily \
          --model-default vpc-id=vpc-0e4f11d0d4e9ba35f \
+         --model-default automatically-retry-hooks=false \
          --config vpc-id=vpc-0e4f11d0d4e9ba35f
 }
 
