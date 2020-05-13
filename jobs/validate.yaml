@@ -17,7 +17,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 */2 * *"
     axes:
       - axis:
           type: slave
@@ -73,7 +73,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 */2 * *"
     axes:
       - axis:
           type: slave
@@ -266,7 +266,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 */2 * *"
     axes:
       - axis:
           type: slave
@@ -321,7 +321,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 */2 * *"
     axes:
       - axis:
           type: user-defined
@@ -360,7 +360,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 */2 * *"
     axes:
       - axis:
           type: slave
@@ -404,7 +404,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 */2 * *"
     axes:
       - axis:
           type: slave
@@ -433,7 +433,7 @@
             bash jobs/validate/ceph-spec $snap_version $series
 
 - job:
-    name: 'validate-ck- nfs'
+    name: 'validate-ck-nfs'
     node: runner-validate
     description: |
       Validates CK, with NFS.
@@ -447,7 +447,7 @@
       - build-discarder:
           num-to-keep: 7
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 */2 * *"
     axes:
       - axis:
           type: slave
@@ -492,7 +492,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 */4 * *"
     axes:
       - axis:
           type: slave
@@ -537,7 +537,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: "@weekly"
     axes:
       - axis:
           type: slave
@@ -582,7 +582,7 @@
       - build-discarder:
           num-to-keep: 7
     triggers:
-        - timed: "@daily"
+        - timed: "@weekly"
     axes:
       - axis:
           type: slave
@@ -626,7 +626,7 @@
       - build-discarder:
           num-to-keep: 7
     triggers:
-        - timed: "@daily"
+        - timed: "0 0 */2 * *"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
