@@ -44,6 +44,7 @@
           name: channel
           values:
             - edge
+            - stable
       - axis:
           type: user-defined
           name: arch
