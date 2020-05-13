@@ -25,23 +25,22 @@ function compile::env
     export SERIES
     export SNAP_VERSION
     export TMPDIR
-    export PATH=$TMPDIR/venv/bin:$PATH
 
     echo "Storing initial meta information"
-    pushd "$TMPDIR" || exit
     local job_name_format
     local snap_version_format
 
-    mkdir -p "meta"
+    mkdir -p "$TMPDIR/meta"
     job_name_format=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     snap_version_format=$(echo "$SNAP_VERSION" | tr '/' '-')
 
-    touch "meta/name-$job_name_format"
-    touch "meta/channel-$JUJU_DEPLOY_CHANNEL"
-    touch "meta/series-$SERIES"
-    touch "meta/snap_version-$snap_version_format"
-    aws s3 sync "meta" "s3://jenkaas/$JOB_ID/meta"
-    popd || exit
+    touch "$TMPDIR/meta/name-$job_name_format"
+    touch "$TMPDIR/meta/channel-$JUJU_DEPLOY_CHANNEL"
+    touch "$TMPDIR/meta/series-$SERIES"
+    touch "$TMPDIR/meta/snap_version-$snap_version_format"
+    for i in "$TMPDIR"/meta/*; do
+        "$venv_p/bin/aws" s3 cp "$i" "s3://jenkaas/$JOB_ID/meta/"
+    done
 }
 
 function identifier
@@ -94,14 +93,12 @@ function test::capture
     if which juju-crashdump; then
         juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL" -o "$TMPDIR"
     fi
-    pushd "$TMPDIR" || exit
-    tar --exclude='venv' -cvzf artifacts.tar.gz *
-    columbo --output-dir "_out" "artifacts.tar.gz" || true
-    aws s3 cp "_out/columbo-report.json" s3://jenkaas/"$JOB_ID"/columbo-report.json || true
-    aws s3 cp "metadata.json" s3://jenkaas/"$JOB_ID"/metadata.json || true
-    aws s3 cp "report.html" s3://jenkaas/"$JOB_ID"/index.html || true
-    aws s3 cp "artifacts.tar.gz" s3://jenkaas/"$JOB_ID"/artifacts.tar.gz || true
-    popd || exit
+    (cd $TMPDIR && tar --exclude='venv' -cvzf artifacts.tar.gz *)
+    "$venv_p/bin/columbo" --output-dir "$TMPDIR/_out" "$TMPDIR/artifacts.tar.gz" || true
+    "$venv_p/bin/aws" s3 cp "$TMPDIR/_out/columbo-report.json" s3://jenkaas/"$JOB_ID"/columbo-report.json || true
+    "$venv_p/bin/aws" s3 cp "$TMPDIR/metadata.json" s3://jenkaas/"$JOB_ID"/metadata.json || true
+    "$venv_p/bin/aws" s3 cp "$TMPDIR/report.html" s3://jenkaas/"$JOB_ID"/index.html || true
+    "$venv_p/bin/aws" s3 cp "$TMPDIR/artifacts.tar.gz" s3://jenkaas/"$JOB_ID"/artifacts.tar.gz || true
 }
 
 
