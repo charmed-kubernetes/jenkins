@@ -85,6 +85,8 @@ function test::report
     deploy_endtime=$3
 
     python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$JOB_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': '$build_starttime', 'deploy_endtime': '$deploy_endtime'}))" | tee "metadata.json"
+    touch "meta/result-$result"
+    aws s3 cp "meta/result-$result" s3://jenkaas/"$JOB_ID"/meta/
 }
 
 function test::capture
