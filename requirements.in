@@ -22,7 +22,7 @@ ipdb
 jenkins-job-builder
 jinja2
 juju-wait
-juju>=2.7.1
+juju>=2.8.0
 jujubundlelib
 kv
 loguru
