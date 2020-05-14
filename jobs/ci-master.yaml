@@ -286,6 +286,13 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
+          python3.6 -m virtualenv venv
+          venv/bin/python -m pip install tox awscli
+
+          set +u
+          source venv/bin/activate
+          set -u
+
           {COMMAND}
 
 
