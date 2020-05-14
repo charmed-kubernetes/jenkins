@@ -203,8 +203,8 @@ def skip_by_model(request, model):
     """ Skips tests if model isn't referenced, ie validate-vault for only
     running tests applicable to vault
     """
-    if request.node.get_closest_marker("skip_model"):
-        if request.node.get_closest_marker("skip_model").args[0] not in model.info.name:
+    if request.node.get_closest_marker("on_model"):
+        if request.node.get_closest_marker("on_model").args[0] not in model.info.name:
             pytest.skip("skipped on this model: {}".format(model.info.name))
 
 

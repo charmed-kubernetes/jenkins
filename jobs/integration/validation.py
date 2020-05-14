@@ -571,7 +571,7 @@ async def test_worker_master_removal(event_loop, model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip_model("validate-nvidia")
+@pytest.mark.on_model("validate-nvidia")
 async def test_gpu_support(model, tools):
     """ Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
@@ -1169,7 +1169,7 @@ async def test_audit_webhook(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.skip_arch(["aarch64"])
-@pytest.mark.skip_model("validate-vault")
+@pytest.mark.on_model("validate-vault")
 async def test_keystone(model, tools):
     masters = model.applications["kubernetes-master"]
     k8s_version_str = masters.data["workload-version"]
@@ -1412,7 +1412,7 @@ data:
 
 @pytest.mark.asyncio
 @pytest.mark.skip_arch(["aarch64"])
-@pytest.mark.skip_model("validate-vault")
+@pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     """ Testing integrating vault secrets into cluster
     """
