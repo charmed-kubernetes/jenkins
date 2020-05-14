@@ -226,11 +226,6 @@
 
           rm -rf /var/lib/jenkins/venvs || true
 
-          # TODO: Switch to this repo when ready
-          # git clone --depth 1 \
-          #      https://github.com/charmed-kubernetes/integration-tests \
-          #      $WORKSPACE/integration-tests
-
           export INTEGRATION_TEST_PATH=$WORKSPACE/jobs/integration
 
           # Login to snapstore

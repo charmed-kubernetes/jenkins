@@ -474,7 +474,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-           tox -e py36 -- bash jobs/validate/nfs-spec $snap_version $series
+            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/nfs-spec $snap_version $series
 
 
 - job:
