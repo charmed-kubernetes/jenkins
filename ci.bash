@@ -38,7 +38,7 @@ function compile::env
     touch "meta/series-$SERIES"
     touch "meta/snap_version-$snap_version_format"
     for i in meta/*; do
-        aws s3 cp "$i" "s3://jenkaas/$JOB_ID/meta/"
+        python bin/s3 cp "$i" "$i"
     done
 }
 
@@ -86,7 +86,7 @@ function test::report
 
     python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$JOB_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': '$build_starttime', 'deploy_endtime': '$deploy_endtime'}))" | tee "metadata.json"
     touch "meta/result-$result"
-    aws s3 cp "meta/result-$result" s3://jenkaas/"$JOB_ID"/meta/
+    python bin/s3 cp "meta/result-$result" "meta/result-$result"
 }
 
 function test::capture
@@ -96,10 +96,10 @@ function test::capture
     fi
     tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.*
     columbo --output-dir "_out" "artifacts.tar.gz" || true
-    aws s3 cp "_out/columbo-report.json" s3://jenkaas/"$JOB_ID"/columbo-report.json || true
-    aws s3 cp "metadata.json" s3://jenkaas/"$JOB_ID"/metadata.json || true
-    aws s3 cp "report.html" s3://jenkaas/"$JOB_ID"/index.html || true
-    aws s3 cp "artifacts.tar.gz" s3://jenkaas/"$JOB_ID"/artifacts.tar.gz || true
+    python bin/s3 cp "_out/columbo-report.json" columbo-report.json || true
+    python bin/s3 cp "metadata.json" metadata.json || true
+    python bin/s3 cp "report.html" index.html || true
+    python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 }
 
 

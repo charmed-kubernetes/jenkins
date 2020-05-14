@@ -16,7 +16,6 @@ set -x
 ###############################################################################
 function juju::bootstrap
 {
-    pip3 install awscli
     python3 $WORKSPACE/jobs/integration/tigera_aws.py cleanup
     python3 $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
 }

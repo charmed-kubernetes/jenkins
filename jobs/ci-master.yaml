@@ -286,8 +286,9 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
+          sudo rm -rf /usr/local/bin/aws
           python3.6 -m virtualenv venv
-          venv/bin/python -m pip install tox awscli
+          venv/bin/python -m pip install tox
 
           set +u
           source venv/bin/activate

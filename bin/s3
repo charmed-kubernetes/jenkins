@@ -1,0 +1,37 @@
+""" Script for storing build results
+"""
+
+from pathlib import Path
+import boto3
+import click
+import os
+import sys
+import json
+import operator
+
+session = boto3.Session(profile_name="default", region_name="us-east-1")
+s3 = session.client("s3")
+
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.option("--bucket", required=True, help="s3 bucket to use", default="jenkaas")
+@click.argument("src")
+@click.argument("dst")
+def cp(bucket, src, dst):
+    """ pushes files to s3
+    """
+    job_id = os.environ.get("JOB_ID", None)
+    if not job_id:
+        click.echo("No job id found")
+        sys.exit(1)
+    click.echo(f"Uploading {src} to s3://{bucket}/{job_id}/{dst}")
+    s3.upload_file(src, bucket, f"{job_id}/{dst}")
+
+
+if __name__ == "__main__":
+    cli()
