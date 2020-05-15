@@ -32,6 +32,13 @@ def format(c):
 
 
 @task
+def black_check(c):
+    """ Checks black format
+    """
+    c.run("black --check .")
+
+
+@task
 def flake8(c):
     """ Runs flake8 against project
     """
@@ -40,7 +47,7 @@ def flake8(c):
     )
 
 
-@task(pre=[flake8])
+@task(pre=[flake8, black_check])
 def test(c):
     """ Run unittest suite
     """

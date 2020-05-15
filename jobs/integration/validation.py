@@ -329,6 +329,7 @@ async def test_microbot(model, tools):
             click.echo(traceback.print_exc())
         await asyncio.sleep(60)
 
+
 @pytest.mark.asyncio
 async def test_dashboard(model, log_dir, tools):
     """ Validate that the dashboard is operational """
@@ -1876,7 +1877,7 @@ async def test_multus(model, tools, addons_model):
 async def test_series_upgrade(model, tools):
     if not tools.is_series_upgrade:
         pytest.skip("No series upgrade argument found")
-    k8s_master_0 = model.applications['kubernetes-master'].units[0]
+    k8s_master_0 = model.applications["kubernetes-master"].units[0]
     old_series = k8s_master_0.machine.series
     try:
         new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
@@ -1899,16 +1900,13 @@ async def test_series_upgrade(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.clouds(['openstack'])
+@pytest.mark.clouds(["openstack"])
 async def test_cinder(model, tools):
     # setup
     log.info("deploying openstack-integrator")
-    series = 'bionic'
+    series = "bionic"
     await model.deploy(
-        "openstack-integrator",
-        num_units=1,
-        series=series,
-        trust=True,
+        "openstack-integrator", num_units=1, series=series, trust=True,
     )
 
     log.info("adding relations")
@@ -1920,8 +1918,9 @@ async def test_cinder(model, tools):
     log.info("waiting for csi to settle")
     unit = model.applications["kubernetes-master"].units[0]
     await retry_async_with_timeout(
-        verify_ready, (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
-        timeout_msg="CSI pod not ready!"
+        verify_ready,
+        (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
+        timeout_msg="CSI pod not ready!",
     )
     # create pod that writes to a pv from cinder
     await validate_storage_class(model, "cdk-cinder", "Cinder")

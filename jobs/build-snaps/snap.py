@@ -67,7 +67,7 @@ def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
         click.echo(f"Checking: {git_repo}")
         snap_releases = remote_branches(git_repo)
         if set(supported_releases).issubset(set(snap_releases)) and not force:
-            click.echo(f"  synced, skipping")
+            click.echo("  synced, skipping")
             continue
         if force:
             snap_releases = supported_releases

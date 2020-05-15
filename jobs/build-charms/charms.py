@@ -379,7 +379,7 @@ class BuildEntity:
             ret = script(self.opts["override-build"])
         else:
             ret = cmd_ok(
-                f"charm build -r --force -i https://localhost", cwd=self.src_path
+                "charm build -r --force -i https://localhost", cwd=self.src_path
             )
 
         if not ret.ok:

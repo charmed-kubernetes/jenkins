@@ -309,7 +309,7 @@ def summary(max_days, job_filter):
     obj = Storage(numdays=int(max_days))
     table = PrettyTable()
     table.field_names = ["Job", "Test Result", "Datetime"]
-    table.align = 'l'
+    table.align = "l"
 
     for prefix_id, files in obj.reports.items():
         has_metadata = has_file("metadata.json", files)
@@ -323,15 +323,22 @@ def summary(max_days, job_filter):
         except json.decoder.JSONDecodeError:
             continue
 
-        job_name = metadata.get('job_name_custom', metadata['job_name'])
+        job_name = metadata.get("job_name_custom", metadata["job_name"])
         if job_filter and job_filter not in job_name:
             continue
 
         try:
-            table.add_row([job_name, "PASS" if metadata['test_result'] else "FAIL", metadata['build_endtime']])
+            table.add_row(
+                [
+                    job_name,
+                    "PASS" if metadata["test_result"] else "FAIL",
+                    metadata["build_endtime"],
+                ]
+            )
         except KeyError:
             click.echo(metadata)
     click.echo(table)
+
 
 @cli.command()
 def list():

@@ -114,7 +114,7 @@ class Tools:
         stdout, stderr = await proc.communicate()
         if proc.returncode > 0:
             raise Exception(
-                f"Problem with run command: \nstdout: "
+                f"Problem with run command [{' '.join(cmd)}]: \nstdout: "
                 f"{stdout.decode()}\nstderr: {stderr.decode()}"
             )
 
@@ -122,7 +122,7 @@ class Tools:
         cmd = f"juju wait -e {self.connection} -w"
         if args:
             cmd = f"{cmd} ' '.join(args)"
-        if "timeout_secs" in kwargs and kwargs['timeout_secs']:
+        if "timeout_secs" in kwargs and kwargs["timeout_secs"]:
             cmd = f"{cmd} -t {kwargs['timeout_secs']}"
         return await self.run(cmd)
 
