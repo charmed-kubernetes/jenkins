@@ -72,7 +72,6 @@ function test::execute
 {
     declare -n is_pass=$1
     timeout 2h pytest \
-                --html="$TMPDIR/report.html" \
                 jobs/integration/validation.py \
                 --is-upgrade \
                 --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
@@ -91,6 +90,8 @@ function test::execute
 # ENV
 ###############################################################################
 SNAP_VERSION_UPGRADE_TO=${5:-1.19/edge}
+export SNAP_VERSION_UPGRADE_TO
+
 SNAP_VERSION=${1:-1.16/stable}
 SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
