@@ -1,0 +1,43 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+# Init
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+
+function test::execute
+{
+    declare -n is_pass=$1
+    timeout 2h pytest \
+                jobs/integration/validation.py \
+                --is-series-upgrade \
+                --cloud "$JUJU_CLOUD" \
+                --model "$JUJU_MODEL" \
+                --controller "$JUJU_CONTROLLER"
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+
+# Setup Environment
+
+SNAP_VERSION=${1:-1.19/edge}
+SERIES=${2:-bionic}
+JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_CLOUD=aws/us-east-2
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-series-upgrade
+ARCH=${4:-amd64}
+JOB_NAME_CUSTOM="validate-ck-series-upgrade-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
+
+ci::run
