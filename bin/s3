@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import operator
+import mimetypes
 
 session = boto3.Session(profile_name="default", region_name="us-east-1")
 s3 = session.client("s3")
@@ -30,7 +31,10 @@ def cp(bucket, src, dst):
         click.echo("No job id found")
         sys.exit(1)
     click.echo(f"Uploading {src} to s3://{bucket}/{job_id}/{dst}")
-    s3.upload_file(src, bucket, f"{job_id}/{dst}")
+    context_type = mimetypes.guess_type(src)[0]
+    if not context_type:
+        context_type = 'text/plain'
+    s3.upload_file(src, bucket, f"{job_id}/{dst}", ExtraArgs={'ContentType': context_type})
 
 
 if __name__ == "__main__":
