@@ -62,7 +62,13 @@ class Storage:
 
 
 def has_file(filename, files):
-    return any([name == filename for name, _ in files])
+    return any([name == filename for name, _, _ in files])
+
+def get_file_name(filename, files):
+    for name, size, modified in files:
+        if name == filename:
+            return (name, size, modified)
+    return (None, None, None)
 
 
 def get_file_prefix(prefix, files, normalize=True):
@@ -76,20 +82,21 @@ def get_file_prefix(prefix, files, normalize=True):
 
 def build_columbo_reports(data):
     prefix_id, files = data
-    has_columbo = [
-        (name, size) for name, size in files if name == "columbo-report.json"
-    ]
-
+    prefix_id = str(prefix_id).rstrip("/meta")
+    has_columbo = get_file_name("columbo-report.json", files)
     if not has_columbo:
         log.debug(f"{prefix_id} :: no report found, skipping")
         return
 
-    name, size = has_columbo[0]
-    if size >= 1048576:
+    name, size, modified = has_columbo
+    if not name:
+        return
+
+    if size and size >= 1048576:
         log.debug(f"{prefix_id} :: columbo report to big, skipping")
         return
 
-    has_index = requests.get(f"{REPORT_HOST}/{prefix_id}/columbo.html")
+    has_index = requests.head(f"{REPORT_HOST}/{prefix_id}/columbo.html")
     if has_index.ok:
         log.debug(f"Report already generated for {prefix_id}, skipping.")
         return
@@ -103,15 +110,17 @@ def build_columbo_reports(data):
         except json.decoder.JSONDecodeError:
             return
 
-    has_artifacts = requests.get(f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz")
-    if has_artifacts.ok:
-        log.debug(f"{prefix_id} :: found artifacts")
-        obj["artifacts"] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
+    obj["artifacts"] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
 
     log.info(f"{prefix_id} :: processing report {name} ({size})")
 
     tmpl = html.template("columbo.html")
-    columbo_results = requests.get(f"{REPORT_HOST}/{prefix_id}/{name}").json()
+    columbo_results = requests.get(f"{REPORT_HOST}/{prefix_id}/{name}")
+    if columbo_results.ok:
+        try:
+            columbo_results = columbo_results.json()
+        except json.decoder.JSONDecodeError:
+            return
     context = {"obj": obj, "columbo_results": columbo_results}
     rendered = tmpl.render(context)
     html_p = Path(f"{prefix_id}-columbo.html")
@@ -175,35 +184,8 @@ def _gen_metadata():
     db = OrderedDict()
     debug_host_url = "https://jenkaas.s3.amazonaws.com"
 
-    # def _download_metadata(item):
-    #     prefix_id, files = item
-    #     has_metadata = has_file("metadata.json", files)
-    #     if not has_metadata:
-    #         log.debug(f"{prefix_id} :: missing metadata, skipping")
-    #         return
-
-    #     metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
-    #     try:
-    #         obj = metadata.json()
-    #     except json.decoder.JSONDecodeError:
-    #         return
-    #     log.info(f"Storing {prefix_id} metadata")
-    #     try:
-    #         Path(f"metadatas/{prefix_id}-metadata.json").write_text(json.dumps(obj))
-    #     except FileNotFoundError:
-    #         return
-
-    # metadatas = Path("metadatas")
-    # if not metadatas.exists():
-    #     os.mkdir("metadatas")
-
-    # pool = ThreadPool()
-    # pool.map(
-    #     _download_metadata,
-    #     [(prefix_id, files) for prefix_id, files in _storage.reports.items()],
-    # )
-
     for prefix_id, files in _storage.reports.items():
+        prefix_id = str(prefix_id).rstrip("/meta")
         obj = {}
 
         obj["job_id"] = prefix_id
