@@ -35,8 +35,9 @@ from .utils import (
 )
 
 # Quiet the noise
-ws_logger = logging.getLogger("websockets.protocol")
-ws_logger.setLevel(logging.INFO)
+logging.getLogger("websockets.protocol").setLevel(logging.INFO)
+# bump up juju debug
+logging.getLogger("juju").setLevel(logging.DEBUG)
 
 
 class MicrobotError(Exception):
