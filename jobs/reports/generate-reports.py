@@ -55,14 +55,23 @@ class Storage:
         for item in self.objects:
             key_p = Path(item["Key"])
             if key_p.parent in _report_map:
-                _report_map[key_p.parent].append((key_p.name, int(item["Size"])))
+                _report_map[key_p.parent].append((key_p.name, int(item["Size"]), datetime.strptime(item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z")))
             else:
-                _report_map[key_p.parent] = [(key_p.name, int(item["Size"]))]
+                _report_map[key_p.parent] = [(key_p.name, int(item["Size"]), datetime.strptime(item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z"))]
         return _report_map
 
 
 def has_file(filename, files):
     return any([name == filename for name, _ in files])
+
+
+def get_file_prefix(prefix, files, normalize=True):
+    for name, size, modified in files:
+        if prefix in name:
+            if normalize:
+                name = name.lstrip(prefix)
+            return (name, size, modified)
+    return (None, None, None)
 
 
 def build_columbo_reports(data):
@@ -166,71 +175,59 @@ def _gen_metadata():
     db = OrderedDict()
     debug_host_url = "https://jenkaas.s3.amazonaws.com"
 
-    def _download_metadata(item):
-        prefix_id, files = item
-        has_metadata = has_file("metadata.json", files)
-        if not has_metadata:
-            log.debug(f"{prefix_id} :: missing metadata, skipping")
-            return
+    # def _download_metadata(item):
+    #     prefix_id, files = item
+    #     has_metadata = has_file("metadata.json", files)
+    #     if not has_metadata:
+    #         log.debug(f"{prefix_id} :: missing metadata, skipping")
+    #         return
 
-        metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
-        try:
-            obj = metadata.json()
-        except json.decoder.JSONDecodeError:
-            return
-        log.info(f"Storing {prefix_id} metadata")
-        try:
-            Path(f"metadatas/{prefix_id}-metadata.json").write_text(json.dumps(obj))
-        except FileNotFoundError:
-            return
+    #     metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
+    #     try:
+    #         obj = metadata.json()
+    #     except json.decoder.JSONDecodeError:
+    #         return
+    #     log.info(f"Storing {prefix_id} metadata")
+    #     try:
+    #         Path(f"metadatas/{prefix_id}-metadata.json").write_text(json.dumps(obj))
+    #     except FileNotFoundError:
+    #         return
 
-    metadatas = Path("metadatas")
-    if not metadatas.exists():
-        os.mkdir("metadatas")
+    # metadatas = Path("metadatas")
+    # if not metadatas.exists():
+    #     os.mkdir("metadatas")
 
-    pool = ThreadPool()
-    pool.map(
-        _download_metadata,
-        [(prefix_id, files) for prefix_id, files in _storage.reports.items()],
-    )
+    # pool = ThreadPool()
+    # pool.map(
+    #     _download_metadata,
+    #     [(prefix_id, files) for prefix_id, files in _storage.reports.items()],
+    # )
 
-    for item in metadatas.glob("*.json"):
-        obj = json.loads(item.read_text())
+    for prefix_id, files in _storage.reports.items():
+        obj = {}
 
-        prefix_id = obj["job_id"]
-        if "build_endtime" not in obj:
-            continue
+        obj["job_id"] = prefix_id
         if "job_id" not in obj:
             continue
 
-        day = datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
-        date_of_last_30 = datetime.today() - timedelta(days=30)
-        if day < date_of_last_30:
-            continue
-        day = day.strftime("%Y-%m-%d")
-        log.info(
-            f"{prefix_id} :: grabbing metadata for {obj['job_name']} @ {day} report"
-        )
-
         obj["debug_host"] = debug_host_url
-        if "validate" not in obj["job_name"]:
+
+        job_name, _, _ = get_file_prefix("name-", files)
+        if not job_name:
+            continue
+
+        test_result, _, obj["build_endtime"] = get_file_prefix("result-", files)
+        if not obj["build_endtime"]:
+            continue
+
+        obj["test_result"] = True if test_result == "True" else False
+
+        if "validate" not in job_name:
             continue
 
         obj["artifacts"] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
         obj["index"] = f"{REPORT_HOST}/{prefix_id}/index.html"
         obj["columbo_results"] = f"{REPORT_HOST}/{prefix_id}/columbo.html"
-
-        job_name = obj["job_name"]
-        if "snap_version" in obj:
-            job_name = f"{job_name}-{obj['snap_version']}"
-        elif "juju_version" in obj:
-            job_name = f"{job_name}-juju-{obj['juju_version']}"
-
-        if "job_name_custom" in obj:
-            job_name = obj["job_name_custom"]
-
-        if not any(ser in job_name for ser in SERIES):
-            continue
 
         if job_name not in db:
             db[job_name] = {}
@@ -239,7 +236,7 @@ def _gen_metadata():
             result_bg_class = "bg-light"
             result_btn_class = "btn-light"
             result_bg_color = "#d4dee8!important;"
-        elif not obj["test_result"] or int(obj["test_result"]) == 0:
+        elif not obj["test_result"]:
             result_bg_class = "bg-danger"
             result_btn_class = "btn-danger"
             result_bg_color = "#ff0018!important;"
@@ -252,17 +249,17 @@ def _gen_metadata():
         obj["btn_class"] = result_btn_class
         obj["bg_color"] = result_bg_color
 
+        day = obj["build_endtime"].strftime("%Y-%m-%d")
         if day not in db[job_name]:
             db[job_name][day] = []
         db[job_name][day].append(obj)
-    Path("index.json").write_text(json.dumps(db))
     return db
 
 
 def _gen_rows():
     """ Generates reports
     """
-    days = _gen_days()
+    days = _gen_days(15)
     metadata = _gen_metadata()
     rows = []
     for jobname, jobdays in sorted(metadata.items()):
@@ -270,15 +267,13 @@ def _gen_rows():
         for day in days:
             try:
                 dates_to_test = [
-                    datetime.strptime(obj["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f")
+                    obj["build_endtime"]
                     for obj in jobdays[day]
                 ]
                 max_date_for_day = max(dates_to_test)
                 log.info(f"Testing {max_date_for_day}")
                 for job in jobdays[day]:
-                    _day = datetime.strptime(
-                        job["build_endtime"], "%Y-%m-%dT%H:%M:%S.%f"
-                    )
+                    _day = job["build_endtime"]
                     log.info(f"{_day} == {max_date_for_day}")
                     if _day == max_date_for_day:
                         sub_item.append(job)
@@ -308,31 +303,31 @@ def summary(max_days, job_filter):
     """
     obj = Storage(numdays=int(max_days))
     table = PrettyTable()
-    table.field_names = ["Job", "Test Result", "Datetime"]
+    table.field_names = ["Job", "Test Result", "Date"]
     table.align = "l"
 
     for prefix_id, files in obj.reports.items():
-        has_metadata = has_file("metadata.json", files)
-        if not has_metadata:
-            log.debug(f"{prefix_id} :: missing metadata, skipping")
+        job_name, _, _ = get_file_prefix("name-", files)
+        test_result, _, modified = get_file_prefix("result-", files)
+        if not job_name:
+            log.debug(f"{prefix_id} :: missing name, skipping")
             continue
 
-        metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
-        try:
-            metadata = metadata.json()
-        except json.decoder.JSONDecodeError:
-            continue
+        if not test_result:
+            test_result = "FAIL"
+        else:
+            test_result = "PASS" if test_result == "True" else "FAIL"
 
-        job_name = metadata.get("job_name_custom", metadata["job_name"])
         if job_filter and job_filter not in job_name:
             continue
 
+        print(job_name, test_result, modified)
         try:
             table.add_row(
                 [
                     job_name,
-                    "PASS" if metadata["test_result"] else "FAIL",
-                    metadata["build_endtime"],
+                    test_result,
+                    modified
                 ]
             )
         except KeyError:
@@ -409,7 +404,7 @@ def build():
     ci_results_context = {
         "rows": _gen_rows(),
         "headers": [
-            datetime.strptime(day, "%Y-%m-%d").strftime("%m-%d") for day in _gen_days()
+            datetime.strptime(day, "%Y-%m-%d").strftime("%m-%d") for day in _gen_days(15)
         ],
         "modified": datetime.now(),
     }
