@@ -518,7 +518,7 @@ async def test_network_policies(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+@pytest.mark.skip("Unskip when this can be speed up considerably")
 async def test_worker_master_removal(event_loop, model, tools):
     # Add a second master
     masters = model.applications["kubernetes-master"]
