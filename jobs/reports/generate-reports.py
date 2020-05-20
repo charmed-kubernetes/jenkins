@@ -55,14 +55,31 @@ class Storage:
         for item in self.objects:
             key_p = Path(item["Key"])
             if key_p.parent in _report_map:
-                _report_map[key_p.parent].append((key_p.name, int(item["Size"]), datetime.strptime(item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z")))
+                _report_map[key_p.parent].append(
+                    (
+                        key_p.name,
+                        int(item["Size"]),
+                        datetime.strptime(
+                            item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z"
+                        ),
+                    )
+                )
             else:
-                _report_map[key_p.parent] = [(key_p.name, int(item["Size"]), datetime.strptime(item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z"))]
+                _report_map[key_p.parent] = [
+                    (
+                        key_p.name,
+                        int(item["Size"]),
+                        datetime.strptime(
+                            item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z"
+                        ),
+                    )
+                ]
         return _report_map
 
 
 def has_file(filename, files):
     return any([name == filename for name, _, _ in files])
+
 
 def get_file_name(filename, files):
     for name, size, modified in files:
@@ -248,10 +265,7 @@ def _gen_rows():
         sub_item = [jobname]
         for day in days:
             try:
-                dates_to_test = [
-                    obj["build_endtime"]
-                    for obj in jobdays[day]
-                ]
+                dates_to_test = [obj["build_endtime"] for obj in jobdays[day]]
                 max_date_for_day = max(dates_to_test)
                 log.info(f"Testing {max_date_for_day}")
                 for job in jobdays[day]:
@@ -305,13 +319,7 @@ def summary(max_days, job_filter):
 
         print(job_name, test_result, modified)
         try:
-            table.add_row(
-                [
-                    job_name,
-                    test_result,
-                    modified
-                ]
-            )
+            table.add_row([job_name, test_result, modified])
         except KeyError:
             click.echo(metadata)
     click.echo(table)
@@ -386,7 +394,8 @@ def build():
     ci_results_context = {
         "rows": _gen_rows(),
         "headers": [
-            datetime.strptime(day, "%Y-%m-%d").strftime("%m-%d") for day in _gen_days(15)
+            datetime.strptime(day, "%Y-%m-%d").strftime("%m-%d")
+            for day in _gen_days(15)
         ],
         "modified": datetime.now(),
     }
