@@ -26,6 +26,8 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
+      - shell: |
+          rm -rf /var/lib/jenkins/slaves/*/workspace/validate*
       - run-venv:
           COMMAND: |
             bash $WORKSPACE/jobs/infra/fixtures/cleanup-env.sh
