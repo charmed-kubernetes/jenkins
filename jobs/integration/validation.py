@@ -185,7 +185,7 @@ async def reset_audit_config(master_app, tools):
 
 # START TESTS
 @pytest.mark.asyncio
-async def test_auth_file_propagation(event_loop, model):
+async def test_auth_file_propagation(event_loop, model, tools):
     """Validate that changes to /root/cdk/basic_auth.csv on the leader master
     unit are propagated to the other master units.
 
@@ -215,6 +215,7 @@ async def test_auth_file_propagation(event_loop, model):
 
     # Cleanup (remove the line we added)
     await run_until_success(leader, "sed -i '$d' /root/cdk/basic_auth.csv")
+    await tools.juju_wait()
 
 
 @pytest.mark.asyncio
