@@ -59,7 +59,7 @@ async def wait_for_process(model, arg):
         else:
             if checks <= 0:
                 assert False
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(5)
 
 
 async def wait_for_not_process(model, arg):
@@ -71,7 +71,7 @@ async def wait_for_not_process(model, arg):
         if await api_server_with_arg(model, arg):
             if checks <= 0:
                 assert False
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(5)
         else:
             return
 
@@ -111,7 +111,7 @@ async def run_until_success(unit, cmd, timeout_insec=None):
                     "stderr:\n" + action.data["results"].get("Stderr", "").strip()
                 )
                 click.echo("Will retry...")
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(5)
 
 
 async def get_last_audit_entry_date(application):
@@ -155,7 +155,7 @@ async def assert_hook_occurs_on_all_units(app, hook):
 
     click.echo("assert_hook_occurs_on_all_units: waiting for " + hook + " hook")
     while len(finished_units) < len(app.units):
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(5)
 
 
 async def set_config_and_wait(app, config, tools, timeout_secs=None):
@@ -661,7 +661,7 @@ async def test_extra_args(model, tools):
                     results.append(args)
                     break
 
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(5)
 
         # charms sometimes choose the master randomly, filter out the master
         # arg so we can do comparisons reliably
@@ -694,7 +694,7 @@ async def test_extra_args(model, tools):
                         args_per_unit = await get_filtered_service_args(app, service)
                         if all(expected_service_args <= args for args in args_per_unit):
                             break
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(5)
             except asyncio.CancelledError:
                 click.echo("Dumping locals:\n" + pformat(locals()))
                 raise
@@ -712,7 +712,7 @@ async def test_extra_args(model, tools):
                         new_args = await get_filtered_service_args(app, service)
                         if new_args == original_service_args:
                             break
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(5)
             except asyncio.CancelledError:
                 click.echo("Dumping locals:\n" + pformat(locals()))
                 raise
@@ -823,7 +823,7 @@ async def test_kubelet_extra_config(model, tools):
             if all_nodes_updated:
                 break
 
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(5)
 
     # validate config.yaml on each worker
     click.echo("validating generated config.yaml files")
@@ -959,7 +959,7 @@ async def test_audit_default_config(model, tools):
     # Verify new entries are being logged
     unit = app.units[0]
     before_date = await get_last_audit_entry_date(app)
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(5)
     await run_until_success(
         unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
     )
@@ -1035,7 +1035,7 @@ async def test_audit_empty_policy(model, tools):
     # Verify no entries are being logged
     unit = app.units[0]
     before_date = await get_last_audit_entry_date(app)
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(5)
     await run_until_success(
         unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
     )
@@ -1063,7 +1063,7 @@ async def test_audit_custom_policy(model, tools):
     # Verify no entries are being logged
     unit = app.units[0]
     before_date = await get_last_audit_entry_date(app)
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(5)
     await run_until_success(
         unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
     )
@@ -1087,7 +1087,7 @@ async def test_audit_custom_policy(model, tools):
 
     # Verify our very special request gets logged
     before_date = await get_last_audit_entry_date(app)
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(5)
     await run_until_success(
         unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -n " + namespace
     )
@@ -1600,7 +1600,7 @@ async def test_dns_provider(model, tools):
                     break
             if not exists:
                 break
-            await asyncio.sleep(1)
+            await asyncio.sleep(5)
 
     async def verify_dns_resolution():
         names = ["www.ubuntu.com", "kubernetes.default.svc.cluster.local"]
