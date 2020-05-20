@@ -87,6 +87,9 @@
         state: absent
       tags:
         - jenkins
+    - name: upgrade juju
+      command: "snap refresh juju --channel latest/stable"
+      ignore_errors: yes
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
@@ -94,7 +97,7 @@
         - "aws-cli --classic"
         - "charm --classic --edge"
         - "go --classic --stable"
-        - "juju --classic --channel latest/stable"
+        - "juju --classic --channel 2.8/candidate"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"
