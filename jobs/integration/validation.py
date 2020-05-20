@@ -1874,31 +1874,31 @@ async def test_multus(model, tools, addons_model):
     await cleanup()
 
 
-@pytest.mark.asyncio
-@pytest.mark.skip("Closes the EV prematurely")
-async def test_series_upgrade(model, tools):
-    if not tools.is_series_upgrade:
-        pytest.skip("No series upgrade argument found")
-    k8s_master_0 = model.applications["kubernetes-master"].units[0]
-    old_series = k8s_master_0.machine.series
-    try:
-        new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
-    except IndexError:
-        pytest.skip("no supported series to upgrade to")
-    except ValueError:
-        pytest.skip("unrecognized series to upgrade from: {old_series}")
-    for machine in model.machines.values():
-        await prep_series_upgrade(machine, new_series, tools)
-        await do_series_upgrade(machine)
-        await finish_series_upgrade(machine, tools)
-        assert machine.series == new_series
-    expected_messages = {
-        "kubernetes-master": "Kubernetes master running.",
-        "kubernetes-worker": "Kubernetes worker running.",
-    }
-    for app, message in expected_messages.items():
-        for unit in model.applications[app].units:
-            assert unit.workload_status_message == message
+# @pytest.mark.asyncio
+# @pytest.mark.skip("Closes the EV prematurely")
+# async def test_series_upgrade(model, tools):
+#     if not tools.is_series_upgrade:
+#         pytest.skip("No series upgrade argument found")
+#     k8s_master_0 = model.applications["kubernetes-master"].units[0]
+#     old_series = k8s_master_0.machine.series
+#     try:
+#         new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
+#     except IndexError:
+#         pytest.skip("no supported series to upgrade to")
+#     except ValueError:
+#         pytest.skip("unrecognized series to upgrade from: {old_series}")
+#     for machine in model.machines.values():
+#         await prep_series_upgrade(machine, new_series, tools)
+#         await do_series_upgrade(machine)
+#         await finish_series_upgrade(machine, tools)
+#         assert machine.series == new_series
+#     expected_messages = {
+#         "kubernetes-master": "Kubernetes master running.",
+#         "kubernetes-worker": "Kubernetes worker running.",
+#     }
+#     for app, message in expected_messages.items():
+#         for unit in model.applications[app].units:
+#             assert unit.workload_status_message == message
 
 
 @pytest.mark.asyncio
@@ -1930,45 +1930,45 @@ async def test_cinder(model, tools):
     await model.applications["openstack-integrator"].destroy()
 
 
-# @pytest.mark.asyncio
-# @pytest.mark.skip("Closes the EV prematurely")
-# async def test_containerd_to_docker(model, tools):
-#     """
-#     Assume we're starting with containerd, replace
-#     with Docker and then revert to containerd.
+@pytest.mark.asyncio
+@pytest.mark.skip("Closes the EV prematurely")
+async def test_containerd_to_docker(model, tools):
+    """
+    Assume we're starting with containerd, replace
+    with Docker and then revert to containerd.
 
-#     :param model: Object
-#     :return: None
-#     """
-#     containerd_app = model.applications["containerd"]
+    :param model: Object
+    :return: None
+    """
+    containerd_app = model.applications["containerd"]
 
-#     await containerd_app.remove()
-#     await tools.juju_wait("-x", "kubernetes-worker")
-#     # Block until containerd's removed, ignore `blocked` worker.
+    await containerd_app.remove()
+    await tools.juju_wait("-x", "kubernetes-worker")
+    # Block until containerd's removed, ignore `blocked` worker.
 
-#     docker_app = await model.deploy(
-#         "cs:~containers/docker", num_units=0, channel="edge"  # Subordinate.
-#     )
+    docker_app = await model.deploy(
+        "cs:~containers/docker", num_units=0, channel="edge"  # Subordinate.
+    )
 
-#     await docker_app.add_relation("docker", "kubernetes-master")
+    await docker_app.add_relation("docker", "kubernetes-master")
 
-#     await docker_app.add_relation("docker", "kubernetes-worker")
+    await docker_app.add_relation("docker", "kubernetes-worker")
 
-#     await tools.juju_wait()
-#     # If we settle, it's safe to
-#     # assume Docker is now running
-#     # workloads.
+    await tools.juju_wait()
+    # If we settle, it's safe to
+    # assume Docker is now running
+    # workloads.
 
-#     await docker_app.remove()
-#     await tools.juju_wait("-x", "kubernetes-worker")
-#     # Block until docker's removed, ignore `blocked` worker.
+    await docker_app.remove()
+    await tools.juju_wait("-x", "kubernetes-worker")
+    # Block until docker's removed, ignore `blocked` worker.
 
-#     containerd_app = await model.deploy(
-#         "cs:~containers/containerd", num_units=0, channel="edge"  # Subordinate.
-#     )
+    containerd_app = await model.deploy(
+        "cs:~containers/containerd", num_units=0, channel="edge"  # Subordinate.
+    )
 
-#     await containerd_app.add_relation("containerd", "kubernetes-master")
+    await containerd_app.add_relation("containerd", "kubernetes-master")
 
-#     await containerd_app.add_relation("containerd", "kubernetes-worker")
+    await containerd_app.add_relation("containerd", "kubernetes-worker")
 
-#     await tools.juju_wait()
+    await tools.juju_wait()
