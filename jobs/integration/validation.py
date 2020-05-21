@@ -342,10 +342,9 @@ async def test_dashboard(model, log_dir, tools):
             config = yaml.safe_load(stream)
     # make sure we can hit the api-server
     url = config["clusters"][0]["cluster"]["server"]
-    user = config["users"][0]["user"]["username"]
-    password = config["users"][0]["user"]["password"]
-    auth = tools.requests.auth.HTTPBasicAuth(user, password)
-    resp = await tools.requests.get(url, auth=auth, verify=False)
+    token = config["users"][0]["user"]["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = await tools.requests.get(url, headers=headers, verify=False)
     assert resp.status_code == 200
 
     # get k8s version
@@ -371,7 +370,7 @@ async def test_dashboard(model, log_dir, tools):
     click.echo("Waiting for dashboard to stabilize...")
 
     async def dashboard_present(url):
-        resp = await tools.requests.get(url, auth=auth, verify=False)
+        resp = await tools.requests.get(url, headers=headers, verify=False)
         if resp.status_code == 200 and "Dashboard" in resp.text:
             return True
         return False
