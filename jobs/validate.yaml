@@ -5,8 +5,7 @@
     name: 'validate-ck'
     node: runner-validate
     description: |
-      Validates CDK edge on amd64 and arm64, supports last three recent releases additionally
-      validates upgrades from current stables to latest edge.
+      Validates CDK edge on amd64 and arm64, supports last three recent releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -57,6 +56,61 @@
       - run-env:
           COMMAND: |
             TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/spec $snap_version $series $channel $arch
+
+- job:
+    name: 'validate-ck-stable'
+    node: runner-validate
+    description: |
+      Validates CDK stable on amd64 and arm64, supports last three recent releases additionally.
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+    triggers:
+        - timed: "@weekly"
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.18/stable
+            - 1.17/stable
+            - 1.16/stable
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+            - bionic
+            - xenial
+      - axis:
+          type: user-defined
+          name: channel
+          values:
+            - stable
+      - axis:
+          type: user-defined
+          name: arch
+          values:
+            - amd64
+            - arm64
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
+          COMMAND: |
+            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/spec $snap_version $series $channel $arch
+
 
 - job:
     name: 'validate-ck-upgrade'
