@@ -1753,20 +1753,6 @@ async def test_cloud_node_labels(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.preupgrade
-async def test_preupgrade_stub(model, tools):
-    click.echo("Pre-upgrade")
-    assert True
-
-
-@pytest.mark.asyncio
-@pytest.mark.postupgrade
-async def test_postupgrade_stub(model, tools):
-    click.echo("Post-upgrade")
-    assert True
-
-
-@pytest.mark.asyncio
 async def test_multus(model, tools, addons_model):
     if "multus" not in addons_model.applications:
         pytest.skip("multus is not deployed")
@@ -1901,74 +1887,74 @@ async def test_multus(model, tools, addons_model):
 #             assert unit.workload_status_message == message
 
 
-@pytest.mark.asyncio
-@pytest.mark.clouds(["openstack"])
-async def test_cinder(model, tools):
-    # setup
-    log.info("deploying openstack-integrator")
-    series = "bionic"
-    await model.deploy(
-        "openstack-integrator", num_units=1, series=series, trust=True,
-    )
+# @pytest.mark.asyncio
+# @pytest.mark.clouds(["openstack"])
+# async def test_cinder(model, tools):
+#     # setup
+#     log.info("deploying openstack-integrator")
+#     series = "bionic"
+#     await model.deploy(
+#         "openstack-integrator", num_units=1, series=series, trust=True,
+#     )
 
-    log.info("adding relations")
-    await model.add_relation("openstack-integrator", "kubernetes-master")
-    await model.add_relation("openstack-integrator", "kubernetes-worker")
-    log.info("waiting...")
-    await tools.juju_wait()
+#     log.info("adding relations")
+#     await model.add_relation("openstack-integrator", "kubernetes-master")
+#     await model.add_relation("openstack-integrator", "kubernetes-worker")
+#     log.info("waiting...")
+#     await tools.juju_wait()
 
-    log.info("waiting for csi to settle")
-    unit = model.applications["kubernetes-master"].units[0]
-    await retry_async_with_timeout(
-        verify_ready,
-        (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
-        timeout_msg="CSI pod not ready!",
-    )
-    # create pod that writes to a pv from cinder
-    await validate_storage_class(model, "cdk-cinder", "Cinder")
-    # cleanup
-    await model.applications["openstack-integrator"].destroy()
+#     log.info("waiting for csi to settle")
+#     unit = model.applications["kubernetes-master"].units[0]
+#     await retry_async_with_timeout(
+#         verify_ready,
+#         (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
+#         timeout_msg="CSI pod not ready!",
+#     )
+#     # create pod that writes to a pv from cinder
+#     await validate_storage_class(model, "cdk-cinder", "Cinder")
+#     # cleanup
+#     await model.applications["openstack-integrator"].destroy()
 
 
-@pytest.mark.asyncio
-@pytest.mark.skip("Closes the EV prematurely")
-async def test_containerd_to_docker(model, tools):
-    """
-    Assume we're starting with containerd, replace
-    with Docker and then revert to containerd.
+# @pytest.mark.asyncio
+# @pytest.mark.skip("Closes the EV prematurely")
+# async def test_containerd_to_docker(model, tools):
+#     """
+#     Assume we're starting with containerd, replace
+#     with Docker and then revert to containerd.
 
-    :param model: Object
-    :return: None
-    """
-    containerd_app = model.applications["containerd"]
+#     :param model: Object
+#     :return: None
+#     """
+#     containerd_app = model.applications["containerd"]
 
-    await containerd_app.remove()
-    await tools.juju_wait("-x", "kubernetes-worker")
-    # Block until containerd's removed, ignore `blocked` worker.
+#     await containerd_app.remove()
+#     await tools.juju_wait("-x", "kubernetes-worker")
+#     # Block until containerd's removed, ignore `blocked` worker.
 
-    docker_app = await model.deploy(
-        "cs:~containers/docker", num_units=0, channel="edge"  # Subordinate.
-    )
+#     docker_app = await model.deploy(
+#         "cs:~containers/docker", num_units=0, channel="edge"  # Subordinate.
+#     )
 
-    await docker_app.add_relation("docker", "kubernetes-master")
+#     await docker_app.add_relation("docker", "kubernetes-master")
 
-    await docker_app.add_relation("docker", "kubernetes-worker")
+#     await docker_app.add_relation("docker", "kubernetes-worker")
 
-    await tools.juju_wait()
-    # If we settle, it's safe to
-    # assume Docker is now running
-    # workloads.
+#     await tools.juju_wait()
+#     # If we settle, it's safe to
+#     # assume Docker is now running
+#     # workloads.
 
-    await docker_app.remove()
-    await tools.juju_wait("-x", "kubernetes-worker")
-    # Block until docker's removed, ignore `blocked` worker.
+#     await docker_app.remove()
+#     await tools.juju_wait("-x", "kubernetes-worker")
+#     # Block until docker's removed, ignore `blocked` worker.
 
-    containerd_app = await model.deploy(
-        "cs:~containers/containerd", num_units=0, channel="edge"  # Subordinate.
-    )
+#     containerd_app = await model.deploy(
+#         "cs:~containers/containerd", num_units=0, channel="edge"  # Subordinate.
+#     )
 
-    await containerd_app.add_relation("containerd", "kubernetes-master")
+#     await containerd_app.add_relation("containerd", "kubernetes-master")
 
-    await containerd_app.add_relation("containerd", "kubernetes-worker")
+#     await containerd_app.add_relation("containerd", "kubernetes-worker")
 
-    await tools.juju_wait()
+#     await tools.juju_wait()
