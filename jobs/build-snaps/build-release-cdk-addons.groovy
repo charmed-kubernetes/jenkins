@@ -32,6 +32,7 @@ pipeline {
                 sh "git config --global user.email 'cdkbot@juju.solutions'"
                 sh "git config --global user.name 'cdkbot'"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+                sh "snapcraft whoami"
             }
         }
         stage('Ensure valid K8s version'){
