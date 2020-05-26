@@ -291,7 +291,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/localhost-spec $snap_version $series
+            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/localhost-spec $snap_version $series
 
 - job:
     name: 'validate-ck-s390x'

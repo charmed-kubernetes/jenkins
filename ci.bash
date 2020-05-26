@@ -10,7 +10,6 @@ function compile::env
     : "${JUJU_MODEL:?Must have a model defined}"
     : "${SERIES:?Must have a release series defined}"
     : "${SNAP_VERSION:?Must have a snap version defined}"
-    : "${TMPDIR:?Must have a temporary directory defined}"
     : "${JOB_NAME_CUSTOM:?Must have a job name defined}"
     : "${JOB_ID:?Must have a job id defined}"
 

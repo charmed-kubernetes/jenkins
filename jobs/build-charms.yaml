@@ -85,7 +85,7 @@
 
 - job:
     name: 'build-charms'
-    node: runner-amd64
+    node: runner-cloud
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
