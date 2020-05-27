@@ -271,7 +271,7 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          python3.6 -m virtualenv venv
+          virtualenv venv -p python3.6
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
           venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
@@ -307,7 +307,7 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          python3.6 -m virtualenv venv
+          virtualenv venv -p python3.6
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
 
