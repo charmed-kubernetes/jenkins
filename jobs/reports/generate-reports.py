@@ -119,7 +119,7 @@ def build_columbo_reports(data):
         return
 
     obj = {}
-    has_metadata = requests.head(f"{REPORT_HOST}/{prefix_id}/metadata.json")
+    has_metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
     if has_metadata.ok:
         log.info(f"{prefix_id} :: grabbing metadata for report")
         try:
