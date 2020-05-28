@@ -97,7 +97,7 @@ function test::capture
     columbo --output-dir "_out" "artifacts.tar.gz" || true
     python bin/s3 cp "_out/columbo-report.json" columbo-report.json || true
     python bin/s3 cp "metadata.json" metadata.json || true
-    python bin/s3 cp "report.html" index.html || true
+    python bin/s3 cp "report.html" report.html || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 }
 

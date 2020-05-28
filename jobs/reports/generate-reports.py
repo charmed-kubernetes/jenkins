@@ -113,19 +113,22 @@ def build_columbo_reports(data):
         log.debug(f"{prefix_id} :: columbo report to big, skipping")
         return
 
-    has_index = requests.head(f"{REPORT_HOST}/{prefix_id}/columbo.html")
+    has_index = requests.head(f"{REPORT_HOST}/{prefix_id}/index.html")
     if has_index.ok:
         log.debug(f"Report already generated for {prefix_id}, skipping.")
         return
 
     obj = {}
-    has_metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
+    has_metadata = requests.head(f"{REPORT_HOST}/{prefix_id}/metadata.json")
     if has_metadata.ok:
         log.info(f"{prefix_id} :: grabbing metadata for report")
         try:
             obj = has_metadata.json()
         except json.decoder.JSONDecodeError:
             return
+
+    if requests.head(f"{REPORT_HOST}/{prefix_id}/report.html").ok:
+        obj["pytest_report"] = f"{REPORT_HOST}/{prefix_id}/report.html"
 
     obj["artifacts"] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
 
@@ -143,7 +146,7 @@ def build_columbo_reports(data):
     html_p = Path(f"{prefix_id}-columbo.html")
     html_p.write_text(rendered)
     run.cmd_ok(
-        f"aws s3 cp {prefix_id}-columbo.html s3://jenkaas/{prefix_id}/columbo.html",
+        f"aws s3 cp {prefix_id}-columbo.html s3://jenkaas/{prefix_id}/index.html",
         shell=True,
     )
     run.cmd_ok(f"rm -rf {html_p}")
