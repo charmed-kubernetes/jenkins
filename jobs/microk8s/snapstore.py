@@ -76,7 +76,7 @@ class Microk8sSnap:
 
     def test_cross_distro(
         self,
-        channel_to_upgrade="stable",
+        channel_to_upgrade="latest/stable",
         tests_branch=None,
         distributions=["ubuntu:16.04", "ubuntu:18.04"],
         proxy=None,
@@ -131,16 +131,12 @@ class Microk8sSnap:
         if "under-testing" in self.under_testing_channel:
             self.release_to(self.under_testing_channel)
         for distro in distributions:
-            if self.track == "latest":
-                track_channel_to_upgrade = channel_to_upgrade
-                testing_track_channel = self.under_testing_channel
-            else:
-                track_channel_to_upgrade = "{}/{}".format(
-                    self.track, channel_to_upgrade
-                )
-                testing_track_channel = "{}/{}".format(
-                    self.track, self.under_testing_channel
-                )
+            track_channel_to_upgrade = "{}/{}".format(
+                self.track, channel_to_upgrade
+            )
+            testing_track_channel = "{}/{}".format(
+                self.track, self.under_testing_channel
+            )
 
             cmd = "sudo tests/test-distro.sh {} {} {}".format(
                 distro, track_channel_to_upgrade, testing_track_channel

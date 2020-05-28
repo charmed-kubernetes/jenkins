@@ -65,7 +65,7 @@ def create_gh_branch(branch, gh_user, gh_token):
         branch
     ).split()
     check_call(cmd)
-    cmd = "sed -i s@UPGRADE_MICROK8S_FROM=edge@UPGRADE_MICROK8S_FROM={}/edge@g .travis.yml".format(
+    cmd = "sed -i s@UPGRADE_MICROK8S_FROM=latest/edge@UPGRADE_MICROK8S_FROM={}/edge@g .travis.yml".format(
         branch
     ).split()
     check_call(cmd)
