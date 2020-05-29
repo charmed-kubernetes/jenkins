@@ -66,7 +66,7 @@ def sh(*args, **kwargs):
 def ec2(*args, ignore_errors=False):
     cmd = ["aws", "--region", REGION, "--output", "json", "ec2"] + list(args)
     try:
-        output = sh(cmd)
+        output = sh(cmd, env=os.environ.copy())
     except CalledProcessError:
         if ignore_errors:
             return

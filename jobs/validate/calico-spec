@@ -16,7 +16,7 @@ set -x
 ###############################################################################
 function juju::bootstrap
 {
-    python3 $WORKSPACE/jobs/integration/tigera_aws.py cleanup
+    python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
 
     export NUM_SUBNETS=1
     if [ "$TEST_BGP" = "1" ]; then
@@ -24,7 +24,7 @@ function juju::bootstrap
       export JOB_NAME_CUSTOM="validate-ck-calico-bgp-router-$SERIES-$SNAP_VERSION"
     fi
 
-    python3 $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
+    python $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
 
     if [ "$TEST_BGP" = "1" ]; then
       echo "Deploying bgp router"
@@ -34,16 +34,16 @@ function juju::bootstrap
 
 function juju::deploy::after
 {
-    python3 $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
+    python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
 
     if [ "$TEST_BGP" = "1" ]; then
-      python3 $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
+      python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
     fi
 }
 
 function ci::cleanup::before
 {
-    python3 $WORKSPACE/jobs/integration/tigera_aws.py cleanup
+    python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
 }
 
 ###############################################################################
