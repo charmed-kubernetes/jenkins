@@ -17,15 +17,13 @@ function juju::deploy
         --force \
         --constraints "mem=32G root-disk=100G cores=8" \
         ubuntu
+
+        juju deploy cs:~adam-stokes/localhost-ci-setup --channel edge
+        juju add-relation ubuntu ci-setup
 }
 
 function juju::deploy::after
 {
-    ansible-playbook -i $(juju::unitAddress ubuntu), \
-                     --ssh-common-args '-o StrictHostKeyChecking=no' \
-                     --key-file /var/lib/jenkins/.local/share/juju/ssh/juju_id_rsa \
-                     -u ubuntu \
-                     "$WORKSPACE/jobs/validate/playbooks/single-system.yml"
     tee overlay.yaml <<EOF> /dev/null
 series: $SERIES
 applications:
