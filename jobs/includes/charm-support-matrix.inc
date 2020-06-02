@@ -76,9 +76,9 @@
     tags: ['general', 'keepalived']
 - docker-registry:
     upstream: "https://github.com/CanonicalLtd/docker-registry-charm.git"
-    downstream: 'CanonicalLtd/docker-registry-charm.git'
+    downstream: 'charmed-kubernetes/docker-registry-charm.git'
     namespace: 'containers'
-    tags: ['general', 'docker-registry']
+    tags: ['general', 'docker-registry', 'k8s']
 - aws-iam:
     upstream: "https://github.com/charmed-kubernetes/charm-aws-iam.git"
     namespace: 'containers'
