@@ -144,6 +144,10 @@
     downstream: "charmed-kubernetes/layer-debug.git"
     upstream: "https://github.com/juju-solutions/layer-debug.git"
     tags: ['k8s']
+- layer:docker:
+    downstream: "charmed-kubernetes/layer-docker.git"
+    upstream: "https://github.com/juju-solutions/layer-docker.git"
+    tags: ['k8s']
 - layer:hacluster:
     downstream: "charmed-kubernetes/layer-hacluster.git"
     upstream: "https://github.com/juju-solutions/layer-hacluster.git"
