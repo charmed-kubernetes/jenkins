@@ -34,20 +34,36 @@
     description: |
       Validates charms from their stable branch/channels in order to release a
       bug/hotfix to stable.
-    project-type: freestyle
-    parameters:
-      - global-params
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
     wrappers:
       - default-job-wrapper
       - ci-creds
-    scm:
-      - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
           num-to-keep: 3
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.18/stable
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+            - bionic
+            - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release"
-      - ogc-execute-spec:
-          JOB_SPEC_DIR: "jobs/release"
-          JOB_SPEC_FILE: "bugfix-spec.yml"
+      - run-env:
+          COMMAND: |
+            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/release/bugfix-spec $snap_version $series
