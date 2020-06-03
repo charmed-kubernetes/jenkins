@@ -340,19 +340,25 @@ async def test_dashboard(model, log_dir, tools):
         await scp_from(unit, "config", f.name, tools.controller_name, tools.connection)
         with open(f.name, "r") as stream:
             config = yaml.safe_load(stream)
+
+    async def query_dashboard(url, config):
+        # handle pre 1.19 authentication
+        try:
+            user = config["users"][0]["user"]["username"]
+            password = config["users"][0]["user"]["password"]
+            auth = tools.requests.auth.HTTPBasicAuth(user, password)
+            resp = await tools.requests.get(url, auth=auth, verify=False)
+        except KeyError:
+            token = config["users"][0]["user"]["token"]
+            headers = {"Authorization": f"Bearer {token}"}
+            resp = await tools.requests.get(url, headers=headers, verify=False)
+        return resp
+
     # make sure we can hit the api-server
     url = config["clusters"][0]["cluster"]["server"]
-    # handle pre 1.19 authentication
-    try:
-        user = config["users"][0]["user"]["username"]
-        password = config["users"][0]["user"]["password"]
-        auth = tools.requests.auth.HTTPBasicAuth(user, password)
-        resp = await tools.requests.get(url, auth=auth, verify=False)
-    except KeyError:
-        token = config["users"][0]["user"]["token"]
-        headers = {"Authorization": f"Bearer {token}"}
-        resp = await tools.requests.get(url, headers=headers, verify=False)
-    assert resp.status_code == 200
+
+    can_access_dashboard = await query_dashboard(url, config)
+    assert can_access_dashboard.status_code == 200
 
     # get k8s version
     app_config = await model.applications["kubernetes-master"].get_config()
@@ -376,8 +382,8 @@ async def test_dashboard(model, log_dir, tools):
 
     click.echo("Waiting for dashboard to stabilize...")
 
-    async def dashboard_present(url):
-        resp = await tools.requests.get(url, headers=headers, verify=False)
+    async def dashboard_present(url, config):
+        resp = await query_dashboard(url, config)
         if resp.status_code == 200 and "Dashboard" in resp.text:
             return True
         return False
@@ -389,7 +395,7 @@ async def test_dashboard(model, log_dir, tools):
     )
 
     await retry_async_with_timeout(
-        dashboard_present, (url,), timeout_msg="Unable to reach dashboard"
+        dashboard_present, (url, config), timeout_msg="Unable to reach dashboard"
     )
 
 

@@ -31,6 +31,7 @@
 
 - job:
     name: 'validate-charm-bugfix'
+    node: runner-validate
     description: |
       Validates charms from their stable branch/channels in order to release a
       bug/hotfix to stable.
