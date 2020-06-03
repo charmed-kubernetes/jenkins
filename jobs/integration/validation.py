@@ -342,9 +342,16 @@ async def test_dashboard(model, log_dir, tools):
             config = yaml.safe_load(stream)
     # make sure we can hit the api-server
     url = config["clusters"][0]["cluster"]["server"]
-    token = config["users"][0]["user"]["token"]
-    headers = {"Authorization": f"Bearer {token}"}
-    resp = await tools.requests.get(url, headers=headers, verify=False)
+    # handle pre 1.19 authentication
+    try:
+        user = config["users"][0]["user"]["username"]
+        password = config["users"][0]["user"]["password"]
+        auth = tools.requests.auth.HTTPBasicAuth(user, password)
+        resp = await tools.requests.get(url, auth=auth, verify=False)
+    except KeyError:
+        token = config["users"][0]["user"]["token"]
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = await tools.requests.get(url, headers=headers, verify=False)
     assert resp.status_code == 200
 
     # get k8s version
