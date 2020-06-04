@@ -23,7 +23,8 @@ function juju::bootstrap
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
          --model-default image-stream=daily \
-         --model-default automatically-retry-hooks=false
+         --model-default automatically-retry-hooks=false \
+         --model-default logging-config="<root>=DEBUG"
 }
 
 function juju::deploy::before
