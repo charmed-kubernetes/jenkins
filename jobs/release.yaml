@@ -68,3 +68,48 @@
       - run-env:
           COMMAND: |
             TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/release/bugfix-spec $snap_version $series
+
+- job:
+    name: 'validate-charm-bugfix-upgrade'
+    node: runner-validate
+    description: |
+      Validates CK upgrades from previous 2 stables to latest candidate
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.17/stable
+            - 1.16/stable
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+            - bionic
+            - xenial
+      - axis:
+          type: user-defined
+          name: arch
+          values:
+            - amd64
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
+          COMMAND: |
+           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/release/bugfix-upgrade-spec $snap_version $series
