@@ -63,7 +63,7 @@ if __name__ == "__main__":
             )
             continue
 
-        for channel in [("edge", "alpha"), ("beta", "beta"), ("candidate", "rc")]:
+        for channel in [("candidate", "rc"), ("beta", "beta"), ("edge", "alpha")]:
             pre_release = get_latest_pre_release(track, channel[1])
             if not pre_release:
                 click.echo("No {} pre-release".format(channel[1]))
@@ -84,3 +84,5 @@ if __name__ == "__main__":
                 continue
             click.echo("Building and releasing {}".format(pre_release))
             snap.build_and_release(pre_release, dry_run)
+            # We only build the last pre-release
+            break
