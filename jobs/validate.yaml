@@ -694,10 +694,10 @@
 
 - job:
     name: 'validate-ck-multus'
-    node: runner-amd64
+    node: runner-validate
     description: |
       Validates CK, with Multus.
-    project-type: freestyle
+    project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -705,14 +705,33 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 3
     triggers:
         - timed: "0 0 */2 * *"
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.19/edge
+            - 1.18/edge
+            - 1.17/edge
+            - 1.16/edge
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+            - bionic
+            - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/validate/multus-spec.yml
+           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/multus-spec $snap_version $series

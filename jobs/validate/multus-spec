@@ -1,0 +1,92 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+###############################################################################
+# Init
+###############################################################################
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+###############################################################################
+# Overrides
+###############################################################################
+function juju::deploy
+{
+   tee overlay.yaml <<EOF> /dev/null
+series: $SERIES
+applications:
+  kubernetes-master:
+    options:
+      channel: $SNAP_VERSION
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+EOF
+
+    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
+         --overlay overlay.yaml \
+         --force \
+         --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
+    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" -n 3 ceph-mon
+    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" -n 3 ceph-osd \
+         --storage osd-devices=32G,2 \
+         --storage osd-journals=8G,1
+    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-osd ceph-mon
+    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:admin kubernetes-master
+    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:client kubernetes-master
+}
+
+function juju::deploy::after
+{
+    juju scp -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
+          kubernetes-master/0:config "kubeconfig"
+    export KUBECONFIG="kubeconfig"
+    juju add-k8s k8s --controller "$JUJU_CONTROLLER"
+    juju add-model -c "$JUJU_CONTROLLER" addons k8s
+    juju deploy -m "$JUJU_CONTROLLER:addons" \
+          --channel "$JUJU_DEPLOY_CHANNEL" cs:~containers/multus
+    timeout 45m juju-wait -e "$JUJU_CONTROLLER:addons" -w
+}
+
+function test::execute
+{
+    declare -n is_pass=$1
+    timeout 2h pytest \
+        --html="report.html" \
+        jobs/integration/validation.py \
+        --cloud "$JUJU_CLOUD" \
+        --model "$JUJU_MODEL" \
+        --controller "$JUJU_CONTROLLER" \
+        --addons-model addons
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+function ci::cleanup::before
+{
+    juju destroy-model -y --destroy-storage "$JUJU_CONTROLLER:addons" || true
+}
+
+
+###############################################################################
+# Setup Environment
+###############################################################################
+SNAP_VERSION=${1:-1.19/edge}
+SERIES=${2:-bionic}
+JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_CLOUD=aws/us-east-1
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-vault
+ARCH=${4:-amd64}
+JOB_NAME_CUSTOM="validate-ck-multus-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
+
+ci::run
