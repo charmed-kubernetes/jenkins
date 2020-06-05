@@ -294,7 +294,7 @@ def pytest_html_results_table_row(report, cells):
     cells.pop()
 
 
-@pytest.hookimpl(hookwrapper=True)
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
@@ -303,7 +303,7 @@ def pytest_runtest_makereport(item, call):
     if report.when == "call" and report.failed:
         mode = "a" if os.path.exists("failures") else "w"
         with open("failures", mode) as f:
-            f.write(rep.longreprtext + "\n")
+            f.write(report.longreprtext + "\n")
 
 @pytest.mark.optionalhook
 def pytest_metadata(metadata):
