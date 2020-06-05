@@ -299,7 +299,11 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
     report.description = str(item.function.__doc__)
-
+    # we only look at actual failing test calls, not setup/teardown
+    if report.when == "call" and report.failed:
+        mode = "a" if os.path.exists("failures") else "w"
+        with open("failures", mode) as f:
+            f.write(rep.longreprtext + "\n")
 
 @pytest.mark.optionalhook
 def pytest_metadata(metadata):
