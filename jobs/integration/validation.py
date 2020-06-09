@@ -286,14 +286,10 @@ async def test_rbac(model):
     await wait_for_process(model, "RBAC")
     cmd = "/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig get clusterroles"
     worker = model.applications["kubernetes-worker"].units[0]
-    output = await worker.run(cmd)
-    assert output.status == "completed"
-    assert "forbidden" in output.data["results"].get("Stderr", "").lower()
+    await run_until_success(worker, cmd + " 2>&1 | grep Forbidden")
     await app.set_config({"authorization-mode": "AlwaysAllow"})
     await wait_for_process(model, "AlwaysAllow")
-    output = await worker.run(cmd)
-    assert output.status == "completed"
-    assert "forbidden" not in output.data["results"].get("Stderr", "")
+    await run_until_success(worker, cmd)
 
 
 @pytest.mark.asyncio
