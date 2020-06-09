@@ -117,13 +117,14 @@ async def run_until_success(unit, cmd, timeout_insec=None):
 async def get_last_audit_entry_date(application):
     times = []
     for unit in application.units:
-        cmd = "cat /root/cdk/audit/audit.log | tail -n 1"
-        raw = await run_until_success(unit, cmd)
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            print(raw)
-            raise
+        while True:
+            cmd = "cat /root/cdk/audit/audit.log | tail -n 1"
+            raw = await run_until_success(unit, cmd)
+            try:
+                data = json.loads(raw)
+                break
+            except json.JSONDecodeError:
+                print('Failed to read audit log entry: ' + raw)
         if "timestamp" in data:
             timestamp = data["timestamp"]
             time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
