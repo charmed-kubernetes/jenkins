@@ -183,7 +183,7 @@ class Microk8sSnap:
             for line in sh2.env(cmd_array):
                 click.echo(line.strip())
 
-        cmd = "(cd microk8s; pwd; sudo usermod --append --groups lxd $USER; sg lxd -c SNAPCRAFT_BUILD_ENVIRONMENT=lxd /snap/bin/snapcraft)"
+        cmd = "(cd microk8s; pwd; sudo usermod --append --groups lxd $USER; sg lxd -c \"SNAPCRAFT_BUILD_ENVIRONMENT=lxd /snap/bin/snapcraft\")"
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
             click.echo(line.strip())
