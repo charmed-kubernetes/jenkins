@@ -64,7 +64,7 @@ def sh(*args, **kwargs):
 
 
 def ec2(*args, ignore_errors=False):
-    cmd = ["aws", "--region", REGION, "--output", "json", "ec2"] + list(args)
+    cmd = ["/snap/bin/aws", "--region", REGION, "--output", "json", "ec2"] + list(args)
     try:
         output = sh(cmd, env=os.environ.copy())
     except CalledProcessError:

@@ -16,6 +16,7 @@ set -x
 ###############################################################################
 function juju::bootstrap
 {
+    sudo snap install aws-cli --classic
     python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
 
     export NUM_SUBNETS=1
