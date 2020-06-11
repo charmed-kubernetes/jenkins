@@ -18,6 +18,7 @@
 
 - job:
     name: 'conformance'
+    node: runner-amd64
     description: |
       CNCF Conformance testing for Kubernetes.
 

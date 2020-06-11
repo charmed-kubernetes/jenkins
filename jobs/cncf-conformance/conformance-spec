@@ -1,0 +1,68 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+###############################################################################
+# INITIALIZE
+###############################################################################
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function juju::bootstrap::before
+{
+    rm -rf sonobuoy.*
+    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+    tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+}
+
+function test::execute
+{
+    declare -n is_pass=$1
+
+    mkdir -p $HOME/.kube
+    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
+    export RBAC_ENABLED=$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)
+    kubectl version
+    ./sonobuoy version
+    ./sonobuoy run --mode=certified-conformance --wait 2>&1
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+function test::capture
+{
+    ./sonobuoy retrieve
+    mv *sonobuoy*tar.gz artifacts.tar.gz
+    python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
+}
+
+
+###############################################################################
+# ENV
+###############################################################################
+SONOBUOY_VERSION=0.18.2
+SNAP_VERSION=${1:-1.18/stable}
+SERIES=${2:-bionic}
+JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${3:-stable}
+JUJU_CLOUD=aws/us-east-2
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-ck
+ARCH=${4:-amd64}
+JOB_NAME_CUSTOM="validate-ck-conformance-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
+
+
+###############################################################################
+# START
+###############################################################################
+ci::run
