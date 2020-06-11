@@ -34,8 +34,6 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/cncf-conformance"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/cncf-conformance"
+      - run-env:
           COMMAND: |
-            venv/bin/python -m pip install https://github.com/battlemidget/ogc/archive/master.zip
-            venv/bin/ogc --spec jobs/cncf-conformance/spec.yml
+           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/cncf-conformance/conformance-spec
