@@ -348,6 +348,8 @@
           num-to-keep: 3
     triggers:
         - timed: "0 0 */2 * *"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -403,6 +405,8 @@
           num-to-keep: 3
     triggers:
         - timed: "0 0 */2 * *"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: user-defined
