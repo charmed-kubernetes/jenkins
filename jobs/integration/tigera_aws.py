@@ -125,7 +125,7 @@ def get_instance_id(machine_id):
 @def_command("bootstrap")
 def bootstrap():
     # Create VPC
-    vpc_id = retry_call(ec2.create_vpc, fkwargs={"CidrBlock": VPC_CIDR}, backoff=2)
+    vpc_id = retry_call(ec2.create_vpc, fkwargs={"CidrBlock": VPC_CIDR}, backoff=2, exceptions=(ClientError,))
     vpc_id = vpc_id["Vpc"]["VpcId"]
     tag_resource(vpc_id)
     # Must be done in separate requests per doc
