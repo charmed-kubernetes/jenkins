@@ -16,7 +16,6 @@ set -ex
 ###############################################################################
 function juju::bootstrap
 {
-    aws --help
     python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
 
     export NUM_SUBNETS=1

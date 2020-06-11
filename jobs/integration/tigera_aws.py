@@ -7,6 +7,7 @@ import os
 import tempfile
 import time
 import yaml
+import boto3
 from subprocess import check_output, check_call, CalledProcessError
 
 VPC_CIDR = "172.30.0.0/16"
@@ -38,6 +39,10 @@ protocol bgp {
 }
 """
 
+session = boto3.Session(profile_name="default", region_name=REGION)
+ec2 = session.client("ec2")
+
+
 command_defs = {}
 
 
@@ -63,30 +68,27 @@ def sh(*args, **kwargs):
     return output
 
 
-def ec2(*args, ignore_errors=False):
-    cmd = ["aws", "--region", REGION, "--output", "json", "ec2"] + list(args)
-    try:
-        output = sh(cmd, env=os.environ.copy())
-    except CalledProcessError:
-        if ignore_errors:
-            return
-        else:
-            raise
-    try:
-        data = json.loads(output)
-        return data
-    except json.decoder.JSONDecodeError:
-        return
+# def ec2(*args, ignore_errors=False):
+#     cmd = ["aws", "--region", REGION, "--output", "json", "ec2"] + list(args)
+#     try:
+#         output = sh(cmd, env=os.environ.copy())
+#     except CalledProcessError:
+#         if ignore_errors:
+#             return
+#         else:
+#             raise
+#     try:
+#         data = json.loads(output)
+#         return data
+#     except json.decoder.JSONDecodeError:
+#         return
 
 
 def tag_resource(resource_id):
     owner = os.environ.get("JOB_NAME", "test-calico")
-    ec2(
-        "create-tags",
-        "--resource",
-        resource_id,
-        "--tags",
-        "Key=created-by,Value=" + owner,
+    ec2.create_tags(
+        Resources=[resource_id],
+        Tags=[{'Key': "created-by", 'Value': owner}],
     )
 
 
@@ -121,55 +123,46 @@ def get_instance_id(machine_id):
 @def_command("bootstrap")
 def bootstrap():
     # Create VPC
-    vpc_id = ec2("create-vpc", "--cidr", VPC_CIDR)["Vpc"]["VpcId"]
+    vpc_id = ec2.create_vpc(CidrBlock=VPC_CIDR)["Vpc"]["VpcId"]
     tag_resource(vpc_id)
-    ec2("modify-vpc-attribute", "--vpc-id", vpc_id, "--enable-dns-support")
-    ec2("modify-vpc-attribute", "--vpc-id", vpc_id, "--enable-dns-hostnames")
+    # Must be done in separate requests per doc
+    ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={"Value": True})
+    ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsSupport={"Value": True})
 
     # Create subnets
     num_subnets = os.environ.get("NUM_SUBNETS")
     num_subnets = int(num_subnets) if num_subnets else 1
     subnet_cidrs = SUBNET_CIDRS[:num_subnets]
     for subnet_cidr in subnet_cidrs:
-        subnet_id = ec2(
-            "create-subnet",
-            "--vpc-id",
-            vpc_id,
-            "--cidr-block",
-            subnet_cidr,
-            "--availability-zone",
-            AVAILABILITY_ZONE,
+        subnet_id = ec2.create_subnet(
+            VpcId=vpc_id,
+            CidrBlock=subnet_cidr,
+            AvailabilityZone=AVAILABILITY_ZONE,
         )["Subnet"]["SubnetId"]
         tag_resource(subnet_id)
-        ec2(
-            "modify-subnet-attribute",
-            "--subnet-id",
-            subnet_id,
-            "--map-public-ip-on-launch",
+        ec2.modify_subnet_attribute(
+            SubnetId=subnet_id,
+            MapPublicIpOnLaunch={"Value": True}
         )
 
     # Create gateway
-    gateway_id = ec2("create-internet-gateway")["InternetGateway"]["InternetGatewayId"]
+    gateway_id = ec2.create_internet_gateway()["InternetGateway"]["InternetGatewayId"]
     tag_resource(gateway_id)
-    ec2("attach-internet-gateway", "--vpc-id", vpc_id, "--internet-gateway", gateway_id)
+    ec2.attach_internet_gateway(VpcId=vpc_id, InternetGatewayId=gateway_id)
 
     # Create route
     route_table_ids = []
-    route_tables = ec2("describe-route-tables")["RouteTables"]
+    route_tables = ec2.describe_route_tables()["RouteTables"]
     for route_table in route_tables:
         if route_table["VpcId"] == vpc_id:
             route_table_id = route_table["RouteTableId"]
             tag_resource(route_table_id)
             route_table_ids.append(route_table_id)
     for route_table_id in route_table_ids:
-        ec2(
-            "create-route",
-            "--route-table-id",
-            route_table_id,
-            "--destination-cidr-block",
-            "0.0.0.0/0",
-            "--gateway-id",
-            gateway_id,
+        ec2.create_route(
+            RouteTableId=route_table_id,
+            DestinationCidrBlock="0.0.0.0/0",
+            GatewayId=gateway_id,
         )
 
     # Juju bootstrap
@@ -201,67 +194,52 @@ def bootstrap():
 @def_command("cleanup")
 def cleanup():
     owner = os.environ.get("JOB_NAME", "test-calico")
-    network_interfaces = ec2("describe-network-interfaces")["NetworkInterfaces"]
+    network_interfaces = ec2.describe_network_interfaces()["NetworkInterfaces"]
     for network_interface in network_interfaces:
         for tag in network_interface.get("TagSet", []):
             if tag["Key"] == "created-by" and tag["Value"] == owner:
                 network_interface_id = network_interface["NetworkInterfaceId"]
-                ec2(
-                    "delete-network-interface",
-                    "--network-interface-id",
-                    network_interface_id,
-                    ignore_errors=True,
+                ec2.delete_network_interface(
+                    NetworkInterfaceId=network_interface_id,
                 )
                 break
 
-    gateways = ec2("describe-internet-gateways")["InternetGateways"]
+    gateways = ec2.describe_internet_gateways()["InternetGateways"]
     for gateway in gateways:
         for tag in gateway.get("Tags", []):
             if tag["Key"] == "created-by" and tag["Value"] == owner:
                 gateway_id = gateway["InternetGatewayId"]
                 for attachment in gateway["Attachments"]:
-                    ec2(
-                        "detach-internet-gateway",
-                        "--internet-gateway-id",
-                        gateway_id,
-                        "--vpc-id",
-                        attachment["VpcId"],
-                        ignore_errors=True,
+                    ec2.detach_internet_gateway(
+                        InternetGatewayId=gateway_id,
+                        VpcId=attachment["VpcId"],
                     )
-                ec2(
-                    "delete-internet-gateway",
-                    "--internet-gateway-id",
-                    gateway_id,
-                    ignore_errors=True,
+                ec2.delete_internet_gateway(
+                    InternetGatewayId=gateway_id,
                 )
                 break
 
-    subnets = ec2("describe-subnets")["Subnets"]
+    subnets = ec2.describe_subnets()["Subnets"]
     for subnet in subnets:
         for tag in subnet.get("Tags", []):
             if tag["Key"] == "created-by" and tag["Value"] == owner:
-                ec2(
-                    "delete-subnet",
-                    "--subnet-id",
-                    subnet["SubnetId"],
-                    ignore_errors=True,
+                ec2.delete_subnet(
+                    SubnetId=subnet["SubnetId"],
                 )
                 break
 
-    vpcs = ec2("describe-vpcs")["Vpcs"]
+    vpcs = ec2.describe_vpcs()["Vpcs"]
     for vpc in vpcs:
         for tag in vpc.get("Tags", []):
             if tag["Key"] == "created-by" and tag["Value"] == owner:
-                ec2("delete-vpc", "--vpc-id", vpc["VpcId"], ignore_errors=True)
+                ec2.delete_vpc(VpcId=vpc["VpcId"])
                 break
 
 
 def disable_source_dest_check_on_instance(instance_id):
     log("Getting network interfaces for instance " + instance_id)
     network_interface_ids = []
-    reservations = ec2(
-        "describe-instances", "--filter", "Name=instance-id,Values=" + instance_id
-    )["Reservations"]
+    reservations = ec2.describe_instances(InstanceIds=[instance_id])["Reservations"]
     for reservation in reservations:
         instances = reservation["Instances"]
         for instance in instances:
@@ -272,12 +250,9 @@ def disable_source_dest_check_on_instance(instance_id):
     for network_interface_id in network_interface_ids:
         log("Disabling source/dest checks on " + network_interface_id)
 
-        ec2(
-            "modify-network-interface-attribute",
-            "--network-interface-id",
-            network_interface_id,
-            "--source-dest-check",
-            '{"Value": false}',
+        ec2.modify_network_interface_attribute(
+            NetworkInterfaceId=network_interface_id,
+            SourceDestCheck={'Value': False}
         )
 
 
@@ -313,7 +288,7 @@ def get_model_vpc_id():
 
 def get_subnets_in_vpc(vpc_id):
     log("Getting subnets in VPC " + vpc_id)
-    subnets = ec2("describe-subnets")["Subnets"]
+    subnets = ec2.describe_subnets()["Subnets"]
     subnets = [subnet for subnet in subnets if subnet["VpcId"] == vpc_id]
     return subnets
 
@@ -321,9 +296,7 @@ def get_subnets_in_vpc(vpc_id):
 def get_instance_ips(instance_id):
     log("Getting IPs for instance " + instance_id)
     ips = set()
-    reservations = ec2(
-        "describe-instances", "--filter", "Name=instance-id,Values=" + instance_id
-    )["Reservations"]
+    reservations = ec2.describe_instances(InstanceIds=[instance_id])["Reservations"]
     for reservation in reservations:
         for instance in reservation["Instances"]:
             for interface in instance["NetworkInterfaces"]:
@@ -357,9 +330,7 @@ def deploy_bgp_router():
 
     log("Getting instance security groups")
     security_groups = set()
-    reservations = ec2(
-        "describe-instances", "--filter", "Name=instance-id,Values=" + instance_id
-    )["Reservations"]
+    reservations = ec2.describe_instances(InstanceIds=[instance_id])["Reservations"]
     for reservation in reservations:
         for instance in reservation["Instances"]:
             for group in instance["SecurityGroups"]:
@@ -369,30 +340,20 @@ def deploy_bgp_router():
     for i in range(1, len(subnets)):
         subnet = subnets[i]
         subnet_id = subnet["SubnetId"]
-        result = ec2(
-            "create-network-interface",
-            "--subnet-id",
-            subnet_id,
-            "--groups",
-            json.dumps(list(security_groups)),
+        result = ec2.create_network_interface(
+            SubnetId=subnet_id,
+            Groups=list(security_groups),
         )
         network_interface_id = result["NetworkInterface"]["NetworkInterfaceId"]
         tag_resource(network_interface_id)
-        attachment_id = ec2(
-            "attach-network-interface",
-            "--network-interface-id",
-            network_interface_id,
-            "--instance-id",
-            instance_id,
-            "--device-index",
-            str(i),
+        attachment_id = ec2.attach_network_interface(
+            NetworkInterfaceId=network_interface_id,
+            InstanceId=instance_id,
+            DeviceIndex=i,
         )["AttachmentId"]
-        ec2(
-            "modify-network-interface-attribute",
-            "--network-interface-id",
-            network_interface_id,
-            "--attachment",
-            "AttachmentId=%s,DeleteOnTermination=true" % attachment_id,
+        ec2.modify_network_interface_attribute(
+            NetworkInterfaceId=network_interface_id,
+            Attachment={"AttachmentId": attachment_id, "DeleteOnTermination": True}
         )
 
     log("Waiting for router to come up")
@@ -421,7 +382,7 @@ def deploy_bgp_router():
     juju("ssh", "router/0", "sudo", "apt", "install", "-y", "bird", json=False)
 
     log("Getting VPC CIDR")
-    vpc = ec2("describe-vpcs", "--filter", "Name=vpc-id,Values=" + vpc_id)["Vpcs"][0]
+    vpc = ec2.describe_vpcs(VpcIds=[vpc_id])["Vpcs"][0]
     vpc_cidr = vpc["CidrBlock"]
 
     log("Getting router IPs")
