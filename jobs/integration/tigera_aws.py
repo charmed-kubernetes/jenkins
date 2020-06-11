@@ -8,6 +8,8 @@ import tempfile
 import time
 import yaml
 import boto3
+from retry.api import retry_call
+from botocore.exceptions import ClientError
 from subprocess import check_output, check_call, CalledProcessError
 
 VPC_CIDR = "172.30.0.0/16"
@@ -123,7 +125,8 @@ def get_instance_id(machine_id):
 @def_command("bootstrap")
 def bootstrap():
     # Create VPC
-    vpc_id = ec2.create_vpc(CidrBlock=VPC_CIDR)["Vpc"]["VpcId"]
+    vpc_id = retry_call(ec2.create_vpc, fkwargs={"CidrBlock": VPC_CIDR}, backoff=2)
+    vpc_id = vpc_id["Vpc"]["VpcId"]
     tag_resource(vpc_id)
     # Must be done in separate requests per doc
     ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={"Value": True})
