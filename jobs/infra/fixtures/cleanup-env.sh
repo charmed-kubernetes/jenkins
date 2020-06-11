@@ -5,8 +5,8 @@ function purge::controllers
 {
     if [ "$1" != "jaas" ]; then
         echo "$1"
-        if ! timeout 15m juju destroy-controller -y --destroy-all-models --destroy-storage "$1"; then
-            timeout 15m juju kill-controller -y "$1" 2>&1
+        if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$1"; then
+            timeout 5m juju kill-controller -y "$1" 2>&1
         fi
     fi
 }
