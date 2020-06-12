@@ -344,6 +344,7 @@ def deploy_bgp_router():
             SubnetId=subnet_id,
             Groups=list(security_groups),
         )
+        time.sleep(15)
         network_interface_id = result["NetworkInterface"]["NetworkInterfaceId"]
         tag_resource(network_interface_id)
         attachment_id = ec2.attach_network_interface(
