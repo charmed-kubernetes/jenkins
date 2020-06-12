@@ -16,7 +16,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "0 0 */2 * *"
+        - timed: "@daily"
     axes:
       - axis:
           type: slave
@@ -126,7 +126,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "0 0 */2 * *"
+        - timed: "@daily"
     axes:
       - axis:
           type: slave
@@ -347,7 +347,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "0 0 */2 * *"
+        - timed: "@weekly"
     execution-strategy:
       sequential: true
     axes:
@@ -404,7 +404,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "0 0 */2 * *"
+        - timed: "@weekly"
     execution-strategy:
       sequential: true
     axes:
@@ -445,7 +445,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "0 0 */2 * *"
+        - timed: "@daily"
     axes:
       - axis:
           type: slave
@@ -489,7 +489,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "0 0 */2 * *"
+        - timed: "@weekly"
     axes:
       - axis:
           type: slave
@@ -532,7 +532,7 @@
       - build-discarder:
           num-to-keep: 7
     triggers:
-        - timed: "0 0 */2 * *"
+        - timed: "@weekly"
     axes:
       - axis:
           type: slave
@@ -577,7 +577,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "0 0 */4 * *"
+        - timed: "@weekly"
     axes:
       - axis:
           type: slave
@@ -711,7 +711,9 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "0 0 */2 * *"
+        - timed: "@weekly"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
