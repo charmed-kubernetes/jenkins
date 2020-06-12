@@ -19,6 +19,7 @@ function juju::bootstrap::before
     rm -rf sonobuoy.*
     wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
     tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+    rm -rf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
 }
 
 function test::execute
@@ -41,7 +42,7 @@ function test::execute
 function test::capture
 {
     ./sonobuoy retrieve
-    mv *sonobuoy*tar.gz artifacts.tar.gz
+    mv *_sonobuoy*tar.gz artifacts.tar.gz
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 }
 
