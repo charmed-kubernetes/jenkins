@@ -7,9 +7,8 @@ set -eux
 # Assumes docker is available on the host environment and has been logged in
 # to upload.rocks.canonical.com.
 
-addon_resizer_version="1.8.5"
-golang_version="1.10.8"
-arches="amd64 arm64 s390x"
+addon_resizer_version="1.8.9"
+golang_version="1.12.1"
 registry="upload.rocks.canonical.com:5000/cdk"
 
 root_dir="$(readlink -f "$(dirname $0)")"
@@ -28,11 +27,8 @@ go version
 go get -d k8s.io/autoscaler/addon-resizer
 cd "$GOPATH/src/k8s.io/autoscaler/addon-resizer"
 git checkout addon-resizer-$addon_resizer_version
-git apply "$root_dir/addon-resizer-arch-support.diff"
+git apply "$root_dir/addon-resizer.diff"
 
-for arch in $arches; do
-  make build REGISTRY=$registry IMGNAME=addon-resizer-$arch ARCH=$arch
-  docker push $registry/addon-resizer-$arch:$addon_resizer_version
-done
+make all-push REGISTRY=$registry IMGNAME=addon-resizer
 
 rm -rf "$temp_dir"
