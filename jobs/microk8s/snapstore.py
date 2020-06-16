@@ -129,9 +129,7 @@ class Microk8sSnap:
         if "under-testing" in self.under_testing_channel:
             self.release_to(self.under_testing_channel)
         for distro in distributions:
-            track_channel_to_upgrade = "{}/{}".format(
-                self.track, channel_to_upgrade
-            )
+            track_channel_to_upgrade = "{}/{}".format(self.track, channel_to_upgrade)
             testing_track_channel = "{}/{}".format(
                 self.track, self.under_testing_channel
             )
@@ -183,7 +181,7 @@ class Microk8sSnap:
             for line in sh2.env(cmd_array):
                 click.echo(line.strip())
 
-        cmd = "(cd microk8s; pwd; sudo usermod --append --groups lxd $USER; sg lxd -c \"SNAPCRAFT_BUILD_ENVIRONMENT=lxd /snap/bin/snapcraft\")"
+        cmd = '(cd microk8s; pwd; sudo usermod --append --groups lxd $USER; sg lxd -c "SNAPCRAFT_BUILD_ENVIRONMENT=lxd /snap/bin/snapcraft")'
         cmd_array = self.cmd_array_to_run(cmd)
         for line in sh2.env(cmd_array):
             click.echo(line.strip())

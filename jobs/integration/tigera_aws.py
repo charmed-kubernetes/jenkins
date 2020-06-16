@@ -87,8 +87,7 @@ def sh(*args, **kwargs):
 def tag_resource(resource_id):
     owner = os.environ.get("JOB_NAME", "test-calico")
     ec2.create_tags(
-        Resources=[resource_id],
-        Tags=[{'Key': "created-by", 'Value': owner}],
+        Resources=[resource_id], Tags=[{"Key": "created-by", "Value": owner}],
     )
 
 
@@ -135,14 +134,11 @@ def bootstrap():
     subnet_cidrs = SUBNET_CIDRS[:num_subnets]
     for subnet_cidr in subnet_cidrs:
         subnet_id = ec2.create_subnet(
-            VpcId=vpc_id,
-            CidrBlock=subnet_cidr,
-            AvailabilityZone=AVAILABILITY_ZONE,
+            VpcId=vpc_id, CidrBlock=subnet_cidr, AvailabilityZone=AVAILABILITY_ZONE,
         )["Subnet"]["SubnetId"]
         tag_resource(subnet_id)
         ec2.modify_subnet_attribute(
-            SubnetId=subnet_id,
-            MapPublicIpOnLaunch={"Value": True}
+            SubnetId=subnet_id, MapPublicIpOnLaunch={"Value": True}
         )
 
     # Create gateway
@@ -199,9 +195,7 @@ def cleanup():
         for tag in network_interface.get("TagSet", []):
             if tag["Key"] == "created-by" and tag["Value"] == owner:
                 network_interface_id = network_interface["NetworkInterfaceId"]
-                ec2.delete_network_interface(
-                    NetworkInterfaceId=network_interface_id,
-                )
+                ec2.delete_network_interface(NetworkInterfaceId=network_interface_id,)
                 break
 
     gateways = ec2.describe_internet_gateways()["InternetGateways"]
@@ -211,21 +205,16 @@ def cleanup():
                 gateway_id = gateway["InternetGatewayId"]
                 for attachment in gateway["Attachments"]:
                     ec2.detach_internet_gateway(
-                        InternetGatewayId=gateway_id,
-                        VpcId=attachment["VpcId"],
+                        InternetGatewayId=gateway_id, VpcId=attachment["VpcId"],
                     )
-                ec2.delete_internet_gateway(
-                    InternetGatewayId=gateway_id,
-                )
+                ec2.delete_internet_gateway(InternetGatewayId=gateway_id,)
                 break
 
     subnets = ec2.describe_subnets()["Subnets"]
     for subnet in subnets:
         for tag in subnet.get("Tags", []):
             if tag["Key"] == "created-by" and tag["Value"] == owner:
-                ec2.delete_subnet(
-                    SubnetId=subnet["SubnetId"],
-                )
+                ec2.delete_subnet(SubnetId=subnet["SubnetId"],)
                 break
 
     vpcs = ec2.describe_vpcs()["Vpcs"]
@@ -251,8 +240,7 @@ def disable_source_dest_check_on_instance(instance_id):
         log("Disabling source/dest checks on " + network_interface_id)
 
         ec2.modify_network_interface_attribute(
-            NetworkInterfaceId=network_interface_id,
-            SourceDestCheck={'Value': False}
+            NetworkInterfaceId=network_interface_id, SourceDestCheck={"Value": False}
         )
 
 
@@ -341,8 +329,7 @@ def deploy_bgp_router():
         subnet = subnets[i]
         subnet_id = subnet["SubnetId"]
         result = ec2.create_network_interface(
-            SubnetId=subnet_id,
-            Groups=list(security_groups),
+            SubnetId=subnet_id, Groups=list(security_groups),
         )
         time.sleep(15)
         network_interface_id = result["NetworkInterface"]["NetworkInterfaceId"]
@@ -354,7 +341,7 @@ def deploy_bgp_router():
         )["AttachmentId"]
         ec2.modify_network_interface_attribute(
             NetworkInterfaceId=network_interface_id,
-            Attachment={"AttachmentId": attachment_id, "DeleteOnTermination": True}
+            Attachment={"AttachmentId": attachment_id, "DeleteOnTermination": True},
         )
 
     log("Waiting for router to come up")

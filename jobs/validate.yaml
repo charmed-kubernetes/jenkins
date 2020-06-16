@@ -387,7 +387,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-env:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/calico-spec $snap_version $series $channel arch $test_bgp
+           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/calico-spec $snap_version $series $channel amd64 $test_bgp
 
 - job:
     name: 'validate-ck-tigera-secure-ee'

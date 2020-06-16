@@ -14,7 +14,8 @@ import click
 from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from base64 import b64encode
-from cilib import log
+
+# from cilib import log
 from datetime import datetime
 from pprint import pformat
 from tempfile import NamedTemporaryFile
@@ -27,11 +28,11 @@ from .utils import (
     verify_deleted,
     verify_ready,
     is_localhost,
-    validate_storage_class,
-    SERIES_ORDER,
-    prep_series_upgrade,
-    do_series_upgrade,
-    finish_series_upgrade,
+    #    validate_storage_class,
+    #    SERIES_ORDER,
+    #    prep_series_upgrade,
+    #    do_series_upgrade,
+    #    finish_series_upgrade,
 )
 
 # Quiet the noise
@@ -124,7 +125,7 @@ async def get_last_audit_entry_date(application):
                 data = json.loads(raw)
                 break
             except json.JSONDecodeError:
-                print('Failed to read audit log entry: ' + raw)
+                print("Failed to read audit log entry: " + raw)
         if "timestamp" in data:
             timestamp = data["timestamp"]
             time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")

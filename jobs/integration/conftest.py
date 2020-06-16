@@ -305,6 +305,7 @@ def pytest_runtest_makereport(item, call):
         with open("failures", mode) as f:
             f.write(report.longreprtext + "\n")
 
+
 @pytest.mark.optionalhook
 def pytest_metadata(metadata):
     custom_name = os.environ.get("JOB_NAME_CUSTOM", None)
