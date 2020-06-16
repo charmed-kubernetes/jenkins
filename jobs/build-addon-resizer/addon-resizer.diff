@@ -1,0 +1,15 @@
+diff -pur a/addon-resizer/Makefile b/addon-resizer/Makefile
+--- a/addon-resizer/Makefile	2020-06-16 12:25:46.584758872 -0500
++++ b/addon-resizer/Makefile	2020-06-16 12:30:13.836228961 -0500
+@@ -72,9 +72,9 @@ test:
+ 
+ push: .push-$(ARCH)
+ .push-$(ARCH): .container-$(ARCH)
+-	gcloud docker -- push $(MULTI_ARCH_IMG):$(TAG)
++	docker push $(MULTI_ARCH_IMG):$(TAG)
+ ifeq ($(ARCH), amd64)
+-	gcloud docker -- push $(IMAGE):$(TAG)
++	docker push $(IMAGE):$(TAG)
+ endif
+ 
+ clean: $(addprefix sub-clean-,$(ALL_ARCH))
