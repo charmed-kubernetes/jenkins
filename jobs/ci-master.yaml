@@ -229,8 +229,8 @@
           export INTEGRATION_TEST_PATH=$WORKSPACE/jobs/integration
 
           # Login to snapstore
-          cp $SNAPCRAFTCREDS /var/lib/jenkins/snapcraft-creds
-          cp $SNAPCRAFTCPCCREDS /var/lib/jenkins/snapcraft-cpc-creds
+          cp $SNAPCRAFTCREDS /var/lib/jenkins/snapcraft-creds || true
+          cp $SNAPCRAFTCPCCREDS /var/lib/jenkins/snapcraft-cpc-creds || true
 
           rm -rf $WORKSPACE/.env || true
 

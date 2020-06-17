@@ -126,6 +126,12 @@
         force: yes
       tags:
         - jenkins
+    - name: Creates ssh dir
+      file:
+        path: /var/lib/jenkins/.ssh
+        state: directory
+      tags:
+        - jenkins
     - name: ssh config
       template:
         src: "fixtures/ssh_config"
@@ -169,12 +175,6 @@
         group: jenkins
         mode: 0644
         force: no
-      tags:
-        - jenkins
-    - name: Creates ssh dir
-      file:
-        path: /var/lib/jenkins/.ssh
-        state: directory
       tags:
         - jenkins
     - name: copy ssh creds

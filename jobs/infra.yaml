@@ -28,6 +28,9 @@
           JOB_SPEC_DIR: "jobs/infra"
       - shell: |
           rm -rf /var/lib/jenkins/slaves/*/workspace/validate*
+          sudo add-apt-repository -y ppa:deadsnakes/ppa
+          sudo apt update
+          sudo apt install -qyf python3.6 tox virtualenv
       - run-venv:
           COMMAND: |
             bash $WORKSPACE/jobs/infra/fixtures/cleanup-env.sh
