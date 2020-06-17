@@ -18,11 +18,7 @@ set -x
 function juju::bootstrap
 {
     local constraints
-    if [[ "$ARCH" = "arm64" ]]; then
-        constraints="instance-type=a1.large arch=$ARCH"
-    else
-        constraints="arch=$ARCH"
-    fi
+    constraints="instance-type=a1.large arch=$ARCH"
 
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          -d "$JUJU_MODEL" \
@@ -38,11 +34,7 @@ function juju::bootstrap
 function juju::deploy
 {
     local constraints
-    if [[ "$ARCH" = "arm64" ]]; then
-        constraints="instance-type=a1.large arch=$ARCH"
-    else
-        constraints="arch=$ARCH instance-type=t3a.medium"
-    fi
+    constraints="instance-type=a1.large arch=$ARCH"
 
     tee overlay.yaml <<EOF> /dev/null
 series: $SERIES
