@@ -215,7 +215,7 @@
         owner: jenkins
         group: jenkins
         mode: 0644
-        force: no
+        force: yes
       tags:
         - jenkins
     - name: create juju dir
