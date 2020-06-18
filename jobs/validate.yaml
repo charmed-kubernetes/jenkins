@@ -56,6 +56,61 @@
             TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/spec $snap_version $series $channel $arch
 
 - job:
+    name: 'validate-ck-arm64'
+    node: runner-validate
+    description: |
+      Validates CDK edge on arm64, supports last three recent releases.
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+    triggers:
+        - timed: "@weekly"
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.19/edge
+            - 1.18/edge
+            - 1.17/edge
+            - 1.16/edge
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+            - bionic
+            - xenial
+      - axis:
+          type: user-defined
+          name: channel
+          values:
+            - edge
+      - axis:
+          type: user-defined
+          name: arch
+          values:
+            - arm64
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
+          COMMAND: |
+            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/spec $snap_version $series $channel $arch
+
+
+- job:
     name: 'validate-ck-stable'
     node: runner-validate
     description: |
@@ -156,6 +211,58 @@
           name: arch
           values:
             - amd64
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
+          COMMAND: |
+           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/upgrade-spec $snap_version $series $channel $arch
+
+- job:
+    name: 'validate-ck-upgrade-arm64'
+    node: runner-validate
+    description: |
+      Validates CK upgrades from previous 2 stables to latest edge
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+    triggers:
+        - timed: "@weekly"
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.18/stable
+            - 1.17/stable
+            - 1.16/stable
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+            - bionic
+            - xenial
+      - axis:
+          type: user-defined
+          name: channel
+          values:
+            - edge
+      - axis:
+          type: user-defined
+          name: arch
+          values:
             - arm64
     builders:
       - set-env:
@@ -473,94 +580,6 @@
           COMMAND: |
            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/vault-spec $snap_version $series
 
-# - job:
-#     name: 'validate-ck-ceph'
-#     node: runner-validate
-#     description: |
-#       Validates CK, with Ceph.
-#     project-type: matrix
-#     scm:
-#       - k8s-jenkins-jenkaas
-#     wrappers:
-#       - default-job-wrapper
-#       - ci-creds
-#     properties:
-#       - build-discarder:
-#           num-to-keep: 3
-#     triggers:
-#         - timed: "@weekly"
-#     axes:
-#       - axis:
-#           type: slave
-#           name: node
-#           values:
-#             - runner-validate
-#       - axis:
-#           type: user-defined
-#           name: snap_version
-#           values:
-#             - 1.19/edge
-#             - 1.18/edge
-#             - 1.17/edge
-#             - 1.16/edge
-#       - axis:
-#           type: user-defined
-#           name: series
-#           values:
-#             - focal
-#             - bionic
-#     builders:
-#       - set-env:
-#           JOB_SPEC_DIR: "jobs/validate"
-#       - run-env:
-#           COMMAND: |
-#            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/ceph-spec $snap_version $series
-
-# - job:
-#     name: 'validate-ck-nfs'
-#     node: runner-validate
-#     description: |
-#       Validates CK, with NFS.
-#     project-type: matrix
-#     scm:
-#       - k8s-jenkins-jenkaas
-#     wrappers:
-#       - default-job-wrapper
-#       - ci-creds
-#     properties:
-#       - build-discarder:
-#           num-to-keep: 7
-#     triggers:
-#         - timed: "@weekly"
-#     axes:
-#       - axis:
-#           type: slave
-#           name: node
-#           values:
-#             - runner-validate
-#       - axis:
-#           type: user-defined
-#           name: snap_version
-#           values:
-#             - 1.19/edge
-#             - 1.18/edge
-#             - 1.17/edge
-#             - 1.16/edge
-#       - axis:
-#           type: user-defined
-#           name: series
-#           values:
-#             - focal
-#             - bionic
-#             - xenial
-#     builders:
-#       - set-env:
-#           JOB_SPEC_DIR: "jobs/validate"
-#       - run-env:
-#           COMMAND: |
-#             TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/nfs-spec $snap_version $series
-
-
 - job:
     name: 'validate-ck-nvidia'
     node: runner-validate
@@ -650,50 +669,6 @@
           COMMAND: |
            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/aws-iam-spec $snap_version $series
 
-
-# - job:
-#     name: 'validate-ck-nagios'
-#     description: |
-#       Validates CK, with Nagios.
-#     node: runner-validate
-#     project-type: matrix
-#     scm:
-#       - k8s-jenkins-jenkaas
-#     wrappers:
-#       - default-job-wrapper
-#       - ci-creds
-#     properties:
-#       - build-discarder:
-#           num-to-keep: 7
-#     triggers:
-#         - timed: "@weekly"
-#     axes:
-#       - axis:
-#           type: slave
-#           name: node
-#           values:
-#             - runner-validate
-#       - axis:
-#           type: user-defined
-#           name: snap_version
-#           values:
-#             - 1.19/edge
-#             - 1.18/edge
-#             - 1.17/edge
-#             - 1.16/edge
-#       - axis:
-#           type: user-defined
-#           name: series
-#           values:
-#             - focal
-#             - bionic
-#             - xenial
-#     builders:
-#       - set-env:
-#           JOB_SPEC_DIR: "jobs/validate"
-#       - run-env:
-#           COMMAND: |
-#            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/nagios-spec $snap_version $series
 
 - job:
     name: 'validate-ck-multus'
