@@ -1,0 +1,22 @@
+- job:
+    name: 'bundle-tester'
+    node: runner-validate
+    description: |
+      Tests custom bundles residing in jobs/bundles
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+    triggers:
+        - timed: "@weekly"
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/bundles"
+      - run-env:
+          COMMAND: |
+            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/bundles/test-all

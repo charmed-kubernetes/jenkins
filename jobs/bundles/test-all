@@ -1,0 +1,143 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+###############################################################################
+# INITIALIZE
+###############################################################################
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function compile::env
+{
+    : "${BUNDLE_FILE:?Must have a cloud defined}"
+    : "${JUJU_CLOUD:?Must have a cloud defined}"
+    : "${JUJU_CONTROLLER:?Must have a controller defined}"
+    : "${JUJU_DEPLOY_BUNDLE:?Must have a bundle defined}"
+    : "${JUJU_MODEL:?Must have a model defined}"
+    : "${JOB_NAME_CUSTOM:?Must have a job name defined}"
+    : "${JOB_ID:?Must have a job id defined}"
+
+    export BUNDLE_FILE
+    export JOB_NAME_CUSTOM
+    export JOB_ID
+    export JUJU_CLOUD
+    export JUJU_CONTROLLER
+    export JUJU_DEPLOY_BUNDLE
+    export JUJU_MODEL
+
+    echo "Storing initial meta information"
+    local job_name_format
+
+    mkdir -p "meta"
+    job_name_format=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
+
+    touch "meta/name-$job_name_format"
+    for i in meta/*; do
+        python bin/s3 cp "$i" "$i"
+    done
+}
+
+
+function ci::run
+{
+    compile::env
+
+    local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
+    {
+        build_starttime=$(timestamp)
+
+        juju::bootstrap::before
+        juju::bootstrap
+        juju::bootstrap::after
+        juju::deploy::before
+        juju::deploy
+        juju::wait
+        juju::deploy::after
+
+        deploy_endtime=$(timestamp)
+
+        test::execute result
+        test::report "$result" "$build_starttime" "$deploy_endtime"
+        test::capture
+        ci::cleanup::before
+
+    } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
+}
+
+function test::capture
+{
+    if which juju-crashdump; then
+        juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    fi
+    tar -cvzf artifacts.tar.gz ci.log meta juju-crashdump*
+    python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
+}
+
+function test::execute
+{
+    declare -n is_pass=$1
+    test::verify
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+# Reads in the verify stanza from bundle
+function test::verify
+{
+    py_script="
+import sys
+import yaml
+
+bundle_yaml=yaml.safe_load(sys.stdin)
+verify_out = bundle_yaml['verify']
+print(verify_out)
+"
+    env python3 -c "$py_script" < "$BUNDLE_FILE" | bash
+}
+
+function juju::deploy
+{
+    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
+         --force \
+         "$JUJU_DEPLOY_BUNDLE"
+}
+
+function juju::bootstrap
+{
+    juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
+         -d "$JUJU_MODEL" \
+         --force \
+         --bootstrap-constraints arch="amd64" \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=daily \
+         --model-default automatically-retry-hooks=false \
+         --model-default logging-config="<root>=DEBUG"
+}
+
+###############################################################################
+# START
+###############################################################################
+for bundle in jobs/bundles/*; do
+    if [[ $(basename "$bundle") = "test-all" ]]; then
+        continue
+    fi
+    BUNDLE_FILE="$bundle"
+    JOB_NAME_CUSTOM="bundle-$(basename ${bundle%%.*})"
+    JOB_ID=$(identifier)
+    JUJU_DEPLOY_BUNDLE="./$bundle"
+    JUJU_CLOUD=aws/us-east-1
+    JUJU_CONTROLLER=bundle-$(identifier::short)
+    JUJU_MODEL="bundle-ck"
+    ci::run
+done

@@ -1,0 +1,87 @@
+name: Converged Calico Docker bundle
+description: |
+  Does some consolidating of machines utilizing lxd.
+verify: |
+  #!/bin/bash
+  set -x
+
+  echo "It works!"
+  exit 0
+
+applications:
+  calico:
+    charm: cs:~containers/calico
+  docker:
+    charm: cs:~containers/docker
+  easyrsa:
+    charm: cs:~containers/easyrsa
+    num_units: 1
+    to:
+    - lxd:0
+  etcd:
+    charm: cs:~containers/etcd
+    num_units: 3
+    to:
+    - lxd:0
+    - lxd:1
+    - lxd:2
+    options:
+      channel: 3.4/stable
+  kubeapi-load-balancer:
+    charm: cs:~containers/kubeapi-load-balancer
+    num_units: 1
+    to:
+    - "0"
+    expose: true
+  kubernetes-master:
+    charm: cs:~containers/kubernetes-master
+    num_units: 2
+    to:
+    - lxd:1
+    - lxd:2
+  kubernetes-worker:
+    charm: cs:~containers/kubernetes-worker
+    num_units: 2
+    to:
+    - "1"
+    - "2"
+    expose: true
+machines:
+  "0":
+    series: bionic
+    constraints: "cores=2 mem=4G root-disk=32G"
+  "1":
+    series: bionic
+    constraints: "cores=8 mem=16G root-disk=48G"
+  "2":
+    series: bionic
+    constraints: "cores=8 mem=16G root-disk=48G"
+relations:
+- - kubernetes-master:kube-api-endpoint
+  - kubeapi-load-balancer:apiserver
+- - kubernetes-master:loadbalancer
+  - kubeapi-load-balancer:loadbalancer
+- - kubernetes-master:kube-control
+  - kubernetes-worker:kube-control
+- - kubernetes-master:certificates
+  - easyrsa:client
+- - etcd:certificates
+  - easyrsa:client
+- - kubernetes-master:etcd
+  - etcd:db
+- - kubernetes-worker:certificates
+  - easyrsa:client
+- - kubernetes-worker:kube-api-endpoint
+  - kubeapi-load-balancer:website
+- - kubeapi-load-balancer:certificates
+  - easyrsa:client
+- - calico:etcd
+  - etcd:db
+- - calico:cni
+  - kubernetes-master:cni
+- - calico:cni
+  - kubernetes-worker:cni
+- - docker:docker
+  - kubernetes-worker:container-runtime
+- - docker:docker
+  - kubernetes-master:container-runtime

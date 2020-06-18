@@ -33,10 +33,11 @@
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
+            - "bundle-.*"
             - "validate-ck.*"
             - "release-microk8s.*"
             - "validate-kubeflow.*"
-          block-level: 'NODE'
+          block-level: 'GLOBAL'
 
 
 # PARAMETERS ----------------------------------------------------------------- #
