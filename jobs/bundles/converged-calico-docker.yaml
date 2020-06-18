@@ -1,6 +1,3 @@
-name: Converged Calico Docker bundle
-description: |
-  Does some consolidating of machines utilizing lxd.
 verify: |
   #!/bin/bash
   set -x
