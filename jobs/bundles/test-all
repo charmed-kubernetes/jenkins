@@ -99,8 +99,11 @@ import sys
 import yaml
 
 bundle_yaml=yaml.safe_load(sys.stdin)
-verify_out = bundle_yaml['verify']
-print(verify_out)
+if 'verify' not in bundle_yaml:
+    print('echo no verification found')
+else:
+    verify_out = bundle_yaml['verify']
+    print(verify_out)
 "
     env python3 -c "$py_script" < "$BUNDLE_FILE" | bash
 }
