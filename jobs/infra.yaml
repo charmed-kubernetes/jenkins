@@ -66,3 +66,22 @@
       - shell: |
           scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa jobs/infra/fixtures/cleanup-s390x-env.sh  ubuntu@10.13.6.3:cleanup.sh
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- bash cleanup.sh
+
+- job:
+    name: 'infra-nodes-reboot-amd64-4'
+    description: |
+      reboots node
+    node: runner-amd64-4
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 1
+    builders:
+      - shell: |
+          sudo reboot
