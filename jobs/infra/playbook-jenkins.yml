@@ -135,6 +135,13 @@
         force: yes
       tags:
         - jenkins
+    - name: create snapcraft config dir
+      file:
+        path: /var/lib/jenkins/.config/snapcraft
+        state: directory
+        mode: 0755
+      tags:
+        - jenkins
     - name: Creates ssh dir
       file:
         path: /var/lib/jenkins/.ssh
@@ -185,7 +192,7 @@
     - name: copy snapcraft creds
       copy:
         src: "{{ lookup('env', 'SNAPCRAFTCPCCREDS') }}"
-        dest: /var/lib/jenkins/snapcraft-cpc-creds
+        dest: /var/lib/jenkins/.config/snapcraft/snapcraft.cfg
         owner: jenkins
         group: jenkins
         mode: 0644
@@ -209,13 +216,6 @@
         group: jenkins
         mode: 0644
         force: no
-      tags:
-        - jenkins
-    - name: create config dir
-      file:
-        path: /var/lib/jenkins/.config
-        state: directory
-        mode: 0755
       tags:
         - jenkins
     - name: create juju dir
