@@ -151,12 +151,6 @@
         force: yes
       tags:
         - jenkins
-    - name: login to charmstore
-      command: "charm login -B"
-      become: false
-      register: charmstore_login
-      tags:
-        - jenkins
     - name: copy charm creds
       copy:
         src: "{{ lookup('env', 'CHARMCREDS') }}"
@@ -164,16 +158,8 @@
         owner: jenkins
         group: jenkins
         mode: 0644
-        force: yes
+        force: no
       become: false
-      when: charmstore_login.rc != 0
-      tags:
-        - jenkins
-
-    - name: login to charmstorex2
-      command: "charm login -B"
-      become: false
-      when: charmstore_login.rc != 0
       tags:
         - jenkins
     - name: copy snapcraft creds
@@ -206,11 +192,6 @@
         force: no
       tags:
         - jenkins
-    - name: login to snapstore
-      command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
-      become: false
-      tags:
-        - jenkins
     - name: create aws dir
       file:
         path: /var/lib/jenkins/.aws
@@ -228,6 +209,13 @@
         group: jenkins
         mode: 0644
         force: no
+      tags:
+        - jenkins
+    - name: create config dir
+      file:
+        path: /var/lib/jenkins/.config
+        state: directory
+        mode: 0755
       tags:
         - jenkins
     - name: create juju dir
@@ -348,6 +336,17 @@
         owner: jenkins
         group: jenkins
         mode: 0644
+      tags:
+        - jenkins
+    - name: login to charmstore
+      command: "charm login -B"
+      become: false
+      register: charmstore_login
+      tags:
+        - jenkins
+    - name: login to snapstore
+      command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
+      become: false
       tags:
         - jenkins
     - name: make sure permissions are correct
