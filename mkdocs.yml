@@ -9,8 +9,6 @@ markdown_extensions:
     - wikilinks
     - codehilite:
         linenums: True
-    # - urlize # requires: pip install git+https://github.com/r0wb0t/markdown-urlize.git
-    # - pymdownx.arithmatex
     - pymdownx.betterem:
         smart_enable: all
     - pymdownx.caret
@@ -26,7 +24,3 @@ markdown_extensions:
     - pymdownx.tasklist:
         custom_checkbox: True
     - pymdownx.tilde
-extra:
-  social:
-    - type: 'github'
-      link: 'https://github.com/charmed-kubernetes/jenkins'

@@ -8,7 +8,6 @@ This project contains the scripts used to build and test the CDK.
 
  - *jobs* - All jenkins jobs housed here
  - *jobs/integration* - All integration tests housed here
- - *jobs/overlays* - All juju bundle overlays housed here.
 
 ## How to run tests locally
 
@@ -19,7 +18,7 @@ help output from `pytest` under the **custom options** section.
 > **Note**: Required minimum Python version is 3.6.
 
 ```
-> pytest jobs/integration/validation.py --help
+> tox -e py3 --workdir .tox -- pytest jobs/integration/validation.py --help
 
 custom options:
   --no-flaky-report     Suppress the report at the end of the run detailing
@@ -66,15 +65,11 @@ tox --workdir .tox -e py3 -- \
 Jenkins Job Builder is used to generate jobs for Jenkins programmatically. No
 jobs are created by hand in the Jenkins UI.
 
-To add a new test into Jenkins, it is necessary to create an OGC Spec that is a
-yaml configuration on what the test looks like and then a yaml file to describe
-the job to Jenkins Job Builder. Example job:
+Adding a new test can be done by copying an existing one and modifying for your needs:
 
-[OGC Spec](https://github.com/charmed-kubernetes/jenkins/blob/master/jobs/validate/spec.yml)
+[Spec](https://github.com/juju-solutions/kubernetes-jenkins/blob/master/jobs/validate/spec)
 
 [JJB Validate](https://github.com/juju-solutions/kubernetes-jenkins/blob/master/jobs/validate.yaml)
-
-Please see [OGC Website](https://ogc.8op.org) for information on how to write a specification.
 
 ## Documentation
 
