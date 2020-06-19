@@ -63,7 +63,7 @@ function timestamp
 function test::execute
 {
     declare -n is_pass=$1
-    timeout 2h pytest \
+    timeout 3h pytest \
         --html="report.html" \
         jobs/integration/validation.py \
         --cloud "$JUJU_CLOUD" \
