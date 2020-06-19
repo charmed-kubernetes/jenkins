@@ -44,53 +44,6 @@ function compile::env
     done
 }
 
-
-function ci::run
-{
-    compile::env
-
-    local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
-    {
-        build_starttime=$(timestamp)
-
-        juju::bootstrap::before
-        juju::bootstrap
-        juju::bootstrap::after
-        juju::deploy::before
-        juju::deploy
-        juju::wait
-        juju::deploy::after
-
-        deploy_endtime=$(timestamp)
-
-        test::execute result
-        test::report "$result" "$build_starttime" "$deploy_endtime"
-        test::capture
-        ci::cleanup::before
-
-    } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
-}
-
-function test::capture
-{
-    if which juju-crashdump; then
-        juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-    fi
-    tar -cvzf artifacts.tar.gz ci.log meta juju-crashdump*
-    python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
-}
-
-function test::execute
-{
-    declare -n is_pass=$1
-    test::verify
-    ret=$?
-    is_pass="True"
-    if (( $ret > 0 )); then
-        is_pass="False"
-    fi
-}
-
 # Reads in the verify stanza from bundle
 function test::verify
 {
