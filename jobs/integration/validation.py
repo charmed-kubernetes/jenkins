@@ -190,7 +190,7 @@ async def reset_audit_config(master_app, tools):
 
 # START TESTS
 @pytest.mark.asyncio
-async def test_auth_file_propagation(event_loop, model, tools):
+async def test_auth_file_propagation(model, tools):
     """Validate that changes to /root/cdk/basic_auth.csv on the leader master
     unit are propagated to the other master units.
 
@@ -534,7 +534,7 @@ async def test_network_policies(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.skip("Unskip when this can be speed up considerably")
-async def test_worker_master_removal(event_loop, model, tools):
+async def test_worker_master_removal(model, tools):
     # Add a second master
     masters = model.applications["kubernetes-master"]
     original_master_count = len(masters.units)

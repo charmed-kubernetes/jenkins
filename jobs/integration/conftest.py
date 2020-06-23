@@ -160,7 +160,10 @@ async def model(request, event_loop, tools):
         await tools.juju_wait()
         await log_snap_versions(model, prefix="After")
     yield model
-    await model.disconnect()
+    try:
+        await model.disconnect()
+    except RuntimeError as err:
+        print(f"Caught runtimeerror: {err}, will ignore for now.")
 
 
 @pytest.fixture

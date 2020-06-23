@@ -4,6 +4,10 @@
     downstream: 'charmed-kubernetes/interface-aws-iam.git'
     upstream: 'https://github.com/juju-solutions/interface-aws-iam.git'
     tags: ['k8s']
+- interface:mysql:
+    downstream: 'charmed-kubernetes/juju-relation-mysql.git'
+    upstream: 'https://github.com/johnsca/juju-relation-mysql.git'
+    tags: ['k8s']
 - interface:prometheus-manual:
     downstream: 'charmed-kubernetes/interface-prometheus-manual.git'
     upstream: 'https://github.com/charmed-kubernetes/interface-prometheus-manual'
