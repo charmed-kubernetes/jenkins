@@ -1,8 +1,4 @@
 - id: python-tb-exception
   description: python tracebacks
   start_marker: "^Traceback.*"
-  end_marker: "^Exception|Error|InvalidRequest|CalledProcessError|AssertionError:"
-- id: source-config-error
-  description: source config error typically due to invalid cloud options
-  start_marker: "^Traceback.*"
-  end_marker: ".*SourceConfigError:.*$"
+  end_marker: "^Exception|Error|InvalidRequest|CalledProcessError|AssertionError|SourceConfigError:"

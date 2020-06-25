@@ -10,7 +10,7 @@ ansible
 black
 boto3
 bs4
-columbo>=0.0.4
+columbo>=0.0.6
 contextvars
 configobj
 canonicalwebteam.snapstoreapi
