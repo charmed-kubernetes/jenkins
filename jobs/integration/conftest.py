@@ -134,7 +134,6 @@ def tools(request):
 
 @pytest.fixture(scope="module")
 async def model(request, event_loop, tools):
-    event_loop.set_exception_handler(lambda l, _: l.stop())
     model = Model(event_loop)
     await model.connect(tools.connection)
     if request.config.getoption("--is-upgrade"):
@@ -160,10 +159,7 @@ async def model(request, event_loop, tools):
         await tools.juju_wait()
         await log_snap_versions(model, prefix="After")
     yield model
-    try:
-        await model.disconnect()
-    except RuntimeError as err:
-        print(f"Caught runtimeerror: {err}, will ignore for now.")
+    await model.disconnect()
 
 
 @pytest.fixture
