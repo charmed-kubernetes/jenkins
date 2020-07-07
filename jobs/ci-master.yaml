@@ -304,7 +304,7 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          virtualenv venv -p python3.6
+          virtualenv venv -p python3.8
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
 
