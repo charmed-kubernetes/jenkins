@@ -70,7 +70,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@weekly"
+        - timed: "@monthly"
     axes:
       - axis:
           type: slave
@@ -233,7 +233,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@weekly"
+        - timed: "@monthly"
     axes:
       - axis:
           type: slave
@@ -595,7 +595,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@weekly"
+        - timed: "@monthly"
     axes:
       - axis:
           type: slave
