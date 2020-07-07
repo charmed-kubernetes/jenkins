@@ -138,7 +138,7 @@ async def upgrade_snaps(model, channel, tools):
                         break
                     await asyncio.sleep(3)
                 else:
-                    raise TimeoutError(
+                    raise asyncio.TimeoutError(
                         "Unable to find blocked status on unit {0} - {1} {2}".format(
                             unit.name, unit.workload_status, unit.agent_status
                         )
@@ -204,7 +204,7 @@ async def retry_async_with_timeout(
             break
         await asyncio.sleep(retry_interval_insec)
     else:
-        raise TimeoutError(timeout_msg)
+        raise asyncio.TimeoutError(timeout_msg)
 
 
 def arch():
