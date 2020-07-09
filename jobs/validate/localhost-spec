@@ -12,8 +12,8 @@ set -xe
 
 function juju::deploy
 {
-        juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
-        --series $SERIES \
+        juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
+        --series "$SERIES" \
         --force \
         --constraints "mem=32G root-disk=100G cores=8" \
         ubuntu
