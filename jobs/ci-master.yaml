@@ -268,7 +268,7 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          virtualenv venv -p python3.6
+          python3.6 -m venv venv
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
           venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
@@ -284,7 +284,7 @@
           set +o allexport
 
           sudo rm -rf /usr/local/bin/aws
-          python3.6 -m virtualenv venv
+          python3.8 -m venv venv
           venv/bin/python -m pip install tox
 
           set +u
@@ -304,7 +304,7 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          virtualenv venv -p python3.8
+          python3.8 -m venv venv
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
 

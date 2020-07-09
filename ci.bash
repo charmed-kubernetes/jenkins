@@ -175,7 +175,7 @@ function ci::cleanup
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
-            timeout 2m juju kill-controller -y "$JUJU_CONTROLLER" || true
+            timeout 5m juju kill-controller -y "$JUJU_CONTROLLER" || true
         fi
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
 }

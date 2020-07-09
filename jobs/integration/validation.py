@@ -1592,6 +1592,7 @@ async def test_encryption_at_rest(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.offline
+@pytest.mark.clouds(["aws"])
 async def test_dns_provider(model, tools):
     master_app = model.applications["kubernetes-master"]
     master_unit = master_app.units[0]
@@ -2107,6 +2108,7 @@ async def test_ceph(model, tools):
         # read and ignore any exception so that it doesn't get raised
         # when the task is GC'd
         task.exception()
+    await tools.juju_wait()
 
 
 # @pytest.mark.asyncio
