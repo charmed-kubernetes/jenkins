@@ -86,6 +86,7 @@
           - expect-dev
           - redis-server
           - language-pack-en-base
+          - libuv1
       tags:
         - jenkins
     - name: remove unused debs

@@ -285,7 +285,7 @@
 
           sudo rm -rf /usr/local/bin/aws
           python3.8 -m venv venv
-          venv/bin/python -m pip install tox
+          venv/bin/python -m pip install tox wheel
 
           set +u
           source venv/bin/activate
@@ -305,7 +305,7 @@
           set +o allexport
 
           python3.8 -m venv venv
-          venv/bin/python -m pip install pip-tools
+          venv/bin/python -m pip install pip-tools wheel
           venv/bin/pip-sync requirements.txt
 
           set +u
