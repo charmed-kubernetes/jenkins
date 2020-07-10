@@ -224,7 +224,7 @@ def event_loop():
     loop = asyncio.new_event_loop()
     assert isinstance(loop, uvloop.Loop)
     yield loop
-    loop.close()
+    # loop.close()
 
 
 @pytest.fixture
