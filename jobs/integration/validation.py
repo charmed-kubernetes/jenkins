@@ -308,6 +308,7 @@ async def test_rbac_flag(model):
 
 
 @pytest.mark.asyncio
+@pytest.mark.clouds(["aws"])
 async def test_microbot(model, tools):
     """ Validate the microbot action """
     unit = model.applications["kubernetes-worker"].units[0]
@@ -1592,7 +1593,6 @@ async def test_encryption_at_rest(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.offline
-@pytest.mark.clouds(["aws"])
 async def test_dns_provider(model, tools):
     master_app = model.applications["kubernetes-master"]
     master_unit = master_app.units[0]
