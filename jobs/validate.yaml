@@ -17,6 +17,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@daily"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -61,6 +63,8 @@
     description: |
       Validates CDK edge on arm64, supports last three recent releases.
     project-type: matrix
+    execution-strategy:
+      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -116,6 +120,8 @@
     description: |
       Validates CDK stable on amd64 and arm64, supports last three recent releases additionally.
     project-type: matrix
+    execution-strategy:
+      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -171,6 +177,8 @@
     description: |
       Validates CK upgrades from previous 2 stables to latest edge
     project-type: matrix
+    execution-strategy:
+      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -220,6 +228,8 @@
 
 - job:
     name: 'validate-ck-upgrade-arm64'
+    execution-strategy:
+      sequential: true
     node: runner-validate
     description: |
       Validates CK upgrades from previous 2 stables to latest edge
@@ -313,44 +323,46 @@
            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/snapd-upgrade-spec $snap_version $series
 
 
-# - job:
-#     name: 'validate-ck-series-upgrade'
-#     node: runner-validate
-#     description: |
-#       Validates CK machine series upgrades.
-#     project-type: matrix
-#     scm:
-#       - k8s-jenkins-jenkaas
-#     wrappers:
-#       - default-job-wrapper
-#       - ci-creds
-#     properties:
-#       - build-discarder:
-#           num-to-keep: 7
-#     triggers:
-#         - timed: "@weekly"
-#     axes:
-#       - axis:
-#           type: slave
-#           name: node
-#           values:
-#             - runner-validate
-#       - axis:
-#           type: user-defined
-#           name: snap_version
-#           values:
-#             - 1.18/stable
-#       - axis:
-#           type: user-defined
-#           name: series
-#           values:
-#             - xenial
-#     builders:
-#       - set-env:
-#           JOB_SPEC_DIR: "jobs/validate"
-#       - run-env:
-#           COMMAND: |
-#             TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/series-upgrade-spec $snap_version $series
+- job:
+    name: 'validate-ck-series-upgrade'
+    node: runner-validate
+    description: |
+      Validates CK machine series upgrades.
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    execution-strategy:
+      sequential: true
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    triggers:
+        - timed: "@weekly"
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.18/stable
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - xenial
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-env:
+          COMMAND: |
+            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/series-upgrade-spec $snap_version $series
 
 
 # ADDONS --------------------------------------------------------------------- #
@@ -552,6 +564,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -586,6 +600,8 @@
     description: |
       Validates CK, with NVidia.
     project-type: matrix
+    execution-strategy:
+      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -631,6 +647,8 @@
       Validates CK, with AWS IAM.
     node: runner-validate
     project-type: matrix
+    execution-strategy:
+      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -640,7 +658,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@weekly"
+        - timed: "@monthly"
     axes:
       - axis:
           type: slave

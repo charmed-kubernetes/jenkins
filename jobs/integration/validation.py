@@ -2167,6 +2167,7 @@ async def test_cinder(model, tools):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip("Getting further")
 async def test_containerd_to_docker(model, tools):
     """
     Assume we're starting with containerd, replace
