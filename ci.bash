@@ -28,7 +28,9 @@ function compile::env
     local job_name_format
     local snap_version_format
 
+    test -d "meta" && rm -rf "meta"
     mkdir -p "meta"
+
     job_name_format=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     snap_version_format=$(echo "$SNAP_VERSION" | tr '/' '-')
 
@@ -71,7 +73,7 @@ function test::execute
         --controller "$JUJU_CONTROLLER"
     ret=$?
     is_pass="True"
-    if (( $ret > 0 )); then
+    if (( ret > 0 )); then
         is_pass="False"
     fi
 }
@@ -109,15 +111,14 @@ function ci::run
 
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
-        sleep $(( ( RANDOM % 25 )  + 1 ))s
-
+        ci::sleep
         build_starttime=$(timestamp)
 
         juju::bootstrap::before
         juju::bootstrap
         juju::bootstrap::after
 
-        sleep $(( ( RANDOM % 25 )  + 1 ))s
+        ci::sleep
         juju::deploy::before
         juju::deploy
         juju::wait
@@ -133,40 +134,11 @@ function ci::run
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
 }
 
-# get latest python on system
-function ci::py
+# injects random sleep
+function ci::sleep
 {
-    local python_p="python3"
-
-    if [[ -f /usr/bin/python3.6 ]]; then
-        python_p="python3.6"
-    elif [[ -f /usr/bin/python3.7 ]]; then
-        python_p="python3.7"
-    fi
-    echo "$python_p"
+    sleep $(( ( RANDOM % 25 )  + 1 ))s
 }
-
-# create a virtualenv for python
-function ci::venv
-{
-    declare -n _venv_p=$1
-    _venv_p="$TMPDIR/venv"
-
-    rm -rf "$TMPDIR/venv" || true
-
-    virtualenv "$_venv_p" -p "$(ci::py)"
-}
-
-# tox environment to use
-function ci::toxpy
-{
-    local python_p="py36"
-    if [[ -f /usr/bin/python3.7 ]]; then
-        python_p="py37"
-    fi
-    echo "$python_p"
-}
-
 
 function ci::cleanup::before
 {
