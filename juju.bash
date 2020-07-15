@@ -50,7 +50,6 @@ applications:
       channel: $SNAP_VERSION
 EOF
 
-    sleep $(( ( RANDOM % 10 )  + 1 ))s
     juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
          --overlay overlay.yaml \
          --force \

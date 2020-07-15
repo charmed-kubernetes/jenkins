@@ -109,11 +109,15 @@ function ci::run
 
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
+        sleep $(( ( RANDOM % 25 )  + 1 ))s
+
         build_starttime=$(timestamp)
 
         juju::bootstrap::before
         juju::bootstrap
         juju::bootstrap::after
+
+        sleep $(( ( RANDOM % 25 )  + 1 ))s
         juju::deploy::before
         juju::deploy
         juju::wait
