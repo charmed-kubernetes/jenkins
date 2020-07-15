@@ -17,8 +17,6 @@
           num-to-keep: 3
     triggers:
         - timed: "@daily"
-    execution-strategy:
-      sequential: true
     axes:
       - axis:
           type: slave
