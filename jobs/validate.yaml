@@ -61,8 +61,6 @@
     description: |
       Validates CDK edge on arm64, supports last three recent releases.
     project-type: matrix
-    execution-strategy:
-      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -173,8 +171,6 @@
     description: |
       Validates CK upgrades from previous 2 stables to latest edge
     project-type: matrix
-    execution-strategy:
-      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -224,8 +220,6 @@
 
 - job:
     name: 'validate-ck-upgrade-arm64'
-    execution-strategy:
-      sequential: true
     node: runner-validate
     description: |
       Validates CK upgrades from previous 2 stables to latest edge
@@ -327,8 +321,6 @@
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
-    execution-strategy:
-      sequential: true
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -560,8 +552,6 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
-    execution-strategy:
-      sequential: true
     axes:
       - axis:
           type: slave
@@ -596,8 +586,6 @@
     description: |
       Validates CK, with NVidia.
     project-type: matrix
-    execution-strategy:
-      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -643,8 +631,6 @@
       Validates CK, with AWS IAM.
     node: runner-validate
     project-type: matrix
-    execution-strategy:
-      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
@@ -700,8 +686,6 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
-    execution-strategy:
-      sequential: true
     axes:
       - axis:
           type: slave
