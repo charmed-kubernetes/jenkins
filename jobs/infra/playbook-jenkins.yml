@@ -41,6 +41,14 @@
         reload: yes
       tags:
         - jenkins
+    - name: install columbo
+      shell: |
+        wget https://github.com/battlemidget/columbo-go/releases/download/0.0.3/columbo-go_0.0.3_$(uname -m).tar.gz
+        tar xvf columbo-go_0.0.3_$(uname -m).tar.gz
+        mv columbo /usr/local/bin
+      tags:
+        - adhoc
+        - jenkins
     - name: install apt deps
       apt:
         name:

@@ -118,8 +118,6 @@
     description: |
       Validates CDK stable on amd64 and arm64, supports last three recent releases additionally.
     project-type: matrix
-    execution-strategy:
-      sequential: true
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
