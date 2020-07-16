@@ -33,6 +33,7 @@ pipeline {
                 sh "git config --global user.name 'cdkbot'"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
                 sh "snapcraft whoami"
+                sh "sudo chown jenkins:jenkins -R /var/lib/jenkins/.config/snapcraft"
             }
         }
         stage('Ensure valid K8s version'){
