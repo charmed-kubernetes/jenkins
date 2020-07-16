@@ -1,4 +1,5 @@
-- id: python-tb-exception
-  description: python tracebacks
-  start_marker: "Traceback.*"
-  end_marker: "Exception|Error|InvalidRequest|CalledProcessError|AssertionError|SourceConfigError:"
+rules:
+  - id: python-tb-exception
+    description: python tracebacks
+    start_marker: "Traceback.*"
+    end_marker: "Exception|Error|InvalidRequest|CalledProcessError|AssertionError|SourceConfigError:"
