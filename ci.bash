@@ -147,10 +147,10 @@ function ci::run
         build_starttime=$(timestamp)
 
         juju::bootstrap::before
-        retry 5 juju::bootstrap
+        retry 15 juju::bootstrap
         juju::bootstrap::after
         juju::deploy::before
-        retry 5 juju::deploy
+        retry 15 juju::deploy
         juju::wait
         juju::deploy::after
 
