@@ -17,8 +17,6 @@
           num-to-keep: 3
     triggers:
         - timed: "@daily"
-    execution-strategy:
-      sequential: true
     axes:
       - axis:
           type: slave
@@ -53,9 +51,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py38 -- bash jobs/validate/spec $snap_version $series $channel $arch
+             bash jobs/validate/spec $snap_version $series $channel $arch
 
 - job:
     name: 'validate-ck-arm64'
@@ -109,9 +107,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/spec $snap_version $series $channel $arch
+            bash jobs/validate/spec $snap_version $series $channel $arch
 
 
 - job:
@@ -166,9 +164,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/spec $snap_version $series $channel $arch
+            bash jobs/validate/spec $snap_version $series $channel $arch
 
 
 - job:
@@ -222,9 +220,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/upgrade-spec $snap_version $series $channel $arch
+            bash jobs/validate/upgrade-spec $snap_version $series $channel $arch
 
 - job:
     name: 'validate-ck-upgrade-arm64'
@@ -277,9 +275,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/upgrade-spec $snap_version $series $channel $arch
+            bash jobs/validate/upgrade-spec $snap_version $series $channel $arch
 
 
 - job:
@@ -318,9 +316,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/snapd-upgrade-spec $snap_version $series
+            bash jobs/validate/snapd-upgrade-spec $snap_version $series
 
 
 - job:
@@ -360,9 +358,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/series-upgrade-spec $snap_version $series
+            bash jobs/validate/series-upgrade-spec $snap_version $series
 
 
 # ADDONS --------------------------------------------------------------------- #
@@ -406,9 +404,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/localhost-spec $snap_version $series
+            bash jobs/validate/localhost-spec $snap_version $series
 
 - job:
     name: 'validate-ck-s390x'
@@ -445,9 +443,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/ck-s390-spec $snap_version $series
+            bash jobs/validate/ck-s390-spec $snap_version $series
 
 
 - job:
@@ -503,9 +501,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/calico-spec $snap_version $series $channel amd64 $test_bgp
+            bash jobs/validate/calico-spec $snap_version $series $channel amd64 $test_bgp
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
@@ -544,9 +542,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/tigera-ee-spec $snap_version $series
+            bash jobs/validate/tigera-ee-spec $snap_version $series
 
 - job:
     name: 'validate-ck-vault'
@@ -590,9 +588,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/vault-spec $snap_version $series
+            bash jobs/validate/vault-spec $snap_version $series
 
 - job:
     name: 'validate-ck-nvidia'
@@ -636,9 +634,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/nvidia-spec $snap_version $series
+            bash jobs/validate/nvidia-spec $snap_version $series
 
 
 - job:
@@ -683,9 +681,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/aws-iam-spec $snap_version $series
+            bash jobs/validate/aws-iam-spec $snap_version $series
 
 
 - job:
@@ -730,6 +728,6 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-env:
+      - run-venv:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/validate/multus-spec $snap_version $series
+            bash jobs/validate/multus-spec $snap_version $series
