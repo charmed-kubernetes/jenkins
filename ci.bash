@@ -129,8 +129,8 @@ function test::capture
         juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
     tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures*
-    columbo --output-dir "_out" "artifacts.tar.gz" || true
-    python bin/s3 cp "_out/columbo-report.json" columbo-report.json || true
+    /usr/local/bin/columbo -r columbo.yaml -o "_out" "artifacts.tar.gz" || true
+    python bin/s3 cp "columbo-report.json" columbo-report.json || true
     python bin/s3 cp "metadata.json" metadata.json || true
     python bin/s3 cp "report.html" report.html || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true

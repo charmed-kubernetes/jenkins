@@ -104,7 +104,7 @@
           description: Snap track(s) to promote to, separated by space.
       - string:
           name: SNAP_ARCH
-          default: "amd64"
+          default: "'amd64 ppc64el s390x arm64'"
           description: Architectures to promote in snap store, separated by space.
       - choice:
           name: SNAP_SELECTION
