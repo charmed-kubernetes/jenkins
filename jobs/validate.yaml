@@ -22,7 +22,7 @@
           type: slave
           name: node
           values:
-            - runner-validate
+            - runner-cloud
       - axis:
           type: user-defined
           name: snap_version

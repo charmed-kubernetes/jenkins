@@ -144,14 +144,11 @@ function ci::run
 
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
-        ci::sleep
         build_starttime=$(timestamp)
 
         juju::bootstrap::before
         retry 5 juju::bootstrap
         juju::bootstrap::after
-
-        ci::sleep
         juju::deploy::before
         retry 5 juju::deploy
         juju::wait
