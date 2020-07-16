@@ -79,7 +79,7 @@
           fi
 
           export TRACKS="$TRACKS"
-          virtualenv venv -p python3.6
+          python3.8 -m venv venv
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
           venv/bin/python jobs/build-snaps/snap.py sync-snaps \
