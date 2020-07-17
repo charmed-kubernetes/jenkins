@@ -335,6 +335,7 @@ async def test_microbot(model, tools):
 
 
 @pytest.mark.asyncio
+@pytest.mark.clouds(["aws"])
 async def test_dashboard(model, log_dir, tools):
     """ Validate that the dashboard is operational """
     unit = model.applications["kubernetes-master"].units[0]
@@ -993,6 +994,7 @@ async def test_audit_default_config(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.flaky(max_runs=5, min_passes=1)
+@pytest.mark.clouds(["aws"])
 async def test_toggle_metrics(model, tools):
     """Turn metrics on/off via the 'enable-metrics' config on kubernetes-master,
     and check that workload status returns to 'active', and that the metrics-server
