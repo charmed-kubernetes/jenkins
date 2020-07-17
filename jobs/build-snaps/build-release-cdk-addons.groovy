@@ -202,7 +202,7 @@ pipeline {
                         done
 
                         # Tag and push
-                        sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
+                        until sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}; do sleep 1; done
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
