@@ -6,7 +6,7 @@
   vars:
     s390x: "{{ lookup('env', 'S3LP3') }}"
     arm64: "{{ lookup('env', 'NEADER') }}"
-    columbo_version: 0.0.3
+    columbo_version: 0.0.4
   tasks:
     - name: make sure permissions are correct
       file:
