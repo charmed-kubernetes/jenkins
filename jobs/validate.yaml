@@ -17,6 +17,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@daily"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -71,6 +73,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@monthly"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -124,6 +128,8 @@
     properties:
       - build-discarder:
           num-to-keep: 3
+    execution-strategy:
+      sequential: true
     triggers:
         - timed: "@weekly"
     axes:
@@ -181,6 +187,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -234,6 +242,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@monthly"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -288,6 +298,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@daily"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -321,6 +333,8 @@
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
+    execution-strategy:
+      sequential: true
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -370,6 +384,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@daily"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -552,6 +568,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -596,6 +614,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@monthly"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -641,6 +661,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@monthly"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -686,6 +708,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave

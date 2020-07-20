@@ -1,8 +1,5 @@
 rules:
   - id: python-tb-exception
     description: python tracebacks
-    start_marker: "Traceback"
-    end_marker: "Exception|Error|InvalidRequest|CalledProcessError|AssertionError"
-  - id: errors
-    description: line errors
-    line_match: "Error"
+    start_marker: ".*Traceback"
+    end_marker: "^Exception|InvalidRequest|CalledProcessError|AssertionError:"

@@ -132,7 +132,6 @@ function test::capture
     /usr/local/bin/columbo -r columbo.yaml -o "_out" "artifacts.tar.gz" || true
     python bin/s3 cp "columbo-report.json" columbo-report.json || true
     python bin/s3 cp "metadata.json" metadata.json || true
-    python bin/s3 cp "report.html" report.html || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 }
 
