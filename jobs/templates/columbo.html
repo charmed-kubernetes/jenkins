@@ -22,12 +22,14 @@
         {% endif %}
 
       </ul>
+      {% if columbo_results %}
       {% for item in columbo_results %}
       <h3>{{item.name}}</h3>
       <p><strong>{{item.filename}}</strong></p>
       <pre>{{item.results}}</pre>
       <hr>
       {% endfor %}
+      {% endif %}
     </div>
   </div>
 </div>
