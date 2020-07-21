@@ -12,6 +12,7 @@ function compile::env
     : "${SNAP_VERSION:?Must have a snap version defined}"
     : "${JOB_NAME_CUSTOM:?Must have a job name defined}"
     : "${JOB_ID:?Must have a job id defined}"
+    : "${KV_DB}:=metadata.db}"
 
     export ARCH
     export JOB_NAME_CUSTOM
@@ -41,6 +42,14 @@ function compile::env
     for i in meta/*; do
         python bin/s3 cp "$i" "$i"
     done
+
+    key::set "job_id" "$JOB_ID"
+    key::set "job_name" "$JOB_NAME_CUSTOM"
+    key::set "job_name_custom" "$JOB_NAME_CUSTOM"
+    key::set "series" "$SERIES"
+    key::set "arch" "$ARCH"
+    key::set "snap_version" "$SNAP_VERSION"
+    key::set "channel" "$JUJU_DEPLOY_CHANNEL"
 }
 
 function identifier
@@ -92,6 +101,25 @@ function retry {
   return 0
 }
 
+# sets a state key/value namespaced to the current spell
+#
+# Arguments:
+# $1: KEY
+# $2: VALUE
+function kv::set
+{
+    kv-cli "$KV_DB" set "$1" "$2"
+}
+
+# gets a state key/value namespaced by the current spell
+#
+# Arguments:
+# $1: KEY
+function kv::get
+{
+    kv-cli "$KV_DB" get "$1" || echo "None"
+}
+
 # Run pytest
 #
 # Returns str: True or False
@@ -118,7 +146,10 @@ function test::report
     build_starttime=$2
     deploy_endtime=$3
 
-    python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$JOB_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': '$build_starttime', 'deploy_endtime': '$deploy_endtime'}))" | tee "metadata.json"
+    key::set "result" "$result"
+
+    python -c "import json; import kv; print(json.dumps(dict(kv.KV('metadata.db'))))" | tee "metadata.json"
+    # python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$JOB_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': '$build_starttime', 'deploy_endtime': '$deploy_endtime'}))" | tee "metadata.json"
     touch "meta/result-$result"
     python bin/s3 cp "meta/result-$result" "meta/result-$result"
 }
@@ -132,6 +163,7 @@ function test::capture
     /usr/local/bin/columbo -r columbo.yaml -o "_out" "artifacts.tar.gz" || true
     python bin/s3 cp "columbo-report.json" columbo-report.json || true
     python bin/s3 cp "metadata.json" metadata.json || true
+    python bin/s3 cp "metadata.db" metadata.db || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 }
 
@@ -144,16 +176,19 @@ function ci::run
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
         build_starttime=$(timestamp)
+        key::set "build_starttime" "$build_starttime"
 
         juju::bootstrap::before
-        retry 15 juju::bootstrap
+        juju::bootstrap
         juju::bootstrap::after
         juju::deploy::before
-        retry 15 juju::deploy
+        juju::deploy
         juju::wait
         juju::deploy::after
 
         deploy_endtime=$(timestamp)
+        key::set "deploy_result" "Pass"
+        key::set "deploy_endtime" "$deploy_endtime"
 
         test::execute result
         test::report "$result" "$build_starttime" "$deploy_endtime"
