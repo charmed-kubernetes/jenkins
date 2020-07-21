@@ -12,7 +12,7 @@ function compile::env
     : "${SNAP_VERSION:?Must have a snap version defined}"
     : "${JOB_NAME_CUSTOM:?Must have a job name defined}"
     : "${JOB_ID:?Must have a job id defined}"
-    : "${KV_DB}:=metadata.db}"
+    : "${KV_DB:=metadata.db}"
 
     export ARCH
     export JOB_NAME_CUSTOM
