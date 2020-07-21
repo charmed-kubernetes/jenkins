@@ -146,7 +146,7 @@ function test::report
     build_starttime=$2
     deploy_endtime=$3
 
-    key::set "result" "$result"
+    kv::set "result" "$result"
 
     python -c "import json; import kv; print(json.dumps(dict(kv.KV('metadata.db'))))" | tee "metadata.json"
     # python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$JOB_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': '$build_starttime', 'deploy_endtime': '$deploy_endtime'}))" | tee "metadata.json"
@@ -176,7 +176,7 @@ function ci::run
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
         build_starttime=$(timestamp)
-        key::set "build_starttime" "$build_starttime"
+        kv::set "build_starttime" "$build_starttime"
 
         juju::bootstrap::before
         juju::bootstrap
@@ -187,8 +187,8 @@ function ci::run
         juju::deploy::after
 
         deploy_endtime=$(timestamp)
-        key::set "deploy_result" "Pass"
-        key::set "deploy_endtime" "$deploy_endtime"
+        kv::set "deploy_result" "Pass"
+        kv::set "deploy_endtime" "$deploy_endtime"
 
         test::execute result
         test::report "$result" "$build_starttime" "$deploy_endtime"
