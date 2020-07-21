@@ -44,11 +44,13 @@ compile::env
 log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
 {
     build_starttime=$(timestamp)
+    kv::set "build_starttime" "$build_starttime"
 
     juju::bootstrap
 
     test::execute result
     deploy_endtime=$(timestamp)
+    kv::set "deploy_endtime" "$deploy_endtime"
 
     test::report "$result" "$build_starttime" "$deploy_endtime"
     test::capture

@@ -11,11 +11,6 @@ set -x
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
-function juju::bootstrap::before
-{
-    sudo snap refresh juju --channel 2.7/stable
-}
-
 ###############################################################################
 # ENV
 ###############################################################################
