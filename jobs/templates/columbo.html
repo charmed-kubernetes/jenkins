@@ -12,7 +12,7 @@
         {% else %}
         <li class="list-group-item">Name: {{ obj.job_name }}</li>
         {% endif %}
-        <li class="list-group-item">Start: {{ obj.build_datetime }}</li>
+        <li class="list-group-item">Start: {{ obj.build_starttime }}</li>
         <li class="list-group-item">End: {{ obj.build_endtime }}</li>
         {% if obj.artifacts %}
         <li class="list-group-item"><a href="/{{obj.job_id}}/artifacts.tar.gz" target="_blank">Download Artifacts</a></li>

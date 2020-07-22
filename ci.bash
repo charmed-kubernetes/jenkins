@@ -143,13 +143,8 @@ function test::execute
 function test::report
 {
     result=$1
-    build_starttime=$2
-    deploy_endtime=$3
 
     kv::set "result" "$result"
-
-    python -c "import json; import kv; print(json.dumps(dict(kv.KV('metadata.db'))))" | tee "metadata.json"
-    # python -c "import json; from datetime import datetime; print(json.dumps({'test_result': $result, 'job_name_custom': '$JOB_NAME_CUSTOM', 'job_name': '$JOB_NAME_CUSTOM', 'job_id': '$JOB_ID', 'build_endtime': datetime.utcnow().isoformat(), 'build_starttime': '$build_starttime', 'deploy_endtime': '$deploy_endtime'}))" | tee "metadata.json"
     touch "meta/result-$result"
     python bin/s3 cp "meta/result-$result" "meta/result-$result"
 }
@@ -162,6 +157,8 @@ function test::capture
     tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures*
     /usr/local/bin/columbo -r columbo.yaml -o "_out" "artifacts.tar.gz" || true
     python bin/s3 cp "columbo-report.json" columbo-report.json || true
+
+    python -c "import json; import kv; print(json.dumps(dict(kv.KV('metadata.db'))))" | tee "metadata.json"
     python bin/s3 cp "metadata.json" metadata.json || true
     python bin/s3 cp "metadata.db" metadata.db || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
@@ -175,8 +172,7 @@ function ci::run
 
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
-        build_starttime=$(timestamp)
-        kv::set "build_starttime" "$build_starttime"
+        kv::set "build_starttime" "$(timestamp)"
 
         juju::bootstrap::before
         retry 15 juju::bootstrap
@@ -186,12 +182,14 @@ function ci::run
         juju::wait
         juju::deploy::after
 
-        deploy_endtime=$(timestamp)
-        kv::set "deploy_result" "Pass"
-        kv::set "deploy_endtime" "$deploy_endtime"
+        kv::set "deploy_result" "True"
+        kv::set "deploy_endtime" "$(timestamp)"
 
         test::execute result
-        test::report "$result" "$build_starttime" "$deploy_endtime"
+
+        kv::set "build_endtime" "$(timestamp)"
+
+        test::report "$result"
         test::capture
         ci::cleanup::before
 
