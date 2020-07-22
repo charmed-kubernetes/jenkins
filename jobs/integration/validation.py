@@ -774,7 +774,7 @@ async def test_extra_args(model, tools):
             "kubelet-extra-args": " ".join(
                 [
                     "v=1",  # int arg, overrides a charm default
-                    "enable-server",  # bool arg, implied true
+                    "add-dir-header",  # bool arg, implied true
                     "alsologtostderr=false",  # bool arg, explicit false
                 ]
             ),
@@ -787,7 +787,7 @@ async def test_extra_args(model, tools):
             ),
         },
         expected_args={
-            "kubelet": {"v=1", "enable-server=true", "alsologtostderr=false"},
+            "kubelet": {"v=1", "add-dir-header=true", "alsologtostderr=false"},
             "kube-proxy": {"v=1", "profiling=true", "alsologtostderr=false"},
         },
     )
