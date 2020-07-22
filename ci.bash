@@ -43,13 +43,13 @@ function compile::env
         python bin/s3 cp "$i" "$i"
     done
 
-    key::set "job_id" "$JOB_ID"
-    key::set "job_name" "$JOB_NAME_CUSTOM"
-    key::set "job_name_custom" "$JOB_NAME_CUSTOM"
-    key::set "series" "$SERIES"
-    key::set "arch" "$ARCH"
-    key::set "snap_version" "$SNAP_VERSION"
-    key::set "channel" "$JUJU_DEPLOY_CHANNEL"
+    kv::set "job_id" "$JOB_ID"
+    kv::set "job_name" "$JOB_NAME_CUSTOM"
+    kv::set "job_name_custom" "$JOB_NAME_CUSTOM"
+    kv::set "series" "$SERIES"
+    kv::set "arch" "$ARCH"
+    kv::set "snap_version" "$SNAP_VERSION"
+    kv::set "channel" "$JUJU_DEPLOY_CHANNEL"
 }
 
 function identifier
