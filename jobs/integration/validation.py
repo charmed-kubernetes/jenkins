@@ -2039,13 +2039,14 @@ async def test_nfs(model, tools):
 @pytest.mark.asyncio
 async def test_ceph(model, tools):
     # setup
-    log("adding cloud:train to k8s-master")
     series = os.environ["SERIES"]
     check_cephfs = os.environ["SNAP_VERSION"].split("/")[0] not in ("1.15", "1.16")
-    await model.applications["kubernetes-master"].set_config(
-        {"install_sources": "[cloud:{}-train]".format(series)}
-    )
-    await tools.juju_wait()
+    if series in ('xenial', 'bionic'):
+        log("adding cloud:train to k8s-master")
+        await model.applications["kubernetes-master"].set_config(
+            {"install_sources": "[cloud:{}-train]".format(series)}
+        )
+        await tools.juju_wait()
     log("deploying ceph mon")
     await model.deploy(
         "ceph-mon",
