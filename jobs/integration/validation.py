@@ -410,10 +410,16 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
         await unit.run("open-port 10250")
         address = unit.public_address
         url = "https://%s:10250/pods/" % address
-        response = await tools.requests.get(
-            url, verify=False, proxies={"http": None, "https": None}
-        )
-        assert response.status_code == 401  # Unauthorized
+        while True:
+            try:
+                response = await tools.requests.get(
+                    url, verify=False, proxies={"http": None, "https": None}
+                )
+                assert response.status_code == 401  # Unauthorized
+                break
+            except requests.exceptions.ConnectionError:
+                traceback.print_exc()
+                await asyncio.sleep(10)
 
     units = model.applications["kubernetes-worker"].units
     await asyncio.gather(*(validate_unit(unit) for unit in units))
