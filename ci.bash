@@ -160,6 +160,7 @@ function test::capture
 
     python -c "import json; import kv; print(json.dumps(dict(kv.KV('metadata.db'))))" | tee "metadata.json"
     python bin/s3 cp "metadata.json" metadata.json || true
+    python bin/s3 cp "report.html" report.html || true
     python bin/s3 cp "metadata.db" metadata.db || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 }
