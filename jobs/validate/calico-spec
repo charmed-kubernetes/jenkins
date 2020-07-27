@@ -32,9 +32,35 @@ function juju::bootstrap
     fi
 }
 
+function juju::deploy::overlay
+{
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  kubernetes-master:
+    options:
+      channel: $SNAP_VERSION
+      service-cidr: "10.152.183.0/24,fd00:c00b:2::/112"
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+  flannel:
+  calico:
+    charm: cs:~containers/calico
+    options:
+      cidr: "192.168.0.0/16,fd00:c00b:1::/112"
+relations:
+- [calico:etcd, etcd:db]
+- [calico:cni, kubernetes-master:cni]
+- [calico:cni, kubernetes-worker:cni]
+EOF
+}
+
 function juju::deploy::after
 {
     python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
+
+    python $WORKSPACE/jobs/integration/tigera_aws.py assign-ipv6-addrs
 
     if [ "$TEST_BGP" = "1" ]; then
       python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
