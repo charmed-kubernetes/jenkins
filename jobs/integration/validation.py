@@ -2047,18 +2047,20 @@ async def test_ceph(model, tools):
     # setup
     series = os.environ["SERIES"]
     check_cephfs = os.environ["SNAP_VERSION"].split("/")[0] not in ("1.15", "1.16")
+    ceph_config = {}
     if series in ("xenial", "bionic"):
         log("adding cloud:train to k8s-master")
         await model.applications["kubernetes-master"].set_config(
             {"install_sources": "[cloud:{}-train]".format(series)}
         )
         await tools.juju_wait()
+        ceph_config["source"] = "cloud:{}-train".format(series)
     log("deploying ceph mon")
     await model.deploy(
         "ceph-mon",
         num_units=3,
         series=series,
-        config={"source": "cloud:{}-train".format(series)},
+        config=ceph_config,
     )
     cs = {
         "osd-devices": {"size": 8 * 1024, "count": 1},
@@ -2070,7 +2072,7 @@ async def test_ceph(model, tools):
         storage=cs,
         num_units=3,
         series=series,
-        config={"source": "cloud:{}-train".format(series)},
+        config=ceph_config,
     )
     if check_cephfs:
         log("deploying ceph fs")
@@ -2078,7 +2080,7 @@ async def test_ceph(model, tools):
             "ceph-fs",
             num_units=1,
             series=series,
-            config={"source": "cloud:{}-train".format(series)},
+            config=ceph_config,
         )
 
     log("adding relations")
