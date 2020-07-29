@@ -1916,9 +1916,11 @@ async def test_nagios(model, tools):
     masters = model.applications["kubernetes-master"]
     k8s_version_str = masters.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
+    series = os.environ["SERIES"]
+    if series in ("xenial",):
+        pytest.skip(f"skipping unsupported series {series}")
     if k8s_minor_version < (1, 17):
-        log("skipping, k8s version v" + k8s_version_str)
-        return
+        pytest.skip(f"skipping, k8s version v{k8s_version_str}")
 
     # 1) deploy
     log("deploying nagios and nrpe")
