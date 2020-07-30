@@ -418,24 +418,30 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
                 assert response.status_code == 401  # Unauthorized
                 break
             except requests.exceptions.ConnectionError:
-                log('Failed to connect to kubelet on {}; retrying in 10s'.format(unit.name))
+                log(
+                    "Failed to connect to kubelet on {}; retrying in 10s".format(
+                        unit.name
+                    )
+                )
                 await asyncio.sleep(10)
         else:
             output = await unit.run("systemctl status --no-pager snap.kubelet.daemon")
             stdout = output.results.get("Stdout", "")
             stderr = output.results.get("Stderr", "")
             if "active (running)" not in stdout:
-                raise AssertionError("kubelet not running on {}: {}".format(
-                    unit.name, stdout or stderr,
-                ))
+                raise AssertionError(
+                    "kubelet not running on {}: {}".format(unit.name, stdout or stderr)
+                )
             else:
                 await unit.run("which netstat || apt install net-tools")
                 output = await unit.run("netstat -tnlp")
                 stdout = output.results.get("Stdout", "")
                 stderr = output.results.get("Stderr", "")
-                raise AssertionError("Unable to connect to kubelet on {}: {}".format(
-                    unit.name, stdout or stderr,
-                ))
+                raise AssertionError(
+                    "Unable to connect to kubelet on {}: {}".format(
+                        unit.name, stdout or stderr,
+                    )
+                )
 
     units = model.applications["kubernetes-worker"].units
     await asyncio.gather(*(validate_unit(unit) for unit in units))
