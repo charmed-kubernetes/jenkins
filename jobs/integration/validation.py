@@ -410,7 +410,7 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
         await unit.run("open-port 10250")
         address = unit.public_address
         url = "https://%s:10250/pods/" % address
-        while True:
+        for attempt in range(0, 120):  # 2 minutes
             try:
                 response = await tools.requests.get(
                     url, verify=False, proxies={"http": None, "https": None}
@@ -420,6 +420,22 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
             except requests.exceptions.ConnectionError:
                 traceback.print_exc()
                 await asyncio.sleep(10)
+        else:
+            output = await unit.run("systemctl status --no-pager snap.kubelet.daemon")
+            stdout = output.results.get("Stdout", "")
+            stderr = output.results.get("Stderr", "")
+            if "active (running)" not in stdout:
+                raise AssertionError("kubelet not running on {}: {}".format(
+                    unit.name, stdout or stderr,
+                ))
+            else:
+                await unit.run("which netstat || apt install net-tools")
+                output = await unit.run("netstat -tnlp")
+                stdout = output.results.get("Stdout", "")
+                stderr = output.results.get("Stderr", "")
+                raise AssertionError("Unable to connect to kubelet on {}: {}".format(
+                    unit.name, stdout or stderr,
+                ))
 
     units = model.applications["kubernetes-worker"].units
     await asyncio.gather(*(validate_unit(unit) for unit in units))
