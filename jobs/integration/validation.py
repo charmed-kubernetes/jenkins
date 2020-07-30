@@ -418,7 +418,7 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
                 assert response.status_code == 401  # Unauthorized
                 break
             except requests.exceptions.ConnectionError:
-                traceback.print_exc()
+                log('Failed to connect to kubelet on {}; retrying in 10s'.format(unit.name))
                 await asyncio.sleep(10)
         else:
             output = await unit.run("systemctl status --no-pager snap.kubelet.daemon")
