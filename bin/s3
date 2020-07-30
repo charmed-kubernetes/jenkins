@@ -29,8 +29,12 @@ def cp(bucket, src, dst):
     """
     job_id = os.environ.get("JOB_ID", None)
     if not job_id:
-        click.echo("No job id found")
+        click.echo(" job id not found, exiting")
         sys.exit(1)
+    if not Path(src).exists():
+        click.echo(f" {src} file not found, exiting.")
+        sys.exit(1)
+
     click.echo(f"Uploading {src} to s3://{bucket}/{job_id}/{dst}")
     context_type = mimetypes.guess_type(src)[0]
     if not context_type:
