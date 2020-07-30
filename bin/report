@@ -152,13 +152,13 @@ def _gen_metadata():
     debug_host_url = "https://jenkaas.s3.amazonaws.com"
 
     for prefix_id, files in _storage.reports.items():
-        prefix_id = str(prefix_id).rstrip("/meta")
+        prefix_id = str(prefix_id)
+        if 'meta' in prefix_id:
+            prefix_id = prefix_id.split("/")[0]
+
+        log.info(prefix_id)
         obj = {}
-
         obj["job_id"] = prefix_id
-        if "job_id" not in obj:
-            continue
-
         obj["debug_host"] = debug_host_url
 
         job_name, _, _ = get_file_prefix("name-", files)
@@ -284,6 +284,50 @@ def job_info(job_id):
             return
 
     click.echo(pformat(obj))
+
+
+@cli.command()
+@click.option("--max-days", help="Max number of previous days to report on", default=15)
+def sync_missing_reports(max_days):
+    """ syncs reports that are missing
+    """
+    obj = Storage(numdays=int(max_days))
+    table = PrettyTable()
+    table.field_names = ["ID", "Index HTML", "Metadata JSON", "Columbo JSON"]
+    table.align = "l"
+
+    for prefix_id, files in obj.reports.items():
+        if 'meta' in str(prefix_id):
+            continue
+
+        has_index_html = has_file("index.html", files)
+        if has_index_html:
+            continue
+
+        os.environ['JOB_ID'] = str(prefix_id)
+        has_metadata_json = has_file("metadata.json", files)
+        has_columbo_json = has_file("columbo-report.json", files)
+        if has_metadata_json and has_columbo_json:
+            log.info(f"{prefix_id} :: writing report and storing it")
+            has_metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
+            metadata = has_metadata.json()
+            has_columbo = requests.get(f"{REPORT_HOST}/{prefix_id}/columbo-report.json")
+            columbo = has_columbo.json()
+            tmpl = html.template("columbo.html")
+            context = {"obj": metadata, "columbo_results": columbo}
+            rendered = tmpl.render(context)
+            html_p = Path(f"{prefix_id}-columbo.html")
+            html_p.write_text(rendered)
+            run.cmd_ok(
+                f"python bin/s3 cp {prefix_id}-columbo.html index.html",
+                shell=True,
+            )
+            run.cmd_ok(f"rm -rf {html_p}")
+        try:
+            table.add_row([prefix_id, has_index_html, has_metadata_json, has_columbo_json])
+        except KeyError as e:
+            click.echo(e)
+    click.echo(table)
 
 
 @cli.command()
