@@ -263,7 +263,7 @@ def job_result(job_id, metadata_db, columbo_json):
     html_p = Path(f"{job_id}-columbo.html")
     html_p.write_text(rendered)
     run.cmd_ok(
-        f"aws s3 cp {job_id}-columbo.html s3://jenkaas/{job_id}/index.html",
+        f"python bin/s3 cp {job_id}-columbo.html index.html",
         shell=True,
     )
     run.cmd_ok(f"rm -rf {html_p}")
