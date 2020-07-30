@@ -163,6 +163,9 @@ function test::capture
     python bin/s3 cp "report.html" report.html || true
     python bin/s3 cp "metadata.db" metadata.db || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
+
+    # Generate job report
+    python bin/report job-result --job-id "$JOB_ID" --metadata-db metadata.db --columbo-json columbo-report.json
 }
 
 

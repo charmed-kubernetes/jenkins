@@ -20,7 +20,5 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/reports"
       - run-venv:
-          JOB_SPEC_DIR: "jobs/reports"
           COMMAND: |
-            venv/bin/python jobs/reports/generate-reports.py columbo
-            venv/bin/python jobs/reports/generate-reports.py build
+            python bin/report build

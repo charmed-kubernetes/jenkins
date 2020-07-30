@@ -1,3 +1,4 @@
+# -*- mode:python; -*-
 """ Script for generating HTML output
 """
 
@@ -17,6 +18,7 @@ from pathlib import Path
 from pprint import pformat, pprint
 from cilib import log, run, html
 from prettytable import PrettyTable
+from kv import KV
 
 session = boto3.Session(region_name="us-east-1")
 s3 = session.resource("s3")
@@ -95,61 +97,6 @@ def get_file_prefix(prefix, files, normalize=True):
                 name = name.lstrip(prefix)
             return (name, size, modified)
     return (None, None, None)
-
-
-def build_columbo_reports(data):
-    prefix_id, files = data
-    prefix_id = str(prefix_id).rstrip("/meta")
-    has_columbo = get_file_name("columbo-report.json", files)
-    if not has_columbo:
-        log.debug(f"{prefix_id} :: no report found, skipping")
-        return
-
-    name, size, modified = has_columbo
-    if not name:
-        return
-
-    if size and size >= 1048576:
-        log.debug(f"{prefix_id} :: columbo report to big, skipping")
-        return
-
-    has_index = requests.head(f"{REPORT_HOST}/{prefix_id}/index.html")
-    if has_index.ok:
-        log.debug(f"Report already generated for {prefix_id}, skipping.")
-        return
-
-    obj = {}
-    has_metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
-    if has_metadata.ok:
-        log.info(f"{prefix_id} :: grabbing metadata for report")
-        try:
-            obj = has_metadata.json()
-        except json.decoder.JSONDecodeError:
-            return
-
-    if requests.head(f"{REPORT_HOST}/{prefix_id}/report.html").ok:
-        obj["pytest_report"] = f"{REPORT_HOST}/{prefix_id}/report.html"
-
-    obj["artifacts"] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
-
-    log.info(f"{prefix_id} :: processing report {name} ({size})")
-
-    tmpl = html.template("columbo.html")
-    columbo_results = requests.get(f"{REPORT_HOST}/{prefix_id}/{name}")
-    if columbo_results.ok:
-        try:
-            columbo_results = columbo_results.json()
-        except json.decoder.JSONDecodeError:
-            return
-    context = {"obj": obj, "columbo_results": columbo_results}
-    rendered = tmpl.render(context)
-    html_p = Path(f"{prefix_id}-columbo.html")
-    html_p.write_text(rendered)
-    run.cmd_ok(
-        f"aws s3 cp {prefix_id}-columbo.html s3://jenkaas/{prefix_id}/index.html",
-        shell=True,
-    )
-    run.cmd_ok(f"rm -rf {html_p}")
 
 
 def _gen_days(numdays=30):
@@ -295,6 +242,51 @@ def cli():
 
 
 @cli.command()
+@click.option("--job-id", help="ID of Job to parse")
+@click.option("--metadata-db", help="Database of job metadata")
+@click.option("--columbo-json", help="JSON report of Columbo results")
+def job_result(job_id, metadata_db, columbo_json):
+    """ Creates a report file of the finished job
+    """
+    db = KV(metadata_db)
+    columbo_data = json.loads(Path(columbo_json).read_text())
+    if Path("report.html").exists():
+        db["pytest_report"] = f"{REPORT_HOST}/{job_id}/report.html"
+
+    db["artifacts"] = f"{REPORT_HOST}/{job_id}/artifacts.tar.gz"
+
+    log.info(f"{job_id} :: processing report")
+
+    tmpl = html.template("columbo.html")
+    context = {"obj": db, "columbo_results": columbo_data}
+    rendered = tmpl.render(context)
+    html_p = Path(f"{job_id}-columbo.html")
+    html_p.write_text(rendered)
+    run.cmd_ok(
+        f"aws s3 cp {job_id}-columbo.html s3://jenkaas/{job_id}/index.html",
+        shell=True,
+    )
+    run.cmd_ok(f"rm -rf {html_p}")
+
+
+@cli.command()
+@click.option("--job-id", help="ID of Job to parse")
+def job_info(job_id):
+    """ Get metadata info for job
+    """
+    url = f"{REPORT_HOST}/{job_id}/metadata.json"
+    log.info(f"{job_id} :: Downloading {url}")
+    has_metadata = requests.get(url)
+    if has_metadata.ok:
+        try:
+            obj = has_metadata.json()
+        except json.decoder.JSONDecodeError:
+            return
+
+    click.echo(pformat(obj))
+
+
+@cli.command()
 @click.option("--max-days", help="Max number of previous days to report on", default=10)
 @click.option("--job-filter", help="Job to filter on")
 def summary(max_days, job_filter):
@@ -326,15 +318,6 @@ def summary(max_days, job_filter):
         except KeyError:
             click.echo(metadata)
     click.echo(table)
-
-
-@cli.command()
-def list():
-    """ List keys in dynamodb
-    """
-    table = dynamodb.Table("CIBuilds")
-    response = table.scan()
-    log.info(response["Items"])
 
 
 @cli.command()
@@ -374,18 +357,6 @@ def migrate():
 
     pool = ThreadPool()
     pool.map(_migrate, data)
-
-
-@cli.command()
-def columbo():
-    """ Update columbo reports
-    """
-    obj = Storage()
-    pool = ThreadPool()
-    pool.map(
-        build_columbo_reports,
-        [(prefix_id, files) for prefix_id, files in obj.reports.items()],
-    )
 
 
 @cli.command()
