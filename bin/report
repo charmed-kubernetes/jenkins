@@ -168,8 +168,10 @@ def _gen_metadata():
         test_result, _, obj["build_endtime"] = get_file_prefix("result-", files)
         if not obj["build_endtime"]:
             continue
-
         obj["test_result"] = True if test_result == "True" else False
+
+        deploy_result, _, _ = get_file_prefix("deployresult-", files)
+        obj["deploy_result"] = True if deploy_result == "True" else False
 
         if "validate" not in job_name:
             continue
@@ -181,10 +183,14 @@ def _gen_metadata():
         if job_name not in db:
             db[job_name] = {}
 
-        if "test_result" not in obj:
+        if "test_result" not in obj and "deploy_result" not in obj:
             result_bg_class = "bg-light"
             result_btn_class = "btn-light"
             result_bg_color = "#d4dee8!important;"
+        elif obj["deploy_result"] and not obj["test_result"]:
+            result_bg_class = "bg-warning"
+            result_btn_class = "btn-warning"
+            result_bg_color = "##FFFF00!important;"
         elif not obj["test_result"]:
             result_bg_class = "bg-danger"
             result_btn_class = "btn-danger"

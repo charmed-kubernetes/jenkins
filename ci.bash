@@ -189,6 +189,9 @@ function ci::run
         kv::set "deploy_result" "True"
         kv::set "deploy_endtime" "$(timestamp)"
 
+        touch "meta/deployresult-True"
+        python bin/s3 cp "meta/deployresult-True" "meta/deployresult-True"
+
         test::execute result
 
         kv::set "build_endtime" "$(timestamp)"
