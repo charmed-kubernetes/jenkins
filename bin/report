@@ -92,7 +92,7 @@ def get_file_name(filename, files):
 
 def get_file_prefix(prefix, files, normalize=True):
     for name, size, modified in files:
-        if prefix in name:
+        if prefix.rstrip("-") == name.split("-")[0]:
             if normalize:
                 name = name.lstrip(prefix)
             return (name, size, modified)
@@ -156,7 +156,6 @@ def _gen_metadata():
         if 'meta' in prefix_id:
             prefix_id = prefix_id.split("/")[0]
 
-        log.info(prefix_id)
         obj = {}
         obj["job_id"] = prefix_id
         obj["debug_host"] = debug_host_url
@@ -183,22 +182,18 @@ def _gen_metadata():
         if job_name not in db:
             db[job_name] = {}
 
-        if "test_result" not in obj and "deploy_result" not in obj:
-            result_bg_class = "bg-light"
-            result_btn_class = "btn-light"
-            result_bg_color = "#d4dee8!important;"
-        elif obj["deploy_result"] and not obj["test_result"]:
-            result_bg_class = "bg-warning"
-            result_btn_class = "btn-warning"
-            result_bg_color = "#FFFF00!important;"
-        elif not obj["test_result"]:
-            result_bg_class = "bg-danger"
-            result_btn_class = "btn-danger"
-            result_bg_color = "#ff0018!important;"
-        else:
+        if obj["test_result"]:
             result_btn_class = "btn-success"
             result_bg_class = "bg-success"
             result_bg_color = "#00cc00!important;"
+        elif obj["deploy_result"]:
+            result_bg_class = "bg-warning"
+            result_btn_class = "btn-warning"
+            result_bg_color = "#FFFF00!important;"
+        else:
+            result_bg_class = "bg-danger"
+            result_btn_class = "btn-danger"
+            result_bg_color = "#ff0018!important;"
 
         obj["bg_class"] = result_bg_class
         obj["btn_class"] = result_btn_class
@@ -223,10 +218,8 @@ def _gen_rows():
             try:
                 dates_to_test = [obj["build_endtime"] for obj in jobdays[day]]
                 max_date_for_day = max(dates_to_test)
-                log.info(f"Testing {max_date_for_day}")
                 for job in jobdays[day]:
                     _day = job["build_endtime"]
-                    log.info(f"{_day} == {max_date_for_day}")
                     if _day == max_date_for_day:
                         sub_item.append(job)
             except:
