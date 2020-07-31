@@ -17,6 +17,6 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/bundles"
-      - run-env:
+      - run-venv:
           COMMAND: |
-            TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/bundles/test-all
+            bash jobs/bundles/test-all
