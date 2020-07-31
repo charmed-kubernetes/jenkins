@@ -50,6 +50,7 @@ export JUJU_MODEL=$JUJU_MODEL
 export JUJU_CLOUD=$JUJU_CLOUD
 export JUJU_DEPLOY_CHANNEL=$JUJU_DEPLOY_CHANNEL
 export SERIES=$SERIES
+export SNAP_VERSION=$SNAP_VERSION
 
 juju bootstrap localhost/localhost \
     $JUJU_CONTROLLER \
