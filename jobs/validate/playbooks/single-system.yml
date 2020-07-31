@@ -53,6 +53,7 @@
       shell: |
         export PATH=/snap/bin:$PATH
         lxc network set lxdbr0 ipv6.address none
+        lxc network set lxdbr1 ipv6.address none
       ignore_errors: true
     - name: fix lxd config profile
       shell: |
