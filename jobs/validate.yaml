@@ -57,7 +57,7 @@
 
 - job:
     name: 'validate-ck-arm64'
-    node: runner-validate
+    node: runner-arm64
     description: |
       Validates CDK edge on arm64, supports last three recent releases.
     project-type: matrix
@@ -76,7 +76,7 @@
           type: slave
           name: node
           values:
-            - runner-validate
+            - runner-arm64
       - axis:
           type: user-defined
           name: snap_version
@@ -220,7 +220,7 @@
 
 - job:
     name: 'validate-ck-upgrade-arm64'
-    node: runner-validate
+    node: runner-arm64
     description: |
       Validates CK upgrades from previous 2 stables to latest edge
     project-type: matrix
@@ -239,7 +239,7 @@
           type: slave
           name: node
           values:
-            - runner-validate
+            - runner-arm64
       - axis:
           type: user-defined
           name: snap_version
@@ -293,7 +293,7 @@
           type: slave
           name: node
           values:
-            - runner-validate
+            - runner-amd64
       - axis:
            type: user-defined
            name: snap_version
