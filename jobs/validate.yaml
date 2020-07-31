@@ -274,7 +274,7 @@
 
 - job:
     name: 'validate-ck-snapd-upgrade'
-    node: runner-validate
+    node: runner-amd64
     description: |
       Validates CK release using an upgrade snapcore.
     project-type: matrix
