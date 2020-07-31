@@ -448,7 +448,6 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.offline
 @pytest.mark.skip_apps(["canal", "calico", "tigera-secure-ee"])
 async def test_network_policies(model, tools):
     """ Apply network policy and use two busyboxes to validate it. """
@@ -1146,7 +1145,6 @@ async def test_audit_custom_policy(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.offline
 async def test_audit_webhook(model, tools):
     app = model.applications["kubernetes-master"]
     unit = app.units[0]
@@ -1622,7 +1620,6 @@ async def test_encryption_at_rest(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.offline
 @pytest.mark.clouds(["aws"])
 async def test_dns_provider(model, tools):
     master_app = model.applications["kubernetes-master"]
@@ -1723,7 +1720,6 @@ async def test_dns_provider(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.offline
 async def test_sysctl(model, tools):
     if await is_localhost(tools.controller_name):
         pytest.skip("sysctl options not available on localhost")

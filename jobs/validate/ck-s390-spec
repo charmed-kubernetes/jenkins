@@ -73,7 +73,7 @@ pushd jenkins
 git pull || true
 TOX_WORK_DIR=.tox timeout 3h tox -e py36 -- pytest \
     jobs/integration/validation.py \
-    --cloud localhost/localhost \
+    --cloud localhost \
     --model $JUJU_MODEL \
     --controller $JUJU_CONTROLLER
 EOF
