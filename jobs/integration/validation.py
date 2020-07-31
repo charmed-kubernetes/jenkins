@@ -2036,6 +2036,7 @@ async def test_nagios(model, tools):
 
 
 @pytest.mark.asyncio
+@pytest.mark.clouds(["aws"])
 async def test_nfs(model, tools):
     # setup
     log("deploying nfs")
