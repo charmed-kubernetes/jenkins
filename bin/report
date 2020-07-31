@@ -190,7 +190,7 @@ def _gen_metadata():
         elif obj["deploy_result"] and not obj["test_result"]:
             result_bg_class = "bg-warning"
             result_btn_class = "btn-warning"
-            result_bg_color = "##FFFF00!important;"
+            result_bg_color = "#FFFF00!important;"
         elif not obj["test_result"]:
             result_bg_class = "bg-danger"
             result_btn_class = "btn-danger"
