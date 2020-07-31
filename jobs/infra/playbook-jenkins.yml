@@ -130,7 +130,7 @@
         - "aws-cli --classic"
         - "charm --classic --edge"
         - "go --classic --stable"
-        - "juju --classic --channel 2.8/candidate"
+        - "juju --classic --channel latest/stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"
