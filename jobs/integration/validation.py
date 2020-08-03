@@ -569,7 +569,9 @@ async def test_network_policies(model, tools):
 @pytest.mark.skip_apps(["calico"])
 async def test_ipv6(model, tools):
     master = model.applications["kubernetes-master"].units[0]
-    kubectl("create -f - << EOF{}EOF".format("""
+    kubectl(
+        "create -f - << EOF{}EOF".format(
+            """
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -619,7 +621,9 @@ spec:
     protocol: TCP
   selector:
     run: nginxdualstack
-"""))
+"""
+        )
+    )
 
     # wait for completion
     await retry_async_with_timeout(
@@ -634,16 +638,20 @@ spec:
     for worker in model.applications["kubernetes-worker"].units:
         ipv4_addr = worker.public_address
         ipv6_addr = get_ipv6_addr(worker)
-        assert ipv6_addr is not None, "Unable to find IPv6 address for {}".format(worker.name)
-        urls.extend([
-            "http://{}:{}/".format(ipv4_addr, ipv4_port),
-            "http://[{}]:{}/".format(ipv6_addr, ipv6_port),
-        ])
+        assert ipv6_addr is not None, "Unable to find IPv6 address for {}".format(
+            worker.name
+        )
+        urls.extend(
+            [
+                "http://{}:{}/".format(ipv4_addr, ipv4_port),
+                "http://[{}]:{}/".format(ipv6_addr, ipv6_port),
+            ]
+        )
 
     for url in urls:
         output = await master.run("curl '{}'".format(url))
         assert output.status == "completed" and output.results["Code"] == 0
-        assert 'Kubernetes IPv6 nginx' in output.results["Stdout"]
+        assert "Kubernetes IPv6 nginx" in output.results["Stdout"]
 
 
 @pytest.mark.asyncio

@@ -519,8 +519,9 @@ class KubectlError(AssertionError):
         self.code = result["Code"]
         self.stdout = result.get("Stdout", "")
         self.stderr = result.get("Stderr", "")
-        super().__init__("`{}` failed: {}".format(self.command,
-                                                  self.stderr or self.stdout))
+        super().__init__(
+            "`{}` failed: {}".format(self.command, self.stderr or self.stdout)
+        )
 
 
 class KubectlResult:
@@ -545,7 +546,7 @@ async def get_ipv6_addr(unit):
     output = await unit.run("ip -br a show scope global")
     assert output.status == "completed" and output.results["Code"] == 0
     for intf in output.results["Stdout"].splitlines():
-        if 'UP' not in intf:
+        if "UP" not in intf:
             continue
         for addr in intf.split("  ")[-1].split():
             addr = ipaddress.ip_interface(addr).ip

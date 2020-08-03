@@ -122,10 +122,7 @@ def get_instance_id(machine_id):
 @def_command("bootstrap")
 def bootstrap():
     # Create VPC
-    vpc = ec2.create_vpc(
-        CidrBlock=VPC_CIDR,
-        AmazonProvidedIpv6CidrBlock=True,
-    )["Vpc"]
+    vpc = ec2.create_vpc(CidrBlock=VPC_CIDR, AmazonProvidedIpv6CidrBlock=True,)["Vpc"]
     vpc_id = ["VpcId"]
     ipv6_cidr_block = vpc["Ipv6CidrBlockAssociationSet"]["Ipv6CidrBlock"]
     tag_resource(vpc_id)
@@ -292,8 +289,7 @@ def assign_ipv6_addr_on_instance(instance_id):
         log("Assigning IPv6 address to " + network_interface_id)
 
         ec2.modify_network_interface_attribute(
-            NetworkInterfaceId=network_interface_id,
-            Ipv6AddressCount=1,
+            NetworkInterfaceId=network_interface_id, Ipv6AddressCount=1,
         )
 
 
