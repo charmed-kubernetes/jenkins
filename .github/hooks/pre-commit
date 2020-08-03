@@ -1,0 +1,3 @@
+#!/bin/sh
+
+TOX_WORK_DIR=.tox tox -e py3 -- inv test
