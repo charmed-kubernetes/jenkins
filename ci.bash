@@ -182,6 +182,7 @@ function ci::run
         retry 15 juju::bootstrap
         juju::bootstrap::after
         juju::deploy::before
+        juju::deploy::overlay
         retry 15 juju::deploy
         juju::wait
         juju::deploy::after

@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import ipaddress
 import json
 import os
 import subprocess
@@ -510,3 +511,45 @@ async def finish_series_upgrade(machine, tools):
         "complete",
     )
     await wait_for_status("active", _units(machine))
+
+
+class KubectlError(AssertionError):
+    def __init__(self, command, result):
+        self.command = command
+        self.code = result["Code"]
+        self.stdout = result.get("Stdout", "")
+        self.stderr = result.get("Stderr", "")
+        super().__init__(
+            "`{}` failed: {}".format(self.command, self.stderr or self.stdout)
+        )
+
+
+class KubectlResult:
+    def __init__(self, result):
+        self.code = result["Code"]
+        self.stdout = result.get("Stdout", "")
+        self.stderr = result.get("Stderr", "")
+
+
+async def kubectl(model, cmd):
+    master = model.applications["kubernetes-master"].units[0]
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {}".format(cmd)
+    result = await master.run(cmd)
+    if result.status != "completed" or result.results["Code"] != 0:
+        raise KubectlError(cmd, result.results)
+    return KubectlResult(result.results)
+
+
+async def get_ipv6_addr(unit):
+    """Return the first globally scoped IPv6 address found on the given unit, or None.
+    """
+    output = await unit.run("ip -br a show scope global")
+    assert output.status == "completed" and output.results["Code"] == 0
+    for intf in output.results["Stdout"].splitlines():
+        if "UP" not in intf:
+            continue
+        for addr in intf.split("  ")[-1].split():
+            addr = ipaddress.ip_interface(addr).ip
+            if addr.version == 6:
+                return str(addr)
+    return None

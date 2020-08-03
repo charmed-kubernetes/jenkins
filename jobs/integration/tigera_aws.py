@@ -122,7 +122,9 @@ def get_instance_id(machine_id):
 @def_command("bootstrap")
 def bootstrap():
     # Create VPC
-    vpc_id = ec2.create_vpc(CidrBlock=VPC_CIDR)["Vpc"]["VpcId"]
+    vpc = ec2.create_vpc(CidrBlock=VPC_CIDR, AmazonProvidedIpv6CidrBlock=True,)["Vpc"]
+    vpc_id = ["VpcId"]
+    ipv6_cidr_block = vpc["Ipv6CidrBlockAssociationSet"]["Ipv6CidrBlock"]
     tag_resource(vpc_id)
     # Must be done in separate requests per doc
     ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={"Value": True})
@@ -134,7 +136,10 @@ def bootstrap():
     subnet_cidrs = SUBNET_CIDRS[:num_subnets]
     for subnet_cidr in subnet_cidrs:
         subnet_id = ec2.create_subnet(
-            VpcId=vpc_id, CidrBlock=subnet_cidr, AvailabilityZone=AVAILABILITY_ZONE,
+            VpcId=vpc_id,
+            CidrBlock=subnet_cidr,
+            Ipv6CidrBlock=ipv6_cidr_block,
+            AvailabilityZone=AVAILABILITY_ZONE,
         )["Subnet"]["SubnetId"]
         tag_resource(subnet_id)
         ec2.modify_subnet_attribute(
@@ -265,6 +270,50 @@ def disable_source_dest_check():
         instance_id = get_instance_id(machine_id)
         if instance_id:
             disable_source_dest_check_on_instance(instance_id)
+
+
+def assign_ipv6_addr_on_instance(instance_id):
+    log("Getting network interfaces for instance " + instance_id)
+    network_interface_ids = []
+    reservations = ec2.describe_instances(InstanceIds=[instance_id])["Reservations"]
+    for reservation in reservations:
+        instances = reservation["Instances"]
+        for instance in instances:
+            for network_interface in instance["NetworkInterfaces"]:
+                network_interface_id = network_interface["NetworkInterfaceId"]
+                ipv6_addrs = network_interface["Ipv6Addresses"]
+                if not ipv6_addrs:
+                    network_interface_ids.append(network_interface_id)
+
+    for network_interface_id in network_interface_ids:
+        log("Assigning IPv6 address to " + network_interface_id)
+
+        ec2.modify_network_interface_attribute(
+            NetworkInterfaceId=network_interface_id, Ipv6AddressCount=1,
+        )
+
+
+@def_command("assign-ipv6-addrs")
+def assign_ipv6_addrs():
+    status = juju_json("status")
+
+    if status["model"]["cloud"] != "aws":
+        log("Cloud is not AWS, doing nothing")
+        return
+
+    apps = ["calico", "tigera-secure-ee"]
+    if not any(app in status["applications"] for app in apps):
+        log("No apps need source dest check disabled, doing nothing")
+        return
+
+    global REGION
+    REGION = status["model"]["region"]
+
+    status = juju_json("status")
+    for machine_id in status["machines"]:
+        instance_id = get_instance_id(machine_id)
+        if instance_id:
+            assign_ipv6_addr_on_instance(instance_id)
 
 
 def get_model_vpc_id():

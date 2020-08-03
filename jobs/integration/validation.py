@@ -25,7 +25,9 @@ from .utils import (
     scp_to,
     scp_from,
     disable_source_dest_check,
+    find_entities,
     verify_deleted,
+    verify_completed,
     verify_ready,
     is_localhost,
     validate_storage_class,
@@ -33,6 +35,8 @@ from .utils import (
     prep_series_upgrade,
     do_series_upgrade,
     finish_series_upgrade,
+    kubectl,
+    get_ipv6_addr,
 )
 import urllib.request
 from .logger import log
@@ -559,6 +563,95 @@ async def test_network_policies(model, tools):
         "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy"
     )
     assert cmd.status == "completed"
+
+
+@pytest.mark.asyncio
+@pytest.mark.skip_apps(["calico"])
+async def test_ipv6(model, tools):
+    master = model.applications["kubernetes-master"].units[0]
+    kubectl(
+        "create -f - << EOF{}EOF".format(
+            """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginxdualstack
+spec:
+  selector:
+    matchLabels:
+      run: nginxdualstack
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        run: nginxdualstack
+    spec:
+      containers:
+      - name: nginxdualstack
+        image: rocks.canonical.com/cdk/diverdane/nginxdualstack:1.0.0
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx6
+  labels:
+    run: nginxdualstack
+spec:
+  type: NodePort
+  ipFamily: IPv6
+  ports:
+  - port: 80
+    protocol: TCP
+  selector:
+    run: nginxdualstack
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx4
+  labels:
+    run: nginxdualstack
+spec:
+  type: NodePort
+  ipFamily: IPv4
+  ports:
+  - port: 80
+    protocol: TCP
+  selector:
+    run: nginxdualstack
+"""
+        )
+    )
+
+    # wait for completion
+    await retry_async_with_timeout(
+        verify_completed,
+        (master, "svc", ["nginx4", "nginx6"]),
+        timeout_msg="Timeout waiting for nginxdualstack services",
+    )
+    nginx4, nginx6 = await find_entities(master, "svc", ["nginx4", "nginx6"])
+    ipv4_port = nginx4["ports"][0]["nodePort"]
+    ipv6_port = nginx6["ports"][0]["nodePort"]
+    urls = []
+    for worker in model.applications["kubernetes-worker"].units:
+        ipv4_addr = worker.public_address
+        ipv6_addr = get_ipv6_addr(worker)
+        assert ipv6_addr is not None, "Unable to find IPv6 address for {}".format(
+            worker.name
+        )
+        urls.extend(
+            [
+                "http://{}:{}/".format(ipv4_addr, ipv4_port),
+                "http://[{}]:{}/".format(ipv6_addr, ipv6_port),
+            ]
+        )
+
+    for url in urls:
+        output = await master.run("curl '{}'".format(url))
+        assert output.status == "completed" and output.results["Code"] == 0
+        assert "Kubernetes IPv6 nginx" in output.results["Stdout"]
 
 
 @pytest.mark.asyncio

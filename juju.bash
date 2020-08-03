@@ -37,9 +37,9 @@ function juju::deploy::after
     echo "> skipping after tasks"
 }
 
-function juju::deploy
+function juju::deploy::overlay
 {
-    tee overlay.yaml <<EOF> /dev/null
+    cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
   kubernetes-master:
@@ -49,7 +49,10 @@ applications:
     options:
       channel: $SNAP_VERSION
 EOF
+}
 
+function juju::deploy
+{
     juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
          --overlay overlay.yaml \
          --force \
