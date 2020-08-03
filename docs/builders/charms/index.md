@@ -1,4 +1,4 @@
-# Charm builds
+# Charm build specification
 
 Each charm that is to be built in Jenkaas CI must adhere to a specific interface
 so that CI can easily build all charms in a uniformed way.
