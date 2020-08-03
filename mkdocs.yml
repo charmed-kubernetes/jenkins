@@ -2,6 +2,7 @@
 site_name: Charm Engineering CI
 theme: material
 markdown_extensions:
+    - footnotes
     - toc:
         permalink: True
     - admonition
