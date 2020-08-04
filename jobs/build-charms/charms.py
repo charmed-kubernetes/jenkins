@@ -245,7 +245,12 @@ class BuildEnv:
                 if not build_path:
                     raise BuildException(f"Could not determine build path for {_path}")
 
-                git.checkout(self.layer_branch, _cwd=build_path)
+                try:
+                    git.checkout(self.layer_branch, _cwd=build_path)
+                except sh.ErrorReturnCode_1 as error:
+                    raise BuildException(
+                        f"Could find stable branch for layer: {build_path}, error: {error}"
+                    )
 
                 layer_manifest = {
                     "rev": git("rev-parse", "HEAD", _cwd=build_path)
