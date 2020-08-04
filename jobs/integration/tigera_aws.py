@@ -125,9 +125,15 @@ def bootstrap():
     vpc = ec2.create_vpc(CidrBlock=VPC_CIDR, AmazonProvidedIpv6CidrBlock=True,)["Vpc"]
     vpc_id = vpc["VpcId"]
     tag_resource(vpc_id)
+    # poll the IPv6 CIDR block until it's available
     for attempt in range(10):
         ipv6_cidr_block = vpc["Ipv6CidrBlockAssociationSet"][0]["Ipv6CidrBlock"]
         if ipv6_cidr_block:
+            # AWS gives us a larger CIDR block than we can use directly, so we have to chop it down
+            i = ipaddress.ip_interface(ipv6_cidr_block)
+            ipv6_cidr_block = str(
+                ipaddress.IPv6Network((i.ip, max(i.network.prefixlen, 64)))
+            )
             break
         else:
             time.sleep(5)
