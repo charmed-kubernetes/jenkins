@@ -1,4 +1,4 @@
-name: Verifies jenkins repo
+name: Repo Status
 on: [push, pull_request]
 
 jobs:
