@@ -185,13 +185,19 @@ function ci::run
         juju::deploy::overlay
         retry 15 juju::deploy
         juju::wait
-        juju::deploy::after
 
-        kv::set "deploy_result" "True"
+        ret=$?
+        is_pass="True"
+        if (( ret > 0 )); then
+            is_pass="False"
+        fi
+
+        kv::set "deploy_result" "$is_pass"
         kv::set "deploy_endtime" "$(timestamp)"
+        touch "meta/deployresult-$is_pass"
+        python bin/s3 cp "meta/deployresult-$is_pass" "meta/deployresult-$is_pass"
 
-        touch "meta/deployresult-True"
-        python bin/s3 cp "meta/deployresult-True" "meta/deployresult-True"
+        juju::deploy::after
 
         test::execute result
 
