@@ -38,7 +38,7 @@ def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dr
 
 
 def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
-    """ This will force push each layers master onto the stable branches.
+    """ This will merge each layers master onto the stable branches.
 
     PLEASE NOTE: This step should come after each stable branch has been tagged
     and references a current stable bundle revision.
@@ -104,7 +104,7 @@ def _tag_stable_forks(
         {
             "downstream": "charmed-kubernetes/jenkins.git",
             "tags": ["k8s"],
-            namespace: "containers",
+            "namespace": "containers",
         }
     ]
     new_env = os.environ.copy()
