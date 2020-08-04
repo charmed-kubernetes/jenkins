@@ -123,6 +123,9 @@
     - name: upgrade juju
       command: "snap refresh juju --channel latest/stable"
       ignore_errors: yes
+      tags:
+        - jenkins
+        - adhoc
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
