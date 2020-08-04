@@ -106,6 +106,8 @@
             set -eux
             export PATH=/snap/bin:$PATH
 
+            sudo chown jenkins:jenkins /var/lib/jenkins/.config/charm-build.conf
+
             IS_REBUILD_CACHE=""
             if [[ $REBUILD_CACHE = "true" ]]; then
               IS_REBUILD_CACHE="--rebuild-cache"

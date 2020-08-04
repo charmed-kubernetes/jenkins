@@ -100,17 +100,8 @@ def _tag_stable_forks(
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
-    ci_repo_list = [
-        {
-            "jenkins": {
-                "downstream": "charmed-kubernetes/jenkins.git",
-                "tags": ["k8s"],
-                "namespace": "containers",
-            }
-        }
-    ]
     new_env = os.environ.copy()
-    for layer_map in layer_list + charm_list + ci_repo_list:
+    for layer_map in layer_list + charm_list:
         for layer_name, repos in layer_map.items():
 
             tags = repos.get("tags", None)
