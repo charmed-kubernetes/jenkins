@@ -131,7 +131,7 @@ def bootstrap():
             break
         else:
             time.sleep(5)
-            vpc = ec2.describe_vpc(VpcIds=[vpc_id])["Vpcs"][0]
+            vpc = ec2.describe_vpcs(VpcIds=[vpc_id])["Vpcs"][0]
     else:
         raise ValueError(
             "Unable to get IPv6 CIDR block from VPC {}: {}".format(
