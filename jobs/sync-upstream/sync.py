@@ -102,9 +102,11 @@ def _tag_stable_forks(
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     ci_repo_list = [
         {
-            "downstream": "charmed-kubernetes/jenkins.git",
-            "tags": ["k8s"],
-            "namespace": "containers",
+            "jenkins": {
+                "downstream": "charmed-kubernetes/jenkins.git",
+                "tags": ["k8s"],
+                "namespace": "containers",
+            }
         }
     ]
     new_env = os.environ.copy()
