@@ -123,8 +123,20 @@ def get_instance_id(machine_id):
 def bootstrap():
     # Create VPC
     vpc = ec2.create_vpc(CidrBlock=VPC_CIDR, AmazonProvidedIpv6CidrBlock=True,)["Vpc"]
-    vpc_id = ["VpcId"]
-    ipv6_cidr_block = vpc["Ipv6CidrBlockAssociationSet"]["Ipv6CidrBlock"]
+    vpc_id = vpc["VpcId"]
+    for attempt in range(10):
+        ipv6_cidr_block = vpc["Ipv6CidrBlockAssociationSet"][0]["Ipv6CidrBlock"]
+        if ipv6_cidr_block:
+            break
+        else:
+            time.sleep(5)
+            vpc = ec2.describe_vpc(VpcIds=[vpc_id])["Vpcs"][0]
+    else:
+        raise ValueError(
+            "Unable to get IPv6 CIDR block from VPC {}: {}".format(
+                vpc_id, vpc["Ipv6CidrBlockAssociationSet"],
+            )
+        )
     tag_resource(vpc_id)
     # Must be done in separate requests per doc
     ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={"Value": True})
