@@ -20,6 +20,29 @@ function juju::bootstrap
     python3 $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
 }
 
+function juju::deploy::overlay
+{
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  kubernetes-master:
+    options:
+      channel: $SNAP_VERSION
+      service-cidr: "10.152.183.0/24,fd00:c00b:2::/112"
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+  flannel:
+  tigera-secure-ee:
+    charm: cs:~containers/tigera-secure-ee
+relations:
+- [tigera-secure-ee:etcd, etcd:db]
+- [tigera-secure-ee:cni, kubernetes-master:cni]
+- [tigera-secure-ee:cni, kubernetes-worker:cni]
+- [tigera-secure-ee:kube-api-endpoint, kubernetes-master:kube-api-endpoint]
+EOF
+}
+
 function juju::deploy::after
 {
     juju config -m $JUJU_CONTROLLER:$JUJU_MODEL tigera-secure-ee \
