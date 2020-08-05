@@ -179,11 +179,11 @@ function ci::run
         kv::set "build_starttime" "$(timestamp)"
 
         juju::bootstrap::before
-        retry 15 juju::bootstrap
+        juju::bootstrap
         juju::bootstrap::after
         juju::deploy::before
         juju::deploy::overlay
-        retry 15 juju::deploy
+        juju::deploy
         juju::wait
 
         ret=$?
