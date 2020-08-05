@@ -1,0 +1,228 @@
+# -*- mode:python; -*-
+"""
+charm - Interface to building and publishing charms
+
+Make sure that charm environments variables are set appropriately
+
+CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR
+
+See `charm build --help` for more information.
+
+Usage:
+
+  tox -e py3 -- python bin/charm build \
+     --charm-list jobs/includes/charm-support-matrix.inc \
+     --resource-spec jobs/build-charms/resource-spec.yaml
+"""
+
+import os
+from glob import glob
+from pathlib import Path
+from pprint import pformat
+from sh.contrib import git
+from cilib.service.aws import Store
+from cilib.run import cmd_ok, capture, script
+from cilib.charm.build import Environment
+from datetime import datetime
+from enum import Enum
+from retry.api import retry_call
+from subprocess import CalledProcessError
+from types import SimpleNamespace
+from pathos.threading import ThreadPool
+import click
+import shutil
+import sh
+import yaml
+import json
+import requests
+
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.option(
+    "--charm-list", required=True, help="path to a file with list of charms in YAML"
+)
+@click.option("--layer-list", required=True, help="list of layers in YAML format")
+@click.option("--layer-index", required=True, help="Charm layer index")
+@click.option(
+    "--charm-branch",
+    required=True,
+    help="Git branch to build charm from",
+    default="master",
+)
+@click.option(
+    "--layer-branch",
+    required=True,
+    help="Git branch to pull layers/interfaces from",
+    default="master",
+)
+@click.option(
+    "--resource-spec", required=True, help="YAML Spec of resource keys and filenames"
+)
+@click.option(
+    "--filter-by-tag",
+    required=True,
+    help="only build for charms matching a tag, comma separate list",
+    multiple=True,
+)
+@click.option(
+    "--to-channel", required=True, help="channel to promote charm to", default="edge"
+)
+@click.option("--rebuild-cache", is_flag=True)
+@click.option("--force", is_flag=True)
+def build(
+    charm_list,
+    layer_list,
+    layer_index,
+    charm_branch,
+    layer_branch,
+    resource_spec,
+    filter_by_tag,
+    to_channel,
+    rebuild_cache,
+    force,
+):
+    build_env = Environment()
+    build_env.db["build_args"] = {
+        "artifact_list": charm_list,
+        "layer_list": layer_list,
+        "layer_index": layer_index,
+        "charm_branch": charm_branch,
+        "layer_branch": layer_branch,
+        "resource_spec": resource_spec,
+        "filter_by_tag": list(filter_by_tag),
+        "to_channel": to_channel,
+        "rebuild_cache": rebuild_cache,
+        "force": force,
+    }
+
+    build_env.pull_layers()
+
+    entities = []
+    for charm_map in build_env.artifacts:
+        for charm_name, charm_opts in charm_map.items():
+            if not any(match in filter_by_tag for match in charm_opts["tags"]):
+                continue
+
+            entities.append(
+                BuildEntity(build_env, charm_name, charm_opts)
+            )
+            click.echo(f"Queued {charm_name} for building")
+
+    def _run_build(build_entity):
+        build_entity.setup()
+        build_entity.build()
+        build_entity.push(charm_opts['namespace'], to_channel)
+
+    pool = ThreadPool()
+    pool.map(_run_build, entities)
+
+
+@cli.command()
+@click.option("--bundle-list", required=True, help="list of bundles in YAML format")
+@click.option(
+    "--bundle-branch",
+    default="master",
+    required=True,
+    help="Upstream branch to build bundles from",
+)
+@click.option(
+    "--filter-by-tag",
+    required=True,
+    help="only build for charms matching a tag, comma separate list",
+    multiple=True,
+)
+@click.option(
+    "--bundle-repo",
+    required=True,
+    help="upstream repo for bundle builder",
+    default="https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git",
+)
+@click.option(
+    "--to-channel", required=True, help="channel to promote bundle to", default="edge"
+)
+def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel):
+    build_env = BuildEnv(build_type=BuildType.BUNDLE)
+    build_env.db["build_args"] = {
+        "artifact_list": bundle_list,
+        "bundle_branch": bundle_branch,
+        "filter_by_tag": list(filter_by_tag),
+        "to_channel": to_channel,
+    }
+
+    bundle_repo_dir = build_env.tmp_dir / "bundles-kubernetes"
+    # bundle_build_dir = build_env.tmp_dir / "tmp-bundles"
+    # sh.rm("-rf", bundle_repo_dir)
+    # sh.rm("-rf", bundle_build_dir)
+    # os.makedirs(str(bundle_repo_dir), exist_ok=True)
+    # os.makedirs(str(bundle_build_dir), exist_ok=True)
+    for line in git.clone(
+        "--branch",
+        bundle_branch,
+        bundle_repo,
+        str(bundle_repo_dir),
+        _iter=True,
+        _bg_exc=False,
+    ):
+        click.echo(line)
+
+    for bundle_map in build_env.artifacts:
+        for bundle_name, bundle_opts in bundle_map.items():
+            if not any(match in filter_by_tag for match in bundle_opts["tags"]):
+                click.echo(f"Skipping {bundle_name}")
+                continue
+            click.echo(f"Processing {bundle_name}")
+            cmd = [
+                str(bundle_repo_dir / "bundle"),
+                "-o",
+                bundle_name,
+                "-c",
+                to_channel,
+                bundle_opts["fragments"],
+            ]
+            click.echo(f"Running {' '.join(cmd)}")
+            import subprocess
+
+            subprocess.run(" ".join(cmd), shell=True)
+            bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
+            build_entity = BundleBuildEntity(
+                build_env, bundle_name, bundle_opts, bundle_entity
+            )
+            build_entity.push()
+            build_entity.promote(to_channel=to_channel)
+
+    build_env.save()
+
+
+@cli.command()
+@click.option("--charm-list", required=True, help="path to charm list YAML")
+@click.option(
+    "--filter-by-tag",
+    required=True,
+    help="only build for charms matching a tag, comma separate list",
+    multiple=True,
+)
+@click.option(
+    "--from-channel",
+    default="unpublished",
+    required=True,
+    help="Charm channel to publish from",
+)
+@click.option("--to-channel", required=True, help="Charm channel to publish to")
+def promote(charm_list, filter_by_tag, from_channel, to_channel):
+    build_env = BuildEnv(build_type=BuildType.CHARM)
+    build_env.db["build_args"] = {
+        "artifact_list": charm_list,
+        "filter_by_tag": list(filter_by_tag),
+        "to_channel": to_channel,
+        "from_channel": from_channel,
+    }
+    return build_env.promote_all(from_channel=from_channel, to_channel=to_channel)
+
+
+if __name__ == "__main__":
+    cli()
