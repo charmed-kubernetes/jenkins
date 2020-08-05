@@ -22,4 +22,4 @@ ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-bugfix-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
-retry 5 ci::run
+ci::run
