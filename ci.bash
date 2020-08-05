@@ -185,12 +185,6 @@ function ci::run
         juju::deploy::overlay
         juju::deploy
         juju::wait
-
-        ret=$?
-        if (( ret > 0 )); then
-            exit "$ret"
-        fi
-
         kv::set "deploy_result" "True"
         kv::set "deploy_endtime" "$(timestamp)"
         touch "meta/deployresult-True"

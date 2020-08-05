@@ -25,6 +25,11 @@ function juju::bootstrap
          --model-default image-stream=daily \
          --model-default automatically-retry-hooks=false \
          --model-default logging-config="<root>=DEBUG"
+
+    ret=$?
+    if (( ret > 0 )); then
+        exit "$ret"
+    fi
 }
 
 function juju::deploy::before
@@ -57,12 +62,22 @@ function juju::deploy
          --overlay overlay.yaml \
          --force \
          --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
+
+    ret=$?
+    if (( ret > 0 )); then
+        exit "$ret"
+    fi
 }
 
 function juju::wait
 {
     echo "Waiting for deployment to settle..."
     timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
+
+    ret=$?
+    if (( ret > 0 )); then
+        exit "$ret"
+    fi
 }
 
 function juju::unitAddress
