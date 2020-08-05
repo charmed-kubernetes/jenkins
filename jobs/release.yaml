@@ -44,6 +44,8 @@
     properties:
       - build-discarder:
           num-to-keep: 3
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
@@ -83,6 +85,8 @@
     properties:
       - build-discarder:
           num-to-keep: 3
+    execution-strategy:
+      sequential: true
     axes:
       - axis:
           type: slave
