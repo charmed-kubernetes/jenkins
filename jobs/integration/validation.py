@@ -1892,14 +1892,14 @@ async def test_multus(model, tools, addons_model):
         pytest.skip("multus is not deployed")
 
     unit = model.applications["kubernetes-master"].units[0]
-    multus_app = addons_model.applications['multus']
+    multus_app = addons_model.applications["multus"]
 
     async def cleanup():
         await run_until_success(
             unit,
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete pod multus-test --ignore-not-found"
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete pod multus-test --ignore-not-found",
         )
-        await multus_app.set_config({'network-attachment-definitions': ''})
+        await multus_app.set_config({"network-attachment-definitions": ""})
 
     await cleanup()
 
@@ -1907,10 +1907,7 @@ async def test_multus(model, tools, addons_model):
     net_attach_def = {
         "apiVersion": "k8s.cni.cncf.io/v1",
         "kind": "NetworkAttachmentDefinition",
-        "metadata": {
-            "name": "flannel",
-            "namespace": "default"
-        },
+        "metadata": {"name": "flannel", "namespace": "default"},
         "spec": {
             "config": json.dumps(
                 {
@@ -1930,9 +1927,9 @@ async def test_multus(model, tools, addons_model):
             )
         },
     }
-    await multus_app.set_config({
-        'network-attachment-definitions': yaml.safe_dump(net_attach_def)
-    })
+    await multus_app.set_config(
+        {"network-attachment-definitions": yaml.safe_dump(net_attach_def)}
+    )
 
     # Create pod with 2 extra flannel interfaces
     pod_definition = {
