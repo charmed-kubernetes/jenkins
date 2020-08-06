@@ -20,7 +20,7 @@ pipeline {
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.rocks.canonical.com:5000'
-        REGISTRY_REPLACE = 'docker.io/ k8s.gcr.io/ quay.io/'
+        REGISTRY_REPLACE = 'docker.io/ k8s.gcr.io/ quay.io/ us.gcr.io/'
     }
     options {
         ansiColor('xterm')
