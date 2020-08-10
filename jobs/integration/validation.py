@@ -2154,8 +2154,10 @@ async def test_nfs(model, tools):
 async def test_ceph(model, tools):
     # setup
     series = os.environ["SERIES"]
+    if series == "xenial":
+        pytest.skip("Ceph not supported fully on xenial")
     snap_ver = os.environ["SNAP_VERSION"].split("/")[0]
-    check_cephfs = snap_ver not in ("1.15", "1.16") and series != "xenial"
+    check_cephfs = snap_ver not in ("1.15", "1.16")
     ceph_config = {}
     if check_cephfs and series == "bionic":
         log("adding cloud:train to k8s-master")
