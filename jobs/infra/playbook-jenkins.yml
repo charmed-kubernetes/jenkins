@@ -121,7 +121,7 @@
       tags:
         - jenkins
     - name: upgrade juju
-      command: "snap refresh juju --channel latest/stable"
+      command: "snap refresh juju --channel 2.7/stable"
       ignore_errors: yes
       tags:
         - jenkins
@@ -133,7 +133,7 @@
         - "aws-cli --classic"
         - "charm --classic --edge"
         - "go --classic --stable"
-        - "juju --classic --channel latest/stable"
+        - "juju --classic --channel 2.7/stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"
