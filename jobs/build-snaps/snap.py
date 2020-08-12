@@ -21,7 +21,7 @@ from cilib.run import cmd_ok, capture
 
 # go compiler version map for k8s version releases
 K8S_GO_MAP = {
-    "1.19": "go/1.15/beta",
+    "1.19": "go/1.15/stable",
     "1.18": "go/1.13/stable",
     "1.17": "go/1.13/stable",
     "1.16": "go/1.13/stable",
