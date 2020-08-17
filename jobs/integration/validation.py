@@ -289,26 +289,15 @@ async def test_snap_versions(model):
 
 @pytest.mark.asyncio
 async def test_rbac(model):
-    """ Validate RBAC is actually on """
+    """ When RBAC is enabled, validate kubelet creds cannot get ClusterRoles """
     app = model.applications["kubernetes-master"]
-    await app.set_config({"authorization-mode": "RBAC,Node"})
-    await wait_for_process(model, "RBAC")
+    config = await app.get_config()
+    if "RBAC" not in config["authorization-mode"]["value"]:
+        pytest.skip("Cluster does not have RBAC enabled")
+
     cmd = "/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig get clusterroles"
     worker = model.applications["kubernetes-worker"].units[0]
     await run_until_success(worker, cmd + " 2>&1 | grep Forbidden")
-    await app.set_config({"authorization-mode": "AlwaysAllow"})
-    await wait_for_process(model, "AlwaysAllow")
-    await run_until_success(worker, cmd)
-
-
-@pytest.mark.asyncio
-async def test_rbac_flag(model):
-    """ Switch between auth modes and check the apiserver follows """
-    master = model.applications["kubernetes-master"]
-    await master.set_config({"authorization-mode": "RBAC"})
-    await wait_for_process(model, "RBAC")
-    await master.set_config({"authorization-mode": "AlwaysAllow"})
-    await wait_for_process(model, "AlwaysAllow")
 
 
 @pytest.mark.asyncio
