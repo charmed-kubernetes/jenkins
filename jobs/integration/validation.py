@@ -292,8 +292,8 @@ async def test_rbac(model):
     """ When RBAC is enabled, validate kubelet creds cannot get ClusterRoles """
     app = model.applications["kubernetes-master"]
     config = await app.get_config()
-    if 'RBAC' not in config['authorization-mode']['value']:
-        pytest.skip('Cluster does not have RBAC enabled')
+    if "RBAC" not in config["authorization-mode"]["value"]:
+        pytest.skip("Cluster does not have RBAC enabled")
 
     cmd = "/snap/bin/kubectl --kubeconfig /root/cdk/kubeconfig get clusterroles"
     worker = model.applications["kubernetes-worker"].units[0]
