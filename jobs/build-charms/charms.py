@@ -247,6 +247,10 @@ class BuildEnv:
 
                 try:
                     git.checkout(self.layer_branch, _cwd=build_path)
+                except sh.ErrorReturnCode_128 as error:
+                    raise BuildException(
+                        f"Could find branch for layer: {build_path}, error: {error}"
+                    )
                 except sh.ErrorReturnCode_1 as error:
                     raise BuildException(
                         f"Could find stable branch for layer: {build_path}, error: {error}"
