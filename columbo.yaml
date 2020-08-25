@@ -1,5 +1,5 @@
 rules:
   - id: python-tb-exception
     description: python tracebacks
-    start_marker: ".*Traceback"
-    end_marker: "^Exception|InvalidRequest|CalledProcessError|AssertionError:"
+    start_marker: "Traceback"
+    end_marker: "^Exception|InvalidRequest|CalledProcessError|AssertionError|ModuleNotFoundError:"
