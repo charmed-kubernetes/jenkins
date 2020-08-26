@@ -2310,3 +2310,37 @@ async def test_containerd_to_docker(model, tools):
     await containerd_app.add_relation("containerd", "kubernetes-worker")
 
     await tools.juju_wait()
+
+
+@pytest.mark.asyncio
+async def test_sriov_cni(model, tools, addons_model):
+    if "sriov-cni" not in addons_model.applications:
+        pytest.skip("sriov-cni is not deployed")
+
+    for unit in model.applications["kubernetes-worker"].units:
+        action = await unit.run("[ -x /opt/cni/bin/sriov ]")
+        assert action.status == "completed"
+        assert action.data["results"]["Code"] == "0"
+
+
+@pytest.mark.asyncio
+async def test_sriov_network_device_plugin(model, tools, addons_model):
+    if "sriov-network-device-plugin" not in addons_model.applications:
+        pytest.skip("sriov-network-device-plugin is not deployed")
+
+    app = addons_model.applications["sriov-network-device-plugin"]
+    config = await app.get_config()
+    resource_list = yaml.load(config["resource-list"]["value"])
+    resource_prefix = config["resource-prefix"]["value"]
+    resource_names = [
+        resource_prefix + "/" + resource["resourceName"] for resource in resource_list
+    ]
+
+    master_unit = model.applications["kubernetes-master"].units[0]
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get node -o json"
+    raw_output = await run_until_success(master_unit, cmd)
+    data = json.loads(raw_output)
+    for node in data["items"]:
+        capacity = node["status"]["capacity"]
+        for resource_name in resource_names:
+            assert resource_name in capacity
