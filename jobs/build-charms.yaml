@@ -108,11 +108,6 @@
 
             sudo chown jenkins:jenkins /var/lib/jenkins/.config/charm-build.conf
 
-            IS_REBUILD_CACHE=""
-            if [[ $REBUILD_CACHE = "true" ]]; then
-              IS_REBUILD_CACHE="--rebuild-cache"
-            fi
-
             IS_FORCE=""
             if [[ $FORCE = "true" ]]; then
               IS_FORCE="--force"
@@ -127,7 +122,7 @@
               --layer-index  "$LAYER_INDEX" \
               --layer-list "$LAYER_LIST" \
               --layer-branch "$LAYER_BRANCH" \
-              $IS_REBUILD_CACHE $IS_FORCE
+              $IS_FORCE
 
             python jobs/build-charms/charms.py build-bundles \
                 --to-channel "$TO_CHANNEL" \

@@ -35,6 +35,7 @@ import sh
 import yaml
 import json
 import requests
+import re
 
 
 class BuildException(Exception):
@@ -134,10 +135,6 @@ class BuildEnv:
         return self.db["build_args"].get("from_channel", None)
 
     @property
-    def rebuild_cache(self):
-        return self.db["build_args"].get("rebuild_cache", None)
-
-    @property
     def force(self):
         return self.db["build_args"].get("force", None)
 
@@ -201,26 +198,25 @@ class BuildEnv:
                 )
 
     def download(self, layer_name):
-        if Path(self.build_path(layer_name)).exists():
-            click.echo(f"- Refreshing {layer_name} cache.")
-            cmd_ok(f"git checkout {self.layer_branch}", cwd=self.build_path(layer_name))
-            cmd_ok(
-                f"git pull origin {self.layer_branch}", cwd=self.build_path(layer_name),
-            )
-        else:
-            click.echo(f"- Downloading {layer_name}")
-            cmd_ok(f"charm pull-source -i {self.layer_index} {layer_name}")
-        return True
+        out = capture(
+            f"charm pull-source -i {self.layer_index} -b {self.layer_branch} {layer_name}"
+        )
+        click.echo(f"-  {out.stdout.decode()}")
+        rev = re.compile("rev: ([a-zA-Z0-9]+)")
+        layer_manifest = {
+            "rev": rev.search(out.stdout.decode()).group(1),
+            "url": layer_name,
+        }
+        return layer_manifest
 
     def pull_layers(self):
         """ clone all downstream layers to be processed locally when doing charm builds
         """
-        if self.rebuild_cache:
-            click.echo("-  rebuild cache triggered, cleaning out cache.")
-            shutil.rmtree(str(self.layers_dir))
-            shutil.rmtree(str(self.interfaces_dir))
-            os.mkdir(str(self.layers_dir))
-            os.mkdir(str(self.interfaces_dir))
+        shutil.rmtree(str(self.build_dir))
+        shutil.rmtree(str(self.layers_dir))
+        shutil.rmtree(str(self.interfaces_dir))
+        os.mkdir(str(self.layers_dir))
+        os.mkdir(str(self.interfaces_dir))
 
         layers_to_pull = []
         for layer_map in self.layers:
@@ -232,40 +228,9 @@ class BuildEnv:
             layers_to_pull.append(layer_name)
 
         pool = ThreadPool()
-        pool.map(self.download, layers_to_pull)
+        results = pool.map(self.download, layers_to_pull)
 
-        self.db["pull_layer_manifest"] = []
-        _paths_to_process = {
-            "layer": glob("{}/*".format(str(self.layers_dir))),
-            "interface": glob("{}/*".format(str(self.interfaces_dir))),
-        }
-        for prefix, paths in _paths_to_process.items():
-            for _path in paths:
-                build_path = _path
-                if not build_path:
-                    raise BuildException(f"Could not determine build path for {_path}")
-
-                try:
-                    git.checkout(self.layer_branch, _cwd=build_path)
-                except sh.ErrorReturnCode_128 as error:
-                    raise BuildException(
-                        f"Could find branch for layer: {build_path}, error: {error}"
-                    )
-                except sh.ErrorReturnCode_1 as error:
-                    raise BuildException(
-                        f"Could find stable branch for layer: {build_path}, error: {error}"
-                    )
-
-                layer_manifest = {
-                    "rev": git("rev-parse", "HEAD", _cwd=build_path)
-                    .stdout.decode()
-                    .strip(),
-                    "url": f"{prefix}:{Path(build_path).stem}",
-                }
-                self.db["pull_layer_manifest"].append(layer_manifest)
-                click.echo(
-                    f"- {layer_manifest['url']} at commit: {layer_manifest['rev']}"
-                )
+        self.db["pull_layer_manifest"] = [result for result in results]
 
 
 class BuildEntity:
@@ -614,7 +579,6 @@ def cli():
 @click.option(
     "--to-channel", required=True, help="channel to promote charm to", default="edge"
 )
-@click.option("--rebuild-cache", is_flag=True)
 @click.option("--force", is_flag=True)
 def build(
     charm_list,
@@ -625,7 +589,6 @@ def build(
     resource_spec,
     filter_by_tag,
     to_channel,
-    rebuild_cache,
     force,
 ):
     build_env = BuildEnv(build_type=BuildType.CHARM)
@@ -638,7 +601,6 @@ def build(
         "resource_spec": resource_spec,
         "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
-        "rebuild_cache": rebuild_cache,
         "force": force,
     }
 
