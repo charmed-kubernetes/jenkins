@@ -118,7 +118,7 @@
     tags: ['k8s']
 - interface:ceph-admin:
     downstream: "charmed-kubernetes/juju-interface-ceph-admin.git"
-    upstream: "https://github.com/cholcombe973/juju-interface-ceph-admin"
+    upstream: "https://github.com/openstack-charmers/juju-interface-ceph-admin"
     tags: ['k8s']
 - interface:ceph-client:
     downstream: "charmed-kubernetes/charm-interface-ceph-client.git"
