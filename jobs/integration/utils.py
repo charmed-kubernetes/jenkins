@@ -47,7 +47,7 @@ def tracefunc(frame, event, arg):
 
 @contextmanager
 def timeout_for_current_task(timeout):
-    """ Create a context with a timeout.
+    """Create a context with a timeout.
 
     If the context body does not finish within the time limit, then the current
     asyncio task will be cancelled, and an asyncio.TimeoutError will be raised.
@@ -541,8 +541,7 @@ async def kubectl(model, cmd):
 
 
 async def get_ipv6_addr(unit):
-    """Return the first globally scoped IPv6 address found on the given unit, or None.
-    """
+    """Return the first globally scoped IPv6 address found on the given unit, or None."""
     output = await unit.run("ip -br a show scope global")
     assert output.status == "completed" and output.results["Code"] == 0
     for intf in output.results["Stdout"].splitlines():

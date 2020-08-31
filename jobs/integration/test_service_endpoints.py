@@ -60,8 +60,7 @@ async def cleanup():
 
 @pytest.mark.asyncio
 async def test_nodeport_service_endpoint():
-    """Create k8s Deployement and NodePort service, send request to NodePort
-    """
+    """Create k8s Deployement and NodePort service, send request to NodePort"""
 
     try:
         await setup_svc("NodePort")

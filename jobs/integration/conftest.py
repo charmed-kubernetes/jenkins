@@ -92,8 +92,7 @@ def pytest_addoption(parser):
 
 
 class Tools:
-    """ Utility class for accessing juju related tools
-    """
+    """Utility class for accessing juju related tools"""
 
     def __init__(self, request):
         self.requests = aioify(obj=requests)
@@ -170,8 +169,7 @@ def system_arch():
 
 @pytest.fixture(autouse=True)
 def skip_by_arch(request, system_arch):
-    """ Skip tests on specified arches
-    """
+    """Skip tests on specified arches"""
     if request.node.get_closest_marker("skip_arch"):
         if system_arch in request.node.get_closest_marker("skip_arch").args[0]:
             pytest.skip("skipped on this arch: {}".format(system_arch))
@@ -189,8 +187,7 @@ async def proxy_app(model):
 
 @pytest.fixture(autouse=True)
 def skip_by_app(request, model):
-    """ Skip tests if missing certain applications
-    """
+    """Skip tests if missing certain applications"""
     if request.node.get_closest_marker("skip_apps"):
         apps = request.node.get_closest_marker("skip_apps").args[0]
         is_available = any(app in model.applications for app in apps)
@@ -200,7 +197,7 @@ def skip_by_app(request, model):
 
 @pytest.fixture(autouse=True)
 def skip_by_model(request, model):
-    """ Skips tests if model isn't referenced, ie validate-vault for only
+    """Skips tests if model isn't referenced, ie validate-vault for only
     running tests applicable to vault
     """
     if request.node.get_closest_marker("on_model"):

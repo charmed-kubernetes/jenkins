@@ -45,21 +45,19 @@ def parse_options(argv):
 
 
 def store_results(db):
-    """ saves the current state of release
-    """
+    """saves the current state of release"""
     store.put_item(Item=dict(db))
 
 
 def get_phase(db, opts):
-    """ checks for existing phase and returns result
-    """
+    """checks for existing phase and returns result"""
     if db.get(opts.phase_name, "fail") == "fail":
         return click.echo(1)
     return click.echo(0)
 
 
 def set_phase(db, opts):
-    """ sets a phase result
+    """sets a phase result
 
     0 for pass, 1 for fail, 2 for timeout
     """

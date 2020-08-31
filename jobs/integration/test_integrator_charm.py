@@ -10,16 +10,14 @@ env = os.environ.copy()
 
 
 def template_path(cloud):
-    """ get correct template path for cloud
-    """
+    """get correct template path for cloud"""
     here = Path(__file__).absolute().parent
     return here / "templates/integrator-charm-data" / cloud
 
 
 @pytest.fixture(scope="function")
 def setup_storage_elb_resource(request, cloud):
-    """ Sets up and tearsdown k8s resources
-    """
+    """Sets up and tearsdown k8s resources"""
 
     def setup_storage_elb_resource_teardown():
         print("Perform teardown of resources")
@@ -37,7 +35,7 @@ def setup_storage_elb_resource(request, cloud):
 
 @pytest.mark.asyncio
 async def test_load_balancer(setup_storage_elb_resource):
-    """ Performs a deployment of hello-world with newly created LB and attempts
+    """Performs a deployment of hello-world with newly created LB and attempts
     to do a requests.get and parse the html to verify the lb ip address is
     functioning appropriately.
     """

@@ -104,8 +104,7 @@ revisions = [
 
 
 def test_latest_rev_115():
-    """ Make sure we pull latest revision
-    """
+    """Make sure we pull latest revision"""
     output = snapapi.max_rev(revisions, "1.15")
     # latest("kubectl", "1.14", "s390x", True)
     assert output is not None
@@ -113,8 +112,7 @@ def test_latest_rev_115():
 
 
 def test_latest_rev_114():
-    """ Make sure we pull latest revision
-    """
+    """Make sure we pull latest revision"""
     output = snapapi.max_rev(revisions, "1.14")
     # latest("kubectl", "1.14", "s390x", True)
     assert output is not None
@@ -122,8 +120,7 @@ def test_latest_rev_114():
 
 
 def test_latest_rev_113():
-    """ Make sure we pull latest revision
-    """
+    """Make sure we pull latest revision"""
     output = snapapi.max_rev(revisions, "1.13")
     # latest("kubectl", "1.14", "s390x", True)
     assert output is not None

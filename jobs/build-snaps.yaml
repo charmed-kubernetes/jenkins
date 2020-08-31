@@ -219,8 +219,7 @@
                  --version $VERSION \
                  --snap kubelet \
                  --snap kubectl \
-                 --snap kube-proxy \
-                 --snap kubernetes-test
+                 --snap kube-proxy
             python jobs/build-snaps/build-eks-snaps.py push --version $VERSION
 
             docker image prune -a --filter "until=24h" --force

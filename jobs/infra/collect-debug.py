@@ -25,8 +25,7 @@ def cli():
 @cli.command()
 @click.option("--table", default="CIBuilds")
 def save_meta(table):
-    """ Saves metadata to dynamo
-    """
+    """Saves metadata to dynamo"""
     click.echo("Saving build to database")
     table = dynamodb.Table(table)
     table.put_item(Item=dict(db))
@@ -37,8 +36,7 @@ def save_meta(table):
 @click.argument("db_key")
 @click.argument("db_val")
 def set_key(db_key, db_val):
-    """ sets db key/val
-    """
+    """sets db key/val"""
     db[db_key] = db_val
 
 
@@ -47,8 +45,7 @@ def set_key(db_key, db_val):
 @click.argument("db_key")
 @click.argument("results-file", nargs=-1)
 def push(bucket, db_key, results_file):
-    """ pushes files to s3
-    """
+    """pushes files to s3"""
     result_path_objs = []
     for r_file in results_file:
         r_file = Path(r_file)

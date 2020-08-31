@@ -32,8 +32,7 @@ K8S_GO_MAP = {
 
 
 def _render(tmpl_file, context):
-    """ Renders a jinja template with context
-    """
+    """Renders a jinja template with context"""
     template = Template(tmpl_file.read_text(), keep_trailing_newline=True)
     return template.render(context)
 
@@ -44,7 +43,7 @@ def cli():
 
 
 def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
-    """ Syncs the upstream k8s release tags with our snap branches
+    """Syncs the upstream k8s release tags with our snap branches
 
     Usage:
     python3 snap.py sync-branches --snap-list includes/k8s-snap-list.inc
@@ -87,8 +86,7 @@ def _sync_branches(snap_list, starting_ver, force, patches, dry_run):
 
 
 def _sync_snaps(snap_list, version, branch_version, tracks):
-    """ Creates the snap recipes that upload to the snap store for latest k8s and stable releases
-    """
+    """Creates the snap recipes that upload to the snap store for latest k8s and stable releases"""
     snaps = yaml.safe_load(Path(snap_list).read_text(encoding="utf8"))
     for snap in snaps:
         git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
@@ -139,8 +137,7 @@ def sync_branches(snap_list, starting_ver, force, patches, dry_run):
     required=True,
 )
 def sync_branches_list(snap):
-    """ Syncs the downstream snap branches to a yaml file for parsing in jobs
-    """
+    """Syncs the downstream snap branches to a yaml file for parsing in jobs"""
     click.echo(f"Checking: git+ssh://cdkbot@git.launchpad.net/snap-{snap}")
     git_repo = f"git+ssh://cdkbot@git.launchpad.net/snap-{snap}"
     snap_releases = remote_branches(git_repo)
@@ -392,8 +389,7 @@ def create_snap_recipe(
 
 
 def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
-    """ Promotes snaps from latest revision of version on architecture
-    """
+    """Promotes snaps from latest revision of version on architecture"""
     snap_list = Path(snap_list)
     if snap_list.exists():
         snap_list = yaml.safe_load(snap_list.read_text(encoding="utf8"))
@@ -457,8 +453,7 @@ def promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
 @click.option("--version", required=True, help="Snap application version to release")
 @click.option("--dry-run", is_flag=True)
 def release(name, channel, version, dry_run):
-    """ Release the most current revision snap to channel
-    """
+    """Release the most current revision snap to channel"""
     latest_release = snapapi.latest(name, version)
     click.echo(latest_release)
     if dry_run:
@@ -480,8 +475,7 @@ def release(name, channel, version, dry_run):
     default="k8s-jenkaas-admins",
 )
 def build_summaries(snap_list, snap_versions, owner):
-    """ Return snap build summaries
-    """
+    """Return snap build summaries"""
     _client = lp.Client(stage="production")
     _client.login()
 

@@ -22,7 +22,7 @@ def compare_releases(a, b):
     """Compares two version string.
 
     Returns: 1 if a > b, 0 if a==b, -1 if a < b
-    Raises ValueError if string is not correctly formatted """
+    Raises ValueError if string is not correctly formatted"""
 
     a = a.strip()
     b = b.strip()

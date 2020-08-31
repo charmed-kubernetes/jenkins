@@ -5,8 +5,7 @@ import sh
 
 
 def remote_tags(url):
-    """ Returns a list of remote tags
-    """
+    """Returns a list of remote tags"""
     _tags = sh.sed(
         sh.sort(sh.git("ls-remote", "-t", "--refs", url), "-t", "/", "-k", 3, "-V"),
         "-E",
@@ -16,8 +15,7 @@ def remote_tags(url):
 
 
 def remote_branches(url):
-    """ Returns a list of remote branches
-    """
+    """Returns a list of remote branches"""
     _tags = sh.sed(
         sh.sort(sh.git("ls-remote", "-h", "--refs", url), "-t", "/", "-k", 3, "-V"),
         "-E",
@@ -28,8 +26,7 @@ def remote_branches(url):
 
 
 def branch_exists(repo, branch, env):
-    """ Checks if a branch exists
-    """
+    """Checks if a branch exists"""
     try:
         sh.git("ls-remote", "--exit-code", "--heads", repo, branch, env=env)
     except sh.ErrorReturnCode_2 as e:

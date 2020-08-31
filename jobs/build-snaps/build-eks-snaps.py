@@ -100,8 +100,7 @@ def build(snap, build_path, version, arch, dry_run):
 @click.option("--version", required=True, default="1.14.8", help="k8s Version")
 @click.option("--dry-run", is_flag=True)
 def push(result_dir, version, dry_run):
-    """ Promote to a snapstore channel/track
-    """
+    """Promote to a snapstore channel/track"""
     for fname in glob.glob(f"{result_dir}/*.snap"):
         try:
             click.echo(f"Running: snapcraft push {fname}")

@@ -11,9 +11,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_etcd_actions(model, tools):
-    """Test etcd charm actions
-
-    """
+    """Test etcd charm actions"""
 
     async def assert_action(unit, action, output_regex=None, **action_params):
         action = await unit.run_action(action, **action_params)
@@ -51,9 +49,7 @@ async def test_etcd_actions(model, tools):
 
 
 async def test_etcd_scaling(model, tools):
-    """ Scale etcd up and down and ensure the cluster state remains healthy.
-
-    """
+    """Scale etcd up and down and ensure the cluster state remains healthy."""
     e = asyncio.Event()
 
     async def on_unit_removed(delta, old_obj, new_obj, model):
@@ -172,8 +168,8 @@ async def test_config_snapd_refresh(model, tools):
 
 
 async def test_cluster_health(model, tools):
-    """ Iterate all the units and verify we have a clean bill of health
-    from etcd """
+    """Iterate all the units and verify we have a clean bill of health
+    from etcd"""
     certs = (
         "ETCDCTL_KEY_FILE=/var/snap/etcd/common/client.key "
         "ETCDCTL_CERT_FILE=/var/snap/etcd/common/client.crt "
@@ -193,8 +189,8 @@ async def test_cluster_health(model, tools):
 
 
 async def test_leader_knows_all_members(model, tools):
-    """ Test we have the same number of units deployed and reporting in
-    the etcd cluster as participating """
+    """Test we have the same number of units deployed and reporting in
+    the etcd cluster as participating"""
 
     # The spacing here is semi-important as its a string of ENV exports
     # also, this is hard coding for the defaults. if the defaults in

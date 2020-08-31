@@ -5,8 +5,7 @@ import requests
 
 
 class CanonicalIdentityProvider:
-    """ provider class to sso
-    """
+    """provider class to sso"""
 
     def __init__(self, email, password):
         self.email = email
@@ -14,7 +13,7 @@ class CanonicalIdentityProvider:
         self.host = "https://login.ubuntu.com"
 
     def get_discharge(self, caveat_id):
-        """ Pass in the caveat_id to get a discharged
+        """Pass in the caveat_id to get a discharged
         macaroon
         """
         api_path = "/api/v2/tokens/discharge"

@@ -53,8 +53,7 @@ class LayerType(Enum):
 
 
 class BuildEnv:
-    """ Charm or Bundle build data class
-    """
+    """Charm or Bundle build data class"""
 
     try:
         build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
@@ -90,36 +89,31 @@ class BuildEnv:
 
     @property
     def layers(self):
-        """ List of layers defined in our jobs/includes/charm-layer-list.inc
-        """
+        """List of layers defined in our jobs/includes/charm-layer-list.inc"""
         return yaml.safe_load(
             Path(self.db["build_args"]["layer_list"]).read_text(encoding="utf8")
         )
 
     @property
     def artifacts(self):
-        """ List of charms or bundles to process
-        """
+        """List of charms or bundles to process"""
         return yaml.safe_load(
             Path(self.db["build_args"]["artifact_list"]).read_text(encoding="utf8")
         )
 
     @property
     def layer_index(self):
-        """ Remote Layer index
-        """
+        """Remote Layer index"""
         return self.db["build_args"].get("layer_index", None)
 
     @property
     def layer_branch(self):
-        """ Remote Layer branch
-        """
+        """Remote Layer branch"""
         return self.db["build_args"].get("layer_branch", None)
 
     @property
     def filter_by_tag(self):
-        """ filter tag
-        """
+        """filter tag"""
         return self.db["build_args"].get("filter_by_tag", None)
 
     @property
@@ -139,8 +133,7 @@ class BuildEnv:
         return self.db["build_args"].get("force", None)
 
     def _layer_type(self, ltype):
-        """ Check the type of an individual layer set in the layer list
-        """
+        """Check the type of an individual layer set in the layer list"""
         if ltype == "layer":
             return LayerType.LAYER
         elif ltype == "interface":
@@ -210,8 +203,7 @@ class BuildEnv:
         return layer_manifest
 
     def pull_layers(self):
-        """ clone all downstream layers to be processed locally when doing charm builds
-        """
+        """clone all downstream layers to be processed locally when doing charm builds"""
         shutil.rmtree(str(self.build_dir))
         shutil.rmtree(str(self.layers_dir))
         shutil.rmtree(str(self.interfaces_dir))
@@ -234,8 +226,7 @@ class BuildEnv:
 
 
 class BuildEntity:
-    """ The Build data class
-    """
+    """The Build data class"""
 
     def __init__(self, build, name, opts, entity):
         # Build env
@@ -283,8 +274,7 @@ class BuildEntity:
 
     @property
     def has_changed(self):
-        """ Determine if the charm/layers commits have changed since last publish to charmstore
-        """
+        """Determine if the charm/layers commits have changed since last publish to charmstore"""
         charmstore_build_manifest = None
         resp = self.download(".build.manifest")
         if resp.ok:
@@ -320,8 +310,7 @@ class BuildEntity:
 
     @property
     def commit(self):
-        """ Commit hash of downstream repo
-        """
+        """Commit hash of downstream repo"""
         if not Path(self.src_path).exists():
             raise BuildException(f"Could not locate {self.src_path}")
 
@@ -329,8 +318,7 @@ class BuildEntity:
         return git_commit.stdout.decode().strip()
 
     def setup(self):
-        """ Setup directory for charm build
-        """
+        """Setup directory for charm build"""
         downstream = f"https://github.com/{self.opts['downstream']}"
         click.echo(f"Cloning repo from {downstream}")
 
@@ -346,8 +334,7 @@ class BuildEntity:
             click.echo(line)
 
     def proof_build(self):
-        """ Perform charm build against charm/bundle
-        """
+        """Perform charm build against charm/bundle"""
         if "override-build" in self.opts:
             click.echo("Override build found, running in place of charm build.")
             ret = script(self.opts["override-build"])
@@ -361,8 +348,7 @@ class BuildEntity:
             click.echo("Ignoring proof warning")
 
     def push(self):
-        """ Pushes a built charm to Charmstore
-        """
+        """Pushes a built charm to Charmstore"""
 
         click.echo(f"Pushing built {self.dst_path} to {self.entity}")
         resource_args = []
@@ -508,8 +494,7 @@ class BuildEntity:
 
 class BundleBuildEntity(BuildEntity):
     def push(self):
-        """ Pushes a built charm to Charmstore
-        """
+        """Pushes a built charm to Charmstore"""
 
         click.echo(f"Pushing built {self.name} to {self.entity}")
         out = sh.charm.push(self.name, self.entity)

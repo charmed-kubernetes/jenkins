@@ -38,7 +38,7 @@ def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dr
 
 
 def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
-    """ This will merge each layers master onto the stable branches.
+    """This will merge each layers master onto the stable branches.
 
     PLEASE NOTE: This step should come after each stable branch has been tagged
     and references a current stable bundle revision.
@@ -89,7 +89,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
 def _tag_stable_forks(
     layer_list, charm_list, k8s_version, bundle_rev, filter_by_tag, bugfix, dry_run
 ):
-    """ Tags stable forks to a certain bundle revision for a k8s version
+    """Tags stable forks to a certain bundle revision for a k8s version
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
     bundle_rev: bundle revision to tag for a particular version of k8s
@@ -199,7 +199,7 @@ def __run_git(args):
 
 
 def _sync_upstream(layer_list, charm_list, dry_run):
-    """ Syncs any of the forked upstream repos
+    """Syncs any of the forked upstream repos
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
     """
@@ -236,8 +236,7 @@ def _sync_upstream(layer_list, charm_list, dry_run):
 @click.option("--charm-list", required=True, help="Path to supported charm list")
 @click.option("--dry-run", is_flag=True)
 def forks(layer_list, charm_list, dry_run):
-    """ Syncs all upstream forks
-    """
+    """Syncs all upstream forks"""
     # Try auto-merge; if conflict: update_readme.py && git add README.md && git
     # commit. If that fails, too, then it was a JSON conflict that will have to
     # be handled manually.

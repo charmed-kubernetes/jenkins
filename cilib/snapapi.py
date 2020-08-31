@@ -17,8 +17,7 @@ def max_rev(revlist, version_filter):
 
 
 def all_published(snap):
-    """ Get all known published snap versions, tracks, arch
-    """
+    """Get all known published snap versions, tracks, arch"""
     re_comp = re.compile("[ \t+]{2,}")
     revision_list = capture(["snapcraft", "revisions", snap])
     revision_list = revision_list.stdout.decode().splitlines()[1:]
@@ -36,7 +35,7 @@ def all_published(snap):
 
 
 def revisions(snap, version_filter_track, arch="amd64", exclude_pre=False):
-    """ Get revisions of snap
+    """Get revisions of snap
 
     snap: name of snap
     version_filter: snap version to filter on
@@ -63,6 +62,5 @@ def revisions(snap, version_filter_track, arch="amd64", exclude_pre=False):
 
 
 def latest(snap, version_track, arch="amd64", exclude_pre=False):
-    """ Get latest snap revision
-    """
+    """Get latest snap revision"""
     return revisions(snap, version_track, arch, exclude_pre)

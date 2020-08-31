@@ -7,8 +7,7 @@ load_dotenv()
 
 @task
 def update_deps(c):
-    """ Syncs package dependencies
-    """
+    """Syncs package dependencies"""
     c.run("pip-compile")
 
 
@@ -26,22 +25,19 @@ def upload_docs(c):
 
 @task
 def format(c):
-    """ Formats py code
-    """
+    """Formats py code"""
     c.run("black .")
 
 
 @task
 def black_check(c):
-    """ Checks black format
-    """
+    """Checks black format"""
     c.run("black --check .")
 
 
 @task
 def flake8(c):
-    """ Runs flake8 against project
-    """
+    """Runs flake8 against project"""
     c.run(
         "flake8 --ignore=E501,W503 jobs/integration jobs/build-charms jobs/build-snaps"
     )
@@ -49,36 +45,31 @@ def flake8(c):
 
 @task(pre=[flake8, black_check])
 def test(c):
-    """ Run unittest suite
-    """
+    """Run unittest suite"""
     c.run("pytest jobs/**/test_unit*")
 
 
 @task
 def test_jobs(c, conf):
-    """ Tests the Jenkins Job Builder definitions
-    """
+    """Tests the Jenkins Job Builder definitions"""
     c.run("jenkins-jobs --conf {} test jobs/.".format(conf))
 
 
 @task
 def update_jobs(c, conf):
-    """ Uploads the Jenkins Job Builder definitions
-    """
+    """Uploads the Jenkins Job Builder definitions"""
     c.run("jenkins-jobs --conf {} update jobs/. --worker 8".format(conf))
 
 
 @task
 def list_jobs(c, conf):
-    """ list the Jenkins Job Builder definitions
-    """
+    """list the Jenkins Job Builder definitions"""
     c.run("jenkins-jobs --conf {} list".format(conf))
 
 
 @task
 def delete_jobs(c, conf, pattern):
-    """ Delete jobs based on pattern
-    """
+    """Delete jobs based on pattern"""
     out = c.run("jenkins-jobs --conf {} list |grep '{}'".format(conf, pattern))
     for line in out.stdout.splitlines():
         c.run("jenkins-jobs --conf {} delete {}".format(conf, line.strip()))

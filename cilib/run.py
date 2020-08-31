@@ -14,8 +14,7 @@ def make_executable(path):
 
 
 def _log_sub_out(pipe):
-    """ Logs output from subprocess
-    """
+    """Logs output from subprocess"""
     for line in iter(pipe.readline, b""):
         click.echo(line.decode().strip())
 
@@ -57,8 +56,7 @@ def script(script_data, **kwargs):
 
 
 def capture(script, **kwargs):
-    """ capture command output
-    """
+    """capture command output"""
     env = os.environ.copy()
     if not isinstance(script, list) and "shell" not in kwargs:
         script = shlex.split(script)
@@ -74,7 +72,7 @@ def capture(script, **kwargs):
 
 
 def cmd_ok(script, **kwargs):
-    """ Stream command, doesnt buffer and prints it all out to stdout, only
+    """Stream command, doesnt buffer and prints it all out to stdout, only
     returns exit status
     """
     env = os.environ.copy()

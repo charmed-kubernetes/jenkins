@@ -12,8 +12,7 @@ class ClientError(Exception):
 
 
 class Client:
-    """ Launchpad client
-    """
+    """Launchpad client"""
 
     def __init__(self, stage="production", version="devel"):
         _env = os.environ.copy()
@@ -36,18 +35,16 @@ class Client:
         )
 
     def owner(self, name):
-        """ Returns LP owner object
-        """
+        """Returns LP owner object"""
         return self._client.people[name]
 
     @property
     def snaps(self):
-        """ Gets snaps collection
-        """
+        """Gets snaps collection"""
         return self._client.snaps
 
     def snap_git_repo(self, owner, project):
-        """ Returns a git repository link for project
+        """Returns a git repository link for project
 
         Usage:
         snap_git_repo('k8s-jenkaas-admins, 'snap-kubectl')
@@ -55,24 +52,21 @@ class Client:
         return self._client.git_repositories.getByPath(path=f"~{owner.name}/{project}")
 
     def archive(self, reference="ubuntu"):
-        """ Returns archive for reference
-        """
+        """Returns archive for reference"""
         return self._client.archives.getByReference(reference=reference)
 
     def distro_series(self, distribution="ubuntu", series="xenial"):
-        """ Returns distributions
-        """
+        """Returns distributions"""
         return self._client.distributions[distribution].getSeries(
             name_or_version=series
         )
 
     def snappy_series(self, name="16"):
-        """ Returns current snappy_series
-        """
+        """Returns current snappy_series"""
         return self._client.snappy_serieses.getByName(name=name)
 
     def create_or_update_snap_recipe(self, name, owner, version, repo, branch, track):
-        """ Creates/update snap recipe
+        """Creates/update snap recipe
 
         Note: You can delete snaps with:
         lp._browser.delete('https://api.launchpad.net/devel/~k8s-jenkaas-admins/+snap/kube-apiserver-1.13')
@@ -119,6 +113,9 @@ class Client:
             delay=2,
             backoff=2,
             tries=15,
-            exceptions=(Exception, PreconditionFailed,),
+            exceptions=(
+                Exception,
+                PreconditionFailed,
+            ),
         )
         return snap

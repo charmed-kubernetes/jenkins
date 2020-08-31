@@ -87,7 +87,8 @@ def sh(*args, **kwargs):
 def tag_resource(resource_id):
     owner = os.environ.get("JOB_NAME", "test-calico")
     ec2.create_tags(
-        Resources=[resource_id], Tags=[{"Key": "created-by", "Value": owner}],
+        Resources=[resource_id],
+        Tags=[{"Key": "created-by", "Value": owner}],
     )
 
 
@@ -122,7 +123,10 @@ def get_instance_id(machine_id):
 @def_command("bootstrap")
 def bootstrap():
     # Create VPC
-    vpc = ec2.create_vpc(CidrBlock=VPC_CIDR, AmazonProvidedIpv6CidrBlock=True,)["Vpc"]
+    vpc = ec2.create_vpc(
+        CidrBlock=VPC_CIDR,
+        AmazonProvidedIpv6CidrBlock=True,
+    )["Vpc"]
     vpc_id = vpc["VpcId"]
     tag_resource(vpc_id)
     # poll the IPv6 CIDR block until it's available
@@ -141,7 +145,8 @@ def bootstrap():
     else:
         raise ValueError(
             "Unable to get IPv6 CIDR block from VPC {}: {}".format(
-                vpc_id, vpc["Ipv6CidrBlockAssociationSet"],
+                vpc_id,
+                vpc["Ipv6CidrBlockAssociationSet"],
             )
         )
     # Must be done in separate requests per doc
@@ -218,7 +223,9 @@ def cleanup():
         for tag in network_interface.get("TagSet", []):
             if tag["Key"] == "created-by" and tag["Value"] == owner:
                 network_interface_id = network_interface["NetworkInterfaceId"]
-                ec2.delete_network_interface(NetworkInterfaceId=network_interface_id,)
+                ec2.delete_network_interface(
+                    NetworkInterfaceId=network_interface_id,
+                )
                 break
 
     gateways = ec2.describe_internet_gateways()["InternetGateways"]
@@ -228,16 +235,21 @@ def cleanup():
                 gateway_id = gateway["InternetGatewayId"]
                 for attachment in gateway["Attachments"]:
                     ec2.detach_internet_gateway(
-                        InternetGatewayId=gateway_id, VpcId=attachment["VpcId"],
+                        InternetGatewayId=gateway_id,
+                        VpcId=attachment["VpcId"],
                     )
-                ec2.delete_internet_gateway(InternetGatewayId=gateway_id,)
+                ec2.delete_internet_gateway(
+                    InternetGatewayId=gateway_id,
+                )
                 break
 
     subnets = ec2.describe_subnets()["Subnets"]
     for subnet in subnets:
         for tag in subnet.get("Tags", []):
             if tag["Key"] == "created-by" and tag["Value"] == owner:
-                ec2.delete_subnet(SubnetId=subnet["SubnetId"],)
+                ec2.delete_subnet(
+                    SubnetId=subnet["SubnetId"],
+                )
                 break
 
     vpcs = ec2.describe_vpcs()["Vpcs"]
@@ -307,7 +319,8 @@ def assign_ipv6_addr_on_instance(instance_id):
         log("Assigning IPv6 address to " + network_interface_id)
 
         ec2.modify_network_interface_attribute(
-            NetworkInterfaceId=network_interface_id, Ipv6AddressCount=1,
+            NetworkInterfaceId=network_interface_id,
+            Ipv6AddressCount=1,
         )
 
 
@@ -396,7 +409,8 @@ def deploy_bgp_router():
         subnet = subnets[i]
         subnet_id = subnet["SubnetId"]
         result = ec2.create_network_interface(
-            SubnetId=subnet_id, Groups=list(security_groups),
+            SubnetId=subnet_id,
+            Groups=list(security_groups),
         )
         time.sleep(15)
         network_interface_id = result["NetworkInterface"]["NetworkInterfaceId"]

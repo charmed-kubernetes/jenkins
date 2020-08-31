@@ -242,7 +242,7 @@ async def test_status_messages(model):
 
 @pytest.mark.asyncio
 async def test_snap_versions(model):
-    """ Validate that the installed snap versions are consistent with channel
+    """Validate that the installed snap versions are consistent with channel
     config on the charms.
     """
     snaps_to_validate = {
@@ -432,7 +432,8 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
                 stderr = output.results.get("Stderr", "")
                 raise AssertionError(
                     "Unable to connect to kubelet on {}: {}".format(
-                        unit.name, stdout or stderr,
+                        unit.name,
+                        stdout or stderr,
                     )
                 )
 
@@ -700,7 +701,7 @@ async def test_worker_master_removal(model, tools):
 @pytest.mark.asyncio
 @pytest.mark.on_model("validate-nvidia")
 async def test_gpu_support(model, tools):
-    """ Test gpu support. Should be disabled if hardware
+    """Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
 
     # See if the workers have nvidia
@@ -1541,8 +1542,7 @@ data:
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
-    """ Testing integrating vault secrets into cluster
-    """
+    """Testing integrating vault secrets into cluster"""
     try:
         click.echo("Deploying model")
         # setup
@@ -1992,7 +1992,7 @@ async def wait_for_no_errors(url, opener):
 
 @pytest.mark.asyncio
 async def test_nagios(model, tools):
-    """ This test verifies the nagios relation is working
+    """This test verifies the nagios relation is working
     properly. This requires:
 
     1) Deploy nagios and nrpe
@@ -2157,7 +2157,10 @@ async def test_ceph(model, tools):
         ceph_config["source"] = "cloud:{}-train".format(series)
     log("deploying ceph mon")
     await model.deploy(
-        "ceph-mon", num_units=3, series=series, config=ceph_config,
+        "ceph-mon",
+        num_units=3,
+        series=series,
+        config=ceph_config,
     )
     cs = {
         "osd-devices": {"size": 8 * 1024, "count": 1},
@@ -2165,12 +2168,19 @@ async def test_ceph(model, tools):
     }
     log("deploying ceph osd")
     await model.deploy(
-        "ceph-osd", storage=cs, num_units=3, series=series, config=ceph_config,
+        "ceph-osd",
+        storage=cs,
+        num_units=3,
+        series=series,
+        config=ceph_config,
     )
     if check_cephfs:
         log("deploying ceph fs")
         await model.deploy(
-            "ceph-fs", num_units=1, series=series, config=ceph_config,
+            "ceph-fs",
+            num_units=1,
+            series=series,
+            config=ceph_config,
         )
 
     log("adding relations")
@@ -2246,7 +2256,10 @@ async def test_cinder(model, tools):
     log("deploying openstack-integrator")
     series = "bionic"
     await model.deploy(
-        "openstack-integrator", num_units=1, series=series, trust=True,
+        "openstack-integrator",
+        num_units=1,
+        series=series,
+        trust=True,
     )
 
     log("adding relations")

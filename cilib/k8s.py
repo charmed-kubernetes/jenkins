@@ -3,8 +3,7 @@ import semver
 
 
 def latest():
-    """ return latest version, this could be an alpha release
-    """
+    """return latest version, this could be an alpha release"""
     ret = requests.get(
         "https://storage.googleapis.com/kubernetes-release/release/latest.txt"
     )
@@ -15,8 +14,7 @@ def latest():
 
 
 def stable():
-    """ return latest stable
-    """
+    """return latest stable"""
     ret = requests.get(
         "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
     )
