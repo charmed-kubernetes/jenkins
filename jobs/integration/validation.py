@@ -1309,113 +1309,114 @@ async def test_keystone(model, tools):
     # save off config
     config = await model.applications["kubernetes-master"].get_config()
 
-    # add keystone
-    await model.deploy(
-        "keystone",
-        series="bionic",
-        config={
-            "admin-password": "testpw",
-            "preferred-api-version": "3",
-            "openstack-origin": "cloud:bionic-rocky",
-        },
-    )
-    await model.deploy(
-        "percona-cluster",
-        config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
-    )
-
-    await model.add_relation(
-        "kubernetes-master:keystone-credentials", "keystone:identity-credentials"
-    )
-    await model.add_relation("keystone:shared-db", "percona-cluster:shared-db")
-    await tools.juju_wait()
-
-    # verify kubectl config file has keystone in it
-    one_master = random.choice(masters.units)
-    for i in range(60):
-        action = await one_master.run("cat /home/ubuntu/config")
-        if "client-keystone-auth" in action.results.get("Stdout", ""):
-            break
-        click.echo("Unable to find keystone information in kubeconfig, retrying...")
-        await asyncio.sleep(10)
-
-    assert "client-keystone-auth" in action.results.get("Stdout", "")
-
-    # verify kube-keystone.sh exists
-    one_master = random.choice(masters.units)
-    action = await one_master.run("cat /home/ubuntu/kube-keystone.sh")
-    assert "OS_AUTH_URL" in action.results.get("Stdout", "")
-
-    # verify webhook enabled on apiserver
-    await wait_for_process(model, "authentication-token-webhook-config-file")
-    one_master = random.choice(masters.units)
-    action = await one_master.run("sudo cat /root/cdk/keystone/webhook.yaml")
-    assert "webhook" in action.results.get("Stdout", "")
-
-    # verify keystone pod is running
-    await retry_async_with_timeout(
-        verify_ready,
-        (one_master, "po", ["k8s-keystone-auth"], "-n kube-system"),
-        timeout_msg="Unable to find keystone auth pod before timeout",
-    )
-
-    skip_tests = False
-    action = await one_master.run(
-        "cat /snap/cdk-addons/current/templates/keystone-rbac.yaml"
-    )
-    if "kind: Role" in action.results.get("Stdout", ""):
-        # we need to skip tests for the old template that incorrectly had a Role instead
-        # of a ClusterRole
-        skip_tests = True
-
-    if skip_tests:
-        await masters.set_config({"enable-keystone-authorization": "true"})
-    else:
-        # verify authorization
-        await masters.set_config(
-            {
-                "enable-keystone-authorization": "true",
-                "authorization-mode": "Node,Webhook,RBAC",
-            }
+    try:
+        # add keystone
+        await model.deploy(
+            "keystone",
+            series="bionic",
+            config={
+                "admin-password": "testpw",
+                "preferred-api-version": "3",
+                "openstack-origin": "cloud:bionic-rocky",
+            },
         )
-    await wait_for_process(model, "authorization-webhook-config-file")
+        await model.deploy(
+            "percona-cluster",
+            config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
+        )
 
-    # verify auth fail - bad user
-    one_master = random.choice(masters.units)
-    await one_master.run("/usr/bin/snap install --edge client-keystone-auth")
+        await model.add_relation(
+            "kubernetes-master:keystone-credentials", "keystone:identity-credentials"
+        )
+        await model.add_relation("keystone:shared-db", "percona-cluster:shared-db")
+        await tools.juju_wait()
 
-    cmd = "source /home/ubuntu/kube-keystone.sh && \
-           OS_PROJECT_NAME=k8s OS_DOMAIN_NAME=k8s OS_USERNAME=fake \
-           OS_PASSWORD=bad /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
-    output = await one_master.run(cmd)
-    assert output.status == "completed"
-    if (
-        "invalid user credentials"
-        not in output.data["results"].get("Stderr", "").lower()
-    ):
-        click.echo("Failing, auth did not fail as expected")
-        click.echo(pformat(output.data["results"]))
-        assert False
+        # verify kubectl config file has keystone in it
+        one_master = random.choice(masters.units)
+        for i in range(60):
+            action = await one_master.run("cat /home/ubuntu/config")
+            if "client-keystone-auth" in action.results.get("Stdout", ""):
+                break
+            click.echo("Unable to find keystone information in kubeconfig, retrying...")
+            await asyncio.sleep(10)
 
-    # verify auth fail - bad password
-    cmd = "source /home/ubuntu/kube-keystone.sh && \
-           OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
-           OS_PASSWORD=badpw /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
-    output = await one_master.run(cmd)
-    assert output.status == "completed"
-    if (
-        "invalid user credentials"
-        not in output.data["results"].get("Stderr", "").lower()
-    ):
-        click.echo("Failing, auth did not fail as expected")
-        click.echo(pformat(output.data["results"]))
-        assert False
+        assert "client-keystone-auth" in action.results.get("Stdout", "")
 
-    if not skip_tests:
-        # set up read only access to pods only
-        await masters.set_config(
-            {
-                "keystone-policy": """apiVersion: v1
+        # verify kube-keystone.sh exists
+        one_master = random.choice(masters.units)
+        action = await one_master.run("cat /home/ubuntu/kube-keystone.sh")
+        assert "OS_AUTH_URL" in action.results.get("Stdout", "")
+
+        # verify webhook enabled on apiserver
+        await wait_for_process(model, "authentication-token-webhook-config-file")
+        one_master = random.choice(masters.units)
+        action = await one_master.run("sudo cat /root/cdk/keystone/webhook.yaml")
+        assert "webhook" in action.results.get("Stdout", "")
+
+        # verify keystone pod is running
+        await retry_async_with_timeout(
+            verify_ready,
+            (one_master, "po", ["k8s-keystone-auth"], "-n kube-system"),
+            timeout_msg="Unable to find keystone auth pod before timeout",
+        )
+
+        skip_tests = False
+        action = await one_master.run(
+            "cat /snap/cdk-addons/current/templates/keystone-rbac.yaml"
+        )
+        if "kind: Role" in action.results.get("Stdout", ""):
+            # we need to skip tests for the old template that incorrectly had a Role instead
+            # of a ClusterRole
+            skip_tests = True
+
+        if skip_tests:
+            await masters.set_config({"enable-keystone-authorization": "true"})
+        else:
+            # verify authorization
+            await masters.set_config(
+                {
+                    "enable-keystone-authorization": "true",
+                    "authorization-mode": "Node,Webhook,RBAC",
+                }
+            )
+        await wait_for_process(model, "authorization-webhook-config-file")
+
+        # verify auth fail - bad user
+        one_master = random.choice(masters.units)
+        await one_master.run("/usr/bin/snap install --edge client-keystone-auth")
+
+        cmd = "source /home/ubuntu/kube-keystone.sh && \
+            OS_PROJECT_NAME=k8s OS_DOMAIN_NAME=k8s OS_USERNAME=fake \
+            OS_PASSWORD=bad /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
+        output = await one_master.run(cmd)
+        assert output.status == "completed"
+        if (
+            "invalid user credentials"
+            not in output.data["results"].get("Stderr", "").lower()
+        ):
+            click.echo("Failing, auth did not fail as expected")
+            click.echo(pformat(output.data["results"]))
+            assert False
+
+        # verify auth fail - bad password
+        cmd = "source /home/ubuntu/kube-keystone.sh && \
+            OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
+            OS_PASSWORD=badpw /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
+        output = await one_master.run(cmd)
+        assert output.status == "completed"
+        if (
+            "invalid user credentials"
+            not in output.data["results"].get("Stderr", "").lower()
+        ):
+            click.echo("Failing, auth did not fail as expected")
+            click.echo(pformat(output.data["results"]))
+            assert False
+
+        if not skip_tests:
+            # set up read only access to pods only
+            await masters.set_config(
+                {
+                    "keystone-policy": """apiVersion: v1
 kind: ConfigMap
 metadata:
   name: k8s-auth-policy
@@ -1440,102 +1441,102 @@ data:
         ]
       }
     ]"""
-            }
-        )
-        await tools.juju_wait()
+                }
+            )
+            await tools.juju_wait()
 
-        # verify auth failure on something not a pod
-        cmd = "source /home/ubuntu/kube-keystone.sh && \
-            OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
-            OS_PASSWORD=testpw /snap/bin/kubectl \
-            --kubeconfig /home/ubuntu/config get clusterroles"
-        output = await one_master.run(cmd)
-        assert output.status == "completed"
-        assert "error" in output.data["results"].get("Stderr", "").lower()
-
-        # the config set writes out a file and updates a configmap, which is then picked up by the
-        # keystone pod and updated. This all takes time and I don't know of a great way to tell
-        # that it is all done. I could compare the configmap to this, but that doesn't mean the
-        # pod has updated. The pod does write a log line about the configmap updating, but
-        # I'd need to watch both in succession and it just seems much easier and just as reliable
-        # to just retry on failure a few times.
-
-        for i in range(18):  # 3 minutes
-            # verify auth success on pods
+            # verify auth failure on something not a pod
             cmd = "source /home/ubuntu/kube-keystone.sh && \
                 OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
                 OS_PASSWORD=testpw /snap/bin/kubectl \
-                --kubeconfig /home/ubuntu/config get po"
+                --kubeconfig /home/ubuntu/config get clusterroles"
             output = await one_master.run(cmd)
-            if (
-                output.status == "completed"
-                and "invalid user credentials"
-                not in output.data["results"].get("Stderr", "").lower()
-                and "error" not in output.data["results"].get("Stderr", "").lower()
-            ):
-                break
-            click.echo("Unable to verify configmap change, retrying...")
-            await asyncio.sleep(10)
+            assert output.status == "completed"
+            assert "error" in output.data["results"].get("Stderr", "").lower()
 
+            # the config set writes out a file and updates a configmap, which is then picked up by the
+            # keystone pod and updated. This all takes time and I don't know of a great way to tell
+            # that it is all done. I could compare the configmap to this, but that doesn't mean the
+            # pod has updated. The pod does write a log line about the configmap updating, but
+            # I'd need to watch both in succession and it just seems much easier and just as reliable
+            # to just retry on failure a few times.
+
+            for i in range(18):  # 3 minutes
+                # verify auth success on pods
+                cmd = "source /home/ubuntu/kube-keystone.sh && \
+                    OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
+                    OS_PASSWORD=testpw /snap/bin/kubectl \
+                    --kubeconfig /home/ubuntu/config get po"
+                output = await one_master.run(cmd)
+                if (
+                    output.status == "completed"
+                    and "invalid user credentials"
+                    not in output.data["results"].get("Stderr", "").lower()
+                    and "error" not in output.data["results"].get("Stderr", "").lower()
+                ):
+                    break
+                click.echo("Unable to verify configmap change, retrying...")
+                await asyncio.sleep(10)
+
+            assert output.status == "completed"
+            assert (
+                "invalid user credentials"
+                not in output.data["results"].get("Stderr", "").lower()
+            )
+            assert "error" not in output.data["results"].get("Stderr", "").lower()
+
+            # verify auth failure on pods outside of default namespace
+            cmd = "source /home/ubuntu/kube-keystone.sh && \
+                OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
+                OS_PASSWORD=testpw /snap/bin/kubectl \
+                --kubeconfig /home/ubuntu/config get po -n kube-system"
+            output = await one_master.run(cmd)
+            assert output.status == "completed"
+            assert (
+                "invalid user credentials"
+                not in output.data["results"].get("Stderr", "").lower()
+            )
+            assert "forbidden" in output.data["results"].get("Stderr", "").lower()
+
+        # verify auth works now that it is off
+        original_auth = config["authorization-mode"]["value"]
+        await masters.set_config(
+            {"enable-keystone-authorization": "false", "authorization-mode": original_auth}
+        )
+        await wait_for_not_process(model, "authorization-webhook-config-file")
+        await tools.juju_wait()
+        cmd = "/snap/bin/kubectl --context=juju-context \
+            --kubeconfig /home/ubuntu/config get clusterroles"
+        output = await one_master.run(cmd)
         assert output.status == "completed"
         assert (
             "invalid user credentials"
             not in output.data["results"].get("Stderr", "").lower()
         )
         assert "error" not in output.data["results"].get("Stderr", "").lower()
-
-        # verify auth failure on pods outside of default namespace
-        cmd = "source /home/ubuntu/kube-keystone.sh && \
-            OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
-            OS_PASSWORD=testpw /snap/bin/kubectl \
-            --kubeconfig /home/ubuntu/config get po -n kube-system"
-        output = await one_master.run(cmd)
-        assert output.status == "completed"
-        assert (
-            "invalid user credentials"
-            not in output.data["results"].get("Stderr", "").lower()
+        assert "forbidden" not in output.data["results"].get("Stderr", "").lower()
+    finally:
+        # cleanup
+        (done1, pending1) = await asyncio.wait(
+            {
+                model.applications["percona-cluster"].destroy(),
+                model.applications["keystone"].destroy(),
+            }
         )
-        assert "forbidden" in output.data["results"].get("Stderr", "").lower()
-
-    # verify auth works now that it is off
-    original_auth = config["authorization-mode"]["value"]
-    await masters.set_config(
-        {"enable-keystone-authorization": "false", "authorization-mode": original_auth}
-    )
-    await wait_for_not_process(model, "authorization-webhook-config-file")
-    await tools.juju_wait()
-    cmd = "/snap/bin/kubectl --context=juju-context \
-           --kubeconfig /home/ubuntu/config get clusterroles"
-    output = await one_master.run(cmd)
-    assert output.status == "completed"
-    assert (
-        "invalid user credentials"
-        not in output.data["results"].get("Stderr", "").lower()
-    )
-    assert "error" not in output.data["results"].get("Stderr", "").lower()
-    assert "forbidden" not in output.data["results"].get("Stderr", "").lower()
-
-    # cleanup
-    (done1, pending1) = await asyncio.wait(
-        {
-            model.applications["percona-cluster"].destroy(),
-            model.applications["keystone"].destroy(),
-        }
-    )
-    await tools.juju_wait()
-    for task in done1:
-        # read and ignore any exception so that it doesn't get raised
-        # when the task is GC'd
-        task.exception()
-    # apparently, juju-wait will consider the model settled before an
-    # application has fully gone away (presumably, when all units are gone) but
-    # but having a dying percona-cluster in the model can break the vault test
-    try:
-        await model.block_until(
-            lambda: "percona-cluster" not in model.applications, timeout=120
-        )
-    except asyncio.TimeoutError:
-        pytest.fail("Timed out waiting for percona-cluster to go away")
+        await tools.juju_wait()
+        for task in done1:
+            # read and ignore any exception so that it doesn't get raised
+            # when the task is GC'd
+            task.exception()
+        # apparently, juju-wait will consider the model settled before an
+        # application has fully gone away (presumably, when all units are gone) but
+        # but having a dying percona-cluster in the model can break the vault test
+        try:
+            await model.block_until(
+                lambda: "percona-cluster" not in model.applications, timeout=120
+            )
+        except asyncio.TimeoutError:
+            pytest.fail("Timed out waiting for percona-cluster to go away")
 
 
 @pytest.mark.asyncio
