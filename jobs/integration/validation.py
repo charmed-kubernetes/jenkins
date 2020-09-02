@@ -1501,7 +1501,10 @@ data:
         # verify auth works now that it is off
         original_auth = config["authorization-mode"]["value"]
         await masters.set_config(
-            {"enable-keystone-authorization": "false", "authorization-mode": original_auth}
+            {
+                "enable-keystone-authorization": "false",
+                "authorization-mode": original_auth,
+            }
         )
         await wait_for_not_process(model, "authorization-webhook-config-file")
         await tools.juju_wait()
