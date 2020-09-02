@@ -25,6 +25,24 @@ function juju::bootstrap
          --config vpc-id=vpc-0e4f11d0d4e9ba35f
 }
 
+function test::execute
+{
+    declare -n is_pass=$1
+    timeout 2h pytest \
+        --html="report.html" \
+        jobs/integration/validation.py::test_encryption_at_rest \
+        --cloud "$JUJU_CLOUD" \
+        --model "$JUJU_MODEL" \
+        --controller "$JUJU_CONTROLLER" \
+        --addons-model addons
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+
 
 # Setup Environment
 
