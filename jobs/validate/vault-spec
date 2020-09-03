@@ -25,6 +25,50 @@ function juju::bootstrap
          --config vpc-id=vpc-0e4f11d0d4e9ba35f
 }
 
+function juju::deploy::overlay
+{
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  kubernetes-master:
+    options:
+      channel: $SNAP_VERSION
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+  easyrsa: null
+  vault:
+    charm: cs:vault
+    num_units: 1
+    options:
+      auto-generate-root-ca-cert: true
+      disable-mlock: true
+  percona-cluster:
+    charm: cs:percona-cluster
+    num_units: 1
+    options:
+      innodb-buffer-pool-size: 256M
+      max-connection: 1000
+relations:
+  - ["vault:certificates", "kubernetes-master:certificates"]
+  - ["vault:certificates", "kubernetes-worker:certificates"]
+  - ["vault:certificates", "kubeapi-load-balancer:certificates"]
+  - ["vault:shared-db", "percona-cluster:shared-db"]
+  - ["kubernetes-master:vault-kv", "vault:secrets"]
+EOF
+}
+
+function juju::wait
+{
+    echo "Waiting for deployment to settle..."
+    timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w -x vault
+
+    ret=$?
+    if (( ret > 0 )); then
+        exit "$ret"
+    fi
+}
+
 function test::execute
 {
     declare -n is_pass=$1
