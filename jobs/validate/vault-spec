@@ -61,13 +61,18 @@ EOF
 
 function juju::wait
 {
-    echo "Waiting for deployment to settle..."
-    timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w -x vault
-
-    ret=$?
-    if (( ret > 0 )); then
-        exit "$ret"
-    fi
+    # We can only wait for Vault to be ready to unseal. The test itself has to
+    # wait for the rest of the cluster to settle after that is done.
+    echo "Waiting for Vault to be ready to initialize..."
+    start_min=$(now_min)
+    while ! juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" vault | grep -q "Vault needs to be initialized"; do
+        sleep 60
+        if (( $(now_min) - start_min > 20 )); then
+            echo "Timed out waiting for Vault"
+            juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" vault
+            exit 124
+        fi
+    done
 }
 
 function test::execute
@@ -82,7 +87,7 @@ function test::execute
         --addons-model addons
     ret=$?
     is_pass="True"
-    if (( $ret > 0 )); then
+    if (( ret > 0 )); then
         is_pass="False"
     fi
 }

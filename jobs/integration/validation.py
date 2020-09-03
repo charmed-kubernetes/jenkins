@@ -1583,9 +1583,16 @@ async def test_encryption_at_rest(model, tools):
     await action.wait()
     click.echo("Finalizing vault unseal")
     assert action.status not in ("pending", "running", "failed")
-    # now wait for k8s to settle
-    click.echo("Waiting for Vault to settle")
-    await tools.juju_wait()
+
+    # now wait for the rest of k8s to settle
+    click.echo("Waiting for cluster to settle")
+    try:
+        await asyncio.wait_for(tools.juju_wait(), timeout=30 * 60)
+    except asyncio.TimeoutError:
+        stdout, stderr = await tools.run(f"juju status -m {tools.connection}")
+        click.echo(f"Timed out waiting for cluster:\n{stderr}\n{stdout}")
+        raise
+
     click.echo("Creating secret")
     # create secret
     one_master = random.choice(model.applications["kubernetes-master"].units)
