@@ -68,7 +68,11 @@ class Microk8sSnap:
         target = "{}/{}".format(self.track, channel)
         cmd = "snapcraft release microk8s {} {}".format(self.revision, target)
         if dry_run == "no":
-            run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
+            try:
+                run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
+            except CalledProcessError as e:
+                click.echo("Release failed: {}".format(e.stdout))
+                raise
         else:
             click.echo("DRY RUN - calling: {}".format(cmd))
 
