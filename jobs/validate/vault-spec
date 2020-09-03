@@ -48,7 +48,7 @@ applications:
     num_units: 1
     options:
       innodb-buffer-pool-size: 256M
-      max-connection: 1000
+      max-connections: 1000
 relations:
   - ["vault:certificates", "kubernetes-master:certificates"]
   - ["vault:certificates", "kubernetes-worker:certificates"]
