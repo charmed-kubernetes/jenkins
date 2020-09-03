@@ -1546,12 +1546,7 @@ data:
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
-    click.echo("Waiting for Vault to be ready to initialize")
     vault = model.applications["vault"].units[0]
-    await model.block_until(
-        lambda: vault.workload_status_message == "Vault needs to be initialized",
-        timeout=5 * 60,  # 5 minutes
-    )
 
     click.echo("Unsealing vault")
     # unseal vault
@@ -1583,9 +1578,16 @@ async def test_encryption_at_rest(model, tools):
     await action.wait()
     click.echo("Finalizing vault unseal")
     assert action.status not in ("pending", "running", "failed")
-    # now wait for k8s to settle
-    click.echo("Waiting for Vault to settle")
-    await tools.juju_wait()
+
+    # now wait for the rest of k8s to settle
+    click.echo("Waiting for cluster to settle")
+    try:
+        await asyncio.wait_for(tools.juju_wait(), timeout=30 * 60)
+    except asyncio.TimeoutError:
+        stdout, stderr = await tools.run(f"juju status -m {tools.connection}")
+        click.echo(f"Timed out waiting for cluster:\n{stderr}\n{stdout}")
+        raise
+
     click.echo("Creating secret")
     # create secret
     one_master = random.choice(model.applications["kubernetes-master"].units)

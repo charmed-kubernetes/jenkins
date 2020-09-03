@@ -117,6 +117,7 @@ class Tools:
                 f"Problem with run command [{' '.join(cmd)}]: \nstdout: "
                 f"{stdout.decode()}\nstderr: {stderr.decode()}"
             )
+        return stdout.decode("utf8"), stderr.decode("utf8")
 
     async def juju_wait(self, *args, **kwargs):
         cmd = f"juju wait -e {self.connection} -w"
