@@ -1546,12 +1546,7 @@ data:
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
-    click.echo("Waiting for Vault to be ready to initialize")
     vault = model.applications["vault"].units[0]
-    await model.block_until(
-        lambda: vault.workload_status_message == "Vault needs to be initialized",
-        timeout=5 * 60,  # 5 minutes
-    )
 
     click.echo("Unsealing vault")
     # unseal vault
