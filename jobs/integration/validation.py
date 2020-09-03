@@ -8,7 +8,6 @@ import yaml
 import re
 import random
 import pytest
-import juju
 import logging
 import click
 from asyncio_extras import async_contextmanager
@@ -1547,162 +1546,77 @@ data:
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
-    try:
-        click.echo("Deploying model")
-        # setup
-        if "percona-cluster" not in model.applications:
-            click.echo(" deploy percona-cluster")
-            await model.deploy(
-                "percona-cluster",
-                config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
-            )
-        click.echo(" deploy vault")
-        await model.deploy(
-            "cs:~openstack-charmers-next/vault",
-            config={"auto-generate-root-ca-cert": True, "disable-mlock": True},
-        )
-        try:
-            click.echo(" adding vault:shared-db<->percona-cluster:shared_db")
-            await model.add_relation("vault:shared-db", "percona-cluster:shared-db")
-        except juju.errors.JujuAPIError as e:
-            pc = model.applications.get("percona-cluster")
-            pytest.fail(
-                "JujuAPIError: {}\n\n{}".format(
-                    e, pc.data if pc else "(percona-cluster not in model)"
-                )
-            )
-        click.echo("Adding/Removing relations")
-        click.echo(" removing easyrsa:client<->kubernetes-*:certificates")
-        await model.applications["kubernetes-master"].remove_relation(
-            "easyrsa:client", "kubernetes-master:certificates"
-        )
-        await model.applications["kubernetes-master"].remove_relation(
-            "easyrsa:client", "kubernetes-worker:certificates"
-        )
-        if "kubeapi-load-balancer" in model.applications:
-            click.echo(
-                " removing easyrsa:client<->kubernetes-load-balancer:certificates"
-            )
-            await model.applications["kubeapi-load-balancer"].remove_relation(
-                "easyrsa:client", "kubeapi-load-balancer:certificates"
-            )
-        click.echo(" adding vault:certificates<->kubernetes-*:certificates")
-        await model.add_relation("vault:certificates", "kubernetes-master:certificates")
-        await model.add_relation("vault:certificates", "kubernetes-worker:certificates")
-        if "kubeapi-load-balancer" in model.applications:
-            click.echo(
-                " adding vault:certificates<->kubernetes-load-balancer:certificates"
-            )
-            await model.add_relation(
-                "vault:certificates", "kubeapi-load-balancer:certificates"
-            )
-        click.echo(" adding vault:secrets<->kubernetes-master:vault-kv")
-        await model.add_relation("kubernetes-master:vault-kv", "vault:secrets")
+    click.echo("Waiting for Vault to be ready to initialize")
+    vault = model.applications["vault"].units[0]
+    await model.block_until(
+        lambda: vault.workload_status_message == "Vault needs to be initialized",
+        timeout=5 * 60,  # 5 minutes
+    )
 
-        click.echo("Waiting for vault to be active")
-        await model.block_until(lambda: "vault" in model.applications)
-        vault = model.applications["vault"].units[0]
-        click.echo("Waiting for vault to be ready to initialize")
-        await model.block_until(
-            lambda: vault.workload_status_message == "Vault needs to " "be initialized"
-        )
-
-        click.echo("Unsealing vault")
-        # unseal vault
+    click.echo("Unsealing vault")
+    # unseal vault
+    output = await vault.run(
+        "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
+        "operator init -key-shares=5 -key-threshold=3 "
+        "--format=yaml"
+    )
+    assert output.status == "completed"
+    vault_info = yaml.safe_load(output.results.get("Stdout", ""))
+    click.echo(vault_info)
+    for key in vault_info["unseal_keys_hex"][:3]:
         output = await vault.run(
             "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
-            "operator init -key-shares=5 -key-threshold=3 "
-            "--format=yaml"
+            "operator unseal {}".format(key)
         )
         assert output.status == "completed"
-        vault_info = yaml.safe_load(output.results.get("Stdout", ""))
-        click.echo(vault_info)
-        for key in vault_info["unseal_keys_hex"][:3]:
-            output = await vault.run(
-                "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
-                "operator unseal {}".format(key)
-            )
-            assert output.status == "completed"
-        output = await vault.run(
-            "VAULT_ADDR=http://localhost:8200 VAULT_TOKEN={} "
-            "/snap/bin/vault token create -ttl=10m --format=yaml"
-            "".format(vault_info["root_token"])
-        )
-        assert output.status == "completed"
-        vault_token_info = yaml.safe_load(output.results.get("Stdout", ""))
-        click.echo(vault_token_info)
-        charm_token = vault_token_info["auth"]["client_token"]
-        click.echo("Authorizing charm")
-        action = await vault.run_action("authorize-charm", token=charm_token)
-        await action.wait()
-        click.echo("Finalizing vault unseal")
-        assert action.status not in ("pending", "running", "failed")
-        # now wait for k8s to settle
-        click.echo("Settling")
-        await tools.juju_wait()
-        click.echo("Secrets")
-        # create secret
-        one_master = random.choice(model.applications["kubernetes-master"].units)
-        output = await one_master.run(
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config create secret generic test-secret "
-            "--from-literal=username='secret-value'"
-        )
-        if output.results.get("Stderr", ""):
-            click.echo("stderr: {}".format(output.results.get("Stderr", "")))
-        assert output.status == "completed"
-        # read secret
-        output = await one_master.run(
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config get secret test-secret -o yaml"
-        )
-        if output.results.get("Stderr", ""):
-            click.echo("stderr: {}".format(output.results.get("Stderr", "")))
-        assert output.status == "completed"
-        assert b64encode(b"secret-value").decode("utf8") in output.results.get(
-            "Stdout", ""
-        )
-        click.echo("Verifying encryption")
-        # verify secret is encrypted
-        etcd = model.applications["etcd"].units[0]
-        output = await etcd.run(
-            "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
-            "--endpoints http://127.0.0.1:4001 "
-            "get /registry/secrets/default/test-secret | strings"
-        )
-        assert output.status == "completed"
-        assert b64encode(b"secret-value").decode("utf8") not in output.results.get(
-            "Stdout", ""
-        )
-    finally:
-        click.echo("Cleaning up")
-        if "vault" in model.applications:
-            click.echo("Removing vault")
-            await model.applications["vault"].destroy()
-            # wait for vault to go away before removing percona to prevent vault
-            # from erroring from having its DB taken away
-            await tools.juju_wait()
-        if "percona-cluster" in model.applications:
-            click.echo("Removing percona-cluster")
-            await model.applications["percona-cluster"].destroy()
-
-        click.echo("Re-add easyrsa and setup relations")
-        # re-add easyrsa after vault is gone
-        tasks = {
-            model.add_relation("easyrsa:client", "kubernetes-master:certificates"),
-            model.add_relation("easyrsa:client", "kubernetes-worker:certificates"),
-        }
-        if "kubeapi-load-balancer" in model.applications:
-            tasks.add(
-                model.add_relation(
-                    "easyrsa:client", "kubeapi-load-balancer:certificates"
-                )
-            )
-        (done2, pending2) = await asyncio.wait(tasks)
-        for task in done2:
-            # read and ignore any exception so that it doesn't get raised
-            # when the task is GC'd
-            task.exception()
-        click.echo("Waiting for cluster to settle")
-        await tools.juju_wait()
+    output = await vault.run(
+        "VAULT_ADDR=http://localhost:8200 VAULT_TOKEN={} "
+        "/snap/bin/vault token create -ttl=10m --format=yaml"
+        "".format(vault_info["root_token"])
+    )
+    assert output.status == "completed"
+    vault_token_info = yaml.safe_load(output.results.get("Stdout", ""))
+    click.echo(vault_token_info)
+    charm_token = vault_token_info["auth"]["client_token"]
+    click.echo("Authorizing charm")
+    action = await vault.run_action("authorize-charm", token=charm_token)
+    await action.wait()
+    click.echo("Finalizing vault unseal")
+    assert action.status not in ("pending", "running", "failed")
+    # now wait for k8s to settle
+    click.echo("Waiting for Vault to settle")
+    await tools.juju_wait()
+    click.echo("Creating secret")
+    # create secret
+    one_master = random.choice(model.applications["kubernetes-master"].units)
+    output = await one_master.run(
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config create secret generic test-secret "
+        "--from-literal=username='secret-value'"
+    )
+    if output.results.get("Stderr", ""):
+        click.echo("stderr: {}".format(output.results.get("Stderr", "")))
+    assert output.status == "completed"
+    click.echo("Verifying secret")
+    # read secret
+    output = await one_master.run(
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config get secret test-secret -o yaml"
+    )
+    if output.results.get("Stderr", ""):
+        click.echo("stderr: {}".format(output.results.get("Stderr", "")))
+    assert output.status == "completed"
+    assert b64encode(b"secret-value").decode("utf8") in output.results.get("Stdout", "")
+    click.echo("Verifying encryption")
+    # verify secret is encrypted
+    etcd = model.applications["etcd"].units[0]
+    output = await etcd.run(
+        "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
+        "--endpoints http://127.0.0.1:4001 "
+        "get /registry/secrets/default/test-secret | strings"
+    )
+    assert output.status == "completed"
+    assert b64encode(b"secret-value").decode("utf8") not in output.results.get(
+        "Stdout", ""
+    )
 
 
 @pytest.mark.asyncio
