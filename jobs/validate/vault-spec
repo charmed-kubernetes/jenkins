@@ -60,6 +60,11 @@ relations:
 EOF
 }
 
+function now_min
+{
+    echo $(( $(date '+%s') / 60 ))
+}
+
 function juju::wait
 {
     # We can only wait for Vault to be ready to unseal. The test itself has to
