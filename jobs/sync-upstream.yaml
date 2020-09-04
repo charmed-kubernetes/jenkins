@@ -59,7 +59,7 @@
     description: |
       Tags all downstream stable branches with bundle revision
     project-type: freestyle
-    node: runner-amd64
+    node: runner-cloud
     scm:
       - k8s-jenkins-jenkaas
     properties:
@@ -133,7 +133,7 @@
     description: |
       Refreshes all layer stable branches on top of master.
     project-type: freestyle
-    node: runner-amd64
+    node: runner-cloud
     scm:
       - k8s-jenkins-jenkaas
     properties:
