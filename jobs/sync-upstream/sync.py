@@ -97,6 +97,13 @@ def _tag_stable_forks(
     git tag (ie. ck-{bundle_rev}), this would mean we tagged current
     stable branches for 1.14 with the latest charmed kubernetes(ck) bundle rev
     of {bundle_rev}
+
+    TODO: Switch to different merge strategy
+    git checkout master
+    git checkout -b staging
+    git merge stable -s ours
+    git checkout stable
+    git reset staging
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
