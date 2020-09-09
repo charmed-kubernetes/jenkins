@@ -47,14 +47,14 @@ async def verify_auth_failure(one_master, cmd):
     assert "authenticated:false" in output.results.get("Stdout", "").replace('"', '')
 
 
-async def verify_custom_auth(one_master, cmd):
+async def verify_custom_auth(one_master, cmd, endpoint):
     output = await one_master.run(cmd)
     assert output.status == "completed"
 
     # make sure expected custom log entry is present
     output = await one_master.run("grep Forwarding /root/cdk/auth-webhook/auth-webhook.log")
     assert output.status == "completed"
-    assert "Forwarding to" in output.results.get("Stdout", "").strip()
+    assert "Forwarding to: {}".format(endpoint) in output.results.get("Stdout", "").strip()
 
 
 @pytest.mark.asyncio
@@ -84,10 +84,11 @@ async def test_validate_auth_webhook(model, tools):
 
     try:
         # Verify invalid token triggers a call to a custom endpoint
-        await masters.set_config({"authn-webhook-endpoint": "https://localhost:6000/v1beta1"})
+        ep = "https://localhost:6000/v1beta1"
+        await masters.set_config({"authn-webhook-endpoint": ep})
         log("waiting for cluster to settle...")
         await tools.juju_wait()
-        await verify_custom_auth(one_master, bad_curl)
+        await verify_custom_auth(one_master, bad_curl, ep)
     finally:
         # Reset config
         await masters.set_config({"authn-webhook-endpoint": ""})
