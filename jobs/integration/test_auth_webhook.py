@@ -6,11 +6,15 @@ from yaml import safe_load
 
 
 def get_curl_cmd(url, token):
-    json_data = {"kind": "TokenReview",
-                 "apiVersion": "authentication.k8s.io/v1beta1",
-                 "spec": {"token": token}}
+    json_data = {
+        "kind": "TokenReview",
+        "apiVersion": "authentication.k8s.io/v1beta1",
+        "spec": {"token": token},
+    }
     return "curl -X POST -H 'Content-Type: application/json' \
-           -d '{}' {}".format(json.dumps(json_data), url)
+           -d '{}' {}".format(
+        json.dumps(json_data), url
+    )
 
 
 async def get_hostname(one_master):
@@ -38,13 +42,13 @@ async def verify_service(one_master):
 async def verify_auth_success(one_master, cmd):
     output = await one_master.run(cmd)
     assert output.status == "completed"
-    assert "authenticated:true" in output.results.get("Stdout", "").replace('"', '')
+    assert "authenticated:true" in output.results.get("Stdout", "").replace('"', "")
 
 
 async def verify_auth_failure(one_master, cmd):
     output = await one_master.run(cmd)
     assert output.status == "completed"
-    assert "authenticated:false" in output.results.get("Stdout", "").replace('"', '')
+    assert "authenticated:false" in output.results.get("Stdout", "").replace('"', "")
 
 
 async def verify_custom_auth(one_master, cmd, endpoint):
@@ -52,9 +56,13 @@ async def verify_custom_auth(one_master, cmd, endpoint):
     assert output.status == "completed"
 
     # make sure expected custom log entry is present
-    output = await one_master.run("grep Forwarding /root/cdk/auth-webhook/auth-webhook.log")
+    output = await one_master.run(
+        "grep Forwarding /root/cdk/auth-webhook/auth-webhook.log"
+    )
     assert output.status == "completed"
-    assert "Forwarding to: {}".format(endpoint) in output.results.get("Stdout", "").strip()
+    assert (
+        "Forwarding to: {}".format(endpoint) in output.results.get("Stdout", "").strip()
+    )
 
 
 @pytest.mark.asyncio
