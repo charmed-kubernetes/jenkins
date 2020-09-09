@@ -81,17 +81,20 @@ async def test_validate_auth_webhook(model, tools):
     await verify_service(one_master)
 
     # Verify authn with a valid token
+    log("verifying valid token")
     valid_token = await get_valid_token(one_master)
     good_curl = get_curl_cmd("https://{}:5000/v1beta1".format(hostname), valid_token)
     await verify_auth_success(one_master, good_curl)
 
     # Verify no auth with an invalid token
+    log("verifying invalid token")
     invalid_token = "this_cant_be_right"
     bad_curl = get_curl_cmd("https://{}:5000/v1beta1".format(hostname), invalid_token)
     await verify_auth_failure(one_master, bad_curl)
 
     try:
         # Verify invalid token triggers a call to a custom endpoint
+        log("verifying custom endpoint")
         ep = "https://localhost:6000/v1beta1"
         await masters.set_config({"authn-webhook-endpoint": ep})
         log("waiting for cluster to settle...")
