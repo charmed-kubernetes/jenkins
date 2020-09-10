@@ -4,6 +4,9 @@ def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
 def kube_ersion = null
+if (kube_version != "") {
+    kube_ersion = kube_version.substring(1)
+}
 def lxd_exec(String container, String cmd) {
     sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
 }
@@ -52,7 +55,6 @@ pipeline {
                     }
                     kube_ersion = kube_version.substring(1);
                 }
-                echo "Set K8s version to: ${kube_version} and K8s ersion: ${kube_ersion}"
             }
         }
         stage('Setup Source') {
@@ -86,6 +88,7 @@ pipeline {
         }
         stage('Build cdk-addons and image list'){
             steps {
+                echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
 
                     cd cdk-addons
@@ -149,7 +152,7 @@ pipeline {
         stage('Setup LXD container for ctr'){
             steps {
                 sh "sudo lxc launch ubuntu:18.04 image-processor"
-                lxd_exec("image-processor", "sleep 5")
+                lxd_exec("image-processor", "sleep 10")
                 lxd_exec("image-processor", "apt update")
                 lxd_exec("image-processor", "apt install containerd -y")
             }
@@ -185,9 +188,14 @@ pipeline {
 
                         # Skip images that dont exist (usually due to non-existing arch). Other
                         # pull failures will manifest themselves when we attempt to tag.
-                        if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms 2>&1 | grep -qi 'not found'
+                        if ${params.dry_run}
                         then
-                            continue
+                            echo "Dry run; would have pulled: \${i}"
+                        else
+                            if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms 2>&1 | grep -qi 'not found'
+                            then
+                                continue
+                            fi
                         fi
 
                         # Massage image names
@@ -202,11 +210,12 @@ pipeline {
                         done
 
                         # Tag and push
-                        until sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}; do sleep 1; done
                         if ${params.dry_run}
                         then
+                            echo "Dry run; would have tagged: \${i}"
                             echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
                         else
+                            until sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}; do sleep 1; done
                             sudo lxc exec image-processor -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                         fi
                     done
