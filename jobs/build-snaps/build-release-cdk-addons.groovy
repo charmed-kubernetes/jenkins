@@ -3,11 +3,9 @@
 def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
-if (kube_version == "") {
-    def kube_ersion = null
-} else {
-    def kube_ersion = kube_version.substring(1);
-}
+def kube_ersion = null
+if (kube_version != "") {
+    kube_ersion = kube_version.substring(1);
 def lxd_exec(String container, String cmd) {
     sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
 }
