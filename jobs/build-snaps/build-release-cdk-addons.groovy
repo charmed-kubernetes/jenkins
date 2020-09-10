@@ -152,7 +152,7 @@ pipeline {
         stage('Setup LXD container for ctr'){
             steps {
                 sh "sudo lxc launch ubuntu:18.04 image-processor"
-                lxd_exec("image-processor", "sleep 5")
+                lxd_exec("image-processor", "sleep 10")
                 lxd_exec("image-processor", "apt update")
                 lxd_exec("image-processor", "apt install containerd -y")
             }
