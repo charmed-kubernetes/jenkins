@@ -188,9 +188,14 @@ pipeline {
 
                         # Skip images that dont exist (usually due to non-existing arch). Other
                         # pull failures will manifest themselves when we attempt to tag.
-                        if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms 2>&1 | grep -qi 'not found'
+                        if ${params.dry_run}
                         then
-                            continue
+                            echo "Dry run; would have pulled: \${i}"
+                        else
+                            if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms 2>&1 | grep -qi 'not found'
+                            then
+                                continue
+                            fi
                         fi
 
                         # Massage image names
@@ -205,11 +210,12 @@ pipeline {
                         done
 
                         # Tag and push
-                        until sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}; do sleep 1; done
                         if ${params.dry_run}
                         then
+                            echo "Dry run; would have tagged: \${i}"
                             echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
                         else
+                            until sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}; do sleep 1; done
                             sudo lxc exec image-processor -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                         fi
                     done
