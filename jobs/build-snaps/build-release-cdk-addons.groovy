@@ -6,6 +6,7 @@ def kube_version = params.k8s_tag
 def kube_ersion = null
 if (kube_version != "") {
     kube_ersion = kube_version.substring(1);
+}
 def lxd_exec(String container, String cmd) {
     sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
 }
