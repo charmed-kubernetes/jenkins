@@ -5,7 +5,7 @@ def kube_status = "stable"
 def kube_version = params.k8s_tag
 def kube_ersion = null
 if (kube_version != "") {
-    kube_ersion = kube_version.substring(1);
+    kube_ersion = kube_version.substring(1)
 }
 def lxd_exec(String container, String cmd) {
     sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
@@ -55,7 +55,6 @@ pipeline {
                     }
                     kube_ersion = kube_version.substring(1);
                 }
-                echo "Set K8s version to: ${kube_version} and K8s ersion: ${kube_ersion}"
             }
         }
         stage('Setup Source') {
@@ -89,6 +88,7 @@ pipeline {
         }
         stage('Build cdk-addons and image list'){
             steps {
+                echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
 
                     cd cdk-addons
