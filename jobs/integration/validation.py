@@ -1521,17 +1521,11 @@ data:
         assert "forbidden" not in output.data["results"].get("Stderr", "").lower()
     finally:
         # cleanup
-        (done1, pending1) = await asyncio.wait(
-            {
-                model.applications["percona-cluster"].destroy(),
-                model.applications["keystone"].destroy(),
-            }
-        )
+        await model.applications["keystone"].destroy()
         await tools.juju_wait()
-        for task in done1:
-            # read and ignore any exception so that it doesn't get raised
-            # when the task is GC'd
-            task.exception()
+        await model.applications["percona-cluster"].destroy()
+        await tools.juju_wait()
+
         # apparently, juju-wait will consider the model settled before an
         # application has fully gone away (presumably, when all units are gone) but
         # but having a dying percona-cluster in the model can break the vault test
