@@ -98,7 +98,7 @@ async def test_clusterip_service_endpoint(model):
 
         # Build the url
         set_url = f"http://{ip}:80"
-        cmd = f"curl -vk {set_url}"
+        cmd = f'curl -vk --noproxy "{ip}" {set_url}'
 
         # Curl the ClusterIP from each kubernetes master and worker
         master = model.applications["kubernetes-master"]
