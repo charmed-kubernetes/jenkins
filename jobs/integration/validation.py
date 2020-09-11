@@ -1,4 +1,5 @@
 import asyncio
+import backoff
 import ipaddress
 import json
 import os
@@ -328,6 +329,7 @@ async def test_microbot(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.clouds(["aws"])
+@backoff.on_exception(backoff.expo, TypeError, max_tries=5)
 async def test_dashboard(model, log_dir, tools):
     """ Validate that the dashboard is operational """
     unit = model.applications["kubernetes-master"].units[0]
