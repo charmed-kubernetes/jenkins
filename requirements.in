@@ -7,6 +7,7 @@ autopep8
 aiocontextvars
 awscli>=1.18.3
 ansible
+backoff
 black
 boto3
 bs4
