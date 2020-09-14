@@ -20,7 +20,6 @@ invoke
 importlib-metadata
 jenkins-job-builder
 jinja2
-juju-wait
 juju==2.8.2
 jujubundlelib
 kv

@@ -51,7 +51,7 @@ jenkins-job-builder==3.5.0  # via -r requirements.in
 jinja2==2.11.2            # via -r requirements.in, ansible, jenkins-job-builder, mkdocs, ogc
 jmespath==0.10.0          # via boto3, botocore
 joblib==0.16.0            # via nltk
-juju-wait==2.7.0          # via -r requirements.in, ogc-plugins-juju
+juju-wait==2.7.0          # via ogc-plugins-juju
 juju==2.8.2               # via -r requirements.in
 jujubundlelib==0.5.6      # via -r requirements.in, theblues
 keyring==21.4.0           # via launchpadlib
