@@ -103,29 +103,31 @@ class Tools:
         self.connection = f"{self.controller_name}:{self.model_name}"
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
 
-    async def run(self, *cmd):
-        proc = await asyncio.create_subprocess_shell(
-            " ".join(cmd),
+    async def run(self, cmd, *args):
+        proc = await asyncio.create_subprocess_exec(
+            cmd,
+            *args,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=os.environ.copy(),
         )
 
         stdout, stderr = await proc.communicate()
-        if proc.returncode > 0:
+        if proc.returncode != 0:
             raise Exception(
-                f"Problem with run command [{' '.join(cmd)}]: \nstdout: "
-                f"{stdout.decode()}\nstderr: {stderr.decode()}"
+                f"Problem with run command {cmd} (exit {proc.returncode}):\n"
+                f"stdout:\n{stdout.decode()}\n"
+                f"stderr:\n{stderr.decode()}\n"
             )
         return stdout.decode("utf8"), stderr.decode("utf8")
 
     async def juju_wait(self, *args, **kwargs):
-        cmd = f"juju wait -e {self.connection} -w"
+        cmd = ["/snap/bin/juju-wait", "-e", self.connection, "-w"]
         if args:
-            cmd = f"{cmd} {' '.join(args)}"
+            cmd.extend(args)
         if "timeout_secs" in kwargs and kwargs["timeout_secs"]:
-            cmd = f"{cmd} -t {kwargs['timeout_secs']}"
-        return await self.run(cmd)
+            cmd.extend(["-t", kwargs["timeout_secs"]])
+        return await self.run(*cmd)
 
 
 @pytest.fixture(scope="module")
