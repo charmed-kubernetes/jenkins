@@ -1580,7 +1580,7 @@ async def test_encryption_at_rest(model, tools):
     try:
         await asyncio.wait_for(tools.juju_wait(), timeout=30 * 60)
     except asyncio.TimeoutError:
-        stdout, stderr = await tools.run(f"juju status -m {tools.connection}")
+        stdout, stderr = await tools.run("juju", "status", "-m", tools.connection)
         click.echo(f"Timed out waiting for cluster:\n{stderr}\n{stdout}")
         raise
 
