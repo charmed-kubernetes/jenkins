@@ -2,7 +2,6 @@
 # Fixtures and stuff go here.
 
 import os
-import uvloop
 import pytest
 import asyncio
 import uuid
@@ -220,11 +219,8 @@ def log_dir(request):
 
 @pytest.fixture(scope="module")
 def event_loop():
-    uvloop.install()
     loop = asyncio.new_event_loop()
-    assert isinstance(loop, uvloop.Loop)
     yield loop
-    # loop.close()
 
 
 @pytest.fixture
