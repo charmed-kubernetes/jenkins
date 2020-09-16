@@ -126,7 +126,7 @@ class Tools:
         if args:
             cmd.extend(args)
         if "timeout_secs" in kwargs and kwargs["timeout_secs"]:
-            cmd.extend(["-t", kwargs["timeout_secs"]])
+            cmd.extend(["-t", str(kwargs["timeout_secs"])])
         return await self.run(*cmd)
 
 
