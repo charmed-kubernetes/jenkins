@@ -162,23 +162,17 @@ async def is_localhost(controller_name):
 
 
 async def scp_from(unit, remote_path, local_path, controller_name, connection_name):
-    if await is_localhost(controller_name):
-        cmd = "juju scp -m {} {}:{} {}".format(
-            connection_name, unit.name, remote_path, local_path
-        )
-        await asyncify(subprocess.check_call)(cmd.split())
-    else:
-        await unit.scp_from(remote_path, local_path)
+    cmd = "juju scp -m {} {}:{} {}".format(
+        connection_name, unit.name, remote_path, local_path
+    )
+    await asyncify(subprocess.check_call)(cmd.split())
 
 
 async def scp_to(local_path, unit, remote_path, controller_name, connection_name):
-    if await is_localhost(controller_name):
-        cmd = "juju scp -m {} {} {}:{}".format(
-            connection_name, local_path, unit.name, remote_path
-        )
-        await asyncify(subprocess.check_call)(cmd.split())
-    else:
-        await unit.scp_to(local_path, remote_path)
+    cmd = "juju scp -m {} {} {}:{}".format(
+        connection_name, local_path, unit.name, remote_path
+    )
+    await asyncify(subprocess.check_call)(cmd.split())
 
 
 async def retry_async_with_timeout(
