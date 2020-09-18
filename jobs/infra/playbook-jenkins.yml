@@ -61,16 +61,19 @@
         name:
           - build-essential
           - curl
+          - debhelper
           - default-jre
           - docker.io
+          - expect-dev
           - file
           - flake8
-          - tox
           - gcc
-          - zlib1g-dev
+          - jq
+          - language-pack-en-base
           - libffi-dev
           - libffi6
           - libssl-dev
+          - libuv1
           - libxml2-dev
           - make
           - parallel
@@ -85,23 +88,21 @@
           - python3.8
           - python3.8-dev
           - python3.8-venv
+          - redis-server
           - snapd
           - sosreport
           - squashfuse
           - strace
+          - tox
+          - tree
           - ubuntu-dev-tools
           - ubuntu-server
           - ubuntu-standard
           - unzip
           - uuid
-          - wget
-          - tree
           - virtualenv
-          - jq
-          - expect-dev
-          - redis-server
-          - language-pack-en-base
-          - libuv1
+          - wget
+          - zlib1g-dev
       tags:
         - jenkins
     - name: remove unused debs
