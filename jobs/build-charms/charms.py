@@ -337,7 +337,9 @@ class BuildEntity:
         """Perform charm build against charm/bundle"""
         if "override-build" in self.opts:
             click.echo("Override build found, running in place of charm build.")
-            ret = script(self.opts["override-build"])
+            ret = script(
+                self.opts["override-build"], cwd=self.src_path, charm=self.name
+            )
         else:
             ret = cmd_ok(
                 "charm build -r --force -i https://localhost", cwd=self.src_path

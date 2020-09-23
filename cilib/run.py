@@ -22,11 +22,14 @@ def _log_sub_out(pipe):
 def script(script_data, **kwargs):
     is_single_command = len(script_data.splitlines()) == 1
     process = None
+    env = os.environ.copy()
+    if "charm" in kwargs:
+        env["CHARM"] = kwargs.pop("charm")
     if is_single_command:
         process = subprocess.Popen(
             script_data.strip(),
             shell=True,
-            env=os.environ.copy(),
+            env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             **kwargs
@@ -41,7 +44,7 @@ def script(script_data, **kwargs):
     os.close(tmp_script[0])
     process = subprocess.Popen(
         ["bash", str(tmp_script_path)],
-        env=env.copy(),
+        env=os.env.copy(),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         **kwargs
