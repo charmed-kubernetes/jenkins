@@ -44,7 +44,7 @@ def script(script_data, **kwargs):
     os.close(tmp_script[0])
     process = subprocess.Popen(
         ["bash", str(tmp_script_path)],
-        env=os.env.copy(),
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         **kwargs
