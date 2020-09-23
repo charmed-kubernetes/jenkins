@@ -113,13 +113,13 @@
     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
-    tags: ["k8s", "metallb-operator", "metallb-controller"]
+    tags: ["k8s", "metallb", "metallb-controller"]
     override-build: make charm
 - metallb-speaker:
     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
-    tags: ["k8s", "metallb-operator", "metallb-speaker"]
+    tags: ["k8s", "metallb", "metallb-speaker"]
     override-build: make charm
 
 # - multus:
