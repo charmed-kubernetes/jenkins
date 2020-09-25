@@ -236,7 +236,7 @@ class BuildEntity:
         self.name = name
 
         # Alias to name
-        self.src_path = self.name
+        self.src_path = opts.get("src-path", self.name)
 
         self.dst_path = str(self.build.build_dir / self.name)
 
@@ -337,7 +337,9 @@ class BuildEntity:
         """Perform charm build against charm/bundle"""
         if "override-build" in self.opts:
             click.echo("Override build found, running in place of charm build.")
-            ret = script(self.opts["override-build"])
+            ret = script(
+                self.opts["override-build"], cwd=self.src_path, charm=self.name
+            )
         else:
             ret = cmd_ok(
                 "charm build -r --force -i https://localhost", cwd=self.src_path
@@ -496,7 +498,7 @@ class BundleBuildEntity(BuildEntity):
     def push(self):
         """Pushes a built charm to Charmstore"""
 
-        click.echo(f"Pushing built {self.name} to {self.entity}")
+        click.echo(f"Pushing bundle {self.name} from {self.src_path} to {self.entity}")
         out = sh.charm.push(self.name, self.entity)
         click.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
@@ -509,12 +511,16 @@ class BundleBuildEntity(BuildEntity):
     def has_changed(self):
         charmstore_bundle = self.download("bundle.yaml")
         charmstore_bundle = yaml.safe_load(charmstore_bundle.text)
-        charmstore_bundle_services = charmstore_bundle["services"]
+        charmstore_bundle_services = charmstore_bundle.get(
+            "applications", charmstore_bundle.get("services", {})
+        )
 
         local_built_bundle = yaml.safe_load(
             (Path(self.name) / "bundle.yaml").read_text(encoding="utf8")
         )
-        local_built_bundle_services = local_built_bundle["services"]
+        local_built_bundle_services = local_built_bundle.get(
+            "applications", local_built_bundle.get("services", {})
+        )
         the_diff = [
             i["charm"]
             for _, i in charmstore_bundle_services.items()
@@ -652,7 +658,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
         "to_channel": to_channel,
     }
 
-    bundle_repo_dir = build_env.tmp_dir / "bundles-kubernetes"
+    default_repo_dir = build_env.tmp_dir / "bundles-kubernetes"
     # bundle_build_dir = build_env.tmp_dir / "tmp-bundles"
     # sh.rm("-rf", bundle_repo_dir)
     # sh.rm("-rf", bundle_build_dir)
@@ -662,7 +668,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
         "--branch",
         bundle_branch,
         bundle_repo,
-        str(bundle_repo_dir),
+        str(default_repo_dir),
         _iter=True,
         _bg_exc=False,
     ):
@@ -674,18 +680,35 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 click.echo(f"Skipping {bundle_name}")
                 continue
             click.echo(f"Processing {bundle_name}")
-            cmd = [
-                str(bundle_repo_dir / "bundle"),
-                "-o",
-                bundle_name,
-                "-c",
-                to_channel,
-                bundle_opts["fragments"],
-            ]
-            click.echo(f"Running {' '.join(cmd)}")
-            import subprocess
+            if "repo" in bundle_opts:
+                # override the default repo
+                bundle_repo_dir = build_env.tmp_dir / bundle_name
+                for line in git.clone(
+                    "--branch",
+                    bundle_branch,
+                    bundle_opts["bundle_repo"],
+                    str(bundle_repo_dir),
+                    _iter=True,
+                    _bg_exc=False,
+                ):
+                    click.echo(line)
+            else:
+                bundle_repo_dir = default_repo_dir
 
-            subprocess.run(" ".join(cmd), shell=True)
+            if not bundle_opts.get("skip-build", False):
+                cmd = [
+                    str(bundle_repo_dir / "bundle"),
+                    "-o",
+                    bundle_name,
+                    "-c",
+                    to_channel,
+                    bundle_opts["fragments"],
+                ]
+                click.echo(f"Running {' '.join(cmd)}")
+                import subprocess
+
+                subprocess.run(" ".join(cmd), shell=True)
+
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
             build_entity = BundleBuildEntity(
                 build_env, bundle_name, bundle_opts, bundle_entity

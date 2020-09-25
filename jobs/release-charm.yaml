@@ -49,6 +49,8 @@
             - 'kubeflow-charmers/kubeflow-tf-job-operator'
             - 'kubeflow-charmers/kubeflow-tf-serving'
             - 'kubeflow-charmers/redis-k8s'
+            - 'containers/metallb-controller'
+            - 'containers/metallb-speaker'
     properties:
       - build-discarder:
           num-to-keep: 2
