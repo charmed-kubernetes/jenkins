@@ -36,7 +36,6 @@ import yaml
 import json
 import requests
 import re
-import uuid
 
 
 class BuildException(Exception):
@@ -57,7 +56,7 @@ class BuildEnv:
     """Charm or Bundle build data class"""
 
     try:
-        build_dir = Path(os.environ.get("WORKSPACE")) / str(uuid.uuid4())
+        build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
         layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
         interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
         tmp_dir = Path(os.environ.get("WORKSPACE"))
@@ -205,11 +204,11 @@ class BuildEnv:
 
     def pull_layers(self):
         """clone all downstream layers to be processed locally when doing charm builds"""
+        shutil.rmtree(str(self.build_dir))
         shutil.rmtree(str(self.layers_dir))
         shutil.rmtree(str(self.interfaces_dir))
         os.mkdir(str(self.layers_dir))
         os.mkdir(str(self.interfaces_dir))
-        os.mkdir(str(self.build_dir))
 
         layers_to_pull = []
         for layer_map in self.layers:
@@ -392,6 +391,7 @@ class BuildEntity:
         out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
         click.echo(f"Setting {out['url']} metadata: {self.commit}")
         cmd_ok(["charm", "set", out["url"], f"commit={self.commit}"])
+        shutil.rmtree(self.dst_path)
 
     def attach_resource(self, from_channel):
         resource_builder = self.opts.get("resource_build_sh", None)
