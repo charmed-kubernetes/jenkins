@@ -30,5 +30,5 @@
     namespace: containers
     repo: "https://github.com/charmed-kubernetes/metallb-operator"
     skip-build: true
-    src-path: "bundle"
+    subdir: "bundle"
     tags: ['k8s', 'addons', 'metallb']

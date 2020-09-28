@@ -236,7 +236,7 @@ class BuildEntity:
         self.name = name
 
         # Alias to name
-        self.src_path = opts.get("src-path", self.name)
+        self.src_path = self.name
 
         self.dst_path = str(self.build.build_dir / self.name)
 
@@ -495,11 +495,18 @@ class BuildEntity:
 
 
 class BundleBuildEntity(BuildEntity):
+    def __init__(self, build, name, opts, repo_dir, entity):
+        super().__init__(build, name, opts, entity)
+        if "subdir" in opts:
+            self.src_path = str(repo_dir / opts["subdir"])
+        else:
+            self.src_path = str(repo_dir)
+
     def push(self):
         """Pushes a built charm to Charmstore"""
 
         click.echo(f"Pushing bundle {self.name} from {self.src_path} to {self.entity}")
-        out = sh.charm.push(self.name, self.entity)
+        out = sh.charm.push(self.src_path, self.entity)
         click.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
@@ -681,7 +688,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 continue
             click.echo(f"Processing {bundle_name}")
             if "repo" in bundle_opts:
-                # override the default repo
+                # override bundle repo
                 bundle_repo_dir = build_env.tmp_dir / bundle_name
                 for line in git.clone(
                     "--branch",
@@ -711,7 +718,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
 
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
             build_entity = BundleBuildEntity(
-                build_env, bundle_name, bundle_opts, bundle_entity
+                build_env, bundle_name, bundle_opts, bundle_repo_dir, bundle_entity
             )
             build_entity.push()
             build_entity.promote(to_channel=to_channel)
