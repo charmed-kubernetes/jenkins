@@ -209,6 +209,7 @@ class BuildEnv:
         shutil.rmtree(str(self.interfaces_dir))
         os.mkdir(str(self.layers_dir))
         os.mkdir(str(self.interfaces_dir))
+        os.mkdir(str(self.build_dir))
 
         layers_to_pull = []
         for layer_map in self.layers:
