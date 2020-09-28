@@ -496,13 +496,6 @@ class BuildEntity:
 
 
 class BundleBuildEntity(BuildEntity):
-    def __init__(self, build, name, opts, repo_dir, entity):
-        super().__init__(build, name, opts, entity)
-        if "subdir" in opts:
-            self.src_path = str(repo_dir / opts["subdir"])
-        else:
-            self.src_path = str(repo_dir)
-
     def push(self):
         """Pushes a built charm to Charmstore"""
 
@@ -716,10 +709,16 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 import subprocess
 
                 subprocess.run(" ".join(cmd), shell=True)
+            else:
+                # If we're not building the bundle from the repo, we have
+                # to copy it to the expected output location instead.
+                bundle_path = bundle_repo_dir / bundle_opts.get("subdir", "")
+                Path(bundle_name).mkdir()
+                shutil.copytree(bundle_path, bundle_name)
 
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
             build_entity = BundleBuildEntity(
-                build_env, bundle_name, bundle_opts, bundle_repo_dir, bundle_entity
+                build_env, bundle_name, bundle_opts, bundle_entity
             )
             build_entity.push()
             build_entity.promote(to_channel=to_channel)
