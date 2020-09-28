@@ -36,6 +36,7 @@ import yaml
 import json
 import requests
 import re
+import uuid
 
 
 class BuildException(Exception):
@@ -56,7 +57,7 @@ class BuildEnv:
     """Charm or Bundle build data class"""
 
     try:
-        build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
+        build_dir = Path(os.environ.get("WORKSPACE")) / str(uuid.uuid4())
         layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
         interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
         tmp_dir = Path(os.environ.get("WORKSPACE"))
@@ -204,7 +205,6 @@ class BuildEnv:
 
     def pull_layers(self):
         """clone all downstream layers to be processed locally when doing charm builds"""
-        shutil.rmtree(str(self.build_dir))
         shutil.rmtree(str(self.layers_dir))
         shutil.rmtree(str(self.interfaces_dir))
         os.mkdir(str(self.layers_dir))
