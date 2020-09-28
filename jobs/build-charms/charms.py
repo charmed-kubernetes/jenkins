@@ -686,7 +686,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 for line in git.clone(
                     "--branch",
                     bundle_branch,
-                    bundle_opts["bundle_repo"],
+                    bundle_opts["repo"],
                     str(bundle_repo_dir),
                     _iter=True,
                     _bg_exc=False,
