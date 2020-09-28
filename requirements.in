@@ -11,6 +11,7 @@ backoff
 black
 boto3
 bs4
+charmcraft
 contextvars
 configobj
 canonicalwebteam.snapstoreapi
