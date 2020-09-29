@@ -391,7 +391,6 @@ class BuildEntity:
         out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
         click.echo(f"Setting {out['url']} metadata: {self.commit}")
         cmd_ok(["charm", "set", out["url"], f"commit={self.commit}"])
-        shutil.rmtree(self.dst_path)
 
     def attach_resource(self, from_channel):
         resource_builder = self.opts.get("resource_build_sh", None)

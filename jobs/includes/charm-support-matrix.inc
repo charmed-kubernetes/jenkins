@@ -109,18 +109,18 @@
     namespace: 'containers'
     downstream: 'charmed-kubernetes/charm-vsphere-integrator'
     tags: ['k8s', 'charm-vsphere-integrator']
-- metallb-controller:
-    upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
-    namespace: "containers"
-    downstream: "charmed-kubernetes/metallb-operator"
-    tags: ["k8s", "metallb", "metallb-controller"]
-    override-build: make charm
-- metallb-speaker:
-    upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
-    namespace: "containers"
-    downstream: "charmed-kubernetes/metallb-operator"
-    tags: ["k8s", "metallb", "metallb-speaker"]
-    override-build: make charm
+# - metallb-controller:
+#     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
+#     namespace: "containers"
+#     downstream: "charmed-kubernetes/metallb-operator"
+#     tags: ["k8s", "metallb", "metallb-controller"]
+#     override-build: make charm
+# - metallb-speaker:
+#     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
+#     namespace: "containers"
+#     downstream: "charmed-kubernetes/metallb-operator"
+#     tags: ["k8s", "metallb", "metallb-speaker"]
+#     override-build: make charm
 
 # - multus:
 #     upstream: "https://github.com/charmed-kubernetes/charm-multus.git"
