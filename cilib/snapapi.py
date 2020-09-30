@@ -45,12 +45,20 @@ def revisions(snap, version_filter_track, arch="amd64", exclude_pre=False):
     revision_list = sh.snapcraft.revisions(snap, "--arch", arch, _err_to_out=True)
     revision_list = revision_list.stdout.decode().splitlines()[1:]
     revision_parsed = {}
-    revision_list = [
-        re_comp.split(line) for line in revision_list if line[-2] != "null"
-    ]
+
+    revisions_to_process = []
+    for line in revision_list:
+        line = re_comp.split(line)
+        try:
+            semver.parse(line[-2])
+            revisions_to_process.append(line)
+        except ValueError:
+            print(f"Skipping: {line}")
+            continue
+
     revision_list = [
         line
-        for line in revision_list
+        for line in revisions_to_process
         if exclude_pre
         and semver.parse(line[-2])["prerelease"] is None
         and any(version_filter_track in item for item in line)
