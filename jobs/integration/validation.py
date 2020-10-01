@@ -1582,11 +1582,15 @@ data:
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
-    vault = model.applications["vault"].units[0]
+    vault_app = model.applications["vault"]
+    if await vault_app.units[0].is_leader_from_status():
+        vault_leader = vault_app.units[0]
+    else:
+        vault_leader = vault_app.units[1]
 
     click.echo("Unsealing vault")
-    # unseal vault
-    output = await vault.run(
+    # init vault
+    output = await vault_leader.run(
         "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
         "operator init -key-shares=5 -key-threshold=3 "
         "--format=yaml"
@@ -1594,13 +1598,15 @@ async def test_encryption_at_rest(model, tools):
     assert output.status == "completed"
     vault_info = yaml.safe_load(output.results.get("Stdout", ""))
     click.echo(vault_info)
-    for key in vault_info["unseal_keys_hex"][:3]:
-        output = await vault.run(
-            "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
-            "operator unseal {}".format(key)
-        )
-        assert output.status == "completed"
-    output = await vault.run(
+    # unseal vault
+    for vault_unit in vault_app.units:
+        for key in vault_info["unseal_keys_hex"][:3]:
+            output = await vault_unit.run(
+                "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
+                "operator unseal {}".format(key)
+            )
+            assert output.status == "completed"
+    output = await vault_leader.run(
         "VAULT_ADDR=http://localhost:8200 VAULT_TOKEN={} "
         "/snap/bin/vault token create -ttl=10m --format=yaml"
         "".format(vault_info["root_token"])
@@ -1610,7 +1616,7 @@ async def test_encryption_at_rest(model, tools):
     click.echo(vault_token_info)
     charm_token = vault_token_info["auth"]["client_token"]
     click.echo("Authorizing charm")
-    action = await vault.run_action("authorize-charm", token=charm_token)
+    action = await vault_leader.run_action("authorize-charm", token=charm_token)
     await action.wait()
     click.echo("Finalizing vault unseal")
     assert action.status not in ("pending", "running", "failed")
