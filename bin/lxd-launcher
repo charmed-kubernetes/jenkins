@@ -35,10 +35,9 @@ def build(container_name, playbook, ssh_import_id, key_file):
     click.echo(f"Import ssh key for {ssh_import_id}")
     cmd_ok(f"sudo lxc exec deb-build -- ssh-import-id {ssh_import_id}")
 
-    click.echo("Running playbook")
+    click.echo(f"Running playbook: {playbook}")
     cmd_ok(f"ansible-playbook -i {lxc_ip}, --ssh-common-args '-o StrictHostKeyChecking=no' "
-           "--key-file {key_file} -u root "
-           "{playbook}")
+           f"--key-file {key_file} -u root {playbook}")
 
 @cli.command()
 @click.option("--container-name", help="Name of container to destroy", default="deb-build")
