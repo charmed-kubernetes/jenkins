@@ -3,7 +3,7 @@
 import click
 import yaml
 import tempfile
-import sh
+from sh.contrib import git
 from cilib.run import cmd_ok
 from cilib.git import remote_tags
 from pathlib import Path
