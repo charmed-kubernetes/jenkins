@@ -47,7 +47,6 @@ class KubernetesRepo:
 class BuildRepo:
     def make_debs(self):
         """Builds the debian packaging for each component"""
-        cmd_ok("sudo apt-get install -qyf golang-1.15-go golang-1.15 golang", shell=True)
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
             cmd_ok(f"dpkg-buildpackage -us -uc", cwd="k8s-internal-mirror")
@@ -103,6 +102,9 @@ def sync_tags():
 @click.option("--version", help="Kubernetes tag to build", required=True)
 @click.option("--git-user", help="Git repo user", required=True, default="cdkbot")
 def build_debs(version, git_user):
+    cmd_ok("sudo apt-get update")
+    cmd_ok("sudo apt-get install -qyf golang-1.15-go golang-1.15 golang", shell=True)
+
     _fmt_rel = version.lstrip("v")
     parsed_version = version
     try:
