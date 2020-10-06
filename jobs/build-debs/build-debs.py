@@ -66,6 +66,7 @@ def sync_tags():
     click.echo(f"Stored list at {str(deb_list)}")
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        repo = f"https://{env['CDKBOT_GH_USR']}:{env['CDKBOT_GH_PSW']}@github.com/charmed-kubernetes/jenkins"
         git.clone(repo, tmpdir)
         git.config("user.email", "cdkbot@gmail.com", _env=env, _cwd=tmpdir)
         git.config("user.name", "cdkbot", _env=env, _cwd=tmpdir)
