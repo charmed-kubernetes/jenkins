@@ -31,7 +31,7 @@
     - name: copy ssh creds
       copy:
         src: "{{ lookup('env', 'CDKBOTSSHCREDS') }}"
-        dest: /root/.ssh/cdkbot_rsa
+        dest: /root/.ssh/id_rsa
         owner: root
         group: root
         mode: 0600
