@@ -23,7 +23,8 @@
           ubuntu-dev-tools \
           wget \
           python3-dev \
-          python3-pip
+          python3-pip \
+          tox
     - name: copy bashrc
       copy:
         src: "fixtures/bashrc"
@@ -62,12 +63,9 @@
     - name: clone jenkins repo
       shell: |
         git clone https://github.com/charmed-kubernetes/jenkins
-    - name: run build
-      shell: |
-        export CDKBOT_GH_USR="{{ lookup('env', 'CDKBOT_GH_USER') }}"
-        export CDKBOT_GH_PSW="{{ lookup('env', 'CDKBOT_GH_PSW') }}"
-        pip3 install -rrequirements.txt
-        python3 jobs/build-debs/build-debs.py build-debs \
-              --version "{{ lookup('env', 'K8S_VERSION') }}"
-      args:
-        chdir: /root/jenkins
+    - name: copy run script
+      template:
+        src: "run.sh.j2"
+        dest: "/root/jenkins/run.sh"
+        owner: root
+        mode: 775
