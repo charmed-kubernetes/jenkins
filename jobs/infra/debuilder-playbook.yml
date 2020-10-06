@@ -57,8 +57,8 @@
       copy:
         src: "{{ lookup('env', 'K8STEAMCI_GPG_PRIVATE') }}"
         dest: /root/gpg-private.key
-        owner: ubuntu
-        group: ubuntu
+        owner: root
+        group: root
         mode: 0644
     - name: import gpg keys
       ignore_errors: yes
