@@ -8,6 +8,9 @@
     arm64: "{{ lookup('env', 'NEADER') }}"
     columbo_version: 0.0.4
   tasks:
+    - name: add golang ppa
+      apt_repository:
+        repo: "ppa:longsleep/golang-backports"
     - name: make sure permissions are correct
       file:
         path: /var/lib/jenkins/slaves
@@ -62,6 +65,7 @@
           - build-essential
           - fakeroot
           - curl
+          - dh-systemd
           - debhelper
           - default-jre
           - docker.io
