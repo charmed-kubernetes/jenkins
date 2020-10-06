@@ -93,7 +93,7 @@ def sync_tags():
 
 
 @cli.command()
-@click.option("--version", "Kuberenetes major.minor to build", required=False)
+@click.option("--version", help="Kubernetes tag to build", required=True)
 def build_debs(version):
     _fmt_rel = version.lstrip("v")
     parsed_version = version
