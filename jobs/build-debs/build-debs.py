@@ -3,6 +3,7 @@
 import click
 import yaml
 from cilib.run import cmd_ok
+from cilib.git import remote_tags
 from pathlib import Path
 
 
