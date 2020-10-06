@@ -47,8 +47,9 @@ def cli():
 
 @cli.command()
 @click.option("--version", "Kuberenetes major.minor to build", required=False)
-def build_debs(version):
-    PPA = VERSION_PPA[version]
+@click.option("--ppa", "Kuberenetes PPA to upload", required=False)
+def build_debs(version, ppa):
+    PPA = VERSION_PPA[ppa]
     repo = KubernetesRepo(version)
     repo.get_kubernetes_source()
     repo.get_packaging_repos()
