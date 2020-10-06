@@ -33,7 +33,7 @@
           bin/lxd-launcher build \
               --container-name deb-build \
               --playbook jobs/build-debs/debuilder-playbook.yml
-          lxc exec deb-build -- "cd jenkins && bash run.sh"
+          sudo lxc exec deb-build -- "cd jenkins && bash run.sh"
           bin/lxd-launcher teardown --container-name deb-build
 
 - job:

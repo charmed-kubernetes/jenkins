@@ -54,6 +54,7 @@
         gpg --batch --import gpg-private.key
     - name: clone jenkins repo
       shell: |
+        rm -rf jenkins || true
         git clone https://github.com/charmed-kubernetes/jenkins
     - name: copy run script
       template:
