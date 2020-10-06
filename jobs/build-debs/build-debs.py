@@ -2,6 +2,8 @@
 
 import click
 import yaml
+import tempfile
+import sh
 from cilib.run import cmd_ok
 from cilib.git import remote_tags
 from pathlib import Path
@@ -61,7 +63,26 @@ def sync_tags():
     deb_list.write_text(
         yaml.dump(upstream_releases, default_flow_style=False, indent=2)
     )
-    click.echo(f"Stored list at f{str(deb_list)}")
+    click.echo(f"Stored list at {str(deb_list)}")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        git.clone(repo, tmpdir)
+        git.config("user.email", "cdkbot@gmail.com", _env=env, _cwd=tmpdir)
+        git.config("user.name", "cdkbot", _env=env, _cwd=tmpdir)
+        git.config("--global", "push.default", "simple", _cwd=tmpdir)
+
+        output = Path(tmpdir) / str(deb_list)
+        click.echo(f"Saving to {str(output)}")
+        output.write_text(yaml.dump(snap_releases, default_flow_style=False, indent=2))
+        cmd_ok(f"git add {str(output)}", cwd=tmpdir)
+        ret = cmd_ok(["git", "commit", "-m", "Updating k8s deb tags list"], cwd=tmpdir)
+        if not ret.ok:
+            return
+        click.echo(f"Committing to {repo}.")
+        ret = cmd_ok(["git", "push", repo, "master"], cwd=tmpdir)
+        if not ret.ok:
+            raise SystemExit("Failed to commit latest deb tags.")
+
     return
 
 
