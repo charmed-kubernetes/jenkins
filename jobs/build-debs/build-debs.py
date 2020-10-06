@@ -47,6 +47,8 @@ class KubernetesRepo:
 class BuildRepo:
     def make_debs(self):
         """Builds the debian packaging for each component"""
+        cmd_ok("sudo apt-get update")
+        cmd_ok("sudo apt-get -qyf install build-essential fakeroot")
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
             cmd_ok(f"dpkg-buildpackage -us -uc", cwd="k8s-internal-mirror")
