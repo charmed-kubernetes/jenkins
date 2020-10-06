@@ -33,7 +33,7 @@ def build(container_name, playbook, ssh_import_id, key_file):
                     lxc_ip = interface_map[2]
     click.echo(f"Found IP: {lxc_ip}")
     click.echo(f"Import ssh key for {ssh_import_id}")
-    cmd_ok(f"sudo lxc exec deb-build -- ssh-import-id {ssh_import_id}")
+    cmd_ok(f"sudo lxc exec {container_name} -- ssh-import-id {ssh_import_id}")
 
     click.echo(f"Running playbook: {playbook}")
     cmd_ok(f"ansible-playbook -i {lxc_ip}, --ssh-common-args '-o StrictHostKeyChecking=no' "
