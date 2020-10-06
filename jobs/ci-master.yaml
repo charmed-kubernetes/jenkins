@@ -380,3 +380,9 @@
           - file:
               credential-id: openstack-creds
               variable: OPENSTACK_CREDS
+          - file:
+              credential-id: deb-gpg-public
+              variable: K8STEAMCI_GPG_PUB
+          - file:
+              credential-id: deb-gpg-private
+              variable: K8STEAMCI_GPG_PRIVATE
