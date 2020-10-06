@@ -1,0 +1,67 @@
+---
+- hosts: all
+#  connection: local
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: add golang ppa
+      apt_repository:
+        repo: "ppa:longsleep/golang-backports"
+    - name: update /etc/environment
+      copy:
+        src: "fixtures/environment"
+        dest: /etc/environment
+        owner: root
+        group: root
+        mode: 0644
+        force: yes
+    - name: install apt deps
+      shell: |
+        apt-get update
+        apt-get install -qyf \
+          build-essential \
+          fakeroot \
+          curl \
+          dh-systemd \
+          debhelper \
+          gcc \
+          make \
+          golang-1.15 \
+          golang \
+          ubuntu-dev-tools \
+          wget
+    - name: copy bashrc
+      copy:
+        src: "fixtures/bashrc"
+        dest: /root/.bashrc
+        owner: root
+        group: root
+        mode: 0644
+        force: yes
+    - name: copy ssh creds
+      copy:
+        src: "{{ lookup('env', 'CDKBOTSSHCREDS') }}"
+        dest: /root/.ssh/cdkbot_rsa
+        owner: root
+        group: root
+        mode: 0600
+        force: yes
+    - name: copy gpg public key
+      copy:
+        src: "{{ lookup('env', 'K8STEAMCI_GPG_PUB') }}"
+        dest: /root/gpg-pub.key
+        owner: root
+        group: root
+        mode: 0644
+    - name: copy gpg private key
+      copy:
+        src: "{{ lookup('env', 'K8STEAMCI_GPG_PRIVATE') }}"
+        dest: /root/gpg-private.key
+        owner: ubuntu
+        group: ubuntu
+        mode: 0644
+    - name: import gpg keys
+      ignore_errors: yes
+      shell: |
+        gpg --import gpg-pub.key
+        gpg --import gpg-private.key

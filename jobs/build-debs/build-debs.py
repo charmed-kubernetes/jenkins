@@ -103,7 +103,7 @@ def sync_tags():
 @click.option("--git-user", help="Git repo user", required=True, default="cdkbot")
 def build_debs(version, git_user):
     cmd_ok("sudo lxc launch ubuntu:20.04 deb-build")
-    cmd_ok("sudo lxc exec deb-build -- runuser -l ubuntu -c 'ssh-import-id cdkbot'")
+    cmd_ok("sudo lxc exec deb-build -- ssh-import-id cdkbot")
     lxc_info = capture("sudo lxc info deb-build")
     lxc_ip = None
     for interface in lxc_info.stdout.decode().splitlines():
@@ -113,7 +113,7 @@ def build_debs(version, git_user):
                 lxc_ip = interface_map[2]
                 break
     cmd_ok(f"ansible-playbook -i {lxc_ip}, --ssh-common-args '-o StrictHostKeyChecking=no' "
-           "--key-file /var/lib/jenkins/.ssh/cdkbot_rsa -u ubuntu "
+           "--key-file /var/lib/jenkins/.ssh/cdkbot_rsa -u root "
            "jobs/infra/debuilder-playbook.yml")
     cmd_ok("sudo lxc delete --force deb-build")
     # _fmt_rel = version.lstrip("v")
