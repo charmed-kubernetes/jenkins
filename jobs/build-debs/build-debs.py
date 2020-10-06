@@ -103,18 +103,23 @@ def sync_tags():
 @click.option("--git-user", help="Git repo user", required=True, default="cdkbot")
 def build_debs(version, git_user):
     cmd_ok("sudo lxc launch ubuntu:20.04 deb-build")
-    cmd_ok("sudo lxc exec deb-build -- ssh-import-id cdkbot")
-    lxc_info = capture("sudo lxc info deb-build")
     lxc_ip = None
-    for interface in lxc_info.stdout.decode().splitlines():
-        if "eth" in interface:
-            interface_map = interface.lstrip().split("\t")
-            if len(interface_map) >= 2 and interface_map[1] == "inet":
-                lxc_ip = interface_map[2]
-                break
+    while not lxc_ip:
+        lxc_info = capture("sudo lxc info deb-build")
+        for interface in lxc_info.stdout.decode().splitlines():
+            if "eth" in interface:
+                interface_map = interface.lstrip().split("\t")
+                if len(interface_map) >= 2 and interface_map[1] == "inet":
+                    lxc_ip = interface_map[2]
+    click.echo(f"Found IP: {lxc_ip}")
+    click.echo(f"Import ssh key for {git_user}")
+    cmd_ok(f"sudo lxc exec deb-build -- ssh-import-id {git_user}")
+
+    click.echo("Running playbook")
     cmd_ok(f"ansible-playbook -i {lxc_ip}, --ssh-common-args '-o StrictHostKeyChecking=no' "
            "--key-file /var/lib/jenkins/.ssh/cdkbot_rsa -u root "
            "jobs/infra/debuilder-playbook.yml")
+    click.echo("Cleaning up deb-build")
     cmd_ok("sudo lxc delete --force deb-build")
     # _fmt_rel = version.lstrip("v")
     # parsed_version = version
