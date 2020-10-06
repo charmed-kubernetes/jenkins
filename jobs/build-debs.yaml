@@ -30,11 +30,11 @@
           python3.8 -m venv venv
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
-          bin/lxd-launcher teardown --container-name deb-build
+          bin/lxd-launcher teardown --container-name deb-build || true
           bin/lxd-launcher build \
               --container-name deb-build \
               --playbook jobs/build-debs/debuilder-playbook.yml
-          sudo lxc exec deb-build -- base -c "/root/jenkins/run.sh"
+          sudo lxc exec deb-build -- bash -c "/root/jenkins/run.sh"
           bin/lxd-launcher teardown --container-name deb-build
 
 - job:
