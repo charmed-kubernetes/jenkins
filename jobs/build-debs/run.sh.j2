@@ -7,6 +7,6 @@ export CDKBOT_GH_PSW="{{ lookup('env', 'CDKBOT_GH_PSW') }}"
 K8S_VERSION="{{ lookup('env', 'K8S_VERSION') }}"
 
 cd /root/jenkins
-pip3 install -rrequirements.txt
+pip3 install -rjobs/build-debs/requirements.txt
 PYTHONPATH=. python3 jobs/build-debs/build-debs.py build-debs \
        --version "$K8S_VERSION"
