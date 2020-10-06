@@ -49,7 +49,7 @@ class BuildRepo:
         """Builds the debian packaging for each component"""
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
-            cmd_ok(f"debuild -us -uc", cwd="k8s-internal-mirror")
+            cmd_ok(f"dpkg-buildpackage -us -uc", cwd="k8s-internal-mirror")
             cmd_ok(f"rm -rf debian")
 
 
