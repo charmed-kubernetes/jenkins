@@ -3,5 +3,8 @@
 export CDKBOT_GH_USR="{{ lookup('env', 'CDKBOT_GH_USER') }}"
 export CDKBOT_GH_PSW="{{ lookup('env', 'CDKBOT_GH_PSW') }}"
 K8S_VERSION="{{ lookup('env', 'K8S_VERSION') }}"
+
+
+cd /root/jenkins
 TOX_WORK_DIR=.tox tox -e py3 -- python jobs/build-debs/build-debs.py build-debs \
        --version "$K8S_VERSION"
