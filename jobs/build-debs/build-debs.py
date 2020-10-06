@@ -47,7 +47,7 @@ class KubernetesRepo:
 class BuildRepo:
     def make_debs(self):
         """Builds the debian packaging for each component"""
-        cmd_ok("sudo apt-get install -qyf golang-1.15 golang")
+        cmd_ok("sudo apt-get install -qyf golang-1.15-go golang-1.15 golang", shell=True)
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
             cmd_ok(f"dpkg-buildpackage -us -uc", cwd="k8s-internal-mirror")
