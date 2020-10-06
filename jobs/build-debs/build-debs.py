@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import click
+import os
 import yaml
 import tempfile
 from sh.contrib import git
@@ -66,6 +67,7 @@ def sync_tags():
     click.echo(f"Stored list at {str(deb_list)}")
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        env = os.environ.copy()
         repo = f"https://{env['CDKBOT_GH_USR']}:{env['CDKBOT_GH_PSW']}@github.com/charmed-kubernetes/jenkins"
         git.clone(repo, tmpdir)
         git.config("user.email", "cdkbot@gmail.com", _env=env, _cwd=tmpdir)
