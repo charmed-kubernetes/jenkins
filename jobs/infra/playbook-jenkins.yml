@@ -83,8 +83,6 @@
           - libuv1
           - libxml2-dev
           - make
-          - golang
-          - golang-1.15
           - parallel
           - python3-dev
           - python3-pip
