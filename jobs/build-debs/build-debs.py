@@ -76,7 +76,9 @@ def sync_tags():
 
         output = Path(tmpdir) / str(deb_list)
         click.echo(f"Saving to {str(output)}")
-        output.write_text(yaml.dump(upstream_releases, default_flow_style=False, indent=2))
+        output.write_text(
+            yaml.dump(upstream_releases, default_flow_style=False, indent=2)
+        )
         cmd_ok(f"git add {str(output)}", cwd=tmpdir)
         ret = cmd_ok(["git", "commit", "-m", "Updating k8s deb tags list"], cwd=tmpdir)
         if not ret.ok:

@@ -15,11 +15,6 @@
           name: K8S_VERSION
           description: |
             Select the K8S_VERSION which is reflective of the tags stored in our internal git repo.
-          choices: !include: jobs/includes/k8s-snap-branches-list.inc
-      - choice:
-          name: K8S_PPA
-          description: |
-            Select which PPA to place the built debs in
           choices: !include: jobs/includes/k8s-deb-ppa-list.inc
 
     builders:
@@ -36,8 +31,7 @@
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
           venv/bin/python jobs/build-debs/build-debs.py build-debs \
-              --version "$K8S_VERSION" \
-              --ppa "$K8S_PPA"
+              --version "$K8S_VERSION"
 
 
 - job:
@@ -51,6 +45,9 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 1
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-debs"
