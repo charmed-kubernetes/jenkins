@@ -3,6 +3,7 @@
 import click
 import yaml
 from cilib.run import cmd_ok
+from pathlib import Path
 
 
 DEB_REPOS = ["kubectl", "kubeadm", "kubelet", "kubernetes-cni"]
