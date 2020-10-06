@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+import click
+import os
+import yaml
+import tempfile
+import semver
+from sh.contrib import git
+from cilib.run import cmd_ok, capture
+from cilib.git import remote_tags
+from pathlib import Path
+
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.option("--container-name", help="Name of container to create", default="deb-build")
+@click.option("--playbook", help="Playbook to run once lxd container is running", default="jobs/infra/debuilder-playbook.yml")
+@click.option("--ssh-import-id", help="SSH public key to import", default="cdkbot")
+@click.option("--key-file", help="SSH Key to connect to container with", default="/var/lib/jenkins/.ssh/cdkbot_rsa")
+def build(container_name, playbook, ssh_import_id, key_file):
+    cmd_ok(f"sudo lxc launch ubuntu:20.04 {container_name}")
+    lxc_ip = None
+    while not lxc_ip:
+        lxc_info = capture(f"sudo lxc info {container_name}")
+        for interface in lxc_info.stdout.decode().splitlines():
+            if "eth" in interface:
+                interface_map = interface.lstrip().split("\t")
+                if len(interface_map) >= 2 and interface_map[1] == "inet":
+                    lxc_ip = interface_map[2]
+    click.echo(f"Found IP: {lxc_ip}")
+    click.echo(f"Import ssh key for {ssh_import_id}")
+    cmd_ok(f"sudo lxc exec deb-build -- ssh-import-id {ssh_import_id}")
+
+    click.echo("Running playbook")
+    cmd_ok(f"ansible-playbook -i {lxc_ip}, --ssh-common-args '-o StrictHostKeyChecking=no' "
+           "--key-file {key_file} -u root "
+           "{playbook}")
+
+@cli.command()
+@click.option("--container-name", help="Name of container to destroy", default="deb-build")
+def teardown(container_name):
+    click.echo("Cleaning up deb-build")
+    cmd_ok(f"sudo lxc delete --force {container_name}")
+
+
+if __name__ == "__main__":
+    cli()

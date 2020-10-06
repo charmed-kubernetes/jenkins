@@ -30,9 +30,10 @@
           python3.8 -m venv venv
           venv/bin/python -m pip install pip-tools
           venv/bin/pip-sync requirements.txt
-          venv/bin/python jobs/build-debs/build-debs.py build-debs \
-              --version "$K8S_VERSION"
-
+          bin/lxd-launcher build \
+              --container-name deb-build \
+              --playbook jobs/infra/debuilder-playbook.yml
+          bin/lxd-launcher teardown --container-name deb-build
 
 - job:
     name: 'sync-deb-tags'
