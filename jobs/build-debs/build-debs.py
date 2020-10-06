@@ -4,6 +4,7 @@ import click
 import os
 import yaml
 import tempfile
+import semver
 from sh.contrib import git
 from cilib.run import cmd_ok
 from cilib.git import remote_tags
@@ -93,9 +94,17 @@ def sync_tags():
 
 @cli.command()
 @click.option("--version", "Kuberenetes major.minor to build", required=False)
-@click.option("--ppa", "Kuberenetes PPA to upload", required=False)
-def build_debs(version, ppa):
-    PPA = VERSION_PPA[ppa]
+def build_debs(version):
+    _fmt_rel = version.lstrip("v")
+    parsed_version = version
+    try:
+        parsed_version = semver.parse(_fmt_rel)
+        parsed_version = f"{parsed_version['major']}.{parsed_version['minor']}"
+    except ValueError as error:
+        click.echo(f"Skipping invalid {_fmt_rel}: {error}")
+
+    PPA = VERSION_PPA[parsed_version]
+    click.echo(f"Selecting PPA: {PPA}")
     repo = KubernetesRepo(version)
     repo.get_kubernetes_source()
     repo.get_packaging_repos()
