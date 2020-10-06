@@ -6,7 +6,7 @@ import yaml
 import tempfile
 import semver
 from sh.contrib import git
-from cilib.run import cmd_ok
+from cilib.run import cmd_ok, capture
 from cilib.git import remote_tags
 from pathlib import Path
 
@@ -102,22 +102,36 @@ def sync_tags():
 @click.option("--version", help="Kubernetes tag to build", required=True)
 @click.option("--git-user", help="Git repo user", required=True, default="cdkbot")
 def build_debs(version, git_user):
-    _fmt_rel = version.lstrip("v")
-    parsed_version = version
-    try:
-        parsed_version = semver.parse(_fmt_rel)
-        parsed_version = f"{parsed_version['major']}.{parsed_version['minor']}"
-    except ValueError as error:
-        click.echo(f"Skipping invalid {_fmt_rel}: {error}")
+    cmd_ok("sudo lxc launch ubuntu:20.04 deb-build")
+    cmd_ok("sudo lxc exec deb-build -- runuser -l ubuntu -c 'ssh-import-id cdkbot'")
+    lxc_info = capture("sudo lxc info deb-build")
+    lxc_ip = None
+    for interface in lxc_info.stdout.decode().splitlines():
+        if "eth" in interface:
+            interface_map = interface.lstrip().split("\t")
+            if len(interface_map) >= 2 and interface_map[1] == "inet":
+                lxc_ip = interface_map[2]
+                break
+    cmd_ok(f"ansible-playbook -i {lxc_ip}, --ssh-common-args '-o StrictHostKeyChecking=no' "
+           "--key-file /var/lib/jenkins/.ssh/cdkbot_rsa -u ubuntu "
+           "jobs/infra/debuilder-playbook.yml")
+    cmd_ok("sudo lxc delete --force deb-build")
+    # _fmt_rel = version.lstrip("v")
+    # parsed_version = version
+    # try:
+    #     parsed_version = semver.parse(_fmt_rel)
+    #     parsed_version = f"{parsed_version['major']}.{parsed_version['minor']}"
+    # except ValueError as error:
+    #     click.echo(f"Skipping invalid {_fmt_rel}: {error}")
 
-    PPA = VERSION_PPA[parsed_version]
-    click.echo(f"Selecting PPA: {PPA}")
-    repo = KubernetesRepo(version, git_user)
-    repo.get_kubernetes_source()
-    repo.get_packaging_repos()
+    # PPA = VERSION_PPA[parsed_version]
+    # click.echo(f"Selecting PPA: {PPA}")
+    # repo = KubernetesRepo(version, git_user)
+    # repo.get_kubernetes_source()
+    # repo.get_packaging_repos()
 
-    build = BuildRepo()
-    build.make_debs()
+    # build = BuildRepo()
+    # build.make_debs()
 
 
 if __name__ == "__main__":
