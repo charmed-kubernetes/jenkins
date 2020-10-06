@@ -25,14 +25,6 @@
           python3-dev \
           python3-pip \
           tox
-    - name: copy bashrc
-      copy:
-        src: "fixtures/bashrc"
-        dest: /root/.bashrc
-        owner: root
-        group: root
-        mode: 0644
-        force: yes
     - name: copy ssh creds
       copy:
         src: "{{ lookup('env', 'CDKBOTSSHCREDS') }}"
