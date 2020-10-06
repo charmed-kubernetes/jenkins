@@ -15,7 +15,7 @@
           name: K8S_VERSION
           description: |
             Select the K8S_VERSION which is reflective of the tags stored in our internal git repo.
-          choices: !include: jobs/includes/k8s-snap-support-versions.inc
+          choices: !include: jobs/includes/k8s-snap-branches-list.inc
       - choice:
           name: K8S_PPA
           description: |
@@ -38,3 +38,30 @@
           venv/bin/python jobs/build-debs/build-debs.py build-debs \
               --version "$K8S_VERSION" \
               --ppa "$K8S_PPA"
+
+
+- job:
+    name: 'sync-deb-tags'
+    node: runner-cloud
+    description: |
+      Syncs all internal k8s tags for use with building debian packages
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-debs"
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          python3.8 -m venv venv
+          venv/bin/python -m pip install pip-tools
+          venv/bin/pip-sync requirements.txt
+          venv/bin/python jobs/build-debs/build-debs.py sync-tags

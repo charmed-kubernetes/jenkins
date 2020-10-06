@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import click
+import yaml
 from cilib.run import cmd_ok
 
 
@@ -43,6 +44,23 @@ class BuildRepo:
 @click.group()
 def cli():
     pass
+
+
+@cli.command()
+def sync_tags():
+    deb_list = Path("jobs/includes/k8s-deb-ppa-list.inc")
+    supported_releases = []
+    upstream_releases = remote_tags(
+        "git+ssh://cdkbot@git.launchpad.net/internal-k8s-mirror"
+    )
+
+    click.echo(f"Writing deb version tags:")
+    click.echo(upstream_releases)
+    deb_list.write_text(
+        yaml.dump(upstream_releases, default_flow_style=False, indent=2)
+    )
+    click.echo(f"Stored list at f{str(deb_list)}")
+    return
 
 
 @cli.command()
