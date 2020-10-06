@@ -63,6 +63,5 @@
     - name: import gpg keys
       ignore_errors: yes
       shell: |
-        export GPG_TTY=`tty`
-        gpg --import gpg-pub.key
-        gpg --import gpg-private.key
+        gpg --batch --import gpg-pub.key
+        gpg --batch --import gpg-private.key
