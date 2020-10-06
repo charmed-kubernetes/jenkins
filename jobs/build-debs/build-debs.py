@@ -53,7 +53,7 @@ def sync_tags():
     deb_list = Path("jobs/includes/k8s-deb-ppa-list.inc")
     supported_releases = []
     upstream_releases = remote_tags(
-        "git+ssh://cdkbot@git.launchpad.net/internal-k8s-mirror"
+        "git+ssh://cdkbot@git.launchpad.net/k8s-internal-mirror"
     )
 
     click.echo(f"Writing deb version tags:")
