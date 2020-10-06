@@ -11,6 +11,8 @@
     - name: add golang ppa
       apt_repository:
         repo: "ppa:longsleep/golang-backports"
+      tags:
+        - jenkins
     - name: make sure permissions are correct
       file:
         path: /var/lib/jenkins/slaves
