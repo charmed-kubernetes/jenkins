@@ -60,6 +60,7 @@
       apt:
         name:
           - build-essential
+          - fakeroot
           - curl
           - debhelper
           - default-jre
