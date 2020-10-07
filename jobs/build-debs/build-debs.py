@@ -47,9 +47,10 @@ class KubernetesRepo:
 class BuildRepo:
     def make_debs(self, sign_key):
         """Builds the debian packaging for each component"""
+        cmd_ok(f"script /dev/null")
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
-            cmd_ok(f"dpkg-buildpackage -S -k {sign_key}", cwd="k8s-internal-mirror")
+            cmd_ok(f"dpkg-buildpackage -S --sign-key={sign_key}", cwd="k8s-internal-mirror")
             cmd_ok(f"rm -rf debian")
 
 
