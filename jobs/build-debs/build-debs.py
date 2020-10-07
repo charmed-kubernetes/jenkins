@@ -45,11 +45,11 @@ class KubernetesRepo:
 
 
 class BuildRepo:
-    def make_debs(self):
+    def make_debs(self, sign_key):
         """Builds the debian packaging for each component"""
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
-            cmd_ok(f"dpkg-buildpackage -us", cwd="k8s-internal-mirror")
+            cmd_ok(f"dpkg-buildpackage -S -k {sign_key}", cwd="k8s-internal-mirror")
             cmd_ok(f"rm -rf debian")
 
 
@@ -100,8 +100,9 @@ def sync_tags():
 
 @cli.command()
 @click.option("--version", help="Kubernetes tag to build", required=True)
-@click.option("--git-user", help="Git repo user", required=True, default="cdkbot")
-def build_debs(version, git_user):
+@click.option("--git-user", help="Git repo user", default="k8s-team-ci")
+@click.option("--sign-key", help="GPG Sign key ID", required=True)
+def build_debs(version, git_user, sign_key):
     _fmt_rel = version.lstrip("v")
     parsed_version = version
     try:
@@ -117,7 +118,7 @@ def build_debs(version, git_user):
     repo.get_packaging_repos()
 
     build = BuildRepo()
-    build.make_debs()
+    build.make_debs(sign_key)
 
 
 if __name__ == "__main__":

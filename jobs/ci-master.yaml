@@ -386,3 +386,6 @@
           - file:
               credential-id: deb-gpg-private
               variable: K8STEAMCI_GPG_PRIVATE
+          - text:
+              credential-id: deb-gpg-key
+              variable: K8STEAMCI_GPG_KEY

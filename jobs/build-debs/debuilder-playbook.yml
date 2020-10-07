@@ -58,7 +58,7 @@
     - name: copy devscripts
       copy:
         src: "devscripts"
-        dest: "/root/jenkins/.devscripts"
+        dest: "/root/.devscripts"
         owner: root
     - name: clone jenkins repo
       shell: |
