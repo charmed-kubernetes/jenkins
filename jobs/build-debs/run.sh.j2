@@ -2,6 +2,7 @@
 
 set -x
 
+export GIT_SSH_COMMAND='"ssh -i /root/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"'
 export CDKBOT_GH_USR="{{ lookup('env', 'CDKBOT_GH_USER') }}"
 export CDKBOT_GH_PSW="{{ lookup('env', 'CDKBOT_GH_PSW') }}"
 K8S_VERSION="{{ lookup('env', 'K8S_VERSION') }}"
