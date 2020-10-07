@@ -10,13 +10,13 @@ K8S_VERSION="{{ lookup('env', 'K8S_VERSION') }}"
 INCLUDE_SOURCE="{{ lookup('env', 'K8S_INCLUDE_SOURCE') }}"
 K8STEAMCI_GPG_KEY="{{ lookup('env', 'K8STEAMCI_GPG_KEY') }}"
 
+OPTS="--version $K8S_VERSION --sign-key $K8STEAMCI_GPG_KEY"
+
 INCLUDE_SOURCE_FLAG=""
 if [ "$INCLUDE_SOURCE" = "true" ]; then
-    INCLUDE_SOURCE_FLAG="--include-source"
+    OPTS="$OPTS --include-source"
 fi
 
 cd /root/jenkins
 pip3 install -rjobs/build-debs/requirements.txt
-PYTHONPATH=. python3 jobs/build-debs/build-debs.py build-debs \
-          --version "$K8S_VERSION" \
-          --sign-key "$K8STEAMCI_GPG_KEY" "$INCLUDE_SOURCE_FLAG"
+PYTHONPATH=. python3 jobs/build-debs/build-debs.py build-debs "$OPTS"
