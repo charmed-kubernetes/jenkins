@@ -54,7 +54,7 @@ class BuildRepo:
         """Uploads source changes to LP"""
         for changes in list(Path(".").glob("*changes")):
             cmd = f"dput {ppa} {str(changes)}"
-            click.echo(cmd)
+            cmd_ok(cmd)
 
 
 @click.group()
