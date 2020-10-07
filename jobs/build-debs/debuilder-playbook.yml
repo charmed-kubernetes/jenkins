@@ -55,6 +55,11 @@
       shell: |
         gpg --batch --import gpg-pub.key
         gpg --batch --import gpg-private.key
+    - name: copy devscripts
+      copy:
+        src: "devscripts"
+        dest: "/root/jenkins/.devscripts"
+        owner: root
     - name: clone jenkins repo
       shell: |
         git clone https://github.com/charmed-kubernetes/jenkins
