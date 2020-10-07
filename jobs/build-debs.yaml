@@ -28,8 +28,7 @@
           set +o allexport
 
           python3.8 -m venv venv
-          venv/bin/python -m pip install pip-tools
-          venv/bin/pip-sync requirements.txt
+          venv/bin/python -m pip install ansible wheel sh semver click
           bin/lxd-launcher teardown --container-name deb-build || true
           bin/lxd-launcher build \
               --container-name deb-build \
