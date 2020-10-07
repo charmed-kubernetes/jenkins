@@ -7,9 +7,16 @@ export CDKBOT_GH_USR="{{ lookup('env', 'CDKBOT_GH_USER') }}"
 export CDKBOT_GH_PSW="{{ lookup('env', 'CDKBOT_GH_PSW') }}"
 export DEBEMAIL="Kubernetes Engineering <k8s-team-ci@canonical.com>"
 K8S_VERSION="{{ lookup('env', 'K8S_VERSION') }}"
+INCLUDE_SOURCE="{{ lookup('env', 'K8S_INCLUDE_SOURCE') }}"
 K8STEAMCI_GPG_KEY="{{ lookup('env', 'K8STEAMCI_GPG_KEY') }}"
+
+INCLUDE_SOURCE_FLAG=""
+if [ "$INCLUDE_SOURCE" = "true" ]; then
+    INCLUDE_SOURCE_FLAG="--include-source"
+fi
 
 cd /root/jenkins
 pip3 install -rjobs/build-debs/requirements.txt
 PYTHONPATH=. python3 jobs/build-debs/build-debs.py build-debs \
-       --version "$K8S_VERSION" --sign-key "$K8STEAMCI_GPG_KEY"
+          --version "$K8S_VERSION" \
+          --sign-key "$K8STEAMCI_GPG_KEY" "$INCLUDE_SOURCE_FLAG"

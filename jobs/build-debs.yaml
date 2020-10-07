@@ -16,6 +16,10 @@
           description: |
             Select the K8S_VERSION which is reflective of the tags stored in our internal git repo.
           choices: !include: jobs/includes/k8s-deb-ppa-list.inc
+      - bool:
+          name: K8S_INCLUDE_SOURCE
+          description: |
+            Include the orig.tar.gz in the built debian packge. Should only be required when this is a new minor.major upload.
 
     builders:
       - set-env:

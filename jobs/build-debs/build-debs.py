@@ -43,13 +43,19 @@ class KubernetesRepo:
 
 
 class BuildRepo:
-    def make_debs(self, sign_key):
+    def make_debs(self, sign_key, include_source):
         """Builds the debian packaging for each component"""
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
-            cmd_ok(
-                f"dpkg-buildpackage -S --sign-key={sign_key}", cwd="k8s-internal-mirror"
-            )
+
+            if include_source:
+                cmd_ok(
+                    f"dpkg-buildpackage -S --sign-key={sign_key}", cwd="k8s-internal-mirror"
+                )
+            else:
+                cmd_ok(
+                    f"dpkg-buildpackage -S --sign-key={sign_key} -sd", cwd="k8s-internal-mirror"
+                )
             cmd_ok(f"rm -rf debian", cwd="k8s-internal-mirror")
 
     def upload_debs(self, ppa):
@@ -108,7 +114,8 @@ def sync_tags():
 @click.option("--version", help="Kubernetes tag to build", required=True)
 @click.option("--git-user", help="Git repo user", default="k8s-team-ci")
 @click.option("--sign-key", help="GPG Sign key ID", required=True)
-def build_debs(version, git_user, sign_key):
+@click.option("--include-source", help="Include orig.tar.gz source in builds", is_flag=True)
+def build_debs(version, git_user, sign_key, include_source):
     _fmt_rel = version.lstrip("v")
     parsed_version = version
     try:
@@ -124,7 +131,7 @@ def build_debs(version, git_user, sign_key):
     repo.get_packaging_repos()
 
     build = BuildRepo()
-    build.make_debs(sign_key)
+    build.make_debs(sign_key, include_source)
     build.upload_debs(PPA)
 
 
