@@ -31,8 +31,6 @@ class KubernetesRepo:
         if not Path("k8s-internal-mirror").exists():
             cmd_ok(f"git clone {self.base_url}/k8s-internal-mirror")
             cmd_ok(f"git checkout {self.k8s_version}", cwd="k8s-internal-mirror")
-        else:
-            cmd_ok(f"git pull --ff-only", cwd="k8s-internal-mirror")
 
     def get_packaging_repos(self):
         """Downloads the required packaging repos"""
@@ -47,7 +45,6 @@ class KubernetesRepo:
 class BuildRepo:
     def make_debs(self, sign_key):
         """Builds the debian packaging for each component"""
-        cmd_ok(f"script /dev/null")
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
             cmd_ok(f"dpkg-buildpackage -S --sign-key={sign_key}", cwd="k8s-internal-mirror")
