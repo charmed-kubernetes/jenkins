@@ -47,7 +47,9 @@ class BuildRepo:
         """Builds the debian packaging for each component"""
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
-            cmd_ok(f"dpkg-buildpackage -S --sign-key={sign_key}", cwd="k8s-internal-mirror")
+            cmd_ok(
+                f"dpkg-buildpackage -S --sign-key={sign_key}", cwd="k8s-internal-mirror"
+            )
             cmd_ok(f"rm -rf debian", cwd="k8s-internal-mirror")
 
     def upload_debs(self, ppa):
@@ -113,7 +115,7 @@ def build_debs(version, git_user, sign_key):
         parsed_version = semver.parse(_fmt_rel)
         parsed_version = f"{parsed_version['major']}.{parsed_version['minor']}"
     except ValueError as error:
-        click.echo(f"Skipping invalid {_fmt_rel}: {error}")
+        raise Exception(f"Skipping invalid {_fmt_rel}: {error}")
 
     PPA = VERSION_PPA[parsed_version]
     click.echo(f"Selecting PPA: {PPA}")
