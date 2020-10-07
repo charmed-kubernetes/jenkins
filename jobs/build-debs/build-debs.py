@@ -48,7 +48,13 @@ class BuildRepo:
         for repo in DEB_REPOS:
             cmd_ok(f"cp -a {repo}/* k8s-internal-mirror/.", shell=True)
             cmd_ok(f"dpkg-buildpackage -S --sign-key={sign_key}", cwd="k8s-internal-mirror")
-            cmd_ok(f"rm -rf debian")
+            cmd_ok(f"rm -rf debian", cwd="k8s-internal-mirror")
+
+    def upload_debs(self, ppa):
+        """Uploads source changes to LP"""
+        for changes in list(Path(".").glob("*changes")):
+            cmd = f"dput {ppa} {str(changes)}"
+            click.echo(cmd)
 
 
 @click.group()
@@ -117,6 +123,7 @@ def build_debs(version, git_user, sign_key):
 
     build = BuildRepo()
     build.make_debs(sign_key)
+    build.upload_debs(PPA)
 
 
 if __name__ == "__main__":
