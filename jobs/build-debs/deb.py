@@ -13,7 +13,6 @@ from cilib.git import remote_tags
 from pathlib import Path
 
 
-CORE_COMPONENTS = ["kubectl", "kubeadm", "kubelet", "cri-tools"]
 VERSION_PPA = {
     "1.18": "ppa:k8s-maintainers/1.18",
     "1.19": "ppa:k8s-maintainers/1.19",
