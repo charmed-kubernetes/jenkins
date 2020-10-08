@@ -120,11 +120,18 @@ class KubernetesUpstreamComponentRepo(UpstreamComponentRepo):
 
 
 class CriToolsUpstreamComponentRepo(UpstreamComponentRepo):
-    def __init__(self, ref="master"):
+    def __init__(self, ref="v1.19.0"):
         super().__init__()
         self.name = "cri-tools"
         self.ref = ref
         self.repo = f"https://github.com/kubernetes-sigs/{self.name}.git"
+
+class CNIPluginsUpstreamComponentRepo(UpstreamComponentRepo):
+    def __init__(self, ref="v0.8.7"):
+        super().__init__()
+        self.name = "plugins"
+        self.ref = ref
+        self.repo = f"https://github.com/containernetworking/{self.name}.git"
 
 
 @cli.command()
@@ -158,6 +165,7 @@ def build_debs(ref, git_user, sign_key, include_source, package):
             "kubeadm",
         ],
         CriToolsUpstreamComponentRepo(): ["cri-tools"],
+        CNIPluginsUpstreamComponentRepo(): ["kubernetes-cni"],
     }
     for upstream, components in upstreams.items():
         click.echo(f"Grabbing upstream: {upstream.name}: {components}")
