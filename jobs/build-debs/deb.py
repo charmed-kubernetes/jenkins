@@ -170,6 +170,7 @@ def build_debs(ref, git_user, sign_key, include_source, package):
     for upstream, components in upstreams.items():
         click.echo(f"Grabbing upstream: {upstream.name}: {components}")
         upstream.clone()
+        upstream.checkout(cwd=upstream.name)
         for component in components:
             if package and component not in package:
                 click.echo(
