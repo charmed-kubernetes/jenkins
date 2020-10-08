@@ -125,6 +125,7 @@ class CriToolsUpstreamComponentRepo(UpstreamComponentRepo):
         self.ref = ref
         self.repo = f"https://github.com/kubernetes-sigs/{self.name}.git"
 
+
 class CNIPluginsUpstreamComponentRepo(UpstreamComponentRepo):
     def __init__(self, ref="v0.8.7"):
         super().__init__()
