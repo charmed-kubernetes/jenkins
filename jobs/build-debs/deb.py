@@ -5,6 +5,8 @@ import os
 import yaml
 import tempfile
 import semver
+import uuid
+from subprocess import run
 from sh.contrib import git
 from cilib.run import cmd_ok, capture
 from cilib.git import remote_tags
@@ -12,8 +14,6 @@ from pathlib import Path
 
 
 CORE_COMPONENTS = ["kubectl", "kubeadm", "kubelet", "cri-tools"]
-EXT_COMPONENTS = ["kubernetes-cni", "cri-tools"]
-DEB_REPOS = ["kubectl", "kubeadm", "kubelet", "kubernetes-cni"]
 VERSION_PPA = {
     "1.18": "ppa:k8s-maintainers/1.18",
     "1.19": "ppa:k8s-maintainers/1.19",
@@ -44,30 +44,39 @@ class Git:
 
     def commit(self, message, **subprocess_kwargs):
         """Add commit to repo"""
-        cmd_ok(f"git commit -i {message}")
+        run(["git", "config", "user.email", "cdkbot@gmail.com"], **subprocess_kwargs)
+        run(["git", "config", "user.name", "cdkbot"], **subprocess_kwargs)
+        run(
+            ["git", "config", "--global", "push.default", "simple"], **subprocess_kwargs
+        )
+        run(["git", "add", "debian/changelog"], **subprocess_kwargs)
+        run(["git", "commit", "-m", message], **subprocess_kwargs)
 
-    def push(self, origin="origin"):
+    def push(self, origin="origin", **subprocess_kwargs):
         """Pushes commit to repo"""
-        cmd_ok(f"git push {origin} {self.ref}")
+        run(["git", "push", "origin", self.ref], **subprocess_kwargs)
 
 
 class DebBuilder:
-    def bump_revision(self):
+    def bump_revision(self, **subprocess_kwargs):
         """Bumps upstream revision for builds"""
-        cmd_ok("dch -U 'Automated Build'")
+        cmd_ok("dch -U 'Automated Build' -D focal", **subprocess_kwargs)
 
     def source(self, sign_key, include_source=False, **subprocess_kwargs):
         """Builds the source deb package"""
-        cmd = ["dpkg-buildpackage", "-S", "--sign-key={sign_key}"]
-        if include_source:
+        cmd = ["dpkg-buildpackage", "-S", f"--sign-key={sign_key}"]
+        if not include_source:
             cmd.append("-sd")
-        cmd_ok(cmd, **subprocess_kwargs)
+        click.echo(f"Building package: {cmd}")
+        run(cmd, **subprocess_kwargs)
 
-    def cleanup(self, **subprocess_kwargs):
-        cmd_ok("rm -rf *changes")
-        cmd_ok(f"rm -rf debian", **subprocess_kwargs)
+    def cleanup_source(self, **subprocess_kwargs):
+        run("rm -rf *.changes", shell=True, **subprocess_kwargs)
 
-    def upload(self, **subprocess_kwargs):
+    def cleanup_debian(self, **subprocess_kwargs):
+        run(["rm", "-rf", "debian"], **subprocess_kwargs)
+
+    def upload(self, ppa, **subprocess_kwargs):
         """Uploads source packages via dput"""
         for changes in list(Path(".").glob("*changes")):
             cmd_ok(f"dput {ppa} {str(changes)}", **subprocess_kwargs)
@@ -76,19 +85,18 @@ class DebBuilder:
 class PackageComponentRepo(Git, DebBuilder):
     """Represents the debian packaging repos"""
 
-    def __init__(self, component_name, git_user, ref="master"):
+    def __init__(self, name, git_user, ref="master"):
         """
         ref: git tag or branch to checkout
         """
-        self.component_name = component_name
+        self.name = name
         self.git_user = git_user
-        self.repo = f"git+ssh://{git_user}@git.launchpad.net/{self.component_name}"
+        self.repo = f"git+ssh://{git_user}@git.launchpad.net/{self.name}"
         self.ref = ref
 
     def __str__(self):
         return (
-            f"<PackageComponentRepo: {self.component_name} "
-            f"Repo: {self.repo} Ref: {self.ref}>"
+            f"<PackageComponentRepo: {self.name} " f"Repo: {self.repo} Ref: {self.ref}>"
         )
 
 
@@ -152,23 +160,27 @@ def build_debs(ref, git_user, sign_key, include_source, package):
         CriToolsUpstreamComponentRepo(): ["cri-tools"],
     }
     for upstream, components in upstreams.items():
-        click.echo(f"Grabbing upstream: {upstream.name}")
+        click.echo(f"Grabbing upstream: {upstream.name}: {components}")
         upstream.clone()
-        for component in CORE_COMPONENTS:
+        for component in components:
             if package and component not in package:
-                click.echo(f"Skipping {component} as it was not listed in --package")
+                click.echo(
+                    f"Skipping {component} as it was not specified with --package"
+                )
                 continue
-            build = PackageComponentRepo(component, git_user, parsed_version)
-            click.echo(f"Building component {build.component_name}")
-            build.clone()
-            build.checkout(cwd=build.component_name)
-            cmd_ok(f"cp -a {build.component_name}/* {upstream.name}/.")
-            build.bump_revision(cwd=build.component_name)
-            build.source(sign_key, include_source, cwd=upstream.name)
-            build.upload()
-            build.commit("Automated Build", cwd=build.component_name)
-            build.push(cwd=build.component_name)
-            build.cleanup(cwd=upstream.name)
+            with tempfile.TemporaryDirectory() as tmpdir:
+                build = PackageComponentRepo(component, git_user, parsed_version)
+                click.echo(f"Building component {build.name}")
+                build.clone(cwd=tmpdir)
+                build.checkout(cwd=f"{tmpdir}/{build.name}")
+                build.bump_revision(cwd=f"{tmpdir}/{build.name}")
+                run(f"cp -a {tmpdir}/{build.name}/* {upstream.name}/.", shell=True)
+                build.source(sign_key, include_source, cwd=upstream.name)
+                build.commit("Automated Build", cwd=f"{tmpdir}/{build.name}")
+                build.push(cwd=f"{tmpdir}/{build.name}")
+                build.upload(PPA)
+                build.cleanup_source()
+                build.cleanup_debian(cwd=upstream.name)
 
 
 @cli.command()

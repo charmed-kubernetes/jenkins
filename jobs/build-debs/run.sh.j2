@@ -10,7 +10,7 @@ K8S_VERSION="{{ lookup('env', 'K8S_VERSION') }}"
 INCLUDE_SOURCE="{{ lookup('env', 'K8S_INCLUDE_SOURCE') }}"
 K8STEAMCI_GPG_KEY="{{ lookup('env', 'K8STEAMCI_GPG_KEY') }}"
 
-OPTS="--version $K8S_VERSION --sign-key $K8STEAMCI_GPG_KEY"
+OPTS="--ref $K8S_VERSION --sign-key $K8STEAMCI_GPG_KEY"
 
 INCLUDE_SOURCE_FLAG=""
 if [ "$INCLUDE_SOURCE" = "true" ]; then
