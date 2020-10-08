@@ -128,8 +128,15 @@
         state: absent
       tags:
         - jenkins
-    - name: upgrade juju
-      command: "snap refresh juju --channel 2.8/edge"
+    - name: install user charmcraft
+      command: "pip3 install --user charmcraft"
+      ignore_errors: yes
+      become: false
+      tags:
+        - jenkins
+        - adhoc
+    - name: upgrade charm
+      command: "snap refresh charm --channel latest/edge"
       ignore_errors: yes
       tags:
         - jenkins
