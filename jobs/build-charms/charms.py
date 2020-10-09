@@ -352,6 +352,11 @@ class BuildEntity:
     def push(self):
         """Pushes a built charm to Charmstore"""
 
+        if "override-push" in self.opts:
+            click.echo("Override push found, running in place of charm push.")
+            script(self.opts["override-push"], cwd=self.src_path, charm=self.name)
+            return
+
         click.echo(f"Pushing built {self.dst_path} to {self.entity}")
         resource_args = []
         # Build a list of `oci-image` resources that have `upstream-source` defined,
