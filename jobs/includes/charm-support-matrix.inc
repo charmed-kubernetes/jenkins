@@ -109,27 +109,41 @@
     namespace: 'containers'
     downstream: 'charmed-kubernetes/charm-vsphere-integrator'
     tags: ['k8s', 'charm-vsphere-integrator']
-# - metallb-controller:
-#     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
-#     namespace: "containers"
-#     downstream: "charmed-kubernetes/metallb-operator"
-#     tags: ["k8s", "metallb", "metallb-controller"]
-#     override-build: make charm
-# - metallb-speaker:
-#     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
-#     namespace: "containers"
-#     downstream: "charmed-kubernetes/metallb-operator"
-#     tags: ["k8s", "metallb", "metallb-speaker"]
-#     override-build: make charm
-
-# - multus:
-#     upstream: "https://github.com/charmed-kubernetes/charm-multus.git"
-#     namespace: 'containers'
-#     downstream: 'charmed-kubernetes/charm-multus'
-#     tags: ['k8s', 'charm-multus']
-#     override-build: |
-#       git submodule init
-#       git submodule update
+- metallb-controller:
+    upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/metallb-operator"
+    tags: ["k8s", "metallb", "metallb-controller"]
+    override-build: make charm
+    override-push: make upload
+- metallb-speaker:
+    upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/metallb-operator"
+    tags: ["k8s", "metallb", "metallb-speaker"]
+    override-build: make charm
+    override-push: make upload
+- multus:
+    upstream: "https://github.com/charmed-kubernetes/charm-multus.git"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/charm-multus"
+    tags: ["k8s", "multus"]
+    override-build: make charm
+    override-push: make upload
+- sriov-cni:
+    upstream: "https://github.com/charmed-kubernetes/charm-sriov-cni.git"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/charm-sriov-cni"
+    tags: ["k8s", "sriov-cni"]
+    override-build: make charm
+    override-push: make upload
+- coredns:
+    upstream: "https://github.com/charmed-kubernetes/charm-coredns.git"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/charm-coredns"
+    tags: ["k8s", "coredns"]
+    override-build: make charm
+    override-push: make upload
 
 # - nfs:
 #     upstream: "https://github.com/hyperbolic2346/nfs-charm.git"
