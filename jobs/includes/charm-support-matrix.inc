@@ -134,7 +134,14 @@
     upstream: "https://github.com/charmed-kubernetes/charm-sriov-cni.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-sriov-cni"
-    tags: ["k8s", "sriov-cni"]
+    tags: ["k8s", "sriov", "sriov-cni"]
+    override-build: make charm
+    override-push: make upload
+- sriov-cni:
+    upstream: "https://github.com/charmed-kubernetes/charm-sriov-network-device-plugin.git"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/charm-sriov-network-device-plugin"
+    tags: ["k8s", "sriov", "sriov-network-device-plugin"]
     override-build: make charm
     override-push: make upload
 - coredns:
