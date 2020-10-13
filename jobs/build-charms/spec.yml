@@ -3,7 +3,7 @@ plan:
       - |
         #!/bin/bash
         set -eux
-        export PATH=/snap/bin:$PATH
+        export PATH=$HOME/.local/bin:/snap/bin:$PATH
 
         IS_REBUILD_CACHE=""
         if [[ $REBUILD_CACHE = "true" ]]; then
