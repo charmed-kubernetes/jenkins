@@ -25,6 +25,8 @@ def script(script_data, **kwargs):
     env = os.environ.copy()
     if "charm" in kwargs:
         env["CHARM"] = kwargs.pop("charm")
+    if "namespace" in kwargs:
+        env["NAMESPACE"] = kwargs.pop("namespace")
     if is_single_command:
         process = subprocess.Popen(
             script_data.strip(),
