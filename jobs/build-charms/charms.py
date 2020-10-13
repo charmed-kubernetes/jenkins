@@ -243,6 +243,8 @@ class BuildEntity:
         # Bundle or charm opts as defined in the layer include
         self.opts = opts
 
+        self.namespace = opts["namespace"]
+
         # Entity path, ie cs:~containers/kubernetes-master
         self.entity = entity
 
@@ -354,7 +356,12 @@ class BuildEntity:
 
         if "override-push" in self.opts:
             click.echo("Override push found, running in place of charm push.")
-            script(self.opts["override-push"], cwd=self.src_path, charm=self.name)
+            script(
+                self.opts["override-push"],
+                cwd=self.src_path,
+                charm=self.name,
+                namespace=self.namespace,
+            )
             return
 
         click.echo(f"Pushing built {self.dst_path} to {self.entity}")
