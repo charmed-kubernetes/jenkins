@@ -12,6 +12,10 @@ from urllib.parse import urlparse, quote
 from sh.contrib import git
 from cilib.run import capture, cmd_ok
 from cilib import log
+from cilib.models.repos.kubernetes import (
+    UpstreamKubernetesRepoModel,
+    InternalKubernetesRepoModel,
+)
 
 
 @click.group()
@@ -236,6 +240,30 @@ def _sync_upstream(layer_list, charm_list, dry_run):
                     data = future.result()
                 except Exception as exc:
                     log.info(f"Failed thread: {exc}")
+
+
+@cli.command()
+@click.option("--dry-run", is_flag=True)
+def sync_internal_tags(dry_run):
+    """Syncs upstream project tags to internal private repos"""
+
+    # List of tuples containing upstream, downstream models and a starting semver
+    repos_map = [
+        (UpstreamKubernetesRepoModel(), InternalKubernetesRepoModel(), "v1.19.0")
+    ]
+
+    for repo in repos_map:
+        upstream, downstream, starting_semver = repo
+        tags_to_sync = upstream.tags_subset_semver_point(downstream, starting_semver)
+        if not tags_to_sync:
+            click.echo(f"All synced up: {upstream} == {downstream}")
+            continue
+        upstream.clone()
+        upstream.remote_add("downstream", downstream.repo, cwd=upstream.name)
+        for tag in tags_to_sync:
+            click.echo(f"Syncing repo {upstream} => {downstream}, tag => {tag}")
+            if not dry_run:
+                upstream.push("downstream", tag, cwd=upstream.name)
 
 
 @cli.command()
