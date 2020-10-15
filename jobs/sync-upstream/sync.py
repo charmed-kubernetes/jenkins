@@ -249,7 +249,7 @@ def sync_internal_tags(dry_run):
 
     # List of tuples containing upstream, downstream models and a starting semver
     repos_map = [
-        (UpstreamKubernetesRepoModel(), InternalKubernetesRepoModel(), "v1.19.0")
+        (UpstreamKubernetesRepoModel(), InternalKubernetesRepoModel(), "v1.16.0")
     ]
 
     for repo in repos_map:

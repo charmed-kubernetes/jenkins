@@ -15,21 +15,9 @@ from urllib.parse import urlparse
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
-from cilib import lp, idm, snapapi, html
+from cilib import lp, idm, snapapi, html, enums
 from cilib.git import remote_branches, branch_exists, remote_tags
 from cilib.run import cmd_ok, capture
-
-# go compiler version map for k8s version releases
-K8S_GO_MAP = {
-    "1.20": "go/1.15/stable",
-    "1.19": "go/1.15/stable",
-    "1.18": "go/1.13/stable",
-    "1.17": "go/1.13/stable",
-    "1.16": "go/1.13/stable",
-    "1.15": "go/1.12/stable",
-    "1.14": "go/1.12/stable",
-    "1.13": "go/1.12/stable",
-}
 
 
 def _render(tmpl_file, context):
@@ -233,7 +221,7 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     snapcraft_yml_context = {
         "snap_version": to_branch.lstrip("v"),
         "patches": patches_list,
-        "go_version": K8S_GO_MAP.get(k8s_major_minor, "go/1.12/stable"),
+        "go_version": enums.K8S_GO_MAP.get(k8s_major_minor, "go/1.12/stable"),
     }
 
     # Starting with 1.19 and beyond, build snaps with a base snap of core18 or
