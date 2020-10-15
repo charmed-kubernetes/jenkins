@@ -45,7 +45,7 @@ from bs4 import BeautifulSoup as bs
 # Quiet the noise
 logging.getLogger("websockets.protocol").setLevel(logging.INFO)
 # bump up juju debug
-logging.getLogger("juju").setLevel(logging.DEBUG)
+logging.getLogger("juju").setLevel(logging.INFO)
 
 
 class MicrobotError(Exception):
@@ -120,6 +120,22 @@ async def run_until_success(unit, cmd, timeout_insec=None):
                 )
                 click.echo("Will retry...")
             await asyncio.sleep(5)
+
+
+async def run_and_check(desc, unit, cmd, timeout=None):
+    result = await unit.run(cmd, timeout=timeout)
+    status = result.status
+    code = result.data.get("results", {}).get("Code")
+    stdout = result.data.get("results", {}).get("Stdout").strip()
+    stderr = result.data.get("results", {}).get("Stderr").strip()
+    assert (status, code) == ("completed", "0"), (
+        f"Failed to {desc}:\n"
+        f"  status={status}\n"
+        f"  code={code}\n"
+        f"  stdout={stdout}\n"
+        f"  stderr={stderr}"
+    )
+    return stdout
 
 
 async def get_last_audit_entry_date(application):
@@ -1619,37 +1635,81 @@ async def test_encryption_at_rest(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.clouds(["aws"])
-async def test_dns_provider(model, tools):
+async def test_dns_provider(model, k8s_model, tools):
     master_app = model.applications["kubernetes-master"]
     master_unit = master_app.units[0]
 
-    async def cleanup():
-        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config delete po validate-dns-provider-ubuntu --ignore-not-found"
-        await run_until_success(master_unit, cmd)
+    async def deploy_validation_pod():
+        local_path = "jobs/integration/templates/validate-dns-spec.yaml"
+        remote_path = "/tmp/validate-dns-spec.yaml"
+        await scp_to(
+            local_path,
+            master_unit,
+            remote_path,
+            tools.controller_name,
+            tools.connection,
+        )
+        log("Deploying DNS pod")
+        await kubectl(model, f"apply -f {remote_path}")
+        # wait for pod to be ready (having installed required packages), or failed
+        cmd = "logs validate-dns | grep 'validate-dns: \\(Ready\\|Failed\\)'"
+        while not (await kubectl(model, cmd, False)).success:
+            await asyncio.sleep(5)
 
-    async def wait_for_pod_removal(prefix):
-        click.echo("Waiting for %s pods to be removed" % prefix)
-        while True:
-            cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -n kube-system -o json"
-            output = await run_until_success(master_unit, cmd)
-            pods = json.loads(output)
-            exists = False
-            for pod in pods["items"]:
-                if pod["metadata"]["name"].startswith(prefix):
-                    exists = True
-                    break
-            if not exists:
+    async def remove_validation_pod():
+        log("Removing DNS pod")
+        await kubectl(model, "delete pod validate-dns --ignore-not-found")
+
+    async def wait_for_pods_ready(label, ns="kube-system"):
+        log(f"Waiting for pods with label {label} to be ready")
+        cmd = f"get pod -n {ns} -l {label} -o jsonpath='{{.items[*].status.containerStatuses[*].started}}'"
+        while result := await kubectl(model, cmd):
+            if result.stdout and "false" not in result.stdout:
                 break
             await asyncio.sleep(5)
 
-    async def verify_dns_resolution():
+    async def wait_for_pods_removal(label, ns="kube-system", force=False):
+        log(f"Waiting for pods with label {label} to be removed")
+        cmd = f"get pod -n {ns} -l {label} -o jsonpath='{{.items[*].status.containerStatuses[*].started}}'"
+        while result := await kubectl(model, cmd):
+            if result.stdout == "":
+                break
+            if force and ("true" not in result.stdout):
+                log("All pods stuck in terminating, forcibly deleting them")
+                await kubectl(
+                    model, f"delete -n {ns} pod -l {label} --grace-period=0 --force"
+                )
+                break
+            await asyncio.sleep(5)
+
+    async def verify_dns_resolution(*, fresh):
+        if fresh:
+            await remove_validation_pod()
+            await deploy_validation_pod()
         names = ["www.ubuntu.com", "kubernetes.default.svc.cluster.local"]
         for name in names:
-            cmd = (
-                "/snap/bin/kubectl --kubeconfig /root/.kube/config exec validate-dns-provider-ubuntu -- nslookup "
-                + name
-            )
-            await run_until_success(master_unit, cmd)
+            log(f"Checking domain {name}")
+            await kubectl(model, f"exec validate-dns -- host {name}")
+
+    async def verify_no_dns_resolution(*, fresh):
+        try:
+            await verify_dns_resolution(fresh=fresh)
+        except AssertionError:
+            pass
+        else:
+            pytest.fail("DNS resolution should not be working with no provider, but is")
+
+    async def get_offer():
+        try:
+            offers = await k8s_model.list_offers()
+            for offer in offers.results:
+                if offer.offer_name == "coredns":
+                    return offer
+            else:
+                return None
+        except TypeError:
+            # work around https://github.com/juju/python-libjuju/pull/452
+            return None
 
     # Only run this test against k8s 1.14+
     master_config = await master_app.get_config()
@@ -1663,58 +1723,103 @@ async def test_dns_provider(model, tools):
             )
             return
 
-    # Cleanup
-    await cleanup()
+    try:
+        log("Verifying DNS with default provider (auto -> coredns)")
+        await verify_dns_resolution(fresh=True)
 
-    # Set to kube-dns
-    await master_app.set_config({"dns-provider": "kube-dns"})
-    await wait_for_pod_removal("coredns")
+        log("Switching to kube-dns provider")
+        await master_app.set_config({"dns-provider": "kube-dns"})
+        await wait_for_pods_removal("kubernetes.io/name=CoreDNS")
+        await wait_for_pods_ready("k8s-app=kube-dns")
 
-    # Deploy busybox
-    pod_def = {
-        "apiVersion": "v1",
-        "kind": "Pod",
-        "metadata": {"name": "validate-dns-provider-ubuntu", "namespace": "default"},
-        "spec": {
-            "containers": [
-                {
-                    "name": "ubuntu",
-                    "image": "ubuntu",
-                    "command": [
-                        "sh",
-                        "-c",
-                        "apt update -y && apt install -y dnsutils && sleep 3600",
-                    ],
-                    "imagePullPolicy": "IfNotPresent",
-                }
-            ],
-            "restartPolicy": "Always",
-        },
-    }
-    with NamedTemporaryFile("w") as f:
-        yaml.dump(pod_def, f)
-        f.flush()
-        remote_path = "/tmp/validate-dns-provider-ubuntu.yaml"
-        await scp_to(
-            f.name, master_unit, remote_path, tools.controller_name, tools.connection
+        log("Verifying DNS with kube-dns provider")
+        # Note: Switching directly preserves the service IP, so we don't need to
+        # redeploy the validation pod. Switching to none first changes the service
+        # IP and would require redeploying the validation pod.
+        await verify_dns_resolution(fresh=False)
+
+        log("Switching to none provider")
+        await master_app.set_config({"dns-provider": "none"})
+        # The kube-dns pod gets stuck in Terminating when switching to "none"
+        # provider. I think this has something to do with the order (or lack
+        # thereof) in which cdk-addons removes the resource types, since it doesn't
+        # happen when switching from kube-dns to core-dns. So we force delete them
+        # once all their containers are dead.
+        await wait_for_pods_removal("k8s-app=kube-dns", force=True)
+
+        log("Verifying DNS no longer works on existing pod")
+        await verify_no_dns_resolution(fresh=False)
+
+        log("Verifying DNS no longer works on fresh pod")
+        await verify_no_dns_resolution(fresh=True)
+
+        log("Deploying CoreDNS charm")
+        coredns = await k8s_model.deploy(
+            "cs:~containers/coredns",
+            channel=tools.charm_channel,
         )
-        cmd = (
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path
-        )
-        await run_until_success(master_unit, cmd)
 
-    # Verify DNS resolution
-    await verify_dns_resolution()
+        log("Waiting for CoreDNS charm to be ready")
+        while (
+            status := coredns.units[0].workload_status if coredns.units else None
+        ) != "active":
+            assert status not in ("blocked", "error")
+            await asyncio.sleep(5)
 
-    # Set to core-dns
-    await master_app.set_config({"dns-provider": "core-dns"})
-    await wait_for_pod_removal("kube-dns")
+        log("Creating cross-model offer")
+        offer_name = f"{tools.k8s_model_name_full}.coredns"
+        await k8s_model.create_offer("coredns:dns-provider")
+        try:
+            log("Waiting for cross-model offer to be ready")
+            while not await get_offer():
+                await asyncio.sleep(1)
 
-    # Verify DNS resolution
-    await verify_dns_resolution()
+            log("Consuming cross-model offer")
+            await model.consume(offer_name, "coredns")
 
-    # Cleanup
-    await cleanup()
+            log("Adding cross-model relation to CK")
+            await model.add_relation("kubernetes-master", "coredns")
+            await tools.juju_wait()
+
+            log("Verifying that stale pod doesn't pick up new DNS provider")
+            await verify_no_dns_resolution(fresh=False)
+
+            log("Verifying DNS works on fresh pod")
+            await verify_dns_resolution(fresh=True)
+        finally:
+            log("Removing cross-model offer")
+            if any("coredns" in rel.key for rel in master_app.relations):
+                await master_app.destroy_relation("dns-provider", "coredns")
+                await tools.juju_wait()
+            await model.remove_saas("coredns")
+            await k8s_model.remove_offer(offer_name, force=True)
+            log("Removing CoreDNS charm")
+            # NB: can't use libjuju here because it doesn't support --force.
+            await tools.run(
+                "juju",
+                "remove-application",
+                "-m",
+                tools.k8s_connection,
+                "--force",
+                "coredns",
+            )
+            await wait_for_pods_removal("juju-app=coredns", ns=tools.k8s_model_name)
+
+        log("Verifying that DNS is no longer working")
+        await verify_no_dns_resolution(fresh=True)
+
+        log("Switching back to core-dns from cdk-addons")
+        await master_app.set_config({"dns-provider": "core-dns"})
+        await tools.juju_wait()
+
+        log("Verifying DNS works again")
+        await verify_dns_resolution(fresh=True)
+    finally:
+        # Cleanup
+        if (await master_app.get_config())["dns-provider"] != "core-dns":
+            await master_app.set_config({"dns-provider": "core-dns"})
+            await tools.juju_wait()
+        await remove_validation_pod()
 
 
 @pytest.mark.asyncio

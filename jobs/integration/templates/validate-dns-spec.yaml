@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: validate-dns
+  namespace: default
+spec:
+  containers:
+    - name: ubuntu
+      image: ubuntu
+      imagePullPolicy: IfNotPresent
+      command: ['sh', '-c', 'apt update -qqy && apt install -qqfy bind9-host && echo "validate-dns: Ready" && sleep 3600 || echo "validate-dns: Failed"']
+  restartPolicy: Never

@@ -507,31 +507,38 @@ async def finish_series_upgrade(machine, tools):
     await wait_for_status("active", _units(machine))
 
 
-class KubectlError(AssertionError):
+class JujuRunError(AssertionError):
     def __init__(self, command, result):
         self.command = command
-        self.code = result["Code"]
-        self.stdout = result.get("Stdout", "")
-        self.stderr = result.get("Stderr", "")
-        super().__init__(
-            "`{}` failed: {}".format(self.command, self.stderr or self.stdout)
-        )
+        self.code = result.code
+        self.stdout = result.stdout
+        self.stderr = result.stderr
+        self.output = result.output
+        super().__init__(f"`{self.command}` failed:\n{self.stdout}\n{self.stderr}")
 
 
-class KubectlResult:
-    def __init__(self, result):
-        self.code = result["Code"]
-        self.stdout = result.get("Stdout", "")
-        self.stderr = result.get("Stderr", "")
+class JujuRunResult:
+    def __init__(self, action):
+        self.status = action.status
+        self.code = int(action.results["Code"])
+        self.stdout = action.results.get("Stdout", "").strip()
+        self.stderr = action.results.get("Stderr", "").strip()
+        self.output = self.stderr or self.stdout
+        self.success = self.status == "completed" and self.code == 0
 
 
-async def kubectl(model, cmd):
+async def juju_run(unit, cmd, check=True):
+    result = JujuRunResult(await unit.run(cmd))
+    if check and not result.success:
+        raise JujuRunError(cmd, result)
+    return result
+
+
+async def kubectl(model, cmd, check=True):
     master = model.applications["kubernetes-master"].units[0]
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {}".format(cmd)
-    result = await master.run(cmd)
-    if result.status != "completed" or result.results["Code"] != 0:
-        raise KubectlError(cmd, result.results)
-    return KubectlResult(result.results)
+    return await juju_run(
+        master, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
+    )
 
 
 async def get_ipv6_addr(unit):
