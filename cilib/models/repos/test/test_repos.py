@@ -32,3 +32,7 @@ def test_add_remote_repo():
         remote_repos = run("git remote -v", shell=True, cwd=tmpdir, capture_output=True)
         assert "downstream" in remote_repos.stdout.decode()
         assert "https://example.com/repo.git" in remote_repos.stdout.decode()
+
+def test_latest_branch_from_major_minor():
+    """Test getting latest branch version from a major.minor release"""
+    major_minor = "1.19"

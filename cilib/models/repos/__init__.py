@@ -1,6 +1,5 @@
 import semver
-from cilib import git
-from cilib.version import compare
+from cilib import git, version
 
 
 class BaseRepoModel:
@@ -48,12 +47,19 @@ class BaseRepoModel:
         """Grabs remote branches"""
         return git.remote_branches(self.repo, **subprocess_kwargs)
 
+    def latest_branch_from_major_minor(self, major_minor):
+        """Grabs latest known branch semver for a major.minor release"""
+        major_minor = semver.parse(f"{major_minor}.0")
+        branches = []
+        for branch in self.branches:
+            branch_version = version.parse(branch)
+
     def tags_from_semver_point(self, starting_semver):
         """Returns a list of tags from a starting semantic version"""
         tags = []
         for tag in self.tags:
             try:
-                if compare(tag, starting_semver):
+                if version.compare(tag, starting_semver):
                     tags.append(tag)
             except Exception as error:
                 print(error)

@@ -5,6 +5,12 @@ import yaml
 
 JOBS_PATH = Path("jobs")
 
+# Current supported STABLE K8s MAJOR.MINOR release
+# This should be updated whenever a new major.minor is released
+K8S_STABLE_VERSION = "1.19"
+
+# Next MAJOR.MINOR
+K8S_NEXT_VERSION = "1.20"
 
 # Supported Versions
 K8S_SUPPORT_VERSION_LIST = yaml.safe_load(str(JOBS_PATH / 'includes/k8s-snap-support-versions.inc'))
@@ -38,3 +44,14 @@ SNAP_LIST = yaml.safe_load(str(JOBS_PATH / 'includes/k8s-snap-list.inc'))
 
 # Eks Snap list
 EKS_SNAP_LIST = yaml.safe_load(str(JOBS_PATH / 'includes/k8s-eks-snap-list.inc'))
+
+# Snap k8s version <-> track mapping
+# Allows us to be specific in which tracks should get what major.minor and dictate when a release
+# should be put into the latest track.
+SNAP_K8S_TRACK_MAP = {
+    "1.20": ["1.20/edge"],
+    "1.19": ["1.19/stable", "1.19/candidate", "1.19/beta", "1.19/edge"],
+    "1.18": ["1.18/stable", "1.18/candidate", "1.18/beta", "1.18/edge"],
+    "1.17": ["1.17/stable", "1.17/candidate", "1.17/beta", "1.17/edge"],
+    "1.16": ["1.16/stable", "1.16/candidate", "1.16/beta", "1.16/edge"]
+}
