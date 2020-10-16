@@ -47,12 +47,23 @@ class BaseRepoModel:
         """Grabs remote branches"""
         return git.remote_branches(self.repo, **subprocess_kwargs)
 
-    def latest_branch_from_major_minor(self, major_minor):
+    def latest_branch_from_major_minor(self, major_minor, include_prerelease=False):
         """Grabs latest known branch semver for a major.minor release"""
-        major_minor = semver.parse(f"{major_minor}.0")
-        branches = []
+        _branches = []
         for branch in self.branches:
-            branch_version = version.parse(branch)
+            try:
+                branch_version = version.parse(branch)
+                if not include_prerelease and branch_version["prerelease"] is not None:
+                    continue
+
+                if (
+                    major_minor
+                    == f"{branch_version['major']}.{branch_version['minor']}"
+                ):
+                    _branches.append(version.normalize(branch))
+            except:
+                continue
+        return str(max(map(semver.VersionInfo.parse, _branches)))
 
     def tags_from_semver_point(self, starting_semver):
         """Returns a list of tags from a starting semantic version"""

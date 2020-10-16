@@ -5,9 +5,11 @@ def normalize(version):
     """Normalizes a version string"""
     return version.lstrip("v")
 
+
 def parse(version):
     """Returns semver.parse"""
     return semver.parse(normalize(version))
+
 
 def compare(version_a, version_b):
     """Compares 2 sem versions"""

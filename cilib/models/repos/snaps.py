@@ -7,13 +7,6 @@ import os
 
 
 class SnapBaseRepoModel(BaseRepoModel):
-    def __init__(self):
-        super().__init__()
-        self.git_user = "k8s-team-ci"
-        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{snap}"
-        self.snap_recipe_email=os.environ.get("K8STEAMCI_USR")
-        self.snap_recipe_password=os.environ.get("K8STEAMCI_PSW")
-
     def create_recipe(self, version, branch, tracks=None):
         """ Creates an new snap recipe in Launchpad
 
@@ -37,6 +30,9 @@ class SnapBaseRepoModel(BaseRepoModel):
           --snap-recipe-password aabbccddee
 
         """
+        snap_recipe_email = os.environ.get("K8STEAMCI_USR")
+        snap_recipe_password = os.environ.get("K8STEAMCI_PSW")
+
         _client = lp.Client(stage="production")
         _client.login()
 
@@ -56,50 +52,77 @@ class SnapBaseRepoModel(BaseRepoModel):
         snap_recipe = _client.create_or_update_snap_recipe(**params)
         caveat_id = snap_recipe.beginAuthorization()
         cip = idm.CanonicalIdentityProvider(
-            email=self.snap_recipe_email, password=self.snap_recipe_password
+            email=snap_recipe_email, password=snap_recipe_password
         )
         discharge_macaroon = cip.get_discharge(caveat_id).json()
-        discharge_macaroon = Macaroon.deserialize(discharge_macaroon["discharge_macaroon"])
-        snap_recipe.completeAuthorization(discharge_macaroon=discharge_macaroon.serialize())
+        discharge_macaroon = Macaroon.deserialize(
+            discharge_macaroon["discharge_macaroon"]
+        )
+        snap_recipe.completeAuthorization(
+            discharge_macaroon=discharge_macaroon.serialize()
+        )
         snap_recipe.requestBuilds(archive=_client.archive(), pocket="Updates")
 
 
 class SnapKubeApiServerRepoModel(SnapBaseRepoModel):
     def __init__(self):
+        super().__init__()
         self.name = "kube-apiserver"
-        super().__init__()
+        self.git_user = "k8s-team-ci"
+        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
 
-class SnapKubeControllerManagerRepoModel(BaseRepoModel):
+
+class SnapKubeControllerManagerRepoModel(SnapBaseRepoModel):
     def __init__(self):
+        super().__init__()
         self.name = "kube-controller-manager"
-        super().__init__()
+        self.git_user = "k8s-team-ci"
+        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
 
-class SnapKubeProxyRepoModel(BaseRepoModel):
+
+class SnapKubeProxyRepoModel(SnapBaseRepoModel):
     def __init__(self):
+        super().__init__()
         self.name = "kube-proxy"
-        super().__init__()
+        self.git_user = "k8s-team-ci"
+        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
 
-class SnapKubeSchedulerRepoModel(BaseRepoModel):
+
+class SnapKubeSchedulerRepoModel(SnapBaseRepoModel):
     def __init__(self):
+        super().__init__()
         self.name = "kube-scheduler"
-        super().__init__()
+        self.git_user = "k8s-team-ci"
+        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
 
-class SnapKubectlRepoModel(BaseRepoModel):
+
+class SnapKubectlRepoModel(SnapBaseRepoModel):
     def __init__(self):
+        super().__init__()
         self.name = "kubectl"
-        super().__init__()
+        self.git_user = "k8s-team-ci"
+        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
 
-class SnapKubeadmRepoModel(BaseRepoModel):
+
+class SnapKubeadmRepoModel(SnapBaseRepoModel):
     def __init__(self):
+        super().__init__()
         self.name = "kubeadm"
-        super().__init__()
+        self.git_user = "k8s-team-ci"
+        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
 
-class SnapKubeletRepoModel(BaseRepoModel):
+
+class SnapKubeletRepoModel(SnapBaseRepoModel):
     def __init__(self):
+        super().__init__()
         self.name = "kubelet"
-        super().__init__()
+        self.git_user = "k8s-team-ci"
+        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
 
-class SnapKubernetesTestRepoModel(BaseRepoModel):
+
+class SnapKubernetesTestRepoModel(SnapBaseRepoModel):
     def __init__(self):
-        self.name = "kubernetes-test"
         super().__init__()
+        self.name = "kubernetes-test"
+        self.git_user = "k8s-team-ci"
+        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"

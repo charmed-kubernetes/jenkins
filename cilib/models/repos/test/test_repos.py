@@ -1,10 +1,12 @@
 import tempfile
+import semver
 from subprocess import run
 from cilib.models.repos.kubernetes import (
     BaseRepoModel,
     UpstreamKubernetesRepoModel,
     InternalKubernetesRepoModel,
 )
+from cilib.models.repos.snaps import SnapKubeletRepoModel
 
 UPSTREAM = UpstreamKubernetesRepoModel()
 DOWNSTREAM = InternalKubernetesRepoModel()
@@ -33,6 +35,9 @@ def test_add_remote_repo():
         assert "downstream" in remote_repos.stdout.decode()
         assert "https://example.com/repo.git" in remote_repos.stdout.decode()
 
+
 def test_latest_branch_from_major_minor():
     """Test getting latest branch version from a major.minor release"""
-    major_minor = "1.19"
+    kubelet_repo = SnapKubeletRepoModel()
+    max_branch = kubelet_repo.latest_branch_from_major_minor("1.14")
+    assert semver.compare(max_branch, "1.14.10") == 0
