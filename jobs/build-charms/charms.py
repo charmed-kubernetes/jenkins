@@ -17,9 +17,7 @@ Usage:
 """
 
 import os
-from glob import glob
 from pathlib import Path
-from pprint import pformat
 from sh.contrib import git
 from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture, script
@@ -60,9 +58,10 @@ class BuildEnv:
         layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
         interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
         tmp_dir = Path(os.environ.get("WORKSPACE"))
+        home_dir = Path(os.environ.get("HOME"))
     except TypeError:
         raise BuildException(
-            "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE: "
+            "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE, HOME: "
             "Unable to find some or all of these charm build environment variables."
         )
 
@@ -235,10 +234,14 @@ class BuildEntity:
         # Bundle or charm name
         self.name = name
 
-        # Alias to name
-        self.src_path = self.name
+        src_path = Path(self.name).absolute()
+        layer_path = src_path / "layer.yaml"
+        self.legacy_charm = layer_path.exists()
 
+        self.src_path = str(src_path)
         self.dst_path = str(self.build.build_dir / self.name)
+        if self.legacy_charm:
+            self.dst_path += ".charm"
 
         # Bundle or charm opts as defined in the layer include
         self.opts = opts
@@ -247,6 +250,12 @@ class BuildEntity:
 
         # Entity path, ie cs:~containers/kubernetes-master
         self.entity = entity
+
+        # Entity path with current revision (from target channel)
+        self.full_entity = self.get_charmstore_rev_url()
+
+        # Entity path with new revision (from pushing)
+        self.new_entity = None
 
     def get_charmstore_rev_url(self):
         # Grab charmstore revision for channels charm
@@ -266,10 +275,9 @@ class BuildEntity:
         return response["id"]["Id"]
 
     def download(self, fname):
-        entity_p = self.get_charmstore_rev_url()
-        if not entity_p:
+        if not self.full_entity:
             return SimpleNamespace(ok=False)
-        entity_p = entity_p.lstrip("cs:")
+        entity_p = self.full_entity.lstrip("cs:")
         url = f"https://api.jujucharms.com/charmstore/v5/{entity_p}/archive/{fname}"
         click.echo(f"Downloading {fname} from {url}")
         return requests.get(url)
@@ -277,6 +285,24 @@ class BuildEntity:
     @property
     def has_changed(self):
         """Determine if the charm/layers commits have changed since last publish to charmstore"""
+        if not self.legacy_charm:
+            # Operator framework charms won't have a .build.manifest and it's
+            # sufficient to just compare the charm repo's commit rev.
+            extra_info = yaml.safe_load(
+                sh.charm(
+                    "show",
+                    self.full_entity,
+                    "extra-info",
+                    format="yaml",
+                ).stdout.decode()
+            )
+            old_commit = extra_info.get("commit")
+            new_commit = self.commit
+            changed = new_commit != new_commit
+            if changed:
+                click.echo(f"Changes found: {new_commit} (new) != {old_commit} (old)")
+            return changed
+
         charmstore_build_manifest = None
         resp = self.download(".build.manifest")
         if resp.ok:
@@ -319,6 +345,16 @@ class BuildEntity:
         git_commit = git("rev-parse", "HEAD", _cwd=self.src_path)
         return git_commit.stdout.decode().strip()
 
+    def _read_metadata_resources(self):
+        if self.legacy_charm:
+            # Legacy (reactive) charms can have resources added by layers,
+            # so we need to read from the built charm.
+            metadata_path = Path(self.dst_path) / "metadata.yaml"
+        else:
+            metadata_path = Path(self.src_path) / "metadata.yaml"
+        metadata = yaml.safe_load(metadata_path.read_text())
+        return metadata.get("resources", {})
+
     def setup(self):
         """Setup directory for charm build"""
         downstream = f"https://github.com/{self.opts['downstream']}"
@@ -335,21 +371,26 @@ class BuildEntity:
         ):
             click.echo(line)
 
-    def proof_build(self):
+    def build(self):
         """Perform charm build against charm/bundle"""
         if "override-build" in self.opts:
             click.echo("Override build found, running in place of charm build.")
             ret = script(
                 self.opts["override-build"], cwd=self.src_path, charm=self.name
             )
+        elif self.legacy_charm:
+            ret = cmd_ok(
+                "charm build -r --force -i https://localhost",
+                cwd=self.src_path,
+            )
         else:
             ret = cmd_ok(
-                "charm build -r --force -i https://localhost", cwd=self.src_path
+                f"{self.build.home_dir}/.local/bin/charmcraft build -f {self.src_path}",
+                cwd=self.build.build_dir,
             )
 
         if not ret.ok:
-            # Until https://github.com/juju/charm-tools/pull/554 is fixed.
-            click.echo("Ignoring proof warning")
+            raise SystemExit(f"Failed to build {self.name}")
 
     def push(self):
         """Pushes a built charm to Charmstore"""
@@ -365,33 +406,10 @@ class BuildEntity:
             return
 
         click.echo(f"Pushing built {self.dst_path} to {self.entity}")
-        resource_args = []
-        # Build a list of `oci-image` resources that have `upstream-source` defined,
-        # which is added for this click.echoic to work.
-        resources = yaml.safe_load(
-            Path(self.dst_path).joinpath("metadata.yaml").read_text()
-        ).get("resources", {})
-        images = {
-            name: details["upstream-source"]
-            for name, details in resources.items()
-            if details["type"] == "oci-image" and details.get("upstream-source")
-        }
-        click.echo(f"Found {len(images)} oci-image resources:\n{pformat(images)}\n")
-        for image in images.values():
-            click.echo(f"Pulling {image}...")
-            sh.docker.pull(image)
-
-        # Convert the image names and tags to `--resource foo=bar` format
-        # for passing to `charm push`.
-        resource_args = [
-            arg
-            for name, image in images.items()
-            for arg in ("--resource", f"{name}={image}")
-        ]
 
         out = retry_call(
             capture,
-            fargs=[["charm", "push", self.dst_path, self.entity, *resource_args]],
+            fargs=[["charm", "push", self.dst_path, self.entity]],
             fkwargs={"check": True},
             delay=2,
             backoff=2,
@@ -401,82 +419,63 @@ class BuildEntity:
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
         out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
-        click.echo(f"Setting {out['url']} metadata: {self.commit}")
-        cmd_ok(["charm", "set", out["url"], f"commit={self.commit}"])
+        self.new_entity = out["url"]
+        click.echo(f"Setting {self.new_entity} metadata: {self.commit}")
+        cmd_ok(["charm", "set", self.new_entity, f"commit={self.commit}"])
 
-    def attach_resource(self, from_channel):
-        resource_builder = self.opts.get("resource_build_sh", None)
-        if not resource_builder:
-            return
-
-        builder = Path(self.src_path) / resource_builder
+    def attach_resources(self):
         out_path = Path(self.src_path) / "tmp"
-
-        resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
-        resource_spec_fragment = resource_spec.get(self.entity, None)
-        click.echo(resource_spec_fragment)
-        if not resource_spec_fragment:
-            raise SystemExit("Unable to determine resource spec for entity")
-
         os.makedirs(str(out_path), exist_ok=True)
-        charm_id = capture(
-            ["charm", "show", self.entity, "--channel", from_channel, "id"]
-        )
-        charm_id = yaml.safe_load(charm_id.stdout.decode())
-        resources = capture(
-            [
-                "charm",
-                "list-resources",
-                charm_id["id"]["Id"],
-                "--channel",
-                from_channel,
-                "--format",
-                "yaml",
-            ]
-        )
-        if not resources.ok:
-            click.echo("No resources found for {}".format(charm_id))
-            return
-        resources = yaml.safe_load(resources.stdout.decode())
-        builder_sh = builder.absolute()
-        click.echo(f"Running {builder_sh} from {self.dst_path}")
+        resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
+        resources = resource_spec.get(self.entity, {})
 
-        # Grab a list of all file extensions to lookout for
-        known_resource_extensions = list(
-            set("".join(Path(k).suffixes) for k in resource_spec_fragment.keys())
-        )
-        click.echo(
-            f"  attaching resources with known extensions: {', '.join(known_resource_extensions)}"
-        )
+        # Build any custom resources.
+        resource_builder = self.opts.get("build-resources", None)
+        if resource_builder and not resources:
+            raise SystemExit(
+                "Custom build-resources specified for {self.entity} but no spec found"
+            )
+        if resource_builder:
+            resource_builder.format(
+                out_path=out_path,
+                src_path=self.src_path,
+            )
+            click.echo("Running custom build-resources")
+            ret = script(resource_builder)
+            if not ret.ok:
+                raise SystemExit("Failed to build custom resources")
 
-        ret = cmd_ok(["bash", str(builder_sh)], cwd=out_path)
-        if not ret.ok:
-            raise SystemExit("Unable to build resources")
+        # Pull any `upstream-image` annotated resources.
+        resources = self._read_metadata_resources()
+        for name, details in resources.items():
+            upstream_image = details.get("upstream-source")
+            if details["type"] == "oci-image" and upstream_image:
+                click.echo(f"Pulling {upstream_image}...")
+                sh.docker.pull(upstream_image)
+                resources[name] = upstream_image
 
-        for line in glob("{}/*".format(out_path)):
-            click.echo(f" verifying {line}")
-            resource_path = Path(line)
-            resource_fn = resource_path.parts[-1]
-            resource_key = resource_spec_fragment.get(resource_fn, None)
-            if resource_key:
-                retry_call(
-                    cmd_ok,
-                    fargs=[
-                        [
-                            "charm",
-                            "attach",
-                            self.entity,
-                            "--channel",
-                            from_channel,
-                            f"{resource_key}={resource_path}",
-                        ]
-                    ],
-                    fkwargs={"check": True},
-                    delay=2,
-                    backoff=2,
-                    tries=15,
-                    exceptions=CalledProcessError,
-                )
+        # Attach all resources.
+        for name, resource in resources.items():
+            # If the resource is a file, populate the path where it was built.
+            # If it's a custom image, it will be in Docker and this will be a no-op.
+            resource = resource.format(out_path=out_path)
+            click.echo(f"Attaching {name}={resource}")
+            retry_call(
+                cmd_ok,
+                fargs=[
+                    [
+                        "charm",
+                        "attach",
+                        self.new_entity,
+                        f"{name}={resource}",
+                    ]
+                ],
+                fkwargs={"check": True},
+                delay=2,
+                backoff=2,
+                tries=15,
+                exceptions=CalledProcessError,
+            )
 
     def promote(self, from_channel="unpublished", to_channel="edge"):
         click.echo(
@@ -630,7 +629,7 @@ def build(
         build_entity.proof_build()
 
         build_entity.push()
-        build_entity.attach_resource("unpublished")
+        build_entity.attach_resources()
         build_entity.promote(to_channel=to_channel)
 
     pool = ThreadPool()
