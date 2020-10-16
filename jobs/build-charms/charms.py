@@ -235,13 +235,11 @@ class BuildEntity:
         self.name = name
 
         src_path = Path(self.name).absolute()
-        layer_path = src_path / "layer.yaml"
-        self.legacy_charm = layer_path.exists()
+        self.layer_path = src_path / "layer.yaml"
+        self.legacy_charm = False
 
         self.src_path = str(src_path)
         self.dst_path = str(self.build.build_dir / self.name)
-        if self.legacy_charm:
-            self.dst_path += ".charm"
 
         # Bundle or charm opts as defined in the layer include
         self.opts = opts
@@ -373,6 +371,10 @@ class BuildEntity:
             _bg_exc=False,
         ):
             click.echo(line)
+
+        self.legacy_charm = self.layer_path.exists()
+        if self.legacy_charm:
+            self.dst_path += ".charm"
 
     def charm_build(self):
         """Perform charm build against charm/bundle"""
@@ -624,12 +626,12 @@ def build(
             click.echo(f"Queued {charm_entity} for building")
 
     def _run_build(entity):
-        click.echo(f"Processing: {entity}")
         entity.setup()
 
         if not entity.has_changed and not build_env.force:
             return
 
+        click.echo(f"Processing: {entity}")
         entity.charm_build()
 
         entity.push()
