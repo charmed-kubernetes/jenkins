@@ -2,13 +2,13 @@
 - calico:
     upstream: "https://github.com/charmed-kubernetes/layer-calico.git"
     downstream: 'charmed-kubernetes/layer-calico.git'
-    resource_build_sh: 'build-calico-resource.sh'
+    build-resources: "cd {out_path}; bash {src_path}/build-calico-resource.sh"
     namespace: 'containers'
     tags: ['k8s', 'calico']
 - canal:
     upstream: "https://github.com/charmed-kubernetes/layer-canal.git"
     downstream: 'charmed-kubernetes/layer-canal.git'
-    resource_build_sh: 'build-canal-resources.sh'
+    build-resources: "cd {out_path}; bash {src_path}/build-canal-resources.sh"
     namespace: 'containers'
     tags: ['k8s', 'canal']
 - containerd:
@@ -34,7 +34,7 @@
 - flannel:
     upstream: "https://github.com/charmed-kubernetes/charm-flannel.git"
     downstream: 'charmed-kubernetes/charm-flannel.git'
-    resource_build_sh: 'build-flannel-resources.sh'
+    build-resources: "cd {out_path}; bash {src_path}/build-flannel-resources.sh"
     namespace: 'containers'
     tags: ['k8s', 'flannel']
 - kata:
@@ -60,13 +60,13 @@
 - kubernetes-worker:
     upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-worker.git"
     downstream: 'charmed-kubernetes/charm-kubernetes-worker.git'
-    resource_build_sh: 'build-cni-resources.sh'
+    build-resources: "cd {out_path}; bash {src_path}/build-cni-resources.sh"
     namespace: 'containers'
     tags: ['k8s', 'kubernetes-worker']
 - tigera-secure-ee:
     upstream: "https://github.com/charmed-kubernetes/layer-tigera-secure-ee.git"
     downstream: 'charmed-kubernetes/layer-tigera-secure-ee.git'
-    resource_build_sh: 'build-resources.sh'
+    build-resources: "cd {out_path}; bash {src_path}/build-resources.sh"
     namespace: 'containers'
     tags: ['k8s', 'tigera-secure-ee']
 - keepalived:
@@ -114,43 +114,33 @@
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
     tags: ["k8s", "metallb", "metallb-controller"]
-    override-build: make charm
-    override-push: make upload
 - metallb-speaker:
     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
     tags: ["k8s", "metallb", "metallb-speaker"]
-    override-build: make charm
-    override-push: make upload
 - multus:
     upstream: "https://github.com/charmed-kubernetes/charm-multus.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-multus"
     tags: ["k8s", "multus"]
-    override-build: make charm
-    override-push: make upload
+    build-resources: "cd {src_path}/net-attach-def-manager; ./build"
 - sriov-cni:
     upstream: "https://github.com/charmed-kubernetes/charm-sriov-cni.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-sriov-cni"
     tags: ["k8s", "sriov", "sriov-cni"]
-    override-build: make charm
-    override-push: make upload
-- sriov-cni:
+    build-resources: "cd {src_path}/image; ./build"
+- sriov-network-device-plugin:
     upstream: "https://github.com/charmed-kubernetes/charm-sriov-network-device-plugin.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-sriov-network-device-plugin"
     tags: ["k8s", "sriov", "sriov-network-device-plugin"]
-    override-build: make charm
-    override-push: make upload
 - coredns:
     upstream: "https://github.com/charmed-kubernetes/charm-coredns.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-coredns"
     tags: ["k8s", "coredns"]
-    override-build: make charm
-    override-push: make upload
 
 # - nfs:
 #     upstream: "https://github.com/hyperbolic2346/nfs-charm.git"
