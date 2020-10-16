@@ -87,9 +87,13 @@ def cmd_ok(script, **kwargs):
         del kwargs["check"]
     if not isinstance(script, list) and "shell" not in kwargs:
         script = shlex.split(script)
-    process = subprocess.Popen(
-        script, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, **kwargs
-    )
+    try:
+        process = subprocess.Popen(
+            script, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, **kwargs
+        )
+    except Exception as error:
+        click.echo(f"Error: Failed to run {script}: {error}")
+        raise subprocess.CalledProcessError(1, "", "")
 
     with process.stdout:
         _log_sub_out(process.stdout)

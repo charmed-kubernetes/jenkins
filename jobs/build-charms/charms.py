@@ -257,6 +257,9 @@ class BuildEntity:
         # Entity path with new revision (from pushing)
         self.new_entity = None
 
+    def __str__(self):
+        return f"<BuildEntity: {self.name} ({self.full_entity}) (legacy charm: {self.legacy_charm})>"
+
     def get_charmstore_rev_url(self):
         # Grab charmstore revision for channels charm
         response = capture(
@@ -371,7 +374,7 @@ class BuildEntity:
         ):
             click.echo(line)
 
-    def build(self):
+    def charm_build(self):
         """Perform charm build against charm/bundle"""
         if "override-build" in self.opts:
             click.echo("Override build found, running in place of charm build.")
@@ -385,7 +388,7 @@ class BuildEntity:
             )
         else:
             ret = cmd_ok(
-                f"{self.build.home_dir}/.local/bin/charmcraft build -f {self.src_path}",
+                f"charmcraft build -f {self.src_path}",
                 cwd=self.build.build_dir,
             )
 
@@ -620,17 +623,18 @@ def build(
             )
             click.echo(f"Queued {charm_entity} for building")
 
-    def _run_build(build_entity):
-        build_entity.setup()
+    def _run_build(entity):
+        click.echo(f"Processing: {entity}")
+        entity.setup()
 
-        if not build_entity.has_changed and not build_env.force:
+        if not entity.has_changed and not build_env.force:
             return
 
-        build_entity.proof_build()
+        entity.charm_build()
 
-        build_entity.push()
-        build_entity.attach_resources()
-        build_entity.promote(to_channel=to_channel)
+        entity.push()
+        entity.attach_resources()
+        entity.promote(to_channel=to_channel)
 
     pool = ThreadPool()
     pool.map(_run_build, entities)
