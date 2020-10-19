@@ -611,6 +611,9 @@ def build(
     to_channel,
     force,
 ):
+    cmd_ok("which charm", echo=lambda m: click.echo(f"charm -> {m}"))
+    cmd_ok("which charmcraft", echo=lambda m: click.echo(f"charmcraft -> {m}"))
+
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
         "artifact_list": charm_list,
@@ -651,8 +654,6 @@ def build(
         entity.attach_resources()
         entity.promote(to_channel=to_channel)
 
-    cmd_ok("which charmcraft", echo=lambda m: click.echo(f"[path-debug] {m}"))
-    click.echo(f"[path-debug] PATH={os.environ['PATH']}")
     pool = ThreadPool()
     pool.map(_run_build, entities)
     build_env.save()
