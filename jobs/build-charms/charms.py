@@ -454,8 +454,7 @@ class BuildEntity:
                 raise SystemExit("Failed to build custom resources")
 
         # Pull any `upstream-image` annotated resources.
-        resources = self._read_metadata_resources()
-        for name, details in resources.items():
+        for name, details in self._read_metadata_resources().items():
             upstream_image = details.get("upstream-source")
             if details["type"] == "oci-image" and upstream_image:
                 click.echo(f"Pulling {upstream_image}...")
