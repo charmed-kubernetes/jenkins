@@ -27,6 +27,7 @@ from retry.api import retry_call
 from subprocess import CalledProcessError
 from types import SimpleNamespace
 from pathos.threading import ThreadPool
+from pprint import pformat
 import click
 import shutil
 import sh
@@ -258,6 +259,9 @@ class BuildEntity:
     def __str__(self):
         return f"<BuildEntity: {self.name} ({self.full_entity}) (legacy charm: {self.legacy_charm})>"
 
+    def echo(self, msg):
+        click.echo(f"[{self.name}] {msg}")
+
     def get_charmstore_rev_url(self):
         # Grab charmstore revision for channels charm
         response = capture(
@@ -280,7 +284,7 @@ class BuildEntity:
             return SimpleNamespace(ok=False)
         entity_p = self.full_entity.lstrip("cs:")
         url = f"https://api.jujucharms.com/charmstore/v5/{entity_p}/archive/{fname}"
-        click.echo(f"Downloading {fname} from {url}")
+        self.echo(f"Downloading {fname} from {url}")
         return requests.get(url)
 
     @property
@@ -301,7 +305,7 @@ class BuildEntity:
             new_commit = self.commit
             changed = new_commit != new_commit
             if changed:
-                click.echo(f"Changes found: {new_commit} (new) != {old_commit} (old)")
+                self.echo(f"Changes found: {new_commit} (new) != {old_commit} (old)")
             return changed
 
         charmstore_build_manifest = None
@@ -310,7 +314,7 @@ class BuildEntity:
             charmstore_build_manifest = resp.json()
 
         if not charmstore_build_manifest:
-            click.echo(
+            self.echo(
                 "No build.manifest located, unable to determine if any changes occurred."
             )
             return True
@@ -331,10 +335,10 @@ class BuildEntity:
             if i not in current_build_manifest
         ]
         if the_diff:
-            click.echo("Changes found:")
-            click.echo(the_diff)
+            self.echo("Changes found:")
+            self.echo(the_diff)
             return True
-        click.echo(f"No changes found, not building a new {self.entity}")
+        self.echo(f"No changes found, not building a new {self.entity}")
         return False
 
     @property
@@ -359,7 +363,7 @@ class BuildEntity:
     def setup(self):
         """Setup directory for charm build"""
         downstream = f"https://github.com/{self.opts['downstream']}"
-        click.echo(f"Cloning repo from {downstream}")
+        self.echo(f"Cloning repo from {downstream}")
 
         os.makedirs(self.src_path)
         for line in git.clone(
@@ -370,7 +374,7 @@ class BuildEntity:
             _iter=True,
             _bg_exc=False,
         ):
-            click.echo(line)
+            self.echo(line)
 
         self.legacy_charm = self.layer_path.exists()
         if not self.legacy_charm:
@@ -379,22 +383,26 @@ class BuildEntity:
     def charm_build(self):
         """Perform charm build against charm/bundle"""
         if "override-build" in self.opts:
-            click.echo("Override build found, running in place of charm build.")
+            self.echo("Override build found, running in place of charm build.")
             ret = script(
-                self.opts["override-build"], cwd=self.src_path, charm=self.name
+                self.opts["override-build"],
+                cwd=self.src_path,
+                charm=self.name,
+                echo=self.echo,
             )
         elif self.legacy_charm:
             ret = cmd_ok(
                 "charm build -r --force -i https://localhost",
                 cwd=self.src_path,
+                echo=self.echo,
             )
         else:
-            cmd_ok("which charmcraft")
-            cmd_ok(f"ls {self.build.home}/.local/bin")
-            click.echo(f"PATH={os.environ['PATH']}")
+            cmd_ok("which charmcraft", echo=self.echo)
+            self.echo(f"PATH={os.environ['PATH']}")
             ret = cmd_ok(
                 f"{self.build.home}/.local/bin/charmcraft build -f {self.src_path}",
                 cwd=self.build.build_dir,
+                echo=self.echo,
             )
 
         if not ret.ok:
@@ -404,16 +412,17 @@ class BuildEntity:
         """Pushes a built charm to Charmstore"""
 
         if "override-push" in self.opts:
-            click.echo("Override push found, running in place of charm push.")
+            self.echo("Override push found, running in place of charm push.")
             script(
                 self.opts["override-push"],
                 cwd=self.src_path,
                 charm=self.name,
                 namespace=self.namespace,
+                echo=self.echo,
             )
             return
 
-        click.echo(f"Pushing built {self.dst_path} to {self.entity}")
+        self.echo(f"Pushing built {self.dst_path} to {self.entity}")
 
         out = retry_call(
             capture,
@@ -423,13 +432,15 @@ class BuildEntity:
             backoff=2,
             exceptions=CalledProcessError,
         )
-        click.echo(f"Charm push returned: {out}")
+        self.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
         out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
         self.new_entity = out["url"]
-        click.echo(f"Setting {self.new_entity} metadata: {self.commit}")
-        cmd_ok(["charm", "set", self.new_entity, f"commit={self.commit}"])
+        self.echo(f"Setting {self.new_entity} metadata: {self.commit}")
+        cmd_ok(
+            ["charm", "set", self.new_entity, f"commit={self.commit}"], echo=self.echo
+        )
 
     def attach_resources(self):
         out_path = Path(self.src_path) / "tmp"
@@ -448,8 +459,8 @@ class BuildEntity:
                 out_path=out_path,
                 src_path=self.src_path,
             )
-            click.echo("Running custom build-resources")
-            ret = script(resource_builder)
+            self.echo("Running custom build-resources")
+            ret = script(resource_builder, echo=self.echo)
             if not ret.ok:
                 raise SystemExit("Failed to build custom resources")
 
@@ -457,16 +468,16 @@ class BuildEntity:
         for name, details in self._read_metadata_resources().items():
             upstream_image = details.get("upstream-source")
             if details["type"] == "oci-image" and upstream_image:
-                click.echo(f"Pulling {upstream_image}...")
+                self.echo(f"Pulling {upstream_image}...")
                 sh.docker.pull(upstream_image)
                 resources[name] = upstream_image
 
+        self.echo(f"Attaching resources:\n{pformat(resources)}")
         # Attach all resources.
         for name, resource in resources.items():
             # If the resource is a file, populate the path where it was built.
             # If it's a custom image, it will be in Docker and this will be a no-op.
             resource = resource.format(out_path=out_path)
-            click.echo(f"Attaching {name}={resource}")
             retry_call(
                 cmd_ok,
                 fargs=[
@@ -477,7 +488,7 @@ class BuildEntity:
                         f"{name}={resource}",
                     ]
                 ],
-                fkwargs={"check": True},
+                fkwargs={"check": True, "echo": self.echo},
                 delay=2,
                 backoff=2,
                 tries=15,
@@ -485,7 +496,7 @@ class BuildEntity:
             )
 
     def promote(self, from_channel="unpublished", to_channel="edge"):
-        click.echo(
+        self.echo(
             f"Promoting :: {self.entity:^35} :: from:{from_channel} to: {to_channel}"
         )
         charm_id = sh.charm.show(self.entity, "--channel", from_channel, "id")
@@ -508,7 +519,7 @@ class BuildEntity:
                     for resource in resources
                 ]
         except sh.ErrorReturnCode:
-            click.echo("No resources for {}".format(charm_id))
+            self.echo("No resources for {}".format(charm_id))
         sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
 
 
