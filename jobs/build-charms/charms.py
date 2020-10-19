@@ -365,15 +365,8 @@ class BuildEntity:
         self.echo(f"Cloning repo from {downstream}")
 
         os.makedirs(self.src_path)
-        for line in git.clone(
-            "--branch",
-            self.build.db["build_args"]["charm_branch"],
-            downstream,
-            self.src_path,
-            _iter=True,
-            _bg_exc=False,
-        ):
-            self.echo(line)
+        branch = self.build.db["build_args"]["charm_branch"]
+        cmd_ok(f"git clone --branch {branch} {downstream} {self.src_path}")
 
         self.legacy_charm = self.layer_path.exists()
         if not self.legacy_charm:
