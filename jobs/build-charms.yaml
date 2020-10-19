@@ -112,6 +112,8 @@
               IS_FORCE="--force"
             fi
 
+            rm -rf "$WORKSPACE/build-charms" || true
+
             tox -e py38 -- python jobs/build-charms/charms.py build \
               --charm-list "$CHARM_LIST" \
               --charm-branch "$CHARM_BRANCH" \
