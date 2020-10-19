@@ -441,7 +441,7 @@ class BuildEntity:
                 "Custom build-resources specified for {self.entity} but no spec found"
             )
         if resource_builder:
-            resource_builder.format(
+            resource_builder = resource_builder.format(
                 out_path=out_path,
                 src_path=self.src_path,
             )
