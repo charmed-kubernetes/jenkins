@@ -531,6 +531,7 @@ class BuildEntity:
 class BundleBuildEntity(BuildEntity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.src_path = self.opts["repo_dir"]
         self.dst_path = self.name
 
     def push(self):
@@ -740,6 +741,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                     click.echo(line)
             else:
                 bundle_repo_dir = default_repo_dir
+            bundle_opts["repo_dir"] = str(bundle_repo_dir)
 
             if not bundle_opts.get("skip-build", False):
                 cmd = [
