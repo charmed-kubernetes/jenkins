@@ -1,16 +1,4 @@
 # -*- mode:yaml; -*-
-- metallb-controller:
-    upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
-    subdir: "charms/metallb-controller"
-    namespace: "containers"
-    downstream: "charmed-kubernetes/metallb-operator"
-    tags: ["k8s", "metallb", "metallb-controller"]
-- metallb-speaker:
-    upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
-    subdir: "charms/metallb-speaker"
-    namespace: "containers"
-    downstream: "charmed-kubernetes/metallb-operator"
-    tags: ["k8s", "metallb", "metallb-speaker"]
 - calico:
     upstream: "https://github.com/charmed-kubernetes/layer-calico.git"
     downstream: 'charmed-kubernetes/layer-calico.git'
@@ -121,6 +109,18 @@
     namespace: 'containers'
     downstream: 'charmed-kubernetes/charm-vsphere-integrator'
     tags: ['k8s', 'charm-vsphere-integrator']
+- metallb-controller:
+    upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
+    subdir: "charms/metallb-controller"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/metallb-operator"
+    tags: ["k8s", "metallb", "metallb-controller"]
+- metallb-speaker:
+    upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
+    subdir: "charms/metallb-speaker"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/metallb-operator"
+    tags: ["k8s", "metallb", "metallb-speaker"]
 - multus:
     upstream: "https://github.com/charmed-kubernetes/charm-multus.git"
     namespace: "containers"
