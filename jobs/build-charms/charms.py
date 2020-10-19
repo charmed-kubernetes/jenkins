@@ -229,9 +229,10 @@ class BuildEntity:
         # Bundle or charm name
         self.name = name
 
-        src_path = Path(self.name).absolute()
+        self.checkout_path = Path(self.name).absolute()
+
         if "subdir" in opts:
-            src_path = src_path / opts["subdir"]
+            src_path = self.checkout_path / opts["subdir"]
 
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
@@ -366,7 +367,10 @@ class BuildEntity:
 
         os.makedirs(self.src_path)
         branch = self.build.db["build_args"]["charm_branch"]
-        cmd_ok(f"git clone --branch {branch} {downstream} {self.src_path}")
+        cmd_ok(
+            f"git clone --branch {branch} {downstream} {self.checkout_path}",
+            echo=self.echo,
+        )
 
         self.legacy_charm = self.layer_path.exists()
         if not self.legacy_charm:
