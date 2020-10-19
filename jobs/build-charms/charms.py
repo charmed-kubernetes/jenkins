@@ -303,9 +303,11 @@ class BuildEntity:
             )
             old_commit = extra_info.get("commit")
             new_commit = self.commit
-            changed = new_commit != new_commit
+            changed = new_commit != old_commit
             if changed:
                 self.echo(f"Changes found: {new_commit} (new) != {old_commit} (old)")
+            else:
+                self.echo(f"No changes found: {new_commit} (new) == {old_commit} (old)")
             return changed
 
         charmstore_build_manifest = None
