@@ -531,8 +531,8 @@ class BuildEntity:
 class BundleBuildEntity(BuildEntity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.src_path = self.opts["repo_dir"]
-        self.dst_path = self.name
+        self.src_path = str(self.opts["src_path"])
+        self.dst_path = str(self.opts["dst_path"])
 
     def push(self):
         """Pushes a built charm to Charmstore"""
@@ -705,21 +705,18 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
         "to_channel": to_channel,
     }
 
-    default_repo_dir = build_env.tmp_dir / "bundles-kubernetes"
-    # bundle_build_dir = build_env.tmp_dir / "tmp-bundles"
-    # sh.rm("-rf", bundle_repo_dir)
-    # sh.rm("-rf", bundle_build_dir)
-    # os.makedirs(str(bundle_repo_dir), exist_ok=True)
-    # os.makedirs(str(bundle_build_dir), exist_ok=True)
-    for line in git.clone(
-        "--branch",
-        bundle_branch,
-        bundle_repo,
-        str(default_repo_dir),
-        _iter=True,
-        _bg_exc=False,
-    ):
-        click.echo(line)
+    repos_dir = build_env.tmp_dir / "repos"
+    if repos_dir.exists():
+        shutil.rmtree(repos_dir)
+    repos_dir.mkdir()
+
+    bundles_dir = build_env.tmp_dir / "bundles"
+    if bundles_dir.exists():
+        shutil.rmtree(bundles_dir)
+    bundles_dir.mkdir()
+
+    default_repo_dir = repos_dir / "bundles-kubernetes"
+    cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {default_repo_dir}")
 
     for bundle_map in build_env.artifacts:
         for bundle_name, bundle_opts in bundle_map.items():
@@ -729,39 +726,24 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
             click.echo(f"Processing {bundle_name}")
             if "repo" in bundle_opts:
                 # override bundle repo
-                bundle_repo_dir = build_env.tmp_dir / bundle_name
-                for line in git.clone(
-                    "--branch",
-                    bundle_branch,
-                    bundle_opts["repo"],
-                    str(bundle_repo_dir),
-                    _iter=True,
-                    _bg_exc=False,
-                ):
-                    click.echo(line)
+                src_path = repos_dir / bundle_name
+                cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {src_path}")
             else:
-                bundle_repo_dir = default_repo_dir
-            bundle_opts["repo_dir"] = str(bundle_repo_dir)
+                src_path = default_repo_dir
+            dst_path = bundles_dir / bundle_name
+
+            bundle_opts["src_path"] = src_path
+            bundle_opts["dst_path"] = dst_path
 
             if not bundle_opts.get("skip-build", False):
-                cmd = [
-                    str(bundle_repo_dir / "bundle"),
-                    "-o",
-                    bundle_name,
-                    "-c",
-                    to_channel,
-                    bundle_opts["fragments"],
-                ]
-                click.echo(f"Running {' '.join(cmd)}")
-                import subprocess
-
-                subprocess.run(" ".join(cmd), shell=True)
+                cmd = f"{src_path}/bundle -o {dst_path} -c {to_channel} {bundle_opts['fragments']}"
+                click.echo(f"Running {cmd}")
+                cmd_ok(cmd)
             else:
                 # If we're not building the bundle from the repo, we have
                 # to copy it to the expected output location instead.
-                bundle_path = bundle_repo_dir / bundle_opts.get("subdir", "")
-                Path(bundle_name).mkdir()
-                shutil.copytree(bundle_path, bundle_name)
+                dst_path.mkdir()
+                shutil.copytree(src_path / bundle_opts.get("subdir", ""), dst_path)
 
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
             build_entity = BundleBuildEntity(
