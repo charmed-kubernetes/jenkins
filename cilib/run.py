@@ -34,7 +34,7 @@ def script(script_data, **kwargs):
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            **kwargs
+            **kwargs,
         )
 
     if not script_data[:2] != "#!":
@@ -49,7 +49,7 @@ def script(script_data, **kwargs):
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        **kwargs
+        **kwargs,
     )
     with process.stdout:
         _log_sub_out(process.stdout)

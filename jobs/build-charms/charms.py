@@ -373,7 +373,7 @@ class BuildEntity:
             click.echo(line)
 
         self.legacy_charm = self.layer_path.exists()
-        if self.legacy_charm:
+        if not self.legacy_charm:
             self.dst_path += ".charm"
 
     def charm_build(self):
