@@ -241,9 +241,7 @@
 
           mkdir -p $HOME/bin || true
           mkdir -p $HOME/go/bin || true
-          rm -rf "$CHARM_BUILD_DIR" || true
-          rm -rf "$CHARM_LAYERS_DIR" || true
-          rm -rf "$CHARM_INTERFACES_DIR" || true
+          rm -rf "$HOME/.cache/charmbuild" || true
           mkdir -p "$CHARM_BUILD_DIR"
           mkdir -p "$CHARM_LAYERS_DIR"
           mkdir -p "$CHARM_INTERFACES_DIR"
