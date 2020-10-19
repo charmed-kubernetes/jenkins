@@ -105,7 +105,7 @@
             #!/bin/bash
             set -eux
 
-            sudo apt install tree
+            sudo apt install -yqq tree
             sudo chown jenkins:jenkins /var/lib/jenkins/.config/charm-build.conf
 
             IS_FORCE=""
