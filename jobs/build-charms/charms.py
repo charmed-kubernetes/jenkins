@@ -374,7 +374,7 @@ class BuildEntity:
             echo=self.echo,
         )
         if not ret.ok:
-            cmd_ok(f"ls -lR {self.checkout_path}")
+            cmd_ok(f"tree -Fpuga {self.checkout_path}")
             raise SystemExit("Clone failed")
 
         self.legacy_charm = self.layer_path.exists()
