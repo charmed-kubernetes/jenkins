@@ -369,10 +369,13 @@ class BuildEntity:
 
         os.makedirs(self.src_path)
         branch = self.build.db["build_args"]["charm_branch"]
-        cmd_ok(
+        ret = cmd_ok(
             f"git clone --branch {branch} {downstream} {self.checkout_path}",
             echo=self.echo,
         )
+        if not ret.ok:
+            cmd_ok(f"ls -lR {self.checkout_path}")
+            raise SystemExit("Clone failed")
 
         self.legacy_charm = self.layer_path.exists()
         if not self.legacy_charm:
