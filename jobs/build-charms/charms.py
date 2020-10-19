@@ -639,7 +639,7 @@ def build(
             )
             click.echo(f"Queued {charm_entity} for building")
 
-    def _run_build(entity):
+    for entity in entities:
         entity.echo("Starting")
         try:
             entity.setup()
@@ -656,8 +656,8 @@ def build(
         finally:
             entity.echo("Stopping")
 
-    pool = ThreadPool()
-    pool.map(_run_build, entities)
+    # pool = ThreadPool()
+    # pool.map(_run_build, entities)
     build_env.save()
 
 
