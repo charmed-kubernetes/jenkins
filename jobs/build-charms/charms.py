@@ -229,7 +229,7 @@ class BuildEntity:
         # Bundle or charm name
         self.name = name
 
-        self.checkout_path = Path(self.name).absolute()
+        self.checkout_path = Path("charms") / self.name
 
         if "subdir" in opts:
             src_path = self.checkout_path / opts["subdir"]
@@ -239,7 +239,7 @@ class BuildEntity:
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
 
-        self.src_path = str(src_path)
+        self.src_path = str(src_path.absolute())
         self.dst_path = str(self.build.build_dir / self.name)
 
         # Bundle or charm opts as defined in the layer include
@@ -374,7 +374,6 @@ class BuildEntity:
             echo=self.echo,
         )
         if not ret.ok:
-            cmd_ok(f"tree -Fpuga {self.checkout_path}")
             raise SystemExit("Clone failed")
 
         self.legacy_charm = self.layer_path.exists()

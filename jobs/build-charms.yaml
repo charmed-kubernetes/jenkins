@@ -105,7 +105,6 @@
             #!/bin/bash
             set -eux
 
-            sudo apt install -yqq tree
             sudo chown jenkins:jenkins /var/lib/jenkins/.config/charm-build.conf
 
             IS_FORCE=""
@@ -113,8 +112,7 @@
               IS_FORCE="--force"
             fi
 
-            rm -rf "$WORKSPACE/build-charms" || true
-            tree -Fpuga "$WORKSPACE/build-charms"
+            rm -rf "$WORKSPACE/charms" || true
 
             tox -e py38 -- python jobs/build-charms/charms.py build \
               --charm-list "$CHARM_LIST" \
