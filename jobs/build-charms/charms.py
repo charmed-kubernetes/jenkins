@@ -400,7 +400,7 @@ class BuildEntity:
             )
         else:
             ret = cmd_ok(
-                f"{self.build.home}/.local/bin/charmcraft build -f {self.src_path}",
+                f"charmcraft build -f {self.src_path}",
                 cwd=self.build.build_dir,
                 echo=self.echo,
             )
