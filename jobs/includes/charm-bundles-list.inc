@@ -26,9 +26,9 @@
 - kubeflow:
     namespace: kubeflow-charmers
     tags: ['general', 'kubeflow']
-# - metallb:
-#     namespace: containers
-#     repo: "https://github.com/charmed-kubernetes/metallb-operator"
-#     skip-build: true
-#     subdir: "bundle"
-#     tags: ['k8s', 'addons', 'metallb']
+- metallb:
+    namespace: containers
+    repo: "https://github.com/charmed-kubernetes/metallb-operator"
+    skip-build: true
+    subdir: "bundle"
+    tags: ['k8s', 'addons', 'metallb']

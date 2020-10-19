@@ -529,10 +529,14 @@ class BuildEntity:
 
 
 class BundleBuildEntity(BuildEntity):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dst_path = self.name
+
     def push(self):
         """Pushes a built charm to Charmstore"""
 
-        click.echo(f"Pushing bundle {self.name} from {self.src_path} to {self.entity}")
+        click.echo(f"Pushing bundle {self.name} from {self.dst_path} to {self.entity}")
         out = sh.charm.push(self.src_path, self.entity)
         click.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
