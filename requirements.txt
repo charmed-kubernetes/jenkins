@@ -120,6 +120,7 @@ pyyaml-include==1.2       # via ogc
 pyyaml==5.3.1             # via -r requirements.in, ansible, awscli, jenkins-job-builder, juju, jujubundlelib, mkdocs, ogc, ogc-plugins-juju, python-frontmatter, pyyaml-include
 regex==2020.7.14          # via black, nltk
 requests==2.24.0          # via -r requirements.in, canonicalwebteam.snapstoreapi, macaroonbakery, ogc, python-jenkins, theblues
+requests-toolbelt==0.9.1  # manual
 retry==0.9.2              # via -r requirements.in
 rsa==4.5                  # via awscli
 s3transfer==0.3.3         # via awscli, boto3
