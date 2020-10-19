@@ -403,6 +403,7 @@ class BuildEntity:
             )
 
         if not ret.ok:
+            self.echo("Failed to build, aborting")
             raise SystemExit(f"Failed to build {self.name}")
 
     def push(self):
@@ -639,17 +640,21 @@ def build(
             click.echo(f"Queued {charm_entity} for building")
 
     def _run_build(entity):
-        entity.setup()
+        entity.echo("Starting")
+        try:
+            entity.setup()
+            entity.echo(f"Details: {entity}")
 
-        if not entity.has_changed and not build_env.force:
-            return
+            if not entity.has_changed and not build_env.force:
+                return
 
-        click.echo(f"Processing: {entity}")
-        entity.charm_build()
+            entity.charm_build()
 
-        entity.push()
-        entity.attach_resources()
-        entity.promote(to_channel=to_channel)
+            entity.push()
+            entity.attach_resources()
+            entity.promote(to_channel=to_channel)
+        finally:
+            entity.echo("Stopping")
 
     pool = ThreadPool()
     pool.map(_run_build, entities)
