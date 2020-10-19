@@ -390,14 +390,18 @@ class BuildEntity:
                 echo=self.echo,
             )
         elif self.legacy_charm:
+            cmd = "charm build -r --force -i https://localhost"
+            self.echo(f"Building with: {cmd}")
             ret = cmd_ok(
-                "charm build -r --force -i https://localhost",
+                cmd,
                 cwd=self.src_path,
                 echo=self.echo,
             )
         else:
+            cmd = f"charmcraft build -f {self.src_path}"
+            self.echo(f"Building with: {cmd}")
             ret = cmd_ok(
-                f"charmcraft build -f {self.src_path}",
+                cmd,
                 cwd=self.build.build_dir,
                 echo=self.echo,
             )
