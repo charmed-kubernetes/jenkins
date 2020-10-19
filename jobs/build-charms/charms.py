@@ -301,8 +301,7 @@ class BuildEntity:
                     "extra-info",
                     format="yaml",
                 ).stdout.decode()
-            )
-            self.echo(f"Extra-info for {self.full_entity}: {extra_info}")
+            )["extra-info"]
             old_commit = extra_info.get("commit")
             new_commit = self.commit
             changed = new_commit != old_commit
