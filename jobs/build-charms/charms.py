@@ -537,7 +537,7 @@ class BundleBuildEntity(BuildEntity):
         """Pushes a built charm to Charmstore"""
 
         click.echo(f"Pushing bundle {self.name} from {self.dst_path} to {self.entity}")
-        out = sh.charm.push(self.src_path, self.entity)
+        out = sh.charm.push(self.dst_path, self.entity)
         click.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
