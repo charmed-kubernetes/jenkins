@@ -646,7 +646,7 @@ def build(
             entity.echo(f"Details: {entity}")
 
             if not entity.has_changed and not build_env.force:
-                return
+                continue
 
             entity.charm_build()
 
