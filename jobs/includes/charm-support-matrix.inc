@@ -111,11 +111,13 @@
     tags: ['k8s', 'charm-vsphere-integrator']
 - metallb-controller:
     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
+    subdir: "charms/metallb-controller"
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
     tags: ["k8s", "metallb", "metallb-controller"]
 - metallb-speaker:
     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
+    subdir: "charms/metallb-speaker"
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
     tags: ["k8s", "metallb", "metallb-speaker"]

@@ -230,6 +230,9 @@ class BuildEntity:
         self.name = name
 
         src_path = Path(self.name).absolute()
+        if "subdir" in opts:
+            src_path = src_path / opts["subdir"]
+
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
 
