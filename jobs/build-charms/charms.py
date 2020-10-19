@@ -393,7 +393,7 @@ class BuildEntity:
             cmd_ok(f"ls {self.build.home}/.local/bin")
             click.echo(f"PATH={os.environ['PATH']}")
             ret = cmd_ok(
-                f"charmcraft build -f {self.src_path}",
+                f"{self.build.home}/.local/bin/charmcraft build -f {self.src_path}",
                 cwd=self.build.build_dir,
             )
 
