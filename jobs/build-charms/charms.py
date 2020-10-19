@@ -204,12 +204,6 @@ class BuildEnv:
 
     def pull_layers(self):
         """clone all downstream layers to be processed locally when doing charm builds"""
-        shutil.rmtree(str(self.build_dir))
-        shutil.rmtree(str(self.layers_dir))
-        shutil.rmtree(str(self.interfaces_dir))
-        os.mkdir(str(self.layers_dir))
-        os.mkdir(str(self.interfaces_dir))
-
         layers_to_pull = []
         for layer_map in self.layers:
             layer_name = list(layer_map.keys())[0]
