@@ -109,7 +109,7 @@ def sync_snaps(snap_list, version, branch_version, tracks):
     "--starting-ver",
     help="Oldest k8s release to start from",
     required=True,
-    default="1.13.7",
+    default="1.16.0",
 )
 @click.option("--force", is_flag=True)
 @click.option("--patches", help="Path to patches list", required=False)
