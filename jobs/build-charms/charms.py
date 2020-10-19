@@ -397,8 +397,6 @@ class BuildEntity:
                 echo=self.echo,
             )
         else:
-            cmd_ok("which charmcraft", echo=self.echo)
-            self.echo(f"PATH={os.environ['PATH']}")
             ret = cmd_ok(
                 f"{self.build.home}/.local/bin/charmcraft build -f {self.src_path}",
                 cwd=self.build.build_dir,
@@ -651,6 +649,8 @@ def build(
         entity.attach_resources()
         entity.promote(to_channel=to_channel)
 
+    cmd_ok("which charmcraft", echo=lambda m: click.echo(f"[path-debug] {m}"))
+    click.echo(f"[path-debug] PATH={os.environ['PATH']}")
     pool = ThreadPool()
     pool.map(_run_build, entities)
     build_env.save()
