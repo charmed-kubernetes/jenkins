@@ -60,6 +60,7 @@ class BuildEnv:
         interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
         tmp_dir = Path(os.environ.get("WORKSPACE"))
         home_dir = Path(os.environ.get("HOME"))
+        charms_dir = home_dir / ".cache/charmbuild/charms"
     except TypeError:
         raise BuildException(
             "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE, HOME: "
@@ -229,7 +230,7 @@ class BuildEntity:
         # Bundle or charm name
         self.name = name
 
-        self.checkout_path = Path("charms") / self.name
+        self.checkout_path = build.charms_dir / self.name
 
         if "subdir" in opts:
             src_path = self.checkout_path / opts["subdir"]
@@ -367,7 +368,7 @@ class BuildEntity:
         downstream = f"https://github.com/{self.opts['downstream']}"
         self.echo(f"Cloning repo from {downstream}")
 
-        os.makedirs(self.src_path)
+        os.makedirs(self.checkout_path)
         branch = self.build.db["build_args"]["charm_branch"]
         ret = cmd_ok(
             f"git clone --branch {branch} {downstream} {self.checkout_path}",
