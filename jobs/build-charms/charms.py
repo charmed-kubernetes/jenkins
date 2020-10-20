@@ -737,6 +737,8 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
 
             if "repo" in bundle_opts:
                 # clone bundle repo override
+                bundle_repo = bundle_opts["repo"]
+                build_entity.echo(f"Cloning {bundle_repo}")
                 cmd_ok(
                     f"git clone --branch {bundle_branch} {bundle_repo} {src_path}",
                     echo=build_entity.echo,
@@ -750,9 +752,6 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 # If we're not building the bundle from the repo, we have
                 # to copy it to the expected output location instead.
                 dst_path.mkdir()
-                build_entity.echo(f"src_path = '{src_path}'")
-                cmd_ok(f"ls -ld {src_path}", echo=build_entity.echo)
-                cmd_ok(f"ls -l {src_path}", echo=build_entity.echo)
                 shutil.copytree(src_path / bundle_opts.get("subdir", ""), dst_path)
 
             build_entity.push()
