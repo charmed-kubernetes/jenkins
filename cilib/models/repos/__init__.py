@@ -49,33 +49,19 @@ class BaseRepoModel:
 
     def latest_branch_from_major_minor(self, major_minor, include_prerelease=False):
         """Grabs latest known branch semver for a major.minor release"""
-        _branches = []
-        for branch in self.branches:
-            try:
-                branch_version = version.parse(branch)
-                if not include_prerelease and branch_version["prerelease"] is not None:
-                    continue
+        return self.__latest_from_semver(self.branches, major_minor, include_prerelease)
 
-                if (
-                    major_minor
-                    == f"{branch_version['major']}.{branch_version['minor']}"
-                ):
-                    _branches.append(version.normalize(branch))
-            except:
-                continue
-        return str(max(map(semver.VersionInfo.parse, _branches)))
+    def latest_tag_from_major_minor(self, major_minor, include_prerelease=False):
+        """Grabs latest known tag semver for a major.minor release"""
+        return self.__latest_from_semver(self.tags, major_minor, include_prerelease)
+
+    def branches_from_semver_point(self, starting_semver):
+        """Returns a list of branches from a starting semantic version"""
+        return self.__semvers_from_point(self.branches, starting_semver)
 
     def tags_from_semver_point(self, starting_semver):
         """Returns a list of tags from a starting semantic version"""
-        tags = []
-        for tag in self.tags:
-            try:
-                if version.compare(tag, starting_semver):
-                    tags.append(tag)
-            except Exception as error:
-                print(error)
-                continue
-        return tags
+        return self.__semvers_from_point(self.tags, starting_semver)
 
     def tags_subset(self, alt_model):
         """Grabs a subset of tags from a another repo model"""
@@ -87,3 +73,36 @@ class BaseRepoModel:
             set(self.tags_from_semver_point(starting_semver))
             - set(alt_model.tags_from_semver_point(starting_semver))
         )
+
+    # private
+
+    def __latest_from_semver(self, semvers, major_minor, include_prerelease=False):
+        """Grabs latest semver from list of semvers"""
+        _semvers = []
+        for _semver in semvers:
+            try:
+                semver_version = version.parse(_semver)
+                if not include_prerelease and semver_version["prerelease"] is not None:
+                    continue
+
+                if (
+                    major_minor
+                    == f"{semver_version['major']}.{semver_version['minor']}"
+                ):
+                    _semvers.append(version.normalize(_semver))
+            except:
+                continue
+        return str(max(map(semver.VersionInfo.parse, _semvers)))
+
+    def __semvers_from_point(self, semvers, starting_semver):
+        """Grabs all semvers from branches or tags at starting semver point"""
+        _semvers = []
+        for _semver in semvers:
+            try:
+                if version.compare(_semver, starting_semver):
+                    _semvers.append(_semver)
+            except Exception as error:
+                print(error)
+                continue
+        return _semvers
+
