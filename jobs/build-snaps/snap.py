@@ -181,7 +181,7 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     """
     env = os.environ.copy()
 
-    if branch_exists(repo, to_branch, env) and not force:
+    if branch_exists(repo, to_branch, env=env) and not force:
         click.echo(f"{to_branch} already exists, skipping...")
         sys.exit(0)
 
