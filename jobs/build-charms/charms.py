@@ -751,7 +751,6 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
             else:
                 # If we're not building the bundle from the repo, we have
                 # to copy it to the expected output location instead.
-                dst_path.mkdir()
                 shutil.copytree(src_path / bundle_opts.get("subdir", ""), dst_path)
 
             build_entity.push()
