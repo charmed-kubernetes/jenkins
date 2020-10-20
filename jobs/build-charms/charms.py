@@ -27,6 +27,7 @@ from retry.api import retry_call
 from subprocess import CalledProcessError
 from types import SimpleNamespace
 from pathos.threading import ThreadPool
+from pprint import pformat
 import click
 import shutil
 import sh
@@ -59,6 +60,7 @@ class BuildEnv:
         interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
         tmp_dir = Path(os.environ.get("WORKSPACE"))
         home_dir = Path(os.environ.get("HOME"))
+        charms_dir = home_dir / ".cache/charmbuild/charms"
     except TypeError:
         raise BuildException(
             "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE, HOME: "
@@ -203,12 +205,6 @@ class BuildEnv:
 
     def pull_layers(self):
         """clone all downstream layers to be processed locally when doing charm builds"""
-        shutil.rmtree(str(self.build_dir))
-        shutil.rmtree(str(self.layers_dir))
-        shutil.rmtree(str(self.interfaces_dir))
-        os.mkdir(str(self.layers_dir))
-        os.mkdir(str(self.interfaces_dir))
-
         layers_to_pull = []
         for layer_map in self.layers:
             layer_name = list(layer_map.keys())[0]
@@ -234,11 +230,17 @@ class BuildEntity:
         # Bundle or charm name
         self.name = name
 
-        src_path = Path(self.name).absolute()
+        self.checkout_path = build.charms_dir / self.name
+
+        if "subdir" in opts:
+            src_path = self.checkout_path / opts["subdir"]
+        else:
+            src_path = self.checkout_path
+
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
 
-        self.src_path = str(src_path)
+        self.src_path = str(src_path.absolute())
         self.dst_path = str(self.build.build_dir / self.name)
 
         # Bundle or charm opts as defined in the layer include
@@ -257,6 +259,9 @@ class BuildEntity:
 
     def __str__(self):
         return f"<BuildEntity: {self.name} ({self.full_entity}) (legacy charm: {self.legacy_charm})>"
+
+    def echo(self, msg):
+        click.echo(f"[{self.name}] {msg}")
 
     def get_charmstore_rev_url(self):
         # Grab charmstore revision for channels charm
@@ -280,7 +285,7 @@ class BuildEntity:
             return SimpleNamespace(ok=False)
         entity_p = self.full_entity.lstrip("cs:")
         url = f"https://api.jujucharms.com/charmstore/v5/{entity_p}/archive/{fname}"
-        click.echo(f"Downloading {fname} from {url}")
+        self.echo(f"Downloading {fname} from {url}")
         return requests.get(url)
 
     @property
@@ -296,12 +301,14 @@ class BuildEntity:
                     "extra-info",
                     format="yaml",
                 ).stdout.decode()
-            )
+            )["extra-info"]
             old_commit = extra_info.get("commit")
             new_commit = self.commit
-            changed = new_commit != new_commit
+            changed = new_commit != old_commit
             if changed:
-                click.echo(f"Changes found: {new_commit} (new) != {old_commit} (old)")
+                self.echo(f"Changes found: {new_commit} (new) != {old_commit} (old)")
+            else:
+                self.echo(f"No changes found: {new_commit} (new) == {old_commit} (old)")
             return changed
 
         charmstore_build_manifest = None
@@ -310,7 +317,7 @@ class BuildEntity:
             charmstore_build_manifest = resp.json()
 
         if not charmstore_build_manifest:
-            click.echo(
+            self.echo(
                 "No build.manifest located, unable to determine if any changes occurred."
             )
             return True
@@ -331,10 +338,10 @@ class BuildEntity:
             if i not in current_build_manifest
         ]
         if the_diff:
-            click.echo("Changes found:")
-            click.echo(the_diff)
+            self.echo("Changes found:")
+            self.echo(the_diff)
             return True
-        click.echo(f"No changes found, not building a new {self.entity}")
+        self.echo(f"No changes found, not building a new {self.entity}")
         return False
 
     @property
@@ -359,18 +366,16 @@ class BuildEntity:
     def setup(self):
         """Setup directory for charm build"""
         downstream = f"https://github.com/{self.opts['downstream']}"
-        click.echo(f"Cloning repo from {downstream}")
+        self.echo(f"Cloning repo from {downstream}")
 
-        os.makedirs(self.src_path)
-        for line in git.clone(
-            "--branch",
-            self.build.db["build_args"]["charm_branch"],
-            downstream,
-            self.src_path,
-            _iter=True,
-            _bg_exc=False,
-        ):
-            click.echo(line)
+        os.makedirs(self.checkout_path)
+        branch = self.build.db["build_args"]["charm_branch"]
+        ret = cmd_ok(
+            f"git clone --branch {branch} {downstream} {self.checkout_path}",
+            echo=self.echo,
+        )
+        if not ret.ok:
+            raise SystemExit("Clone failed")
 
         self.legacy_charm = self.layer_path.exists()
         if not self.legacy_charm:
@@ -379,38 +384,49 @@ class BuildEntity:
     def charm_build(self):
         """Perform charm build against charm/bundle"""
         if "override-build" in self.opts:
-            click.echo("Override build found, running in place of charm build.")
+            self.echo("Override build found, running in place of charm build.")
             ret = script(
-                self.opts["override-build"], cwd=self.src_path, charm=self.name
+                self.opts["override-build"],
+                cwd=self.src_path,
+                charm=self.name,
+                echo=self.echo,
             )
         elif self.legacy_charm:
+            cmd = "charm build -r --force -i https://localhost"
+            self.echo(f"Building with: {cmd}")
             ret = cmd_ok(
-                "charm build -r --force -i https://localhost",
+                cmd,
                 cwd=self.src_path,
+                echo=self.echo,
             )
         else:
+            cmd = f"charmcraft build -f {self.src_path}"
+            self.echo(f"Building with: {cmd}")
             ret = cmd_ok(
-                f"charmcraft build -f {self.src_path}",
+                cmd,
                 cwd=self.build.build_dir,
+                echo=self.echo,
             )
 
         if not ret.ok:
+            self.echo("Failed to build, aborting")
             raise SystemExit(f"Failed to build {self.name}")
 
     def push(self):
         """Pushes a built charm to Charmstore"""
 
         if "override-push" in self.opts:
-            click.echo("Override push found, running in place of charm push.")
+            self.echo("Override push found, running in place of charm push.")
             script(
                 self.opts["override-push"],
                 cwd=self.src_path,
                 charm=self.name,
                 namespace=self.namespace,
+                echo=self.echo,
             )
             return
 
-        click.echo(f"Pushing built {self.dst_path} to {self.entity}")
+        self.echo(f"Pushing built {self.dst_path} to {self.entity}")
 
         out = retry_call(
             capture,
@@ -420,13 +436,15 @@ class BuildEntity:
             backoff=2,
             exceptions=CalledProcessError,
         )
-        click.echo(f"Charm push returned: {out}")
+        self.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
         out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
         self.new_entity = out["url"]
-        click.echo(f"Setting {self.new_entity} metadata: {self.commit}")
-        cmd_ok(["charm", "set", self.new_entity, f"commit={self.commit}"])
+        self.echo(f"Setting {self.new_entity} metadata: {self.commit}")
+        cmd_ok(
+            ["charm", "set", self.new_entity, f"commit={self.commit}"], echo=self.echo
+        )
 
     def attach_resources(self):
         out_path = Path(self.src_path) / "tmp"
@@ -445,26 +463,26 @@ class BuildEntity:
                 out_path=out_path,
                 src_path=self.src_path,
             )
-            click.echo("Running custom build-resources")
-            ret = script(resource_builder)
+            cmd_ok(f"tree -Fpuga {self.src_path}")
+            self.echo("Running custom build-resources")
+            ret = script(resource_builder, echo=self.echo)
             if not ret.ok:
                 raise SystemExit("Failed to build custom resources")
 
         # Pull any `upstream-image` annotated resources.
-        resources = self._read_metadata_resources()
-        for name, details in resources.items():
+        for name, details in self._read_metadata_resources().items():
             upstream_image = details.get("upstream-source")
             if details["type"] == "oci-image" and upstream_image:
-                click.echo(f"Pulling {upstream_image}...")
+                self.echo(f"Pulling {upstream_image}...")
                 sh.docker.pull(upstream_image)
                 resources[name] = upstream_image
 
+        self.echo(f"Attaching resources:\n{pformat(resources)}")
         # Attach all resources.
         for name, resource in resources.items():
             # If the resource is a file, populate the path where it was built.
             # If it's a custom image, it will be in Docker and this will be a no-op.
             resource = resource.format(out_path=out_path)
-            click.echo(f"Attaching {name}={resource}")
             retry_call(
                 cmd_ok,
                 fargs=[
@@ -475,7 +493,7 @@ class BuildEntity:
                         f"{name}={resource}",
                     ]
                 ],
-                fkwargs={"check": True},
+                fkwargs={"check": True, "echo": self.echo},
                 delay=2,
                 backoff=2,
                 tries=15,
@@ -483,7 +501,7 @@ class BuildEntity:
             )
 
     def promote(self, from_channel="unpublished", to_channel="edge"):
-        click.echo(
+        self.echo(
             f"Promoting :: {self.entity:^35} :: from:{from_channel} to: {to_channel}"
         )
         charm_id = sh.charm.show(self.entity, "--channel", from_channel, "id")
@@ -506,16 +524,21 @@ class BuildEntity:
                     for resource in resources
                 ]
         except sh.ErrorReturnCode:
-            click.echo("No resources for {}".format(charm_id))
+            self.echo("No resources for {}".format(charm_id))
         sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
 
 
 class BundleBuildEntity(BuildEntity):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.src_path = str(self.opts["src_path"])
+        self.dst_path = str(self.opts["dst_path"])
+
     def push(self):
         """Pushes a built charm to Charmstore"""
 
-        click.echo(f"Pushing bundle {self.name} from {self.src_path} to {self.entity}")
-        out = sh.charm.push(self.src_path, self.entity)
+        click.echo(f"Pushing bundle {self.name} from {self.dst_path} to {self.entity}")
+        out = sh.charm.push(self.dst_path, self.entity)
         click.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
@@ -598,6 +621,9 @@ def build(
     to_channel,
     force,
 ):
+    cmd_ok("which charm", echo=lambda m: click.echo(f"charm -> {m}"))
+    cmd_ok("which charmcraft", echo=lambda m: click.echo(f"charmcraft -> {m}"))
+
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
         "artifact_list": charm_list,
@@ -625,21 +651,25 @@ def build(
             )
             click.echo(f"Queued {charm_entity} for building")
 
-    def _run_build(entity):
-        entity.setup()
+    for entity in entities:
+        entity.echo("Starting")
+        try:
+            entity.setup()
+            entity.echo(f"Details: {entity}")
 
-        if not entity.has_changed and not build_env.force:
-            return
+            if not entity.has_changed and not build_env.force:
+                continue
 
-        click.echo(f"Processing: {entity}")
-        entity.charm_build()
+            entity.charm_build()
 
-        entity.push()
-        entity.attach_resources()
-        entity.promote(to_channel=to_channel)
+            entity.push()
+            entity.attach_resources()
+            entity.promote(to_channel=to_channel)
+        finally:
+            entity.echo("Stopping")
 
-    pool = ThreadPool()
-    pool.map(_run_build, entities)
+    # pool = ThreadPool()
+    # pool.map(_run_build, entities)
     build_env.save()
 
 
@@ -675,21 +705,18 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
         "to_channel": to_channel,
     }
 
-    default_repo_dir = build_env.tmp_dir / "bundles-kubernetes"
-    # bundle_build_dir = build_env.tmp_dir / "tmp-bundles"
-    # sh.rm("-rf", bundle_repo_dir)
-    # sh.rm("-rf", bundle_build_dir)
-    # os.makedirs(str(bundle_repo_dir), exist_ok=True)
-    # os.makedirs(str(bundle_build_dir), exist_ok=True)
-    for line in git.clone(
-        "--branch",
-        bundle_branch,
-        bundle_repo,
-        str(default_repo_dir),
-        _iter=True,
-        _bg_exc=False,
-    ):
-        click.echo(line)
+    repos_dir = build_env.tmp_dir / "repos"
+    if repos_dir.exists():
+        shutil.rmtree(repos_dir)
+    repos_dir.mkdir()
+
+    bundles_dir = build_env.tmp_dir / "bundles"
+    if bundles_dir.exists():
+        shutil.rmtree(bundles_dir)
+    bundles_dir.mkdir()
+
+    default_repo_dir = repos_dir / "bundles-kubernetes"
+    cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {default_repo_dir}")
 
     for bundle_map in build_env.artifacts:
         for bundle_name, bundle_opts in bundle_map.items():
@@ -699,38 +726,24 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
             click.echo(f"Processing {bundle_name}")
             if "repo" in bundle_opts:
                 # override bundle repo
-                bundle_repo_dir = build_env.tmp_dir / bundle_name
-                for line in git.clone(
-                    "--branch",
-                    bundle_branch,
-                    bundle_opts["repo"],
-                    str(bundle_repo_dir),
-                    _iter=True,
-                    _bg_exc=False,
-                ):
-                    click.echo(line)
+                src_path = repos_dir / bundle_name
+                cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {src_path}")
             else:
-                bundle_repo_dir = default_repo_dir
+                src_path = default_repo_dir
+            dst_path = bundles_dir / bundle_name
+
+            bundle_opts["src_path"] = src_path
+            bundle_opts["dst_path"] = dst_path
 
             if not bundle_opts.get("skip-build", False):
-                cmd = [
-                    str(bundle_repo_dir / "bundle"),
-                    "-o",
-                    bundle_name,
-                    "-c",
-                    to_channel,
-                    bundle_opts["fragments"],
-                ]
-                click.echo(f"Running {' '.join(cmd)}")
-                import subprocess
-
-                subprocess.run(" ".join(cmd), shell=True)
+                cmd = f"{src_path}/bundle -o {dst_path} -c {to_channel} {bundle_opts['fragments']}"
+                click.echo(f"Running {cmd}")
+                cmd_ok(cmd)
             else:
                 # If we're not building the bundle from the repo, we have
                 # to copy it to the expected output location instead.
-                bundle_path = bundle_repo_dir / bundle_opts.get("subdir", "")
-                Path(bundle_name).mkdir()
-                shutil.copytree(bundle_path, bundle_name)
+                dst_path.mkdir()
+                shutil.copytree(src_path / bundle_opts.get("subdir", ""), dst_path)
 
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
             build_entity = BundleBuildEntity(

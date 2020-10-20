@@ -99,12 +99,11 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"
-      - run-venv:
+      - run-tox:
           JOB_SPEC_DIR: "jobs/build-charms"
           COMMAND: |
             #!/bin/bash
             set -eux
-            export PATH=/snap/bin:$PATH
 
             sudo chown jenkins:jenkins /var/lib/jenkins/.config/charm-build.conf
 
@@ -113,7 +112,9 @@
               IS_FORCE="--force"
             fi
 
-            python jobs/build-charms/charms.py build \
+            rm -rf "$WORKSPACE/charms" || true
+
+            tox -e py38 -- python jobs/build-charms/charms.py build \
               --charm-list "$CHARM_LIST" \
               --charm-branch "$CHARM_BRANCH" \
               --to-channel "$TO_CHANNEL" \
@@ -124,7 +125,7 @@
               --layer-branch "$LAYER_BRANCH" \
               $IS_FORCE
 
-            python jobs/build-charms/charms.py build-bundles \
+            tox -e py38 -- python jobs/build-charms/charms.py build-bundles \
                 --to-channel "$TO_CHANNEL" \
                 --bundle-list "$BUNDLE_LIST" \
                 --bundle-branch "$BUNDLE_BRANCH" \

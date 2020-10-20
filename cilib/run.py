@@ -13,10 +13,10 @@ def make_executable(path):
     os.chmod(str(path), mode)
 
 
-def _log_sub_out(pipe):
+def _log_sub_out(pipe, echo):
     """Logs output from subprocess"""
     for line in iter(pipe.readline, b""):
-        click.echo(line.decode().strip())
+        echo(line.decode().strip())
 
 
 def script(script_data, **kwargs):
@@ -27,6 +27,7 @@ def script(script_data, **kwargs):
         env["CHARM"] = kwargs.pop("charm")
     if "namespace" in kwargs:
         env["NAMESPACE"] = kwargs.pop("namespace")
+    echo = kwargs.pop("echo", click.echo)
     if is_single_command:
         process = subprocess.Popen(
             script_data.strip(),
@@ -52,7 +53,7 @@ def script(script_data, **kwargs):
         **kwargs,
     )
     with process.stdout:
-        _log_sub_out(process.stdout)
+        _log_sub_out(process.stdout, echo)
     exitcode = process.wait()
     subprocess.run(["rm", "-rf", str(tmp_script_path)])
     return SimpleNamespace(
@@ -85,6 +86,7 @@ def cmd_ok(script, **kwargs):
     if "check" in kwargs:
         check = kwargs["check"]
         del kwargs["check"]
+    echo = kwargs.pop("echo", click.echo)
     if not isinstance(script, list) and "shell" not in kwargs:
         script = shlex.split(script)
     try:
@@ -92,11 +94,11 @@ def cmd_ok(script, **kwargs):
             script, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, **kwargs
         )
     except Exception as error:
-        click.echo(f"Error: Failed to run {script}: {error}")
+        echo(f"Error: Failed to run {script}: {error}")
         raise subprocess.CalledProcessError(1, "", "")
 
     with process.stdout:
-        _log_sub_out(process.stdout)
+        _log_sub_out(process.stdout, echo)
     exitcode = process.wait()
     if check and exitcode > 0:
         raise subprocess.CalledProcessError(exitcode, "", "")

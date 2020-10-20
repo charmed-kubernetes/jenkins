@@ -241,9 +241,10 @@
 
           mkdir -p $HOME/bin || true
           mkdir -p $HOME/go/bin || true
-          mkdir -p "$CHARM_BUILD_DIR" || true
-          mkdir -p "$CHARM_LAYERS_DIR" || true
-          mkdir -p "$CHARM_INTERFACES_DIR" || true
+          rm -rf "$HOME/.cache/charmbuild" || true
+          mkdir -p "$CHARM_BUILD_DIR"
+          mkdir -p "$CHARM_LAYERS_DIR"
+          mkdir -p "$CHARM_INTERFACES_DIR"
 
           export PATH=/snap/bin:$HOME/bin/:$PATH
           export NODE_LABELS='"$NODE_LABELS"'
@@ -311,6 +312,26 @@
           set -u
 
           {COMMAND}
+
+- builder:
+    name: run-tox
+    builders:
+      - shell: |-
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          python3.8 -m venv venv
+          venv/bin/python -m pip install tox wheel
+
+          set +u
+          source venv/bin/activate
+          set -u
+
+          {COMMAND}
+
 
 # WRAPPERS ------------------------------------------------------------------- #
 - wrapper:
