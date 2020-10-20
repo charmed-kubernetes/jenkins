@@ -6,9 +6,9 @@ class BaseRepoModel:
     """Represents the upstream source to be included in the debian packaging"""
 
     def __init__(self, repo=None, git_user=None, name=None):
-        self.repo = None
-        self.git_user = None
-        self.name = None
+        self.repo = repo
+        self.git_user = git_user
+        self.name = name
 
     def __str__(self):
         return self.repo
@@ -49,19 +49,19 @@ class BaseRepoModel:
 
     def latest_branch_from_major_minor(self, major_minor, include_prerelease=False):
         """Grabs latest known branch semver for a major.minor release"""
-        return self.__latest_from_semver(self.branches, major_minor, include_prerelease)
+        return self._latest_from_semver(self.branches, major_minor, include_prerelease)
 
     def latest_tag_from_major_minor(self, major_minor, include_prerelease=False):
         """Grabs latest known tag semver for a major.minor release"""
-        return self.__latest_from_semver(self.tags, major_minor, include_prerelease)
+        return self._latest_from_semver(self.tags, major_minor, include_prerelease)
 
     def branches_from_semver_point(self, starting_semver):
         """Returns a list of branches from a starting semantic version"""
-        return self.__semvers_from_point(self.branches, starting_semver)
+        return self._semvers_from_point(self.branches, starting_semver)
 
     def tags_from_semver_point(self, starting_semver):
         """Returns a list of tags from a starting semantic version"""
-        return self.__semvers_from_point(self.tags, starting_semver)
+        return self._semvers_from_point(self.tags, starting_semver)
 
     def tags_subset(self, alt_model):
         """Grabs a subset of tags from a another repo model"""
@@ -76,7 +76,7 @@ class BaseRepoModel:
 
     # private
 
-    def __latest_from_semver(self, semvers, major_minor, include_prerelease=False):
+    def _latest_from_semver(self, semvers, major_minor, include_prerelease=False):
         """Grabs latest semver from list of semvers"""
         _semvers = []
         for _semver in semvers:
@@ -94,15 +94,14 @@ class BaseRepoModel:
                 continue
         return str(max(map(semver.VersionInfo.parse, _semvers)))
 
-    def __semvers_from_point(self, semvers, starting_semver):
+    def _semvers_from_point(self, semvers, starting_semver):
         """Grabs all semvers from branches or tags at starting semver point"""
         _semvers = []
         for _semver in semvers:
             try:
-                if version.compare(_semver, starting_semver):
+                if version.greater(_semver, starting_semver):
                     _semvers.append(_semver)
             except Exception as error:
                 print(error)
                 continue
         return _semvers
-

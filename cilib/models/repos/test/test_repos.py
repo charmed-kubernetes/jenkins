@@ -8,21 +8,33 @@ from cilib.models.repos.kubernetes import (
 )
 from cilib.models.repos.snaps import SnapKubeletRepoModel
 
-UPSTREAM = UpstreamKubernetesRepoModel()
-DOWNSTREAM = InternalKubernetesRepoModel()
 
-
-def test_tags_semver_point():
+def test_tags_semver_point(monkeypatch):
     """Test getting tags from a starting semver"""
-    tags = DOWNSTREAM.tags_from_semver_point("v1.19.0")
-    assert len(tags) > 0
+    monkeypatch.setattr(
+        "cilib.models.repos.kubernetes.InternalKubernetesRepoModel.tags",
+        ["v1.16.1", "v1.17.1", "v1.17.2", "v1.18.1"],
+    )
+    DOWNSTREAM = InternalKubernetesRepoModel()
+    tags = DOWNSTREAM.tags_from_semver_point("v1.17.0")
+    assert tags == ["v1.17.1", "v1.17.2", "v1.18.1"]
 
 
-def test_tags_subset_semver_point():
+def test_tags_subset_semver_point(monkeypatch):
     """Test getting subset of tags from a starting semver"""
-    tags = UPSTREAM.tags_subset_semver_point(DOWNSTREAM, "v1.17.0")
-    assert "v1.17.0" in tags
-    assert "v1.17.1" in tags
+    monkeypatch.setattr(
+        "cilib.models.repos.kubernetes.UpstreamKubernetesRepoModel.tags",
+        ["v1.17.5", "v1.17.6", "v1.17.7"],
+    )
+    monkeypatch.setattr(
+        "cilib.models.repos.kubernetes.InternalKubernetesRepoModel.tags",
+        ["v1.17.0", "v1.17.1", "v1.17.2"],
+    )
+    ustream = UpstreamKubernetesRepoModel()
+    dstream = InternalKubernetesRepoModel()
+    tags = ustream.tags_subset_semver_point(dstream, "v1.17.0")
+    assert "v1.16.0" not in tags
+    assert "v1.17.5" in tags
 
 
 def test_add_remote_repo():
@@ -36,8 +48,13 @@ def test_add_remote_repo():
         assert "https://example.com/repo.git" in remote_repos.stdout.decode()
 
 
-def test_latest_branch_from_major_minor():
+def test_latest_branch_from_major_minor(monkeypatch):
     """Test getting latest branch version from a major.minor release"""
+
+    monkeypatch.setattr(
+        "cilib.models.repos.snaps.BaseRepoModel.branches",
+        ["v1.19.0", "v1.19.1", "v1.19.3"],
+    )
     kubelet_repo = SnapKubeletRepoModel()
-    max_branch = kubelet_repo.latest_branch_from_major_minor("1.14")
-    assert semver.compare(max_branch, "1.14.10") == 0
+    max_branch = kubelet_repo.base.latest_branch_from_major_minor("1.19")
+    assert semver.compare(max_branch, "1.19.3") == 0
