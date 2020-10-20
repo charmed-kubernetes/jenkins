@@ -724,23 +724,23 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 click.echo(f"Skipping {bundle_name}")
                 continue
             click.echo(f"Processing {bundle_name}")
+            if "repo" in bundle_opts:
+                src_path = bundle_opts["src_path"] = repos_dir / bundle_name
+            else:
+                src_path = bundle_opts["src_path"] = default_repo_dir
+            dst_path = bundle_opts["dst_path"] = bundles_dir / bundle_name
+
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
             build_entity = BundleBuildEntity(
                 build_env, bundle_name, bundle_opts, bundle_entity
             )
+
             if "repo" in bundle_opts:
-                # override bundle repo
-                src_path = repos_dir / bundle_name
+                # clone bundle repo override
                 cmd_ok(
                     f"git clone --branch {bundle_branch} {bundle_repo} {src_path}",
                     echo=build_entity.echo,
                 )
-            else:
-                src_path = default_repo_dir
-            dst_path = bundles_dir / bundle_name
-
-            bundle_opts["src_path"] = src_path
-            bundle_opts["dst_path"] = dst_path
 
             if not bundle_opts.get("skip-build", False):
                 cmd = f"{src_path}/bundle -o {dst_path} -c {to_channel} {bundle_opts['fragments']}"
