@@ -725,30 +725,34 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 continue
             click.echo(f"Processing {bundle_name}")
             if "repo" in bundle_opts:
-                # override bundle repo
-                src_path = repos_dir / bundle_name
-                cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {src_path}")
+                src_path = bundle_opts["src_path"] = repos_dir / bundle_name
             else:
-                src_path = default_repo_dir
-            dst_path = bundles_dir / bundle_name
-
-            bundle_opts["src_path"] = src_path
-            bundle_opts["dst_path"] = dst_path
-
-            if not bundle_opts.get("skip-build", False):
-                cmd = f"{src_path}/bundle -o {dst_path} -c {to_channel} {bundle_opts['fragments']}"
-                click.echo(f"Running {cmd}")
-                cmd_ok(cmd)
-            else:
-                # If we're not building the bundle from the repo, we have
-                # to copy it to the expected output location instead.
-                dst_path.mkdir()
-                shutil.copytree(src_path / bundle_opts.get("subdir", ""), dst_path)
+                src_path = bundle_opts["src_path"] = default_repo_dir
+            dst_path = bundle_opts["dst_path"] = bundles_dir / bundle_name
 
             bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
             build_entity = BundleBuildEntity(
                 build_env, bundle_name, bundle_opts, bundle_entity
             )
+
+            if "repo" in bundle_opts:
+                # clone bundle repo override
+                bundle_repo = bundle_opts["repo"]
+                build_entity.echo(f"Cloning {bundle_repo}")
+                cmd_ok(
+                    f"git clone --branch {bundle_branch} {bundle_repo} {src_path}",
+                    echo=build_entity.echo,
+                )
+
+            if not bundle_opts.get("skip-build", False):
+                cmd = f"{src_path}/bundle -o {dst_path} -c {to_channel} {bundle_opts['fragments']}"
+                build_entity.echo(f"Running {cmd}")
+                cmd_ok(cmd, echo=build_entity.echo)
+            else:
+                # If we're not building the bundle from the repo, we have
+                # to copy it to the expected output location instead.
+                shutil.copytree(src_path / bundle_opts.get("subdir", ""), dst_path)
+
             build_entity.push()
             build_entity.promote(to_channel=to_channel)
 
