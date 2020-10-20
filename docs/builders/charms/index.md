@@ -1,82 +1,76 @@
-# Charm build specification
+# Building Charms
 
-Each charm that is to be built in Jenkaas CI must adhere to a specific interface
-so that CI can easily build all charms in a uniformed way.
+The [build job][] in Jenkins builds charms from repos in the
+[charmed-kubernetes org][] on GitHub. Charms with an upstream repo outside of
+that org are synced into that org by the [sync job][] in Jenkins to ensure that
+we can recreate a given build even if the upstream repos go away.
 
-## Build Interface
+## Charm build specification
 
-The interface consists of a Makefile that responds to the following targets:
+Charms that are to be built in Jenkaas CI must be included in the [Charm
+Support Matrix][], which is a YAML list of records for each charm. Each record
+must use this format:
 
-- make charm
-- make upload
-
-Additionally, for `make upload` target it accepts the following variables:
-
-- **NAMESPACE** - This is the charmstore namespace in which the charm is to be uploaded to
-- **CHANNEL** - This is the channel that the resulting charm plus any resources will be published to.
-
-## Usage
-
-Making the charm takes no additional input so the following should result in a
-built charm suitable for upload:
-
-```bash
-$ make charm
+```yaml
+- charm-name:           # The key determines what the charm will be called in the store.
+    tags: [""]          # List of tags used to select which charms to build.
+                        # Must include "k8s" if it should be built by default.
+    namespace: ""       # Namespace in the charm store to push the charm.
+    upstream: ""        # Full URL to the upstream repo for the charm.
+    downstream: ""      # Org and repo name portion of the GitHub URL to sync the
+                        # charm to and to build from.
+    build-resources: "" # Optional script to run if the charm has custom resources.
+    override-build: ""  # Optional script to override how the charm is built.
+    override-push: ""   # Optional script to override how the charm is pushed to the store.
 ```
 
-In this example, the charm will be uploaded to the `containers` namespace and be
-published to the `edge` channel:
+## Build Process
 
-```bash
-$ make NAMESPACE=containers CHANNEL=edge upload
+The build job will automatically detect whether a charm should be built using
+the legacy [charm tool][] or the newer [charmcraft][] based on whether or not
+it contains a `layer.yaml` file. If a charm cannot be built directly with
+either of these tools, you can use the `override-build` field to specify how
+the charm should be built, but this should be avoided if possible.
+
+## Handling Resources
+
+The build job will also automatically handle any `oci-image` type resource
+which is annotated with an `upstream-source` field. The upstream image will be
+pulled and then attached to the charm when it is pushed to the store. If the
+charm has other resources which must be handled differently, it will need to
+specify a script in the `build-resources` field to use to build or fetch the
+resources, as well as have a record in the [Resource Spec][] file.
+
+The `build-resources` value can include the following substitutions:
+
+  * `{src_path}` The full path to where the source repo is checked out.
+  * `{out_path}` The full path where any file resources should be placed.
+
+The Resource Spec record must use this format:
+
+```yaml
+"cs:~charm-store/url":
+  resource-name: "resource-value"
+  resource-name: "resource-value"
+  ...
 ```
 
-## Implementation
+The record's key must be the full charm store URL for the charm, without a
+revision. The resource value can either be a file path, which will also have
+`{out_path}` substituted, or an image name in the local Docker cache.
 
-There is no set way to implement the Makefile targets, however, a good pattern
-to use is have a set of scripts that reside in a `script/` directory that performs
-the necessary tasks.
-
-A good example of this can be seen with the **sriov-cni charm**[^1]. This
-project uses the scripts to rule them all[^3] pattern incorporated by GitHub and
-would allow each charm repo to be managed and developed on in a similar fashion.
-
-The current pattern for developing scripts to satisfy the Makefile targets are as follows:
-
-### script/bootstrap
-
-This script is solely for fulfilling dependencies of the project. In our
-reference repo[^1] we install the necessary snaps, deb packages, and python related
-dependencies here.
-
-This is typically a dependent target on the `make charm` target.
-
-### script/build
-
-This script handles the actual building of the charm. Not all charms are built
-the same way as there are reactive charms and the new operator framework which
-currently have different tools to build them. This script is intended to hide
-those details during build.
-
-This is typically used by the `make charm` target.
-
-### script/upload
-
-This script handles uploading the charm to the charmstore. In the reference
-repo[^1], it also makes use of the environment variables passed via the Makefile
-target to know where and what charm to upload.
-
-This is typically used by the `make upload` target.
-
-## CI
-
-Adding some additional checks on making sure that the charm builds properly with
-each push/pull request is also a good idea. In the reference repo[^1] there is a
-**GitHub workflow**[^2] setup to accomplish that.
+Any resources not annotated with `upstream-source` or specified in the Resource
+Spec record will be ignored, and the charm store will assume that whatever
+resource is already attached will be carried forward. (This is generally used
+for empty placeholders for optional resources, such as snaps which default to
+being fetched from the snap store. These placeholder resources are manually
+attached once and then never updated.)
 
 
-## References
-
-[^1]: https://github.com/charmed-kubernetes/charm-sriov-cni
-[^2]: https://github.com/charmed-kubernetes/charm-sriov-cni/blob/master/.github/workflows/build.yml
-[^3]: https://github.com/github/scripts-to-rule-them-all
+<!-- Links -->
+[build job]: https://jenkins.canonical.com/k8s/job/build-charms/
+[sync job]: https://jenkins.canonical.com/k8s/job/sync-upstream/
+[Charm Support Matrix]: https://github.com/charmed-kubernetes/jenkins/blob/master/jobs/includes/charm-support-matrix.inc
+[charm tool]: https://snapcraft.io/charm
+[charmcraft]: https://snapcraft.io/charmcraft
+[Resource Spec]: https://github.com/charmed-kubernetes/jenkins/blob/master/jobs/build-charms/resource-spec.yaml
