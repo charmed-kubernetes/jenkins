@@ -724,10 +724,17 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 click.echo(f"Skipping {bundle_name}")
                 continue
             click.echo(f"Processing {bundle_name}")
+            bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
+            build_entity = BundleBuildEntity(
+                build_env, bundle_name, bundle_opts, bundle_entity
+            )
             if "repo" in bundle_opts:
                 # override bundle repo
                 src_path = repos_dir / bundle_name
-                cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {src_path}")
+                cmd_ok(
+                    f"git clone --branch {bundle_branch} {bundle_repo} {src_path}",
+                    echo=build_entity.echo,
+                )
             else:
                 src_path = default_repo_dir
             dst_path = bundles_dir / bundle_name
@@ -737,18 +744,15 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
 
             if not bundle_opts.get("skip-build", False):
                 cmd = f"{src_path}/bundle -o {dst_path} -c {to_channel} {bundle_opts['fragments']}"
-                click.echo(f"Running {cmd}")
-                cmd_ok(cmd)
+                build_entity.echo(f"Running {cmd}")
+                cmd_ok(cmd, echo=build_entity.echo)
             else:
                 # If we're not building the bundle from the repo, we have
                 # to copy it to the expected output location instead.
                 dst_path.mkdir()
+                cmd_ok(f"tree -Pug {src_path}", echo=build_entity.echo)
                 shutil.copytree(src_path / bundle_opts.get("subdir", ""), dst_path)
 
-            bundle_entity = f"cs:~{bundle_opts['namespace']}/{bundle_name}"
-            build_entity = BundleBuildEntity(
-                build_env, bundle_name, bundle_opts, bundle_entity
-            )
             build_entity.push()
             build_entity.promote(to_channel=to_channel)
 
