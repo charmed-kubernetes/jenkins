@@ -5,7 +5,7 @@ from cilib import git, version
 class BaseRepoModel:
     """Represents the upstream source to be included in the debian packaging"""
 
-    def __init__(self):
+    def __init__(self, repo=None, git_user=None, name=None):
         self.repo = None
         self.git_user = None
         self.name = None
