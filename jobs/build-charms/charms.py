@@ -463,7 +463,6 @@ class BuildEntity:
                 out_path=out_path,
                 src_path=self.src_path,
             )
-            cmd_ok(f"tree -Fpuga {self.src_path}")
             self.echo("Running custom build-resources")
             ret = script(resource_builder, echo=self.echo)
             if not ret.ok:
