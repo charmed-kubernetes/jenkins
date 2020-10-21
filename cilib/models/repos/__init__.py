@@ -1,5 +1,5 @@
 import semver
-from cilib import git, version
+from cilib import git, version, log
 
 
 class BaseRepoModel:
@@ -47,11 +47,11 @@ class BaseRepoModel:
         """Grabs remote branches"""
         return git.remote_branches(self.repo, **subprocess_kwargs)
 
-    def latest_branch_from_major_minor(self, major_minor, include_prerelease=False):
+    def latest_branch_from_major_minor(self, major_minor, exclude_pre=False):
         """Grabs latest known branch semver for a major.minor release"""
-        return self._latest_from_semver(self.branches, major_minor, include_prerelease)
+        return self._latest_from_semver(self.branches, major_minor, exclude_pre)
 
-    def latest_tag_from_major_minor(self, major_minor, include_prerelease=False):
+    def latest_tag_from_major_minor(self, major_minor, exclude_pre=False):
         """Grabs latest known tag semver for a major.minor release"""
         return self._latest_from_semver(self.tags, major_minor, include_prerelease)
 
@@ -76,20 +76,16 @@ class BaseRepoModel:
 
     # private
 
-    def _latest_from_semver(self, semvers, major_minor, include_prerelease=False):
+    def _latest_from_semver(self, semvers, major_minor, exclude_pre=False):
         """Grabs latest semver from list of semvers"""
         _semvers = []
         for _semver in semvers:
             try:
                 semver_version = version.parse(_semver)
-                if not include_prerelease and semver_version["prerelease"] is not None:
+                if exclude_pre and semver_version.prerelease is not None:
                     continue
-
-                if (
-                    major_minor
-                    == f"{semver_version['major']}.{semver_version['minor']}"
-                ):
-                    _semvers.append(version.normalize(_semver))
+                if major_minor == f"{semver_version.major}.{semver_version.minor}":
+                    _semvers.append(str(semver_version))
             except:
                 continue
         return str(max(map(semver.VersionInfo.parse, _semvers)))

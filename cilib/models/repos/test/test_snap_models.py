@@ -47,8 +47,8 @@ def test_get_revisions(monkeypatch):
     )
     repo_model = SnapKubeletRepoModel()
     revisions = repo_model.revisions()
-    assert revisions["1609"]["string_version"] == "1.17.12"
-    assert semver.compare(revisions["1629"]["string_version"], "1.19.3") == 0
+    assert str(revisions["1609"]["version"]) == "1.17.12"
+    assert semver.compare(str(revisions["1629"]["version"]), "1.19.3") == 0
 
 
 def test_rev_1618_promoted(monkeypatch):
@@ -68,7 +68,7 @@ def test_get_latest_revision(monkeypatch):
         SnapKubeletRepoModel, "_get_revision_output", mock_get_revision_output
     )
     repo_model = SnapKubeletRepoModel()
-    assert repo_model.latest_revision("1.19/stable") == "1629"
+    assert repo_model.latest_revision("1.19/stable") == int(1629)
 
 
 def test_get_proper_tracks():

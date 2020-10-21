@@ -12,6 +12,12 @@ K8S_STABLE_VERSION = "1.19"
 # Next MAJOR.MINOR
 K8S_NEXT_VERSION = "1.20"
 
+# Lowest K8S SEMVER to process, this is usually the last 3 releases
+K8S_STARTING_SEMVER = "1.16.0"
+
+# Supported arches
+K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
+
 # Supported Versions
 K8S_SUPPORT_VERSION_LIST = yaml.safe_load(
     str(JOBS_PATH / "includes/k8s-snap-support-versions.inc")

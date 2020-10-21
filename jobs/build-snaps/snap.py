@@ -221,7 +221,7 @@ def _create_branch(repo, from_branch, to_branch, dry_run, force, patches):
     snapcraft_yml_context = {
         "snap_version": to_branch.lstrip("v"),
         "patches": patches_list,
-        "go_version": enums.K8S_GO_MAP.get(k8s_major_minor, "go/1.12/stable"),
+        "go_version": enums.K8S_GO_MAP.get(k8s_major_minor, "go/1.15/stable"),
     }
 
     # Starting with 1.19 and beyond, build snaps with a base snap of core18 or

@@ -1,8 +1,7 @@
 """ Repo classes for downstream snaps """
 
 from . import BaseRepoModel
-from pymacaroons import Macaroon
-from cilib import lp, idm, enums
+from cilib import enums, log
 import os
 import sh
 import re
@@ -16,6 +15,13 @@ class SnapBaseRepoModel:
         self.version = None
         self.git_user = "k8s-team-ci"
         self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
+        self.src = f"snap-{self.name}"
+
+    def __str__(self):
+        return f"<{self.name}>"
+
+    def debug(self, msg):
+        log.debug(f"[{self.name}] {msg}")
 
     @property
     def base(self):
@@ -27,7 +33,11 @@ class SnapBaseRepoModel:
         return enums.SNAP_K8S_TRACK_MAP[self.version]
 
     def revisions(self, arch="amd64", exclude_pre=False):
-        """Grab revision data"""
+        """Grab revision data
+
+        TODO: rework to query all arches in one go and update data structure
+        {rev: {arch: {**items}}
+        """
         re_comp = re.compile("[ \t+]{2,}")
         revision_list = self._get_revision_output(arch)
 
@@ -35,19 +45,25 @@ class SnapBaseRepoModel:
         for line in revision_list:
             rev, timestamp, arch, version, channels = re_comp.split(line)
             channels = [
-                {"promoted": channel.endswith("*"), "channel": channel.rstrip("*")}
+                {
+                    "promoted": channel.endswith("*"),
+                    "channel": channel.rstrip("*").strip(),
+                }
                 for channel in channels.split(",")
             ]
             try:
-                semver.parse(version)
+                version = semver.VersionInfo.parse(version)
             except ValueError:
                 print(f"Skipping invalid semver: {line}")
                 continue
+
+            if exclude_pre and version.prerelease is not None:
+                continue
+
             revision_map[rev] = {
                 "timestamp": timestamp,
                 "arch": arch,
-                "string_version": version,
-                "version": semver.parse(version),
+                "version": version,
                 "channels": channels,
             }
         return revision_map
@@ -59,65 +75,15 @@ class SnapBaseRepoModel:
         _revisions_list = []
 
         for rev in _revisions_map.keys():
+            if exclude_pre and _revisions_map[rev]["version"].prerelease is not None:
+                continue
+
             for channel in _revisions_map[rev]["channels"]:
                 if not channel["promoted"]:
                     continue
-                if track != channel["channel"]:
-                    continue
-            if exclude_pre and _revisions_map[rev]["version"]["prerelease"] is not None:
-                continue
-            _revisions_list.append(rev)
-
+                if track == channel["channel"]:
+                    _revisions_list.append(int(rev))
         return max(_revisions_list)
-
-    def create_recipe(self, branch):
-        """ Creates an new snap recipe in Launchpad
-
-        tag: launchpad git tag to pull snapcraft instructions from (ie, git.launchpad.net/snap-kubectl)
-
-        # Note: this account would need access granted to the snaps it want's to publish from the snapstore dashboard
-        snap_recipe_email: snapstore email for being able to publish snap recipe from launchpad to snap store
-        snap_recipe_password: snapstore password for account being able to publish snap recipe from launchpad to snap store
-
-        Usage:
-
-        snap.py create-snap-recipe --snap kubectl --version 1.13 --tag v1.13.2 \
-          --track 1.13/edge/hotfix-LP123456 \
-          --repo git+ssh://$LPCREDS@git.launchpad.net/snap-kubectl \
-          --owner k8s-jenkaas-admins \
-          --snap-recipe-email myuser@email.com \
-          --snap-recipe-password aabbccddee
-
-        """
-        snap_recipe_email = os.environ.get("K8STEAMCI_USR")
-        snap_recipe_password = os.environ.get("K8STEAMCI_PSW")
-
-        _client = lp.Client(stage="production")
-        _client.login()
-
-        params = {
-            "name": self.name,
-            "owner": "k8s-jenkaas-admin",
-            "version": self.version,
-            "branch": branch,
-            "repo": self.repo,
-            "track": self.tracks,
-        }
-
-        click.echo(f"  > creating recipe for {params}")
-        snap_recipe = _client.create_or_update_snap_recipe(**params)
-        caveat_id = snap_recipe.beginAuthorization()
-        cip = idm.CanonicalIdentityProvider(
-            email=snap_recipe_email, password=snap_recipe_password
-        )
-        discharge_macaroon = cip.get_discharge(caveat_id).json()
-        discharge_macaroon = Macaroon.deserialize(
-            discharge_macaroon["discharge_macaroon"]
-        )
-        snap_recipe.completeAuthorization(
-            discharge_macaroon=discharge_macaroon.serialize()
-        )
-        snap_recipe.requestBuilds(archive=_client.archive(), pocket="Updates")
 
     # private
     def _get_revision_output(self, arch):

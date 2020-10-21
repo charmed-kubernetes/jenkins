@@ -11,11 +11,22 @@ from pathlib import Path
 from urllib.parse import urlparse, quote
 from sh.contrib import git
 from cilib.run import capture, cmd_ok
-from cilib import log
+from cilib import log, enums
 from cilib.models.repos.kubernetes import (
     UpstreamKubernetesRepoModel,
     InternalKubernetesRepoModel,
 )
+from cilib.models.repos.snaps import (
+    SnapKubeApiServerRepoModel,
+    SnapKubeControllerManagerRepoModel,
+    SnapKubeProxyRepoModel,
+    SnapKubeSchedulerRepoModel,
+    SnapKubectlRepoModel,
+    SnapKubeadmRepoModel,
+    SnapKubeletRepoModel,
+    SnapKubernetesTestRepoModel,
+)
+from cilib.service.snap import SnapService
 
 
 @click.group()
@@ -276,6 +287,30 @@ def forks(layer_list, charm_list, dry_run):
     # commit. If that fails, too, then it was a JSON conflict that will have to
     # be handled manually.
     return _sync_upstream(layer_list, charm_list, dry_run)
+
+
+@cli.command()
+def snaps():
+    """Syncs the snap branches, keeps snap builds in sync, and makes sure the latest snaps are published into snap store"""
+    snaps_to_process = [
+        SnapKubeApiServerRepoModel(),
+        SnapKubeControllerManagerRepoModel(),
+        SnapKubeProxyRepoModel(),
+        SnapKubeSchedulerRepoModel(),
+        SnapKubectlRepoModel(),
+        SnapKubeadmRepoModel(),
+        SnapKubeletRepoModel(),
+        SnapKubernetesTestRepoModel(),
+    ]
+
+    upstream_kubernetes_repo = UpstreamKubernetesRepoModel()
+
+    # Sync all snap branches
+    for _snap in snaps_to_process:
+        snap_service_obj = SnapService(_snap, upstream_kubernetes_repo)
+        # snap_service_obj.sync_from_upstream()
+        snap_service_obj.sync_all_track_snaps()
+        # snap_service_obj.sync_stable_track_snaps()
 
 
 if __name__ == "__main__":

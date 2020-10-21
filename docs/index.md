@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/charmed-kubernetes/jenkins.svg?branch=master)](https://travis-ci.org/charmed-kubernetes/jenkins)
-
 # Charm Kubernetes Jenkins
 
 This project contains the scripts used to build and test the CDK.

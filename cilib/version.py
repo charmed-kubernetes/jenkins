@@ -8,7 +8,7 @@ def normalize(version):
 
 def parse(version):
     """Returns semver.parse"""
-    return semver.parse(normalize(version))
+    return semver.VersionInfo.parse(normalize(version))
 
 
 def compare(version_a, version_b):
@@ -21,17 +21,14 @@ def compare(version_a, version_b):
         semver.parse(version_b)
     except:
         raise Exception(f"Unable to parse {version_a} and/or {version_b}")
-    return semver.compare(version_a, version_b) >= 0
+    return semver.compare(version_a, version_b)
 
 
 def greater(version_a, version_b):
     """Check that version_a > version_b"""
-    version_a = normalize(version_a)
-    version_b = normalize(version_b)
+    return compare(version_a, version_b) >= 0
 
-    try:
-        semver.parse(version_a)
-        semver.parse(version_b)
-    except:
-        raise Exception(f"Unable to parse {version_a} and/or {version_b}")
-    return semver.compare(version_a, version_b) >= 0
+
+def lesser(version_a, version_b):
+    """Check that version_a < version_b"""
+    return compare(version_a, version_b) <= 0
