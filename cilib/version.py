@@ -6,6 +6,11 @@ def normalize(version):
     return version.lstrip("v")
 
 
+def parse(version):
+    """Returns semver.parse"""
+    return semver.VersionInfo.parse(normalize(version))
+
+
 def compare(version_a, version_b):
     """Compares 2 sem versions"""
     version_a = normalize(version_a)
@@ -16,4 +21,14 @@ def compare(version_a, version_b):
         semver.parse(version_b)
     except:
         raise Exception(f"Unable to parse {version_a} and/or {version_b}")
-    return semver.compare(version_a, version_b) >= 0
+    return semver.compare(version_a, version_b)
+
+
+def greater(version_a, version_b):
+    """Check that version_a > version_b"""
+    return compare(version_a, version_b) >= 0
+
+
+def lesser(version_a, version_b):
+    """Check that version_a < version_b"""
+    return compare(version_a, version_b) <= 0

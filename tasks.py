@@ -26,13 +26,13 @@ def upload_docs(c):
 @task
 def format(c):
     """Formats py code"""
-    c.run("black .")
+    c.run("black jobs cilib")
 
 
 @task
 def black_check(c):
     """Checks black format"""
-    c.run("black --check .")
+    c.run("black --check jobs cilib")
 
 
 @task
@@ -46,7 +46,7 @@ def flake8(c):
 @task(pre=[flake8, black_check])
 def test(c):
     """Run unittest suite"""
-    c.run("pytest jobs/**/test_unit*")
+    c.run("pytest cilib")
 
 
 @task

@@ -1,15 +1,13 @@
-import semver
-from cilib import git
-from cilib.version import compare
+from cilib import git, version, log
 
 
 class BaseRepoModel:
     """Represents the upstream source to be included in the debian packaging"""
 
-    def __init__(self):
-        self.repo = None
-        self.git_user = None
-        self.name = None
+    def __init__(self, repo=None, git_user=None, name=None):
+        self.repo = repo
+        self.git_user = git_user
+        self.name = name
 
     def __str__(self):
         return self.repo
@@ -48,17 +46,21 @@ class BaseRepoModel:
         """Grabs remote branches"""
         return git.remote_branches(self.repo, **subprocess_kwargs)
 
+    def latest_branch_from_major_minor(self, major_minor, exclude_pre=False):
+        """Grabs latest known branch semver for a major.minor release"""
+        return self._latest_from_semver(self.branches, major_minor, exclude_pre)
+
+    def latest_tag_from_major_minor(self, major_minor, exclude_pre=False):
+        """Grabs latest known tag semver for a major.minor release"""
+        return self._latest_from_semver(self.tags, major_minor, exclude_pre)
+
+    def branches_from_semver_point(self, starting_semver):
+        """Returns a list of branches from a starting semantic version"""
+        return self._semvers_from_point(self.branches, starting_semver)
+
     def tags_from_semver_point(self, starting_semver):
         """Returns a list of tags from a starting semantic version"""
-        tags = []
-        for tag in self.tags:
-            try:
-                if compare(tag, starting_semver):
-                    tags.append(tag)
-            except Exception as error:
-                print(error)
-                continue
-        return tags
+        return self._semvers_from_point(self.tags, starting_semver)
 
     def tags_subset(self, alt_model):
         """Grabs a subset of tags from a another repo model"""
@@ -70,3 +72,31 @@ class BaseRepoModel:
             set(self.tags_from_semver_point(starting_semver))
             - set(alt_model.tags_from_semver_point(starting_semver))
         )
+
+    # private
+
+    def _latest_from_semver(self, semvers, major_minor, exclude_pre=False):
+        """Grabs latest semver from list of semvers"""
+        _semvers = []
+        for _semver in semvers:
+            try:
+                semver_version = version.parse(_semver)
+                if exclude_pre and semver_version.prerelease is not None:
+                    continue
+                if major_minor == f"{semver_version.major}.{semver_version.minor}":
+                    _semvers.append(str(semver_version))
+            except:
+                continue
+        return str(max(map(version.parse, _semvers)))
+
+    def _semvers_from_point(self, semvers, starting_semver):
+        """Grabs all semvers from branches or tags at starting semver point"""
+        _semvers = []
+        for _semver in semvers:
+            try:
+                if version.greater(_semver, starting_semver):
+                    _semvers.append(_semver)
+            except Exception as error:
+                print(error)
+                continue
+        return _semvers

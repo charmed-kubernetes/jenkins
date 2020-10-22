@@ -11,11 +11,23 @@ from pathlib import Path
 from urllib.parse import urlparse, quote
 from sh.contrib import git
 from cilib.run import capture, cmd_ok
-from cilib import log
+from cilib import log, enums
 from cilib.models.repos.kubernetes import (
     UpstreamKubernetesRepoModel,
     InternalKubernetesRepoModel,
 )
+from cilib.models.repos.snaps import (
+    SnapKubeApiServerRepoModel,
+    SnapKubeControllerManagerRepoModel,
+    SnapKubeProxyRepoModel,
+    SnapKubeSchedulerRepoModel,
+    SnapKubectlRepoModel,
+    SnapKubeadmRepoModel,
+    SnapKubeletRepoModel,
+    SnapKubernetesTestRepoModel,
+)
+from cilib.service.snap import SnapService
+from drypy import dryrun
 
 
 @click.group()
@@ -249,7 +261,11 @@ def sync_internal_tags(dry_run):
 
     # List of tuples containing upstream, downstream models and a starting semver
     repos_map = [
-        (UpstreamKubernetesRepoModel(), InternalKubernetesRepoModel(), "v1.19.0")
+        (
+            UpstreamKubernetesRepoModel(),
+            InternalKubernetesRepoModel(),
+            enums.K8S_STARTING_SEMVER,
+        )
     ]
 
     for repo in repos_map:
@@ -276,6 +292,32 @@ def forks(layer_list, charm_list, dry_run):
     # commit. If that fails, too, then it was a JSON conflict that will have to
     # be handled manually.
     return _sync_upstream(layer_list, charm_list, dry_run)
+
+
+@cli.command()
+@click.option("--dry-run", is_flag=True)
+def snaps(dry_run):
+    """Syncs the snap branches, keeps snap builds in sync, and makes sure the latest snaps are published into snap store"""
+    dryrun(dry_run)
+    snaps_to_process = [
+        SnapKubeApiServerRepoModel(),
+        SnapKubeControllerManagerRepoModel(),
+        SnapKubeProxyRepoModel(),
+        SnapKubeSchedulerRepoModel(),
+        SnapKubectlRepoModel(),
+        SnapKubeadmRepoModel(),
+        SnapKubeletRepoModel(),
+        SnapKubernetesTestRepoModel(),
+    ]
+
+    kubernetes_repo = UpstreamKubernetesRepoModel()
+
+    # Sync all snap branches
+    for _snap in snaps_to_process:
+        snap_service_obj = SnapService(_snap, kubernetes_repo)
+        snap_service_obj.sync_from_upstream()
+        snap_service_obj.sync_all_track_snaps()
+        snap_service_obj.sync_stable_track_snaps()
 
 
 if __name__ == "__main__":
