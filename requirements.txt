@@ -35,6 +35,7 @@ dict-deep==2.0.2          # via ogc
 dill==0.3.2               # via multiprocess, pathos
 distro==1.5.0             # via lazr.restfulclient
 docutils==0.15.2          # via awscli
+drypy==1.0.1              # via -r requirements.in
 fasteners==0.15           # via jenkins-job-builder
 flake8==3.8.4             # via -r requirements.in
 flaky==3.7.0              # via -r requirements.in

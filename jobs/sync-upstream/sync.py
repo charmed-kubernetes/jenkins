@@ -27,6 +27,7 @@ from cilib.models.repos.snaps import (
     SnapKubernetesTestRepoModel,
 )
 from cilib.service.snap import SnapService
+from drypy import dryrun
 
 
 @click.group()
@@ -294,8 +295,10 @@ def forks(layer_list, charm_list, dry_run):
 
 
 @cli.command()
-def snaps():
+@click.option("--dry-run", is_flag=True)
+def snaps(dry_run):
     """Syncs the snap branches, keeps snap builds in sync, and makes sure the latest snaps are published into snap store"""
+    dryrun(dry_run)
     snaps_to_process = [
         SnapKubeApiServerRepoModel(),
         SnapKubeControllerManagerRepoModel(),

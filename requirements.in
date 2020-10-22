@@ -1,4 +1,5 @@
 PyNaCl
+drypy
 hunter
 aioify>=0.3.2
 async-generator

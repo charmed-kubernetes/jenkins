@@ -12,6 +12,7 @@ from pathlib import Path
 from pymacaroons import Macaroon
 from cilib import lp, idm, enums
 from cilib.log import DebugMixin
+from drypy.patterns import sham
 
 
 class SnapService(DebugMixin):
@@ -171,6 +172,7 @@ class SnapService(DebugMixin):
         return template.render(context)
 
     # private
+    @sham
     def _create_recipe(self, version, branch):
         """ Creates an new snap recipe in Launchpad
 
