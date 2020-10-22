@@ -1,4 +1,3 @@
-import semver
 from cilib import git, version, log
 
 
@@ -88,7 +87,7 @@ class BaseRepoModel:
                     _semvers.append(str(semver_version))
             except:
                 continue
-        return str(max(map(semver.VersionInfo.parse, _semvers)))
+        return str(max(map(version.parse, _semvers)))
 
     def _semvers_from_point(self, semvers, starting_semver):
         """Grabs all semvers from branches or tags at starting semver point"""
