@@ -25,8 +25,7 @@ revision_output = """Rev.    Uploaded              Arch    Version              
 1564    2020-07-16T14:29:22Z  amd64   1.16.13               1.16/stable, 1.16/candidate, 1.16/beta, 1.16/edge
 1560    2020-07-16T14:23:15Z  amd64   1.18.6                1.18/stable, 1.18/candidate, 1.18/beta, 1.18/edge, stable, beta, candidate, edge
 1558    2020-07-15T15:11:20Z  amd64   1.19.0-rc.1           1.19/candidate, 1.19/beta, 1.19/edge
-1552    2020-07-14T13:46:14Z  amd64   1.19.0-rc.0           1.19/candidate, 1.19/beta, 1.19/edge
-1549    2020-07-10T17:21:22Z  amd64   1.19.0-rc.0           1.19/candidate, 1.19/beta, 1.19/edge
+1552    2020-07-14T13:46:14Z  arm64   1.19.0-rc.0           1.19/stable*, 1.19/beta, 1.19/edge
 """
 
 
@@ -46,7 +45,7 @@ def test_get_revisions(monkeypatch):
         SnapKubeletRepoModel, "_get_revision_output", mock_get_revision_output
     )
     repo_model = SnapKubeletRepoModel()
-    revisions = repo_model.revisions()
+    revisions = repo_model.revisions
     assert str(revisions["1609"]["version"]) == "1.17.12"
     assert semver.compare(str(revisions["1629"]["version"]), "1.19.3") == 0
 
@@ -57,7 +56,7 @@ def test_rev_1618_promoted(monkeypatch):
         SnapKubeletRepoModel, "_get_revision_output", mock_get_revision_output
     )
     repo_model = SnapKubeletRepoModel()
-    revisions = repo_model.revisions()
+    revisions = repo_model.revisions
     channels = revisions["1618"]["channels"]
     assert all([channel["promoted"] is True for channel in channels]) == True
 
@@ -68,7 +67,9 @@ def test_get_latest_revision(monkeypatch):
         SnapKubeletRepoModel, "_get_revision_output", mock_get_revision_output
     )
     repo_model = SnapKubeletRepoModel()
-    assert repo_model.latest_revision("1.19/stable") == int(1629)
+    revisions = repo_model.revisions
+    assert repo_model.latest_revision(revisions, "1.19/stable", "amd64") == int(1629)
+    assert repo_model.latest_revision(revisions, "1.19/stable", "arm64") == int(1552)
 
 
 def test_get_proper_tracks():

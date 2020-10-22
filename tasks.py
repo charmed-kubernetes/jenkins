@@ -46,7 +46,7 @@ def flake8(c):
 @task(pre=[flake8, black_check])
 def test(c):
     """Run unittest suite"""
-    c.run("pytest jobs/**/test_unit* cilib")
+    c.run("pytest cilib")
 
 
 @task

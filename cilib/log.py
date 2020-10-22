@@ -35,3 +35,11 @@ def error(ctx):
 
 def info(ctx):
     logger.info(ctx)
+
+
+class DebugMixin:
+    def debug(self, msg):
+        debug(f"[{self.snap_model.name}] {msg}")
+
+    def log(self, msg):
+        info(f"[{self.snap_model.name}] {msg}")

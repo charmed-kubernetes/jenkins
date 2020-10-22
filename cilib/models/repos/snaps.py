@@ -1,14 +1,15 @@
 """ Repo classes for downstream snaps """
 
 from . import BaseRepoModel
-from cilib import enums, log
+from cilib import enums
+from cilib.log import DebugMixin
 import os
 import sh
 import re
 import semver
 
 
-class SnapBaseRepoModel:
+class SnapBaseRepoModel(DebugMixin):
     name = None
 
     def __init__(self):
@@ -20,9 +21,6 @@ class SnapBaseRepoModel:
     def __str__(self):
         return f"<{self.name}>"
 
-    def debug(self, msg):
-        log.debug(f"[{self.name}] {msg}")
-
     @property
     def base(self):
         return BaseRepoModel(repo=self.repo, git_user=self.git_user, name=self.name)
@@ -32,14 +30,11 @@ class SnapBaseRepoModel:
         """Tracks to publish a snap to"""
         return enums.SNAP_K8S_TRACK_MAP[self.version]
 
-    def revisions(self, arch="amd64", exclude_pre=False):
-        """Grab revision data
-
-        TODO: rework to query all arches in one go and update data structure
-        {rev: {arch: {**items}}
-        """
+    @property
+    def revisions(self):
+        """Grab revision data"""
         re_comp = re.compile("[ \t+]{2,}")
-        revision_list = self._get_revision_output(arch)
+        revision_list = self._get_revision_output()
 
         revision_map = {}
         for line in revision_list:
@@ -57,9 +52,6 @@ class SnapBaseRepoModel:
                 print(f"Skipping invalid semver: {line}")
                 continue
 
-            if exclude_pre and version.prerelease is not None:
-                continue
-
             revision_map[rev] = {
                 "timestamp": timestamp,
                 "arch": arch,
@@ -68,14 +60,17 @@ class SnapBaseRepoModel:
             }
         return revision_map
 
-    def latest_revision(self, track, arch="amd64", exclude_pre=False):
+    def latest_revision(self, revisions, track, arch="amd64", exclude_pre=False):
         """Get latest revision of snap based on track and arch"""
 
-        _revisions_map = self.revisions(arch)
+        _revisions_map = revisions
         _revisions_list = []
 
         for rev in _revisions_map.keys():
             if exclude_pre and _revisions_map[rev]["version"].prerelease is not None:
+                continue
+
+            if _revisions_map[rev]["arch"] != arch:
                 continue
 
             for channel in _revisions_map[rev]["channels"]:
@@ -86,10 +81,8 @@ class SnapBaseRepoModel:
         return max(_revisions_list)
 
     # private
-    def _get_revision_output(self, arch):
-        revision_list = sh.snapcraft.revisions(
-            self.name, "--arch", arch, _err_to_out=True
-        )
+    def _get_revision_output(self):
+        revision_list = sh.snapcraft.revisions(self.name, _err_to_out=True)
         return revision_list.stdout.decode().splitlines()[1:]
 
 

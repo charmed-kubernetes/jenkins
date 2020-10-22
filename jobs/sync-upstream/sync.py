@@ -303,14 +303,14 @@ def snaps():
         SnapKubernetesTestRepoModel(),
     ]
 
-    upstream_kubernetes_repo = UpstreamKubernetesRepoModel()
+    kubernetes_repo = UpstreamKubernetesRepoModel()
 
     # Sync all snap branches
     for _snap in snaps_to_process:
-        snap_service_obj = SnapService(_snap, upstream_kubernetes_repo)
-        # snap_service_obj.sync_from_upstream()
+        snap_service_obj = SnapService(_snap, kubernetes_repo)
+        snap_service_obj.sync_from_upstream()
         snap_service_obj.sync_all_track_snaps()
-        # snap_service_obj.sync_stable_track_snaps()
+        snap_service_obj.sync_stable_track_snaps()
 
 
 if __name__ == "__main__":

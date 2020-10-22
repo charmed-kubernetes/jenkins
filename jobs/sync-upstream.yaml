@@ -1,7 +1,7 @@
 # Syncs upstream charms, layers, snap branches, whatevs
 
 - job:
-    name: 'sync-snap-branches'
+    name: 'sync-snaps'
     node: runner-cloud
     description: |
       Sync all release tags from upstream.
@@ -16,15 +16,10 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-snaps"
-      - run-venv:
+      - run-tox:
           COMMAND: |
             snapcraft login --with /var/lib/jenkins/snapcraft-creds
-            $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py sync-branches \
-                --snap-list jobs/includes/k8s-snap-list.inc
-            $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py sync-branches-list
-            $WORKSPACE/venv/bin/python jobs/build-snaps/snap.py build-summaries \
-                --snap-list jobs/includes/k8s-snap-list.inc \
-                --snap-versions jobs/includes/k8s-snap-support-versions.inc
+            tox -e py38 -- python jobs/sync-upstream/sync.py snaps
 
 - job:
     name: 'sync-upstream'

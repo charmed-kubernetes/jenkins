@@ -10,16 +10,14 @@ import semver
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
-from cilib import lp, idm, enums, log
+from cilib import lp, idm, enums
+from cilib.log import DebugMixin
 
 
-class SnapService:
+class SnapService(DebugMixin):
     def __init__(self, snap_model, upstream_model):
         self.snap_model = snap_model
         self.upstream_model = upstream_model
-
-    def debug(self, msg):
-        log.info(f"[{self.snap_model.name}] {msg}")
 
     @property
     def missing_branches(self):
@@ -27,21 +25,19 @@ class SnapService:
         upstream_tags = self.upstream_model.tags_from_semver_point(
             enums.K8S_STARTING_SEMVER
         )
-        self.debug(f"{self.upstream_model.repo} tags: {upstream_tags}")
         snap_branches = self.snap_model.base.branches_from_semver_point(
             enums.K8S_STARTING_SEMVER
         )
-        self.debug(f"Snap branches: {snap_branches}")
         return list(set(upstream_tags) - set(snap_branches))
 
     def sync_from_upstream(self):
         """Syncs branches from upstream tags"""
         if not self.missing_branches:
-            self.debug(f"All branches are synced, nothing to do here.")
+            self.log(f"All branches are synced, nothing to do here.")
             return
 
         for branch in self.missing_branches:
-            self.debug(f"Processing branch {branch}")
+            self.log(f"Processing branch {branch}")
             with tempfile.TemporaryDirectory() as tmpdir:
                 src_path = Path(tmpdir) / self.snap_model.src
                 self.snap_model.base.clone(cwd=tmpdir)
@@ -50,11 +46,9 @@ class SnapService:
                 snapcraft_fn = src_path / "snapcraft.yaml"
                 snapcraft_fn_tpl = src_path / "snapcraft.yaml.in"
 
-                k8s_major_minor = semver.parse(branch.lstrip("v"))
-                k8s_major_minor_patch = f"{k8s_major_minor['major']}.{k8s_major_minor['minor']}.{k8s_major_minor['patch']}"
-                k8s_major_minor = (
-                    f"{k8s_major_minor['major']}.{k8s_major_minor['minor']}"
-                )
+                k8s_major_minor = semver.VersionInfo.parse(branch.lstrip("v"))
+                k8s_major_minor_patch = f"{k8s_major_minor.major}.{k8s_major_minor.minor}.{k8s_major_minor.patch}"
+                k8s_major_minor = f"{k8s_major_minor.major}.{k8s_major_minor.minor}"
 
                 snapcraft_yml_context = {
                     "snap_version": branch.lstrip("v"),
@@ -66,15 +60,15 @@ class SnapService:
 
                 # Starting with 1.19 and beyond, build snaps with a base snap of core18 or
                 # whatever the fresh catch of the day is
-                if semver.compare(k8s_major_minor_patch, "1.19.0") >= 0:
+                if semver.compare(str(k8s_major_minor), "1.19.0") >= 0:
                     snapcraft_yml_context["base"] = "core18"
 
-                self.debug(f"Writing template vars {snapcraft_yml_context}")
+                self.log(f"Writing template vars {snapcraft_yml_context}")
                 snapcraft_yml = snapcraft_fn_tpl.read_text()
                 snapcraft_yml = self.render(snapcraft_fn_tpl, snapcraft_yml_context)
                 snapcraft_fn.write_text(snapcraft_yml)
 
-                self.debug(f"Committing {branch}")
+                self.log(f"Committing {branch}")
                 self.snap_model.base.add([str(snapcraft_fn)], cwd=str(src_path))
                 self.snap_model.base.commit(
                     f"Creating branch {branch}", cwd=str(src_path)
@@ -83,20 +77,25 @@ class SnapService:
 
     def sync_stable_track_snaps(self):
         """Keeps current stable version snap builds in sync with latest track"""
+        revisions = self.snap_model.revisions
+        self.snap_model.version = enums.K8S_STABLE_VERSION
+
         for arch in enums.K8S_SUPPORT_ARCHES:
-            self.debug(
+            self.log(
                 f"Checking snaps in version {enums.K8S_STABLE_VERSION} for arch {arch}"
             )
             exclude_pre = True
-            revisions = self.snap_model.revisions(arch, exclude_pre)
             max_track_rev = self.snap_model.latest_revision(
-                f"{enums.K8S_STABLE_VERSION}/stable", arch, exclude_pre
+                revisions,
+                track=f"{enums.K8S_STABLE_VERSION}/stable",
+                arch=arch,
+                exclude_pre=exclude_pre,
             )
             max_stable_rev = self.snap_model.latest_revision(
-                f"stable", arch, exclude_pre
+                revisions, track=f"stable", arch=arch, exclude_pre=exclude_pre
             )
             if int(max_stable_rev) < int(max_track_rev):
-                self.debug(
+                self.log(
                     f"Track revisions do not match {max_track_rev} != {max_stable_rev}, syncing stable snaps to latest track"
                 )
                 for _track in ["stable", "candidate", "beta", "edge"]:
@@ -108,37 +107,43 @@ class SnapService:
                             max_track_rev,
                             _track,
                         ],
-                        echo=self.debug,
+                        echo=self.log,
                     )
                     if not ret.ok:
                         raise Exception(
                             f"Failed to promote {self.snap_model.name} (rev: {max_track_rev}) to track {_track}"
                         )
             else:
-                self.debug(
+                self.log(
                     f"{self.snap_model.name} revision {max_stable_rev} == {max_track_rev}, no promotion needed."
                 )
 
     def sync_all_track_snaps(self):
         """Keeps snap builds current with latest releases"""
         supported_versions = list(enums.SNAP_K8S_TRACK_MAP.keys())
+        revisions = self.snap_model.revisions
         for _version in supported_versions:
             for arch in enums.K8S_SUPPORT_ARCHES:
-                self.debug(f"Checking snaps in version {_version} for arch {arch}")
+                self.log(f"> Checking snaps in version {_version} for arch {arch}")
+
+                # Set the current version in the snap model
+                self.snap_model.version = _version
+
                 exclude_pre = True
                 if _version == enums.K8S_NEXT_VERSION:
-                    self.debug(
+                    self.log(
                         f"Next development version triggered, will query pre-releases."
                     )
                     # Only pull in pre-releases if building for the next development version
                     exclude_pre = False
-
-                revisions = self.snap_model.revisions(arch, exclude_pre)
                 max_rev = self.snap_model.latest_revision(
-                    f"{_version}/edge", arch, exclude_pre
+                    revisions,
+                    track=f"{_version}/edge",
+                    arch=arch,
+                    exclude_pre=exclude_pre,
                 )
                 latest_snap_version = revisions[str(max_rev)]["version"]
-                self.debug(
+                self.log(
                     f"Found snap version {str(latest_snap_version)} at revision {max_rev} for {_version}/edge"
                 )
                 latest_branch_version = (
@@ -146,18 +151,18 @@ class SnapService:
                         _version, exclude_pre
                     )
                 )
-                self.debug(f"Latest branch version {latest_branch_version}")
+                self.log(f"Latest branch version {latest_branch_version}")
                 if (
                     semver.compare(str(latest_branch_version), str(latest_snap_version))
                     > 0
                 ):
-                    self.debug(
-                        f"Found a new branch version {str(latest_branch_version)} > {str(latest_snap_version)}, building a new snap"
+                    self.log(
+                        f"Found new branch {str(latest_branch_version)} > {str(latest_snap_version)}, building new snap"
                     )
-                    # self._create_recipe(_version, f"v{str(latest_branch_version)}")
+                    self._create_recipe(_version, f"v{str(latest_branch_version)}")
                 else:
-                    self.debug(
-                        f"Versions match {str(latest_branch_version)} == {str(latest_snap_version)}, not building a new snap"
+                    self.log(
+                        f"> Versions match {str(latest_branch_version)} == {str(latest_snap_version)}, not building a new snap"
                     )
 
     def render(self, tmpl_file, context):
@@ -185,12 +190,6 @@ class SnapService:
           --snap-recipe-password aabbccddee
 
         """
-        snap_recipe_email = os.environ.get("K8STEAMCI_USR")
-        snap_recipe_password = os.environ.get("K8STEAMCI_PSW")
-
-        _client = lp.Client(stage="production")
-        _client.login()
-
         params = {
             "name": self.snap_model.name,
             "owner": "k8s-jenkaas-admin",
@@ -200,7 +199,14 @@ class SnapService:
             "track": self.snap_model.tracks,
         }
 
-        self.debug(f"creating recipe for {params}")
+        self.log(f"> Creating recipe for {params}")
+
+        snap_recipe_email = os.environ.get("K8STEAMCI_USR")
+        snap_recipe_password = os.environ.get("K8STEAMCI_PSW")
+
+        _client = lp.Client(stage="production")
+        _client.login()
+
         snap_recipe = _client.create_or_update_snap_recipe(**params)
         caveat_id = snap_recipe.beginAuthorization()
         cip = idm.CanonicalIdentityProvider(
