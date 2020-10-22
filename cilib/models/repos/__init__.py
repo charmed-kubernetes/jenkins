@@ -53,7 +53,7 @@ class BaseRepoModel:
 
     def latest_tag_from_major_minor(self, major_minor, exclude_pre=False):
         """Grabs latest known tag semver for a major.minor release"""
-        return self._latest_from_semver(self.tags, major_minor, include_prerelease)
+        return self._latest_from_semver(self.tags, major_minor, exclude_pre)
 
     def branches_from_semver_point(self, starting_semver):
         """Returns a list of branches from a starting semantic version"""
