@@ -11,15 +11,21 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
-    triggers:
-        - timed: "@daily"
+    parameters:
+      - global-params
+    # triggers:
+    #     - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-snaps"
       - run-tox:
           COMMAND: |
+            IS_DRY_RUN=""
+            if [ ! -z ${DRY_RUN+x} ]; then
+              IS_DRY_RUN="--dry-run"
+            fi
             snapcraft login --with /var/lib/jenkins/snapcraft-creds
-            tox -e py38 -- python jobs/sync-upstream/sync.py snaps
+            tox -e py38 -- python jobs/sync-upstream/sync.py snaps $IS_DRY_RUN
 
 - job:
     name: 'sync-upstream'

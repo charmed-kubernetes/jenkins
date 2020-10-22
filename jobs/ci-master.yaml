@@ -45,13 +45,6 @@
 - parameter:
     name: global-params
     parameters:
-      - string:
-          name: RELEASE_ID
-          description: |
-            This should be a uniquely identifiable run tag so that
-            subsequent runs can query any previous state if available. This
-            allows passing jobs to be bypassed and only the failed job be run
-            again.
       - bool:
           name: DRY_RUN
           default: false

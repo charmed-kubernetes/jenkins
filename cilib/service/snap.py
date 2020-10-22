@@ -100,20 +100,7 @@ class SnapService(DebugMixin):
                     f"Track revisions do not match {max_track_rev} != {max_stable_rev}, syncing stable snaps to latest track"
                 )
                 for _track in ["stable", "candidate", "beta", "edge"]:
-                    ret = cmd_ok(
-                        [
-                            "snapcraft",
-                            "release",
-                            self.snap_model.name,
-                            max_track_rev,
-                            _track,
-                        ],
-                        echo=self.log,
-                    )
-                    if not ret.ok:
-                        raise Exception(
-                            f"Failed to promote {self.snap_model.name} (rev: {max_track_rev}) to track {_track}"
-                        )
+                    self._release(max_track_rev, _track)
             else:
                 self.log(
                     f"{self.snap_model.name} revision {max_stable_rev} == {max_track_rev}, no promotion needed."
@@ -172,6 +159,24 @@ class SnapService(DebugMixin):
         return template.render(context)
 
     # private
+    @sham
+    def _release(self, max_track_rev, track):
+        """Runs snapcraft release"""
+        ret = cmd_ok(
+            [
+                "snapcraft",
+                "release",
+                self.snap_model.name,
+                max_track_rev,
+                track,
+            ],
+            echo=self.log,
+        )
+        if not ret.ok:
+            raise Exception(
+                f"Failed to promote {self.snap_model.name} (rev: {max_track_rev}) to track {_track}"
+            )
+
     @sham
     def _create_recipe(self, version, branch):
         """ Creates an new snap recipe in Launchpad

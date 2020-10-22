@@ -1,4 +1,5 @@
 from cilib import git, version, log
+from drypy.patterns import sham
 
 
 class BaseRepoModel:
@@ -28,6 +29,7 @@ class BaseRepoModel:
         """Add files to git repo"""
         git.add(files, **subprocess_kwargs)
 
+    @sham
     def push(self, origin="origin", ref="master", **subprocess_kwargs):
         """Pushes commit to repo"""
         git.push(origin, ref, **subprocess_kwargs)
