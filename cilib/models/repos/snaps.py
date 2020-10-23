@@ -14,7 +14,7 @@ class SnapBaseRepoModel(DebugMixin):
 
     def __init__(self):
         self.version = None
-        self.git_user = "k8s-team-ci"
+        self.git_user = "cdkbot"
         self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
         self.src = f"snap-{self.name}"
 
