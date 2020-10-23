@@ -199,7 +199,7 @@ class SnapService(DebugMixin):
         """
         params = {
             "name": self.snap_model.name,
-            "owner": "k8s-jenkaas-admin",
+            "owner": "k8s-jenkaas-admins",
             "version": version,
             "branch": branch,
             "repo": self.snap_model.repo,
