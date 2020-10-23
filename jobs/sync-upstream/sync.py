@@ -25,6 +25,7 @@ from cilib.models.repos.snaps import (
     SnapKubeadmRepoModel,
     SnapKubeletRepoModel,
     SnapKubernetesTestRepoModel,
+    SnapCdkAddonsRepoModel,
 )
 from cilib.service.snap import SnapService
 from drypy import dryrun
@@ -318,6 +319,10 @@ def snaps(dry_run):
         snap_service_obj.sync_from_upstream()
         snap_service_obj.sync_all_track_snaps()
         snap_service_obj.sync_stable_track_snaps()
+
+    # Handle cdk-addons sync separetely
+    cdk_addons = SnapCdkAddonsRepoModel()
+    cdk_addons.sync_stable_track_snaps()
 
 
 if __name__ == "__main__":

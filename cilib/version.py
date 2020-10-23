@@ -1,4 +1,5 @@
 import semver
+from cilib import log
 
 
 def normalize(version):
@@ -20,7 +21,7 @@ def compare(version_a, version_b):
         semver.parse(version_a)
         semver.parse(version_b)
     except:
-        raise Exception(f"Unable to parse {version_a} and/or {version_b}")
+        log.debug(f"Unable to parse {version_a} and/or {version_b}")
     return semver.compare(version_a, version_b)
 
 

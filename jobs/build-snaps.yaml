@@ -37,7 +37,7 @@
             the tag will be set to https://dl.k8s.io/release/[stable|latest]-`version`.txt.
       - string:
           name: channels
-          default: '{version}/edge,{version}/beta,{version}/candidate'
+          default: '{version}/stable,{version}/edge,{version}/beta,{version}/candidate'
           description: |
             Comma separated snap store channels to release the built snap to.
       - bool:

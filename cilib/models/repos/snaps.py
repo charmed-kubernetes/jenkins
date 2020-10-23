@@ -132,3 +132,9 @@ class SnapKubernetesTestRepoModel(SnapBaseRepoModel):
     def __init__(self):
         self.name = "kubernetes-test"
         super(SnapKubernetesTestRepoModel, self).__init__()
+
+
+class SnapCdkAddonsRepoModel(SnapBaseRepoModel):
+    def __init__(self):
+        self.name = "cdk-addons"
+        super(SnapCdkAddonsRepoModel, self).__init__()
