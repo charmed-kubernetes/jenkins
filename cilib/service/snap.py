@@ -164,13 +164,7 @@ class SnapService(DebugMixin):
     def _release(self, max_track_rev, track):
         """Runs snapcraft release"""
         ret = cmd_ok(
-            [
-                "snapcraft",
-                "release",
-                self.snap_model.name,
-                max_track_rev,
-                track,
-            ],
+            f"snapcraft release {self.snap_model.name} {max_track_rev} {track}",
             echo=self.log,
         )
         if not ret.ok:
