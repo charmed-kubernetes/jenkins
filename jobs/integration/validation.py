@@ -1733,10 +1733,7 @@ async def test_dns_provider(model, k8s_model, tools):
         await wait_for_pods_ready("k8s-app=kube-dns")
 
         log("Verifying DNS with kube-dns provider")
-        # Note: Switching directly preserves the service IP, so we don't need to
-        # redeploy the validation pod. Switching to none first changes the service
-        # IP and would require redeploying the validation pod.
-        await verify_dns_resolution(fresh=False)
+        await verify_dns_resolution(fresh=True)
 
         log("Switching to none provider")
         await master_app.set_config({"dns-provider": "none"})
