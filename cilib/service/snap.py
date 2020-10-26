@@ -11,6 +11,7 @@ from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
 from cilib import lp, idm, enums
+from cilib.run import cmd_ok
 from cilib.log import DebugMixin
 from drypy.patterns import sham
 
