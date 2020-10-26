@@ -11,10 +11,13 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 3
     parameters:
       - global-params
-    # triggers:
-    #     - timed: "@daily"
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-snaps"
@@ -49,9 +52,9 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-venv:
+      - run-tox:
           COMMAND: |
-            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py forks \
+            tox -e py38 -- python jobs/sync-upstream/sync.py forks \
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc
 
