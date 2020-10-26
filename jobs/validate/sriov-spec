@@ -48,7 +48,7 @@ function juju::deploy::after
           kubernetes-master/0:config "kubeconfig"
     export KUBECONFIG="kubeconfig"
     juju add-k8s k8s --controller "$JUJU_CONTROLLER"
-    juju add-model -c "$JUJU_CONTROLLER" addons k8s
+    juju add-model -c "$JUJU_CONTROLLER" addons k8s --config test-mode=true
     juju deploy -m "$JUJU_CONTROLLER:addons" \
           --channel "$JUJU_DEPLOY_CHANNEL" cs:~containers/sriov-cni
     juju deploy -m "$JUJU_CONTROLLER:addons" \
