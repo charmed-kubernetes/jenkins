@@ -322,7 +322,8 @@ def snaps(dry_run):
 
     # Handle cdk-addons sync separetely
     cdk_addons = SnapCdkAddonsRepoModel()
-    cdk_addons.sync_stable_track_snaps()
+    cdk_addons_service_obj = SnapService(cdk_addons(), kubernetes_repo)
+    cdk_addons_service_obj.sync_stable_track_snaps()
 
 
 if __name__ == "__main__":
