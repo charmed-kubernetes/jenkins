@@ -128,6 +128,7 @@
           snapcraft
       tags:
         - jenkins
+      ignore_errors: yes
     - name: upgrade charm
       command: "snap refresh charm --channel latest/edge"
       ignore_errors: yes
