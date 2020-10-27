@@ -30,15 +30,16 @@
           rm -rf /var/lib/jenkins/slaves/*/workspace/validate*
       - run-venv:
           COMMAND: |
-            bash $WORKSPACE/jobs/infra/fixtures/cleanup-env.sh
-      - shell: |
-          #!/bin/bash
-          set -eux
-          set -o allexport
-          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-          set +o allexport
+              #!/bin/bash
+              set -eux
+              set -o allexport
+              [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+              set +o allexport
 
-          TOX_WORK_DIR=.tox tox -e ansible
+              bash jobs/infra/fixtures/cleanup-env.sh
+
+              venv/bin/pip install ansible
+              venv/bin/ansible-playbook jobs/infra/playbook-jenkins.yml --limit localhost --tags 'jenkins' -i jobs/infra/hosts
 
 - job:
     name: 'infra-maintain-nodes-s390x-2'

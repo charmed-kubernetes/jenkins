@@ -222,39 +222,6 @@ def __run_git(args):
     cmd_ok("rm -rf {identifier}")
 
 
-def _sync_upstream(layer_list, charm_list, dry_run):
-    """Syncs any of the forked upstream repos
-
-    layer_list: YAML spec containing git repos and their upstream/downstream properties
-    """
-    layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
-    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
-    new_env = os.environ.copy()
-    username = quote(new_env["CDKBOT_GH_USR"])
-    password = quote(new_env["CDKBOT_GH_PSW"])
-
-    repos_to_process = []
-    for layer_map in layer_list + charm_list:
-        for layer_name, repos in layer_map.items():
-            upstream = repos["upstream"]
-            downstream = repos["downstream"]
-            if urlparse(upstream).path.lstrip("/") == downstream:
-                log.info(f"Skipping {layer_name} :: {upstream} == {downstream}")
-                continue
-            items = (username, password, layer_name, upstream, downstream)
-            log.info(f"Adding {layer_name} to queue")
-            repos_to_process.append(items)
-
-    if not dry_run:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
-            git_runs = {tp.submit(__run_git, args): args for args in repos_to_process}
-            for future in concurrent.futures.as_completed(git_runs):
-                try:
-                    data = future.result()
-                except Exception as exc:
-                    log.info(f"Failed thread: {exc}")
-
-
 @cli.command()
 @click.option("--dry-run", is_flag=True)
 def sync_internal_tags(dry_run):
@@ -284,14 +251,40 @@ def sync_internal_tags(dry_run):
 
 
 @cli.command()
-@click.option("--layer-list", required=True, help="Path to supported layer list")
-@click.option("--charm-list", required=True, help="Path to supported charm list")
 @click.option("--dry-run", is_flag=True)
-def forks(layer_list, charm_list, dry_run):
+def forks(dry_run):
     """Syncs all upstream forks"""
     # Try auto-merge; if conflict: update_readme.py && git add README.md && git
     # commit. If that fails, too, then it was a JSON conflict that will have to
     # be handled manually.
+
+    layer_list = enums.CHARM_LAYERS_MAP
+    charm_list = enums.CHARM_MAP
+    new_env = os.environ.copy()
+    username = quote(new_env["CDKBOT_GH_USR"])
+    password = quote(new_env["CDKBOT_GH_PSW"])
+
+    repos_to_process = []
+    for layer_map in layer_list + charm_list:
+        for layer_name, repos in layer_map.items():
+            upstream = repos["upstream"]
+            downstream = repos["downstream"]
+            if urlparse(upstream).path.lstrip("/") == downstream:
+                log.info(f"Skipping {layer_name} :: {upstream} == {downstream}")
+                continue
+            items = (username, password, layer_name, upstream, downstream)
+            log.info(f"Adding {layer_name} to queue")
+            repos_to_process.append(items)
+
+    if not dry_run:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
+            git_runs = {tp.submit(__run_git, args): args for args in repos_to_process}
+            for future in concurrent.futures.as_completed(git_runs):
+                try:
+                    data = future.result()
+                except Exception as exc:
+                    log.info(f"Failed thread: {exc}")
+
     return _sync_upstream(layer_list, charm_list, dry_run)
 
 

@@ -54,9 +54,7 @@
           JOB_SPEC_DIR: "jobs/sync-upstream"
       - run-tox:
           COMMAND: |
-            tox -e py38 -- python jobs/sync-upstream/sync.py forks \
-               --layer-list jobs/includes/charm-layer-list.inc \
-               --charm-list jobs/includes/charm-support-matrix.inc
+            tox -e py38 -- python jobs/sync-upstream/sync.py forks
 
 - job:
     name: 'sync-stable-tag-bundle-rev'
