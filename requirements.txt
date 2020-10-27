@@ -29,7 +29,7 @@ click==7.1.2              # via black, mkdocs, nltk, ogc, ogc-plugins-juju, ogc-
 colorama==0.3.9           # via awscli, hunter, ogc
 configobj==5.0.6          # via -r requirements.in
 contextvars==2.4          # via -r requirements.in
-cryptography==3.1.1       # via paramiko
+cryptography==3.2         # via paramiko, secretstorage
 decorator==4.4.2          # via ipython, retry
 defusedxml==0.6.0         # via python3-openid
 dict-deep==2.0.2          # via ogc
@@ -52,6 +52,7 @@ ipdb==0.13.4              # via -r requirements.in
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.18.1           # via ipdb
 jedi==0.17.2              # via ipython
+jeepney==0.4.3            # via keyring, secretstorage
 jenkins-job-builder==3.6.0  # via -r requirements.in
 jinja2==2.11.2            # via -r requirements.in, charmcraft, jenkins-job-builder, mkdocs, ogc
 jmespath==0.10.0          # via boto3, botocore
@@ -133,6 +134,7 @@ requests==2.24.0          # via -r requirements.in, canonicalwebteam.snapstoreap
 retry==0.9.2              # via -r requirements.in
 rsa==4.5                  # via awscli
 s3transfer==0.3.3         # via awscli, boto3
+secretstorage==3.1.2      # via keyring
 semver==2.12.0            # via ogc
 sh==1.14.0                # via -r requirements.in, ogc, ogc-plugins-juju, ogc-plugins-runner
 six==1.15.0               # via bcrypt, configobj, cryptography, fasteners, jenkins-job-builder, launchpadlib, lazr.restfulclient, livereload, lunr, macaroonbakery, packaging, ppft, protobuf, pymacaroons, pynacl, python-dateutil, python-frontmatter, python-jenkins
