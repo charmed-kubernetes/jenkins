@@ -1,0 +1,76 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+###############################################################################
+# INITIALIZE
+###############################################################################
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function juju::bootstrap::before
+{
+    # azure-cli
+    curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+    # helm
+    snap install helm --classic
+
+    # sonobuoy
+    rm -rf sonobuoy.*
+    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+    tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+    rm -rf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+}
+
+function test::execute
+{
+    declare -n is_pass=$1
+
+    mkdir -p $HOME/.kube
+    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
+    kubectl version
+    ./sonobuoy version
+    ./sonobuoy run --plugin ./conformance.yaml --plugin-env azure-arc-conformance.TENANT_ID=$TENANT_ID --plugin-env azure-arc-conformance.SUBSCRIPTION_ID=$SUBSCRIPTION_ID --plugin-env azure-arc-conformance.RESOURCE_GROUP=$RESOURCE_GROUP --plugin-env azure-arc-conformance.CLUSTER_NAME=$CLUSTER_NAME --plugin-env azure-arc-conformance.LOCATION=$LOCATION --plugin-env azure-arc-conformance.CLIENT_ID=$CLIENT_ID --plugin-env azure-arc-conformance.CLIENT_SECRET=$CLIENT_SECRET --wait 2>&1
+
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+function test::capture
+{
+    ./sonobuoy retrieve
+    mv *_sonobuoy*tar.gz artifacts.tar.gz
+    python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
+}
+
+
+###############################################################################
+# ENV
+###############################################################################
+SONOBUOY_VERSION=0.19.0
+SNAP_VERSION=${1:-1.19/stable}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${3:-stable}
+JUJU_CLOUD=azure/eastus
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-ck-arc
+ARCH=${4:-amd64}
+JOB_NAME_CUSTOM="validate-ck-arc-conformance-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
+
+
+###############################################################################
+# START
+###############################################################################
+ci::run
