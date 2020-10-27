@@ -62,70 +62,70 @@
         - adhoc
         - jenkins
     - name: install apt deps
-      apt:
-        name:
-          - build-essential
-          - fakeroot
-          - curl
-          - dh-systemd
-          - debhelper
-          - default-jre
-          - docker.io
-          - expect-dev
-          - file
-          - flake8
-          - gcc
-          - jq
-          - language-pack-en-base
-          - libffi-dev
-          - libffi6
-          - libssl-dev
-          - libuv1
-          - libxml2-dev
-          - make
-          - parallel
-          - python3-dev
-          - python3-pip
-          - python3.6
-          - python3.6-dev
-          - python3.6-venv
-          - python3.7
-          - python3.7-dev
-          - python3.7-venv
-          - python3.8
-          - python3.8-dev
-          - python3.8-venv
-          - redis-server
-          - snapd
-          - sosreport
-          - squashfuse
-          - strace
-          - tox
-          - tree
-          - ubuntu-dev-tools
-          - ubuntu-server
-          - ubuntu-standard
-          - unzip
-          - uuid
-          - virtualenv
-          - wget
-          - zlib1g-dev
+      shell: |
+        apt-get update
+        apt-get install -qyf \
+          build-essential \
+          fakeroot \
+          curl \
+          dh-systemd \
+          debhelper \
+          default-jre \
+          docker.io \
+          expect-dev \
+          file \
+          flake8 \
+          gcc \
+          jq \
+          language-pack-en-base \
+          libffi-dev \
+          libffi6 \
+          libssl-dev \
+          libuv1 \
+          libxml2-dev \
+          make \
+          parallel \
+          python3-dev \
+          python3-pip \
+          python3.6 \
+          python3.6-dev \
+          python3.6-venv \
+          python3.7 \
+          python3.7-dev \
+          python3.7-venv \
+          python3.8 \
+          python3.8-dev \
+          python3.8-venv \
+          redis-server \
+          snapd \
+          sosreport \
+          squashfuse \
+          strace \
+          tox \
+          tree \
+          ubuntu-dev-tools \
+          ubuntu-server \
+          ubuntu-standard \
+          unzip \
+          uuid \
+          virtualenv \
+          wget \
+          zlib1g-dev
       tags:
         - jenkins
     - name: remove unused debs
-      apt:
-        name:
-          - python-pip
-          - juju
-          - lxd
-          - lxd-client
-          - lxcfs
-          - lxc-common
-          - liblxc1
-          - juju-wait
-          - libsodium-dev
-          - snapcraft
-        state: absent
+      shell: |
+        sudo apt-get remove -qyf \
+          python-pip \
+          juju \
+          lxd \
+          lxd-client \
+          lxcfs \
+          lxc-common \
+          liblxc1 \
+          juju-wait \
+          libsodium-dev \
+          snapcraft
       tags:
         - jenkins
     - name: upgrade charm
