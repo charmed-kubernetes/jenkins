@@ -285,8 +285,6 @@ def forks(dry_run):
                 except Exception as exc:
                     log.info(f"Failed thread: {exc}")
 
-    return _sync_upstream(layer_list, charm_list, dry_run)
-
 
 @cli.command()
 @click.option("--dry-run", is_flag=True)
