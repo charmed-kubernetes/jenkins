@@ -2,6 +2,7 @@
 from cilib import lp
 import semver
 
+
 class PPA:
     def __init__(self, collection):
         self.collection = collection
@@ -9,11 +10,14 @@ class PPA:
     @property
     def sources(self):
         """Return the published sources for PPA collection"""
-        return [{
-            "name": pkg.source_package_name,
-            "version": pkg.source_package_version,
-            "status": pkg.status
-        } for pkg in self.collection.getPublishedSources()]
+        return [
+            {
+                "name": pkg.source_package_name,
+                "version": pkg.source_package_version,
+                "status": pkg.status,
+            }
+            for pkg in self.collection.getPublishedSources()
+        ]
 
     @property
     def published(self):

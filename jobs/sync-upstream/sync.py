@@ -27,7 +27,15 @@ from cilib.models.repos.snaps import (
     SnapKubernetesTestRepoModel,
     SnapCdkAddonsRepoModel,
 )
+from cilib.models.repos.debs import (
+    DebCriToolsRepoModel,
+    DebKubeadmRepoModel,
+    DebKubectlRepoModel,
+    DebKubeletRepoModel,
+    DebKubernetesCniRepoModel,
+)
 from cilib.service.snap import SnapService
+from cilib.service.deb import DebService
 from drypy import dryrun
 
 
@@ -224,9 +232,28 @@ def __run_git(args):
 
 @cli.command()
 @click.option("--dry-run", is_flag=True)
-def sync_internal_tags(dry_run):
-    """Syncs upstream project tags to internal private repos"""
+def debs(dry_run):
+    """Syncs debs"""
+    dryrun(dry_run)
 
+    debs_to_process = [
+        DebCriToolsRepoModel(),
+        DebKubeadmRepoModel(),
+        DebKubectlRepoModel(),
+        DebKubeletRepoModel(),
+        DebKubernetesCniRepoModel(),
+    ]
+    kubernetes_repo = InternalKubernetesRepoModel()
+
+    # Sync all deb branches
+    for _deb in debs_to_process:
+        deb_service_obj = DebService(_deb, kubernetes_repo)
+        deb_service_obj.sync_from_upstream()
+
+
+@cli.command()
+@click.option("--dry-run", is_flag=True)
+def sync_internal_tags(dry_run):
     # List of tuples containing upstream, downstream models and a starting semver
     repos_map = [
         (
