@@ -484,16 +484,17 @@
             - edge
       - axis:
           type: user-defined
-          name: test_bgp
+          name: routing_mode
           values:
-            - 0
-            - 1
+            - bgp-simple
+            - bgp-router
+            - vxlan
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/calico-spec $snap_version $series $channel amd64 $test_bgp
+            bash jobs/validate/calico-spec $snap_version $series $channel amd64 $routing_mode
 
 - job:
     name: 'validate-ck-tigera-secure-ee'
