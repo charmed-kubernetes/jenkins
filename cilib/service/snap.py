@@ -49,14 +49,12 @@ class SnapService(DebugMixin):
                 snapcraft_fn_tpl = src_path / "snapcraft.yaml.in"
 
                 k8s_major_minor = semver.VersionInfo.parse(branch.lstrip("v"))
-                k8s_major_minor_patch = f"{k8s_major_minor.major}.{k8s_major_minor.minor}.{k8s_major_minor.patch}"
-                k8s_major_minor = f"{k8s_major_minor.major}.{k8s_major_minor.minor}"
 
                 snapcraft_yml_context = {
                     "snap_version": branch.lstrip("v"),
                     "patches": [],
                     "go_version": enums.K8S_GO_MAP.get(
-                        k8s_major_minor, "go/1.15/stable"
+                        f"{k8s_major_minor.major}.{k8s_major_minor.minor}", "go/1.15/stable"
                     ),
                 }
 
