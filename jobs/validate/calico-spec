@@ -18,15 +18,14 @@ function juju::bootstrap
 {
     python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
 
-    export NUM_SUBNETS=1
-    if [ "$TEST_BGP" = "1" ]; then
-      export NUM_SUBNETS=2
-      export JOB_NAME_CUSTOM="validate-ck-calico-bgp-router-$SERIES-$SNAP_VERSION"
+    export NUM_SUBNETS=2
+    if [ "$ROUTING_MODE" = "bgp-simple" ]; then
+      export NUM_SUBNETS=1
     fi
 
     python $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
 
-    if [ "$TEST_BGP" = "1" ]; then
+    if [ "$ROUTING_MODE" = "bgp-router" ]; then
       echo "Deploying bgp router"
       python3 $WORKSPACE/jobs/integration/tigera_aws.py deploy-bgp-router
     fi
@@ -34,6 +33,10 @@ function juju::bootstrap
 
 function juju::deploy::overlay
 {
+    vxlan_mode=Never
+    if [ "$ROUTING_MODE" = "vxlan" ]; then
+      vxlan_mode=Always
+    fi
     cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
@@ -49,6 +52,7 @@ applications:
     charm: cs:~containers/calico
     options:
       cidr: "192.168.0.0/16,fd00:c00b:1::/112"
+      vxlan: $vxlan_mode
 relations:
 - [calico:etcd, etcd:db]
 - [calico:cni, kubernetes-master:cni]
@@ -58,11 +62,13 @@ EOF
 
 function juju::deploy::after
 {
-    python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
+    if [[ "$ROUTING_MODE" = bgp* ]]; then
+      python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
+    fi
 
     python $WORKSPACE/jobs/integration/tigera_aws.py assign-ipv6-addrs
 
-    if [ "$TEST_BGP" = "1" ]; then
+    if [ "$ROUTING_MODE" = "bgp-router" ]; then
       python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
     fi
 }
@@ -89,8 +95,8 @@ JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-calico
 ARCH=${4:-amd64}
-TEST_BGP=${5:0}
-JOB_NAME_CUSTOM="validate-ck-calico-$SERIES-$SNAP_VERSION"
+ROUTING_MODE=${5:bgp-simple}
+JOB_NAME_CUSTOM="validate-ck-calico-$ROUTING_MODE-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
 
