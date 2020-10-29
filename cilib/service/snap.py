@@ -43,7 +43,9 @@ class SnapService(DebugMixin):
             with tempfile.TemporaryDirectory() as tmpdir:
                 src_path = Path(tmpdir) / self.snap_model.src
                 self.snap_model.base.clone(cwd=tmpdir)
-                self.snap_model.base.checkout(branch, cwd=str(src_path))
+                self.snap_model.base.checkout(
+                    branch, new_branch=True, cwd=str(src_path)
+                )
 
                 snapcraft_fn = src_path / "snapcraft.yaml"
                 snapcraft_fn_tpl = src_path / "snapcraft.yaml.in"
@@ -54,7 +56,8 @@ class SnapService(DebugMixin):
                     "snap_version": branch.lstrip("v"),
                     "patches": [],
                     "go_version": enums.K8S_GO_MAP.get(
-                        f"{k8s_major_minor.major}.{k8s_major_minor.minor}", "go/1.15/stable"
+                        f"{k8s_major_minor.major}.{k8s_major_minor.minor}",
+                        "go/1.15/stable",
                     ),
                 }
 
