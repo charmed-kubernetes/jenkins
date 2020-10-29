@@ -47,16 +47,10 @@ applications:
   kubernetes-worker:
     options:
       channel: $SNAP_VERSION
-  flannel:
   calico:
-    charm: cs:~containers/calico
     options:
       cidr: "192.168.0.0/16,fd00:c00b:1::/112"
       vxlan: $vxlan_mode
-relations:
-- [calico:etcd, etcd:db]
-- [calico:cni, kubernetes-master:cni]
-- [calico:cni, kubernetes-worker:cni]
 EOF
 }
 
@@ -89,7 +83,7 @@ function ci::cleanup
 ###############################################################################
 SNAP_VERSION=${1:-1.19/edge}
 SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)
