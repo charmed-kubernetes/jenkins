@@ -20,7 +20,7 @@
         - timed: "@daily"
     builders:
       - set-env:
-          JOB_SPEC_DIR: "jobs/build-snaps"
+          JOB_SPEC_DIR: "jobs/sync-upstream"
       - run-tox:
           COMMAND: |
             IS_DRY_RUN=""
@@ -50,7 +50,7 @@
           num-to-keep: 1
     builders:
       - set-env:
-          JOB_SPEC_DIR: "jobs/build-debs"
+          JOB_SPEC_DIR: "jobs/sync-upstream"
       - run-tox:
           COMMAND: |
             tox -e py38 -- python jobs/sync-upstream/sync.py sync-internal-tags $IS_DRY_RUN
