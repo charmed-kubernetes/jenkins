@@ -31,6 +31,31 @@
             tox -e py38 -- python jobs/sync-upstream/sync.py snaps $IS_DRY_RUN
 
 - job:
+    name: 'sync-internal-tags'
+    node: runner-cloud
+    description: |
+      Syncs all internal k8s tags
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    parameters:
+      - global-params
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          num-to-keep: 1
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/build-debs"
+      - run-tox:
+          COMMAND: |
+            tox -e py38 -- python jobs/sync-upstream/sync.py sync-internal-tags $IS_DRY_RUN
+
+- job:
     name: 'sync-upstream'
     node: runner-cloud
     description: |

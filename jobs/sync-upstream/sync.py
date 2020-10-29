@@ -254,6 +254,8 @@ def debs(dry_run):
 @cli.command()
 @click.option("--dry-run", is_flag=True)
 def sync_internal_tags(dry_run):
+    """Syncs upstream to downstream internal k8s tags"""
+    dryrun(dry_run)
     # List of tuples containing upstream, downstream models and a starting semver
     repos_map = [
         (
@@ -273,8 +275,7 @@ def sync_internal_tags(dry_run):
         upstream.remote_add("downstream", downstream.repo, cwd=upstream.name)
         for tag in tags_to_sync:
             click.echo(f"Syncing repo {upstream} => {downstream}, tag => {tag}")
-            if not dry_run:
-                upstream.push("downstream", tag, cwd=upstream.name)
+            upstream.push("downstream", tag, cwd=upstream.name)
 
 
 @cli.command()
