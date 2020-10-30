@@ -21,6 +21,6 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/arc-conformance"
-      - run-env:
+      - run-tox:
           COMMAND: |
-           TOX_WORK_DIR=$WORKSPACE/.tox tox -e py36 -- bash jobs/arc-conformance/conformance-spec
+           tox -e py38 -- bash jobs/arc-conformance/conformance-spec
