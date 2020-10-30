@@ -14,7 +14,6 @@ class DebBaseRepoModel(DebugMixin):
 
     def __init__(self):
         self.version = None
-        self.ppa = None
         self.git_user = "k8s-team-ci"
         self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/{self.name}"
         self.src = f"{self.name}"

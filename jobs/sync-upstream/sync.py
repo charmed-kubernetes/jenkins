@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import urlparse, quote
 from sh.contrib import git
 from cilib.run import capture, cmd_ok
-from cilib import log, enums
+from cilib import log, enums, lp
 from cilib.models.repos.kubernetes import (
     UpstreamKubernetesRepoModel,
     InternalKubernetesRepoModel,
@@ -38,6 +38,7 @@ from cilib.models.repos.debs import (
 )
 from cilib.service.snap import SnapService
 from cilib.service.deb import DebService, DebCNIService
+from cilib.service.ppa import PPAService
 from drypy import dryrun
 
 
@@ -234,9 +235,25 @@ def __run_git(args):
 
 @cli.command()
 @click.option("--dry-run", is_flag=True)
-def debs(dry_run):
+def ppas(dry_run):
+    """Sync ppas"""
+    dryrun(dry_run)
+    client = lp.Client()
+    client.login()
+    ppa_service_obj = PPAService(client.owner("k8s-maintainers"))
+    ppa_service_obj.sync()
+
+
+@cli.command()
+@click.option("--sign-key", help="GPG Sign key ID", required=True)
+@click.option("--dry-run", is_flag=True)
+def debs(sign_key, dry_run):
     """Syncs debs"""
     dryrun(dry_run)
+
+    client = lp.Client()
+    client.login()
+    ppas = client.ppas("k8s-maintainers")
 
     debs_to_process = [
         DebKubeadmRepoModel(),
@@ -248,15 +265,17 @@ def debs(dry_run):
 
     # Sync all deb branches
     for _deb in debs_to_process:
-        deb_service_obj = DebService(_deb, kubernetes_repo)
+        deb_service_obj = DebService(_deb, kubernetes_repo, ppas)
         deb_service_obj.sync_from_upstream()
+        deb_service_obj.sync_debs(sign_key)
 
     # kubernetes-cni must be processed seperately as they dont follow k8s scheduled releases
     kubernetes_cni = DebKubernetesCniRepoModel()
     kubernetes_cni_service_obj = DebCNIService(
-        kubernetes_cni, CNIPluginsUpstreamRepoModel()
+        kubernetes_cni, CNIPluginsUpstreamRepoModel(), ppas
     )
     kubernetes_cni_service_obj.sync_from_upstream()
+    kubernetes_cni_service_obj.sync_debs(sign_key)
 
 
 @cli.command()

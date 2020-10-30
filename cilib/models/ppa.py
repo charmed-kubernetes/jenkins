@@ -1,6 +1,5 @@
 """Launchpad PPA model"""
-from cilib import lp
-import semver
+from cilib import lp, version
 
 
 class PPA:
@@ -35,5 +34,22 @@ class PPA:
         """Get semver for latest published package"""
         source = self.get_latest_source(name)
         if source:
-            return semver.VersionInfo.parse(source["version"])
+            return version.parse(source["version"])
         return None
+
+
+class PPACollection:
+    def __init__(self, ppas):
+        self.ppas = ppas
+
+    def get_ppa_by_major_minor(self, major_minor):
+        """Returns the ppa archive by name which is major.minor"""
+        for _ppa in self.ppas:
+            if _ppa.name == major_minor:
+                return PPA(_ppa)
+        return None
+
+    @property
+    def names(self):
+        """Returns a list of all ppas in collection by name"""
+        return [_ppa.name for _ppa in self.ppas]
