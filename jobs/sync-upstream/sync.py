@@ -15,6 +15,8 @@ from cilib import log, enums
 from cilib.models.repos.kubernetes import (
     UpstreamKubernetesRepoModel,
     InternalKubernetesRepoModel,
+    CriToolsUpstreamRepoModel,
+    CNIPluginsUpstreamRepoModel,
 )
 from cilib.models.repos.snaps import (
     SnapKubeApiServerRepoModel,
@@ -35,7 +37,7 @@ from cilib.models.repos.debs import (
     DebKubernetesCniRepoModel,
 )
 from cilib.service.snap import SnapService
-from cilib.service.deb import DebService
+from cilib.service.deb import DebService, DebCNIService
 from drypy import dryrun
 
 
@@ -237,11 +239,10 @@ def debs(dry_run):
     dryrun(dry_run)
 
     debs_to_process = [
-        DebCriToolsRepoModel(),
         DebKubeadmRepoModel(),
         DebKubectlRepoModel(),
         DebKubeletRepoModel(),
-        DebKubernetesCniRepoModel(),
+        DebCriToolsRepoModel(),
     ]
     kubernetes_repo = InternalKubernetesRepoModel()
 
@@ -249,6 +250,13 @@ def debs(dry_run):
     for _deb in debs_to_process:
         deb_service_obj = DebService(_deb, kubernetes_repo)
         deb_service_obj.sync_from_upstream()
+
+    # kubernetes-cni must be processed seperately as they dont follow k8s scheduled releases
+    kubernetes_cni = DebKubernetesCniRepoModel()
+    kubernetes_cni_service_obj = DebCNIService(
+        kubernetes_cni, CNIPluginsUpstreamRepoModel()
+    )
+    kubernetes_cni_service_obj.sync_from_upstream()
 
 
 @cli.command()

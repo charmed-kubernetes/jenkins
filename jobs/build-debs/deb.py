@@ -10,6 +10,7 @@ from subprocess import run
 from sh.contrib import git
 from cilib.run import cmd_ok, capture
 from cilib.git import remote_tags
+from cilib import enums, version
 from pathlib import Path
 
 

@@ -14,3 +14,17 @@ class InternalKubernetesRepoModel(BaseRepoModel):
         self.name = "k8s-internal-mirror"
         self.git_user = "k8s-team-ci"
         self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/{self.name}"
+
+
+class CriToolsUpstreamRepoModel(BaseRepoModel):
+    def __init__(self):
+        super(CriToolsUpstreamRepoModel, self).__init__()
+        self.name = "cri-tools"
+        self.repo = f"https://github.com/kubernetes-sigs/{self.name}.git"
+
+
+class CNIPluginsUpstreamRepoModel(BaseRepoModel):
+    def __init__(self):
+        super(CNIPluginsUpstreamRepoModel, self).__init__()
+        self.name = "plugins"
+        self.repo = f"https://github.com/containernetworking/{self.name}.git"
