@@ -10,13 +10,12 @@ K8S_VERSION="{{ lookup('env', 'K8S_VERSION') }}"
 INCLUDE_SOURCE="{{ lookup('env', 'K8S_INCLUDE_SOURCE') }}"
 K8STEAMCI_GPG_KEY="{{ lookup('env', 'K8STEAMCI_GPG_KEY') }}"
 
-OPTS="--ref $K8S_VERSION --sign-key $K8STEAMCI_GPG_KEY"
+OPTS="--sign-key $K8STEAMCI_GPG_KEY"
 
-INCLUDE_SOURCE_FLAG=""
-if [ "$INCLUDE_SOURCE" = "true" ]; then
-    OPTS="$OPTS --include-source"
+if [ "$DRY_RUN" = "true" ]; then
+    OPTS="$OPTS --dry-run"
 fi
 
 cd /root/jenkins
-pip3 install -rjobs/build-debs/requirements.txt
-PYTHONPATH=. python3 jobs/build-debs/deb.py build-debs $OPTS
+pip3 install tox wheel
+tox --workdir .tox -e py38 -- python jobs/sync-upstream/sync.py debs $OPTS

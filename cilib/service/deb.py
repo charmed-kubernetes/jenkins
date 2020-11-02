@@ -136,8 +136,10 @@ class DebService(DebugMixin):
     def cleanup_debian(self, **subprocess_kwargs):
         run(["rm", "-rf", "debian"], **subprocess_kwargs)
 
+    @sham
     def upload(self, ppa, **subprocess_kwargs):
         """Uploads source packages via dput"""
+        click.echo("Performing upload")
         for changes in list(Path(".").glob("*changes")):
             cmd_ok(f"dput {ppa} {str(changes)}", **subprocess_kwargs)
 
