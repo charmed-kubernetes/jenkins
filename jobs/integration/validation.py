@@ -36,6 +36,7 @@ from .utils import (
     do_series_upgrade,
     finish_series_upgrade,
     kubectl,
+    juju_run,
     get_ipv6_addr,
 )
 import urllib.request
@@ -1749,6 +1750,12 @@ async def test_dns_provider(model, k8s_model, tools):
 
         log("Verifying DNS no longer works on fresh pod")
         await verify_no_dns_resolution(fresh=True)
+
+        result = await juju_run(master_unit, "cat metadata.yaml")
+        master_meta = yaml.safe_load(result.stdout)
+        if "dns-provider" not in master_meta["requires"]:
+            log("Skipping CoreDNS charm test for older CK")
+            return
 
         log("Deploying CoreDNS charm")
         coredns = await k8s_model.deploy(
