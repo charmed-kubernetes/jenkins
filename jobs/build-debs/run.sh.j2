@@ -3,11 +3,7 @@
 set -x
 
 export GIT_SSH_COMMAND='ssh -i /root/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no'
-export CDKBOT_GH_USR="{{ lookup('env', 'CDKBOT_GH_USER') }}"
-export CDKBOT_GH_PSW="{{ lookup('env', 'CDKBOT_GH_PSW') }}"
 export DEBEMAIL="Kubernetes Engineering <k8s-team-ci@canonical.com>"
-K8S_VERSION="{{ lookup('env', 'K8S_VERSION') }}"
-INCLUDE_SOURCE="{{ lookup('env', 'K8S_INCLUDE_SOURCE') }}"
 K8STEAMCI_GPG_KEY="{{ lookup('env', 'K8STEAMCI_GPG_KEY') }}"
 
 OPTS="--sign-key $K8STEAMCI_GPG_KEY"
@@ -17,5 +13,4 @@ if [ "$DRY_RUN" = "true" ]; then
 fi
 
 cd /root/jenkins
-pip3 install tox wheel
 tox --workdir .tox -e py38 -- python jobs/sync-upstream/sync.py debs $OPTS

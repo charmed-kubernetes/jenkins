@@ -48,7 +48,7 @@
           JOB_SPEC_DIR: "jobs/build-debs"
       - run-tox:
           COMMAND: |
-            pip install ansible
+            pip install ansible wheel semver sh click
             bin/lxd-launcher teardown --container-name deb-build || true
             bin/lxd-launcher build \
               --container-name deb-build \

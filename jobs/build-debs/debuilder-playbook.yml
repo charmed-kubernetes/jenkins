@@ -27,7 +27,7 @@
           tox
     - name: upgrade system pip
       shell: |
-        pip3 install pip --upgrade
+        pip3 install pip tox --upgrade
     - name: copy ssh creds
       copy:
         src: "{{ lookup('env', 'CDKBOTSSHCREDS') }}"
