@@ -13,4 +13,5 @@ if [ "$DRY_RUN" = "true" ]; then
 fi
 
 cd /root/jenkins
-tox --workdir .tox -e py38 -- python jobs/sync-upstream/sync.py debs $OPTS
+pip install -rrequirements.txt
+PYTHONPATH=. python3 jobs/sync-upstream/sync.py debs $OPTS
