@@ -356,6 +356,9 @@
               credential-id: juju_creds
               variable: JUJUCREDS
           - file:
+              credential-id: juju_clouds
+              variable: JUJUCLOUDS
+          - file:
               credential-id: sso_token
               variable: SSOCREDS
           - file:
