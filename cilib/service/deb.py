@@ -35,6 +35,14 @@ class DebService(DebugMixin):
         )
         return list(set(upstream_tags) - set(deb_branches))
 
+    @property
+    def supported_versions(self):
+        return list(enums.DEB_K8S_TRACK_MAP.keys())
+
+    def get_ppa_for_version(self, version):
+        """Returns the ppas for a particular version. This can be overridden in case some components to match the typical major.minor.patch release that k8s follows"""
+        return list(enums.DEB_K8S_TRACK_MAP.get(version))
+
     def sync_from_upstream(self):
         """Syncs branches from upstream tags"""
         if not self.missing_branches:
@@ -71,8 +79,7 @@ class DebService(DebugMixin):
 
     def sync_debs(self, sign_key):
         """ Builds latest deb from each major.minor and uploads to correct ppa"""
-        supported_versions = list(enums.DEB_K8S_TRACK_MAP.keys())
-        for _version in supported_versions:
+        for _version in self.supported_versions:
             self.deb_model.version = _version
             exclude_pre = True
             if _version == enums.K8S_NEXT_VERSION:
@@ -121,7 +128,7 @@ class DebService(DebugMixin):
                         "Automated Build", cwd=f"{tmpdir}/{self.deb_model.name}"
                     )
                     self.deb_model.base.push(cwd=f"{tmpdir}/{self.deb_model.name}")
-                    self.upload(enums.DEB_K8S_TRACK_MAP.get(_version))
+                    self.upload(self.get_ppa_for_version(_version))
                     self.cleanup_source()
                     self.cleanup_debian(cwd=self.upstream_model.name)
 
@@ -152,14 +159,15 @@ class DebService(DebugMixin):
         cmd_ok(["rm", "-rf", "debian"], **subprocess_kwargs)
 
     @sham
-    def upload(self, ppa, **subprocess_kwargs):
+    def upload(self, ppas, **subprocess_kwargs):
         """Uploads source packages via dput"""
-        for changes in list(Path(".").glob("*changes")):
-            cmd = f"dput {ppa} {str(changes)}"
-            self.log(cmd)
-            cmd_ok(cmd, **subprocess_kwargs)
-
-    # private
+        if isinstance(ppas, str):
+            ppas = [ppas]
+        for _ppa in ppas:
+            for changes in list(Path(".").glob("*changes")):
+                cmd = f"dput {_ppa} {str(changes)}"
+                self.log(cmd)
+                cmd_ok(cmd, **subprocess_kwargs)
 
 
 class DebCNIService(DebService):
@@ -172,6 +180,14 @@ class DebCNIService(DebService):
         deb_branches = self.deb_model.base.branches_from_semver_point("0.8.7")
         return list(set(upstream_tags) - set(deb_branches))
 
+    @property
+    def supported_versions(self):
+        return [enums.K8S_CNI_SEMVER]
+
+    def get_ppa_for_version(self, *args):  # noqa
+        """version is ignored here as we return all ppas for supported k8s versions"""
+        return [ppa for ppa in enums.DEB_K8S_TRACK_MAP.values()]
+
 
 class DebCriToolsService(DebService):
     """This is a separate service for cri-tools as it does not follow the normal kubernetes versioning scheme"""
@@ -182,3 +198,11 @@ class DebCriToolsService(DebService):
         upstream_tags = self.upstream_model.tags_from_semver_point("1.19.0")
         deb_branches = self.deb_model.base.branches_from_semver_point("1.19.0")
         return list(set(upstream_tags) - set(deb_branches))
+
+    @property
+    def supported_versions(self):
+        return [enums.K8S_CRI_TOOLS_SEMVER]
+
+    def get_ppa_for_version(self, *args):  # noqa
+        """version is ignored here as we return all ppas for supported k8s versions"""
+        return [ppa for ppa in enums.DEB_K8S_TRACK_MAP.values()]
