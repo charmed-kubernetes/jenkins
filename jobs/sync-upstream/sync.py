@@ -37,7 +37,7 @@ from cilib.models.repos.debs import (
     DebKubernetesCniRepoModel,
 )
 from cilib.service.snap import SnapService
-from cilib.service.deb import DebService, DebCNIService
+from cilib.service.deb import DebService, DebCNIService, DebCriToolsService
 from cilib.service.ppa import PPAService
 from drypy import dryrun
 
@@ -269,7 +269,9 @@ def debs(sign_key, dry_run):
     #     deb_service_obj.sync_debs(sign_key)
 
     cri_tools = DebCriToolsRepoModel()
-    cri_tools_service_obj = DebService(cri_tools, CriToolsUpstreamRepoModel(), ppas)
+    cri_tools_service_obj = DebCriToolsService(
+        cri_tools, CriToolsUpstreamRepoModel(), ppas
+    )
     cri_tools_service_obj.sync_from_upstream()
     cri_tools_service_obj.sync_debs(sign_key)
 

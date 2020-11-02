@@ -39,10 +39,6 @@ class DebService(DebugMixin):
     def supported_versions(self):
         return list(enums.DEB_K8S_TRACK_MAP.keys())
 
-    def get_ppa_for_version(self, version):
-        """Returns the ppas for a particular version. This can be overridden in case some components to match the typical major.minor.patch release that k8s follows"""
-        return list(enums.DEB_K8S_TRACK_MAP.get(version))
-
     def sync_from_upstream(self):
         """Syncs branches from upstream tags"""
         if not self.missing_branches:
@@ -101,36 +97,8 @@ class DebService(DebugMixin):
                 self.log(
                     f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version)}, building new deb"
                 )
-                self.upstream_model.clone()
-                self.upstream_model.checkout(
-                    ref=f"v{str(latest_branch_version)}",
-                    force=True,
-                    cwd=self.upstream_model.name,
-                )
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    self.log(f"Building {self.deb_model.name} debian package")
-                    self.deb_model.base.clone(cwd=tmpdir)
-                    self.deb_model.base.checkout(
-                        ref=f"v{str(latest_branch_version)}",
-                        force=True,
-                        cwd=f"{tmpdir}/{self.deb_model.name}",
-                    )
-                    self.bump_revision(cwd=f"{tmpdir}/{self.deb_model.name}")
-                    cmd_ok(
-                        f"cp -a {tmpdir}/{self.deb_model.name}/* {self.upstream_model.name}/.",
-                        shell=True,
-                    )
-                    self.source(sign_key, cwd=self.upstream_model.name)
-                    self.deb_model.base.add(
-                        ["debian/changelog"], cwd=f"{tmpdir}/{self.deb_model.name}"
-                    )
-                    self.deb_model.base.commit(
-                        "Automated Build", cwd=f"{tmpdir}/{self.deb_model.name}"
-                    )
-                    self.deb_model.base.push(cwd=f"{tmpdir}/{self.deb_model.name}")
-                    self.upload(self.get_ppa_for_version(_version))
-                    self.cleanup_source()
-                    self.cleanup_debian(cwd=self.upstream_model.name)
+                self.build(latest_branch_version)
+                self.upload(enums.DEB_K8S_TRACK_MAP.get(_version))
 
             else:
                 self.log(
@@ -168,6 +136,38 @@ class DebService(DebugMixin):
                 cmd = f"dput {_ppa} {str(changes)}"
                 self.log(cmd)
                 cmd_ok(cmd, **subprocess_kwargs)
+        self.cleanup_source()
+        self.cleanup_debian(cwd=self.upstream_model.name)
+
+    def build(self, latest_branch_version):
+        """Builds the debian package for latest version"""
+        self.upstream_model.clone()
+        self.upstream_model.checkout(
+            ref=f"v{str(latest_branch_version)}",
+            force=True,
+            cwd=self.upstream_model.name,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.log(f"Building {self.deb_model.name} debian package")
+            self.deb_model.base.clone(cwd=tmpdir)
+            self.deb_model.base.checkout(
+                ref=f"v{str(latest_branch_version)}",
+                force=True,
+                cwd=f"{tmpdir}/{self.deb_model.name}",
+            )
+            self.bump_revision(cwd=f"{tmpdir}/{self.deb_model.name}")
+            cmd_ok(
+                f"cp -a {tmpdir}/{self.deb_model.name}/* {self.upstream_model.name}/.",
+                shell=True,
+            )
+            self.source(sign_key, cwd=self.upstream_model.name)
+            self.deb_model.base.add(
+                ["debian/changelog"], cwd=f"{tmpdir}/{self.deb_model.name}"
+            )
+            self.deb_model.base.commit(
+                "Automated Build", cwd=f"{tmpdir}/{self.deb_model.name}"
+            )
+            self.deb_model.base.push(cwd=f"{tmpdir}/{self.deb_model.name}")
 
 
 class DebCNIService(DebService):
@@ -180,13 +180,30 @@ class DebCNIService(DebService):
         deb_branches = self.deb_model.base.branches_from_semver_point("0.8.7")
         return list(set(upstream_tags) - set(deb_branches))
 
-    @property
-    def supported_versions(self):
-        return [enums.K8S_CNI_SEMVER]
-
-    def get_ppa_for_version(self, *args):  # noqa
-        """version is ignored here as we return all ppas for supported k8s versions"""
-        return [ppa for ppa in enums.DEB_K8S_TRACK_MAP.values()]
+    def sync_debs(self, sign_key):
+        """Builds latest deb from each major.minor and uploads to correct ppa"""
+        for _version in self.supported_versions:
+            self.deb_model.version = enums.K8S_CNI_SEMVER
+            exclude_pre = True
+            ppa = self.ppas.get_ppa_by_major_minor(_version)
+            latest_deb_version = ppa.get_source_semver(self.deb_model.name)
+            latest_branch_version = self.deb_model.base.latest_branch_from_major_minor(
+                enums.K8S_CNI_SEMVER, exclude_pre
+            )
+            if (
+                not latest_deb_version
+                or semver.compare(str(latest_branch_version), str(latest_deb_version))
+                > 0
+            ):
+                self.log(
+                    f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version)}, building new deb"
+                )
+                self.build(latest_branch_version)
+                self.upload([_ppa for _ppa in enums.DEB_K8S_TRACK_MAP.values()])
+            else:
+                self.log(
+                    f"> Versions match {str(latest_branch_version)} == {str(latest_deb_version)}, not building a new deb"
+                )
 
 
 class DebCriToolsService(DebService):
@@ -199,10 +216,27 @@ class DebCriToolsService(DebService):
         deb_branches = self.deb_model.base.branches_from_semver_point("1.19.0")
         return list(set(upstream_tags) - set(deb_branches))
 
-    @property
-    def supported_versions(self):
-        return [enums.K8S_CRI_TOOLS_SEMVER]
-
-    def get_ppa_for_version(self, *args):  # noqa
-        """version is ignored here as we return all ppas for supported k8s versions"""
-        return [ppa for ppa in enums.DEB_K8S_TRACK_MAP.values()]
+    def sync_debs(self, sign_key):
+        """Builds latest deb from each major.minor and uploads to correct ppa"""
+        for _version in self.supported_versions:
+            self.deb_model.version = enums.K8S_CRI_TOOLS_SEMVER
+            exclude_pre = True
+            ppa = self.ppas.get_ppa_by_major_minor(_version)
+            latest_deb_version = ppa.get_source_semver(self.deb_model.name)
+            latest_branch_version = self.deb_model.base.latest_branch_from_major_minor(
+                enums.K8S_CRI_TOOLS_SEMVER, exclude_pre
+            )
+            if (
+                not latest_deb_version
+                or semver.compare(str(latest_branch_version), str(latest_deb_version))
+                > 0
+            ):
+                self.log(
+                    f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version)}, building new deb"
+                )
+                self.build(latest_branch_version)
+                self.upload([_ppa for _ppa in enums.DEB_K8S_TRACK_MAP.values()])
+            else:
+                self.log(
+                    f"> Versions match {str(latest_branch_version)} == {str(latest_deb_version)}, not building a new deb"
+                )

@@ -26,10 +26,10 @@ K8S_SUPPORT_VERSION_LIST = yaml.safe_load(
 )
 
 # Kubernetes CNI version
-K8S_CNI_SEMVER = "0.8.7"
+K8S_CNI_SEMVER = "0.8"
 
 # Cri tools version
-K8S_CRI_TOOLS_SEMVER = "1.19.0"
+K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
