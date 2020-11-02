@@ -38,6 +38,10 @@ class Client:
         """Returns LP owner object"""
         return self._client.people[name]
 
+    def ppas(self, owner):
+        """Returns ppas associated with owner"""
+        return self.owner(owner).ppas
+
     @property
     def snaps(self):
         """Gets snaps collection"""

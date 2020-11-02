@@ -19,6 +19,7 @@ from drypy.patterns import sham
 class SnapService(DebugMixin):
     def __init__(self, snap_model, upstream_model):
         self.snap_model = snap_model
+        self.name = self.snap_model.name
         self.upstream_model = upstream_model
 
     @property

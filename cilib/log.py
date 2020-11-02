@@ -39,7 +39,13 @@ def info(ctx):
 
 class DebugMixin:
     def debug(self, msg):
-        debug(f"[{self.snap_model.name}] {msg}")
+        name = self.__class__.__name__
+        if hasattr(self, "name"):
+            name = self.name
+        debug(f"[{name}] {msg}")
 
     def log(self, msg):
-        info(f"[{self.snap_model.name}] {msg}")
+        name = self.__class__.__name__
+        if hasattr(self, "name"):
+            name = self.name
+        info(f"[{name}] {msg}")

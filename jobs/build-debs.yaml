@@ -11,16 +11,7 @@
       - default-job-wrapper
       - ci-creds
     parameters:
-      - choice:
-          name: K8S_VERSION
-          description: |
-            Select the K8S_VERSION which is reflective of the tags stored in our internal git repo.
-          choices: !include: jobs/includes/k8s-deb-ppa-list.inc
-      - bool:
-          name: K8S_INCLUDE_SOURCE
-          description: |
-            Include the orig.tar.gz in the built debian packge. Should only be required when this is a new minor.major upload.
-
+      - global-params
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-debs"
@@ -40,31 +31,3 @@
           sudo lxc exec deb-build -- bash -c "/root/jenkins/run.sh"
           bin/lxd-launcher teardown --container-name deb-build
 
-- job:
-    name: 'sync-deb-tags'
-    node: runner-cloud
-    description: |
-      Syncs all internal k8s tags for use with building debian packages
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    properties:
-      - build-discarder:
-          num-to-keep: 1
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/build-debs"
-      - shell: |-
-          #!/bin/bash
-          set -eux
-          set -o allexport
-          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-          set +o allexport
-
-          python3.8 -m venv venv
-          venv/bin/python -m pip install pip-tools
-          venv/bin/pip-sync requirements.txt
-          venv/bin/python jobs/build-debs/build-debs.py sync-tags
