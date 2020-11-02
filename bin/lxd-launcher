@@ -22,7 +22,7 @@ def cli():
 @click.option("--ssh-import-id", help="SSH public key to import", default="cdkbot")
 @click.option("--key-file", help="SSH Key to connect to container with", default="/var/lib/jenkins/.ssh/cdkbot_rsa")
 def build(container_name, playbook, ssh_import_id, key_file):
-    cmd_ok(f"sudo lxc launch ubuntu:20.10 {container_name}")
+    cmd_ok(f"sudo lxc launch ubuntu:20.04 {container_name}")
     lxc_ip = None
     while not lxc_ip:
         lxc_info = capture(f"sudo lxc info {container_name}")

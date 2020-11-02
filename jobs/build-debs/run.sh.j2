@@ -13,4 +13,5 @@ if [ "$DRY_RUN" = "true" ]; then
 fi
 
 cd /root/jenkins
+
 tox -e py3 --workdir .tox -- python jobs/sync-upstream/sync.py debs $OPTS

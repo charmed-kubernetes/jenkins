@@ -27,7 +27,7 @@
           tox
     - name: remove apt deps
       shell: |
-          apt-get remove -qyf python3-tox
+          apt remove --autoremove -qyf tox
       ignore_errors: yes
     - name: upgrade system pip
       shell: |
