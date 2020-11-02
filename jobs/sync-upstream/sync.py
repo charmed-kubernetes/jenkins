@@ -259,7 +259,6 @@ def debs(sign_key, dry_run):
         DebKubeadmRepoModel(),
         DebKubectlRepoModel(),
         DebKubeletRepoModel(),
-        DebCriToolsRepoModel(),
     ]
     kubernetes_repo = InternalKubernetesRepoModel()
 
@@ -268,6 +267,11 @@ def debs(sign_key, dry_run):
         deb_service_obj = DebService(_deb, kubernetes_repo, ppas)
         deb_service_obj.sync_from_upstream()
         deb_service_obj.sync_debs(sign_key)
+
+    cri_tools = DebCriToolsRepoModel()
+    cri_tools_service_obj = DebService(cri_tools, CriToolsUpstreamRepoModel(), ppas)
+    cri_tools_service_obj.sync_from_upstream()
+    cri_tools_service_obj.sync_debs(sign_key)
 
     # kubernetes-cni must be processed seperately as they dont follow k8s scheduled releases
     kubernetes_cni = DebKubernetesCniRepoModel()

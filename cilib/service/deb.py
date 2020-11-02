@@ -151,6 +151,7 @@ class DebService(DebugMixin):
     def cleanup_debian(self, **subprocess_kwargs):
         cmd_ok(["rm", "-rf", "debian"], **subprocess_kwargs)
 
+    @sham
     def upload(self, ppa, **subprocess_kwargs):
         """Uploads source packages via dput"""
         for changes in list(Path(".").glob("*changes")):
@@ -169,4 +170,15 @@ class DebCNIService(DebService):
         """Returns any missing branches in our deb git repos that are defined upstream"""
         upstream_tags = self.upstream_model.tags_from_semver_point("0.8.7")
         deb_branches = self.deb_model.base.branches_from_semver_point("0.8.7")
+        return list(set(upstream_tags) - set(deb_branches))
+
+
+class DebCriToolsService(DebService):
+    """This is a separate service for cri-tools as it does not follow the normal kubernetes versioning scheme"""
+
+    @property
+    def missing_branches(self):
+        """Returns any missing branches in our deb git repos that are defined upstream"""
+        upstream_tags = self.upstream_model.tags_from_semver_point("1.19.0")
+        deb_branches = self.deb_model.base.branches_from_semver_point("1.19.0")
         return list(set(upstream_tags) - set(deb_branches))
