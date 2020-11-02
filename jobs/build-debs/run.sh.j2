@@ -3,12 +3,14 @@
 set -x
 
 export GIT_SSH_COMMAND='ssh -i /root/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no'
+export LPCREDS=/root/lpcreds.ini
 export DEBEMAIL="Kubernetes Engineering <k8s-team-ci@canonical.com>"
 K8STEAMCI_GPG_KEY="{{ lookup('env', 'K8STEAMCI_GPG_KEY') }}"
+DRY_RUN="{{ lookup('env', 'DRY_RUN') }}"
 
 OPTS="--sign-key $K8STEAMCI_GPG_KEY"
 
-if [ "$DRY_RUN" = "true" ]; then
+if [[ $DRY_RUN = "true" ]]; then
     OPTS="$OPTS --dry-run"
 fi
 

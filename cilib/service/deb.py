@@ -86,29 +86,44 @@ class DebService(DebugMixin):
             latest_branch_version = self.deb_model.base.latest_branch_from_major_minor(
                 _version, exclude_pre
             )
-            if semver.compare(str(latest_branch_version), str(latest_deb_version)) > 0:
+            if (
+                not latest_deb_version
+                or semver.compare(str(latest_branch_version), str(latest_deb_version))
+                > 0
+            ):
                 self.log(
                     f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version)}, building new deb"
                 )
                 self.upstream_model.clone()
-                self.upstream_model.checkout(cwd=self.upstream_model.name)
+                self.upstream_model.checkout(
+                    ref=f"v{str(latest_branch_version)}",
+                    force=True,
+                    cwd=self.upstream_model.name,
+                )
                 with tempfile.TemporaryDirectory() as tmpdir:
-                    click.echo(f"Building {self.deb_model.name} debian package")
+                    self.log(f"Building {self.deb_model.name} debian package")
                     self.deb_model.base.clone(cwd=tmpdir)
-                    self.deb_model.base.checkout(cwd=f"{tmpdir}/{self.deb_model.name}")
-                self.bump_revision(cwd=f"{tmpdir}/{self.deb_model.name}")
-                run(
-                    f"cp -a {tmpdir}/{self.deb_model.name}/* {self.upstream_model.name}/.",
-                    shell=True,
-                )
-                self.source(sign_key, include_source, cwd=self.upstream_model.name)
-                self.deb_model.base.commit(
-                    "Automated Build", cwd=f"{tmpdir}/{self.deb_model.name}"
-                )
-                self.deb_model.base.push(cwd=f"{tmpdir}/{self.deb_model.name}")
-                self.upload(enums.DEB_K8S_TRACK_MAP.get(_version))
-                self.cleanup_source()
-                self.cleanup_debian(cwd=self.upstream_model.name)
+                    self.deb_model.base.checkout(
+                        ref=f"v{str(latest_branch_version)}",
+                        force=True,
+                        cwd=f"{tmpdir}/{self.deb_model.name}",
+                    )
+                    self.bump_revision(cwd=f"{tmpdir}/{self.deb_model.name}")
+                    cmd_ok(
+                        f"cp -a {tmpdir}/{self.deb_model.name}/* {self.upstream_model.name}/.",
+                        shell=True,
+                    )
+                    self.source(sign_key, cwd=self.upstream_model.name)
+                    self.deb_model.base.add(
+                        ["debian/changelog"], cwd=f"{tmpdir}/{self.deb_model.name}"
+                    )
+                    self.deb_model.base.commit(
+                        "Automated Build", cwd=f"{tmpdir}/{self.deb_model.name}"
+                    )
+                    self.deb_model.base.push(cwd=f"{tmpdir}/{self.deb_model.name}")
+                    self.upload(enums.DEB_K8S_TRACK_MAP.get(_version))
+                    self.cleanup_source()
+                    self.cleanup_debian(cwd=self.upstream_model.name)
 
             else:
                 self.log(
@@ -127,21 +142,21 @@ class DebService(DebugMixin):
     def source(self, sign_key, **subprocess_kwargs):
         """Builds the source deb package"""
         cmd = ["dpkg-buildpackage", "-S", f"--sign-key={sign_key}"]
-        click.echo(f"Building package: {cmd}")
-        run(cmd, **subprocess_kwargs)
+        self.log(f"Building package: {cmd}")
+        cmd_ok(cmd, **subprocess_kwargs)
 
     def cleanup_source(self, **subprocess_kwargs):
-        run("rm -rf *.changes", shell=True, **subprocess_kwargs)
+        cmd_ok("rm -rf *.changes", shell=True, **subprocess_kwargs)
 
     def cleanup_debian(self, **subprocess_kwargs):
-        run(["rm", "-rf", "debian"], **subprocess_kwargs)
+        cmd_ok(["rm", "-rf", "debian"], **subprocess_kwargs)
 
-    @sham
     def upload(self, ppa, **subprocess_kwargs):
         """Uploads source packages via dput"""
-        click.echo("Performing upload")
         for changes in list(Path(".").glob("*changes")):
-            cmd_ok(f"dput {ppa} {str(changes)}", **subprocess_kwargs)
+            cmd = f"dput {ppa} {str(changes)}"
+            self.log(cmd)
+            cmd_ok(cmd, **subprocess_kwargs)
 
     # private
 

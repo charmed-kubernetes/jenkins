@@ -10,11 +10,13 @@ def clone(url, **subprocess_kwargs):
     run(["git", "clone", url], **subprocess_kwargs)
 
 
-def checkout(ref, new_branch=False, **subprocess_kwargs):
+def checkout(ref, new_branch=False, force=False, **subprocess_kwargs):
     """Checkout ref"""
     cmd = ["git", "checkout"]
     if new_branch:
         cmd.append("-b")
+    if force:
+        cmd.append("-f")
     cmd.append(ref)
     run(cmd, **subprocess_kwargs)
 

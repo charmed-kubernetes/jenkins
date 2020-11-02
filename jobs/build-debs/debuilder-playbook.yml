@@ -32,6 +32,14 @@
     - name: upgrade system pip
       shell: |
         pip3 install pip tox --upgrade
+    - name: copy lp creds
+      copy:
+        src: "{{ lookup('env', 'LPCREDS') }}"
+        dest: /root/lpcreds.ini
+        owner: root
+        group: root
+        mode: 0600
+        force: yes
     - name: copy ssh creds
       copy:
         src: "{{ lookup('env', 'CDKBOTSSHCREDS') }}"

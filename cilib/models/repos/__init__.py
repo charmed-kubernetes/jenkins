@@ -17,9 +17,11 @@ class BaseRepoModel:
         """Clone package repo"""
         git.clone(self.repo, **subprocess_kwargs)
 
-    def checkout(self, ref="master", new_branch=False, **subprocess_kwargs):
+    def checkout(
+        self, ref="master", new_branch=False, force=False, **subprocess_kwargs
+    ):
         """Checkout ref"""
-        git.checkout(ref, new_branch, **subprocess_kwargs)
+        git.checkout(ref, new_branch, force, **subprocess_kwargs)
 
     def commit(self, message, **subprocess_kwargs):
         """Add commit to repo"""
