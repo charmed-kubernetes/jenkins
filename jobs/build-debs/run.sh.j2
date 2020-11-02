@@ -14,4 +14,5 @@ fi
 
 cd /root/jenkins
 pip install -rrequirements.txt
+pip install sh
 PYTHONPATH=. python3 jobs/sync-upstream/sync.py debs $OPTS
