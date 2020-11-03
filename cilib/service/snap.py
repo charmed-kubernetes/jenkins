@@ -150,7 +150,9 @@ class SnapService(DebugMixin):
                     self.log(
                         f"Found new branch {str(latest_branch_version)} > {str(latest_snap_version)}, building new snap"
                     )
-                    self._create_recipe(_version, f"v{str(latest_branch_version)}")
+                    self._create_recipe(
+                        _version, f"v{str(latest_branch_version)}", arch
+                    )
                 else:
                     self.log(
                         f"> Versions match {str(latest_branch_version)} == {str(latest_snap_version)}, not building a new snap"
@@ -175,7 +177,7 @@ class SnapService(DebugMixin):
             )
 
     @sham
-    def _create_recipe(self, version, branch):
+    def _create_recipe(self, version, branch, arch):
         """ Creates an new snap recipe in Launchpad
 
         tag: launchpad git tag to pull snapcraft instructions from (ie, git.launchpad.net/snap-kubectl)
@@ -201,6 +203,7 @@ class SnapService(DebugMixin):
             "branch": branch,
             "repo": self.snap_model.repo,
             "track": self.snap_model.tracks,
+            "arch": arch,
         }
 
         self.log(f"> Creating recipe for {params}")

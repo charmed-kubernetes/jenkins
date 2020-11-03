@@ -69,7 +69,9 @@ class Client:
         """Returns current snappy_series"""
         return self._client.snappy_serieses.getByName(name=name)
 
-    def create_or_update_snap_recipe(self, name, owner, version, repo, branch, track):
+    def create_or_update_snap_recipe(
+        self, name, owner, version, repo, branch, track, arch
+    ):
         """Creates/update snap recipe
 
         Note: You can delete snaps with:
@@ -81,6 +83,13 @@ class Client:
         if not isinstance(track, list):
             track = [track]
 
+        processors = {
+            "amd64": "/+processors/amd64",
+            "s390x": "/+processors/s390x",
+            "ppc64el": "/+processors/ppc64el",
+            "arm64": "/+processors/arm64",
+        }
+
         try:
             snap = self.snaps.getByName(name=lp_snap_name, owner=lp_owner)
             snap.git_path = branch
@@ -91,6 +100,7 @@ class Client:
             snap.store_name = name
             snap.store_series = self.snappy_series()
             snap.store_channels = track
+            snap.processors = [processors.get(arch)]
         except NotFound:
             snap = self.snaps.new(
                 name=lp_snap_name,
@@ -102,12 +112,7 @@ class Client:
                 store_name=name,
                 store_series=self.snappy_series(),
                 store_channels=track,
-                processors=[
-                    "/+processors/amd64",
-                    "/+processors/s390x",
-                    "/+processors/ppc64el",
-                    "/+processors/arm64",
-                ],
+                processors=[processors.get(arch)],
                 auto_build=True,
                 auto_build_pocket="Updates",
                 auto_build_archive=self.archive(),
