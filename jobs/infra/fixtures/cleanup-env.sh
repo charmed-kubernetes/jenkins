@@ -29,6 +29,7 @@ docker image prune -a --filter until=24h --force
 docker container prune --filter until=24h --force
 rm -rf /var/lib/jenkins/venvs
 rm -rf /var/lib/jenkins/.tox
+tmpreaper -t 5h /tmp
 
 regions=(us-east-1 us-east-2 us-west-1)
 

@@ -132,8 +132,7 @@
     parameters:
       - global-params
     wrappers:
-      - ansicolor
-      - workspace-cleanup
+      - default-job-wrapper
       - ci-creds
     triggers:
         - timed: "@daily"
