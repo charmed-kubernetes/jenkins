@@ -103,10 +103,10 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-      - run-venv:
+      - run-tox:
           JOB_SPEC_DIR: "jobs/release-microk8s"
           COMMAND: |
-            venv/bin/python jobs/microk8s/release-to-edge-on-new-upstream-release.py
+            tox -e py38 -- python jobs/microk8s/release-to-edge-on-new-upstream-release.py
 
 
 - job:
@@ -128,7 +128,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-      - run-venv:
+      - run-tox:
           JOB_SPEC_DIR: "jobs/release-microk8s"
           COMMAND: |
-            venv/bin/python jobs/microk8s/update-gh-branches-and-lp-builders.py
+            tox -e py38 -- python jobs/microk8s/update-gh-branches-and-lp-builders.py
