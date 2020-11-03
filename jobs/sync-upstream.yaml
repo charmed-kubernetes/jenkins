@@ -88,6 +88,35 @@
             tox -e py38 -- python jobs/sync-upstream/sync.py sync-internal-tags $IS_DRY_RUN
 
 - job:
+    name: 'sync-ppas'
+    node: runner-cloud
+    description: |
+      Syncs all ppas
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    parameters:
+      - global-params
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          num-to-keep: 1
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+      - run-tox:
+          COMMAND: |
+            IS_DRY_RUN=""
+            if [[ $DRY_RUN = "true" ]]; then
+              IS_DRY_RUN="--dry-run"
+            fi
+            tox -e py38 -- python jobs/sync-upstream/sync.py ppas $IS_DRY_RUN
+
+- job:
     name: 'sync-upstream'
     node: runner-cloud
     description: |
@@ -111,7 +140,11 @@
           JOB_SPEC_DIR: "jobs/sync-upstream"
       - run-tox:
           COMMAND: |
-            tox -e py38 -- python jobs/sync-upstream/sync.py forks
+            IS_DRY_RUN=""
+            if [ ! -z ${DRY_RUN+x} ]; then
+              IS_DRY_RUN="--dry-run"
+            fi
+            tox -e py38 -- python jobs/sync-upstream/sync.py forks $IS_DRY_RUN
 
 - job:
     name: 'sync-stable-tag-bundle-rev'
@@ -187,6 +220,7 @@
               --k8s-version $K8S_VERSION \
               --filter-by-tag k8s \
               --bugfix
+
 - job:
     name: 'cut-stable-release'
     description: |

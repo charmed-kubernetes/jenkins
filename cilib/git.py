@@ -10,6 +10,11 @@ def clone(url, **subprocess_kwargs):
     run(["git", "clone", url], **subprocess_kwargs)
 
 
+def fetch(origin="origin", **subprocess_kwargs):
+    """Fetch"""
+    run(["git", "fetch", origin], **subprocess_kwargs)
+
+
 def checkout(ref, new_branch=False, force=False, **subprocess_kwargs):
     """Checkout ref"""
     cmd = ["git", "checkout"]
@@ -39,6 +44,11 @@ def commit(message, **subprocess_kwargs):
 def push(origin="origin", ref="master", **subprocess_kwargs):
     """Pushes commit to repo"""
     run(["git", "push", origin, ref], **subprocess_kwargs)
+
+
+def merge(origin="origin", ref="master", **subprocess_kwargs):
+    """Merges branch"""
+    run(["git", "merge", f"{origin}/{ref}"], **subprocess_kwargs)
 
 
 def remote_add(origin, url, **subprocess_kwargs):

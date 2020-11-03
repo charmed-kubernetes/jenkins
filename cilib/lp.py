@@ -83,13 +83,6 @@ class Client:
         if not isinstance(track, list):
             track = [track]
 
-        processors = {
-            "amd64": "/+processors/amd64",
-            "s390x": "/+processors/s390x",
-            "ppc64el": "/+processors/ppc64el",
-            "arm64": "/+processors/arm64",
-        }
-
         try:
             snap = self.snaps.getByName(name=lp_snap_name, owner=lp_owner)
             snap.git_path = branch
@@ -100,6 +93,9 @@ class Client:
             snap.store_name = name
             snap.store_series = self.snappy_series()
             snap.store_channels = track
+            snap.processors = [
+                _processor for _processor in snap.processors if _processor.name == arch
+            ]
         except NotFound:
             snap = self.snaps.new(
                 name=lp_snap_name,
@@ -111,7 +107,12 @@ class Client:
                 store_name=name,
                 store_series=self.snappy_series(),
                 store_channels=track,
-                processors=[processors.get(arch)],
+                processors=[
+                    "/+processors/amd64",
+                    "/+processors/s390x",
+                    "/+processors/ppc64el",
+                    "/+processors/arm64",
+                ],
                 auto_build=True,
                 auto_build_pocket="Updates",
                 auto_build_archive=self.archive(),

@@ -37,9 +37,11 @@ from cilib.models.repos.debs import (
     DebKubeletRepoModel,
     DebKubernetesCniRepoModel,
 )
+from cilib.models.repos.charms import CharmRepoModel
 from cilib.service.snap import SnapService
 from cilib.service.deb import DebService, DebCNIService, DebCriToolsService
 from cilib.service.ppa import PPAService
+from cilib.service.charm import CharmService
 from drypy import dryrun
 
 
@@ -213,27 +215,6 @@ def tag_stable(
     )
 
 
-def __run_git(args):
-    username, password, layer_name, upstream, downstream = args
-    log.info(f"Syncing {layer_name} :: {upstream} -> {downstream}")
-    downstream = f"https://{username}:{password}@github.com/{downstream}"
-    identifier = str(uuid.uuid4())
-    os.makedirs(identifier)
-    ret = capture(f"git clone {downstream} {identifier}")
-    if not ret.ok:
-        log.info(f"Failed to clone repo: {ret.stderr.decode()}")
-        sys.exit(1)
-    cmd_ok("git config user.email 'cdkbot@juju.solutions'", cwd=identifier)
-    cmd_ok("git config user.name cdkbot", cwd=identifier)
-    cmd_ok("git config push.default simple", cwd=identifier)
-    cmd_ok(f"git remote add upstream {upstream}", cwd=identifier)
-    cmd_ok("git fetch upstream", cwd=identifier)
-    cmd_ok("git checkout master", cwd=identifier)
-    cmd_ok("git merge upstream/master", cwd=identifier)
-    cmd_ok("git push origin", cwd=identifier)
-    cmd_ok("rm -rf {identifier}")
-
-
 @cli.command()
 @click.option("--dry-run", is_flag=True)
 def ppas(dry_run):
@@ -323,33 +304,13 @@ def forks(dry_run):
     # Try auto-merge; if conflict: update_readme.py && git add README.md && git
     # commit. If that fails, too, then it was a JSON conflict that will have to
     # be handled manually.
-
-    layer_list = enums.CHARM_LAYERS_MAP
-    charm_list = enums.CHARM_MAP
-    new_env = os.environ.copy()
-    username = quote(new_env["CDKBOT_GH_USR"])
-    password = quote(new_env["CDKBOT_GH_PSW"])
-
-    repos_to_process = []
-    for layer_map in layer_list + charm_list:
-        for layer_name, repos in layer_map.items():
-            upstream = repos["upstream"]
-            downstream = repos["downstream"]
-            if urlparse(upstream).path.lstrip("/") == downstream:
-                log.info(f"Skipping {layer_name} :: {upstream} == {downstream}")
-                continue
-            items = (username, password, layer_name, upstream, downstream)
-            log.info(f"Adding {layer_name} to queue")
-            repos_to_process.append(items)
-
-    if not dry_run:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as tp:
-            git_runs = {tp.submit(__run_git, args): args for args in repos_to_process}
-            for future in concurrent.futures.as_completed(git_runs):
-                try:
-                    data = future.result()
-                except Exception as exc:
-                    log.info(f"Failed thread: {exc}")
+    dryrun(dry_run)
+    repos_to_process = [
+        CharmService(repo)
+        for repo in CharmRepoModel.load_repos(enums.CHARM_LAYERS_MAP + enums.CHARM_MAP)
+    ]
+    for repo in repos_to_process:
+        repo.sync()
 
 
 @cli.command()

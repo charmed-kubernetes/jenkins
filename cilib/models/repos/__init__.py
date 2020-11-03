@@ -36,6 +36,14 @@ class BaseRepoModel:
         """Pushes commit to repo"""
         git.push(origin, ref, **subprocess_kwargs)
 
+    def fetch(self, origin="origin", **subprocess_kwargs):
+        """Fetch package repo"""
+        git.fetch(origin, **subprocess_kwargs)
+
+    def merge(self, origin="origin", ref="master", **subprocess_kwargs):
+        """Merge branch repo"""
+        git.merge(origin, ref, **subprocess_kwargs)
+
     def remote_add(self, origin, url, **subprocess_kwargs):
         """Add a remote to git repo"""
         git.remote_add(origin, url, **subprocess_kwargs)
