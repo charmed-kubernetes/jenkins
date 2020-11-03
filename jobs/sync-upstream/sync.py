@@ -16,6 +16,7 @@ from cilib.models.repos.kubernetes import (
     UpstreamKubernetesRepoModel,
     InternalKubernetesRepoModel,
     CriToolsUpstreamRepoModel,
+    InternalCriToolsRepoModel,
     CNIPluginsUpstreamRepoModel,
 )
 from cilib.models.repos.snaps import (
@@ -294,7 +295,12 @@ def sync_internal_tags(dry_run):
             UpstreamKubernetesRepoModel(),
             InternalKubernetesRepoModel(),
             enums.K8S_STARTING_SEMVER,
-        )
+        ),
+        (
+            CriToolsUpstreamRepoModel(),
+            InternalCriToolsRepoModel(),
+            enums.K8S_CRI_TOOLS_SEMVER,
+        ),
     ]
 
     for repo in repos_map:

@@ -23,6 +23,13 @@ class CriToolsUpstreamRepoModel(BaseRepoModel):
         self.repo = f"https://github.com/kubernetes-sigs/{self.name}.git"
 
 
+class InternalCriToolsRepoModel(BaseRepoModel):
+    def __init__(self):
+        super(InternalCriToolsUpstreamRepoModel, self).__init__()
+        self.name = "cri-tools"
+        self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/{self.name}"
+
+
 class CNIPluginsUpstreamRepoModel(BaseRepoModel):
     def __init__(self):
         super(CNIPluginsUpstreamRepoModel, self).__init__()

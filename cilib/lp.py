@@ -100,7 +100,6 @@ class Client:
             snap.store_name = name
             snap.store_series = self.snappy_series()
             snap.store_channels = track
-            snap.processors = [processors.get(arch)]
         except NotFound:
             snap = self.snaps.new(
                 name=lp_snap_name,
