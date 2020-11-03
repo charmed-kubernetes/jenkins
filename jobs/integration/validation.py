@@ -1779,7 +1779,7 @@ async def test_dns_provider(model, k8s_model, tools):
                 await asyncio.sleep(1)
 
             log("Consuming cross-model offer")
-            await model.consume(offer_name, "coredns")
+            await model.consume(offer_name, controller_name=tools.controller_name)
 
             log("Adding cross-model relation to CK")
             await model.add_relation("kubernetes-master", "coredns")
