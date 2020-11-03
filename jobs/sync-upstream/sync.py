@@ -264,13 +264,13 @@ def debs(sign_key, dry_run):
 
     # # Sync all deb branches
     # for _deb in debs_to_process:
-    #     deb_service_obj = DebService(_deb, kubernetes_repo, ppas)
+    #     deb_service_obj = DebService(_deb, kubernetes_repo, ppas, sign_key)
     #     deb_service_obj.sync_from_upstream()
     #     deb_service_obj.sync_debs(sign_key)
 
     cri_tools = DebCriToolsRepoModel()
     cri_tools_service_obj = DebCriToolsService(
-        cri_tools, CriToolsUpstreamRepoModel(), ppas
+        cri_tools, CriToolsUpstreamRepoModel(), ppas, sign_key
     )
     cri_tools_service_obj.sync_from_upstream()
     cri_tools_service_obj.sync_debs(sign_key)
@@ -278,7 +278,7 @@ def debs(sign_key, dry_run):
     # kubernetes-cni must be processed seperately as they dont follow k8s scheduled releases
     # kubernetes_cni = DebKubernetesCniRepoModel()
     # kubernetes_cni_service_obj = DebCNIService(
-    #     kubernetes_cni, CNIPluginsUpstreamRepoModel(), ppas
+    #     kubernetes_cni, CNIPluginsUpstreamRepoModel(), ppas, sign_key
     # )
     # kubernetes_cni_service_obj.sync_from_upstream()
     # kubernetes_cni_service_obj.sync_debs(sign_key)
