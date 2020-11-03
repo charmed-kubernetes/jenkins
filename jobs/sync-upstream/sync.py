@@ -255,33 +255,32 @@ def debs(sign_key, dry_run):
     client.login()
     ppas = client.ppas("k8s-maintainers")
 
-    # debs_to_process = [
-    #     DebKubeadmRepoModel(),
-    #     DebKubectlRepoModel(),
-    #     DebKubeletRepoModel(),
-    # ]
-    # kubernetes_repo = InternalKubernetesRepoModel()
+    debs_to_process = [
+        DebKubeadmRepoModel(),
+        DebKubectlRepoModel(),
+        DebKubeletRepoModel(),
+    ]
+    kubernetes_repo = InternalKubernetesRepoModel()
 
-    # # Sync all deb branches
-    # for _deb in debs_to_process:
-    #     deb_service_obj = DebService(_deb, kubernetes_repo, ppas, sign_key)
-    #     deb_service_obj.sync_from_upstream()
-    #     deb_service_obj.sync_debs(sign_key)
+    # Sync all deb branches
+    for _deb in debs_to_process:
+        deb_service_obj = DebService(_deb, kubernetes_repo, ppas, sign_key)
+        deb_service_obj.sync_from_upstream()
+        deb_service_obj.sync_debs()
 
     cri_tools = DebCriToolsRepoModel()
     cri_tools_service_obj = DebCriToolsService(
         cri_tools, CriToolsUpstreamRepoModel(), ppas, sign_key
     )
     cri_tools_service_obj.sync_from_upstream()
-    cri_tools_service_obj.sync_debs(sign_key)
+    cri_tools_service_obj.sync_debs()
 
-    # kubernetes-cni must be processed seperately as they dont follow k8s scheduled releases
-    # kubernetes_cni = DebKubernetesCniRepoModel()
-    # kubernetes_cni_service_obj = DebCNIService(
-    #     kubernetes_cni, CNIPluginsUpstreamRepoModel(), ppas, sign_key
-    # )
-    # kubernetes_cni_service_obj.sync_from_upstream()
-    # kubernetes_cni_service_obj.sync_debs(sign_key)
+    kubernetes_cni = DebKubernetesCniRepoModel()
+    kubernetes_cni_service_obj = DebCNIService(
+        kubernetes_cni, CNIPluginsUpstreamRepoModel(), ppas, sign_key
+    )
+    kubernetes_cni_service_obj.sync_from_upstream()
+    kubernetes_cni_service_obj.sync_debs()
 
 
 @cli.command()

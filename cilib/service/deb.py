@@ -86,23 +86,24 @@ class DebService(DebugMixin):
                 exclude_pre = False
             ppa = self.ppas.get_ppa_by_major_minor(_version)
             latest_deb_version = ppa.get_source_semver(self.deb_model.name)
+            latest_deb_version_mmp = f"{latest_deb_version.major}.{latest_deb_version.minor}.{latest_deb_version.patch}"
             latest_branch_version = self.deb_model.base.latest_branch_from_major_minor(
                 _version, exclude_pre
             )
             if (
                 not latest_deb_version
-                or semver.compare(str(latest_branch_version), str(latest_deb_version))
+                or semver.compare(str(latest_branch_version), latest_deb_version_mmp)
                 > 0
             ):
                 self.log(
-                    f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version)}, building new deb"
+                    f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version_mmp)}, building new deb"
                 )
                 self.build(latest_branch_version)
                 self.upload(enums.DEB_K8S_TRACK_MAP.get(_version))
 
             else:
                 self.log(
-                    f"> Versions match {str(latest_branch_version)} == {str(latest_deb_version)}, not building a new deb"
+                    f"> Versions match {str(latest_branch_version)} == {str(latest_deb_version_mmp)}, not building a new deb"
                 )
 
     def render(self, tmpl_file, context):
@@ -180,25 +181,26 @@ class DebCNIService(DebService):
     def sync_debs(self):
         """Builds latest deb from each major.minor and uploads to correct ppa"""
         for ppa_name in self.ppas.names:
-            _ppa = self.ppas.get_ppa_by_major_minor(ppa_name)
+            ppa = self.ppas.get_ppa_by_major_minor(ppa_name)
             exclude_pre = True
             latest_deb_version = ppa.get_source_semver(self.deb_model.name)
+            latest_deb_version_mmp = f"{latest_deb_version.major}.{latest_deb_version.minor}.{latest_deb_version.patch}"
             latest_branch_version = self.deb_model.base.latest_branch_from_major_minor(
                 enums.K8S_CNI_SEMVER, exclude_pre
             )
             if (
                 not latest_deb_version
-                or semver.compare(str(latest_branch_version), str(latest_deb_version))
+                or semver.compare(str(latest_branch_version), latest_deb_version_mmp)
                 > 0
             ):
                 self.log(
-                    f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version)}, building new deb"
+                    f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version_mmp)}, building new deb"
                 )
                 self.build(latest_branch_version)
                 self.upload(enums.DEB_K8S_TRACK_MAP.get(ppa_name))
             else:
                 self.log(
-                    f"> Versions match {str(latest_branch_version)} == {str(latest_deb_version)}, not building a new deb"
+                    f"> Versions match {str(latest_branch_version)} == {str(latest_deb_version_mmp)}, not building a new deb"
                 )
 
 
@@ -215,23 +217,24 @@ class DebCriToolsService(DebService):
     def sync_debs(self):
         """Builds latest deb from each major.minor and uploads to correct ppa"""
         for ppa_name in self.ppas.names:
-            _ppa = self.ppas.get_ppa_by_major_minor(ppa_name)
+            ppa = self.ppas.get_ppa_by_major_minor(ppa_name)
             exclude_pre = True
             latest_deb_version = ppa.get_source_semver(self.deb_model.name)
+            latest_deb_version_mmp = f"{latest_deb_version.major}.{latest_deb_version.minor}.{latest_deb_version.patch}"
             latest_branch_version = self.deb_model.base.latest_branch_from_major_minor(
                 enums.K8S_CRI_TOOLS_SEMVER, exclude_pre
             )
             if (
                 not latest_deb_version
-                or semver.compare(str(latest_branch_version), str(latest_deb_version))
+                or semver.compare(str(latest_branch_version), latest_deb_version_mmp)
                 > 0
             ):
                 self.log(
-                    f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version)}, building new deb"
+                    f"Found new branch {str(latest_branch_version)} > {str(latest_deb_version_mmp)}, building new deb"
                 )
                 self.build(latest_branch_version)
                 self.upload(enums.DEB_K8S_TRACK_MAP.get(ppa_name))
             else:
                 self.log(
-                    f"> Versions match {str(latest_branch_version)} == {str(latest_deb_version)}, not building a new deb"
+                    f"> Versions match {str(latest_branch_version)} == {str(latest_deb_version_mmp)}, not building a new deb"
                 )
