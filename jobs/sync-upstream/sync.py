@@ -362,7 +362,7 @@ def snaps(dry_run):
         SnapKubernetesTestRepoModel(),
     ]
 
-    kubernetes_repo = UpstreamKubernetesRepoModel()
+    kubernetes_repo = InternalKubernetesRepoModel()
 
     # Sync all snap branches
     for _snap in snaps_to_process:

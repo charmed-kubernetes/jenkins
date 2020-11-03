@@ -43,6 +43,8 @@
       - ci-creds
     parameters:
       - global-params
+    triggers:
+        - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-debs"

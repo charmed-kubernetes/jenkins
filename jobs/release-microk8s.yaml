@@ -67,22 +67,14 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-      - shell: |-
-          #!/bin/bash
-          set -eux
-          set -o allexport
-          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-          set +o allexport
+      - run-tox:
+          COMMAND: |
+            TAG="-t {arch}"
+            if [ "$ARCH_TRACK" != "all" ]; then
+                TAG="-t $ARCH_TRACK"
+            fi
 
-          TAG="-t {arch}"
-          if [ "$ARCH_TRACK" != "all" ]; then
-              TAG="-t $ARCH_TRACK"
-          fi
-
-          virtualenv venv -p python3.6
-          venv/bin/python -m pip install pip-tools
-          venv/bin/pip-sync requirements.txt
-          venv/bin/ogc --spec jobs/release-microk8s/spec.yml $TAG
+            tox -e py38 -- ogc --spec jobs/release-microk8s/spec.yml $TAG
 
 - project:
     name: release-microk8s
