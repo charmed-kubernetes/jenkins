@@ -81,6 +81,10 @@
           JOB_SPEC_DIR: "jobs/sync-upstream"
       - run-tox:
           COMMAND: |
+            IS_DRY_RUN=""
+            if [[ $DRY_RUN = "true" ]]; then
+              IS_DRY_RUN="--dry-run"
+            fi
             tox -e py38 -- python jobs/sync-upstream/sync.py sync-internal-tags $IS_DRY_RUN
 
 - job:
