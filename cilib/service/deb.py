@@ -184,7 +184,11 @@ class DebCNIService(DebService):
             ppa = self.ppas.get_ppa_by_major_minor(ppa_name)
             exclude_pre = True
             latest_deb_version = ppa.get_source_semver(self.deb_model.name)
-            latest_deb_version_mmp = f"{latest_deb_version.major}.{latest_deb_version.minor}.{latest_deb_version.patch}"
+            latest_deb_version_mmp = (
+                f"{latest_deb_version.major}.{latest_deb_version.minor}.{latest_deb_version.patch}"
+                if latest_deb_version
+                else None
+            )
             latest_branch_version = self.deb_model.base.latest_branch_from_major_minor(
                 enums.K8S_CNI_SEMVER, exclude_pre
             )
@@ -220,7 +224,11 @@ class DebCriToolsService(DebService):
             ppa = self.ppas.get_ppa_by_major_minor(ppa_name)
             exclude_pre = True
             latest_deb_version = ppa.get_source_semver(self.deb_model.name)
-            latest_deb_version_mmp = f"{latest_deb_version.major}.{latest_deb_version.minor}.{latest_deb_version.patch}"
+            latest_deb_version_mmp = (
+                f"{latest_deb_version.major}.{latest_deb_version.minor}.{latest_deb_version.patch}"
+                if latest_deb_version
+                else None
+            )
             latest_branch_version = self.deb_model.base.latest_branch_from_major_minor(
                 enums.K8S_CRI_TOOLS_SEMVER, exclude_pre
             )
