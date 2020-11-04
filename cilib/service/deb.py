@@ -165,7 +165,10 @@ class DebService(DebugMixin):
             self.deb_model.base.commit(
                 "Automated Build", cwd=f"{tmpdir}/{self.deb_model.name}"
             )
-            self.deb_model.base.push(cwd=f"{tmpdir}/{self.deb_model.name}")
+            self.deb_model.base.push(
+                ref=f"v{str(latest_branch_version)}",
+                cwd=f"{tmpdir}/{self.deb_model.name}",
+            )
 
 
 class DebCNIService(DebService):
