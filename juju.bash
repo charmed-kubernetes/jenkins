@@ -15,6 +15,10 @@ function juju::bootstrap::after
 
 function juju::bootstrap
 {
+    extra_args=''
+    if [ "$JUJU_CLOUD" = "vsphere/Boston" ]; then
+        extra_args="--model-default datastore=vsanDatastore --model-default primary-network=VLAN_2763"
+    fi
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          -d "$JUJU_MODEL" \
          --bootstrap-series "$SERIES" \
@@ -24,7 +28,8 @@ function juju::bootstrap
          --model-default resource-tags=owner=k8sci \
          --model-default image-stream=daily \
          --model-default automatically-retry-hooks=false \
-         --model-default logging-config="<root>=DEBUG"
+         --model-default logging-config="<root>=DEBUG" \
+         $extra_args
 
     ret=$?
     if (( ret > 0 )); then
