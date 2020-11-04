@@ -252,7 +252,7 @@ def debs(sign_key, dry_run):
 
     cri_tools = DebCriToolsRepoModel()
     cri_tools_service_obj = DebCriToolsService(
-        cri_tools, CriToolsUpstreamRepoModel(), ppas, sign_key
+        cri_tools, InternalCriToolsRepoModel(), ppas, sign_key
     )
     cri_tools_service_obj.sync_from_upstream()
     cri_tools_service_obj.sync_debs()
