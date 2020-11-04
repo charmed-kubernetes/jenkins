@@ -25,7 +25,7 @@ class CriToolsUpstreamRepoModel(BaseRepoModel):
 
 class InternalCriToolsRepoModel(BaseRepoModel):
     def __init__(self):
-        super(InternalCriToolsUpstreamRepoModel, self).__init__()
+        super(InternalCriToolsRepoModel, self).__init__()
         self.name = "cri-tools"
         self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/{self.name}"
 
