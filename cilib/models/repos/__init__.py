@@ -99,7 +99,26 @@ class BaseRepoModel:
                     _semvers.append(str(semver_version))
             except:
                 continue
-        return str(max(map(version.parse, _semvers)))
+        max_ver = max(map(version.parse, _semvers))
+
+        # Grab the branches for max_ver to determine if there are any patches that need to be applied
+        # If any branches has +patch.X defined we use that build information to determine the latest patched
+        # version of that particular major.minor.patch level and that will be built instead.
+        branches = self.branches_from_semver_point(f"{max_ver.major}.{max_ver.minor}")
+        patched_branches = []
+        for branch in branches:
+            if (
+                version.normalize(branch)
+                == f"{max_ver.major}.{max_ver.minor}.{max_ver.patch}"
+                and "patch" in branch
+            ):
+                patched_branches.append(version.parse(branch).build)
+
+        if patched_branches:
+            max_patched = max(patched_branches)
+            return str(f"{max_ver}+{max_patched}")
+
+        return str(max_ver)
 
     def _semvers_from_point(self, semvers, starting_semver):
         """Grabs all semvers from branches or tags at starting semver point"""

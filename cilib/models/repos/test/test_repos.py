@@ -58,3 +58,22 @@ def test_latest_branch_from_major_minor(monkeypatch):
     kubelet_repo = SnapKubeletRepoModel()
     max_branch = kubelet_repo.base.latest_branch_from_major_minor("1.19")
     assert semver.compare(max_branch, "1.19.3") == 0
+
+
+def test_latest_patched_branch_from_major_minor(monkeypatch):
+    """Test getting latest branch with a patch applied from a major.minor release"""
+
+    monkeypatch.setattr(
+        "cilib.models.repos.snaps.BaseRepoModel.branches",
+        [
+            "v1.19.0",
+            "v1.19.1+patch.2",
+            "v1.19.3",
+            "v1.19.3+patch.1",
+            "v1.19.3+patch.4",
+            "v1.19.3+patch.12",
+        ],
+    )
+    kubelet_repo = SnapKubeletRepoModel()
+    max_branch = kubelet_repo.base.latest_branch_from_major_minor("1.19")
+    assert semver.compare(max_branch, "1.19.3+patch.12") == 0
