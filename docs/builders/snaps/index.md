@@ -2,7 +2,7 @@
 Builds Kubernetes snaps from source
 #### Environment
 
-- **SNAP_LIST**: *required*, This points to a yaml file containing the list of snaps we support. There is a list within this spec's directory: *k8s-snap-list.yaml* that can be referenced.
+- **SNAP_LIST**: *required*, This points to a yaml file containing the list of snaps we support. There is a list in the includes directory [k8s-snap-list.inc][Snap Support List] that can be referenced.
 - **SNAP_PATCHES_LIST**: *optional*, This points to a yaml file containing the list patches to be applied prior to buiding the snap.
 - **GIT_SSH_COMMAND**: *required*, Must point to a valid SSH key that will allow commits to the launchpad repos. The format for this can be `export GIT_SSH_COMMAND=\"ssh -i $HOME/.ssh/id_rsa -oStrictHostKeyChecking=no\"`
 - **K8STEAMCI_USR**: *required*, Launchpad user name that has access to the snap recipes for the kubernetes build.
@@ -48,3 +48,5 @@ all:
   - builders/snaps/patches/release-1.15-001.patch
 ```
 
+<!-- Links -->
+[Snap Support List]: https://github.com/charmed-kubernetes/jenkins/blob/master/jobs/includes/k8s-snap-list.inc
