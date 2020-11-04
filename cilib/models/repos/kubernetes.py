@@ -27,6 +27,7 @@ class InternalCriToolsRepoModel(BaseRepoModel):
     def __init__(self):
         super(InternalCriToolsRepoModel, self).__init__()
         self.name = "cri-tools"
+        self.git_user = "k8s-team-ci"
         self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/{self.name}"
 
 
