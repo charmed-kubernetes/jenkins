@@ -10,20 +10,20 @@ set -x
 . "$WORKSPACE/juju.bash"
 
 # Override bootstrap to use a single subnet vpc
-function juju::bootstrap
-{
-    juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
-         -d "$JUJU_MODEL" \
-         --bootstrap-series "$SERIES" \
-         --force \
-         --bootstrap-constraints arch="$ARCH" \
-         --model-default test-mode=true \
-         --model-default resource-tags=owner=k8sci \
-         --model-default image-stream=daily \
-         --model-default vpc-id=vpc-0e4f11d0d4e9ba35f \
-         --model-default automatically-retry-hooks=false \
-         --config vpc-id=vpc-0e4f11d0d4e9ba35f
-}
+# function juju::bootstrap
+# {
+#     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
+#          -d "$JUJU_MODEL" \
+#          --bootstrap-series "$SERIES" \
+#          --force \
+#          --bootstrap-constraints arch="$ARCH" \
+#          --model-default test-mode=true \
+#          --model-default resource-tags=owner=k8sci \
+#          --model-default image-stream=daily \
+#          --model-default vpc-id=vpc-0e4f11d0d4e9ba35f \
+#          --model-default automatically-retry-hooks=false \
+#          --config vpc-id=vpc-0e4f11d0d4e9ba35f
+# }
 
 function juju::deploy::overlay
 {
@@ -106,7 +106,7 @@ SNAP_VERSION=${1:-1.19/edge}
 SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
-JUJU_CLOUD=aws/us-east-1
+JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-vault
 ARCH=${4:-amd64}
