@@ -1246,6 +1246,7 @@ async def test_audit_custom_policy(model, tools):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip_arch(["aarch64", "s390x"])
 async def test_audit_webhook(model, tools):
     app = model.applications["kubernetes-master"]
     unit = app.units[0]
