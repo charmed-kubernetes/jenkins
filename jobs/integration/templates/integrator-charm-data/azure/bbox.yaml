@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   containers:
-    - image: busybox
+    - image: rocks.canonical.com/cdk/busybox:1.32
       command:
         - sleep
         - "3600"

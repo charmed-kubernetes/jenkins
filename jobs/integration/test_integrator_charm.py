@@ -43,7 +43,7 @@ async def test_load_balancer(setup_storage_elb_resource):
         "hello-world",
         replicas=5,
         labels="run=load-balancer-example",
-        image="gcr.io/google-samples/node-hello:1.0",
+        image="rocks.canonical.com/cdk/google-samples/node-hello:1.0",
         port=8080,
     )
     sh.kubectl.expose("deployment", "hello-world", type="LoadBalancer", name="hello")

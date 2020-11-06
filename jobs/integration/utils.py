@@ -340,7 +340,7 @@ spec:
       readOnly: false
   containers:
     - name: {0}-write-test
-      image: ubuntu
+      image: rocks.canonical.com/cdk/ubuntu:focal
       command: ["/bin/bash", "-c", "echo 'JUJU TEST' > /data/juju"]
       volumeMounts:
       - name: shared-data
@@ -377,7 +377,7 @@ spec:
       readOnly: false
   containers:
     - name: {0}-read-test
-      image: ubuntu
+      image: rocks.canonical.com/cdk/ubuntu:focal
       command: ["/bin/bash", "-c", "cat /data/juju"]
       volumeMounts:
       - name: shared-data

@@ -25,7 +25,7 @@ spec:
       name: test-audit-webhook
   containers:
   - name: nginx
-    image: rocks.canonical.com:443/cdk/diverdane/nginxdualstack:1.0.0
+    image: rocks.canonical.com/cdk/nginx:1.18
     ports:
     - containerPort: 80
     volumeMounts:
