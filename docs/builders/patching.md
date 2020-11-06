@@ -74,6 +74,11 @@ Keep in mind that whatever is patched, those fixes will automatically make it in
 to both Snap _and_ Debian package builds to be automatically built and
 published.
 
+If you need to kick off jobs sooner than later the jobs to run are:
+
+- sync-snaps
+- sync-debs
+
 ## Determining what and where the patches come from
 
 Patches will usually come from an opened LP bug that relates to one of the above
