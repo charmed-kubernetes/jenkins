@@ -20,6 +20,7 @@ pipeline {
      */
     environment {
         PATH = "${utils.cipaths}"
+        DOCKERHUB_CREDS = credentials('cdkbot_dockerhub')
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.rocks.canonical.com:5000'
@@ -186,13 +187,21 @@ pipeline {
                             continue
                         fi
 
-                        # Skip images that dont exist (usually due to non-existing arch). Other
-                        # pull failures will manifest themselves when we attempt to tag.
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${i}"
                         else
-                            if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms 2>&1 | grep -qi 'not found'
+                            # Login to increase rate limit for dockerhub
+                            if echo \${i} | grep -qi "docker\.io"
+                            then
+                                LOGIN_ARG="-user ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW}"
+                            else
+                                LOGIN_ARG=
+                            fi
+
+                            # Skip images that dont exist (usually due to non-existing arch). Other
+                            # pull failures will manifest themselves when we attempt to tag.
+                            if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms \${LOGIN_ARG} 2>&1 | grep -qi 'not found'
                             then
                                 continue
                             fi
