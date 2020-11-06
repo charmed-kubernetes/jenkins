@@ -2202,6 +2202,7 @@ async def test_ceph(model, tools):
         num_units=3,
         series=series,
         config=ceph_config,
+        constraints="root-disk=32G",
     )
     if check_cephfs:
         log("deploying ceph fs")
