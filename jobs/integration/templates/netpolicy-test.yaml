@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.7.9
+        image: rocks.canonical.com/cdk/nginx:1.18
         ports:
         - containerPort: 80
 ---
@@ -46,7 +46,7 @@ metadata:
     access: 'yes'
 spec:
   containers:
-  - image: 'busybox'
+  - image: rocks.canonical.com/cdk/busybox:1.32
     name: 'bboxgood'
     command:
       - sleep
@@ -61,7 +61,7 @@ metadata:
     access: 'no'
 spec:
   containers:
-  - image: 'busybox'
+  - image: rocks.canonical.com/cdk/busybox:1.32
     name: 'bboxbad'
     command:
       - sleep

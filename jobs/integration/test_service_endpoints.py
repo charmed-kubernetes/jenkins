@@ -33,7 +33,7 @@ async def is_pod_cleaned():
 async def setup_svc(svc_type):
     # Create Deployment
     sh.kubectl.create(
-        "deployment", "hello-world", image="gcr.io/google-samples/node-hello:1.0"
+        "deployment", "hello-world", image="rocks.canonical.com/cdk/google-samples/node-hello:1.0"
     )
     sh.kubectl.set("env", "deployment/hello-world", "PORT=50000")
 
