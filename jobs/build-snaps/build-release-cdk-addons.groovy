@@ -194,7 +194,7 @@ pipeline {
                             # Login to increase rate limit for dockerhub
                             if echo \${i} | grep -qi "docker\.io"
                             then
-                                LOGIN_ARG="-user ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW}"
+                                LOGIN_ARG="--user ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW}"
                             else
                                 LOGIN_ARG=
                             fi
