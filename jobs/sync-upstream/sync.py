@@ -18,6 +18,7 @@ from cilib.models.repos.kubernetes import (
     CriToolsUpstreamRepoModel,
     InternalCriToolsRepoModel,
     CNIPluginsUpstreamRepoModel,
+    InternalCNIPluginsRepoModel,
 )
 from cilib.models.repos.snaps import (
     SnapKubeApiServerRepoModel,
@@ -259,7 +260,7 @@ def debs(sign_key, dry_run):
 
     kubernetes_cni = DebKubernetesCniRepoModel()
     kubernetes_cni_service_obj = DebCNIService(
-        kubernetes_cni, CNIPluginsUpstreamRepoModel(), ppas, sign_key
+        kubernetes_cni, InternalCNIPluginsRepoModel(), ppas, sign_key
     )
     kubernetes_cni_service_obj.sync_from_upstream()
     kubernetes_cni_service_obj.sync_debs()
@@ -281,6 +282,11 @@ def sync_internal_tags(dry_run):
             CriToolsUpstreamRepoModel(),
             InternalCriToolsRepoModel(),
             enums.K8S_CRI_TOOLS_SEMVER,
+        ),
+        (
+            CNIPluginsUpstreamRepoModel(),
+            InternalCNIPluginsRepoModel(),
+            enums.K8S_CNI_SEMVER,
         ),
     ]
 
