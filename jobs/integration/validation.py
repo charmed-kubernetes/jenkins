@@ -1955,7 +1955,11 @@ async def test_multus(model, tools, addons_model):
         },
         "spec": {
             "containers": [
-                {"name": "ubuntu", "image": "rocks.canonical.com/cdk/ubuntu:focal", "command": ["sleep", "3600"]}
+                {
+                    "name": "ubuntu",
+                    "image": "rocks.canonical.com/cdk/ubuntu:focal",
+                    "command": ["sleep", "3600"],
+                }
             ]
         },
     }
