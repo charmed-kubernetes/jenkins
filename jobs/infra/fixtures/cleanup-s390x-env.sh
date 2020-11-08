@@ -3,7 +3,7 @@ for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
     if [[ "$i" != "jaas" ]]; then
         echo "$i"
         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$i"; then
-            timeout 2m juju kill-controller -y "$i" 2>&1
+            timeout 5m juju kill-controller -t 2m0s -y "$i" 2>&1
         fi
     fi
 done

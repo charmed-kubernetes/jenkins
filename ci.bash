@@ -222,7 +222,7 @@ function ci::cleanup
         test::capture
 
         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
-            timeout 5m juju kill-controller -y "$JUJU_CONTROLLER" || true
+            timeout 5m juju kill-controller -t 2m0s -y "$JUJU_CONTROLLER" || true
         fi
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
 }
