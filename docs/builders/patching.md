@@ -76,8 +76,8 @@ published.
 
 If you need to kick off jobs sooner than later the jobs to run are:
 
-- sync-snaps
-- sync-debs
+- [sync-snaps](https://jenkins.canonical.com/k8s/job/sync-snaps/)
+- [sync-debs](https://jenkins.canonical.com/k8s/job/sync-debs/)
 
 ## Determining what and where the patches come from
 
