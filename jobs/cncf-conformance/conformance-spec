@@ -37,15 +37,15 @@ function test::execute
     if (( $ret > 0 )); then
         is_pass="False"
     fi
+    if which juju-crashdump; then
+        juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    fi
+    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* *_sonobuoy*tar.gz
 }
 
 function test::capture
 {
     ./sonobuoy retrieve
-    if which juju-crashdump; then
-        juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-    fi
-    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* *_sonobuoy*tar.gz
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 }
 
@@ -58,7 +58,7 @@ SNAP_VERSION=${1:-1.19/stable}
 SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-stable}
-JUJU_CLOUD=aws/us-east-2
+JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-ck
 ARCH=${4:-amd64}
