@@ -56,6 +56,60 @@
              bash jobs/validate/spec $snap_version $series $channel $arch
 
 - job:
+    name: 'validate-ck-cloud'
+    node: runner-cloud
+    description: |
+      Validates CDK edge on amd64, supports last three recent releases on clouds AWS/GCE/Azure and runs weekly.
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+    triggers:
+        - timed: "@weekly"
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.20/edge
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+      - axis:
+          type: user-defined
+          name: channel
+          values:
+            - edge
+      - axis:
+          type: user-defined
+          name: arch
+          values:
+            - amd64
+      - axis:
+          type: user-defined
+          name: cloud
+          values:
+            - aws/us-east-1
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-tox:
+          COMMAND: |
+             tox -e py38 -- bash jobs/validate/spec-cloud $snap_version $series $channel $arch $cloud
+
+- job:
     name: 'validate-ck-arm64'
     node: runner-arm64
     description: |
