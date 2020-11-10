@@ -143,6 +143,18 @@
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-coredns"
     tags: ["k8s", "coredns"]
+- kubernetes-dashboard:
+    upstream: "https://github.com/charmed-kubernetes/kubernetes-dashboard-operator"
+    subdir: "charms/kubernetes-dashboard"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/kubernetes-dashboard-operator"
+    tags: ["k8s", "kubernetes-dashboard"]
+- dashboard-metrics-scraper:
+    upstream: "https://github.com/charmed-kubernetes/kubernetes-dashboard-operator"
+    subdir: "charms/dashboard-metrics-scraper"
+    namespace: "containers"
+    downstream: "charmed-kubernetes/kubernetes-dashboard-operator"
+    tags: ["k8s", "dashboard-metrics-scraper"]
 
 # - nfs:
 #     upstream: "https://github.com/hyperbolic2346/nfs-charm.git"
