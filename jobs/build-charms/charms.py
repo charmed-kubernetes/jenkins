@@ -313,6 +313,8 @@ class BuildEntity:
                 changed = new_commit != old_commit
             except sh.ErrorReturnCode:
                 changed = True
+                old_commit = None
+                new_commit = None
             if changed:
                 self.echo(f"Changes found: {new_commit} (new) != {old_commit} (old)")
             else:
