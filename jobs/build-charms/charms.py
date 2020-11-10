@@ -237,6 +237,11 @@ class BuildEntity:
         else:
             src_path = self.checkout_path
 
+        if "branch" in opts:
+            self.charm_branch = opts["branch"]
+        else:
+            self.charm_branch = self.build.db["build_args"]["charm_branch"]
+
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
 
@@ -369,9 +374,8 @@ class BuildEntity:
         self.echo(f"Cloning repo from {downstream}")
 
         os.makedirs(self.checkout_path)
-        branch = self.build.db["build_args"]["charm_branch"]
         ret = cmd_ok(
-            f"git clone --branch {branch} {downstream} {self.checkout_path}",
+            f"git clone --branch {self.charm_branch} {downstream} {self.checkout_path}",
             echo=self.echo,
         )
         if not ret.ok:

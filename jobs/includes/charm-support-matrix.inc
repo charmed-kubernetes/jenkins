@@ -149,12 +149,14 @@
     namespace: "containers"
     downstream: "charmed-kubernetes/kubernetes-dashboard-operator"
     tags: ["k8s", "kubernetes-dashboard"]
+    branch: "main"
 - dashboard-metrics-scraper:
     upstream: "https://github.com/charmed-kubernetes/kubernetes-dashboard-operator"
     subdir: "charms/dashboard-metrics-scraper"
     namespace: "containers"
     downstream: "charmed-kubernetes/kubernetes-dashboard-operator"
     tags: ["k8s", "dashboard-metrics-scraper"]
+    branch: "main"
 
 # - nfs:
 #     upstream: "https://github.com/hyperbolic2346/nfs-charm.git"
