@@ -240,7 +240,9 @@ class BuildEntity:
         if "branch" in opts:
             self.charm_branch = opts["branch"]
         else:
-            self.charm_branch = self.build.db["build_args"]["charm_branch"]
+            self.charm_branch = self.build.db["build_args"].get(
+                "charm_branch", "master"
+            )
 
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
