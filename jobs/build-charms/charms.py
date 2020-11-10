@@ -456,6 +456,10 @@ class BuildEntity:
         cmd_ok(
             ["charm", "set", self.new_entity, f"commit={self.commit}"], echo=self.echo
         )
+        cmd_ok(
+            ["charm", "grant", self.new_entity, "--acl=read", "everyone"],
+            echo=self.echo,
+        )
 
     def attach_resources(self):
         out_path = Path(self.src_path) / "tmp"
