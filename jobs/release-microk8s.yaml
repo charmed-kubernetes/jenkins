@@ -73,7 +73,7 @@
             if [ "$ARCH_TRACK" != "all" ]; then
                 TAG="-t $ARCH_TRACK"
             fi
-
+            snapcraft login --with /var/lib/jenkins/snapcraft-creds
             tox -e py38 -- ogc --spec jobs/release-microk8s/spec.yml $TAG
 
 - project:
@@ -106,6 +106,7 @@
       - run-tox:
           JOB_SPEC_DIR: "jobs/release-microk8s"
           COMMAND: |
+            snapcraft login --with /var/lib/jenkins/snapcraft-creds
             tox -e py38 -- python jobs/microk8s/release-to-edge-on-new-upstream-release.py
 
 
@@ -131,4 +132,5 @@
       - run-tox:
           JOB_SPEC_DIR: "jobs/release-microk8s"
           COMMAND: |
+            snapcraft login --with /var/lib/jenkins/snapcraft-creds
             tox -e py38 -- python jobs/microk8s/update-gh-branches-and-lp-builders.py
