@@ -299,17 +299,20 @@ class BuildEntity:
         if not self.legacy_charm:
             # Operator framework charms won't have a .build.manifest and it's
             # sufficient to just compare the charm repo's commit rev.
-            extra_info = yaml.safe_load(
-                sh.charm(
-                    "show",
-                    self.full_entity,
-                    "extra-info",
-                    format="yaml",
-                ).stdout.decode()
-            )["extra-info"]
-            old_commit = extra_info.get("commit")
-            new_commit = self.commit
-            changed = new_commit != old_commit
+            try:
+                extra_info = yaml.safe_load(
+                    sh.charm(
+                        "show",
+                        self.full_entity,
+                        "extra-info",
+                        format="yaml",
+                    ).stdout.decode()
+                )["extra-info"]
+                old_commit = extra_info.get("commit")
+                new_commit = self.commit
+                changed = new_commit != old_commit
+            except sh.ErrorReturnCode:
+                changed = True
             if changed:
                 self.echo(f"Changes found: {new_commit} (new) != {old_commit} (old)")
             else:
