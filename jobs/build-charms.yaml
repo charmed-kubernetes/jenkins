@@ -105,8 +105,6 @@
             #!/bin/bash
             set -eux
 
-            sudo chown jenkins:jenkins /var/lib/jenkins/.config/charm-build.conf
-
             IS_FORCE=""
             if [[ $FORCE = "true" ]]; then
               IS_FORCE="--force"
