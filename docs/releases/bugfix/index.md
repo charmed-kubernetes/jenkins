@@ -5,13 +5,25 @@ ceph.
 
 ## Bugfix Release Process
 
-### Cherry-pick fixes from master into stable branches
+### Cherry-pick / backport relevant PRs
+
+Cherry-pick relevant PRs for charm repos into stable branch, and
+backport relevant PRs for cdk-addons to the appropriate release
+branch(es).
+
+There is a script to run to tag all bugs in the milestone with
+a `backport-needed` tag. This is then removed by the person who
+cherry-pick or backports all PRs listed in that bug once complete.
 
 ### Document release notes
+
+Create a PR against the [docs repo][] with release notes including:
 
 - Bugfixes
 - Enhancements
 - Known Limitations/Issues
+
+[docs repo]: https://github.com/charmed-kubernetes/kubernetes-docs
 
 ### Verify repos, branches
 
