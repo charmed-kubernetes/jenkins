@@ -456,6 +456,7 @@ class BuildEntity:
         cmd_ok(
             ["charm", "set", self.new_entity, f"commit={self.commit}"], echo=self.echo
         )
+        self.echo(f"Setting {self.new_entity} permissions for read everyone")
         cmd_ok(
             ["charm", "grant", self.new_entity, "--acl=read", "everyone"],
             echo=self.echo,
