@@ -1,7 +1,6 @@
 import requests
 import json
 import semver
-from snapstore import Microk8sSnap
 
 
 def upstream_release(release):
