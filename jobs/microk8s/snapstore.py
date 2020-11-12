@@ -54,11 +54,7 @@ class Microk8sSnap:
         else:
             self.released = False
 
-    def release_to(
-            self,
-            channel,
-            release_to_track=None,
-            dry_run="no"):
+    def release_to(self, channel, release_to_track=None, dry_run="no"):
         """
         Release the Snap to the input channel
         Args:
@@ -67,7 +63,7 @@ class Microk8sSnap:
 
         """
         if not release_to_track:
-            release_to_track=self.track
+            release_to_track = self.track
         if self.is_prerelease:
             click.echo(
                 "This is a pre-release {}. Cannot release to other channels.".format(
@@ -146,7 +142,9 @@ class Microk8sSnap:
         if not track_to_upgrade:
             track_to_upgrade = self.track
         for distro in distributions:
-            track_channel_to_upgrade = "{}/{}".format(track_to_upgrade, channel_to_upgrade)
+            track_channel_to_upgrade = "{}/{}".format(
+                track_to_upgrade, channel_to_upgrade
+            )
             testing_track_channel = "{}/{}".format(
                 self.track, self.under_testing_channel
             )

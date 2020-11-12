@@ -57,17 +57,27 @@ if __name__ == "__main__":
 
         if track == "latest":
             ersion = upstream[1:]
-            ersion_list = ersion.split('.')
+            ersion_list = ersion.split(".")
             source_track = "{}.{}".format(ersion_list[0], ersion_list[1])
             source_channel = "stable"
             always_release = "yes"
-            click.echo("latest/stable is populated from the {}/{}".format(source_track, source_channel))
+            click.echo(
+                "latest/stable is populated from the {}/{}".format(
+                    source_track, source_channel
+                )
+            )
         else:
             source_track = track
             source_channel = "candidate"
-            click.echo("{}/stable is populated from the {}/{}".format(track, source_track, source_channel))
+            click.echo(
+                "{}/stable is populated from the {}/{}".format(
+                    track, source_track, source_channel
+                )
+            )
 
-        candidate_snap = Microk8sSnap(source_track, source_channel, juju_unit, juju_controller)
+        candidate_snap = Microk8sSnap(
+            source_track, source_channel, juju_unit, juju_controller
+        )
         if not candidate_snap.released:
             # Nothing to release
             click.echo("Nothing on candidate. Nothing to release.")
@@ -106,7 +116,7 @@ if __name__ == "__main__":
                 track_to_upgrade=track,
                 channel_to_upgrade="stable",
                 tests_branch=tests_branch,
-                proxy=proxy
+                proxy=proxy,
             )
         else:
             if not stable_snap.released:
