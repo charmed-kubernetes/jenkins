@@ -141,7 +141,7 @@ class DebService(DebugMixin):
         """Builds the debian package for latest version"""
         self.upstream_model.clone()
         self.upstream_model.checkout(
-            ref=f"v{str(latest_branch_version)}",
+            ref=f"tags/v{str(latest_branch_version)}",
             force=True,
             cwd=self.upstream_model.name,
         )
