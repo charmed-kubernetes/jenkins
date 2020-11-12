@@ -71,10 +71,10 @@ function ci::cleanup
 {
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
-        python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
             timeout 2m juju kill-controller -y "$JUJU_CONTROLLER" || true
         fi
+        python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
 }
 
