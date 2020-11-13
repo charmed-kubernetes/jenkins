@@ -3,10 +3,12 @@
 set -x
 
 export GIT_SSH_COMMAND='"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"'
-export CHARM_BUILD_DIR="$HOME/.cache/charmbuild/build/charms"
-export CHARM_LAYERS_DIR="$HOME/.cache/charmbuild/build/layers"
-export CHARM_INTERFACES_DIR="$HOME/.cache/charmbuild/build/interfaces"
-export CHARM_CACHE_DIR=$HOME/tmp/.charm
+export CHARM_BASE_DIR="$WORKSPACE/.cache/charmbuild/$BUILD_TAG"
+export CHARM_BUILD_DIR="$CHARM_BASE_DIR/build/charms"
+export CHARM_LAYERS_DIR="$CHARM_BASE_DIR/build/layers"
+export CHARM_INTERFACES_DIR="$CHARM_BASE_DIR/build/interfaces"
+export CHARM_CHARMS_DIR="$CHARM_BASE_DIR/charms"
+export CHARM_CACHE_DIR="$CHARM_BASE_DIR/cache"
 export PATH=/snap/bin:$HOME/bin/:$PATH
 export WORKSPACE=/tmp
 

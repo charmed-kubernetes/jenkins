@@ -58,9 +58,10 @@ class BuildEnv:
         build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
         layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
         interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
-        tmp_dir = Path(os.environ.get("WORKSPACE"))
+        charms_dir = Path(os.environ.get("CHARM_CHARMS_DIR"))
+        work_dir = Path(os.environ.get("WORKSPACE"))
+        tmp_dir = work_dir / "tmp"
         home_dir = Path(os.environ.get("HOME"))
-        charms_dir = home_dir / ".cache/charmbuild/charms"
     except TypeError:
         raise BuildException(
             "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE, HOME: "
