@@ -223,10 +223,10 @@
           rm -rf $WORKSPACE/.env || true
 
           export GIT_SSH_COMMAND='"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"'
-          export CHARM_BUILD_DIR="$HOME/.cache/charmbuild/${{CHARM_BUILD_DIR:-build/charms}}"
-          export CHARM_LAYERS_DIR="$HOME/.cache/charmbuild/${{CHARM_LAYERS_DIR:-build/layers}}"
-          export CHARM_INTERFACES_DIR="$HOME/.cache/charmbuild/${{CHARM_INTERFACES_DIR:-build/interfaces}}"
-          export CHARM_CACHE_DIR=$WORKSPACE/tmp/.charm
+          export CHARM_BUILD_DIR="$WORKSPAACE/.cache/charmbuild/$BUILD_TAG/${{CHARM_BUILD_DIR:-build/charms}}"
+          export CHARM_LAYERS_DIR="$WORKSPAACE/.cache/charmbuild/$BUILD_TAG/${{CHARM_LAYERS_DIR:-build/layers}}"
+          export CHARM_INTERFACES_DIR="$WORKSPAACE/.cache/charmbuild/$BUILD_TAG/${{CHARM_INTERFACES_DIR:-build/interfaces}}"
+          export CHARM_CACHE_DIR=$WORKSPAACE/tmp/.charm/charmbuild/$BUILD_TAG/cache
 
           export GOPATH=$HOME/go
           export GOBIN=$HOME/go/bin
@@ -234,7 +234,7 @@
 
           mkdir -p $HOME/bin || true
           mkdir -p $HOME/go/bin || true
-          rm -rf "$HOME/.cache/charmbuild" || true
+          rm -rf "$WORKSPAACE/.cache/charmbuild" || true
           mkdir -p "$CHARM_BUILD_DIR"
           mkdir -p "$CHARM_LAYERS_DIR"
           mkdir -p "$CHARM_INTERFACES_DIR"
