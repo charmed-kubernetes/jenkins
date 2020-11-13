@@ -39,7 +39,7 @@
     - name: copy charm creds
       copy:
         src: "{{ lookup('env', 'CHARMCREDS') }}"
-        dest: /var/lib/jenkins/.go-cookies
+        dest: /root/.go-cookies
         owner: jenkins
         group: jenkins
         mode: 0644
