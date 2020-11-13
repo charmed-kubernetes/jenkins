@@ -40,8 +40,8 @@
       copy:
         src: "{{ lookup('env', 'CHARMCREDS') }}"
         dest: /root/.go-cookies
-        owner: jenkins
-        group: jenkins
+        owner: root
+        group: root
         mode: 0644
         force: no
     - name: clone jenkins repo
