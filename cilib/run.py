@@ -28,6 +28,7 @@ def script(script_data, **kwargs):
     if "namespace" in kwargs:
         env["NAMESPACE"] = kwargs.pop("namespace")
     echo = kwargs.pop("echo", click.echo)
+    tmp_script_path = None
     if is_single_command:
         process = subprocess.Popen(
             script_data.strip(),
@@ -55,7 +56,8 @@ def script(script_data, **kwargs):
     with process.stdout:
         _log_sub_out(process.stdout, echo)
     exitcode = process.wait()
-    subprocess.run(["rm", "-rf", str(tmp_script_path)])
+    if tmp_script_path:
+        subprocess.run(["rm", "-rf", str(tmp_script_path)])
     return SimpleNamespace(
         ok=bool(exitcode == 0), returncode=exitcode, stderr=process.stderr
     )
