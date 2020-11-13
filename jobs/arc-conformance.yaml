@@ -8,7 +8,8 @@
     description: |
       Azure Arc Conformance testing for Kubernetes.
 
-      Please see https://git.io/fNwXY for more information.
+      Please see https://github.com/Azure/azure-arc-validation for more
+      information.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas

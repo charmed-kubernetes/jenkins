@@ -17,10 +17,10 @@ set -x
 function juju::bootstrap::before
 {
     # azure-cli
-    curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+    which az || curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
     # helm
-    snap install helm --classic
+    which helm || snap install helm --classic
 
     # sonobuoy
     rm -rf sonobuoy.*
@@ -36,8 +36,41 @@ function test::execute
     mkdir -p $HOME/.kube
     juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
     kubectl version
+
+    # prep azure env
+    source /var/lib/jenkins/.local/share/juju/azure-arc.sh
+    az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
+    az extension add --name connectedk8s
+    az extension add --name k8sconfiguration
+    RESOURCE_GROUP=`az group list --query "[?location=='eastus']"`
+
+    # https://github.com/Azure/azure-arc-validation/blob/main/conformance.yaml
+    cat << EOF > ./arc-conformance.yaml
+sonobuoy-config:
+  driver: Job
+  plugin-name: azure-arc-conformance
+  result-format: junit
+spec:
+  image: arck8sconformance.azurecr.io/arck8sconformance:v0.1.0
+  imagePullPolicy: Always
+  name: plugin
+  resources: {}
+  volumeMounts:
+  - mountPath: /tmp/results
+    name: results
+EOF
     ./sonobuoy version
-    ./sonobuoy run --plugin ./conformance.yaml --plugin-env azure-arc-conformance.TENANT_ID=$TENANT_ID --plugin-env azure-arc-conformance.SUBSCRIPTION_ID=$SUBSCRIPTION_ID --plugin-env azure-arc-conformance.RESOURCE_GROUP=$RESOURCE_GROUP --plugin-env azure-arc-conformance.CLUSTER_NAME=$CLUSTER_NAME --plugin-env azure-arc-conformance.LOCATION=$LOCATION --plugin-env azure-arc-conformance.CLIENT_ID=$CLIENT_ID --plugin-env azure-arc-conformance.CLIENT_SECRET=$CLIENT_SECRET --wait 2>&1
+    ./sonobuoy run \
+        --plugin ./arc-conformance.yaml \
+        --plugin-env azure-arc-conformance.TENANT_ID=$TENANT_ID \
+        --plugin-env azure-arc-conformance.SUBSCRIPTION_ID=$SUBSCRIPTION_ID \
+        --plugin-env azure-arc-conformance.RESOURCE_GROUP=$RESOURCE_GROUP \
+        --plugin-env azure-arc-conformance.CLUSTER_NAME=$CLUSTER_NAME \
+        --plugin-env azure-arc-conformance.LOCATION=$LOCATION \
+        --plugin-env azure-arc-conformance.CLIENT_ID=$CLIENT_ID \
+        --plugin-env azure-arc-conformance.CLIENT_SECRET=$CLIENT_SECRET \
+        --wait 2>&1
+    rm -f ./arc-conformance.yaml
 
     ret=$?
     is_pass="True"
@@ -50,7 +83,8 @@ function test::capture
 {
     ./sonobuoy retrieve
     mv *_sonobuoy*tar.gz artifacts.tar.gz
-    python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
+    # python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
+    tar tvf artifacts.tar.gz
 }
 
 
