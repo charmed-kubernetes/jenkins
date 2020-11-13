@@ -37,21 +37,21 @@ def script(script_data, **kwargs):
             stderr=subprocess.STDOUT,
             **kwargs,
         )
-
-    if not script_data[:2] != "#!":
-        script_data = "#!/bin/bash\n" + script_data
-    tmp_script = tempfile.mkstemp()
-    tmp_script_path = Path(tmp_script[-1])
-    tmp_script_path.write_text(script_data, encoding="utf8")
-    make_executable(tmp_script_path)
-    os.close(tmp_script[0])
-    process = subprocess.Popen(
-        ["bash", str(tmp_script_path)],
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        **kwargs,
-    )
+    else:
+        if not script_data[:2] != "#!":
+            script_data = "#!/bin/bash\n" + script_data
+        tmp_script = tempfile.mkstemp()
+        tmp_script_path = Path(tmp_script[-1])
+        tmp_script_path.write_text(script_data, encoding="utf8")
+        make_executable(tmp_script_path)
+        os.close(tmp_script[0])
+        process = subprocess.Popen(
+            ["bash", str(tmp_script_path)],
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            **kwargs,
+        )
     with process.stdout:
         _log_sub_out(process.stdout, echo)
     exitcode = process.wait()
