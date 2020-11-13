@@ -1,0 +1,55 @@
+---
+- hosts: all
+#  connection: local
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: install apt deps
+      shell: |
+        apt-get update
+        apt-get install -qyf \
+          docker.io \
+          jq \
+          snapd \
+          curl \
+          wget \
+          python3-dev \
+          python3-pip
+    - name: remove apt deps
+      shell: |
+          apt remove --autoremove -qyf tox
+      ignore_errors: yes
+    - name: upgrade system pip
+      shell: |
+        pip3 install pip tox --upgrade
+    - name: install snap deps
+      command: "snap install {{item}}"
+      ignore_errors: yes
+      loop:
+        - "charm --classic --edge"
+        - "yq"
+    - name: copy ssh creds
+      copy:
+        src: "{{ lookup('env', 'CDKBOTSSHCREDS') }}"
+        dest: /root/.ssh/cdkbot_rsa
+        owner: root
+        group: root
+        mode: 0600
+        force: yes
+    - name: copy charm creds
+      copy:
+        src: "{{ lookup('env', 'CHARMCREDS') }}"
+        dest: /var/lib/jenkins/.go-cookies
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+        force: no
+    - name: clone jenkins repo
+      shell: |
+        git clone https://github.com/charmed-kubernetes/jenkins
+    - name: copy run script
+      template:
+        src: "run.sh.j2"
+        dest: "/root/jenkins/run.sh"
+        owner: root
+        mode: 775

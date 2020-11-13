@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -x
+
+BUNDLE_BRANCH="{{ lookup('env', 'BUNDLE_BRANCH') }}"
+BUNDLE_LIST="{{ lookup('env', 'BUNDLE_LIST') }}"
+CHARM_BRANCH="{{ lookup('env', 'CHARM_BRANCH') }}"
+CHARM_LIST="{{ lookup('env', 'CHARM_LIST') }}"
+FILTER_BY_TAG="{{ lookup('env', 'FILTER_BY_TAG') }}"
+FORCE="{{ lookup('env', 'FORCE') }}"
+LAYER_BRANCH="{{ lookup('env', 'LAYER_BRANCH') }}"
+LAYER_INDEX="{{ lookup('env', 'LAYER_INDEX') }}"
+LAYER_LIST="{{ lookup('env', 'LAYER_LIST') }}"
+RESOURCE_SPEC="{{ lookup('env', 'RESOURCE_SPEC') }}"
+TO_CHANNEL="{{ lookup('env', 'TO_CHANNEL') }}"
+
+if [[ $FORCE = "true" ]]; then
+    OPTS="$OPTS --force"
+fi
+
+cd /root/jenkins
+
+tox -e py3 -- python jobs/build-charms/charms.py build \
+    --charm-list "$CHARM_LIST" \
+    --charm-branch "$CHARM_BRANCH" \
+    --to-channel "$TO_CHANNEL" \
+    --resource-spec "$RESOURCE_SPEC" \
+    --filter-by-tag "$FILTER_BY_TAG" \
+    --layer-index  "$LAYER_INDEX" \
+    --layer-list "$LAYER_LIST" \
+    --layer-branch "$LAYER_BRANCH" \
+    $OPTS
+
+tox -e py3 -- python jobs/build-charms/charms.py build-bundles \
+    --to-channel "$TO_CHANNEL" \
+    --bundle-list "$BUNDLE_LIST" \
+    --bundle-branch "$BUNDLE_BRANCH" \
+    --filter-by-tag "$FILTER_BY_TAG"
+
