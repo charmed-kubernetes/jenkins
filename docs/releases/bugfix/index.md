@@ -5,15 +5,65 @@ ceph.
 
 ## Bugfix Release Process
 
-### Cherry-pick / backport relevant PRs
+### Repository layout
 
-Cherry-pick relevant PRs for charm repos into stable branch, and
-backport relevant PRs for cdk-addons to the appropriate release
-branch(es).
+All charm repositories used by charmed-kuberentes use a common branch scheme to provide a
+consistent experience across all code bases. Any external or shared repositories are forked
+into the charmed-kubernetes namespace and have the common branches added.
 
-There is a script to run to tag all bugs in the milestone with
-a `backport-needed` tag. This is then removed by the person who
-cherry-pick or backports all PRs listed in that bug once complete.
+Branches:
+ * `master`: The primary development branch. Merges are made against this branch as they are
+   approved.
+ * `stable`: Stable is the release branch. Major release have `master` directly merged to
+   `stable` while bug-fix releases have specific commits cherry-picked onto `stable` to create a
+   release.
+
+Tags are used to mark the bug-fix releases on the `stable` branch.
+
+Snap repositories follow a similar branching model but due to the availability of channels on
+the snap store there is not a single `stable` branch. Instead each channel has a release branch
+`release/<channel>` which serves the same purpose of release tracking as the `stable` branch on
+charm repositories.
+
+### Preparing the stable/release branch
+
+All Kubernetes charms, interfaces, and layers are revisioned together via
+[milestones][milestones]. To release a bug-fix milestone all bugs listed for the milestone
+will need to have their pull requests cherry-picked onto the stable branch (or onto the
+release branch in the case of snaps). 
+
+#### Easier PR tracking via LP Tags
+
+To make this process easier to track, you can use tags and an advanced search in LP.
+
+Start by bugging Tim until he runs a magic script to add the "backport-needed" tag to all bugs
+listed in the milestone. Next setup the following bookmarklet in your browser:
+
+```
+javascript:var milestone = prompt("Milestone (e.g., 1.19+ck1)"); document.getElementsByName('field.milestone:list').forEach(input => { if(input.id.includes(milestone)) input.checked = true })
+```
+
+Use the bookmarklet on the [advanced search][advanced-search] page for charmed-kubernetes
+bugs and you can easily select the milestone you are working on. Add the "backport-needed"
+tag to the search results and you will have a list of bugs included in the milestone. As you
+work through the cherry-picks needed for each bug, removing the "backport-needed" tag will
+remove it from the search.
+
+### Performing the cherry-pick
+
+For each bug, review the comments and cherry-pick all pull requests onto the stable or
+release branch in the source repository. Some bugs will require doing this for multiple
+source repositories be sure to get all pull requests listed in the bug. As you complete all
+cherry-picks for a given bug remove the "backport-needed" tag. You can push to the stable
+branch as you complete each cherry-pick, release won't happen automatically even if you do
+not complete the process in a single sitting.
+
+If there are trivial merge conflicts you can fix them and continue. If there is a merge
+conflict which is not trivial you can create a PR and ask another team member to review.
+
+When all bugs in the milestone are done you are ready to proceed. The release process will
+automatically detect changes in interfaces and layers, if a bug fixes a layer or interface
+you do not need to try and find which charms are affected by the change.
 
 ### Document release notes
 
@@ -24,15 +74,6 @@ Create a PR against the [docs repo][] with release notes including:
 - Known Limitations/Issues
 
 [docs repo]: https://github.com/charmed-kubernetes/kubernetes-docs
-
-### Verify repos, branches
-
-Make sure that all stable branches are being referenced from
-charmed-kubernetes repo and that charm pull-source is bringing in the
-correct repos/branches. This requires reporting that will provide an
-overview of the status of all forked/maintained repos and their branches in
-addition to verifying that the layer index is pointing to the correct repos
-during build.
 
 ### Tag existing stable branches with bugfix release tag
 
@@ -87,3 +128,5 @@ Promote **cdk-addons** snap from edge to proper snap channels for ck release.
 
 ### Send announcement to k8s-crew with any relevant information.
 
+[milestones]: https://launchpad.net/charmed-kubernetes/+milestones
+[advanced-search]: https://bugs.launchpad.net/charmed-kubernetes/+bugs?advanced=1
