@@ -44,6 +44,21 @@
         group: root
         mode: 0644
         force: no
+    - name: create aws dir
+      file:
+        path: /root/.aws
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+    - name: copy aws creds
+      copy:
+        src: "{{ lookup('env', 'AWSCREDS') }}"
+        dest: /root/.aws/credentials
+        owner: root
+        group: root
+        mode: 0644
+        force: yes
     - name: clone jenkins repo
       shell: |
         git clone https://github.com/charmed-kubernetes/jenkins
