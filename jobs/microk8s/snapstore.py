@@ -12,15 +12,13 @@ class Microk8sSnap:
     def __init__(self, track, channel, juju_unit=None, juju_controller=None):
         arch = configbag.get_arch()
         cmd = "snapcraft list-revisions microk8s --arch {}".format(arch).split()
+        click.echo("Callling {}".format(cmd))
         revisions_list = run(cmd, stdout=PIPE, stderr=STDOUT)
         revisions_list = revisions_list.stdout.decode("utf-8").split("\n")
         click.echo("Snap revisions on {}".format(arch))
         click.echo(revisions_list)
         click.echo("")
-        if track == "latest":
-            channel_patern = " {}*".format(channel)
-        else:
-            channel_patern = " {}/{}*".format(track, channel)
+        channel_patern = "{}/{}*".format(track, channel)
 
         self.juju_unit = juju_unit
         self.juju_controller = juju_controller
