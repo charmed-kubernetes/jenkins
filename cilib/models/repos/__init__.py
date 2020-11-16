@@ -104,7 +104,7 @@ class BaseRepoModel:
         # Grab the branches for max_ver to determine if there are any patches that need to be applied
         # If any branches has +patch.X defined we use that build information to determine the latest patched
         # version of that particular major.minor.patch level and that will be built instead.
-        branches = self.branches_from_semver_point(f"{max_ver.major}.{max_ver.minor}")
+        branches = self.branches_from_semver_point(f"{max_ver.major}.{max_ver.minor}.0")
         patched_branches = []
         for branch in branches:
             if (
