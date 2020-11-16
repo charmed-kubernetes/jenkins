@@ -12,15 +12,13 @@ class Microk8sSnap:
     def __init__(self, track, channel, juju_unit=None, juju_controller=None):
         arch = configbag.get_arch()
         cmd = "snapcraft list-revisions microk8s --arch {}".format(arch).split()
+        click.echo("Callling {}".format(cmd))
         revisions_list = run(cmd, stdout=PIPE, stderr=STDOUT)
         revisions_list = revisions_list.stdout.decode("utf-8").split("\n")
         click.echo("Snap revisions on {}".format(arch))
         click.echo(revisions_list)
         click.echo("")
-        if track == "latest":
-            channel_patern = " {}*".format(channel)
-        else:
-            channel_patern = " {}/{}*".format(track, channel)
+        channel_patern = "{}/{}*".format(track, channel)
 
         self.juju_unit = juju_unit
         self.juju_controller = juju_controller
@@ -54,13 +52,16 @@ class Microk8sSnap:
         else:
             self.released = False
 
-    def release_to(self, channel, dry_run="no"):
+    def release_to(self, channel, release_to_track=None, dry_run="no"):
         """
         Release the Snap to the input channel
         Args:
             channel: The channel to release to
+            release_to_track: the track to release to
 
         """
+        if not release_to_track:
+            release_to_track = self.track
         if self.is_prerelease:
             click.echo(
                 "This is a pre-release {}. Cannot release to other channels.".format(
@@ -68,7 +69,7 @@ class Microk8sSnap:
                 )
             )
             raise Exception("Cannot release pre-releases.")
-        target = "{}/{}".format(self.track, channel)
+        target = "{}/{}".format(release_to_track, channel)
         cmd = "snapcraft release microk8s {} {}".format(self.revision, target)
         if dry_run == "no":
             try:
@@ -81,7 +82,8 @@ class Microk8sSnap:
 
     def test_cross_distro(
         self,
-        channel_to_upgrade="latest/stable",
+        channel_to_upgrade=None,
+        track_to_upgrade=None,
         tests_branch=None,
         distributions=["ubuntu:16.04", "ubuntu:18.04"],
         proxy=None,
@@ -135,8 +137,12 @@ class Microk8sSnap:
 
         if "under-testing" in self.under_testing_channel:
             self.release_to(self.under_testing_channel)
+        if not track_to_upgrade:
+            track_to_upgrade = self.track
         for distro in distributions:
-            track_channel_to_upgrade = "{}/{}".format(self.track, channel_to_upgrade)
+            track_channel_to_upgrade = "{}/{}".format(
+                track_to_upgrade, channel_to_upgrade
+            )
             testing_track_channel = "{}/{}".format(
                 self.track, self.under_testing_channel
             )

@@ -49,13 +49,35 @@ if __name__ == "__main__":
     click.echo("Check candidate maturity and release microk8s to stable.")
     click.echo("Dry run is set to '{}'.".format(dry_run))
     for track in tracks_requested:
-        click.echo("Looking at track {}".format(track))
+
         upstream = upstream_release(track)
         if not upstream:
             click.echo("No stable upstream release yet.")
             continue
 
-        candidate_snap = Microk8sSnap(track, "candidate", juju_unit, juju_controller)
+        if track == "latest":
+            ersion = upstream[1:]
+            ersion_list = ersion.split(".")
+            source_track = "{}.{}".format(ersion_list[0], ersion_list[1])
+            source_channel = "stable"
+            always_release = "yes"
+            click.echo(
+                "latest/stable is populated from the {}/{}".format(
+                    source_track, source_channel
+                )
+            )
+        else:
+            source_track = track
+            source_channel = "candidate"
+            click.echo(
+                "{}/stable is populated from the {}/{}".format(
+                    track, source_track, source_channel
+                )
+            )
+
+        candidate_snap = Microk8sSnap(
+            source_track, source_channel, juju_unit, juju_controller
+        )
         if not candidate_snap.released:
             # Nothing to release
             click.echo("Nothing on candidate. Nothing to release.")
@@ -91,7 +113,10 @@ if __name__ == "__main__":
                 )
             )
             candidate_snap.test_cross_distro(
-                channel_to_upgrade="stable", tests_branch=tests_branch, proxy=proxy
+                track_to_upgrade=track,
+                channel_to_upgrade="stable",
+                tests_branch=tests_branch,
+                proxy=proxy,
             )
         else:
             if not stable_snap.released:
@@ -107,4 +132,4 @@ if __name__ == "__main__":
                 assert False
 
         # The following will raise an exception if it fails
-        candidate_snap.release_to("stable", dry_run=dry_run)
+        candidate_snap.release_to("stable", release_to_track=track, dry_run=dry_run)
