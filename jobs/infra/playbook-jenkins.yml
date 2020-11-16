@@ -136,6 +136,12 @@
       tags:
         - jenkins
         - adhoc
+    - name: upgrade charm
+      command: "snap refresh snapcraft --channel latest/edge"
+      ignore_errors: yes
+      tags:
+        - jenkins
+        - adhoc
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
