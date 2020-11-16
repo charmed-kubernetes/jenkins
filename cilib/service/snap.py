@@ -95,19 +95,22 @@ class SnapService(DebugMixin):
                 arch=arch,
                 exclude_pre=exclude_pre,
             )
-            max_stable_rev = self.snap_model.latest_revision(
-                revisions, track=f"stable", arch=arch, exclude_pre=exclude_pre
-            )
-            if int(max_stable_rev) < int(max_track_rev):
-                self.log(
-                    f"Track revisions do not match {max_track_rev} != {max_stable_rev}, syncing stable snaps to latest track"
+            try:
+                max_stable_rev = self.snap_model.latest_revision(
+                    revisions, track=f"stable", arch=arch, exclude_pre=exclude_pre
                 )
-                for _track in ["stable", "candidate", "beta", "edge"]:
-                    self._release(max_track_rev, _track)
-            else:
-                self.log(
-                    f"{self.snap_model.name} revision {max_stable_rev} == {max_track_rev}, no promotion needed."
-                )
+                if int(max_stable_rev) < int(max_track_rev):
+                    self.log(
+                        f"Track revisions do not match {max_track_rev} != {max_stable_rev}, syncing stable snaps to latest track"
+                    )
+                    for _track in ["stable", "candidate", "beta", "edge"]:
+                        self._release(max_track_rev, _track)
+                else:
+                    self.log(
+                        f"{self.snap_model.name} revision {max_stable_rev} == {max_track_rev}, no promotion needed."
+                    )
+            except ValueError as error:
+                self.log(f"Unable to parse max stable rev {error}")
 
     def sync_all_track_snaps(self):
         """Keeps snap builds current with latest releases"""

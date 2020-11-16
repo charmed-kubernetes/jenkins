@@ -36,6 +36,7 @@
               [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
               set +o allexport
 
+              export CRYPTOGRAPHY_ALLOW_OPENSSL_102=1
               bash jobs/infra/fixtures/cleanup-env.sh
 
               venv/bin/pip install ansible
