@@ -457,11 +457,6 @@ class BuildEntity:
         cmd_ok(
             ["charm", "set", self.new_entity, f"commit={self.commit}"], echo=self.echo
         )
-        self.echo(f"Setting {self.new_entity} permissions for read everyone")
-        cmd_ok(
-            ["charm", "grant", self.new_entity, "--acl=read", "everyone"],
-            echo=self.echo,
-        )
 
     def attach_resources(self):
         out_path = Path(self.src_path) / "tmp"
@@ -542,6 +537,11 @@ class BuildEntity:
         except sh.ErrorReturnCode:
             self.echo("No resources for {}".format(charm_id))
         sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
+        self.echo(f"Setting {self.new_entity} permissions for read everyone")
+        cmd_ok(
+            ["charm", "grant", charm_id["id"]["Id"], "--acl=read", "everyone"],
+            echo=self.echo,
+        )
 
 
 class BundleBuildEntity(BuildEntity):
