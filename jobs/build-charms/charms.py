@@ -537,7 +537,7 @@ class BuildEntity:
         except sh.ErrorReturnCode:
             self.echo("No resources for {}".format(charm_id))
         sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
-        self.echo(f"Setting {self.new_entity} permissions for read everyone")
+        self.echo(f"Setting {charm_id['id']['Id']} permissions for read everyone")
         cmd_ok(
             ["charm", "grant", charm_id["id"]["Id"], "--acl=read", "everyone"],
             echo=self.echo,
