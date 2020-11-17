@@ -13,8 +13,8 @@ set -x
 
 # Setup Environment
 
-SNAP_VERSION=${1:-1.18/stable}
-SERIES=${2:-bionic}
+SNAP_VERSION=${1:-1.19/stable}
+SERIES=${2:-focal}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-candidate}
 JUJU_CLOUD=aws/us-east-1
