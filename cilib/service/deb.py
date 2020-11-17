@@ -7,6 +7,7 @@ Handles the building, syncing of debian packages
 import os
 import tempfile
 import semver
+import textwrap
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
@@ -67,8 +68,24 @@ class DebService(DebugMixin):
                 changelog_out = self.render(changelog_fn_tpl, changelog_context)
                 changelog_fn.write_text(changelog_out)
 
+                kube_git_version_fn = src_path / "DEBVERSION"
+                kube_git_version = textwrap.dedent(
+                    """KUBE_GIT_TREE_STATE=archive
+                KUBE_GIT_VERSION={}
+                KUBE_GIT_MAJOR={}
+                KUBE_GIT_MINOR={}
+                """.format(
+                        f"v{str(k8s_major_minor)}",
+                        k8s_major_minor.major,
+                        k8s_major_minor.minor,
+                    )
+                )
+                kube_git_version_fn.write_text(kube_git_version)
+
                 self.log(f"Committing {branch}")
-                self.deb_model.base.add([str(changelog_fn)], cwd=str(src_path))
+                self.deb_model.base.add(
+                    [str(changelog_fn), str(kube_git_version_fn)], cwd=str(src_path)
+                )
                 self.deb_model.base.commit(
                     f"Creating branch {branch}", cwd=str(src_path)
                 )
