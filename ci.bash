@@ -198,7 +198,6 @@ function ci::run
         kv::set "build_endtime" "$(timestamp)"
 
         test::report "$result"
-        ci::cleanup::before
 
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
 }
@@ -214,16 +213,23 @@ function ci::cleanup::before
     echo "> skipping before tasks"
 }
 
+function ci::cleanup::after
+{
+    echo "> skipping after tasks"
+}
+
 # cleanup function
 function ci::cleanup
 {
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
+        ci::cleanup::before
         test::capture
 
         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
             timeout 5m juju kill-controller -t 2m0s -y "$JUJU_CONTROLLER" || true
         fi
+        ci::cleanup::after
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
 }
 trap ci::cleanup EXIT
