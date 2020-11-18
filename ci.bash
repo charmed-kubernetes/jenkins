@@ -154,7 +154,7 @@ function test::capture
     if which juju-crashdump; then
         juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
-    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures*
+    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* || true
     /usr/local/bin/columbo -r columbo.yaml -o "_out" "artifacts.tar.gz" || true
     python bin/s3 cp "columbo-report.json" columbo-report.json || true
 
@@ -223,13 +223,13 @@ function ci::cleanup
 {
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
-        ci::cleanup::before
-        test::capture
+        ci::cleanup::before || true
+        test::capture || true
 
         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
             timeout 5m juju kill-controller -t 2m0s -y "$JUJU_CONTROLLER" || true
         fi
-        ci::cleanup::after
+        ci::cleanup::after || true
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
 }
 trap ci::cleanup EXIT
