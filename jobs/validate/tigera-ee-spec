@@ -52,7 +52,7 @@ function juju::deploy::after
     python3 $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
 }
 
-function ci::cleanup::before
+function ci::cleanup::after
 {
     python3 $WORKSPACE/jobs/integration/tigera_aws.py cleanup
 }
