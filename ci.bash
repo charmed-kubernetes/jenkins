@@ -166,6 +166,12 @@ function test::capture
 
     # Generate job report
     python bin/report job-result --job-id "$JOB_ID" --metadata-db metadata.db --columbo-json columbo-report.json
+
+    echo "@@@ CAPTURE RESULTS @@@"
+    echo "@"
+    echo "@  http://jenkaas.s3-website-us-east-1.amazonaws.com/$JOB_ID/artifacts.tar.gz"
+    echo "@"
+    echo "@@@"
 }
 
 
