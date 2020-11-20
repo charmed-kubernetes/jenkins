@@ -128,7 +128,7 @@ class DebService(DebugMixin):
             KUBE_GIT_MAJOR={}
             KUBE_GIT_MINOR={}
             """.format(
-                f"v{str(latest_branche_version)}",
+                f"v{str(latest_branch_version)}",
                 latest_branch_version.major,
                 latest_branch_version.minor,
             )
@@ -175,7 +175,8 @@ class DebService(DebugMixin):
             )
             self.bump_revision(cwd=f"{tmpdir}/{self.deb_model.name}")
             self.write_debversion(
-                latest_branch_version, src_path=Path(tmpdir) / self.deb_model.name
+                semver.VersionInfo.parse(latest_branch_version),
+                src_path=Path(tmpdir) / self.deb_model.name,
             )
             cmd_ok(
                 f"cp -a {tmpdir}/{self.deb_model.name}/* {self.upstream_model.name}/.",

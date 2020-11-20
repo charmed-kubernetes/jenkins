@@ -6,6 +6,7 @@ import click
 import yaml
 import itertools
 import sh
+import sys
 from pathlib import Path
 from cilib import lp, snapapi, html
 from cilib.run import cmd_ok
