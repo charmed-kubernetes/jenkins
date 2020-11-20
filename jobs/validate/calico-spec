@@ -54,8 +54,13 @@ applications:
 EOF
 }
 
-function juju::deploy::after
+function juju::deploy
 {
+    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
+         --overlay overlay.yaml \
+         --force \
+         --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
+
     if [[ "$ROUTING_MODE" = bgp* ]]; then
       python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
     fi
