@@ -7,11 +7,16 @@ export LPCREDS=/root/lpcreds.ini
 export DEBEMAIL="Kubernetes Engineering <k8s-team-ci@canonical.com>"
 K8STEAMCI_GPG_KEY="{{ lookup('env', 'K8STEAMCI_GPG_KEY') }}"
 DRY_RUN="{{ lookup('env', 'DRY_RUN') }}"
+FORCE="{{ lookup('env', 'FORCE') }}"
 
 OPTS="--sign-key $K8STEAMCI_GPG_KEY"
 
 if [[ $DRY_RUN = "true" ]]; then
     OPTS="$OPTS --dry-run"
+fi
+
+if [[ $FORCE = "true" ]]; then
+    OPTS="$OPTS --force"
 fi
 
 cd /root/jenkins

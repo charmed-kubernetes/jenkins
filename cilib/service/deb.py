@@ -68,20 +68,6 @@ class DebService(DebugMixin):
                 changelog_out = self.render(changelog_fn_tpl, changelog_context)
                 changelog_fn.write_text(changelog_out)
 
-                kube_git_version_fn = src_path / "DEBVERSION"
-                kube_git_version = textwrap.dedent(
-                    """KUBE_GIT_TREE_STATE=archive
-                KUBE_GIT_VERSION={}
-                KUBE_GIT_MAJOR={}
-                KUBE_GIT_MINOR={}
-                """.format(
-                        f"v{str(k8s_major_minor)}",
-                        k8s_major_minor.major,
-                        k8s_major_minor.minor,
-                    )
-                )
-                kube_git_version_fn.write_text(kube_git_version)
-
                 self.log(f"Committing {branch}")
                 self.deb_model.base.add(
                     [str(changelog_fn), str(kube_git_version_fn)], cwd=str(src_path)
@@ -91,7 +77,7 @@ class DebService(DebugMixin):
                 )
                 self.deb_model.base.push(ref=branch, cwd=str(src_path))
 
-    def sync_debs(self):
+    def sync_debs(self, force=False):
         """ Builds latest deb from each major.minor and uploads to correct ppa"""
         for _version in self.supported_versions:
             exclude_pre = True
@@ -108,7 +94,8 @@ class DebService(DebugMixin):
                 _version, exclude_pre
             )
             if (
-                not latest_deb_version
+                force
+                or not latest_deb_version
                 or semver.compare(str(latest_branch_version), latest_deb_version_mmp)
                 > 0
             ):
@@ -131,6 +118,22 @@ class DebService(DebugMixin):
     def bump_revision(self, **subprocess_kwargs):
         """Bumps upstream revision for builds"""
         cmd_ok("dch -U 'Automated Build' -D focal", **subprocess_kwargs)
+
+    def write_debversion(self, latest_branch_version, src_path):
+        """Writes out the DEBVERSION file to be used in building the deps"""
+        kube_git_version_fn = src_path / "DEBVERSION"
+        kube_git_version = textwrap.dedent(
+            """KUBE_GIT_TREE_STATE=archive
+            KUBE_GIT_VERSION={}
+            KUBE_GIT_MAJOR={}
+            KUBE_GIT_MINOR={}
+            """.format(
+                f"v{str(latest_branche_version)}",
+                latest_branch_version.major,
+                latest_branch_version.minor,
+            )
+        )
+        kube_git_version_fn.write_text(kube_git_version)
 
     def source(self, **subprocess_kwargs):
         """Builds the source deb package"""
@@ -171,6 +174,9 @@ class DebService(DebugMixin):
                 cwd=f"{tmpdir}/{self.deb_model.name}",
             )
             self.bump_revision(cwd=f"{tmpdir}/{self.deb_model.name}")
+            self.write_debversion(
+                latest_branch_version, src_path=Path(tmpdir) / self.deb_model.name
+            )
             cmd_ok(
                 f"cp -a {tmpdir}/{self.deb_model.name}/* {self.upstream_model.name}/.",
                 shell=True,

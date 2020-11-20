@@ -230,7 +230,8 @@ def ppas(dry_run):
 @cli.command()
 @click.option("--sign-key", help="GPG Sign key ID", required=True)
 @click.option("--dry-run", is_flag=True)
-def debs(sign_key, dry_run):
+@click.option("--force", is_flag=True)
+def debs(sign_key, dry_run, force):
     """Syncs debs"""
     dryrun(dry_run)
 
@@ -249,21 +250,21 @@ def debs(sign_key, dry_run):
     for _deb in debs_to_process:
         deb_service_obj = DebService(_deb, kubernetes_repo, ppas, sign_key)
         deb_service_obj.sync_from_upstream()
-        deb_service_obj.sync_debs()
+        deb_service_obj.sync_debs(force)
 
     cri_tools = DebCriToolsRepoModel()
     cri_tools_service_obj = DebCriToolsService(
         cri_tools, InternalCriToolsRepoModel(), ppas, sign_key
     )
     cri_tools_service_obj.sync_from_upstream()
-    cri_tools_service_obj.sync_debs()
+    cri_tools_service_obj.sync_debs(force)
 
     kubernetes_cni = DebKubernetesCniRepoModel()
     kubernetes_cni_service_obj = DebCNIService(
         kubernetes_cni, InternalCNIPluginsRepoModel(), ppas, sign_key
     )
     kubernetes_cni_service_obj.sync_from_upstream()
-    kubernetes_cni_service_obj.sync_debs()
+    kubernetes_cni_service_obj.sync_debs(force)
 
 
 @cli.command()

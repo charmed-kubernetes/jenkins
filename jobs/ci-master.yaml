@@ -49,6 +49,10 @@
           name: DRY_RUN
           default: false
           description: dry-run nothing is actually done
+      - bool:
+          name: FORCE
+          default: false
+          description: force run regardless of condition
 
 
 - parameter:
