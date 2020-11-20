@@ -205,7 +205,7 @@ class DebCNIService(DebService):
         deb_branches = self.deb_model.base.branches_from_semver_point("0.8.7")
         return list(set(upstream_tags) - set(deb_branches))
 
-    def sync_debs(self):
+    def sync_debs(self, force=False):
         """Builds latest deb from each major.minor and uploads to correct ppa"""
         for ppa_name in self.ppas.names:
             ppa = self.ppas.get_ppa_by_major_minor(ppa_name)
@@ -220,7 +220,8 @@ class DebCNIService(DebService):
                 enums.K8S_CNI_SEMVER, exclude_pre
             )
             if (
-                not latest_deb_version
+                force
+                or not latest_deb_version
                 or semver.compare(str(latest_branch_version), latest_deb_version_mmp)
                 > 0
             ):
@@ -245,7 +246,7 @@ class DebCriToolsService(DebService):
         deb_branches = self.deb_model.base.branches_from_semver_point("1.19.0")
         return list(set(upstream_tags) - set(deb_branches))
 
-    def sync_debs(self):
+    def sync_debs(self, force=False):
         """Builds latest deb from each major.minor and uploads to correct ppa"""
         for ppa_name in self.ppas.names:
             ppa = self.ppas.get_ppa_by_major_minor(ppa_name)
@@ -260,7 +261,8 @@ class DebCriToolsService(DebService):
                 enums.K8S_CRI_TOOLS_SEMVER, exclude_pre
             )
             if (
-                not latest_deb_version
+                force
+                or not latest_deb_version
                 or semver.compare(str(latest_branch_version), latest_deb_version_mmp)
                 > 0
             ):
