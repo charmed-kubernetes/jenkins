@@ -318,7 +318,7 @@ def assign_ipv6_addr_on_instance(instance_id):
     for network_interface_id in network_interface_ids:
         log("Assigning IPv6 address to " + network_interface_id)
 
-        ec2.modify_network_interface_attribute(
+        ec2.assign_ipv6_addresses(
             NetworkInterfaceId=network_interface_id,
             Ipv6AddressCount=1,
         )
