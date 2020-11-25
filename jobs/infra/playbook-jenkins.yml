@@ -114,6 +114,7 @@
           tmpreaper
       tags:
         - jenkins
+      ignore_errors: yes
     - name: remove unused debs
       shell: |
         sudo apt-get remove -qyf \
