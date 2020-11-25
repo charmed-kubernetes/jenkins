@@ -15,9 +15,6 @@ class Microk8sSnap:
         click.echo("Callling {}".format(cmd))
         revisions_list = run(cmd, stdout=PIPE, stderr=STDOUT)
         revisions_list = revisions_list.stdout.decode("utf-8").split("\n")
-        click.echo("Snap revisions on {}".format(arch))
-        click.echo(revisions_list)
-        click.echo("")
         channel_patern = "{}/{}*".format(track, channel)
 
         self.juju_unit = juju_unit
@@ -85,7 +82,7 @@ class Microk8sSnap:
         channel_to_upgrade=None,
         track_to_upgrade=None,
         tests_branch=None,
-        distributions=["ubuntu:16.04", "ubuntu:18.04"],
+        distributions=["ubuntu:18.04"],
         proxy=None,
     ):
         """
