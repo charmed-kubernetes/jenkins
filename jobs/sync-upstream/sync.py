@@ -82,6 +82,8 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     ancillary_list = yaml.safe_load(Path(ancillary_list).read_text(encoding="utf8"))
     new_env = os.environ.copy()
+
+    failed_to_release = []
     for layer_map in layer_list + charm_list + ancillary_list:
         for layer_name, repos in layer_map.items():
             downstream = repos["downstream"]
@@ -113,9 +115,18 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 git.config("user.name", "cdkbot", _cwd=identifier)
                 git.config("--global", "push.default", "simple")
                 git.checkout("-f", "stable", _cwd=identifier)
-                git.merge("master", "--no-ff", _cwd=identifier)
+                try:
+                    git.merge("master", "--no-ff", _cwd=identifier)
+                except sh.ErrorReturnCode_1:
+                    failed_to_release.append(layer_name)
+                    continue
                 for line in git.push("origin", "stable", _cwd=identifier, _iter=True):
                     log.info(line)
+
+    if failed_to_release:
+        log.error("Failed to release the following: ")
+        for release in failed_to_release:
+            log.error(f"> {release}")
 
 
 def _tag_stable_forks(
