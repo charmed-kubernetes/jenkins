@@ -97,13 +97,14 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
 
             log.info(f"Releasing :: {layer_name:^35} :: from: master to: stable")
             if not dry_run:
+                master_branch = repos["branch"] if "branch" in repos else "master"
                 downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 for line in git.clone(downstream, identifier, _iter=True):
                     log.info(line)
                 git_rev_master = git(
-                    "rev-parse", "origin/master", _cwd=identifier
+                    "rev-parse", f"origin/{master_branch}", _cwd=identifier
                 ).stdout.decode()
                 git_rev_stable = git(
                     "rev-parse", "origin/stable", _cwd=identifier
@@ -115,18 +116,9 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 git.config("user.name", "cdkbot", _cwd=identifier)
                 git.config("--global", "push.default", "simple")
                 git.checkout("-f", "stable", _cwd=identifier)
-                try:
-                    git.merge("master", "--no-ff", _cwd=identifier)
-                except sh.ErrorReturnCode_1:
-                    failed_to_release.append(layer_name)
-                    continue
-                for line in git.push("origin", "stable", _cwd=identifier, _iter=True):
+                git.reset(master_branch, _cwd=identifier)
+                for line in git.push("origin", "stable", "-f", _cwd=identifier, _iter=True):
                     log.info(line)
-
-    if failed_to_release:
-        log.error("Failed to release the following: ")
-        for release in failed_to_release:
-            log.error(f"> {release}")
 
 
 def _tag_stable_forks(
