@@ -69,9 +69,7 @@ class DebService(DebugMixin):
                 changelog_fn.write_text(changelog_out)
 
                 self.log(f"Committing {branch}")
-                self.deb_model.base.add(
-                    [str(changelog_fn), str(kube_git_version_fn)], cwd=str(src_path)
-                )
+                self.deb_model.base.add([str(changelog_fn)], cwd=str(src_path))
                 self.deb_model.base.commit(
                     f"Creating branch {branch}", cwd=str(src_path)
                 )
