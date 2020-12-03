@@ -318,7 +318,7 @@ async def test_rbac(model):
 
 
 @pytest.mark.asyncio
-@pytest.mark.clouds(["aws", "vsphere"])
+@pytest.mark.clouds(["aws"])
 async def test_microbot(model, tools):
     """ Validate the microbot action """
     unit = model.applications["kubernetes-worker"].units[0]
