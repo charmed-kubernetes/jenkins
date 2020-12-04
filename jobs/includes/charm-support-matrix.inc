@@ -143,7 +143,7 @@
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-coredns"
     tags: ["k8s", "coredns"]
-- kubernetes-dashboard:
+- k8s-dashboard:
     upstream: "https://github.com/charmed-kubernetes/kubernetes-dashboard-operator"
     subdir: "charms/kubernetes-dashboard"
     namespace: "containers"
