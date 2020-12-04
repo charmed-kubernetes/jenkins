@@ -440,14 +440,7 @@ class BuildEntity:
 
         self.echo(f"Pushing built {self.dst_path} to {self.entity}")
 
-        out = retry_call(
-            capture,
-            fargs=[["charm", "push", self.dst_path, self.entity]],
-            fkwargs={"check": True},
-            delay=2,
-            backoff=2,
-            exceptions=CalledProcessError,
-        )
+        out = capture(["charm", "push", self.dst_path, self.entity], echo=self.echo)
         self.echo(f"Charm push returned: {out}")
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
