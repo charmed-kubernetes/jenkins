@@ -24,7 +24,7 @@ pipeline {
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.rocks.canonical.com:5000'
-        REGISTRY_REPLACE = 'docker.io/ k8s.gcr.io/ quay.io/ us.gcr.io/'
+        REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/ gcr.io/ quay.io/'
     }
     options {
         ansiColor('xterm')
@@ -179,6 +179,9 @@ pipeline {
                     # All CK images are stored under ./cdk in our registry
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
 
+                    # Login to increase rate limit for dockerhub
+                    which docker && docker login -u ${env.DOCKERHUB_CREDS_USR} -p ${env.DOCKERHUB_CREDS_PSW}
+
                     for i in \${ALL_IMAGES}
                     do
                         # Skip images that we already host
@@ -191,17 +194,9 @@ pipeline {
                         then
                             echo "Dry run; would have pulled: \${i}"
                         else
-                            # Login to increase rate limit for dockerhub
-                            if echo \${i} | grep -qi 'docker.io'
-                            then
-                                LOGIN_ARG="--user ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW}"
-                            else
-                                LOGIN_ARG=
-                            fi
-
                             # Skip images that dont exist (usually due to non-existing arch). Other
                             # pull failures will manifest themselves when we attempt to tag.
-                            if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms \${LOGIN_ARG} 2>&1 | grep -qi 'not found'
+                            if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms 2>&1 | grep -qi 'not found'
                             then
                                 continue
                             fi
@@ -228,6 +223,9 @@ pipeline {
                             sudo lxc exec image-processor -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                         fi
                     done
+
+                    # Make sure this worker doesn't stay logged in to dockerhub
+                    which docker && docker logout
 
                     echo "All images known to this builder:"
                     sudo lxc exec image-processor -- ctr image ls
