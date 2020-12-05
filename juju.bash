@@ -17,7 +17,7 @@ function juju::bootstrap
 {
     extra_args=''
     if [ "$JUJU_CLOUD" = "vsphere/Boston" ]; then
-        extra_args="--model-default datastore=vsanDatastore --model-default primary-network=VLAN_2763"
+        extra_args="--model-default datastore=vsanDatastore --model-default primary-network=VLAN_2763 --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions"
     fi
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          -d "$JUJU_MODEL" \
