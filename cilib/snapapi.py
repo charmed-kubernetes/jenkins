@@ -17,7 +17,7 @@ class SnapStore:
     @cached_property
     def channel_map(self):
         """Gets the channel map for a snap"""
-        output = sh.surl(
+        output = sh.contrib.sudo.surl(
             "-a", self.creds, "-X", "GET", f"{self.api}/channel-map"
         ).stdout.decode()
         return json.loads(output)
