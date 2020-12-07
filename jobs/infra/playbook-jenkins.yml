@@ -264,13 +264,6 @@
         force: yes
       tags:
         - jenkins
-    - name: create surl snap common dir
-      file:
-        path: /var/lib/jenkins/snap/surl/common
-        state: directory
-        mode: 0755
-      tags:
-        - jenkins
     - name: copy surl creds
       unarchive:
         src: "{{ lookup('env', 'SURLCREDS') }}"
