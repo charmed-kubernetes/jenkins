@@ -158,7 +158,6 @@
         - "multipass"
         - "yq"
         - "snapcraft --classic"
-        - "surl --edge"
       tags:
         - jenkins
         - adhoc
@@ -169,6 +168,7 @@
         - "microk8s"
         - "bundletester"
         - "charmcraft"
+        - "surl"
       tags:
         - jenkins
     - name: copy bashrc
