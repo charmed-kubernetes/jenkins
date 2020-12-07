@@ -163,3 +163,4 @@ zipp==3.4.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
+https://github.com/Roadmaster/surl/archive/master.zip

@@ -28,6 +28,7 @@
               IS_DRY_RUN="--dry-run"
             fi
             snapcraft login --with /var/lib/jenkins/snapcraft-creds
+            sudo snap remove surl
             cp /var/lib/jenkins/snap/surl/common/production-creds.surl production-creds.surl
             tox -e py38 -- python jobs/sync-upstream/sync.py snaps $IS_DRY_RUN
 
