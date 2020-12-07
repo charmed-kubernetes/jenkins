@@ -3,6 +3,7 @@ import re
 import operator
 import semver
 import json
+import os
 from pprint import pprint, pformat
 from cilib.run import capture
 from functools import cached_property
@@ -17,9 +18,11 @@ class SnapStore:
     @cached_property
     def channel_map(self):
         """Gets the channel map for a snap"""
+        new_env = os.environ.copy()
+        new_env["SNAP_USER_COMMON"] = "."
         output = sh.contrib.sudo.surl(
-            "-a", self.creds, "-X", "GET", f"{self.api}/channel-map"
-        ).stdout.decode()
+            "-a", self.creds, "-X", "GET", f"{self.api}/channel-map",
+            _env=new_env).stdout.decode()
         return json.loads(output)
 
     def max_rev(self, arch, track):
