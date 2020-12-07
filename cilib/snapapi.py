@@ -2,8 +2,39 @@ import sh
 import re
 import operator
 import semver
+import json
 from pprint import pprint, pformat
 from cilib.run import capture
+from functools import cached_property
+
+
+class SnapStore:
+    def __init__(self, snap):
+        self.snap = snap
+        self.creds = "production-creds"
+        self.api = f"https://dashboard.snapcraft.io/api/v2/snaps/{snap}"
+
+    @cached_property
+    def channel_map(self):
+        """Gets the channel map for a snap"""
+        output = sh.surl(
+            "-a", self.creds, "-X", "GET", f"{self.api}/channel-map"
+        ).stdout.decode()
+        return json.loads(output)
+
+    def max_rev(self, arch, track):
+        """Returns max revision for snap by arch/track"""
+        for channel in self.channel_map["channel-map"]:
+            if channel["channel"] == track and channel["architecture"] == arch:
+                return int(channel["revision"])
+        return None
+
+    def version_from_rev(self, revision, arch):
+        """Returns the version associated with revision and architecture of snap"""
+        for channel in self.channel_map["revisions"]:
+            if arch in channel["architectures"] and revision == channel["revision"]:
+                return semver.VersionInfo.parse(channel["version"])
+        return None
 
 
 def max_rev(revlist, version_filter):

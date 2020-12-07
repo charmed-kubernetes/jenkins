@@ -373,6 +373,9 @@
           - file:
               credential-id: aws_creds
               variable: AWSCREDS
+          - file:
+              credential-id: surl-creds
+              variable: SURLCREDS
           - text:
               credential-id: aws-iam-arn
               variable: AWSIAMARN

@@ -2,6 +2,13 @@
 
 
 Handles the building, syncing of snaps
+
+
+TODO: surl
+
+for surl:
+1- get a valid macaroon, resusable by name: $ surl -a package-access-prod -e "email addr" -s production
+2- get the channel map for your snap: surl -a package-access-prod -X GET https://dashboard.snapcraft.io/api/v2/snaps/cdk-addons/channel-map | jq .
 """
 
 import os
@@ -81,41 +88,33 @@ class SnapService(DebugMixin):
 
     def sync_stable_track_snaps(self):
         """Keeps current stable version snap builds in sync with latest track"""
-        revisions = self.snap_model.revisions
         self.snap_model.version = enums.K8S_STABLE_VERSION
 
         for arch in enums.K8S_SUPPORT_ARCHES:
             self.log(
                 f"Checking snaps in version {enums.K8S_STABLE_VERSION} for arch {arch}"
             )
-            exclude_pre = True
             max_track_rev = self.snap_model.latest_revision(
-                revisions,
                 track=f"{enums.K8S_STABLE_VERSION}/stable",
                 arch=arch,
-                exclude_pre=exclude_pre,
             )
-            try:
-                max_stable_rev = self.snap_model.latest_revision(
-                    revisions, track=f"stable", arch=arch, exclude_pre=exclude_pre
+            max_stable_rev = self.snap_model.latest_revision(
+                track=f"latest/stable", arch=arch
+            )
+            if max_stable_rev < max_track_rev:
+                self.log(
+                    f"Track revisions do not match {max_track_rev} != {max_stable_rev}, syncing stable snaps to latest track"
                 )
-                if int(max_stable_rev) < int(max_track_rev):
-                    self.log(
-                        f"Track revisions do not match {max_track_rev} != {max_stable_rev}, syncing stable snaps to latest track"
-                    )
-                    for _track in ["stable", "candidate", "beta", "edge"]:
-                        self._release(max_track_rev, _track)
-                else:
-                    self.log(
-                        f"{self.snap_model.name} revision {max_stable_rev} == {max_track_rev}, no promotion needed."
-                    )
-            except ValueError as error:
-                self.log(f"Unable to parse max stable rev {error}")
+                for _track in ["stable", "candidate", "beta", "edge"]:
+                    self._release(max_track_rev, _track)
+            else:
+                self.log(
+                    f"{self.snap_model.name} revision {max_stable_rev} == {max_track_rev}, no promotion needed."
+                )
 
     def sync_all_track_snaps(self):
         """Keeps snap builds current with latest releases"""
         supported_versions = list(enums.SNAP_K8S_TRACK_MAP.keys())
-        revisions = self.snap_model.revisions
         for _version in supported_versions:
             for arch in enums.K8S_SUPPORT_ARCHES:
                 self.log(f"> Checking snaps in version {_version} for arch {arch}")
@@ -130,13 +129,14 @@ class SnapService(DebugMixin):
                     )
                     # Only pull in pre-releases if building for the next development version
                     exclude_pre = False
+
                 max_rev = self.snap_model.latest_revision(
-                    revisions,
                     track=f"{_version}/edge",
                     arch=arch,
-                    exclude_pre=exclude_pre,
                 )
-                latest_snap_version = revisions[str(max_rev)]["version"]
+                latest_snap_version = self.snap_model.store.version_from_rev(
+                    max_rev, arch
+                )
                 self.log(
                     f"Found snap version {str(latest_snap_version)} at revision {max_rev} for {_version}/edge"
                 )

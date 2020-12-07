@@ -3,6 +3,7 @@
 from . import BaseRepoModel
 from cilib import enums
 from cilib.log import DebugMixin
+from cilib.snapapi import SnapStore
 import os
 import sh
 import re
@@ -17,6 +18,7 @@ class SnapBaseRepoModel(DebugMixin):
         self.git_user = "k8s-team-ci"
         self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
         self.src = f"snap-{self.name}"
+        self.store = SnapStore(self.name)
 
     def __str__(self):
         return f"<{self.name}>"
@@ -60,25 +62,15 @@ class SnapBaseRepoModel(DebugMixin):
             }
         return revision_map
 
-    def latest_revision(self, revisions, track, arch="amd64", exclude_pre=False):
+    def latest_revision(self, track, arch="amd64"):
         """Get latest revision of snap based on track and arch"""
 
-        _revisions_map = revisions
-        _revisions_list = []
-
-        for rev in _revisions_map.keys():
-            if exclude_pre and _revisions_map[rev]["version"].prerelease is not None:
-                continue
-
-            if _revisions_map[rev]["arch"] != arch:
-                continue
-
-            for channel in _revisions_map[rev]["channels"]:
-                if not channel["promoted"]:
-                    continue
-                if track == channel["channel"]:
-                    _revisions_list.append(int(rev))
-        return max(_revisions_list)
+        max_rev = self.store.max_rev(arch, track)
+        if not max_rev:
+            raise Exception(
+                f"Unable to determine max revision for {self.name} ({arch} - {track})"
+            )
+        return max_rev
 
     # private
     def _get_revision_output(self):
