@@ -264,10 +264,23 @@
         force: yes
       tags:
         - jenkins
+    - name: create surl dir
+      file:
+        path: /var/lib/jenkins/snap/surl/common
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: 0755
+      tags:
+        - jenkins
     - name: copy surl creds
-      unarchive:
+      copy:
         src: "{{ lookup('env', 'SURLCREDS') }}"
-        dest: /var/lib/jenkins/production-creds.surl
+        dest: /var/lib/jenkins/snap/surl/common/production-creds.surl
+        owner: jenkins
+        group: jenkins
+        mode: 0644
+        force: no
       tags:
         - jenkins
     - name: create juju dir
