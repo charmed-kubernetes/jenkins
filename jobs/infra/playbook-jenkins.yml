@@ -274,7 +274,7 @@
     - name: copy surl creds
       unarchive:
         src: "{{ lookup('env', 'SURLCREDS') }}"
-        dest: /var/lib/jenkins/snap/surl/common/production-creds.surl
+        dest: /var/lib/jenkins/production-creds.surl
       tags:
         - jenkins
     - name: create juju dir
