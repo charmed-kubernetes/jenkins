@@ -17,8 +17,9 @@ class SnapStore:
     @cached_property
     def channel_map(self):
         """Gets the channel map for a snap"""
-        output = sh.surl_cli(
-            "-a", self.creds, "-X", "GET", f"{self.api}/channel-map").stdout.decode()
+        output = capture(
+            ["surl_cli.py", "-a", self.creds, "-X", "GET", f"{self.api}/channel-map"]
+        ).stdout.decode()
         return json.loads(output)
 
     def max_rev(self, arch, track):
