@@ -356,5 +356,30 @@ def snaps(dry_run):
     cdk_addons_service_obj.sync_stable_track_snaps()
 
 
+@cli.command()
+@click.option("--branch", required=True, help="Branch to build from")
+@click.option("--dry-run", is_flag=True)
+def snap_from_branch(branch, dry_run):
+    """Syncs the snap branches, keeps snap builds in sync, and makes sure the latest snaps are published into snap store"""
+    dryrun(dry_run)
+    snaps_to_process = [
+        SnapKubeApiServerRepoModel(),
+        SnapKubeControllerManagerRepoModel(),
+        SnapKubeProxyRepoModel(),
+        SnapKubeSchedulerRepoModel(),
+        SnapKubectlRepoModel(),
+        SnapKubeadmRepoModel(),
+        SnapKubeletRepoModel(),
+        SnapKubernetesTestRepoModel(),
+    ]
+
+    kubernetes_repo = InternalKubernetesRepoModel()
+
+    # Sync all snap branches
+    for _snap in snaps_to_process:
+        snap_service_obj = SnapService(_snap, kubernetes_repo)
+        snap_service_obj.build_snap_from_branch(branch)
+
+
 if __name__ == "__main__":
     cli()

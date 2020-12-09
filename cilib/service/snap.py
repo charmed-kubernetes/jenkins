@@ -161,6 +161,19 @@ class SnapService(DebugMixin):
                         f"> Versions match {str(latest_branch_version)} == {str(latest_snap_version)}, not building a new snap"
                     )
 
+    def build_snap_from_branch(self, branch_version):
+        """Builds a snap from a certain branch version"""
+        branch_version_parsed = semver.VersionInfo.parse(branch_version)
+        self.snap_model.version = (
+            f"{branch_version_parsed.major}.{branch_version_parsed.minor}"
+        )
+
+        for arch in enums.K8S_SUPPORT_ARCHES:
+            self.log(f"Building snap for {str(branch_version_parsed)}")
+            self._create_recipe(
+                self.snap_model.version, f"v{str(branch_version_parsed)}", arch
+            )
+
     def render(self, tmpl_file, context):
         """Renders a jinja template with context"""
         template = Template(tmpl_file.read_text(), keep_trailing_newline=True)

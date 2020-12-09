@@ -99,3 +99,33 @@
     version: ['1.16', '1.17', '1.18', '1.19', '1.20']
     jobs:
       - 'build-release-cdk-addons-{arch}-{version}'
+
+
+# Builds and releases latest snaps
+- job:
+    name: 'build-snap-from-branch'
+    node: runner-cloud
+    description: |
+      Builds a certain snap version from branch
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    parameters:
+      - global-params
+      - string:
+          name: BRANCH
+          description: "MAJOR.MINOR.PATCH to build a snap from"
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+      - run-tox:
+          COMMAND: |
+            #!/bin/bash
+            IS_DRY_RUN=""
+            if [[ $DRY_RUN = "true" ]]; then
+              IS_DRY_RUN="--dry-run"
+            fi
+            tox -e py38 -- python jobs/sync-upstream/sync.py snap-from-branch --branch $BRANCH $IS_DRY_RUN
