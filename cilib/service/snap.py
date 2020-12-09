@@ -153,9 +153,7 @@ class SnapService(DebugMixin):
                     self.log(
                         f"Found new branch {str(latest_branch_version)} > {str(latest_snap_version)}, building new snap"
                     )
-                    self._create_recipe(
-                        _version, f"v{str(latest_branch_version)}", arch
-                    )
+                    self._create_recipe(_version, f"v{str(latest_branch_version)}")
                 else:
                     self.log(
                         f"> Versions match {str(latest_branch_version)} == {str(latest_snap_version)}, not building a new snap"
@@ -168,11 +166,10 @@ class SnapService(DebugMixin):
             f"{branch_version_parsed.major}.{branch_version_parsed.minor}"
         )
 
-        for arch in enums.K8S_SUPPORT_ARCHES:
-            self.log(f"Building snap for {str(branch_version_parsed)}")
-            self._create_recipe(
-                self.snap_model.version, f"v{str(branch_version_parsed)}", arch
-            )
+        self.log(
+            f"Building snap for {str(branch_version_parsed)} into {self.snap_model.tracks}"
+        )
+        self._create_recipe(self.snap_model.version, f"v{str(branch_version_parsed)}")
 
     def render(self, tmpl_file, context):
         """Renders a jinja template with context"""
@@ -193,7 +190,7 @@ class SnapService(DebugMixin):
             )
 
     @sham
-    def _create_recipe(self, version, branch, arch):
+    def _create_recipe(self, version, branch):
         """ Creates an new snap recipe in Launchpad
 
         tag: launchpad git tag to pull snapcraft instructions from (ie, git.launchpad.net/snap-kubectl)
@@ -219,7 +216,6 @@ class SnapService(DebugMixin):
             "branch": branch,
             "repo": self.snap_model.repo,
             "track": self.snap_model.tracks,
-            "arch": arch,
         }
 
         self.log(f"> Creating recipe for {params}")

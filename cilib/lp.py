@@ -69,9 +69,7 @@ class Client:
         """Returns current snappy_series"""
         return self._client.snappy_serieses.getByName(name=name)
 
-    def create_or_update_snap_recipe(
-        self, name, owner, version, repo, branch, track, arch
-    ):
+    def create_or_update_snap_recipe(self, name, owner, version, repo, branch, track):
         """Creates/update snap recipe
 
         Note: You can delete snaps with:
