@@ -7,13 +7,13 @@ JOBS_PATH = Path("jobs")
 
 # Current supported STABLE K8s MAJOR.MINOR release
 # This should be updated whenever a new major.minor is released
-K8S_STABLE_VERSION = "1.19"
+K8S_STABLE_VERSION = "1.20"
 
 # Next MAJOR.MINOR
-K8S_NEXT_VERSION = "1.20"
+K8S_NEXT_VERSION = "1.21"
 
 # Lowest K8S SEMVER to process, this is usually the last 3 releases
-K8S_STARTING_SEMVER = "1.16.0"
+K8S_STARTING_SEMVER = "1.17.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -33,6 +33,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
+    "1.21": "go/1.15/stable",
     "1.20": "go/1.15/stable",
     "1.19": "go/1.15/stable",
     "1.18": "go/1.13/stable",
@@ -48,7 +49,8 @@ SNAP_K8S_TRACK_MAP = {
     "1.17": ["1.17/stable", "1.17/candidate", "1.17/beta", "1.17/edge"],
     "1.18": ["1.18/stable", "1.18/candidate", "1.18/beta", "1.18/edge"],
     "1.19": ["1.19/stable", "1.19/candidate", "1.19/beta", "1.19/edge"],
-    "1.20": ["1.20/edge"],
+    "1.20": ["1.20/stable", "1.20/candidate", "1.20/beta", "1.20/edge"],
+    "1.21": ["1.21/edge"],
 }
 
 # Deb k8s version <-> ppa mapping
@@ -58,6 +60,7 @@ DEB_K8S_TRACK_MAP = {
     "1.18": "ppa:k8s-maintainers/1.18",
     "1.19": "ppa:k8s-maintainers/1.19",
     "1.20": "ppa:k8s-maintainers/1.20",
+    "1.21": "ppa:k8s-maintainers/1.21",
 }
 
 
