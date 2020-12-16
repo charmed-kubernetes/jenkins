@@ -51,6 +51,9 @@
             - 'kubeflow-charmers/redis-k8s'
             - 'containers/metallb-controller'
             - 'containers/metallb-speaker'
+            - 'containers/k8s-dashboard'
+            - 'containers/dashboard-metrics-scraper'
+            - 'containers/kubernetes-dashboard-bundle'
     properties:
       - build-discarder:
           num-to-keep: 2

@@ -32,3 +32,9 @@
     skip-build: true
     subdir: "bundle"
     tags: ['k8s', 'addons', 'metallb']
+- kubernetes-dashboard-bundle:
+    namespace: containers
+    repo: "https://github.com/charmed-kubernetes/kubernetes-dashboard-operator"
+    skip-build: true
+    subdir: "bundles"
+    tags: ['k8s', 'addons', 'kubernetes-dashboard-bundle']
