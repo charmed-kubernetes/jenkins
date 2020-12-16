@@ -18,5 +18,5 @@ def test_get_proper_tracks():
         "1.19/beta",
         "1.19/edge",
     ]
-    repo_model.version = "1.20"
-    assert repo_model.tracks == ["1.20/edge"]
+    repo_model.version = "1.21"
+    assert repo_model.tracks == ["1.21/edge"]
