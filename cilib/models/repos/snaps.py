@@ -67,9 +67,7 @@ class SnapBaseRepoModel(DebugMixin):
 
         max_rev = self.store.max_rev(arch, track)
         if not max_rev:
-            raise Exception(
-                f"Unable to determine max revision for {self.name} ({arch} - {track})"
-            )
+            return None
         return max_rev
 
     # private

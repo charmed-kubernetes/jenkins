@@ -87,13 +87,15 @@ class DebService(DebugMixin):
                 exclude_pre = False
             ppa = self.ppas.get_ppa_by_major_minor(_version)
             latest_deb_version = ppa.get_source_semver(self.deb_model.name)
-            latest_deb_version_mmp = f"{latest_deb_version.major}.{latest_deb_version.minor}.{latest_deb_version.patch}"
+            latest_deb_version_mmp = None
+            if latest_deb_version:
+                latest_deb_version_mmp = f"{latest_deb_version.major}.{latest_deb_version.minor}.{latest_deb_version.patch}"
             latest_branch_version = self.deb_model.base.latest_branch_from_major_minor(
                 _version, exclude_pre
             )
             if (
                 force
-                or not latest_deb_version
+                or not latest_deb_version_mmp
                 or semver.compare(str(latest_branch_version), latest_deb_version_mmp)
                 > 0
             ):

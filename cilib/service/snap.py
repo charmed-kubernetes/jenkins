@@ -134,12 +134,16 @@ class SnapService(DebugMixin):
                     track=f"{_version}/edge",
                     arch=arch,
                 )
-                latest_snap_version = self.snap_model.store.version_from_rev(
-                    max_rev, arch
-                )
-                self.log(
-                    f"Found snap version {str(latest_snap_version)} at revision {max_rev} for {_version}/edge"
-                )
+                if max_rev:
+                    latest_snap_version = self.snap_model.store.version_from_rev(
+                        max_rev, arch
+                    )
+                    self.log(
+                        f"Found snap version {str(latest_snap_version)} at revision {max_rev} for {_version}/edge"
+                    )
+                else:
+                    latest_snap_version = semver.VersionInfo.parse("0.0.0")
+                    self.log(f"No revision or snap version found, assuming new version")
                 latest_branch_version = (
                     self.snap_model.base.latest_branch_from_major_minor(
                         _version, exclude_pre
