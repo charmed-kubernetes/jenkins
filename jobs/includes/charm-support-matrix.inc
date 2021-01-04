@@ -148,7 +148,7 @@
     subdir: "charms/kubernetes-dashboard"
     namespace: "containers"
     downstream: "charmed-kubernetes/kubernetes-dashboard-operator"
-    tags: ["k8s", "kubernetes-dashboard"]
+    tags: ["k8s", "k8s-dashboard"]
     branch: "main"
 - dashboard-metrics-scraper:
     upstream: "https://github.com/charmed-kubernetes/kubernetes-dashboard-operator"
