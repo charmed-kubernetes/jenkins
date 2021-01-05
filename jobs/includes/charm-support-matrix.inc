@@ -73,7 +73,7 @@
     upstream: "https://github.com/juju-solutions/charm-keepalived.git"
     downstream: 'juju-solutions/charm-keepalived.git'
     namespace: 'containers'
-    tags: ['general', 'keepalived']
+    tags: ['general', 'keepalived', 'k8s']
 - docker-registry:
     upstream: "https://github.com/CanonicalLtd/docker-registry-charm.git"
     downstream: 'charmed-kubernetes/docker-registry-charm.git'
