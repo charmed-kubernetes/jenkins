@@ -74,6 +74,7 @@
     downstream: 'charmed-kubernetes/charm-keepalived.git'
     namespace: 'containers'
     tags: ['general', 'keepalived', 'k8s']
+    subdir: "src"
 - docker-registry:
     upstream: "https://github.com/CanonicalLtd/docker-registry-charm.git"
     downstream: 'charmed-kubernetes/docker-registry-charm.git'
