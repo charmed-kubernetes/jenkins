@@ -747,6 +747,8 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
             if "repo" in bundle_opts:
                 # clone bundle repo override
                 bundle_repo = bundle_opts["repo"]
+                if "branch" in bundle_opts:
+                    bundle_branch = bundle_opts["branch"]
                 build_entity.echo(f"Cloning {bundle_repo}")
                 cmd_ok(
                     f"git clone --branch {bundle_branch} {bundle_repo} {src_path}",

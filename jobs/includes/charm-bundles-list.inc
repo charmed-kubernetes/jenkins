@@ -38,3 +38,4 @@
     skip-build: true
     subdir: "bundles"
     tags: ['k8s', 'addons', 'kubernetes-dashboard-bundle']
+    branch: "main"
