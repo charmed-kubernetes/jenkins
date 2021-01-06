@@ -17,9 +17,16 @@ def get_svc_yaml():
 
 async def is_pod_running():
     pod = get_pod_yaml()
-    phase = pod["items"][0]["status"]["phase"]
+
+    try:
+        phase = pod["items"][0]["status"]["phase"]
+    except IndexError:
+        # Pod is not created yet
+        return False
+
     if "Running" in phase:
         return True
+    # Pod has not fully come up yet
     return False
 
 
@@ -51,13 +58,17 @@ async def setup_svc(svc_type):
     )
 
     # Wait for Pods to stabilize
-    await retry_async_with_timeout(is_pod_running, ())
+    await retry_async_with_timeout(
+        is_pod_running, (), timeout_msg="Pod(s) failed to stabilize before timeout"
+    )
 
 
 async def cleanup():
     sh.kubectl.delete("deployment", "hello-world")
     sh.kubectl.delete("service", "hello-world")
-    await retry_async_with_timeout(is_pod_cleaned, ())
+    await retry_async_with_timeout(
+        is_pod_cleaned, (), timeout_msg="Pod(s) failed to clean before timeout"
+    )
 
 
 @pytest.mark.asyncio
