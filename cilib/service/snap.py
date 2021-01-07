@@ -134,6 +134,7 @@ class SnapService(DebugMixin):
                     track=f"{_version}/edge",
                     arch=arch,
                 )
+
                 if max_rev:
                     latest_snap_version = self.snap_model.store.version_from_rev(
                         max_rev, arch
@@ -150,6 +151,21 @@ class SnapService(DebugMixin):
                     )
                 )
                 self.log(f"Latest branch version {latest_branch_version}")
+
+                # Skip building development version if a stable version actually
+                # exists, for example, if 1.21 is in development but there
+                # exists a 1.21.1-rc.0 AND 1.21.0 we do not want to build
+                # 1.21.1-rc.0 as anything with stable releases are considered
+                # usable by end users.
+                if (
+                    _version == enums.K8S_NEXT_VERSION
+                    and not latest_branch_version.prerelease
+                ):
+                    self.log(
+                        f"This version has a non prerelease {str(latest_branch_version)} in our next development build, skipping."
+                    )
+                    continue
+
                 if (
                     semver.compare(str(latest_branch_version), str(latest_snap_version))
                     > 0
