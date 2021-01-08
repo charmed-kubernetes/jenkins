@@ -87,10 +87,7 @@ def sh(*args, **kwargs):
 
 
 def tag_resource(resource_id):
-    ec2.create_tags(
-        Resources=[resource_id],
-        Tags=[{"Key": "owner", "Value": OWNER}]
-    )
+    ec2.create_tags(Resources=[resource_id], Tags=[{"Key": "owner", "Value": OWNER}])
 
 
 def juju(cmd, *args, json=True):
@@ -199,7 +196,7 @@ def create_vpc():
             GatewayId=gateway_id,
         )
 
-    log('Successfully created VPC ' + vpc_id)
+    log("Successfully created VPC " + vpc_id)
 
 
 @def_command("cleanup")

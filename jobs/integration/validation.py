@@ -578,7 +578,7 @@ async def test_ipv6(model, tools):
     master_app = model.applications["kubernetes-master"]
     master_config = await master_app.get_config()
     service_cidr = master_config["service-cidr"]["value"]
-    if all(ipaddress.ip_network(cidr).version != 6 for cidr in service_cidr.split(',')):
+    if all(ipaddress.ip_network(cidr).version != 6 for cidr in service_cidr.split(",")):
         pytest.skip("kubernetes-master not configured for IPv6")
 
     master = master_app.units[0]
