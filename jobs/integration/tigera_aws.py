@@ -4,6 +4,7 @@ import argparse
 import ipaddress
 import json
 import os
+import sys
 import tempfile
 import time
 import yaml
@@ -201,6 +202,18 @@ def create_vpc():
 
 @def_command("cleanup")
 def cleanup():
+    sys.stdout.write(
+        "WARNING: This will clean up long-lived VPCs and, if executed, may require the creation of new VPCs and updates to the hard-coded VPC IDs in the calico and tigera-secure-ee job specs. Are you sure? (y/n): "
+    )
+    while True:
+        answer = input().lower()
+        if answer == "y":
+            break
+        elif answer == "n":
+            return
+        else:
+            sys.stdout.write("Please enter y or n (y/n): ")
+
     network_interfaces = ec2.describe_network_interfaces()["NetworkInterfaces"]
     for network_interface in network_interfaces:
         for tag in network_interface.get("TagSet", []):
