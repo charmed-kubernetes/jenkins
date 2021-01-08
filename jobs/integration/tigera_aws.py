@@ -8,12 +8,14 @@ import tempfile
 import time
 import yaml
 import boto3
-from subprocess import check_output, check_call, CalledProcessError
+from subprocess import check_output, CalledProcessError
 
 VPC_CIDR = "172.30.0.0/16"
 SUBNET_CIDRS = ["172.30.0.0/24", "172.30.1.0/24"]
 REGION = "us-east-2"
 AVAILABILITY_ZONE = "us-east-2a"
+OWNER = "k8sci"
+
 BIRD_CONFIG_BASE = """
 log syslog all;
 debug protocols all;
@@ -85,10 +87,9 @@ def sh(*args, **kwargs):
 
 
 def tag_resource(resource_id):
-    owner = os.environ.get("JOB_NAME", "test-calico")
     ec2.create_tags(
         Resources=[resource_id],
-        Tags=[{"Key": "created-by", "Value": owner}],
+        Tags=[{"Key": "owner", "Value": OWNER}]
     )
 
 
@@ -120,8 +121,8 @@ def get_instance_id(machine_id):
         return machine["instance-id"]
 
 
-@def_command("bootstrap")
-def bootstrap():
+@def_command("create-vpc")
+def create_vpc():
     # Create VPC
     vpc = ec2.create_vpc(
         CidrBlock=VPC_CIDR,
@@ -133,11 +134,6 @@ def bootstrap():
     for attempt in range(10):
         ipv6_cidr_block = vpc["Ipv6CidrBlockAssociationSet"][0]["Ipv6CidrBlock"]
         if ipv6_cidr_block:
-            # AWS gives us a larger CIDR block than we can use directly, so we have to chop it down
-            i = ipaddress.ip_interface(ipv6_cidr_block)
-            ipv6_cidr_block = str(
-                ipaddress.IPv6Network((i.ip, max(i.network.prefixlen, 64)))
-            )
             break
         else:
             time.sleep(5)
@@ -149,6 +145,14 @@ def bootstrap():
                 vpc["Ipv6CidrBlockAssociationSet"],
             )
         )
+
+    # AWS gives us a larger CIDR block than we can use directly, so we have to chop it down
+    # "A subnet's IPv6 CIDR block is a fixed prefix length of /64."
+    # https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html#vpc-sizing-ipv6
+    ipv6_network = ipaddress.IPv6Network(ipv6_cidr_block)
+    ipv6_subnets = ipv6_network.subnets(64 - ipv6_network.prefixlen)
+    ipv6_subnet_cidrs = [str(subnet) for subnet in ipv6_subnets]
+
     # Must be done in separate requests per doc
     ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={"Value": True})
     ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsSupport={"Value": True})
@@ -156,12 +160,13 @@ def bootstrap():
     # Create subnets
     num_subnets = os.environ.get("NUM_SUBNETS")
     num_subnets = int(num_subnets) if num_subnets else 1
-    subnet_cidrs = SUBNET_CIDRS[:num_subnets]
-    for subnet_cidr in subnet_cidrs:
+    for i in range(num_subnets):
+        subnet_cidr = SUBNET_CIDRS[i]
+        subnet_ipv6_cidr = ipv6_subnet_cidrs[i]
         subnet_id = ec2.create_subnet(
             VpcId=vpc_id,
             CidrBlock=subnet_cidr,
-            Ipv6CidrBlock=ipv6_cidr_block,
+            Ipv6CidrBlock=subnet_ipv6_cidr,
             AvailabilityZone=AVAILABILITY_ZONE,
         )["Subnet"]["SubnetId"]
         tag_resource(subnet_id)
@@ -188,40 +193,21 @@ def bootstrap():
             DestinationCidrBlock="0.0.0.0/0",
             GatewayId=gateway_id,
         )
+        ec2.create_route(
+            RouteTableId=route_table_id,
+            DestinationIpv6CidrBlock="::/0",
+            GatewayId=gateway_id,
+        )
 
-    # Juju bootstrap
-    controller_name = os.environ.get("JUJU_CONTROLLER", "aws-" + vpc_id)
-    _model_name = os.environ.get("JUJU_MODEL", "aws-" + vpc_id)
-    check_call(
-        [
-            "juju",
-            "bootstrap",
-            "aws/" + REGION,
-            controller_name,
-            "-d",
-            _model_name,
-            "--config",
-            "vpc-id=" + vpc_id,
-            "--to",
-            "subnet=" + subnet_cidrs[0],
-            "--model-default",
-            "test-mode=true",
-            "--model-default",
-            "resource-tags=owner=k8sci",
-            "--bootstrap-constraints",
-            "arch=amd64",
-        ]
-    )
-    check_call(["juju", "model-defaults", "vpc-id=" + vpc_id, "test-mode=true"])
+    log('Successfully created VPC ' + vpc_id)
 
 
 @def_command("cleanup")
 def cleanup():
-    owner = os.environ.get("JOB_NAME", "test-calico")
     network_interfaces = ec2.describe_network_interfaces()["NetworkInterfaces"]
     for network_interface in network_interfaces:
         for tag in network_interface.get("TagSet", []):
-            if tag["Key"] == "created-by" and tag["Value"] == owner:
+            if tag["Key"] == "owner" and tag["Value"] == OWNER:
                 network_interface_id = network_interface["NetworkInterfaceId"]
                 ec2.delete_network_interface(
                     NetworkInterfaceId=network_interface_id,
@@ -231,7 +217,7 @@ def cleanup():
     gateways = ec2.describe_internet_gateways()["InternetGateways"]
     for gateway in gateways:
         for tag in gateway.get("Tags", []):
-            if tag["Key"] == "created-by" and tag["Value"] == owner:
+            if tag["Key"] == "owner" and tag["Value"] == OWNER:
                 gateway_id = gateway["InternetGatewayId"]
                 for attachment in gateway["Attachments"]:
                     ec2.detach_internet_gateway(
@@ -246,7 +232,7 @@ def cleanup():
     subnets = ec2.describe_subnets()["Subnets"]
     for subnet in subnets:
         for tag in subnet.get("Tags", []):
-            if tag["Key"] == "created-by" and tag["Value"] == owner:
+            if tag["Key"] == "owner" and tag["Value"] == OWNER:
                 ec2.delete_subnet(
                     SubnetId=subnet["SubnetId"],
                 )
@@ -255,7 +241,7 @@ def cleanup():
     vpcs = ec2.describe_vpcs()["Vpcs"]
     for vpc in vpcs:
         for tag in vpc.get("Tags", []):
-            if tag["Key"] == "created-by" and tag["Value"] == owner:
+            if tag["Key"] == "owner" and tag["Value"] == OWNER:
                 ec2.delete_vpc(VpcId=vpc["VpcId"])
                 break
 

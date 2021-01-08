@@ -16,31 +16,21 @@ set -x
 ###############################################################################
 function juju::bootstrap
 {
-    python3 $WORKSPACE/jobs/integration/tigera_aws.py cleanup
-    python3 $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
-}
+    # VPC with a single subnet and IPv6, created with:
+    # NUM_SUBNETS=1 jobs/integration/tigera_aws.py create-vpc
+    vpc_id=vpc-031851c4ad28b316f
 
-function juju::deploy::overlay
-{
-    cat <<EOF > overlay.yaml
-series: $SERIES
-applications:
-  kubernetes-master:
-    options:
-      channel: $SNAP_VERSION
-      service-cidr: "10.152.183.0/24,fd00:c00b:2::/112"
-  kubernetes-worker:
-    options:
-      channel: $SNAP_VERSION
-  flannel:
-  tigera-secure-ee:
-    charm: cs:~containers/tigera-secure-ee
-relations:
-- [tigera-secure-ee:etcd, etcd:db]
-- [tigera-secure-ee:cni, kubernetes-master:cni]
-- [tigera-secure-ee:cni, kubernetes-worker:cni]
-- [tigera-secure-ee:kube-api-endpoint, kubernetes-master:kube-api-endpoint]
-EOF
+    juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
+      -d "$JUJU_MODEL" \
+      --bootstrap-series "$SERIES" \
+      --force \
+      --bootstrap-constraints arch="$ARCH" \
+      --model-default test-mode=true \
+      --model-default resource-tags=owner=k8sci \
+      --model-default image-stream=daily \
+      --model-default automatically-retry-hooks=false \
+      --model-default logging-config="<root>=DEBUG" \
+      --model-default vpc-id=$vpc_id
 }
 
 function juju::deploy
@@ -57,17 +47,12 @@ function juju::deploy
     python3 $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
 }
 
-function ci::cleanup::after
-{
-    python3 $WORKSPACE/jobs/integration/tigera_aws.py cleanup
-}
-
 ###############################################################################
 # ENV
 ###############################################################################
 SNAP_VERSION=${1:-1.19/edge}
 SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-tigera-secure-ee
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)
