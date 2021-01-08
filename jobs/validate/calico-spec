@@ -16,14 +16,26 @@ set -ex
 ###############################################################################
 function juju::bootstrap
 {
-    python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
-
-    export NUM_SUBNETS=2
+    # VPC with multiple subnets and IPv6, created with:
+    # NUM_SUBNETS=2 jobs/integration/tigera_aws.py create-vpc
+    vpc_id=vpc-0e296b9c1d803d8c9
     if [ "$ROUTING_MODE" = "bgp-simple" ]; then
-      export NUM_SUBNETS=1
+      # VPC with a single subnet and IPv6, created with:
+      # NUM_SUBNETS=1 jobs/integration/tigera_aws.py create-vpc
+      vpc_id=vpc-031851c4ad28b316f
     fi
 
-    python $WORKSPACE/jobs/integration/tigera_aws.py bootstrap
+    juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
+      -d "$JUJU_MODEL" \
+      --bootstrap-series "$SERIES" \
+      --force \
+      --bootstrap-constraints arch="$ARCH" \
+      --model-default test-mode=true \
+      --model-default resource-tags=owner=k8sci \
+      --model-default image-stream=daily \
+      --model-default automatically-retry-hooks=false \
+      --model-default logging-config="<root>=DEBUG" \
+      --model-default vpc-id=$vpc_id
 
     if [ "$ROUTING_MODE" = "bgp-router" ]; then
       echo "Deploying bgp router"
@@ -33,11 +45,26 @@ function juju::bootstrap
 
 function juju::deploy::overlay
 {
-    vxlan_mode=Never
     if [ "$ROUTING_MODE" = "vxlan" ]; then
+      # Calico does not support VXLAN + IPv6, so we need to skip the IPv6 CIDRs
+      cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  kubernetes-master:
+    options:
+      channel: $SNAP_VERSION
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+  calico:
+    options:
+      vxlan: Always
+      ignore-loose-rpf: true
+EOF
       vxlan_mode=Always
-    fi
-    cat <<EOF > overlay.yaml
+    else
+      # No VXLAN, so we'll test IPv6
+      cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
   kubernetes-master:
@@ -50,8 +77,9 @@ applications:
   calico:
     options:
       cidr: "192.168.0.0/16,fd00:c00b:1::/112"
-      vxlan: $vxlan_mode
+      ignore-loose-rpf: true
 EOF
+    fi
 }
 
 function juju::deploy
@@ -63,18 +91,12 @@ function juju::deploy
 
     if [[ "$ROUTING_MODE" = bgp* ]]; then
       python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
+      python $WORKSPACE/jobs/integration/tigera_aws.py assign-ipv6-addrs
     fi
-
-    python $WORKSPACE/jobs/integration/tigera_aws.py assign-ipv6-addrs
 
     if [ "$ROUTING_MODE" = "bgp-router" ]; then
       python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
     fi
-}
-
-function ci::cleanup::after
-{
-    python $WORKSPACE/jobs/integration/tigera_aws.py cleanup
 }
 
 ###############################################################################
