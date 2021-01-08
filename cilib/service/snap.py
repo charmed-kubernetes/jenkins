@@ -159,7 +159,7 @@ class SnapService(DebugMixin):
                 # usable by end users.
                 if (
                     _version == enums.K8S_NEXT_VERSION
-                    and not latest_branch_version.prerelease
+                    and not semver.VersionInfo.parse(latest_branch_version).prerelease
                 ):
                     self.log(
                         f"This version has a non prerelease {str(latest_branch_version)} in our next development build, skipping."
