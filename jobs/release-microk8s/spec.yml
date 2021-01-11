@@ -12,7 +12,6 @@ plan:
       - amd64/beta
       - amd64
     before-script:
-      - python3 jobs/infra/collect-debug.py set-key 'job_name_custom' "$JUJU_CONTROLLER"
       - |
         #!/bin/bash
         set -x
@@ -47,16 +46,12 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          python3 jobs/microk8s/release-to-beta.py
+          python jobs/microk8s/release-to-beta.py
 
     after-script:
       - |
         #!/bin/bash
         set -x
-        python3 jobs/infra/collect-debug.py push 'build_log' ogc.log
-        python3 jobs/infra/collect-debug.py push 'metadata' metadata.db
-        python3 jobs/infra/collect-debug.py push 'job_result' *job.json
-        python3 jobs/infra/collect-debug.py save-meta
         juju destroy-controller -y --destroy-all-models --destroy-storage $JUJU_CONTROLLER
   - <<: *BASE_JOB
     env:
@@ -91,7 +86,7 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          python3 jobs/microk8s/release-to-stable.py
+          python jobs/microk8s/release-to-stable.py
   - <<: *BASE_JOB
     env:
       - DRY_RUN=no
@@ -112,7 +107,7 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          python3 jobs/microk8s/release-to-stable.py
+          python jobs/microk8s/release-to-stable.py
   - <<: *BASE_JOB
     env:
       - DRY_RUN=no
@@ -134,7 +129,7 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          python3 jobs/microk8s/release-pre-releases.py
+          python jobs/microk8s/release-pre-releases.py
 
 meta:
   name: Release Microk8s to Beta, Stable
