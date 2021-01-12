@@ -528,7 +528,6 @@
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
