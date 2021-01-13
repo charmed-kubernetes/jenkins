@@ -27,7 +27,6 @@ from .utils import (
     disable_source_dest_check,
     find_entities,
     verify_deleted,
-    verify_completed,
     verify_ready,
     is_localhost,
     validate_storage_class,
