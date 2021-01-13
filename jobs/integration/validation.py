@@ -27,7 +27,6 @@ from .utils import (
     disable_source_dest_check,
     find_entities,
     verify_deleted,
-    verify_completed,
     verify_ready,
     is_localhost,
     validate_storage_class,
@@ -582,7 +581,8 @@ async def test_ipv6(model, tools):
         pytest.skip("kubernetes-master not configured for IPv6")
 
     master = master_app.units[0]
-    kubectl(
+    await kubectl(
+        model,
         "create -f - << EOF{}EOF".format(
             """
 apiVersion: apps/v1
@@ -613,7 +613,8 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  ipFamily: IPv6
+  ipFamilies:
+  - IPv6
   ports:
   - port: 80
     protocol: TCP
@@ -628,29 +629,34 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  ipFamily: IPv4
+  ipFamilies:
+  - IPv4
   ports:
   - port: 80
     protocol: TCP
   selector:
     run: nginxdualstack
 """
-        )
+        ),
     )
 
     # wait for completion
     await retry_async_with_timeout(
-        verify_completed,
+        verify_ready,
         (master, "svc", ["nginx4", "nginx6"]),
         timeout_msg="Timeout waiting for nginxdualstack services",
     )
     nginx4, nginx6 = await find_entities(master, "svc", ["nginx4", "nginx6"])
-    ipv4_port = nginx4["ports"][0]["nodePort"]
-    ipv6_port = nginx6["ports"][0]["nodePort"]
+    ipv4_port = nginx4["spec"]["ports"][0]["nodePort"]
+    ipv6_port = nginx6["spec"]["ports"][0]["nodePort"]
     urls = []
     for worker in model.applications["kubernetes-worker"].units:
+        for port in (ipv4_port, ipv6_port):
+            action = await worker.run("open-port {}".format(port))
+            assert action.status == "completed"
+            assert action.results["Code"] == "0"
         ipv4_addr = worker.public_address
-        ipv6_addr = get_ipv6_addr(worker)
+        ipv6_addr = await get_ipv6_addr(worker)
         assert ipv6_addr is not None, "Unable to find IPv6 address for {}".format(
             worker.name
         )
@@ -660,11 +666,18 @@ spec:
                 "http://[{}]:{}/".format(ipv6_addr, ipv6_port),
             ]
         )
-
     for url in urls:
-        output = await master.run("curl '{}'".format(url))
-        assert output.status == "completed" and output.results["Code"] == 0
-        assert "Kubernetes IPv6 nginx" in output.results["Stdout"]
+        # pods might not be up by this point, retry until it works
+        with timeout_for_current_task(60):
+            while True:
+                output = await master.run("curl '{}'".format(url))
+                if (
+                    output.status == "completed"
+                    and output.results["Code"] == "0"
+                    and "Kubernetes IPv6 nginx" in output.results["Stdout"]
+                ):
+                    break
+                await asyncio.sleep(1)
 
 
 @pytest.mark.asyncio
@@ -1003,11 +1016,15 @@ async def test_service_cidr_expansion(model):
     original_service_cidr = original_config["service-cidr"]["value"]
 
     # Expand the service CIDR by 1
-    new_service_cidr = ipaddress.ip_network(original_service_cidr).supernet()
-    ips = new_service_cidr.hosts()
+    new_service_networks = [
+        ipaddress.ip_network(cidr).supernet()
+        for cidr in original_service_cidr.split(",")
+    ]
+    new_service_cidr = ",".join(str(network) for network in new_service_networks)
+    ips = new_service_networks[0].hosts()
     new_service_ip_str = str(next(ips))
 
-    new_config = {"service-cidr": str(new_service_cidr)}
+    new_config = {"service-cidr": new_service_cidr}
     service_cluster_ip_range = "service-cluster-ip-range=" + str(new_service_cidr)
     await app.set_config(new_config)
     await wait_for_process(model, service_cluster_ip_range)

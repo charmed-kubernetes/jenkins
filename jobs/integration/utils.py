@@ -544,7 +544,7 @@ async def kubectl(model, cmd, check=True):
 async def get_ipv6_addr(unit):
     """Return the first globally scoped IPv6 address found on the given unit, or None."""
     output = await unit.run("ip -br a show scope global")
-    assert output.status == "completed" and output.results["Code"] == 0
+    assert output.status == "completed" and output.results["Code"] == "0"
     for intf in output.results["Stdout"].splitlines():
         if "UP" not in intf:
             continue
