@@ -27,12 +27,13 @@ Solutions QA a solid base to test from.
 
 #### Conflict resolution
 
-Once the subsequent steps have been performed, any remaining bugfixes and
-patches will need to be cherry-picked into their respective stable branches.
-**Only during the initial release process do we rebase development code on top
-of stable branches.**
+At the time of the feature freeze, the stable branches are git reset to match
+the master branches at that point, per the documentation below. During the
+feature freeze and Solutions QA period, fixes which need to be applied to
+address CI or QA failures, and only those specific fixes, are cherry-picked in
+to the stable branches.
 
-## Performing the release
+## Preparing the release
 
 ### Tag existing stable branches with the current stable bundle
 
@@ -112,6 +113,8 @@ any changes as a result of their testing.
 - Bugfixes
 - Enhancements
 - Known Limitations/Issues
+
+## Performing the release
 
 ### Promote charms and bundles from **beta** to **stable**
 
