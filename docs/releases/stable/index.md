@@ -16,6 +16,24 @@ Each step should contain the following:
 - Any additional notes/caveats
 - Example jenkins screenshots if necessary on the options that should be used.
 
+### Feature Freeze
+
+2 weeks prior to a stable release the team goes into a feature freeze. At this
+time only bugfixes and concentration on resolving any other outstanding issues
+will take place for the first week of this freeze.
+
+The remaining tasks will still be completed at the time of feature freeze giving
+Solutions QA a solid base to test from.
+
+#### Conflict resolution
+
+Once the subsequent steps have been performed, any remaining bugfixes and
+patches will need to be cherry-picked into their respective stable branches.
+**Only during the initial release process do we rebase development code on top
+of stable branches.**
+
+## Performing the release
+
 ### Tag existing stable branches with the current stable bundle
 
 For all charm repos that make up CK tag the existing stable branches with
@@ -43,7 +61,7 @@ on each of the relevant git stable branches
 ### Bump snap version to next minor release
 
 Once the rebase has occurred we need to bump the charms and bundle fragments
-to the next k8s minor version in the master git branches, ie 1.19/edge.
+to the next k8s minor version in the master git branches, ie 1.21/edge.
 
 ### Build new CK Charms from stable git branches
 
@@ -75,20 +93,19 @@ candidate channels of the snapstore.
 
 ![snap build options](build-snaps-options.png)
 
-### Validate Charmed Kubernetes
+### Notify Solutions QA
 
-With all bits in place, time to validate CK.
+At the end of the first week and assuming all major blockers are resolved, the
+release is passed over to Solutions QA (SolQA) for a final sign-off. SolQA will
+then have the remaining week to test and file bugs as they happened so
+engineering can work towards getting them resolved prior to going GA.
 
-**Job**: https://jenkins.canonical.com/k8s/job/validate-minor-release/
+Please note the [Conflict Resolution Section](#conflict-resolution) for making
+any changes as a result of their testing.
 
 ### CNCF Conformance
 
 **Job**: https://jenkins.canonical.com/k8s/job/conformance/
-
-### Notify Solutions QA
-
-Notify solutions-qa that CK is ready to be run through their tests. Once
-that is complete and relayed to us, we can start the release to stable.
 
 ### Document release notes
 
