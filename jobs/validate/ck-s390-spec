@@ -27,11 +27,9 @@ applications:
   kubernetes-master:
     options:
       channel: $SNAP_VERSION
-      proxy-extra-args: "proxy-mode=userspace"
   kubernetes-worker:
     options:
       channel: $SNAP_VERSION
-      proxy-extra-args: "proxy-mode=userspace"
 EOF
 
 
