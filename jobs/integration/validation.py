@@ -580,11 +580,14 @@ async def test_ipv6(model, tools):
     if all(ipaddress.ip_network(cidr).version != 6 for cidr in service_cidr.split(",")):
         pytest.skip("kubernetes-master not configured for IPv6")
 
+    k8s_version_str = master_app.data["workload-version"]
+    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
+
     master = master_app.units[0]
     await kubectl(
         model,
         "create -f - << EOF{}EOF".format(
-            """
+            f"""
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -613,8 +616,7 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  ipFamilies:
-  - IPv6
+  {"ipFamily: IPv6" if k8s_minor_version < (1, 20) else "ipFamilies: [IPv6]"}
   ports:
   - port: 80
     protocol: TCP
@@ -629,8 +631,7 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  ipFamilies:
-  - IPv4
+  {"ipFamily: IPv4" if k8s_minor_version < (1, 20) else "ipFamilies: [IPv4]"}
   ports:
   - port: 80
     protocol: TCP
