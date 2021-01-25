@@ -30,14 +30,12 @@ applications:
   kubernetes-master:
     options:
       channel: $SNAP_VERSION
-      proxy-extra-args: "proxy-mode=userspace"
       enable-metrics: false
       enable-dashboard-addons: false
   kubernetes-worker:
     options:
       ingress: false
       channel: $SNAP_VERSION
-      proxy-extra-args: "proxy-mode=userspace"
 EOF
 
 
