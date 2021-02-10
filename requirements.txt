@@ -4,163 +4,476 @@
 #
 #    pip-compile
 #
-aiocontextvars==0.2.2     # via -r requirements.in
-aioify==0.3.2             # via -r requirements.in
-ansible-base==2.10.2      # via ansible
-ansible==2.10.1           # via -r requirements.in
-appdirs==1.4.4            # via black, charmcraft
-async-generator==1.10     # via -r requirements.in, asyncio-extras
-asyncio-extras==1.3.2     # via -r requirements.in
-attrs==20.2.0             # via pytest
-autopep8==1.5.4           # via -r requirements.in
-awscli==1.18.169          # via -r requirements.in
-backcall==0.2.0           # via ipython
-backoff==1.10.0           # via -r requirements.in
-bcrypt==3.2.0             # via paramiko
-beautifulsoup4==4.9.3     # via bs4
-black==20.8b1             # via -r requirements.in
-boto3==1.16.9             # via -r requirements.in
-botocore==1.19.9          # via awscli, boto3, s3transfer
-bs4==0.0.1                # via -r requirements.in
-canonicalwebteam.snapstoreapi==0.4.4  # via -r requirements.in
-certifi==2020.6.20        # via requests
-cffi==1.14.3              # via bcrypt, cryptography, pynacl
-chardet==3.0.4            # via requests
-charmcraft==0.6.0         # via -r requirements.in
-click==7.1.2              # via black, mkdocs, nltk, ogc, ogc-plugins-juju, ogc-plugins-runner
-colorama==0.3.9           # via awscli, hunter, ogc
-configobj==5.0.6          # via -r requirements.in
-contextvars==2.4          # via -r requirements.in
-cryptography==3.2.1       # via ansible-base, paramiko, secretstorage
-decorator==4.4.2          # via ipython, retry
-defusedxml==0.6.0         # via python3-openid
-dict-deep==2.0.2          # via ogc
-dill==0.3.3               # via multiprocess, pathos
-distro==1.5.0             # via lazr.restfulclient
-docutils==0.15.2          # via awscli
-drypy==1.0.1              # via -r requirements.in
-fasteners==0.15           # via jenkins-job-builder
-flake8==3.8.4             # via -r requirements.in
-flaky==3.7.0              # via -r requirements.in
-future==0.18.2            # via lunr
-httplib2==0.18.1          # via launchpadlib, lazr.restfulclient
-hunter==3.3.1             # via -r requirements.in
-idna==2.10                # via requests
-immutables==0.14          # via contextvars
-importlib-metadata==2.0.0  # via -r requirements.in
-iniconfig==1.1.1          # via pytest
-invoke==1.4.1             # via -r requirements.in
-ipdb==0.13.4              # via -r requirements.in
-ipython-genutils==0.2.0   # via traitlets
-ipython==7.19.0           # via ipdb
-jedi==0.17.2              # via ipython
-jeepney==0.4.3            # via keyring, secretstorage
-jenkins-job-builder==3.6.0  # via -r requirements.in
-jinja2==2.11.2            # via -r requirements.in, ansible-base, charmcraft, jenkins-job-builder, mkdocs, ogc
-jmespath==0.10.0          # via boto3, botocore
-joblib==0.17.0            # via nltk
-juju==2.8.2               # via -r requirements.in
-jujubundlelib==0.5.6      # via -r requirements.in, theblues
-keyring==21.4.0           # via launchpadlib
-kv==0.3                   # via -r requirements.in, ogc
-launchpadlib==1.10.13     # via -r requirements.in
-lazr.restfulclient==0.14.3  # via -r requirements.in, launchpadlib
-lazr.uri==1.0.5           # via launchpadlib, wadllib
-livereload==2.6.3         # via mkdocs
-loguru==0.5.3             # via -r requirements.in, ogc
-lunr[languages]==0.5.8    # via mkdocs
-macaroonbakery==1.3.1     # via -r requirements.in, charmcraft, juju, theblues
-manhole==1.6.0            # via hunter
-markdown==3.3.3           # via mkdocs, mkdocs-material, pymdown-extensions
-markupsafe==1.1.1         # via jinja2
-mccabe==0.6.1             # via flake8
-melddict==1.0.1           # via ogc
-mkdocs-material-extensions==1.0.1  # via mkdocs-material
-mkdocs-material==6.1.2    # via -r requirements.in, mkdocs-material-extensions
-mkdocs==1.1.2             # via -r requirements.in, mkdocs-material
-module-wrapper==0.2.4     # via aioify
-monotonic==1.5            # via fasteners
-multi-key-dict==2.0.3     # via python-jenkins
-multiprocess==0.70.10     # via pathos
-mypy-extensions==0.4.3    # via black, typing-inspect
-nltk==3.5                 # via lunr
-oauthlib==3.1.0           # via lazr.restfulclient
-ogc-plugins-juju==1.0.39  # via -r requirements.in
-ogc-plugins-runner==1.0.24  # via -r requirements.in
-ogc==1.0.2                # via -r requirements.in, ogc-plugins-juju, ogc-plugins-runner
-packaging==20.4           # via ansible-base, pytest
-paramiko==2.7.2           # via juju
-parso==0.7.1              # via jedi
-pathos==0.2.6             # via -r requirements.in
-pathspec==0.8.0           # via black
-pbr==5.5.1                # via jenkins-job-builder, python-jenkins, stevedore, testresources
-pexpect==4.8.0            # via ipython
-pickleshare==0.7.5        # via ipython
-pluggy==0.13.1            # via pytest
-poetry-version==0.1.5     # via module-wrapper
-pox==0.2.9                # via pathos
-ppft==1.6.6.3             # via pathos
-prettytable==1.0.1        # via -r requirements.in
-prometheus-client==0.8.0  # via canonicalwebteam.snapstoreapi
-prompt-toolkit==3.0.8     # via ipython
-protobuf==3.13.0          # via macaroonbakery
-ptyprocess==0.6.0         # via pexpect
-py==1.9.0                 # via pytest, retry
-pyasn1==0.4.8             # via juju, rsa
-pycodestyle==2.6.0        # via autopep8, flake8
-pycountry==20.7.3         # via canonicalwebteam.snapstoreapi
-pycparser==2.20           # via cffi
-pyflakes==2.2.0           # via flake8
-pygments==2.7.2           # via ipython, mkdocs-material
-pymacaroons==0.13.0       # via -r requirements.in, canonicalwebteam.snapstoreapi, macaroonbakery
-pymdown-extensions==8.0.1  # via mkdocs-material
-pynacl==1.1.2             # via -r requirements.in, macaroonbakery, paramiko, pymacaroons
-pyparsing==2.4.7          # via packaging
-pyrfc3339==1.1            # via juju, macaroonbakery
-pytest-asyncio==0.14.0    # via -r requirements.in
-pytest-html==2.1.1        # via -r requirements.in
-pytest-metadata==1.10.0   # via pytest-html
-pytest-mock==3.3.1        # via -r requirements.in
-pytest==6.1.2             # via -r requirements.in, pytest-asyncio, pytest-html, pytest-metadata, pytest-mock
-python-dateutil==2.8.1    # via botocore, canonicalwebteam.snapstoreapi, charmcraft
-python-dotenv==0.10.3     # via -r requirements.in, ogc
-python-frontmatter==0.5.0  # via -r requirements.in
-python-jenkins==1.7.0     # via jenkins-job-builder
-python3-openid==3.2.0     # via canonicalwebteam.snapstoreapi
-pytz==2020.4              # via pyrfc3339
-pyyaml-include==1.2       # via ogc
-pyyaml==5.3.1             # via -r requirements.in, ansible-base, awscli, charmcraft, jenkins-job-builder, juju, jujubundlelib, mkdocs, ogc, ogc-plugins-juju, python-frontmatter, pyyaml-include
-regex==2020.10.28         # via black, nltk
-requests-toolbelt==0.9.1  # via charmcraft
-requests==2.24.0          # via -r requirements.in, canonicalwebteam.snapstoreapi, charmcraft, macaroonbakery, ogc, python-jenkins, requests-toolbelt, theblues
-retry==0.9.2              # via -r requirements.in
-rsa==4.5                  # via awscli
-s3transfer==0.3.3         # via awscli, boto3
-secretstorage==3.1.2      # via keyring
-semver==2.13.0            # via ogc
-sh==1.14.1                # via -r requirements.in, ogc, ogc-plugins-juju, ogc-plugins-runner
-six==1.15.0               # via bcrypt, configobj, cryptography, fasteners, jenkins-job-builder, launchpadlib, lazr.restfulclient, livereload, lunr, macaroonbakery, packaging, ppft, protobuf, pymacaroons, pynacl, python-dateutil, python-frontmatter, python-jenkins
-soupsieve==2.0.1          # via beautifulsoup4
-stevedore==3.2.2          # via jenkins-job-builder
-tabulate==0.8.7           # via charmcraft
-testresources==2.0.1      # via launchpadlib
-theblues==0.5.2           # via -r requirements.in, juju
-toml==0.10.2              # via autopep8, black, pytest
-tomlkit==0.5.11           # via poetry-version
-toposort==1.5             # via juju
-tornado==6.1              # via livereload, mkdocs
-tqdm==4.51.0              # via nltk
-traitlets==5.0.5          # via ipython
-typed-ast==1.4.1          # via black
-typing-extensions==3.7.4.3  # via black, typing-inspect
-typing-inspect==0.6.0     # via juju
-urllib3==1.25.11          # via botocore, requests
-wadllib==1.3.4            # via launchpadlib, lazr.restfulclient
-wcwidth==0.2.5            # via prettytable, prompt-toolkit
-websockets==7.0           # via juju
-wheel==0.35.1             # via -r requirements.in
-zipp==3.4.0               # via importlib-metadata
+aiocontextvars==0.2.2
+    # via -r requirements.in
+aioify==0.3.2
+    # via -r requirements.in
+ansible-base==2.10.2
+    # via ansible
+ansible==2.10.1
+    # via -r requirements.in
+appdirs==1.4.4
+    # via
+    #   black
+    #   charmcraft
+async-generator==1.10
+    # via
+    #   -r requirements.in
+    #   asyncio-extras
+asyncio-extras==1.3.2
+    # via -r requirements.in
+attrs==20.2.0
+    # via pytest
+autopep8==1.5.4
+    # via -r requirements.in
+awscli==1.18.169
+    # via -r requirements.in
+backcall==0.2.0
+    # via ipython
+backoff==1.10.0
+    # via -r requirements.in
+bcrypt==3.2.0
+    # via paramiko
+beautifulsoup4==4.9.3
+    # via bs4
+black==20.8b1
+    # via -r requirements.in
+boto3==1.16.9
+    # via -r requirements.in
+botocore==1.19.9
+    # via
+    #   awscli
+    #   boto3
+    #   s3transfer
+bs4==0.0.1
+    # via -r requirements.in
+canonicalwebteam.snapstoreapi==0.4.4
+    # via -r requirements.in
+certifi==2020.6.20
+    # via requests
+cffi==1.14.3
+    # via
+    #   bcrypt
+    #   cryptography
+    #   pynacl
+chardet==3.0.4
+    # via requests
+charmcraft==0.6.0
+    # via -r requirements.in
+click==7.1.2
+    # via
+    #   black
+    #   mkdocs
+    #   nltk
+    #   ogc
+    #   ogc-plugins-juju
+    #   ogc-plugins-runner
+colorama==0.3.9
+    # via
+    #   awscli
+    #   hunter
+    #   ogc
+configobj==5.0.6
+    # via -r requirements.in
+contextvars==2.4
+    # via -r requirements.in
+cryptography==3.3.2
+    # via
+    #   ansible-base
+    #   paramiko
+    #   secretstorage
+decorator==4.4.2
+    # via
+    #   ipython
+    #   retry
+defusedxml==0.6.0
+    # via python3-openid
+dict-deep==2.0.2
+    # via ogc
+dill==0.3.3
+    # via
+    #   multiprocess
+    #   pathos
+distro==1.5.0
+    # via lazr.restfulclient
+docutils==0.15.2
+    # via awscli
+drypy==1.0.1
+    # via -r requirements.in
+fasteners==0.15
+    # via jenkins-job-builder
+flake8==3.8.4
+    # via -r requirements.in
+flaky==3.7.0
+    # via -r requirements.in
+future==0.18.2
+    # via lunr
+httplib2==0.18.1
+    # via
+    #   launchpadlib
+    #   lazr.restfulclient
+hunter==3.3.1
+    # via -r requirements.in
+idna==2.10
+    # via requests
+immutables==0.14
+    # via contextvars
+importlib-metadata==2.0.0
+    # via -r requirements.in
+iniconfig==1.1.1
+    # via pytest
+invoke==1.4.1
+    # via -r requirements.in
+ipdb==0.13.4
+    # via -r requirements.in
+ipython-genutils==0.2.0
+    # via traitlets
+ipython==7.19.0
+    # via ipdb
+jedi==0.17.2
+    # via ipython
+jeepney==0.4.3
+    # via
+    #   keyring
+    #   secretstorage
+jenkins-job-builder==3.6.0
+    # via -r requirements.in
+jinja2==2.11.2
+    # via
+    #   -r requirements.in
+    #   ansible-base
+    #   charmcraft
+    #   jenkins-job-builder
+    #   mkdocs
+    #   ogc
+jmespath==0.10.0
+    # via
+    #   boto3
+    #   botocore
+joblib==0.17.0
+    # via nltk
+juju==2.8.2
+    # via -r requirements.in
+jujubundlelib==0.5.6
+    # via
+    #   -r requirements.in
+    #   theblues
+keyring==21.4.0
+    # via launchpadlib
+kv==0.3
+    # via
+    #   -r requirements.in
+    #   ogc
+launchpadlib==1.10.13
+    # via -r requirements.in
+lazr.restfulclient==0.14.3
+    # via
+    #   -r requirements.in
+    #   launchpadlib
+lazr.uri==1.0.5
+    # via
+    #   launchpadlib
+    #   wadllib
+livereload==2.6.3
+    # via mkdocs
+loguru==0.5.3
+    # via
+    #   -r requirements.in
+    #   ogc
+lunr[languages]==0.5.8
+    # via mkdocs
+macaroonbakery==1.3.1
+    # via
+    #   -r requirements.in
+    #   charmcraft
+    #   juju
+    #   theblues
+manhole==1.6.0
+    # via hunter
+markdown==3.3.3
+    # via
+    #   mkdocs
+    #   mkdocs-material
+    #   pymdown-extensions
+markupsafe==1.1.1
+    # via jinja2
+mccabe==0.6.1
+    # via flake8
+melddict==1.0.1
+    # via ogc
+mkdocs-material-extensions==1.0.1
+    # via mkdocs-material
+mkdocs-material==6.1.2
+    # via
+    #   -r requirements.in
+    #   mkdocs-material-extensions
+mkdocs==1.1.2
+    # via
+    #   -r requirements.in
+    #   mkdocs-material
+module-wrapper==0.2.4
+    # via aioify
+monotonic==1.5
+    # via fasteners
+multi-key-dict==2.0.3
+    # via python-jenkins
+multiprocess==0.70.10
+    # via pathos
+mypy-extensions==0.4.3
+    # via
+    #   black
+    #   typing-inspect
+nltk==3.5
+    # via lunr
+oauthlib==3.1.0
+    # via lazr.restfulclient
+ogc-plugins-juju==1.0.39
+    # via -r requirements.in
+ogc-plugins-runner==1.0.24
+    # via -r requirements.in
+ogc==1.0.2
+    # via
+    #   -r requirements.in
+    #   ogc-plugins-juju
+    #   ogc-plugins-runner
+packaging==20.4
+    # via
+    #   ansible-base
+    #   pytest
+paramiko==2.7.2
+    # via juju
+parso==0.7.1
+    # via jedi
+pathos==0.2.6
+    # via -r requirements.in
+pathspec==0.8.0
+    # via black
+pbr==5.5.1
+    # via
+    #   jenkins-job-builder
+    #   python-jenkins
+    #   stevedore
+    #   testresources
+pexpect==4.8.0
+    # via ipython
+pickleshare==0.7.5
+    # via ipython
+pluggy==0.13.1
+    # via pytest
+poetry-version==0.1.5
+    # via module-wrapper
+pox==0.2.9
+    # via pathos
+ppft==1.6.6.3
+    # via pathos
+prettytable==1.0.1
+    # via -r requirements.in
+prometheus-client==0.8.0
+    # via canonicalwebteam.snapstoreapi
+prompt-toolkit==3.0.8
+    # via ipython
+protobuf==3.13.0
+    # via macaroonbakery
+ptyprocess==0.6.0
+    # via pexpect
+py==1.9.0
+    # via
+    #   pytest
+    #   retry
+pyasn1==0.4.8
+    # via
+    #   juju
+    #   rsa
+pycodestyle==2.6.0
+    # via
+    #   autopep8
+    #   flake8
+pycountry==20.7.3
+    # via canonicalwebteam.snapstoreapi
+pycparser==2.20
+    # via cffi
+pyflakes==2.2.0
+    # via flake8
+pygments==2.7.2
+    # via
+    #   ipython
+    #   mkdocs-material
+pymacaroons==0.13.0
+    # via
+    #   -r requirements.in
+    #   canonicalwebteam.snapstoreapi
+    #   macaroonbakery
+pymdown-extensions==8.0.1
+    # via mkdocs-material
+pynacl==1.1.2
+    # via
+    #   -r requirements.in
+    #   macaroonbakery
+    #   paramiko
+    #   pymacaroons
+pyparsing==2.4.7
+    # via packaging
+pyrfc3339==1.1
+    # via
+    #   juju
+    #   macaroonbakery
+pytest-asyncio==0.14.0
+    # via -r requirements.in
+pytest-html==2.1.1
+    # via -r requirements.in
+pytest-metadata==1.10.0
+    # via pytest-html
+pytest-mock==3.3.1
+    # via -r requirements.in
+pytest==6.1.2
+    # via
+    #   -r requirements.in
+    #   pytest-asyncio
+    #   pytest-html
+    #   pytest-metadata
+    #   pytest-mock
+python-dateutil==2.8.1
+    # via
+    #   botocore
+    #   canonicalwebteam.snapstoreapi
+    #   charmcraft
+python-dotenv==0.10.3
+    # via
+    #   -r requirements.in
+    #   ogc
+python-frontmatter==0.5.0
+    # via -r requirements.in
+python-jenkins==1.7.0
+    # via jenkins-job-builder
+python3-openid==3.2.0
+    # via canonicalwebteam.snapstoreapi
+pytz==2020.4
+    # via pyrfc3339
+pyyaml-include==1.2
+    # via ogc
+pyyaml==5.3.1
+    # via
+    #   -r requirements.in
+    #   ansible-base
+    #   awscli
+    #   charmcraft
+    #   jenkins-job-builder
+    #   juju
+    #   jujubundlelib
+    #   mkdocs
+    #   ogc
+    #   ogc-plugins-juju
+    #   python-frontmatter
+    #   pyyaml-include
+regex==2020.10.28
+    # via
+    #   black
+    #   nltk
+requests-toolbelt==0.9.1
+    # via charmcraft
+requests==2.24.0
+    # via
+    #   -r requirements.in
+    #   canonicalwebteam.snapstoreapi
+    #   charmcraft
+    #   macaroonbakery
+    #   ogc
+    #   python-jenkins
+    #   requests-toolbelt
+    #   theblues
+retry==0.9.2
+    # via -r requirements.in
+rsa==4.5
+    # via awscli
+s3transfer==0.3.3
+    # via
+    #   awscli
+    #   boto3
+secretstorage==3.1.2
+    # via keyring
+semver==2.13.0
+    # via ogc
+sh==1.14.1
+    # via
+    #   -r requirements.in
+    #   ogc
+    #   ogc-plugins-juju
+    #   ogc-plugins-runner
+six==1.15.0
+    # via
+    #   bcrypt
+    #   configobj
+    #   cryptography
+    #   fasteners
+    #   jenkins-job-builder
+    #   launchpadlib
+    #   lazr.restfulclient
+    #   livereload
+    #   lunr
+    #   macaroonbakery
+    #   packaging
+    #   ppft
+    #   protobuf
+    #   pymacaroons
+    #   pynacl
+    #   python-dateutil
+    #   python-frontmatter
+    #   python-jenkins
+soupsieve==2.0.1
+    # via beautifulsoup4
+stevedore==3.2.2
+    # via jenkins-job-builder
+tabulate==0.8.7
+    # via charmcraft
+testresources==2.0.1
+    # via launchpadlib
+theblues==0.5.2
+    # via
+    #   -r requirements.in
+    #   juju
+toml==0.10.2
+    # via
+    #   autopep8
+    #   black
+    #   pytest
+tomlkit==0.5.11
+    # via poetry-version
+toposort==1.5
+    # via juju
+tornado==6.1
+    # via
+    #   livereload
+    #   mkdocs
+tqdm==4.51.0
+    # via nltk
+traitlets==5.0.5
+    # via ipython
+typed-ast==1.4.1
+    # via black
+typing-extensions==3.7.4.3
+    # via
+    #   black
+    #   typing-inspect
+typing-inspect==0.6.0
+    # via juju
+urllib3==1.25.11
+    # via
+    #   botocore
+    #   requests
+wadllib==1.3.4
+    # via
+    #   launchpadlib
+    #   lazr.restfulclient
+wcwidth==0.2.5
+    # via
+    #   prettytable
+    #   prompt-toolkit
+websockets==7.0
+    # via juju
+wheel==0.35.1
+    # via -r requirements.in
+zipp==3.4.0
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
-https://github.com/Roadmaster/surl/archive/master.zip
