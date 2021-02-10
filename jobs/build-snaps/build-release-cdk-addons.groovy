@@ -94,7 +94,7 @@ pipeline {
 
                     cd cdk-addons
                     make KUBE_VERSION=${kube_version} prep
-                    ARCHES="amd64 arm64 ppc64le s390x"
+                    ARCHES="amd64"
                     for arch in \${ARCHES}
                     do
                         echo "Building cdk-addons snap for arch \${arch}."
@@ -177,7 +177,7 @@ pipeline {
                     ALL_IMAGES=\$(echo "\${ALL_IMAGES}" | xargs -n1 | sort -u | xargs)
 
                     # All CK images are stored under ./cdk in our registry
-                    TAG_PREFIX=${env.REGISTRY_URL}/cdk
+                    TAG_PREFIX=${env.REGISTRY_URL}/staging/cdk
 
                     # Login to increase rate limit for dockerhub
                     which docker && docker login -u ${env.DOCKERHUB_CREDS_USR} -p ${env.DOCKERHUB_CREDS_PSW}
