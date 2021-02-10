@@ -155,7 +155,7 @@ pipeline {
                 sh "sudo lxc launch ubuntu:20.04 image-processor"
                 lxd_exec("image-processor", "sleep 10")
                 lxd_exec("image-processor", "apt update")
-                lxd_exec("image-processor", "apt install containerd -y")
+                lxd_exec("image-processor", "apt install containerd motd-news-config -y")
             }
         }
         stage('Process Images'){
