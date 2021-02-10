@@ -91,6 +91,8 @@ pipeline {
             steps {
                 echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
+                    # workaround issue where motd-news-config is needed for arm64 snap env
+                    apt install motd-news-config -y
 
                     cd cdk-addons
                     make KUBE_VERSION=${kube_version} prep
@@ -155,7 +157,7 @@ pipeline {
                 sh "sudo lxc launch ubuntu:20.04 image-processor"
                 lxd_exec("image-processor", "sleep 10")
                 lxd_exec("image-processor", "apt update")
-                lxd_exec("image-processor", "apt install containerd motd-news-config -y")
+                lxd_exec("image-processor", "apt install containerd -y")
             }
         }
         stage('Process Images'){
