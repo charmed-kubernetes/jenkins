@@ -91,7 +91,8 @@ pipeline {
             steps {
                 echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
-                    # workaround issue where motd-news-config is needed for arm64 snap env
+                    # motd-news-config is broken on some workers, but it is needed by ubuntu-server
+                    # for non-intel snap builds. force install it with default config.
                     sudo apt-get -o DPkg::Options::=--force-confdef -y install motd-news-config
 
                     cd cdk-addons
