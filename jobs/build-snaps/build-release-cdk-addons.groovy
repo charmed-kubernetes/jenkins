@@ -92,7 +92,7 @@ pipeline {
                 echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
                     # workaround issue where motd-news-config is needed for arm64 snap env
-                    sudo apt install motd-news-config -y
+                    sudo apt-get -o DPkg::Options::=--force-confdef -y install motd-news-config
 
                     cd cdk-addons
                     make KUBE_VERSION=${kube_version} prep
