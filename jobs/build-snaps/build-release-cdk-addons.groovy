@@ -94,7 +94,7 @@ pipeline {
 
                     cd cdk-addons
                     make KUBE_VERSION=${kube_version} prep
-                    ARCHES="amd64"
+                    ARCHES="amd64 arm64 ppc64le s390x"
                     for arch in \${ARCHES}
                     do
                         echo "Building cdk-addons snap for arch \${arch}."
@@ -182,6 +182,7 @@ pipeline {
                     # Login to increase rate limit for dockerhub
                     which docker && docker login -u ${env.DOCKERHUB_CREDS_USR} -p ${env.DOCKERHUB_CREDS_PSW}
 
+                    ALL_IMAGES=""
                     for i in \${ALL_IMAGES}
                     do
                         # Skip images that we already host
@@ -236,12 +237,12 @@ pipeline {
             steps {
                 script {
                     if(params.dry_run) {
-                        echo "Dry run; would have pushed cdk-addons/*.snap to ${params.channels}"
+                        echo "Dry run; would have uploaded cdk-addons/*.snap to ${params.channels}"
                     } else {
-                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_amd64.snap --release ${params.channels}"
-                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_arm64.snap --release ${params.channels}"
-                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_ppc64el.snap --release ${params.channels}"
-                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_s390x.snap --release ${params.channels}"
+                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_amd64.snap --release ${params.channels}"
+                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_arm64.snap --release ${params.channels}"
+                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_ppc64el.snap --release ${params.channels}"
+                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_s390x.snap --release ${params.channels}"
                     }
                 }
             }
