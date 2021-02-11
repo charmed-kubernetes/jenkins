@@ -185,7 +185,6 @@ pipeline {
                     # Login to increase rate limit for dockerhub
                     which docker && docker login -u ${env.DOCKERHUB_CREDS_USR} -p ${env.DOCKERHUB_CREDS_PSW}
 
-                    ALL_IMAGES=""
                     for i in \${ALL_IMAGES}
                     do
                         # Skip images that we already host
