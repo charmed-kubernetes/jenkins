@@ -20,11 +20,9 @@ pipeline {
      */
     environment {
         PATH = "${utils.cipaths}"
-        DOCKERHUB_CREDS = credentials('cdkbot_dockerhub')
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
-        REGISTRY_PULL_URL = 'rocks.canonical.com'
-        REGISTRY_PUSH_URL = 'upload.rocks.canonical.com:5000'
+        REGISTRY_URL = 'upload.rocks.canonical.com:443'
         REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/library/ docker.io/ gcr.io/ quay.io/'
     }
     options {
@@ -177,8 +175,8 @@ pipeline {
                     ALL_IMAGES=\$(echo "\${ALL_IMAGES}" | xargs -n1 | sort -u | xargs)
 
                     # We pull images from staging and push to our production location
-                    PROD_PREFIX=${env.REGISTRY_PUSH_URL}/cdk
-                    STAGING_PREFIX=${env.REGISTRY_PULL_URL}/staging/cdk
+                    PROD_PREFIX=${env.REGISTRY_URL}/cdk
+                    STAGING_PREFIX=${env.REGISTRY_URL}/staging/cdk
 
                     for i in \${ALL_IMAGES}
                     do
@@ -205,7 +203,7 @@ pipeline {
                         then
                             echo "Dry run; would have pulled: \${STAGING_IMAGE}"
                         else
-                            sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms
+                            sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                         fi
 
                         # Tag and push
