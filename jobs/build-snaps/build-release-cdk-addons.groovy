@@ -93,7 +93,7 @@ pipeline {
                 sh """
                     # motd-news-config is broken on some workers, but it is needed by ubuntu-server
                     # for non-intel snap builds. force install it with default config.
-                    sudo apt-get -o DPkg::Options::=--force-confdef -y install motd-news-config
+                    sudo apt-get -o DPkg::Options::=--force-confdef -y install motd-news-config || true
 
                     cd cdk-addons
                     make KUBE_VERSION=${kube_version} prep
