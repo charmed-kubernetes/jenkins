@@ -172,14 +172,12 @@ pipeline {
                         ALL_IMAGES="\${ALL_IMAGES} \${ARCH_IMAGES}"
                     done
 
-                    # clean up dupes by making a sortable list, uniq it, and turn it back to a string
+                    # Clean up dupes by making a sortable list, uniq it, and turn it back to a string
                     ALL_IMAGES=\$(echo "\${ALL_IMAGES}" | xargs -n1 | sort -u | xargs)
 
-                    # All CK images are stored under ./cdk in our registry
-                    TAG_PREFIX=${env.REGISTRY_URL}/staging/cdk
-
-                    # Login to increase rate limit for dockerhub
-                    which docker && docker login -u ${env.DOCKERHUB_CREDS_USR} -p ${env.DOCKERHUB_CREDS_PSW}
+                    # We pull images from staging and push to our production location
+                    PROD_PREFIX=${env.REGISTRY_URL}/cdk
+                    STAGING_PREFIX=${env.REGISTRY_URL}/staging/cdk
 
                     for i in \${ALL_IMAGES}
                     do
@@ -189,19 +187,7 @@ pipeline {
                             continue
                         fi
 
-                        if ${params.dry_run}
-                        then
-                            echo "Dry run; would have pulled: \${i}"
-                        else
-                            # Skip images that dont exist (usually due to non-existing arch). Other
-                            # pull failures will manifest themselves when we attempt to tag.
-                            if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms 2>&1 | grep -qi 'not found'
-                            then
-                                continue
-                            fi
-                        fi
-
-                        # Massage image names
+                        # Set appropriate production/staging image name
                         RAW_IMAGE=\${i}
                         for repl in ${env.REGISTRY_REPLACE}
                         do
@@ -211,20 +197,26 @@ pipeline {
                                 break
                             fi
                         done
+                        PROD_IMAGE=\${PROD_PREFIX}/\${RAW_IMAGE}
+                        STAGING_IMAGE=\${STAGING_PREFIX}/\${RAW_IMAGE}
+
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have pulled: \${STAGING_IMAGE}"
+                        else
+                            sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms
+                        fi
 
                         # Tag and push
                         if ${params.dry_run}
                         then
-                            echo "Dry run; would have tagged: \${i}"
-                            echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
+                            echo "Dry run; would have tagged: \${STAGING_IMAGE}"
+                            echo "Dry run; would have pushed: \${PROD_IMAGE}"
                         else
-                            until sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}; do sleep 1; done
-                            sudo lxc exec image-processor -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            sudo lxc exec image-processor -- ctr image tag \${STAGING_IMAGE} \${PROD_IMAGE}
+                            sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                         fi
                     done
-
-                    # Make sure this worker doesn't stay logged in to dockerhub
-                    which docker && docker logout
 
                     echo "All images known to this builder:"
                     sudo lxc exec image-processor -- ctr image ls
