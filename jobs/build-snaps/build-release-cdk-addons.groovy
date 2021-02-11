@@ -23,7 +23,8 @@ pipeline {
         DOCKERHUB_CREDS = credentials('cdkbot_dockerhub')
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
-        REGISTRY_URL = 'upload.rocks.canonical.com:5000'
+        REGISTRY_PULL_URL = 'rocks.canonical.com'
+        REGISTRY_PUSH_URL = 'upload.rocks.canonical.com:5000'
         REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/library/ docker.io/ gcr.io/ quay.io/'
     }
     options {
@@ -97,9 +98,9 @@ pipeline {
                     for arch in \${ARCHES}
                     do
                         echo "Building cdk-addons snap for arch \${arch}."
-                	wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
-                	chmod +x build/kubectl
-                	sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
+                        wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
+                        chmod +x build/kubectl
+                        sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
                         if [ "\${arch}" = "ppc64le" ]
                         then
                           sed -i "s/KUBE_ARCH/ppc64el/g" build/snapcraft.yaml
@@ -176,8 +177,8 @@ pipeline {
                     ALL_IMAGES=\$(echo "\${ALL_IMAGES}" | xargs -n1 | sort -u | xargs)
 
                     # We pull images from staging and push to our production location
-                    PROD_PREFIX=${env.REGISTRY_URL}/cdk
-                    STAGING_PREFIX=${env.REGISTRY_URL}/staging/cdk
+                    PROD_PREFIX=${env.REGISTRY_PUSH_URL}/cdk
+                    STAGING_PREFIX=${env.REGISTRY_PULL_URL}/staging/cdk
 
                     for i in \${ALL_IMAGES}
                     do
