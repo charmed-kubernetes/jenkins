@@ -54,7 +54,9 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.20/stable
+            - 1.20/edge
+            - 1.19/edge
+            - 1.18/edge
       - axis:
           type: user-defined
           name: series
