@@ -7,6 +7,7 @@ def kube_ersion = null
 if (kube_version != "") {
     kube_ersion = kube_version.substring(1)
 }
+def lxc_name = 'sync-image-processor'
 def lxd_exec(String container, String cmd) {
     sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
 }
@@ -107,10 +108,10 @@ pipeline {
         }
         stage('Setup LXD container for ctr'){
             steps {
-                sh "sudo lxc launch ubuntu:20.04 image-processor"
-                lxd_exec("image-processor", "sleep 10")
-                lxd_exec("image-processor", "apt update")
-                lxd_exec("image-processor", "apt install containerd -y")
+                sh "sudo lxc launch ubuntu:20.04 ${lxc_name}"
+                lxd_exec("${lxc_name}", "sleep 10")
+                lxd_exec("${lxc_name}", "apt update")
+                lxd_exec("${lxc_name}", "apt install containerd -y")
             }
         }
         stage('Process Images'){
@@ -149,7 +150,7 @@ pipeline {
                         then
                             echo "Dry run; would have pulled: \${i}"
                         else
-                            sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms
+                            sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
                         fi
 
                         # Massage image names
@@ -169,8 +170,8 @@ pipeline {
                             echo "Dry run; would have tagged: \${i}"
                             echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
                         else
-                            sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
-                            sudo lxc exec image-processor -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            sudo lxc exec ${lxc_name} -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
+                            sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                         fi
                     done
 
@@ -178,14 +179,14 @@ pipeline {
                     which docker && docker logout
 
                     echo "All images known to this builder:"
-                    sudo lxc exec image-processor -- ctr image ls
+                    sudo lxc exec ${lxc_name} -- ctr image ls
                 """
             }
         }
     }
     post {
         always {
-            sh "sudo lxc delete -f image-processor"
+            sh "sudo lxc delete -f ${lxc_name}"
             sh "sudo rm -rf cdk-addons/build"
             sh "docker image prune -a --filter \"until=24h\" --force"
             sh "docker container prune --filter \"until=24h\" --force"
