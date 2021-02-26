@@ -1,0 +1,41 @@
+# Tags and pushes upstream oci images to rocks staging area.
+
+- job:
+    name: 'sync-oci-images'
+    node: runner-amd64
+    description: |
+      Builds, releases and promotes cdk-addons for supported k8s versions on {arch} to the snapstore.
+      Container images required by CDK are known during the build, so this job also tags and pushes
+      those to the Canonical image registry.
+
+      The full version of the cdk-addons snap is tied to the upstream k8s tag used during the build.
+      Explicitly set this with the `k8s_tag` parameter, or this job will determine it using the
+      `version` parameter and the contents of https://dl.k8s.io/release/[stable|latest]-`version`.txt.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-snaps/build-release-cdk-addons.groovy
+    parameters:
+      - string:
+          name: version
+          default: '{version}'
+          description: |
+            Version to build and release. This job will clone the master or
+            cdk-addons release-`version` branch, then process the image list for the
+            specified `version`.
+      - string:
+          name: k8s_tag
+          default: ''
+          description: |
+            Source tag from https://github.com/kubernetes/kubernetes. If not specified,
+            the tag will be set to https://dl.k8s.io/release/[stable|latest]-`version`.txt.
+      - bool:
+          name: dry_run
+          default: false
+          description: only report what would be pushed to github / rocks.
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    triggers:
+        - timed: "@daily"
