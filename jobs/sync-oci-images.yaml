@@ -9,7 +9,7 @@
     pipeline-scm:
       scm:
         - k8s-jenkins-jenkaas
-      script-path: jobs/build-snaps/build-release-cdk-addons.groovy
+      script-path: jobs/sync-oci-images/sync-oci-images.groovy
     parameters:
       - string:
           name: build_node
