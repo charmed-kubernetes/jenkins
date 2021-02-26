@@ -19,9 +19,9 @@
     parameters:
       - string:
           name: version
-          default: '{version}'
+          default: '1.20'
           description: |
-            Version to build and release. This job will clone the master or
+            CK version to process. This job will clone the master or
             cdk-addons release-`version` branch, then process the image list for the
             specified `version`.
       - string:
