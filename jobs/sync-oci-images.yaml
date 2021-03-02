@@ -4,7 +4,7 @@
     name: 'sync-oci-images'
     node: runner-amd64
     description: |
-      Tags and pushes container images needed by Charmed Kubernetes to the rocks registry.
+      Tags and pushes container images needed by Charmed Kubernetes to the rocks staging area.
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -18,9 +18,8 @@
           name: version
           default: '1.20'
           description: |
-            CK version to process. This job will clone the master or
-            cdk-addons release-`version` branch, then process the image list for the
-            specified `version`.
+            CK version. This job will clone the cdk-addons release-`version` branch if one
+            exists (otherwise 'master'), then process the image list for this `version`.
       - string:
           name: k8s_tag
           default: ''
