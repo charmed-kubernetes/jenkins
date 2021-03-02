@@ -108,7 +108,7 @@ flaky==3.7.0
     # via -r requirements.in
 future==0.18.2
     # via lunr
-httplib2==0.18.1
+httplib2==0.19.0
     # via
     #   launchpadlib
     #   lazr.restfulclient
@@ -315,7 +315,9 @@ pynacl==1.1.2
     #   paramiko
     #   pymacaroons
 pyparsing==2.4.7
-    # via packaging
+    # via
+    #   httplib2
+    #   packaging
 pyrfc3339==1.1
     # via
     #   juju
