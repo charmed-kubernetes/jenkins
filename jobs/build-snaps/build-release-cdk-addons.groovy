@@ -20,11 +20,10 @@ pipeline {
      */
     environment {
         PATH = "${utils.cipaths}"
-        DOCKERHUB_CREDS = credentials('cdkbot_dockerhub')
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.rocks.canonical.com:5000'
-        REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/library/ docker.io/ gcr.io/ quay.io/'
+        REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/library/ docker.io/ gcr.io/ nvcr.io/ quay.io/'
     }
     options {
         ansiColor('xterm')
@@ -91,16 +90,15 @@ pipeline {
             steps {
                 echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
-
                     cd cdk-addons
                     make KUBE_VERSION=${kube_version} prep
                     ARCHES="amd64 arm64 ppc64le s390x"
                     for arch in \${ARCHES}
                     do
                         echo "Building cdk-addons snap for arch \${arch}."
-                	wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
-                	chmod +x build/kubectl
-                	sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
+                        wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
+                        chmod +x build/kubectl
+                        sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
                         if [ "\${arch}" = "ppc64le" ]
                         then
                           sed -i "s/KUBE_ARCH/ppc64el/g" build/snapcraft.yaml
@@ -152,7 +150,7 @@ pipeline {
         }
         stage('Setup LXD container for ctr'){
             steps {
-                sh "sudo lxc launch ubuntu:18.04 image-processor"
+                sh "sudo lxc launch ubuntu:20.04 image-processor"
                 lxd_exec("image-processor", "sleep 10")
                 lxd_exec("image-processor", "apt update")
                 lxd_exec("image-processor", "apt install containerd -y")
@@ -173,14 +171,12 @@ pipeline {
                         ALL_IMAGES="\${ALL_IMAGES} \${ARCH_IMAGES}"
                     done
 
-                    # clean up dupes by making a sortable list, uniq it, and turn it back to a string
+                    # Clean up dupes by making a sortable list, uniq it, and turn it back to a string
                     ALL_IMAGES=\$(echo "\${ALL_IMAGES}" | xargs -n1 | sort -u | xargs)
 
-                    # All CK images are stored under ./cdk in our registry
-                    TAG_PREFIX=${env.REGISTRY_URL}/cdk
-
-                    # Login to increase rate limit for dockerhub
-                    which docker && docker login -u ${env.DOCKERHUB_CREDS_USR} -p ${env.DOCKERHUB_CREDS_PSW}
+                    # We pull images from staging and push to our production location
+                    PROD_PREFIX=${env.REGISTRY_URL}/cdk
+                    STAGING_PREFIX=${env.REGISTRY_URL}/staging/cdk
 
                     for i in \${ALL_IMAGES}
                     do
@@ -190,19 +186,7 @@ pipeline {
                             continue
                         fi
 
-                        if ${params.dry_run}
-                        then
-                            echo "Dry run; would have pulled: \${i}"
-                        else
-                            # Skip images that dont exist (usually due to non-existing arch). Other
-                            # pull failures will manifest themselves when we attempt to tag.
-                            if sudo lxc exec image-processor -- ctr image pull \${i} --all-platforms 2>&1 | grep -qi 'not found'
-                            then
-                                continue
-                            fi
-                        fi
-
-                        # Massage image names
+                        # Set appropriate production/staging image name
                         RAW_IMAGE=\${i}
                         for repl in ${env.REGISTRY_REPLACE}
                         do
@@ -212,20 +196,26 @@ pipeline {
                                 break
                             fi
                         done
+                        PROD_IMAGE=\${PROD_PREFIX}/\${RAW_IMAGE}
+                        STAGING_IMAGE=\${STAGING_PREFIX}/\${RAW_IMAGE}
+
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have pulled: \${STAGING_IMAGE}"
+                        else
+                            sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                        fi
 
                         # Tag and push
                         if ${params.dry_run}
                         then
-                            echo "Dry run; would have tagged: \${i}"
-                            echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
+                            echo "Dry run; would have tagged: \${STAGING_IMAGE}"
+                            echo "Dry run; would have pushed: \${PROD_IMAGE}"
                         else
-                            until sudo lxc exec image-processor -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}; do sleep 1; done
-                            sudo lxc exec image-processor -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            sudo lxc exec image-processor -- ctr image tag \${STAGING_IMAGE} \${PROD_IMAGE}
+                            sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                         fi
                     done
-
-                    # Make sure this worker doesn't stay logged in to dockerhub
-                    which docker && docker logout
 
                     echo "All images known to this builder:"
                     sudo lxc exec image-processor -- ctr image ls
@@ -236,12 +226,12 @@ pipeline {
             steps {
                 script {
                     if(params.dry_run) {
-                        echo "Dry run; would have pushed cdk-addons/*.snap to ${params.channels}"
+                        echo "Dry run; would have uploaded cdk-addons/*.snap to ${params.channels}"
                     } else {
-                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_amd64.snap --release ${params.channels}"
-                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_arm64.snap --release ${params.channels}"
-                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_ppc64el.snap --release ${params.channels}"
-                        sh "snapcraft push cdk-addons/cdk-addons_${kube_ersion}_s390x.snap --release ${params.channels}"
+                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_amd64.snap --release ${params.channels}"
+                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_arm64.snap --release ${params.channels}"
+                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_ppc64el.snap --release ${params.channels}"
+                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_s390x.snap --release ${params.channels}"
                     }
                 }
             }
