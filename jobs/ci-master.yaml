@@ -33,10 +33,12 @@
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
+            - "build-release-cdk-addons.*"
             - "bundle-.*"
+            - "release-microk8s.*"
+            - "sync-oci-images.*"
             - "validate-ck.*"
             - "validate-charm.*"
-            - "release-microk8s.*"
             - "validate-kubeflow.*"
           block-level: 'GLOBAL'
 

@@ -1,0 +1,37 @@
+# Tags and pushes upstream oci images to rocks staging area.
+
+- job:
+    name: 'sync-oci-images'
+    node: runner-amd64
+    description: |
+      Tags and pushes container images needed by Charmed Kubernetes to the rocks staging area.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/sync-oci-images/sync-oci-images.groovy
+    parameters:
+      - string:
+          name: build_node
+          default: 'runner-amd64'
+      - string:
+          name: version
+          default: '1.20'
+          description: |
+            CK version. This job will clone the cdk-addons release-`version` branch if one
+            exists (otherwise 'master'), then process the image list for this `version`.
+      - string:
+          name: k8s_tag
+          default: ''
+          description: |
+            Source tag from https://github.com/kubernetes/kubernetes. If not specified,
+            the tag will be set to https://dl.k8s.io/release/[stable|latest]-`version`.txt.
+      - bool:
+          name: dry_run
+          default: false
+          description: only report what would be pushed to github / rocks.
+    properties:
+      - build-discarder:
+          num-to-keep: 7
+    triggers:
+        - timed: "@daily"
