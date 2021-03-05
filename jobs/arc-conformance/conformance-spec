@@ -17,19 +17,7 @@ set -x
 function juju::bootstrap::before
 {
     # azure-cli
-    #which az || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash -x 2>&1 | tee readit
-    pwd
-    ls
-    sudo apt-get install ca-certificates curl apt-transport-https lsb-release gnupg
-    cat ./jobs/arc-conformance/microsoft.asc |
-        gpg --dearmor |
-        sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
-    AZ_REPO=$(lsb_release -cs)
-    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ ${AZ_REPO} main" |
-        sudo tee /etc/apt/sources.list.d/azure-cli.list
-    sudo apt-get update
-    which az
-    ls -la /usr/bin/az
+    which az || sudo apt-get install azure-cli
     az version || exit 1
 
     # helm
@@ -127,6 +115,17 @@ ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-arc-conformance-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
+# Make sure azure repo is available in this env. Doing this manually because
+# builders cant curl the auto script from:
+# https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt
+sudo apt-get install ca-certificates curl apt-transport-https lsb-release gnupg
+cat ./jobs/arc-conformance/microsoft.asc |
+    gpg --dearmor |
+    sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+AZ_REPO=$(lsb_release -cs)
+echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ ${AZ_REPO} main" |
+    sudo tee /etc/apt/sources.list.d/azure-cli.list
+sudo apt-get update
 
 ###############################################################################
 # START
