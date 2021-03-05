@@ -23,8 +23,8 @@ function juju::bootstrap::before
     az extension remove --name k8sconfiguration || true
     az extension remove --name k8s-configuration || true
     # NB: can't get to az extension index, so install the bundled extensions
-    az extension add --source ./jobs/arc-conformance/connectedk8s-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
-    az extension add --source ./jobs/arc-conformance/k8s_configuration-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
+    az extension add -y --source ./jobs/arc-conformance/connectedk8s-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
+    az extension add -y --source ./jobs/arc-conformance/k8s_configuration-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
 
     # helm
     which helm || sudo snap install helm --classic
