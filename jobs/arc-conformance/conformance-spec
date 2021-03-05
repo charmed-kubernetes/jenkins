@@ -100,7 +100,8 @@ function test::capture
     ./sonobuoy retrieve
     mv *_sonobuoy*tar.gz artifacts.tar.gz
     # python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
-    tar tvf artifacts.tar.gz
+    tar -tvf artifacts.tar.gz
+    tar -xfO artifacts.tar.gz plugins/azure-arc-conformance/sonobuoy_results.yaml
 }
 
 
