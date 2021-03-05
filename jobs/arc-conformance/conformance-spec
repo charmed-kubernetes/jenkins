@@ -22,6 +22,7 @@ function juju::bootstrap::before
 
     # helm
     which helm || sudo snap install helm --classic
+    helm version || exit 1
 
     # sonobuoy
     rm -rf sonobuoy*
@@ -29,6 +30,7 @@ function juju::bootstrap::before
     wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERSION}/${SB_FILE}
     tar xvf ${SB_FILE}
     rm -f ${SB_FILE}
+    ./sonobuoy version || exit 1
 }
 
 function test::execute
@@ -40,6 +42,7 @@ function test::execute
     kubectl version
 
     # prep azure env
+    echo "Logging into azure"
     set +x
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
     az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
@@ -47,8 +50,10 @@ function test::execute
     az extension remove --name connectedk8s || true
     az extension remove --name k8sconfiguration || true
     az extension remove --name k8s-configuration || true
-    az extension add --name connectedk8s
-    az extension add --name k8s-configuration
+
+    # NB: can't get to az extension index, so install the bundled extensions
+    az extension add --source ./jobs/arc-conformance/connectedk8s-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
+    az extension add --source ./jobs/arc-conformance/k8s_configuration-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
     RESOURCE_GROUP=`az group list --query "[?location=='eastus']" | grep -o "${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
 
     # https://github.com/Azure/azure-arc-validation/blob/main/conformance.yaml
@@ -66,7 +71,7 @@ spec:
   - mountPath: /tmp/results
     name: results
 EOF
-    ./sonobuoy version
+    echo "Running sonobuoy"
     set +x
     ./sonobuoy run \
         --plugin ./arc-conformance.yaml \
