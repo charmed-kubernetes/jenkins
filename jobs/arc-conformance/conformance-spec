@@ -24,9 +24,9 @@ function juju::bootstrap::before
 
     # sonobuoy
     rm -rf sonobuoy.*
-    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
-    tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
-    rm -rf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_"$ARCH".tar.gz
+    tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_"$ARCH".tar.gz
+    rm -f sonobuoy_"$SONOBUOY_VERSION"_linux_"$ARCH".tar.gz
 }
 
 function test::execute
@@ -34,15 +34,18 @@ function test::execute
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
-    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
+    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/leader:config $HOME/.kube/
     kubectl version
 
     # prep azure env
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
     az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
+    az extension remove connectedk8s || true
+    az extension remove k8sconfiguration || true
+    az extension remove k8s-configuration || true
     az extension add --name connectedk8s
-    az extension add --name k8sconfiguration
-    RESOURCE_GROUP=`az group list --query "[?location=='eastus']"`
+    az extension add --name k8s-configuration
+    RESOURCE_GROUP=`az group list --query "[?location=='eastus']" | grep -o "${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g'`
 
     # https://github.com/Azure/azure-arc-validation/blob/main/conformance.yaml
     cat << EOF > ./arc-conformance.yaml
@@ -77,6 +80,7 @@ EOF
     if (( $ret > 0 )); then
         is_pass="False"
     fi
+    az logout
 }
 
 function test::capture
@@ -91,8 +95,8 @@ function test::capture
 ###############################################################################
 # ENV
 ###############################################################################
-SONOBUOY_VERSION=0.19.0
-SNAP_VERSION=${1:-1.19/stable}
+SONOBUOY_VERSION=0.20.0
+SNAP_VERSION=${1:-1.20/stable}
 SERIES=${2:-focal}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-stable}
