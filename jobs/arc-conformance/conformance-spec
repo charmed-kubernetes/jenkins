@@ -53,7 +53,7 @@ function test::execute
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
     az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
     set -x
-    RESOURCE_GROUP=`az group list --query "[?location=='eastus']" | grep -o "${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
+    RESOURCE_GROUP=`az group list --query "[?location=='eastus']" | grep -o "juju-${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
 
     # https://github.com/Azure/azure-arc-validation/blob/main/conformance.yaml
     cat << EOF > ./arc-conformance.yaml
