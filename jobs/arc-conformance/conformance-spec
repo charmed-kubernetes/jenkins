@@ -20,13 +20,14 @@ function juju::bootstrap::before
     which az || curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
     # helm
-    which helm || snap install helm --classic
+    which helm || sudo snap install helm --classic
 
     # sonobuoy
-    rm -rf sonobuoy.*
-    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_"$ARCH".tar.gz
-    tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_"$ARCH".tar.gz
-    rm -f sonobuoy_"$SONOBUOY_VERSION"_linux_"$ARCH".tar.gz
+    rm -rf sonobuoy*
+    SB_FILE="sonobuoy_${SONOBUOY_VERSION}_linux_${ARCH}.tar.gz"
+    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERSION}/${SB_FILE}
+    tar xvf ${SB_FILE}
+    rm -f ${SB_FILE}
 }
 
 function test::execute
@@ -73,13 +74,13 @@ EOF
         --plugin-env azure-arc-conformance.CLIENT_ID=$CLIENT_ID \
         --plugin-env azure-arc-conformance.CLIENT_SECRET=$CLIENT_SECRET \
         --wait 2>&1
-    rm -f ./arc-conformance.yaml
-
     ret=$?
     is_pass="True"
     if (( $ret > 0 )); then
         is_pass="False"
     fi
+
+    rm -f ./arc-conformance.yaml
     az logout
 }
 
@@ -97,7 +98,8 @@ function test::capture
 ###############################################################################
 SONOBUOY_VERSION=0.20.0
 SNAP_VERSION=${1:-1.20/stable}
-SERIES=${2:-focal}
+# NB: bootstrap azure with bionic until juju-2.9
+SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-stable}
 JUJU_CLOUD=azure/eastus
