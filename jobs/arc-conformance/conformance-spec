@@ -17,7 +17,7 @@ set -x
 function juju::bootstrap::before
 {
     # azure-cli
-    which az || sudo apt-get install azure-cli
+    which az || sudo apt-get install -qyf azure-cli
     az version || exit 1
 
     # helm
@@ -44,12 +44,12 @@ function test::execute
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
     az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
     set -x
-    az extension remove connectedk8s || true
-    az extension remove k8sconfiguration || true
-    az extension remove k8s-configuration || true
+    az extension remove --name connectedk8s || true
+    az extension remove --name k8sconfiguration || true
+    az extension remove --name k8s-configuration || true
     az extension add --name connectedk8s
     az extension add --name k8s-configuration
-    RESOURCE_GROUP=`az group list --query "[?location=='eastus']" | grep -o "${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g'`
+    RESOURCE_GROUP=`az group list --query "[?location=='eastus']" | grep -o "${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
 
     # https://github.com/Azure/azure-arc-validation/blob/main/conformance.yaml
     cat << EOF > ./arc-conformance.yaml
