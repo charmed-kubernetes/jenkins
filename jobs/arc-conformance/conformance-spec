@@ -17,7 +17,8 @@ set -x
 function juju::bootstrap::before
 {
     # azure-cli
-    which az || curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+    which az || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+    az version || exit 1
 
     # helm
     which helm || sudo snap install helm --classic
@@ -35,12 +36,14 @@ function test::execute
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
-    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/leader:config $HOME/.kube/
+    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
     kubectl version
 
     # prep azure env
+    set +x
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
     az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
+    set -x
     az extension remove connectedk8s || true
     az extension remove k8sconfiguration || true
     az extension remove k8s-configuration || true
@@ -64,6 +67,7 @@ spec:
     name: results
 EOF
     ./sonobuoy version
+    set +x
     ./sonobuoy run \
         --plugin ./arc-conformance.yaml \
         --plugin-env azure-arc-conformance.TENANT_ID=$TENANT_ID \
@@ -75,6 +79,8 @@ EOF
         --plugin-env azure-arc-conformance.CLIENT_SECRET=$CLIENT_SECRET \
         --wait 2>&1
     ret=$?
+    set -x
+
     is_pass="True"
     if (( $ret > 0 )); then
         is_pass="False"
