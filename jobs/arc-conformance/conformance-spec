@@ -17,9 +17,11 @@ set -x
 function juju::bootstrap::before
 {
     # azure-cli
-    which az || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash -x
+    which az || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash -x 2>&1 | tee readit
     which az
     ls -la /usr/bin/az
+    cat readit
+    rm -f readit
     az version || exit 1
 
     # helm
