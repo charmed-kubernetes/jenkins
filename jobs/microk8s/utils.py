@@ -59,12 +59,14 @@ def get_latest_pre_release(track, patch):
     """
     releases = get_gh_releases()
     if not releases:
+        print("No releases gathered from GH")
         return None
 
     search_version = "v{}.0-{}".format(track, patch)
+    print("Searching on GH releases for a tag starting with:", search_version)
     release_names = []
     for release in releases:
-        if release["name"].startswith(search_version):
+        if release["tag_name"].startswith(search_version):
             release_names.append(release["name"][1:])
 
     if len(release_names) > 0:

@@ -32,5 +32,5 @@ def get_tracks(all=False):
 
 snap_name = "microk8s"
 people_name = "microk8s-dev"
-cachedir = os.getenv("WORKSPACE") + "/cache"
+cachedir = os.getenv("WORKSPACE", default="/var/tmp/") + "/cache"
 creds = os.getenv("LPCREDS")
