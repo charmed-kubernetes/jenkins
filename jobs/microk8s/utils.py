@@ -67,7 +67,7 @@ def get_latest_pre_release(track, patch):
     release_names = []
     for release in releases:
         if release["tag_name"].startswith(search_version):
-            release_names.append(release["name"][1:])
+            release_names.append(release["tag_name"][1:])
 
     if len(release_names) > 0:
         max_release = release_names[0]
