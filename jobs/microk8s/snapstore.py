@@ -11,7 +11,9 @@ sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 
 class Microk8sSnap:
-    def __init__(self, track, channel, juju_unit=None, juju_controller=None, juju_model=None):
+    def __init__(
+        self, track, channel, juju_unit=None, juju_controller=None, juju_model=None
+    ):
         arch = configbag.get_arch()
         channel_patern = "{}/{}*".format(track, channel)
         if juju_controller:
@@ -136,7 +138,9 @@ class Microk8sSnap:
             testing_track_channel = "{}/{}".format(
                 self.track, self.under_testing_channel
             )
-            self.executor.test_distro(distro, track_channel_to_upgrade, testing_track_channel, proxy)
+            self.executor.test_distro(
+                distro, track_channel_to_upgrade, testing_track_channel, proxy
+            )
 
     def build_and_release(self, release=None, dry_run="no"):
         """

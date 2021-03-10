@@ -11,7 +11,6 @@ sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 
 class JujuExecutor(ExecutorInterface):
-
     def __init__(self, unit, controller, model):
         self.unit = unit
         self.controller = controller
@@ -28,9 +27,7 @@ class JujuExecutor(ExecutorInterface):
     def has_tests_for_track(self, track):
         cmd = (
             "git ls-remote --exit-code "
-            "--heads https://github.com/ubuntu/microk8s.git {}".format(
-                track
-            ).split()
+            "--heads https://github.com/ubuntu/microk8s.git {}".format(track).split()
         )
         run(cmd, check=True, stdout=PIPE, stderr=STDOUT)
 
@@ -46,7 +43,6 @@ class JujuExecutor(ExecutorInterface):
 
     def build_snap(self):
         cmd = '(cd microk8s; pwd; sudo usermod --append --groups lxd $USER; sg lxd -c "SNAPCRAFT_BUILD_ENVIRONMENT=lxd /snap/bin/snapcraft")'
-        cmd = 'touch  microk8s/microk8s_v1.20.4_amd64.snap'
         self._run_cmd(cmd)
 
     def fetch_created_snap(self, arch=None):
@@ -64,7 +60,9 @@ class JujuExecutor(ExecutorInterface):
             click.echo(err.output)
             raise err
 
-    def test_distro(self, distro, track_channel_to_upgrade, testing_track_channel, proxy=None):
+    def test_distro(
+        self, distro, track_channel_to_upgrade, testing_track_channel, proxy=None
+    ):
         cmd = "sudo tests/test-distro.sh {} {} {}".format(
             distro, track_channel_to_upgrade, testing_track_channel
         )

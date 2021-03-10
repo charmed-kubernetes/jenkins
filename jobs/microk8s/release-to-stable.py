@@ -99,7 +99,9 @@ if __name__ == "__main__":
             )
             continue
 
-        stable_snap = Microk8sSnap(track, "stable", juju_unit, juju_controller, juju_model)
+        stable_snap = Microk8sSnap(
+            track, "stable", juju_unit, juju_controller, juju_model
+        )
         if stable_snap.released and not stable_snap.is_prerelease:
             # We already have a snap released on stable that is not a pre-release. Lets run some tests.
             if candidate_snap.version == stable_snap.version and always_release == "no":

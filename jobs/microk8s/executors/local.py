@@ -10,7 +10,6 @@ sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 
 class LocalExecutor(ExecutorInterface):
-
     def remove_microk8s_directory(self):
         cmd = "rm -rf microk8s"
         self._run_cmd(cmd)
@@ -22,9 +21,7 @@ class LocalExecutor(ExecutorInterface):
     def has_tests_for_track(self, track):
         cmd = (
             "git ls-remote --exit-code "
-            "--heads https://github.com/ubuntu/microk8s.git {}".format(
-                track
-            ).split()
+            "--heads https://github.com/ubuntu/microk8s.git {}".format(track).split()
         )
         run(cmd, check=True, stdout=PIPE, stderr=STDOUT)
 
@@ -57,12 +54,14 @@ class LocalExecutor(ExecutorInterface):
         cmd = "mv microk8s/microk8s_*_{0}.snap microk8s_latest_{0}.snap".format(arch)
         Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 
-    def test_distro(self, distro, track_channel_to_upgrade, testing_track_channel, proxy=None):
+    def test_distro(
+        self, distro, track_channel_to_upgrade, testing_track_channel, proxy=None
+    ):
         wd = os.getcwd()
         os.chdir("microk8s")
         cmd = "tests/test-distro.sh {} {} {}".format(
-                distro, track_channel_to_upgrade, testing_track_channel
-            )
+            distro, track_channel_to_upgrade, testing_track_channel
+        )
         if proxy:
             cmd = "{} {}".format(cmd, proxy)
         self._run_cmd(cmd)
@@ -72,4 +71,3 @@ class LocalExecutor(ExecutorInterface):
         click.echo("Executing: {}".format(cmd))
         for line in sh2.env(cmd.split()):
             click.echo(line.strip())
-

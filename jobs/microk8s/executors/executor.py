@@ -1,5 +1,4 @@
 class ExecutorInterface:
-
     def remove_microk8s_directory(self):
         pass
 
@@ -21,5 +20,7 @@ class ExecutorInterface:
     def fetch_created_snap(self, arch=None):
         pass
 
-    def test_distro(self, distro, track_channel_to_upgrade, testing_track_channel, proxy=None):
+    def test_distro(
+        self, distro, track_channel_to_upgrade, testing_track_channel, proxy=None
+    ):
         pass

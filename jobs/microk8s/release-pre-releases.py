@@ -73,7 +73,11 @@ if __name__ == "__main__":
                 click.echo("No {} pre-release".format(channel[1]))
                 continue
             snap = Microk8sSnap(
-                track, channel[0], juju_unit=juju_unit, juju_controller=juju_controller, juju_model=juju_model
+                track,
+                channel[0],
+                juju_unit=juju_unit,
+                juju_controller=juju_controller,
+                juju_model=juju_model,
             )
             if (
                 snap.released
