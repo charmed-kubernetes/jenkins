@@ -53,7 +53,7 @@ function test::execute
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
     az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
     set -x
-    RESOURCE_GROUP=`az group list --query "[?location==${CLUSTER_REGION}]" | grep -o "juju-${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
+    RESOURCE_GROUP=`az group list --query "[?location=='${CLUSTER_REGION}']" | grep -o "juju-${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
 
     # https://github.com/Azure/azure-arc-validation/blob/main/conformance.yaml
     cat << EOF > ./arc-conformance.yaml
@@ -91,16 +91,20 @@ EOF
     fi
 
     rm -f ./arc-conformance.yaml
-    az logout
 }
 
 function test::capture
 {
     ./sonobuoy retrieve
     mv *_sonobuoy*tar.gz artifacts.tar.gz
-    # python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
     tar -tvf artifacts.tar.gz
-    tar -Oxf artifacts.tar.gz plugins/azure-arc-conformance/sonobuoy_results.yaml
+
+    RESULT_SRC="plugins/azure-arc-conformance/sonobuoy_results.yaml"
+    RESULT_DST="CharmedKubernetes_${CK_VERSION}_results.yaml"
+    tar -xf artifacts.tar.gz ${RESULT_SRC}
+    cat ${RESULT_SRC}
+    az storage blob upload -c canonical-testresults --account-name canonicalarcci -f ${RESULT_SRC} -n ${RESULT_DST}
+    az logout
 }
 
 
