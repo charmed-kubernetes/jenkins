@@ -103,7 +103,15 @@ function test::capture
     RESULT_DST="CharmedKubernetes_${CK_VERSION}_results.yaml"
     tar -xf artifacts.tar.gz ${RESULT_SRC}
     cat ${RESULT_SRC}
-    az storage blob upload -c canonical-testresults --account-name canonicalarcci -f ${RESULT_SRC} -n ${RESULT_DST}
+
+    if grep -q 'failed' ${RESULT_SRC}; then
+        echo "Failed conformance; not uploading results to azure storageaccount"
+        is_pass="False"
+    else
+        echo "Passed conformance; uploading results to azure storageaccount"
+        az storage blob upload -c canonical-testresults --account-name canonicalarcci -f ${RESULT_SRC} -n ${RESULT_DST}
+        is_pass="True"
+    fi
     az logout
 }
 
