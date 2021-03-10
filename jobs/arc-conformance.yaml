@@ -13,6 +13,13 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
+    parameters:
+      - string:
+          name: CK_VERSION
+          default: '1.20'
+          description: |
+            CK version to deploy. This will be used to set the snap channel
+            and to identify what k8s version is associated with the results.
     properties:
       - build-discarder:
           num-to-keep: 4

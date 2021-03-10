@@ -53,7 +53,7 @@ function test::execute
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
     az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
     set -x
-    RESOURCE_GROUP=`az group list --query "[?location=='eastus']" | grep -o "juju-${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
+    RESOURCE_GROUP=`az group list --query "[?location==${CLUSTER_REGION}]" | grep -o "juju-${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
 
     # https://github.com/Azure/azure-arc-validation/blob/main/conformance.yaml
     cat << EOF > ./arc-conformance.yaml
@@ -78,7 +78,7 @@ EOF
         --plugin-env azure-arc-conformance.SUBSCRIPTION_ID=$SUBSCRIPTION_ID \
         --plugin-env azure-arc-conformance.RESOURCE_GROUP=$RESOURCE_GROUP \
         --plugin-env azure-arc-conformance.CLUSTER_NAME=$CLUSTER_NAME \
-        --plugin-env azure-arc-conformance.LOCATION=$LOCATION \
+        --plugin-env azure-arc-conformance.LOCATION=$CLUSTER_REGION \
         --plugin-env azure-arc-conformance.CLIENT_ID=$CLIENT_ID \
         --plugin-env azure-arc-conformance.CLIENT_SECRET=$CLIENT_SECRET \
         --wait 2>&1
@@ -108,15 +108,17 @@ function test::capture
 # ENV
 ###############################################################################
 SONOBUOY_VERSION=0.20.0
-SNAP_VERSION=${1:-1.20/stable}
+CLUSTER_NAME=azure-arc-ci
+CLUSTER_REGION=eastus
+SNAP_VERSION=${CK_VERSION}/stable
 # NB: bootstrap azure with bionic until juju-2.9
-SERIES=${2:-bionic}
+SERIES=bionic
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${3:-stable}
+JUJU_DEPLOY_CHANNEL=stable
 JUJU_CLOUD=azure/eastus
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-ck-arc
-ARCH=${4:-amd64}
+ARCH=amd64
 JOB_NAME_CUSTOM="validate-ck-arc-conformance-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
