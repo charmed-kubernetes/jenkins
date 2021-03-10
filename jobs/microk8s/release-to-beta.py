@@ -39,6 +39,10 @@ juju_controller = os.environ.get("JUJU_CONTROLLER")
 if juju_controller and juju_controller.strip() == "":
     juju_controller = None
 
+juju_model = os.environ.get("JUJU_MODEL")
+if juju_model and juju_model.strip() == "":
+    juju_model = None
+
 
 if __name__ == "__main__":
     """
@@ -55,12 +59,12 @@ if __name__ == "__main__":
         if not upstream:
             click.echo("No stable upstream release yet.")
             continue
-        edge_snap = Microk8sSnap(track, "edge", juju_unit, juju_controller)
+        edge_snap = Microk8sSnap(track, "edge", juju_unit, juju_controller, juju_model)
         if not edge_snap.released:
             click.echo("Nothing released on {} edge.".format(track))
             break
 
-        beta_snap = Microk8sSnap(track, "beta", juju_unit, juju_controller)
+        beta_snap = Microk8sSnap(track, "beta", juju_unit, juju_controller, juju_model)
         if beta_snap.released and not beta_snap.is_prerelease:
             # We already have a snap on beta that is not a pre-release. Let's see if we have to push a new release.
             if beta_snap.version == edge_snap.version and always_release == "no":

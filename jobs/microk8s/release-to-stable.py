@@ -40,6 +40,10 @@ juju_controller = os.environ.get("JUJU_CONTROLLER")
 if juju_controller and juju_controller.strip() == "":
     juju_controller = None
 
+juju_model = os.environ.get("JUJU_MODEL")
+if juju_model and juju_model.strip() == "":
+    juju_model = None
+
 
 if __name__ == "__main__":
     """
@@ -95,7 +99,7 @@ if __name__ == "__main__":
             )
             continue
 
-        stable_snap = Microk8sSnap(track, "stable", juju_unit, juju_controller)
+        stable_snap = Microk8sSnap(track, "stable", juju_unit, juju_controller, juju_model)
         if stable_snap.released and not stable_snap.is_prerelease:
             # We already have a snap released on stable that is not a pre-release. Lets run some tests.
             if candidate_snap.version == stable_snap.version and always_release == "no":

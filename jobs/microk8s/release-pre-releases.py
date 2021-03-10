@@ -29,6 +29,10 @@ juju_controller = os.environ.get("JUJU_CONTROLLER")
 if juju_controller and juju_controller.strip() == "":
     juju_controller = None
 
+juju_model = os.environ.get("JUJU_MODEL")
+if juju_model and juju_model.strip() == "":
+    juju_model = None
+
 
 if __name__ == "__main__":
     """
@@ -69,7 +73,7 @@ if __name__ == "__main__":
                 click.echo("No {} pre-release".format(channel[1]))
                 continue
             snap = Microk8sSnap(
-                track, channel[0], juju_unit=juju_unit, juju_controller=juju_controller
+                track, channel[0], juju_unit=juju_unit, juju_controller=juju_controller, juju_model=juju_model
             )
             if (
                 snap.released
