@@ -140,7 +140,7 @@ JOB_ID=$(identifier)
 # Make sure azure repo is available in this env. Doing this manually because
 # builders cant curl the auto script from:
 # https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt
-sudo apt-get install ca-certificates curl apt-transport-https lsb-release gnupg
+sudo apt-get install -qyf ca-certificates curl apt-transport-https lsb-release gnupg
 cat ./jobs/arc-conformance/microsoft.asc |
     gpg --dearmor |
     sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
