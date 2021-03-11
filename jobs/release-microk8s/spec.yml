@@ -46,7 +46,7 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          python jobs/microk8s/release-to-beta.py
+          timeout 6h python jobs/microk8s/release-to-beta.py
 
     after-script:
       - |
@@ -86,7 +86,7 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          python jobs/microk8s/release-to-stable.py
+          timeout 6h python jobs/microk8s/release-to-stable.py
   - <<: *BASE_JOB
     env:
       - DRY_RUN=no
@@ -107,7 +107,7 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          python jobs/microk8s/release-to-stable.py
+          timeout 6h python jobs/microk8s/release-to-stable.py
   - <<: *BASE_JOB
     env:
       - DRY_RUN=no
@@ -129,7 +129,7 @@ plan:
         DRY_RUN=$DRY_RUN ALWAYS_RELEASE=$ALWAYS_RELEASE \
           TRACKS=$TRACKS TESTS_BRANCH=$TESTS_BRANCH \
           PROXY=$PROXY JUJU_UNIT=ubuntu/0 \
-          python jobs/microk8s/release-pre-releases.py
+          timeout 6h python jobs/microk8s/release-pre-releases.py
 
 meta:
   name: Release Microk8s to Beta, Stable
