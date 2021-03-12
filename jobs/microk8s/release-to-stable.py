@@ -60,7 +60,6 @@ if __name__ == "__main__":
             ersion_list = ersion.split(".")
             source_track = "{}.{}".format(ersion_list[0], ersion_list[1])
             source_channel = "stable"
-            always_release = "yes"
             click.echo(
                 "latest/stable is populated from the {}/{}".format(
                     source_track, source_channel
