@@ -6,19 +6,23 @@ from dateutil import parser
 from subprocess import CalledProcessError, run, PIPE, STDOUT
 from executors.juju import JujuExecutor
 from executors.local import LocalExecutor
+from executors.testflinger import TestFlingerExecutor
 
 sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 
 class Microk8sSnap:
     def __init__(
-        self, track, channel, juju_unit=None, juju_controller=None, juju_model=None
+        self, track, channel, juju_unit=None, juju_controller=None, juju_model=None, testflinger_queue=None
     ):
         arch = configbag.get_arch()
         channel_patern = "{}/{}*".format(track, channel)
         if juju_controller:
             click.echo("Using juju executor")
             self.executor = JujuExecutor(juju_unit, juju_controller, juju_model)
+        elif testflinger_queue:
+            click.echo("Using testflinger executor")
+            self.executor = TestFlingerExecutor(testflinger_queue)
         else:
             click.echo("Using local executor")
             self.executor = LocalExecutor()

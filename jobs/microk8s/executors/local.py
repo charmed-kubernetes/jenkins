@@ -10,6 +10,10 @@ sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 
 class LocalExecutor(ExecutorInterface):
+    """
+    Execute the low level operations on local host.
+    """
+
     def remove_microk8s_directory(self):
         cmd = "rm -rf microk8s"
         self._run_cmd(cmd)

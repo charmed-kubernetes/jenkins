@@ -1,5 +1,11 @@
 #!/usr/bin/python3
 
+# This script releases MicroK8s from edge to beta.
+# It is meant to be called from Jenkins but you can call it from your host yourself, eg
+# DRY_RUN=yes ALWAYS_RELEASE=yes TRACKS=1.18  TESTFLINGER_QUEUE=nvidia-gfx python3 ./release-to-beta.py
+#
+# See the environment variables below to configure what to release and where to run the tests.
+
 import os
 import click
 from snapstore import Microk8sSnap
@@ -43,6 +49,11 @@ juju_model = os.environ.get("JUJU_MODEL")
 if juju_model and juju_model.strip() == "":
     juju_model = None
 
+# If TESTFLINGER_QUEUE set the tests will run on testflinger on the queue specified
+testflinger_queue = os.environ.get("TESTFLINGER_QUEUE")
+if testflinger_queue and testflinger_queue.strip() == "":
+    testflinger_queue = None
+
 
 if __name__ == "__main__":
     """
@@ -59,7 +70,7 @@ if __name__ == "__main__":
         if not upstream:
             click.echo("No stable upstream release yet.")
             continue
-        edge_snap = Microk8sSnap(track, "edge", juju_unit, juju_controller, juju_model)
+        edge_snap = Microk8sSnap(track, "edge", juju_unit, juju_controller, juju_model, testflinger_queue)
         if not edge_snap.released:
             click.echo("Nothing released on {} edge.".format(track))
             break

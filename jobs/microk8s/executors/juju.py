@@ -11,7 +11,14 @@ sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 
 class JujuExecutor(ExecutorInterface):
+    """
+    Run tests on a juju machine already provisioned
+    """
+
     def __init__(self, unit, controller, model):
+        """
+        Specify the controller, model and unit we will be running the tests on
+        """
         self.unit = unit
         self.controller = controller
         self.model = model
