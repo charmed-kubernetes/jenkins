@@ -13,7 +13,13 @@ sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 class Microk8sSnap:
     def __init__(
-        self, track, channel, juju_unit=None, juju_controller=None, juju_model=None, testflinger_queue=None
+        self,
+        track,
+        channel,
+        juju_unit=None,
+        juju_controller=None,
+        juju_model=None,
+        testflinger_queue=None,
     ):
         arch = configbag.get_arch()
         channel_patern = "{}/{}*".format(track, channel)

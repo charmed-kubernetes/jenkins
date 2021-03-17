@@ -70,7 +70,9 @@ if __name__ == "__main__":
         if not upstream:
             click.echo("No stable upstream release yet.")
             continue
-        edge_snap = Microk8sSnap(track, "edge", juju_unit, juju_controller, juju_model, testflinger_queue)
+        edge_snap = Microk8sSnap(
+            track, "edge", juju_unit, juju_controller, juju_model, testflinger_queue
+        )
         if not edge_snap.released:
             click.echo("Nothing released on {} edge.".format(track))
             break

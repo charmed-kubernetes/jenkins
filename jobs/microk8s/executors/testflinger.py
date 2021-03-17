@@ -34,6 +34,7 @@ test_data:
     set -eux
     ssh $DEVICE_IP <<EOF
       set -eux
+      lxd init --auto
       /usr/bin/git clone https://github.com/ubuntu/microk8s
       cd microk8s
       /usr/bin/git checkout {}
@@ -75,7 +76,12 @@ test_data:
         fname = "testflinger-job.yaml"
         proxy_ep = "" if not proxy else proxy
         manifest = self.test_manifest.format(
-            self.queue, self.tests_branch, distro, track_channel_to_upgrade, testing_track_channel, proxy_ep
+            self.queue,
+            self.tests_branch,
+            distro,
+            track_channel_to_upgrade,
+            testing_track_channel,
+            proxy_ep,
         )
         f = open(fname, "w")
         f.write(manifest)
