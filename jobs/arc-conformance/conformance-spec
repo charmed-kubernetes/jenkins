@@ -17,16 +17,24 @@ set -x
 function juju::bootstrap::before
 {
     # azure-cli
-    which az || curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+    which az || sudo apt-get install -qyf azure-cli
+    rm -rf ${HOME}/.azure/cliextensions/*
+    # NB: can't get to az extension index, so install the bundled extensions
+    az extension add -y --source ./jobs/arc-conformance/connectedk8s-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
+    az extension add -y --source ./jobs/arc-conformance/k8s_configuration-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
+    az version || exit 1
 
     # helm
-    which helm || snap install helm --classic
+    which helm || sudo snap install helm --classic
+    helm version || exit 1
 
     # sonobuoy
-    rm -rf sonobuoy.*
-    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
-    tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
-    rm -rf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+    rm -rf sonobuoy*
+    SB_FILE="sonobuoy_${SONOBUOY_VERSION}_linux_${ARCH}.tar.gz"
+    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERSION}/${SB_FILE}
+    tar xvf ${SB_FILE}
+    rm -f ${SB_FILE}
+    ./sonobuoy version || exit 1
 }
 
 function test::execute
@@ -38,11 +46,12 @@ function test::execute
     kubectl version
 
     # prep azure env
+    echo "Logging into azure"
+    set +x
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
     az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
-    az extension add --name connectedk8s
-    az extension add --name k8sconfiguration
-    RESOURCE_GROUP=`az group list --query "[?location=='eastus']"`
+    set -x
+    RESOURCE_GROUP=`az group list --query "[?location=='${CLUSTER_REGION}']" | grep -o "juju-${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
 
     # https://github.com/Azure/azure-arc-validation/blob/main/conformance.yaml
     cat << EOF > ./arc-conformance.yaml
@@ -59,50 +68,89 @@ spec:
   - mountPath: /tmp/results
     name: results
 EOF
-    ./sonobuoy version
+    echo "Running sonobuoy"
+    set +x
     ./sonobuoy run \
         --plugin ./arc-conformance.yaml \
         --plugin-env azure-arc-conformance.TENANT_ID=$TENANT_ID \
         --plugin-env azure-arc-conformance.SUBSCRIPTION_ID=$SUBSCRIPTION_ID \
         --plugin-env azure-arc-conformance.RESOURCE_GROUP=$RESOURCE_GROUP \
         --plugin-env azure-arc-conformance.CLUSTER_NAME=$CLUSTER_NAME \
-        --plugin-env azure-arc-conformance.LOCATION=$LOCATION \
+        --plugin-env azure-arc-conformance.LOCATION=$CLUSTER_REGION \
         --plugin-env azure-arc-conformance.CLIENT_ID=$CLIENT_ID \
         --plugin-env azure-arc-conformance.CLIENT_SECRET=$CLIENT_SECRET \
         --wait 2>&1
-    rm -f ./arc-conformance.yaml
-
     ret=$?
+    set -x
+
     is_pass="True"
     if (( $ret > 0 )); then
         is_pass="False"
     fi
+
+    rm -f ./arc-conformance.yaml
 }
 
 function test::capture
 {
+    RESULT_SRC="plugins/azure-arc-conformance/sonobuoy_results.yaml"
+    RESULT_DST="CharmedKubernetes_${CK_VERSION}_results.yaml"
+    SB_TAR="CharmedKubernetes_${CK_VERSION}.tar.gz"
+
     ./sonobuoy retrieve
-    mv *_sonobuoy*tar.gz artifacts.tar.gz
-    # python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
-    tar tvf artifacts.tar.gz
+    mv *_sonobuoy*tar.gz ${SB_TAR}
+    tar -xf ${SB_TAR} ${RESULT_SRC}
+
+    if [ -e ${RESULT_SRC} ]; then
+        cat ${RESULT_SRC}
+        if grep -q 'failed' ${RESULT_SRC}; then
+            echo "Failed conformance; not uploading results to azure storageaccount"
+            is_pass="False"
+        else
+            echo "Passed conformance; uploading results to azure storageaccount"
+            az storage blob upload -c canonical-testresults --account-name canonicalarcsa \
+                --account-key ${STORAGE_ACCOUNT_KEY} -f ${SB_TAR} -n ${SB_TAR}
+            az storage blob upload -c canonical-testresults --account-name canonicalarcsa \
+                --account-key ${STORAGE_ACCOUNT_KEY} -f ${RESULT_SRC} -n ${RESULT_DST}
+            is_pass="True"
+        fi
+    else
+        echo "No conformance results"
+        is_pass="False"
+    fi
+    az logout
 }
 
 
 ###############################################################################
 # ENV
 ###############################################################################
-SONOBUOY_VERSION=0.19.0
-SNAP_VERSION=${1:-1.19/stable}
-SERIES=${2:-focal}
+SONOBUOY_VERSION=0.20.0
+CLUSTER_NAME=azure-arc-ci
+CLUSTER_REGION=eastus
+SNAP_VERSION=${CK_VERSION}/stable
+# NB: bootstrap azure with bionic until juju-2.9
+SERIES=bionic
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${3:-stable}
+JUJU_DEPLOY_CHANNEL=stable
 JUJU_CLOUD=azure/eastus
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-ck-arc
-ARCH=${4:-amd64}
+ARCH=amd64
 JOB_NAME_CUSTOM="validate-ck-arc-conformance-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
+# Make sure azure repo is available in this env. Doing this manually because
+# builders cant curl the auto script from:
+# https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt
+sudo apt-get install -qyf ca-certificates curl apt-transport-https lsb-release gnupg
+cat ./jobs/arc-conformance/microsoft.asc |
+    gpg --dearmor |
+    sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+AZ_REPO=$(lsb_release -cs)
+echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ ${AZ_REPO} main" |
+    sudo tee /etc/apt/sources.list.d/azure-cli.list
+sudo apt-get update
 
 ###############################################################################
 # START
