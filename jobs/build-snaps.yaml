@@ -96,7 +96,7 @@
 - project:
     name: build-release-snaps
     arch: ['amd64']
-    version: ['1.16', '1.17', '1.18', '1.19', '1.20']
+    version: ['1.16', '1.17', '1.18', '1.19', '1.20', '1.21']
     jobs:
       - 'build-release-cdk-addons-{arch}-{version}'
 
