@@ -106,8 +106,8 @@
       - run-tox:
           JOB_SPEC_DIR: "jobs/release-microk8s"
           COMMAND: |
-            snapcraft login --with /var/lib/jenkins/snapcraft-creds
-            tox -e py38 -- python jobs/microk8s/release-to-edge-on-new-upstream-release.py
+            timeout 2h snapcraft login --with /var/lib/jenkins/snapcraft-creds
+            timeout 2h tox -e py38 -- python jobs/microk8s/release-to-edge-on-new-upstream-release.py
 
 
 - job:
@@ -132,5 +132,5 @@
       - run-tox:
           JOB_SPEC_DIR: "jobs/release-microk8s"
           COMMAND: |
-            snapcraft login --with /var/lib/jenkins/snapcraft-creds
-            tox -e py38 -- python jobs/microk8s/update-gh-branches-and-lp-builders.py
+            timeout 2h snapcraft login --with /var/lib/jenkins/snapcraft-creds
+            timeout 2h tox -e py38 -- python jobs/microk8s/update-gh-branches-and-lp-builders.py
