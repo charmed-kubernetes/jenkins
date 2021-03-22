@@ -177,7 +177,13 @@ pipeline {
                             echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
                         else
                             sudo lxc exec ${lxc_name} -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
-                            sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            # simple retry if initial push fails
+                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            then
+                                echo "Retrying push"
+                                sleep 5
+                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            fi
                         fi
                     done
 
