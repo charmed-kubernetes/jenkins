@@ -150,7 +150,13 @@ pipeline {
                         then
                             echo "Dry run; would have pulled: \${i}"
                         else
-                            sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                            # simple retry if initial pull fails
+                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                            then
+                                echo "Retrying pull"
+                                sleep 5
+                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                            fi
                         fi
 
                         # Massage image names
