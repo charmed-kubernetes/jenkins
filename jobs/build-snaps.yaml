@@ -56,6 +56,10 @@
     node: runner-amd64
     description: |
       Builds, releases and promotes Amazon EKS snaps for {version} to the snapstore.
+
+      If snapstore login fails due to an expired macaroon, run
+      'snapcraft export-login ./snapcraft_cpc_creds' with credentials from LastPass,
+      update the snapcraft_cpc_creds credential, and re-run the infrastructure jobs.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -69,7 +73,7 @@
           JOB_SPEC_DIR: "jobs/build-snaps"
           COMMAND: |
             snapcraft logout
-            snapcraft login --with /var/lib/jenkins/snapcraft-cpc-creds
+            snapcraft login --with /var/lib/jenkins/.config/snapcraft/snapcraft-cpc.cfg
 
             docker image prune -a --filter "until=24h" --force
             docker container prune --filter "until=24h" --force

@@ -236,10 +236,10 @@
         force: yes
       tags:
         - jenkins
-    - name: copy snapcraft creds
+    - name: copy snapcraft cpc creds
       copy:
         src: "{{ lookup('env', 'SNAPCRAFTCPCCREDS') }}"
-        dest: /var/lib/jenkins/.config/snapcraft/snapcraft.cfg
+        dest: /var/lib/jenkins/.config/snapcraft/snapcraft-cpc.cfg
         owner: jenkins
         group: jenkins
         mode: 0644
