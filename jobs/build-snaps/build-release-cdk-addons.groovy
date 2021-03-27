@@ -159,6 +159,8 @@ pipeline {
         stage('Process Images'){
             steps {
                 sh """
+                    echo "THIS IS HOW BIG"
+                    df -h
                     # Keys from the bundle_image_file used to identify images per release
                     STATIC_KEY=v${params.version}-static:
                     UPSTREAM_KEY=${kube_version}-upstream:
@@ -239,11 +241,15 @@ pipeline {
     }
     post {
         always {
+            sh "echo THIS IS HOW BIG"
+            sh "df -h"
             sh "sudo lxc delete -f image-processor"
             sh "sudo rm -rf cdk-addons/build"
             sh "docker image prune -a --filter \"until=24h\" --force"
             sh "docker container prune --filter \"until=24h\" --force"
             sh "snapcraft logout"
+            sh "echo THIS IS HOW BIG"
+            sh "df -h"
         }
     }
 }
