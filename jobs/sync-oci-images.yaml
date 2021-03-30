@@ -13,10 +13,10 @@
     parameters:
       - string:
           name: build_node
-          default: 'runner-amd64'
+          default: 'runner-amd64-bigdisk'
       - string:
           name: version
-          default: '1.20'
+          default: '1.21'
           description: |
             CK version. This job will clone the cdk-addons release-`version` branch if one
             exists (otherwise 'master'), then process the image list for this `version`.
