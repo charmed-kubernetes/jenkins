@@ -273,7 +273,7 @@ pipeline {
     post {
         always {
             echo "All images known to this builder:"
-            sudo lxc exec ${lxc_name} -- ctr image ls
+            sh "sudo lxc exec ${lxc_name} -- ctr image ls"
             sh "echo Disk usage before cleanup"
             sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
             sh "sudo lxc delete -f ${lxc_name}"
