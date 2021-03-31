@@ -20,6 +20,7 @@ pipeline {
      */
     environment {
         PATH = "${utils.cipaths}"
+        ADDONS_ARCHES="amd64 arm64 ppc64le s390x"
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.rocks.canonical.com:5000'
@@ -96,8 +97,7 @@ pipeline {
                     UPSTREAM_LINE=\$(make KUBE_VERSION=${kube_version} prep upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY})
 
                     # build snap
-                    ARCHES="amd64 arm64 ppc64le s390x"
-                    for arch in \${ARCHES}
+                    for arch in ${env.ADDONS_ARCHES}
                     do
                         echo "Building cdk-addons snap for arch \${arch}."
                         wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
@@ -163,9 +163,11 @@ pipeline {
                     STATIC_KEY=v${params.version}-static:
                     UPSTREAM_KEY=${kube_version}-upstream:
 
+                    # Keep track of images we need to massage as well what we report
                     ALL_IMAGES=""
-                    ARCHES="amd64 arm64 ppc64le s390x"
-                    for arch in \${ARCHES}
+                    REPORT_IMAGES=""
+
+                    for arch in ${env.ADDONS_ARCHES}
                     do
                         ARCH_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|\${arch}|g" -e "s|{{ multiarch_workaround }}||g")
                         ALL_IMAGES="\${ALL_IMAGES} \${ARCH_IMAGES}"
@@ -177,9 +179,6 @@ pipeline {
                     # We pull images from staging and push to our production location
                     PROD_PREFIX=${env.REGISTRY_URL}/cdk
                     STAGING_PREFIX=${env.REGISTRY_URL}/staging/cdk
-
-                    # Keep track of images for friendly reporting
-                    REPORT_IMAGES=""
 
                     for i in \${ALL_IMAGES}
                     do
@@ -199,20 +198,20 @@ pipeline {
                                 break
                             fi
                         done
-                        REPORT_IMAGES="\${REPORT_IMAGES} \${RAW_IMAGE}"
                         PROD_IMAGE=\${PROD_PREFIX}/\${RAW_IMAGE}
                         STAGING_IMAGE=\${STAGING_PREFIX}/\${RAW_IMAGE}
+                        REPORT_IMAGES="\${REPORT_IMAGES} \${RAW_IMAGE}"
 
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${STAGING_IMAGE}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" | grep done
+                            if ! sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" | grep done
+                                sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             fi
                         fi
 
@@ -224,20 +223,35 @@ pipeline {
                         else
                             sudo lxc exec image-processor -- ctr image tag \${STAGING_IMAGE} \${PROD_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" | grep done
+                            if ! sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" | grep done
+                                sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             fi
                         fi
                     done
 
-                    echo "All images known to this builder:"
-                    sudo lxc exec image-processor -- ctr image ls
+                    # Commit what we know about our images
+                    REPORT_FILE=container-images/${kube_version}.txt
+                    REPORT_IMAGES=\$(echo "\${REPORT_IMAGES}" | xargs -n1 | sort -u)
 
-                    echo "All images required for ${params.version}:"
-                    echo "\${REPORT_IMAGES}"
+                    cd bundle
+                    echo \${REPORT_IMAGES} > \${REPORT_FILE}
+                    git add \${REPORT_FILE}
+                    if git status | grep -qi "nothing to commit"
+                    then
+                        echo "No image changes; nothing to commit"
+                    else
+                        git commit -am "Updating \${REPORT_FILE}"
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have updated \${REPORT_FILE} with: \${REPORT_IMAGES}"
+                        else
+                            git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
+                        fi
+                    fi
+                    cd -
                 """
             }
         }
