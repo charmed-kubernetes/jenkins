@@ -203,7 +203,13 @@ pipeline {
                         then
                             echo "Dry run; would have pulled: \${STAGING_IMAGE}"
                         else
-                            sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            # simple retry if initial pull fails
+                            if ! sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            then
+                                echo "Retrying pull"
+                                sleep 5
+                                sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            fi
                         fi
 
                         # Tag and push
@@ -213,7 +219,13 @@ pipeline {
                             echo "Dry run; would have pushed: \${PROD_IMAGE}"
                         else
                             sudo lxc exec image-processor -- ctr image tag \${STAGING_IMAGE} \${PROD_IMAGE}
-                            sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            # simple retry if initial push fails
+                            if ! sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            then
+                                echo "Retrying push"
+                                sleep 5
+                                sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            fi
                         fi
                     done
 
