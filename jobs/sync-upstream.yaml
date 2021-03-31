@@ -5,6 +5,24 @@
     node: runner-cloud
     description: |
       Sync all release tags from upstream.
+
+      If the job fails to create snap recipes with 401 Unauthorized, you may
+      need to update launchpad_creds:
+
+      $ python3
+      >>> from launchpadlib.credentials import Credentials
+      >>> credentials = Credentials("k8s-jenkaas-bot")
+      >>> request_token_info = credentials.get_request_token(web_root="production")
+      >>> request_token_info
+      'https://launchpad.net/+authorize-token?oauth_token=<some_token>'
+      >>> # access above URL in your browser to login as k8s-team-ci, credentials are in LastPass
+      >>> credentials.exchange_request_token_for_access_token(web_root="production")
+      >>> with open('launchpad_creds', 'wb') as f:
+      ...     f.write(credentials.serialize())
+      ...
+      >>> exit()
+
+      Then upload the launchpad_creds file to the launchpad_creds credential on Jenkins.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
