@@ -37,6 +37,8 @@ from .utils import (
     kubectl,
     juju_run,
     get_ipv6_addr,
+    vault,
+    vault_status,
 )
 import urllib.request
 from .logger import log
@@ -1582,85 +1584,156 @@ data:
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
+    master_app = model.applications["kubernetes-master"]
+    etcd_app = model.applications["etcd"]
     vault_app = model.applications["vault"]
     if await vault_app.units[0].is_leader_from_status():
-        vault_leader = vault_app.units[0]
+        leader = vault_app.units[0]
     else:
-        vault_leader = vault_app.units[1]
+        leader = vault_app.units[1]
 
-    click.echo("Unsealing vault")
-    # init vault
-    output = await vault_leader.run(
-        "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
-        "operator init -key-shares=5 -key-threshold=3 "
-        "--format=yaml"
-    )
-    assert output.status == "completed"
-    vault_info = yaml.safe_load(output.results.get("Stdout", ""))
-    click.echo(vault_info)
-    # unseal vault
-    for vault_unit in vault_app.units:
-        for key in vault_info["unseal_keys_hex"][:3]:
-            output = await vault_unit.run(
-                "VAULT_ADDR=http://localhost:8200 /snap/bin/vault "
-                "operator unseal {}".format(key)
+    async def ensure_vault_up():
+        await asyncio.gather(
+            *(
+                retry_async_with_timeout(vault_status, [unit])
+                for unit in vault_app.units
             )
-            assert output.status == "completed"
-    output = await vault_leader.run(
-        "VAULT_ADDR=http://localhost:8200 VAULT_TOKEN={} "
-        "/snap/bin/vault token create -ttl=10m --format=yaml"
-        "".format(vault_info["root_token"])
-    )
-    assert output.status == "completed"
-    vault_token_info = yaml.safe_load(output.results.get("Stdout", ""))
-    click.echo(vault_token_info)
-    charm_token = vault_token_info["auth"]["client_token"]
+        )
+
+    click.echo("Waiting for Vault to settle")
+    await model.wait_for_idle(apps=["vault"], timeout=30 * 60)
+
+    # NB: At this point, depending on the version of the Vault charm, its status
+    # might either be (a less than informative) "'etcd' incomplete" (cs:vault-44)
+    # or "Vault needs to be initialized" (cs:~openstack-charmers-next/vault).
+
+    # init vault
+    click.echo("Initializing Vault")
+    await ensure_vault_up()
+    init_info = await vault(leader, "operator init -key-shares=5 -key-threshold=3")
+    click.echo(init_info)
+    # unseal vault leader (could also unseal follower, but it will be resealed later anyway)
+    for key in init_info["unseal_keys_hex"][:3]:
+        await vault(leader, "operator unseal " + key)
+
+    # authorize charm
     click.echo("Authorizing charm")
-    action = await vault_leader.run_action("authorize-charm", token=charm_token)
+    root_token = init_info["root_token"]
+    token_info = await vault(leader, "token create -ttl=10m", VAULT_TOKEN=root_token)
+    click.echo(token_info)
+    charm_token = token_info["auth"]["client_token"]
+    action = await leader.run_action("authorize-charm", token=charm_token)
     await action.wait()
-    click.echo("Finalizing vault unseal")
     assert action.status not in ("pending", "running", "failed")
 
-    # now wait for the rest of k8s to settle
+    # At this point, Vault is up but in non-HA mode. If we weren't using the
+    # auto-generate-root-ca-cert config, though, it would still be blocking
+    # etcd until we ran either the generate-root-ca or upload-signed-csr
+    # actions. NB: If we did need to manually generate or provide a root CA,
+    # the current charm release (cs:vault-44) would also still be reporting the
+    # less than helpful "'etcd' incomplete" status, while the newer charm would
+    # more helpfully report that it was blocked on the root CA.
+
+    # Since we are using the auto-generate-root-ca-cert config, though, we can
+    # just go straight to waiting for etcd to settle.
+    click.echo("Waiting for etcd to settle")
+    await model.wait_for_idle(apps=["etcd"], timeout=30 * 60)
+    for attempt in range(3):
+        actual_status = {unit.workload_status_message for unit in etcd_app.units}
+        expected_status = {"Healthy with 3 known peers"}
+        if actual_status == expected_status:
+            break
+        # The etcd service tends takes a bit to get the cluster up and
+        # report the proper status, during which time it's not really
+        # feasible for the charm code to block, so it sometimes takes an
+        # update-status hook or two before the unit status is accurate. We
+        # can hurry that along a bit, however.
+        click.echo("Poking etcd to refresh status")
+        await asyncio.gather(
+            *(juju_run(unit, "hooks/update-status") for unit in etcd_app.units)
+        )
+
+    # Even once etcd is ready, Vault will remain in non-HA mode until the Vault
+    # service is restarted, which will re-seal the vault.
+    click.echo("Restarting Vault for HA")
+    await asyncio.gather(
+        *(juju_run(unit, "systemctl restart vault") for unit in vault_app.units)
+    )
+    await ensure_vault_up()
+
+    click.echo("Unsealing Vault again in HA mode")
+    for key in init_info["unseal_keys_hex"][:3]:
+        await asyncio.gather(
+            *(vault(unit, "operator unseal " + key) for unit in vault_app.units)
+        )
+    # force unit status to update
+    await asyncio.gather(
+        *(juju_run(unit, "hooks/update-status") for unit in vault_app.units)
+    )
+    statuses = sorted(unit.workload_status_message for unit in vault_app.units)
+    click.echo(statuses)
+    assert statuses == [
+        "Unit is ready (active: false, mlock: disabled)",
+        "Unit is ready (active: true, mlock: disabled)",
+    ]
+
+    # Until https://github.com/juju-solutions/layer-vault-kv/pull/11 lands, the
+    # k8s-master units can go into error due to trying to talk to Vault during
+    # the restart. Once Vault is back up, the errored hooks can just be retried.
+    await model.wait_for_idle(
+        apps=["kubernetes-master"], raise_on_error=False, timeout=60 * 60
+    )
+
+    async def retry_hook(unit):
+        # Until https://github.com/juju/python-libjuju/issues/484 is fixed, we
+        # have to do this manually.
+        from juju.client import client
+
+        app_facade = client.ApplicationFacade.from_connection(unit.connection)
+        await app_facade.ResolveUnitErrors(
+            all_=False, retry=True, tags={"entities": [{"tag": unit.tag}]}
+        )
+
+    for attempt in range(3):
+        errored_units = [
+            unit for unit in master_app.units if unit.workload_status == "error"
+        ]
+        if not errored_units:
+            break
+        click.echo("Retrying failed k8s-master hook for Vault restart")
+        await asyncio.gather(*(retry_hook(unit) for unit in errored_units))
+        await model.wait_for_idle(apps=["kubernetes-master"], raise_on_error=False)
+
+    # The cluster is probably mostly settled by this point, since the masters typically
+    # take the longest to go into quiescence. However, in case they got into an errored
+    # state, we need to give things another chance to settle out, while also checking
+    # for any other failed units.
     click.echo("Waiting for cluster to settle")
-    try:
-        await asyncio.wait_for(tools.juju_wait(), timeout=30 * 60)
-    except asyncio.TimeoutError:
-        stdout, stderr = await tools.run("juju", "status", "-m", tools.connection)
-        click.echo(f"Timed out waiting for cluster:\n{stderr}\n{stdout}")
-        raise
+    await model.wait_for_idle(
+        wait_for_active=True, raise_on_blocked=True, timeout=60 * 60
+    )
 
     click.echo("Creating secret")
-    # create secret
-    one_master = random.choice(model.applications["kubernetes-master"].units)
-    output = await one_master.run(
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config create secret generic test-secret "
-        "--from-literal=username='secret-value'"
+    await kubectl(
+        model,
+        "create secret generic test-secret --from-literal=username='secret-value'",
     )
-    if output.results.get("Stderr", ""):
-        click.echo("stderr: {}".format(output.results.get("Stderr", "")))
-    assert output.status == "completed"
+
     click.echo("Verifying secret")
-    # read secret
-    output = await one_master.run(
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config get secret test-secret -o yaml"
-    )
-    if output.results.get("Stderr", ""):
-        click.echo("stderr: {}".format(output.results.get("Stderr", "")))
-    assert output.status == "completed"
-    assert b64encode(b"secret-value").decode("utf8") in output.results.get("Stdout", "")
-    click.echo("Verifying encryption")
-    # verify secret is encrypted
+    result = await kubectl(model, "get secret test-secret -o json")
+    secret_value = json.loads(result.stdout)["data"]["username"]
+    b64_value = b64encode(b"secret-value").decode("utf8")
+    assert secret_value == b64_value
+
+    click.echo("Verifying secret encryption")
     etcd = model.applications["etcd"].units[0]
-    output = await etcd.run(
+    result = await juju_run(
+        etcd,
         "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
         "--endpoints http://127.0.0.1:4001 "
-        "get /registry/secrets/default/test-secret | strings"
+        "get /registry/secrets/default/test-secret | strings",
     )
-    assert output.status == "completed"
-    assert b64encode(b"secret-value").decode("utf8") not in output.results.get(
-        "Stdout", ""
-    )
+    assert b64_value not in result.output
 
 
 @pytest.mark.asyncio
