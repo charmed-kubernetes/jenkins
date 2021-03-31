@@ -114,7 +114,84 @@ pipeline {
                 lxd_exec("${lxc_name}", "apt install containerd -y")
             }
         }
-        stage('Process Images'){
+        stage('Process CI Images'){
+            steps {
+                sh """
+                    # Key from the bundle_image_file used to identify images for CI
+                    CI_KEY=ci-static:
+
+                    CI_IMAGES=""
+                    ARCHES="amd64 arm64 ppc64le s390x"
+                    for arch in \${ARCHES}
+                    do
+                        ARCH_IMAGES=\$(grep -e \${CI_KEY} ${bundle_image_file} | sed -e "s|\${CI_KEY}||g" -e "s|{{ arch }}|\${arch}|g")
+                        CI_IMAGES="\${ALL_IMAGES} \${ARCH_IMAGES}"
+                    done
+
+                    # Clean up dupes by making a sortable list, uniq it, and turn it back to a string
+                    CI_IMAGES=\$(echo "\${CI_IMAGES}" | xargs -n1 | sort -u | xargs)
+
+                    # All CK CI images live under ./cdk in our registry
+                    TAG_PREFIX=${env.REGISTRY_URL}/cdk
+
+                    # Login to increase rate limit for dockerhub
+                    which docker && docker login -u ${env.DOCKERHUB_CREDS_USR} -p ${env.DOCKERHUB_CREDS_PSW}
+
+                    for i in \${CI_IMAGES}
+                    do
+                        # Skip images that we already host
+                        if echo \${i} | grep -qi -e 'rocks.canonical.com'
+                        then
+                            continue
+                        fi
+
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have pulled: \${i}"
+                        else
+                            # simple retry if initial pull fails
+                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                            then
+                                echo "Retrying pull"
+                                sleep 5
+                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                            fi
+                        fi
+
+                        # Massage image names
+                        RAW_IMAGE=\${i}
+                        for repl in ${env.REGISTRY_REPLACE}
+                        do
+                            if echo \${RAW_IMAGE} | grep -qi \${repl}
+                            then
+                                RAW_IMAGE=\$(echo \${RAW_IMAGE} | sed -e "s|\${repl}||g")
+                                break
+                            fi
+                        done
+
+                        # Tag and push
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have tagged: \${i}"
+                            echo "Dry run; would have pushed: \${TAG_PREFIX}/\${RAW_IMAGE}"
+                        else
+                            sudo lxc exec ${lxc_name} -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
+                            # simple retry if initial push fails
+                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            then
+                                echo "Retrying push"
+                                sleep 5
+                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            fi
+                        fi
+                    done
+
+                    # Make sure this worker doesn't stay logged in to dockerhub
+                    which docker && docker logout
+                """
+            }
+        }
+        stage('Process K8s Images'){
             steps {
                 sh """
                     # Keys from the bundle_image_file used to identify images per release
@@ -189,15 +266,14 @@ pipeline {
 
                     # Make sure this worker doesn't stay logged in to dockerhub
                     which docker && docker logout
-
-                    echo "All images known to this builder:"
-                    sudo lxc exec ${lxc_name} -- ctr image ls
                 """
             }
         }
     }
     post {
         always {
+            echo "All images known to this builder:"
+            sh "sudo lxc exec ${lxc_name} -- ctr image ls"
             sh "echo Disk usage before cleanup"
             sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
             sh "sudo lxc delete -f ${lxc_name}"
