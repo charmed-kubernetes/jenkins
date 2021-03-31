@@ -91,7 +91,11 @@ pipeline {
                 echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
                     cd cdk-addons
-                    make KUBE_VERSION=${kube_version} prep
+                    # prep ./build/templates and track upstream images
+                    UPSTREAM_KEY=${kube_version}-upstream:
+                    UPSTREAM_LINE=\$(make KUBE_VERSION=${kube_version} prep upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY})
+
+                    # build snap
                     ARCHES="amd64 arm64 ppc64le s390x"
                     for arch in \${ARCHES}
                     do
@@ -117,10 +121,6 @@ pipeline {
                         fi
                     done
                     cd ..
-
-                    echo "Processing upstream images."
-                    UPSTREAM_KEY=${kube_version}-upstream:
-                    UPSTREAM_LINE=\$(cd cdk-addons && make KUBE_VERSION=${kube_version} upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY})
 
                     echo "Updating bundle with upstream images."
                     if grep -q ^\${UPSTREAM_KEY} ${bundle_image_file}
