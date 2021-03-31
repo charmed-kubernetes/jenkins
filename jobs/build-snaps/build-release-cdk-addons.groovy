@@ -178,6 +178,9 @@ pipeline {
                     PROD_PREFIX=${env.REGISTRY_URL}/cdk
                     STAGING_PREFIX=${env.REGISTRY_URL}/staging/cdk
 
+                    # Keep track of images for friendly reporting
+                    REPORT_IMAGES=""
+
                     for i in \${ALL_IMAGES}
                     do
                         # Skip images that we already host
@@ -196,6 +199,7 @@ pipeline {
                                 break
                             fi
                         done
+                        REPORT_IMAGES="\${REPORT_IMAGES} \${RAW_IMAGE}"
                         PROD_IMAGE=\${PROD_PREFIX}/\${RAW_IMAGE}
                         STAGING_IMAGE=\${STAGING_PREFIX}/\${RAW_IMAGE}
 
@@ -204,11 +208,11 @@ pipeline {
                             echo "Dry run; would have pulled: \${STAGING_IMAGE}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            if ! sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" | grep done
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                                sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" | grep done
                             fi
                         fi
 
@@ -220,17 +224,20 @@ pipeline {
                         else
                             sudo lxc exec image-processor -- ctr image tag \${STAGING_IMAGE} \${PROD_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            if ! sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" | grep done
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                                sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" | grep done
                             fi
                         fi
                     done
 
                     echo "All images known to this builder:"
                     sudo lxc exec image-processor -- ctr image ls
+
+                    echo "All images required for ${params.version}:"
+                    echo "\${REPORT_IMAGES}"
                 """
             }
         }
