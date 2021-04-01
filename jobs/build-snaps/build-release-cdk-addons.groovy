@@ -252,6 +252,9 @@ pipeline {
                         fi
                     fi
                     cd -
+
+                    echo "All images known to this builder:"
+                    sudo lxc exec image-processor -- ctr image ls
                 """
             }
         }
