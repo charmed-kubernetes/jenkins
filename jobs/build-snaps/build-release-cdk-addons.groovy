@@ -132,6 +132,7 @@ pipeline {
                     sort -o ${bundle_image_file} ${bundle_image_file}
 
                     cd bundle
+                    git pull origin master
                     if git status | grep -qi "nothing to commit"
                     then
                         echo "No image changes; nothing to commit"
@@ -233,11 +234,11 @@ pipeline {
                     done
 
                     # Commit what we know about our images
+                    cd bundle
                     REPORT_FILE=container-images/${kube_version}.txt
                     REPORT_IMAGES=\$(echo "\${REPORT_IMAGES}" | xargs -n1 | sort -u)
-
-                    cd bundle
                     echo \${REPORT_IMAGES} > \${REPORT_FILE}
+                    git pull origin master
                     git add \${REPORT_FILE}
                     if git status | grep -qi "nothing to commit"
                     then
