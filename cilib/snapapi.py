@@ -74,7 +74,6 @@ def revisions(snap, version_filter_track, arch="amd64", exclude_pre=False):
 
     re_comp = re.compile("[ \t+]{2,}")
     revision_list = sh.snapcraft.revisions(snap, "--arch", arch, _err_to_out=True)
-    print(revision_list)
     revision_list = revision_list.stdout.decode().splitlines()[1:]
     revision_parsed = {}
 
