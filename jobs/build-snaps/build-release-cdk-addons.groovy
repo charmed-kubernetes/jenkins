@@ -236,8 +236,7 @@ pipeline {
                     # Commit what we know about our images
                     cd bundle
                     REPORT_FILE=container-images/${kube_version}.txt
-                    REPORT_IMAGES=\$(echo "\${REPORT_IMAGES}" | xargs -n1 | sort -u)
-                    echo \${REPORT_IMAGES} > \${REPORT_FILE}
+                    echo \${REPORT_IMAGES} | xargs -n1 | sort -u > \${REPORT_FILE}
                     git pull origin master
                     git add \${REPORT_FILE}
                     if git status | grep -qi "nothing to commit"
