@@ -41,8 +41,8 @@ class Microk8sSnap:
         click.echo("Callling {}".format(cmd))
         revisions_list = run(cmd, stdout=PIPE, stderr=STDOUT)
         revisions_list = revisions_list.stdout.decode("utf-8").split("\n")
-        click.echo(revisions_list)
-        click.echo("Searching for {}".format(channel_patern))
+        click.echo("Got revisions list with size {}".format(len(revisions_list)))
+        click.echo("Searching for {} in revisions list".format(channel_patern))
         for revision in revisions_list:
             if channel_patern in revision:
                 revision_info_str = revision

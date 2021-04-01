@@ -90,7 +90,7 @@ if __name__ == "__main__":
             )
 
         candidate_snap = Microk8sSnap(
-            source_track, source_channel, juju_unit, juju_controller
+            source_track, source_channel, juju_unit, juju_controller, juju_model
         )
         if not candidate_snap.released:
             # Nothing to release
