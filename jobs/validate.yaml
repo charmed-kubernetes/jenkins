@@ -1,11 +1,11 @@
-# Validates a deployed CDK
+# Validates a deployed CK
 
 # V2 ------------------------------------------------------------------------- #
 - job:
     name: 'validate-ck'
     node: runner-cloud
     description: |
-      Validates CDK edge on amd64, supports last three recent releases.
+      Validates CK edge on amd64, supports last three recent releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -27,10 +27,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
@@ -59,7 +59,7 @@
     name: 'validate-ck-cloud'
     node: runner-cloud
     description: |
-      Validates CDK edge on amd64, supports last three recent releases on clouds AWS/GCE/Azure and runs weekly.
+      Validates CK edge on amd64, supports last three recent releases on clouds AWS/GCE/Azure and runs weekly.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -81,10 +81,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
@@ -118,7 +118,7 @@
     name: 'validate-ck-arm64'
     node: runner-arm64
     description: |
-      Validates CDK edge on arm64, supports last three recent releases.
+      Validates CK edge on arm64, supports last three recent releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -140,10 +140,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
@@ -173,7 +173,7 @@
     name: 'validate-ck-stable'
     node: runner-validate
     description: |
-      Validates CDK stable on amd64 and arm64, supports last three recent releases additionally.
+      Validates CK stable on amd64 and arm64, supports last three recent releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -195,9 +195,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/stable
+            - 1.20/stable
             - 1.19/stable
             - 1.18/stable
-            - 1.17/stable
       - axis:
           type: user-defined
           name: series
@@ -250,9 +251,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.20/stable
             - 1.19/stable
-            - 1.18/stable
-            - 1.17/stable
       - axis:
           type: user-defined
           name: series
@@ -303,9 +303,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.20/stable
             - 1.19/stable
-            - 1.18/stable
-            - 1.17/stable
       - axis:
           type: user-defined
           name: series
@@ -335,7 +334,7 @@
     name: 'validate-ck-snapd-upgrade'
     node: runner-amd64
     description: |
-      Validates CK release using an upgrade snapcore.
+      Validates CK stable release using an upgraded core snap.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -357,7 +356,7 @@
            type: user-defined
            name: snap_version
            values:
-             - 1.19/stable
+             - 1.20/stable
       - axis:
            type: user-defined
            name: series
@@ -376,7 +375,7 @@
     name: 'validate-ck-series-upgrade'
     node: runner-validate
     description: |
-      Validates CK machine series upgrades.
+      Validates CK stable release with machine series upgrades.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -398,7 +397,7 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.19/stable
+            - 1.20/stable
       - axis:
           type: user-defined
           name: series
@@ -417,7 +416,7 @@
     name: 'validate-ck-localhost'
     node: runner-validate
     description: |
-      Validates CDK edge, supports last three recent releases on localhost.
+      Validates CK edge, supports last three recent releases on localhost.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -439,10 +438,10 @@
            type: user-defined
            name: snap_version
            values:
+             - 1.21/edge
              - 1.20/edge
              - 1.19/edge
              - 1.18/edge
-             - 1.17/edge
       - axis:
            type: user-defined
            name: series
@@ -461,7 +460,7 @@
     name: 'validate-ck-s390x'
     node: runner-validate
     description: |
-      Validates CDK edge, supports last three recent releases on s390x localhost.
+      Validates CK edge, supports last three recent releases on s390x localhost.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -483,7 +482,10 @@
            type: user-defined
            name: snap_version
            values:
+             - 1.21/edge
+             - 1.20/edge
              - 1.19/edge
+             - 1.18/edge
       - axis:
            type: user-defined
            name: series
@@ -525,6 +527,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
@@ -577,10 +580,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
@@ -621,10 +624,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
@@ -665,10 +668,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
@@ -710,10 +713,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
@@ -755,10 +758,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
@@ -800,10 +803,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/edge
             - 1.20/edge
             - 1.19/edge
             - 1.18/edge
-            - 1.17/edge
       - axis:
           type: user-defined
           name: series
