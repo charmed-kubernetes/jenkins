@@ -37,7 +37,6 @@
           values:
             - focal
             - bionic
-            - xenial
       - axis:
           type: user-defined
           name: channel
@@ -91,7 +90,6 @@
           values:
             - focal
             - bionic
-            - xenial
       - axis:
           type: user-defined
           name: channel
@@ -150,7 +148,6 @@
           values:
             - focal
             - bionic
-            - xenial
       - axis:
           type: user-defined
           name: channel
@@ -205,7 +202,6 @@
           values:
             - focal
             - bionic
-            - xenial
       - axis:
           type: user-defined
           name: channel
@@ -362,7 +358,6 @@
            name: series
            values:
              - focal
-             - bionic
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -448,7 +443,6 @@
            values:
              - focal
              - bionic
-             - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -490,6 +484,7 @@
            type: user-defined
            name: series
            values:
+             - focal
              - bionic
     builders:
       - set-env:
@@ -634,7 +629,6 @@
           values:
             - focal
             - bionic
-            - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -678,7 +672,6 @@
           values:
             - focal
             - bionic
-            - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -723,7 +716,6 @@
           values:
             - focal
             - bionic
-            - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -813,7 +805,6 @@
           values:
             - focal
             - bionic
-            - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
