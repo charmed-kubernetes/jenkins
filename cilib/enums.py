@@ -6,11 +6,11 @@ import yaml
 JOBS_PATH = Path("jobs")
 
 # Current supported STABLE K8s MAJOR.MINOR release
-# This should be updated whenever a new major.minor is released
-K8S_STABLE_VERSION = "1.20"
+# This should be updated whenever a new upstream major.minor goes GA
+K8S_STABLE_VERSION = "1.21"
 
 # Next MAJOR.MINOR
-K8S_NEXT_VERSION = "1.21"
+K8S_NEXT_VERSION = "1.22"
 
 # Lowest K8S SEMVER to process, this is usually the last 3 releases
 K8S_STARTING_SEMVER = "1.17.0"
