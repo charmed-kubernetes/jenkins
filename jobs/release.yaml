@@ -26,7 +26,7 @@
           JOB_SPEC_DIR: "jobs/release"
       - run-env:
           COMMAND: |
-            parallel --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.21/beta ::: focal bionic xenial ::: beta ::: arm64 amd64
+            parallel --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.21/beta ::: focal bionic ::: beta ::: arm64 amd64
             parallel --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} {5} ::: 1.20/stable 1.19/stable 1.18/stable ::: focal bionic xenial ::: beta ::: arm64 amd64 ::: 1.21/beta
 
 - job:
