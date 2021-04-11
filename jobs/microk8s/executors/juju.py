@@ -34,7 +34,9 @@ class JujuExecutor(ExecutorInterface):
     def has_tests_for_track(self, track):
         cmd = (
             "git ls-remote --exit-code "
-            "--heads https://github.com/ubuntu/microk8s.git refs/heads/{}".format(track).split()
+            "--heads https://github.com/ubuntu/microk8s.git refs/heads/{}".format(
+                track
+            ).split()
         )
         run(cmd, check=True, stdout=PIPE, stderr=STDOUT)
 
