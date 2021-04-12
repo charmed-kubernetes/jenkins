@@ -36,7 +36,7 @@ def is_latest(release):
 
 def gh_branch_exists(branch):
     """Return true if the branch is already available on the repository"""
-    cmd = "git ls-remote --exit-code --heads https://github.com/ubuntu/microk8s.git {}".format(
+    cmd = "git ls-remote --exit-code --heads https://github.com/ubuntu/microk8s.git refs/heads/{}".format(
         branch
     ).split()
     try:
