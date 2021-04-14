@@ -16,10 +16,16 @@
     parameters:
       - string:
           name: CK_VERSION
-          default: '1.20'
+          default: '1.21'
           description: |
-            CK version to deploy. This will be used to set the snap channel
+            CK version to deploy. This will be used to set the snap track
             and to identify what k8s version is associated with the results.
+      - string:
+          name: CK_CHANNEL
+          default: 'stable'
+          description: |
+            CK channel to deploy. This will be used to set the snap and
+            charm channels used during deployment.
     properties:
       - build-discarder:
           num-to-keep: 4
