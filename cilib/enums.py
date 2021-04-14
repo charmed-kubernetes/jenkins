@@ -6,11 +6,11 @@ import yaml
 JOBS_PATH = Path("jobs")
 
 # Current supported STABLE K8s MAJOR.MINOR release
-# This should be updated whenever a new major.minor is released
+# This should be updated whenever a new CK major.minor is GA
 K8S_STABLE_VERSION = "1.20"
 
 # Next MAJOR.MINOR
-K8S_NEXT_VERSION = "1.21"
+K8S_NEXT_VERSION = "1.22"
 
 # Lowest K8S SEMVER to process, this is usually the last 3 releases
 K8S_STARTING_SEMVER = "1.17.0"
@@ -50,7 +50,8 @@ SNAP_K8S_TRACK_MAP = {
     "1.18": ["1.18/stable", "1.18/candidate", "1.18/beta", "1.18/edge"],
     "1.19": ["1.19/stable", "1.19/candidate", "1.19/beta", "1.19/edge"],
     "1.20": ["1.20/stable", "1.20/candidate", "1.20/beta", "1.20/edge"],
-    "1.21": ["1.21/candidate", "1.21/beta", "1.21/edge"],
+    "1.21": ["1.21/stable", "1.21/candidate", "1.21/beta", "1.21/edge"],
+    "1.22": ["1.22/edge"],
 }
 
 # Deb k8s version <-> ppa mapping
