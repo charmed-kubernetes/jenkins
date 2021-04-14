@@ -108,6 +108,10 @@ function test::capture
             is_pass="False"
         else
             echo "Passed conformance; uploading results to azure storageaccount"
+            # we need the storage account key before upload
+            set +x
+            source /var/lib/jenkins/.local/share/juju/azure-arc.sh
+            set -x
             az storage blob upload -c canonical-testresults --account-name canonicalarcsa \
                 --account-key ${STORAGE_ACCOUNT_KEY} -f ${SB_TAR} -n ${SB_TAR}
             az storage blob upload -c canonical-testresults --account-name canonicalarcsa \
