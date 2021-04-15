@@ -39,7 +39,7 @@ applications:
   easyrsa: null
   vault:
     charm: cs:vault
-    num_units: 1
+    num_units: 2
     options:
       auto-generate-root-ca-cert: true
       disable-mlock: true
@@ -56,6 +56,7 @@ relations:
   - ["vault:certificates", "kubeapi-load-balancer:certificates"]
   - ["vault:certificates", "etcd:certificates"]
   - ["vault:shared-db", "percona-cluster:shared-db"]
+  - ["vault:etcd", "etcd:db"]
   - ["kubernetes-master:vault-kv", "vault:secrets"]
 EOF
 }
@@ -67,18 +68,8 @@ function now_min
 
 function juju::wait
 {
-    # We can only wait for Vault to be ready to unseal. The test itself has to
-    # wait for the rest of the cluster to settle after that is done.
-    echo "Waiting for Vault to be ready to initialize..."
-    start_min=$(now_min)
-    while ! juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" vault | grep -q "Vault needs to be initialized"; do
-        sleep 60
-        if (( $(now_min) - start_min > 20 )); then
-            echo "Timed out waiting for Vault"
-            juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" vault
-            exit 124
-        fi
-    done
+    # Cluster status won't be stable because Vault requires manual unsealing.
+    return
 }
 
 function test::execute

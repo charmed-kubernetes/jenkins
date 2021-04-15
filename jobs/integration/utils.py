@@ -508,13 +508,16 @@ async def finish_series_upgrade(machine, tools):
 
 
 class JujuRunError(AssertionError):
-    def __init__(self, command, result):
+    def __init__(self, unit, command, result):
+        self.unit = unit
         self.command = command
         self.code = result.code
         self.stdout = result.stdout
         self.stderr = result.stderr
         self.output = result.output
-        super().__init__(f"`{self.command}` failed:\n{self.stdout}\n{self.stderr}")
+        super().__init__(
+            f"`{self.command}` failed on {self.unit.name}:\n{self.stdout}\n{self.stderr}"
+        )
 
 
 class JujuRunResult:
@@ -530,7 +533,7 @@ class JujuRunResult:
 async def juju_run(unit, cmd, check=True):
     result = JujuRunResult(await unit.run(cmd))
     if check and not result.success:
-        raise JujuRunError(cmd, result)
+        raise JujuRunError(unit, cmd, result)
     return result
 
 
@@ -539,6 +542,31 @@ async def kubectl(model, cmd, check=True):
     return await juju_run(
         master, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
     )
+
+
+async def vault(unit, cmd, **env):
+    env[
+        "VAULT_FORMAT"
+    ] = "json"  # Can't override this or we won't be able to parse the results
+    env.setdefault("VAULT_ADDR", "http://localhost:8200")
+    env = " ".join(f"{key}='{value}'" for key, value in env.items())
+    result = await juju_run(unit, f"{env} /snap/bin/vault {cmd}")
+    return json.loads(result.stdout)
+
+
+async def vault_status(unit):
+    try:
+        click.echo(f"Checking Vault status on {unit.name}")
+        result = await vault(unit, "status")
+    except JujuRunError as e:
+        if e.code == 2:
+            # This just means Vault is sealed, which is fine.
+            result = json.loads(e.stdout)
+        else:
+            click.echo(f"Vault not running on {unit.name}: {e.output}")
+            return None
+    click.echo(f"Vault is running on {unit.name}: {result}")
+    return result
 
 
 async def get_ipv6_addr(unit):

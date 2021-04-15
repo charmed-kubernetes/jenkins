@@ -21,7 +21,7 @@ invoke
 importlib-metadata
 jenkins-job-builder
 jinja2
-juju==2.8.2
+juju
 jujubundlelib
 kv
 loguru
