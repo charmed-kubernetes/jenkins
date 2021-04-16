@@ -38,7 +38,8 @@ class SnapService(DebugMixin):
         snap_branches = self.snap_model.base.branches_from_semver_point(
             enums.K8S_STARTING_SEMVER
         )
-        return list(set(upstream_tags) - set(snap_branches))
+        # return list(set(upstream_tags) - set(snap_branches))
+        return ["v1.22.0-alpha.0"]
 
     def sync_from_upstream(self):
         """Syncs branches from upstream tags"""
@@ -82,7 +83,7 @@ class SnapService(DebugMixin):
                 self.log(f"Committing {branch}")
                 self.snap_model.base.add([str(snapcraft_fn)], cwd=str(src_path))
                 self.snap_model.base.commit(
-                    f"Creating branch {branch}", cwd=str(src_path)
+                    f"Updating branch {branch}", cwd=str(src_path)
                 )
                 self.snap_model.base.push(ref=branch, cwd=str(src_path))
 
