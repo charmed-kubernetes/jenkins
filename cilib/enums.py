@@ -7,13 +7,13 @@ JOBS_PATH = Path("jobs")
 
 # Current supported STABLE K8s MAJOR.MINOR release
 # This should be updated whenever a new CK major.minor is GA
-K8S_STABLE_VERSION = "1.20"
+K8S_STABLE_VERSION = "1.21"
 
 # Next MAJOR.MINOR
 K8S_NEXT_VERSION = "1.22"
 
-# Lowest K8S SEMVER to process, this is usually the last 3 releases
-K8S_STARTING_SEMVER = "1.17.0"
+# Lowest K8S SEMVER to process, this is usually stable - 3
+K8S_STARTING_SEMVER = "1.18.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -33,6 +33,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
+    "1.22": "go/1.16/stable",
     "1.21": "go/1.16/stable",
     "1.20": "go/1.15/stable",
     "1.19": "go/1.15/stable",
@@ -62,6 +63,7 @@ DEB_K8S_TRACK_MAP = {
     "1.19": "ppa:k8s-maintainers/1.19",
     "1.20": "ppa:k8s-maintainers/1.20",
     "1.21": "ppa:k8s-maintainers/1.21",
+    "1.22": "ppa:k8s-maintainers/1.22",
 }
 
 

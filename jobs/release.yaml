@@ -26,14 +26,14 @@
           JOB_SPEC_DIR: "jobs/release"
       - run-env:
           COMMAND: |
-            parallel --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.21/beta ::: focal bionic ::: beta ::: arm64 amd64
-            parallel --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} {5} ::: 1.20/stable 1.19/stable 1.18/stable ::: focal bionic xenial ::: beta ::: arm64 amd64 ::: 1.21/beta
+            parallel --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.21/stable ::: focal bionic ::: beta ::: arm64 amd64
+            parallel --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} {5} ::: 1.20/stable 1.19/stable 1.18/stable ::: focal bionic xenial ::: beta ::: arm64 amd64 ::: 1.21/stable
 
 - job:
     name: 'validate-charm-bugfix'
     node: runner-validate
     description: |
-      Validates charms from their stable branch/channels in order to release a
+      Validates candidate charms with candidate snaps in order to release a
       bug/hotfix to stable.
     project-type: matrix
     scm:
@@ -54,9 +54,9 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.20/edge
-            - 1.19/edge
-            - 1.18/edge
+            - 1.21/candidate
+            - 1.20/candidate
+            - 1.19/candidate
       - axis:
           type: user-defined
           name: series
