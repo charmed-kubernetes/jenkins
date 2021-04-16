@@ -43,7 +43,7 @@ def commit(message, **subprocess_kwargs):
 
 def push(origin="origin", ref="master", **subprocess_kwargs):
     """Pushes commit to repo"""
-    run(["git", "push", origin, ref], **subprocess_kwargs)
+    run(["git", "push", "--force", origin, ref], **subprocess_kwargs)
 
 
 def merge(origin="origin", ref="master", **subprocess_kwargs):
