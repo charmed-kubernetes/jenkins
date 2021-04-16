@@ -33,7 +33,7 @@
     name: 'validate-charm-bugfix'
     node: runner-validate
     description: |
-      Validates candidate charms with stable snaps in order to release a
+      Validates candidate charms with candidate snaps in order to release a
       bug/hotfix to stable.
     project-type: matrix
     scm:
@@ -54,9 +54,9 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.21/stable
-            - 1.20/stable
-            - 1.19/stable
+            - 1.21/candidate
+            - 1.20/candidate
+            - 1.19/candidate
       - axis:
           type: user-defined
           name: series
