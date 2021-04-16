@@ -30,7 +30,6 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
@@ -83,7 +82,6 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
@@ -141,7 +139,6 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
@@ -195,7 +192,6 @@
             - 1.21/stable
             - 1.20/stable
             - 1.19/stable
-            - 1.18/stable
       - axis:
           type: user-defined
           name: series
@@ -352,7 +348,7 @@
            type: user-defined
            name: snap_version
            values:
-             - 1.20/stable
+             - 1.21/stable
       - axis:
            type: user-defined
            name: series
@@ -392,7 +388,7 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.20/stable
+            - 1.21/stable
       - axis:
           type: user-defined
           name: series
@@ -436,7 +432,6 @@
              - 1.21/edge
              - 1.20/edge
              - 1.19/edge
-             - 1.18/edge
       - axis:
            type: user-defined
            name: series
@@ -479,7 +474,6 @@
              - 1.21/edge
              - 1.20/edge
              - 1.19/edge
-             - 1.18/edge
       - axis:
            type: user-defined
            name: series
@@ -525,14 +519,12 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
           values:
             - focal
             - bionic
-            - xenial
       - axis:
           type: user-defined
           name: channel
@@ -578,14 +570,12 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
           values:
             - focal
             - bionic
-            - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -622,7 +612,6 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
@@ -665,7 +654,6 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
@@ -709,7 +697,6 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
@@ -753,14 +740,12 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
           values:
             - focal
             - bionic
-            - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -798,7 +783,6 @@
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
-            - 1.18/edge
       - axis:
           type: user-defined
           name: series
