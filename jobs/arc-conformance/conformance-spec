@@ -108,6 +108,10 @@ function test::capture
             is_pass="False"
         else
             echo "Passed conformance; uploading results to azure storageaccount"
+            # we need the storage account key before upload
+            set +x
+            source /var/lib/jenkins/.local/share/juju/azure-arc.sh
+            set -x
             az storage blob upload -c canonical-testresults --account-name canonicalarcsa \
                 --account-key ${STORAGE_ACCOUNT_KEY} -f ${SB_TAR} -n ${SB_TAR}
             az storage blob upload -c canonical-testresults --account-name canonicalarcsa \
@@ -128,11 +132,11 @@ function test::capture
 SONOBUOY_VERSION=0.20.0
 CLUSTER_NAME=azure-arc-ci
 CLUSTER_REGION=eastus
-SNAP_VERSION=${CK_VERSION}/stable
+SNAP_VERSION=${CK_VERSION}/${CK_CHANNEL}
 # NB: bootstrap azure with bionic until juju-2.9
 SERIES=bionic
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=stable
+JUJU_DEPLOY_CHANNEL=${CK_CHANNEL}
 JUJU_CLOUD=azure/eastus
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-ck-arc
