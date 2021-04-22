@@ -21,7 +21,7 @@
           default: '{arch}'
       - string:
           name: build_node
-          default: 'runner-amd64-bigdisk'
+          default: 'runner-amd64'
       - string:
           name: version
           default: '{version}'

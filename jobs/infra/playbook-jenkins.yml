@@ -79,7 +79,7 @@
           jq \
           language-pack-en-base \
           libffi-dev \
-          libffi6 \
+          libffi7 \
           libssl-dev \
           libuv1 \
           libxml2-dev \
@@ -88,12 +88,6 @@
           parallel \
           python3-dev \
           python3-pip \
-          python3.6 \
-          python3.6-dev \
-          python3.6-venv \
-          python3.7 \
-          python3.7-dev \
-          python3.7-venv \
           python3.8 \
           python3.8-dev \
           python3.8-venv \
@@ -151,7 +145,7 @@
         - "aws-cli --classic"
         - "charm --classic --edge"
         - "go --classic --stable"
-        - "juju --classic --channel 2.8/edge"
+        - "juju --classic --channel 2.8/stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"
@@ -186,6 +180,8 @@
       file:
         path: /var/lib/jenkins/.config/snapcraft
         state: directory
+        owner: jenkins
+        group: jenkins
         mode: 0755
       tags:
         - jenkins

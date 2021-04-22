@@ -2,7 +2,7 @@
 
 - project:
     name: infra
-    arch: ['amd64-1', 'amd64-2', 'amd64-3', 'amd64-4', 's390x', 'arm64', 'ppc64le']
+    arch: ['amd64-0', 'amd64-1', 'amd64-2', 'amd64-3', 'amd64-4', 'amd64-6', 's390x', 'arm64', 'ppc64le']
     jobs:
       - 'infra-maintain-nodes-{arch}'
 
@@ -28,6 +28,8 @@
           JOB_SPEC_DIR: "jobs/infra"
       - shell: |
           rm -rf /var/lib/jenkins/slaves/*/workspace/validate*
+          sudo apt update
+          sudo apt install -qyf python3-venv
       - run-venv:
           COMMAND: |
               #!/bin/bash
@@ -36,7 +38,6 @@
               [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
               set +o allexport
 
-              export CRYPTOGRAPHY_ALLOW_OPENSSL_102=1
               bash jobs/infra/fixtures/cleanup-env.sh
 
               venv/bin/pip install ansible
