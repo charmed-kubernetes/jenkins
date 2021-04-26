@@ -2,7 +2,7 @@
 
 - project:
     name: infra
-    arch: ['amd64-0', 'amd64-1', 'amd64-2', 'amd64-3', 'amd64-4', 'amd64-6', 's390x', 'arm64', 'ppc64le']
+    arch: ['amd64-0', 'amd64-1', 'amd64-2', 'amd64-3', 's390x', 'arm64', 'ppc64le']
     jobs:
       - 'infra-maintain-nodes-{arch}'
 
