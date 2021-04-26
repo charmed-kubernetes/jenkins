@@ -278,8 +278,6 @@ pipeline {
             sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
             sh "sudo lxc delete -f ${lxc_name}"
             sh "sudo rm -rf cdk-addons/build"
-            sh "docker image prune -a --filter \"until=24h\" --force"
-            sh "docker container prune --filter \"until=24h\" --force"
             sh "echo Disk usage after cleanup"
             sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
         }

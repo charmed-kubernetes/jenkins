@@ -75,9 +75,6 @@
             snapcraft logout
             snapcraft login --with /var/lib/jenkins/.config/snapcraft/snapcraft-cpc.cfg
 
-            docker image prune -a --filter "until=24h" --force
-            docker container prune --filter "until=24h" --force
-
             python jobs/build-snaps/build-eks-snaps.py build \
                  --version $VERSION \
                  --snap kubelet \
@@ -85,9 +82,6 @@
                  --snap kube-proxy \
                  --snap kubernetes-test
             python jobs/build-snaps/build-eks-snaps.py push --version $VERSION
-
-            docker image prune -a --filter "until=24h" --force
-            docker container prune --filter "until=24h" --force
     parameters:
       - string:
           name: VERSION

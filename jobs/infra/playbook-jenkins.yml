@@ -342,7 +342,8 @@
     - name: update jenkins user
       user:
         name: jenkins
-        groups: jenkins,docker,lxd
+        groups: docker,lxd
+        append: yes
       tags:
         - jenkins
     - name: setup lxd network
