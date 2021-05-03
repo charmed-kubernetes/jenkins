@@ -1341,7 +1341,6 @@ async def test_audit_webhook(model, tools):
 @pytest.mark.asyncio
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.clouds(["aws", "vsphere"])
-@pytest.mark.skip
 async def test_keystone(model, tools):
     masters = model.applications["kubernetes-master"]
     k8s_version_str = masters.data["workload-version"]
