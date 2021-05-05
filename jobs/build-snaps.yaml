@@ -92,15 +92,15 @@
       - string:
           name: ARCH
           default: 'amd64'
-          description: snap eks architecture to build/promote
+          description: eks snap architecture to build/promote
       - string:
           name: VERSION
           default: '1.21.1'
-          description: snap eks version to build/promote
+          description: eks snap version to build/promote
       - bool:
           name: DRY_RUN
           default: false
-          description: dry run build
+          description: if checked, only report what would be built/promoted
     properties:
       - build-discarder:
           num-to-keep: 7
