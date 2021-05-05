@@ -15,7 +15,7 @@ from sh.contrib import git
 def _set_snap_alias(build_path, alias):
     click.echo(f"Setting new snap alias: {alias}")
     if build_path.exists():
-        snapcraft_yml = yaml.load(build_path.read_text())
+        snapcraft_yml = yaml.safe_load(build_path.read_text())
         if snapcraft_yml["name"] != alias:
             snapcraft_yml["name"] = alias
             build_path.write_text(
