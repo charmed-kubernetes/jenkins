@@ -145,6 +145,7 @@ pipeline {
                             continue
                         fi
 
+                        # Pull
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${i}"
@@ -183,6 +184,14 @@ pipeline {
                                 sleep 5
                                 sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                             fi
+                        fi
+
+                        # Remove image now that we've pushed to keep our disk req low(ish)
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have removed: \${i} \${TAG_PREFIX}/\${RAW_IMAGE}"
+                        else
+                            sudo lxc exec ${lxc_name} -- ctr image rm \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         fi
                     done
 
@@ -223,6 +232,7 @@ pipeline {
                             continue
                         fi
 
+                        # Pull
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${i}"
@@ -261,6 +271,14 @@ pipeline {
                                 sleep 5
                                 sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
                             fi
+                        fi
+
+                        # Remove image now that we've pushed to keep our disk req low(ish)
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have removed: \${i} \${TAG_PREFIX}/\${RAW_IMAGE}"
+                        else
+                            sudo lxc exec ${lxc_name} -- ctr image rm \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         fi
                     done
 
