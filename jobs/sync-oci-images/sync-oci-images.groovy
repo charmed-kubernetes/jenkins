@@ -151,11 +151,11 @@ pipeline {
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
                             fi
                         fi
 
@@ -178,11 +178,11 @@ pipeline {
                         else
                             sudo lxc exec ${lxc_name} -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             fi
                         fi
 
@@ -238,11 +238,11 @@ pipeline {
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
                             fi
                         fi
 
@@ -265,11 +265,11 @@ pipeline {
                         else
                             sudo lxc exec ${lxc_name} -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             fi
                         fi
 
