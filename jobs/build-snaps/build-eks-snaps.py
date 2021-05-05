@@ -31,7 +31,7 @@ def cli():
 @cli.command()
 @click.option("--snap", required=True, multiple=True, help="Snaps to build")
 @click.option(
-    "--build-path", required=True, default="release/snap", help="Path of snap builds"
+    "--build-path", required=True, default="release", help="Path of snap builds"
 )
 @click.option(
     "--version", required=True, default="1.19.8", help="Version of k8s to build"
