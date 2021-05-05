@@ -34,7 +34,7 @@ def cli():
     "--build-path", required=True, default="release/snap", help="Path of snap builds"
 )
 @click.option(
-    "--version", required=True, default="1.14.8", help="Version of k8s to build"
+    "--version", required=True, default="1.19.8", help="Version of k8s to build"
 )
 @click.option(
     "--arch", required=True, default="amd64", help="Architecture to build against"
@@ -50,7 +50,7 @@ def build(snap, build_path, version, arch, dry_run):
         --snap kube-proxy \
         --snap kubelet \
         --snap kubernetes-test \
-        --version 1.14.8
+        --version 1.19.8
     """
     if not version.startswith("v"):
         version = f"v{version}"
@@ -97,7 +97,7 @@ def build(snap, build_path, version, arch, dry_run):
     default="release/snap/snap/build",
     help="Path of resulting snap builds",
 )
-@click.option("--version", required=True, default="1.14.8", help="k8s Version")
+@click.option("--version", required=True, default="1.19.8", help="k8s Version")
 @click.option("--dry-run", is_flag=True)
 def push(result_dir, version, dry_run):
     """Promote to a snapstore channel/track"""
