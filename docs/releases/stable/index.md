@@ -86,9 +86,8 @@ Promote new K8S snaps for the upcoming stable release to the beta and
 candidate channels of the snapstore.
 
 > **Info**: Please note that currently **CDK-ADDONS** snap needs to be
-    manually promoted to the appropriate channels.
-
-**Job**: https://jenkins.canonical.com/k8s/job/build-snaps/
+    manually promoted to the appropriate channels:
+    **Job**: https://jenkins.canonical.com/k8s/job/build-release-cdk-addons-amd64-1.22/
 
 #### Snap build options
 
