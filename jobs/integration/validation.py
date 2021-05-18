@@ -1587,10 +1587,6 @@ async def test_encryption_at_rest(model, tools):
     master_app = model.applications["kubernetes-master"]
     etcd_app = model.applications["etcd"]
     vault_app = model.applications["vault"]
-    if await vault_app.units[0].is_leader_from_status():
-        leader = vault_app.units[0]
-    else:
-        leader = vault_app.units[1]
 
     async def ensure_vault_up():
         await asyncio.gather(
@@ -1602,6 +1598,11 @@ async def test_encryption_at_rest(model, tools):
 
     click.echo("Waiting for Vault to settle")
     await model.wait_for_idle(apps=["vault"], timeout=30 * 60)
+
+    if await vault_app.units[0].is_leader_from_status():
+        leader = vault_app.units[0]
+    else:
+        leader = vault_app.units[1]
 
     # NB: At this point, depending on the version of the Vault charm, its status
     # might either be (a less than informative) "'etcd' incomplete" (cs:vault-44)
