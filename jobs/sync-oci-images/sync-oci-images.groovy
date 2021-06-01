@@ -69,8 +69,8 @@ pipeline {
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
                     fi
 
-                    echo "Getting bundle from old-ci-images branch."
-                    git clone https://github.com/charmed-kubernetes/bundle.git --branch old-ci-images --depth 1
+                    echo "Getting bundle from master branch."
+                    git clone https://github.com/charmed-kubernetes/bundle.git --branch master --depth 1
                 """
             }
         }
