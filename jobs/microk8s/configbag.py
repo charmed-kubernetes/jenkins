@@ -1,5 +1,4 @@
 import os
-import platform
 
 
 def get_arch():
@@ -7,8 +6,6 @@ def get_arch():
     Returns: the current architecture
 
     """
-    arch_translate = {"aarch64": "arm64", "x86_64": "amd64"}
-
     # return arch_translate[platform.machine()]
     return os.environ.get("ARCH", "amd64")
 
