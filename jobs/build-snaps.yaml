@@ -85,11 +85,11 @@
     parameters:
       - string:
           name: VERSION
-          default: '1.14.8'
+          default: '1.21.1'
           description: snap eks version to build/promote
     properties:
       - build-discarder:
-          num-to-keep: 2
+          num-to-keep: 7
 
 - project:
     name: build-release-snaps
