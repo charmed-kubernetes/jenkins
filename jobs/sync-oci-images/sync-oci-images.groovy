@@ -68,8 +68,10 @@ pipeline {
                         echo "Getting cdk-addons from master branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
                     fi
+
+                    echo "Getting bundle from master branch."
+                    git clone https://github.com/charmed-kubernetes/bundle.git --branch master --depth 1
                 """
-                sh "git clone https://github.com/charmed-kubernetes/bundle.git"
             }
         }
         stage('Build image list'){
@@ -145,16 +147,17 @@ pipeline {
                             continue
                         fi
 
+                        # Pull
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
                             fi
                         fi
 
@@ -177,12 +180,20 @@ pipeline {
                         else
                             sudo lxc exec ${lxc_name} -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             fi
+                        fi
+
+                        # Remove image now that we've pushed to keep our disk req low(ish)
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have removed: \${i} \${TAG_PREFIX}/\${RAW_IMAGE}"
+                        else
+                            sudo lxc exec ${lxc_name} -- ctr image rm \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         fi
                     done
 
@@ -223,16 +234,17 @@ pipeline {
                             continue
                         fi
 
+                        # Pull
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms
+                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
                             fi
                         fi
 
@@ -255,12 +267,20 @@ pipeline {
                         else
                             sudo lxc exec ${lxc_name} -- ctr image tag \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}"
+                                sudo lxc exec ${lxc_name} -- ctr image push \${TAG_PREFIX}/\${RAW_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             fi
+                        fi
+
+                        # Remove image now that we've pushed to keep our disk req low(ish)
+                        if ${params.dry_run}
+                        then
+                            echo "Dry run; would have removed: \${i} \${TAG_PREFIX}/\${RAW_IMAGE}"
+                        else
+                            sudo lxc exec ${lxc_name} -- ctr image rm \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         fi
                     done
 
