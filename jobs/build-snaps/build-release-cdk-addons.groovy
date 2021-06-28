@@ -7,6 +7,7 @@ def kube_ersion = null
 if (kube_version != "") {
     kube_ersion = kube_version.substring(1)
 }
+def lxc_name = "build-release-cdk-addons-"+env.BUILD_NUMBER
 def lxd_exec(String container, String cmd) {
     sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
 }
@@ -151,10 +152,10 @@ pipeline {
         }
         stage('Setup LXD container for ctr'){
             steps {
-                sh "sudo lxc launch ubuntu:20.04 image-processor"
-                lxd_exec("image-processor", "sleep 10")
-                lxd_exec("image-processor", "apt update")
-                lxd_exec("image-processor", "apt install containerd -y")
+                sh "sudo lxc launch ubuntu:20.04 ${lxc_name}"
+                lxd_exec("${lxc_name}", "sleep 10")
+                lxd_exec("${lxc_name}", "apt update")
+                lxd_exec("${lxc_name}", "apt install containerd -y")
             }
         }
         stage('Process Images'){
@@ -208,11 +209,11 @@ pipeline {
                             echo "Dry run; would have pulled: \${STAGING_IMAGE}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec image-processor -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr image pull \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             fi
                         fi
 
@@ -222,13 +223,13 @@ pipeline {
                             echo "Dry run; would have tagged: \${STAGING_IMAGE}"
                             echo "Dry run; would have pushed: \${PROD_IMAGE}"
                         else
-                            sudo lxc exec image-processor -- ctr image tag \${STAGING_IMAGE} \${PROD_IMAGE}
+                            sudo lxc exec ${lxc_name} -- ctr image tag \${STAGING_IMAGE} \${PROD_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec image-processor -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
                             fi
                         fi
                     done
@@ -254,7 +255,7 @@ pipeline {
                     cd -
 
                     echo "All images known to this builder:"
-                    sudo lxc exec image-processor -- ctr image ls
+                    sudo lxc exec ${lxc_name} -- ctr image ls
                 """
             }
         }
@@ -277,7 +278,7 @@ pipeline {
         always {
             sh "echo Disk usage before cleanup"
             sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
-            sh "sudo lxc delete -f image-processor"
+            sh "sudo lxc delete -f ${lxc_name}"
             sh "sudo rm -rf cdk-addons/build"
             sh "snapcraft logout"
             sh "echo Disk usage after cleanup"
