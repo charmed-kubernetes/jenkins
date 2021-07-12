@@ -58,7 +58,7 @@ juju bootstrap localhost/localhost \
     --model-default juju-http-proxy=http://squid.internal:3128 \
     --model-default juju-https-proxy=http://squid.internal:3128 \
     --model-default juju-no-proxy=localhost,127.0.0.1,::1,10.23.105.0/24 \
-    --model-default automatically-retry-hooks=false
+    --model-default automatically-retry-hooks=true
 
 juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
     --channel $JUJU_DEPLOY_CHANNEL \
