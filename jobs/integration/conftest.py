@@ -284,6 +284,8 @@ async def k8s_model(model, tools):
                     "juju",
                     "destroy-model",
                     "--destroy-storage",
+                    "--force",
+                    "--no-wait",
                     "-y",
                     tools.k8s_connection,
                 )
