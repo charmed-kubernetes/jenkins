@@ -69,7 +69,8 @@ juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
 timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
 pushd jenkins
-TOX_WORK_DIR=.tox timeout 3h tox -e py36 -- pytest \
+TOX_WORK_DIR=.tox timeout -s INT 3h tox -e py36 -- pytest \
+    --full-trace \
     jobs/integration/validation.py \
     --cloud localhost \
     --model $JUJU_MODEL \
