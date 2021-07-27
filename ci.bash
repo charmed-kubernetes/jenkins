@@ -126,7 +126,7 @@ function kv::get
 function test::execute
 {
     declare -n is_pass=$1
-    timeout 3h pytest \
+    timeout -s INT 3h pytest \
         --html="report.html" \
         jobs/integration/validation.py \
         --cloud "$JUJU_CLOUD" \

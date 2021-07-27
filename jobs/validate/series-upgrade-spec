@@ -13,7 +13,7 @@ set -x
 function test::execute
 {
     declare -n is_pass=$1
-    timeout 2h pytest \
+    timeout -s INT 2h pytest \
                 jobs/integration/validation.py \
                 --is-series-upgrade \
                 --cloud "$JUJU_CLOUD" \
