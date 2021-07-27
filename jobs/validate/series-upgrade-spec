@@ -14,6 +14,7 @@ function test::execute
 {
     declare -n is_pass=$1
     timeout -s INT 2h pytest \
+                --full-trace \
                 jobs/integration/validation.py \
                 --is-series-upgrade \
                 --cloud "$JUJU_CLOUD" \

@@ -67,6 +67,7 @@ timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
 pushd jenkins
 timeout -s INT 3h tox --workdir .tox -e py38 -- pytest \
+    --full-trace \
     jobs/integration/validation.py \
     --cloud localhost \
     --model $JUJU_MODEL \
