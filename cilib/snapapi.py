@@ -24,6 +24,7 @@ class SnapStore:
 
     def max_rev(self, arch, track):
         """Returns max revision for snap by arch/track"""
+        print(self.channel_map)
         for channel in self.channel_map["channel-map"]:
             if channel["channel"] == track and channel["architecture"] == arch:
                 return int(channel["revision"])
