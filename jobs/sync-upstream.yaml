@@ -108,6 +108,7 @@
 
 - job:
     name: 'sync-ppas'
+    disabled: true
     node: runner-cloud
     description: |
       Syncs all ppas
