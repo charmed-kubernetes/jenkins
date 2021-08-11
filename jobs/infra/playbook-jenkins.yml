@@ -441,7 +441,7 @@
       become: false
       tags:
         - jenkins
-    - name: make sure permissions are correct
+    - name: make sure workspace permissions are correct
       file:
         path: /var/lib/jenkins/slaves
         owner: jenkins
@@ -450,3 +450,12 @@
       ignore_errors: yes
       tags:
         - jenkins
+    - name: make sure docker.sock permissions are correct
+      file:
+        path: /var/run/docker.sock
+        owner: root
+        group: docker
+        mode: 0666
+      ignore_errors: yes
+      tags:
+        - adhoc
