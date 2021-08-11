@@ -459,3 +459,4 @@
       ignore_errors: yes
       tags:
         - adhoc
+        - jenkins
