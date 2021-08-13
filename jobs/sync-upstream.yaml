@@ -24,8 +24,8 @@
 
       Then upload the launchpad_creds file to the launchpad_creds credential in Jenkins.
 
-      If the job fails to retrieve snap channel information (e.g., you get an "invalid channel map" error), you may need to
-      update surl-creds:
+      If the job fails to retrieve snap channel information (e.g., you get an
+      "invalid channel map" error), you may need to update surl-creds:
 
       sudo snap install surl
       surl -e cdkbot@gmail.com -s production -a production-creds
