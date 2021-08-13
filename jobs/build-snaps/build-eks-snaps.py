@@ -60,7 +60,7 @@ def build(snap, build_path, version, arch, dry_run):
     git.clone(
         "https://github.com/juju-solutions/release.git",
         build_path,
-        branch="rye/snaps",
+        branch="jdb/generate-hook-fix",
         depth="1",
     )
     build_path = Path(build_path) / "snap"
