@@ -3,6 +3,7 @@ import pytest
 import requests
 import yaml
 from .utils import asyncify, retry_async_with_timeout
+from .logger import log
 
 
 def get_pod_yaml():
@@ -119,7 +120,11 @@ async def test_clusterip_service_endpoint(model):
         nodes_lst = master.units + worker.units
         for unit in nodes_lst:
             action = await unit.run(cmd)
-            assert "Hello Kubernetes!" in action.results.get("Stdout", "")
+            try:
+                assert "Hello Kubernetes!" in action.results.get("Stdout", "")
+            except AssertionError as e:
+                log(f"connection on {unit} failed")
+                raise e
 
     finally:
         await cleanup()
