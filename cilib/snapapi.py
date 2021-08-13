@@ -1,9 +1,7 @@
 import sh
 import re
-import operator
 import semver
 import json
-from pprint import pprint, pformat
 from cilib.run import capture
 from functools import cached_property
 
@@ -24,6 +22,8 @@ class SnapStore:
 
     def max_rev(self, arch, track):
         """Returns max revision for snap by arch/track"""
+        if "channel-map" not in self.channel_map:
+            print(f"Invalid channel map: {self.channel_map}")
         for channel in self.channel_map["channel-map"]:
             if channel["channel"] == track and channel["architecture"] == arch:
                 return int(channel["revision"])
@@ -75,7 +75,6 @@ def revisions(snap, version_filter_track, arch="amd64", exclude_pre=False):
     re_comp = re.compile("[ \t+]{2,}")
     revision_list = sh.snapcraft.revisions(snap, "--arch", arch, _err_to_out=True)
     revision_list = revision_list.stdout.decode().splitlines()[1:]
-    revision_parsed = {}
 
     revisions_to_process = []
     for line in revision_list:

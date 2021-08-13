@@ -22,7 +22,17 @@
       ...
       >>> exit()
 
-      Then upload the launchpad_creds file to the launchpad_creds credential on Jenkins.
+      Then upload the launchpad_creds file to the launchpad_creds credential in Jenkins.
+
+      If the job fails to retrieve snap channel information (e.g., you get an
+      "invalid channel map" error), you may need to update surl-creds:
+
+      sudo snap install surl
+      surl -e cdkbot@gmail.com -s production -a production-creds
+      # above creds are in LastPass
+
+      Then upload ~/snap/surl/common/production-creds.surl to the surl-creds credential
+      in Jenkins.
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -108,6 +118,7 @@
 
 - job:
     name: 'sync-ppas'
+    disabled: true
     node: runner-cloud
     description: |
       Syncs all ppas
