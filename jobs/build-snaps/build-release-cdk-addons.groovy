@@ -265,10 +265,10 @@ pipeline {
                     if(params.dry_run) {
                         echo "Dry run; would have uploaded cdk-addons/*.snap to ${params.channels}"
                     } else {
-                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_amd64.snap --release ${params.channels}"
-                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_arm64.snap --release ${params.channels}"
-                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_ppc64el.snap --release ${params.channels}"
-                        sh "snapcraft upload cdk-addons/cdk-addons_${kube_ersion}_s390x.snap --release ${params.channels}"
+                        sh "snapcraft -d upload cdk-addons/cdk-addons_${kube_ersion}_amd64.snap --release ${params.channels}"
+                        sh "snapcraft -d upload cdk-addons/cdk-addons_${kube_ersion}_arm64.snap --release ${params.channels}"
+                        sh "snapcraft -d upload cdk-addons/cdk-addons_${kube_ersion}_ppc64el.snap --release ${params.channels}"
+                        sh "snapcraft -d upload cdk-addons/cdk-addons_${kube_ersion}_s390x.snap --release ${params.channels}"
                     }
                 }
             }
