@@ -27,6 +27,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
@@ -79,6 +80,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
@@ -136,6 +138,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
@@ -243,8 +246,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/stable
             - 1.20/stable
-            - 1.19/stable
       - axis:
           type: user-defined
           name: series
@@ -295,8 +298,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.21/stable
             - 1.20/stable
-            - 1.19/stable
       - axis:
           type: user-defined
           name: series
@@ -429,6 +432,7 @@
            type: user-defined
            name: snap_version
            values:
+             - 1.22/edge
              - 1.21/edge
              - 1.20/edge
              - 1.19/edge
@@ -471,6 +475,7 @@
            type: user-defined
            name: snap_version
            values:
+             - 1.22/edge
              - 1.21/edge
              - 1.20/edge
              - 1.19/edge
@@ -516,6 +521,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
@@ -567,6 +573,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
@@ -609,6 +616,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
@@ -651,6 +659,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
@@ -694,6 +703,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
@@ -737,6 +747,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
@@ -780,6 +791,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/edge
             - 1.21/edge
             - 1.20/edge
             - 1.19/edge
