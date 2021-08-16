@@ -61,9 +61,10 @@
 
 - job:
     name: 'sync-debs'
+    disabled: true
     node: runner-cloud
     description: |
-      Build all debian packages
+      Build all debian packages (disabled until we need k8s debs again)
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -121,7 +122,7 @@
     disabled: true
     node: runner-cloud
     description: |
-      Syncs all ppas
+      Syncs all ppas (disabled until we need k8s debs again)
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
