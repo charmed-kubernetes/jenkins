@@ -10,7 +10,12 @@ JOBS_PATH = Path("jobs")
 K8S_STABLE_VERSION = "1.21"
 
 # Next MAJOR.MINOR
-K8S_NEXT_VERSION = "1.22"
+# This controls whether or not we build pre-release snaps in our channels.
+# Typically, this is K8S_STABLE_VERSION +1. However, when prepping the next
+# stable release, this will be +2. For example, 1.21 is currently stable and
+# we're working on the 1.22 GA. Set this value to '1.23' so we don't get
+# pre-release builds (e.g. 1.22.1-beta.0) in our 1.22/beta channels.
+K8S_NEXT_VERSION = "1.23"
 
 # Lowest K8S SEMVER to process, this is usually stable - 3
 K8S_STARTING_SEMVER = "1.18.0"
