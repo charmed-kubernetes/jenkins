@@ -10,6 +10,11 @@
       The full version of the cdk-addons snap is tied to the upstream k8s tag used during the build.
       Explicitly set this with the `k8s_tag` parameter, or this job will determine it using the
       `version` parameter and the contents of https://dl.k8s.io/release/[stable|latest]-`version`.txt.
+
+      If all `build-release-cdk-addons-$arch-$ver` jobs appear to stall during snap upload, check
+      for a revision for which the auto-approver has hung by logging into
+      https://dashboard.snapcraft.io/snaps/cdk-addons/ with cdkbot@gmail ubuntu lastpass creds
+      and manually rejecting the review for the oldest hung revision.
     project-type: pipeline
     pipeline-scm:
       scm:
