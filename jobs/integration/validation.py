@@ -1054,14 +1054,14 @@ async def test_sans(model):
         original_lb_config = await lb.get_config()
 
     async def get_server_certs():
-        results = []
+        results = {}
         for unit in app.units:
             action = await unit.run(
                 "openssl s_client -connect 127.0.0.1:6443 </dev/null 2>/dev/null | openssl x509 -text"
             )
             assert action.status == "completed"
             raw_output = action.data["results"].get("Stdout", "")
-            results.append(raw_output)
+            results[unit.name] = raw_output
 
         # if there is a load balancer, ask it as well
         if lb is not None:
@@ -1071,21 +1071,32 @@ async def test_sans(model):
                 )
                 assert action.status == "completed"
                 raw_output = action.data["results"].get("Stdout", "")
-                results.append(raw_output)
+                results[unit.name] = raw_output
 
         return results
 
     async def all_certs_removed():
         certs = await get_server_certs()
-        if any(example_domain in cert for cert in certs):
-            return False
-        return True
+        passing = True
+        log("Checking for example domain removed from certs...")
+        for unit_name, cert in certs.items():
+            if example_domain in cert:
+                passing = False
+                log(f"Example domain still in cert for {unit_name}")
+        return passing
 
     async def all_certs_in_place():
         certs = await get_server_certs()
-        if not all(example_domain in cert for cert in certs):
-            return False
-        return True
+        passing = True
+        log("Checking for example domain added to certs...")
+        for unit_name, cert in certs.items():
+            if example_domain not in cert:
+                passing = False
+                if not cert:
+                    log(f"Cert empty for {unit_name}")
+                else:
+                    log(f"Example domain not in cert for {unit_name}")
+        return passing
 
     # add san to extra san list
     await app.set_config({"extra_sans": example_domain})
