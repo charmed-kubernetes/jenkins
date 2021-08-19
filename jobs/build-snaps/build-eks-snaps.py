@@ -31,16 +31,13 @@ def cli():
 @cli.command()
 @click.option("--snap", required=True, multiple=True, help="Snaps to build")
 @click.option(
-    "--build-path", required=True, default="release", help="Path of snap builds"
-)
-@click.option(
     "--version", required=True, default="1.21.1", help="Version of k8s to build"
 )
 @click.option(
     "--arch", required=True, default="amd64", help="Architecture to build against"
 )
 @click.option("--dry-run", is_flag=True)
-def build(snap, build_path, version, arch, dry_run):
+def build(snap, version, arch, dry_run):
     """ Build snaps
 
     Usage:
@@ -59,11 +56,11 @@ def build(snap, build_path, version, arch, dry_run):
     env["KUBE_ARCH"] = arch
     git.clone(
         "https://github.com/juju-solutions/release.git",
-        build_path,
+        "release",
         branch="rye/snaps",
         depth="1",
     )
-    build_path = Path(build_path) / "snap"
+    build_path = Path("release/snap")
     snap_alias = None
 
     for _snap in snap:
@@ -94,7 +91,7 @@ def build(snap, build_path, version, arch, dry_run):
 @click.option(
     "--result-dir",
     required=True,
-    default="release/snap/snap/build",
+    default="release/snap/build",
     help="Path of resulting snap builds",
 )
 @click.option("--version", required=True, default="1.21.1", help="k8s Version")
@@ -103,12 +100,12 @@ def push(result_dir, version, dry_run):
     """Promote to a snapstore channel/track"""
     for fname in glob.glob(f"{result_dir}/*.snap"):
         try:
-            click.echo(f"Running: snapcraft push {fname}")
+            click.echo(f"Running: snapcraft upload {fname}")
             if dry_run:
                 click.echo("dry-run only:")
-                click.echo(f"  > snapcraft push {fname}")
+                click.echo(f"  > snapcraft upload {fname}")
             else:
-                for line in sh.snapcraft.push(
+                for line in sh.snapcraft.upload(
                     fname,
                     "--release",
                     f"{version}/edge,{version}/beta,{version}/candidate,{version}/stable",
