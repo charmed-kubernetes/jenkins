@@ -66,7 +66,8 @@ pipeline {
                     if git ls-remote --exit-code --heads https://github.com/charmed-kubernetes/cdk-addons.git \$ADDONS_BRANCH
                     then
                         echo "Getting cdk-addons from \$ADDONS_BRANCH branch."
-                        git clone https://github.com/charmed-kubernetes/cdk-addons.git --branch \$ADDONS_BRANCH --depth 1
+                        #git clone https://github.com/charmed-kubernetes/cdk-addons.git --branch \$ADDONS_BRANCH --depth 1
+                        git clone https://github.com/charmed-kubernetes/cdk-addons.git --branch lp1896765/bump-ceph-csi --depth 1
                     else
                         echo "Getting cdk-addons from master branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
