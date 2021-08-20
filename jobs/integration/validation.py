@@ -2353,6 +2353,7 @@ async def test_ceph(model, tools):
     if check_cephfs:
         await validate_storage_class(model, "cephfs", "Ceph")
     # cleanup
+    log("removing ceph applications")
     tasks = {
         model.applications["ceph-mon"].destroy(),
         model.applications["ceph-osd"].destroy(),

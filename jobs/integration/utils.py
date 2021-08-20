@@ -217,27 +217,16 @@ async def disable_source_dest_check(model_name):
     await asyncify(check_call)(cmd, env=env)
 
 
-async def verify_deleted(unit, entity_type, name, extra_args=""):
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {} --output json get {}".format(
-        extra_args, entity_type
-    )
-    output = await unit.run(cmd)
-    if "error" in output.results.get("Stdout", ""):
-        # error resource type not found most likely. This can happen when the
-        # api server is restarting. As such, don't assume this means we've
-        # finished the deletion
-        return False
-    try:
-        out_list = json.loads(output.results.get("Stdout", ""))
-    except json.JSONDecodeError:
-        click.echo(traceback.format_exc())
-        click.echo("WARNING: Expected json, got non-json output:")
-        click.echo(output.results.get("Stdout", ""))
-        return False
-    for item in out_list["items"]:
-        if item["metadata"]["name"] == name:
-            return False
-    return True
+async def verify_deleted(unit, entity_type, name_list, extra_args=""):
+    matches = await find_entities(unit, entity_type, name_list, extra_args)
+
+    # An empty match list means we didn't find any entities with our name(s).
+    # That's good since we are verifying those entities were deleted.
+    if matches == []:
+        return True
+
+    # Otherwise, find_entities failed or found matches; that's bad either way.
+    return False
 
 
 async def find_entities(unit, entity_type, name_list, extra_args=""):
@@ -248,7 +237,13 @@ async def find_entities(unit, entity_type, name_list, extra_args=""):
         # error resource type not found most likely. This can happen when the
         # api server is restarting. As such, don't assume this means ready.
         return False
-    out_list = json.loads(output.results.get("Stdout", ""))
+    try:
+        out_list = json.loads(output.results.get("Stdout", ""))
+    except json.JSONDecodeError:
+        click.echo(traceback.format_exc())
+        click.echo("WARNING: Expected json, got non-json output:")
+        click.echo(output.results.get("Stdout", ""))
+        return False
     matches = []
     for name in name_list:
         # find all entries that match this
@@ -423,12 +418,12 @@ spec:
 
     await retry_async_with_timeout(
         verify_deleted,
-        (master, "po", pods),
+        (master, "po", pods.split()),
         timeout_msg="Unable to remove {} test pods".format(test_name),
     )
     await retry_async_with_timeout(
         verify_deleted,
-        (master, "pvc", pvcs),
+        (master, "pvc", pvcs.split()),
         timeout_msg="Unable to remove {} test pvcs".format(test_name),
     )
 
