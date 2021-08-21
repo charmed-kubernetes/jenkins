@@ -132,7 +132,13 @@
       tags:
         - jenkins
         - adhoc
-    - name: upgrade charm
+    - name: upgrade juju
+      command: "snap refresh juju --channel latest/stable"
+      ignore_errors: yes
+      tags:
+        - jenkins
+        - adhoc
+    - name: upgrade snapcraft
       command: "snap refresh snapcraft --channel latest/edge"
       ignore_errors: yes
       tags:
@@ -145,7 +151,7 @@
         - "aws-cli --classic"
         - "charm --classic --edge"
         - "go --classic --stable"
-        - "juju --classic --channel 2.8/stable"
+        - "juju --classic --stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"
