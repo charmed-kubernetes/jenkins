@@ -170,7 +170,7 @@
     name: 'validate-ck-stable'
     node: runner-validate
     description: |
-      Validates CK stable on amd64 and arm64, supports last three recent releases.
+      Validates CK stable on amd64, supports last three recent releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -211,7 +211,6 @@
           name: arch
           values:
             - amd64
-            - arm64
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -254,7 +253,6 @@
           values:
             - focal
             - bionic
-            - xenial
       - axis:
           type: user-defined
           name: channel
@@ -306,7 +304,6 @@
           values:
             - focal
             - bionic
-            - xenial
       - axis:
           type: user-defined
           name: channel
