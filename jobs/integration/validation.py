@@ -476,7 +476,7 @@ async def test_network_policies(model, tools):
 
     await retry_async_with_timeout(
         verify_deleted,
-        (unit, "ns", "netpolicy"),
+        (unit, "ns", ["netpolicy"]),
         timeout_msg="Unable to remove the namespace netpolicy",
     )
 
@@ -755,7 +755,7 @@ async def test_gpu_support(model, tools):
         # nvidia should not be running
         await retry_async_with_timeout(
             verify_deleted,
-            (master_unit, "ds", "nvidia-device-plugin-daemonset", "-n kube-system"),
+            (master_unit, "ds", ["nvidia-device-plugin-daemonset"], "-n kube-system"),
             timeout_msg="nvidia-device-plugin-daemonset is setup without nvidia hardware",
         )
     else:
@@ -781,7 +781,7 @@ async def test_gpu_support(model, tools):
         )
         await retry_async_with_timeout(
             verify_deleted,
-            (master_unit, "po", "nvidia-smi", "-n default"),
+            (master_unit, "po", ["nvidia-smi"], "-n default"),
             timeout_msg="Cleaning of nvidia-smi pod failed",
         )
         # Run the cuda addition
@@ -1177,7 +1177,7 @@ async def test_toggle_metrics(model, tools):
         else:
             await retry_async_with_timeout(
                 verify_deleted,
-                (unit, "svc", "metrics-server", "-n kube-system"),
+                (unit, "svc", ["metrics-server"], "-n kube-system"),
                 timeout_msg="metrics-server svc still exists after timeout",
             )
 
@@ -2353,6 +2353,7 @@ async def test_ceph(model, tools):
     if check_cephfs:
         await validate_storage_class(model, "cephfs", "Ceph")
     # cleanup
+    log("removing ceph applications")
     tasks = {
         model.applications["ceph-mon"].destroy(),
         model.applications["ceph-osd"].destroy(),
