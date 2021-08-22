@@ -17,8 +17,8 @@ K8S_STABLE_VERSION = "1.21"
 # pre-release builds (e.g. 1.22.1-beta.0) in our 1.22/beta channels.
 K8S_NEXT_VERSION = "1.23"
 
-# Lowest K8S SEMVER to process, this is usually stable - 3
-K8S_STARTING_SEMVER = "1.18.0"
+# Lowest K8S SEMVER to process, this is usually stable - 2
+K8S_STARTING_SEMVER = "1.19.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -38,6 +38,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
+    "1.23": "go/1.16/stable",
     "1.22": "go/1.16/stable",
     "1.21": "go/1.16/stable",
     "1.20": "go/1.15/stable",
@@ -58,6 +59,7 @@ SNAP_K8S_TRACK_MAP = {
     "1.20": ["1.20/stable", "1.20/candidate", "1.20/beta", "1.20/edge"],
     "1.21": ["1.21/stable", "1.21/candidate", "1.21/beta", "1.21/edge"],
     "1.22": ["1.22/candidate", "1.22/beta", "1.22/edge"],
+    "1.23": ["1.23/edge"],
 }
 
 # Deb k8s version <-> ppa mapping
@@ -69,6 +71,7 @@ DEB_K8S_TRACK_MAP = {
     "1.20": "ppa:k8s-maintainers/1.20",
     "1.21": "ppa:k8s-maintainers/1.21",
     "1.22": "ppa:k8s-maintainers/1.22",
+    "1.23": "ppa:k8s-maintainers/1.23",
 }
 
 
