@@ -33,36 +33,65 @@ feature freeze and Solutions QA period, fixes which need to be applied to
 address CI or QA failures, and only those specific fixes, are cherry-picked in
 to the stable branches.
 
+## Prepare CI
+
+### $next release
+
+Once upstream has an RC for the next stable release, our CI should stop
+building pre-prelease snaps. This ensures the 1.xx/edge channel will end up
+with 1.xx.0 instead of 1.xx.1-alpha.0.
+
+Additionally, if not done already, CI should be including the 1.xx/edge in the
+version matrix for relevant tests.
+
+For example, see changes made to support the new 1.22 release:
+
+https://github.com/charmed-kubernetes/jenkins/pull/723/files
+
+### $next++ release
+
+It may feel early, but part of releasing the next stable version requires
+preparing for the release that will follow. This requires opening tracks and
+building relevant snaps that will be used in the new 'edge' channel.
+
+For example, we requested 1.23 tracks while preparing for the 1.22 release:
+
+https://forum.snapcraft.io/t/kubernetes-1-23-snap-tracks/26086
+
+We also added support for CI to build 1.23 snaps:
+
+https://github.com/charmed-kubernetes/jenkins/commit/c2e4b5150c6f9e3cf6074ac51d249b14f0707386
+
 ## Preparing the release
 
 ### Tag existing stable branches with the current stable bundle
 
 For all charm repos that make up CK tag the existing stable branches with
-the most recently released stable bundle revision.
+the most recently released stable cs:charmed-kubernetes bundle revision.
 
 **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
 
-### Rebase stable on top of master git branches
+### Reset stable with master git branches
 
-Once all repositories are tagged we need to rebase what's in master git on
-to stable as this will be our snapshot on what we test and subsequently
-promote to stable.
+Once all repositories are tagged, we need to reset stable branches with
+master. This will be our snapshot from which we test, fix, and subsequently
+promote to the new stable release.
 
 **Job**: https://jenkins.canonical.com/k8s/job/cut-stable-release/
 
-### Submit PR's to bundle and charms to pin snap version on the stable branches
+### Submit PR's to bundle and charms to pin snap channel on the stable branches
 
 We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
 are set to `<k8sver>/stable` prior to cutting a new release. This should be done
-on each of the relevant git stable branches
+on each of the relevant git stable branches.
 
 > Note: The charms themselves also need to be done as some do not use our
   bundles for deployment.
 
-### Bump snap version to next minor release
+### Bump snap channel to next minor release
 
 Once the rebase has occurred we need to bump the charms and bundle fragments
-to the next k8s minor version in the master git branches, ie 1.21/edge.
+to the next k8s minor version in the master git branches, e.g. 1.23/edge.
 
 ### Build new CK Charms from stable git branches
 

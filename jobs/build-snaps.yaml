@@ -100,7 +100,7 @@
           description: eks snap architecture to build/promote
       - string:
           name: VERSION
-          default: '1.21.1'
+          default: '1.21.2'
           description: eks snap version to build/promote
       - bool:
           name: DRY_RUN
@@ -113,7 +113,7 @@
 - project:
     name: build-release-snaps
     arch: ['amd64']
-    version: ['1.19', '1.20', '1.21', '1.22']
+    version: ['1.19', '1.20', '1.21', '1.22', '1.23']
     jobs:
       - 'build-release-cdk-addons-{arch}-{version}'
 
