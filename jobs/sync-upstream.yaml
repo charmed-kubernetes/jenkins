@@ -188,7 +188,7 @@
       - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
-          days-to-keep: 1
+          days-to-keep: 2
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -256,14 +256,14 @@
 - job:
     name: 'cut-stable-release'
     description: |
-      Refreshes all layer stable branches on top of master.
+      Resets all layer stable branches from master branches.
     project-type: freestyle
     node: runner-cloud
     scm:
       - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
-          days-to-keep: 1
+          days-to-keep: 2
     wrappers:
       - default-job-wrapper
       - ci-creds
