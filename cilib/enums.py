@@ -7,7 +7,7 @@ JOBS_PATH = Path("jobs")
 
 # Current supported STABLE K8s MAJOR.MINOR release
 # This should be updated whenever a new CK major.minor is GA
-K8S_STABLE_VERSION = "1.21"
+K8S_STABLE_VERSION = "1.22"
 
 # Next MAJOR.MINOR
 # This controls whether or not we build pre-release snaps in our channels.
@@ -17,7 +17,7 @@ K8S_STABLE_VERSION = "1.21"
 # pre-release builds (e.g. 1.22.1-beta.0) in our 1.22/beta channels.
 K8S_NEXT_VERSION = "1.23"
 
-# Lowest K8S SEMVER to process, this is usually stable - 2
+# Lowest K8S SEMVER to process, this is usually stable - 3
 K8S_STARTING_SEMVER = "1.19.0"
 
 # Supported arches
@@ -38,7 +38,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
-    "1.23": "go/1.16/stable",
+    "1.23": "go/1.17/stable",
     "1.22": "go/1.16/stable",
     "1.21": "go/1.16/stable",
     "1.20": "go/1.15/stable",
