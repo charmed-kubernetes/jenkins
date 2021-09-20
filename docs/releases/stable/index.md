@@ -33,36 +33,72 @@ feature freeze and Solutions QA period, fixes which need to be applied to
 address CI or QA failures, and only those specific fixes, are cherry-picked in
 to the stable branches.
 
+## Prepare CI
+
+### $next release
+
+Once upstream has an RC for the next stable release, our CI should stop
+building pre-prelease snaps. This ensures the 1.xx/edge channel will end up
+with 1.xx.0 instead of 1.xx.1-alpha.0.
+
+Additionally, if not done already, CI should be including the 1.xx/edge in the
+version matrix for relevant tests.
+
+For example, see changes made to support the new 1.22 release:
+
+https://github.com/charmed-kubernetes/jenkins/pull/723
+
+### $next++ release
+
+It may feel early, but part of releasing the next stable version requires
+preparing for the release that will follow. This requires opening tracks and
+building relevant snaps that will be used in the new 'edge' channel.
+
+For example, we requested 1.23 tracks while preparing for the 1.22 release:
+
+https://forum.snapcraft.io/t/kubernetes-1-23-snap-tracks/26086
+
+We also added support for CI to build/upload to those requested tracks (k8s
+snaps as well as cdk-addons):
+
+https://github.com/charmed-kubernetes/jenkins/commit/c2e4b5150c6f9e3cf6074ac51d249b14f0707386
+https://github.com/charmed-kubernetes/jenkins/commit/b0ce1fb0053908043ce25f10cca40be6531c3156
+
 ## Preparing the release
 
 ### Tag existing stable branches with the current stable bundle
 
-For all charm repos that make up CK tag the existing stable branches with
-the most recently released stable bundle revision.
+For all charm repos that make up CK, tag the existing stable branches with
+the most recently released stable `cs:charmed-kubernetes` bundle revision.
 
 **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
 
-### Rebase stable on top of master git branches
+### Reset stable with master git branches
 
-Once all repositories are tagged we need to rebase what's in master git on
-to stable as this will be our snapshot on what we test and subsequently
-promote to stable.
+Once all repositories are tagged, we need to reset stable branches with
+master. This will be our snapshot from which we test, fix, and subsequently
+promote to the new stable release.
 
 **Job**: https://jenkins.canonical.com/k8s/job/cut-stable-release/
 
-### Submit PR's to bundle and charms to pin snap version on the stable branches
+### Submit PR's to bundle and charms to pin snap channel on the stable branches
 
 We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
-are set to `<k8sver>/stable` prior to cutting a new release. This should be done
-on each of the relevant git stable branches
+are set to `<k8sver>/stable`. This should be done on each of the relevant git
+`stable` branches. For example, for 1.22 GA:
+
+https://github.com/charmed-kubernetes/bundle/pull/808
+https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/14
+https://github.com/charmed-kubernetes/charm-kubernetes-master/pull/175
+https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/96
 
 > Note: The charms themselves also need to be done as some do not use our
   bundles for deployment.
 
-### Bump snap version to next minor release
+### Bump snap channel to next minor release
 
 Once the rebase has occurred we need to bump the charms and bundle fragments
-to the next k8s minor version in the master git branches, ie 1.21/edge.
+to the next k8s minor version in the `master` git branches, e.g. 1.23/edge.
 
 ### Build new CK Charms from stable git branches
 
@@ -72,27 +108,25 @@ Pull down all layers and checkout their stable branches. From there build
 each charm against those local branches. After the charms are built they need to be
 promoted to the **beta** channel in the charmstore.
 
->-
-  **Note**: Beta channel is required as any bugfix releases happening at the
+> **Note**: Beta channel is required as any bugfix releases happening at the
   same time will use the candidate channels for staging those releases.
 
 #### Charm build options
 
 ![charm build options](build-charms-options.png)
 
-### Promote new K8S snaps
+### Promote new K8s snaps
 
-Promote new K8S snaps for the upcoming stable release to the beta and
-candidate channels of the snapstore.
+K8s snap promotion to `beta` is handled by the `sync-snaps` job and will happen
+automatically after following the `Prepare CI` section noted above. If for some
+reason you need to manually build K8s snaps from a specific branch, use the
+following job with a `branch` parameter like `1.22.1`:
+
+**Job**: https://jenkins.canonical.com/k8s/job/build-snap-from-branch/
 
 > **Info**: Please note that currently **CDK-ADDONS** snap needs to be
-    manually promoted to the appropriate channels.
-
-**Job**: https://jenkins.canonical.com/k8s/job/build-snaps/
-
-#### Snap build options
-
-![snap build options](build-snaps-options.png)
+    manually released to the appropriate channels:
+    **Job**: https://jenkins.canonical.com/k8s/job/build-release-cdk-addons-amd64-1.22/
 
 ### Notify Solutions QA
 
@@ -136,26 +170,13 @@ others are kubeflow related).
 
 ### Promote snaps from <stable track>/stable to latest/<risks>
 
-Once complete, the next stable release needs to be promoted into the
-**latest/<risks>** tracks as the default version for snap installs.
+This promotion is handled by the `sync-snaps` job. Once charms and bundles
+have been promoted, set the `K8S_STABLE` enum to the release semver. For
+example, for 1.22 GA:
 
-**Job**: https://jenkins.canonical.com/k8s/job/promote-snaps/
-
-#### Options
-
-![promote snap options](promote-snaps-stable.png)
+https://github.com/charmed-kubernetes/jenkins/pull/728
 
 ### Send announcement
 
 Email announcement to k8s-crew with any relevant information.
-
-### Update ck bundle repo references
-
-Update ck bundle repo to match the current stable snap release and point the
-latest to the next minor version.
-
-For example, if 1.17 is the upcoming release, then once CK is released we
-need to update the bundle repo stable branch to reflect 1.17/stable. Also,
-update the master branch to point to the next K8S release, in this case
-1.18/edge.
 
