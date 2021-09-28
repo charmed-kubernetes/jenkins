@@ -350,7 +350,7 @@ def skip_by_model(request, model):
 
 @pytest.fixture
 def log_dir(request):
-    """ Fixture directory for storing arbitrary test logs. """
+    """Fixture directory for storing arbitrary test logs."""
     path = os.path.join(
         "logs", request.module.__name__, request.node.name.replace("/", "_")
     )
@@ -400,10 +400,10 @@ async def addons_model(request):
     await model.disconnect()
 
 
-@pytest.fixture
-def cloud(request):
-    cloud_name = request.config.getoption("--cloud")
-    return cloud_name.split("/")[0]
+@pytest.fixture(scope="module")
+async def cloud(model):
+    config = await model.get_config()
+    return config["type"].value
 
 
 @pytest.fixture(autouse=True)
