@@ -2397,23 +2397,7 @@ async def test_series_upgrade(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
-async def test_cinder(model, tools):
-    # setup
-    log("deploying openstack-integrator")
-    series = "focal"
-    await model.deploy(
-        "openstack-integrator",
-        num_units=1,
-        series=series,
-        trust=True,
-    )
-
-    log("adding relations")
-    await model.add_relation("openstack-integrator", "kubernetes-master")
-    await model.add_relation("openstack-integrator", "kubernetes-worker")
-    log("waiting...")
-    await tools.juju_wait()
-
+async def test_cinder(model, tools, openstack_integrator):
     log("waiting for csi to settle")
     unit = model.applications["kubernetes-master"].units[0]
     await retry_async_with_timeout(
@@ -2423,29 +2407,11 @@ async def test_cinder(model, tools):
     )
     # create pod that writes to a pv from cinder
     await validate_storage_class(model, "cdk-cinder", "Cinder")
-    # cleanup
-    await model.applications["openstack-integrator"].destroy()
 
 
 @pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
-async def test_octavia(model, tools):
-    # setup
-    log("deploying openstack-integrator")
-    series = "focal"
-    await model.deploy(
-        "openstack-integrator",
-        num_units=1,
-        series=series,
-        trust=True,
-    )
-
-    log("adding relations")
-    await model.add_relation("openstack-integrator", "kubernetes-master")
-    await model.add_relation("openstack-integrator", "kubernetes-worker")
-    log("waiting...")
-    await tools.juju_wait()
-
+async def test_octavia(model, tools, openstack_integrator):
     log("waiting for cloud-controller-openstack to settle")
     unit = model.applications["kubernetes-master"].units[0]
     await retry_async_with_timeout(
@@ -2460,33 +2426,34 @@ async def test_octavia(model, tools):
     action = await unit.run_action("microbot", replicas=3)
     await action.wait()
     assert action.status == "completed"
-    # remove and replace the service with an LB type
-    await kubectl(model, "delete", "svc", "microbot")
-    await kubectl(
-        model,
-        "expose",
-        "deployment",
-        "microbot",
-        "--type=LoadBalancer",
-        "microbot",
-        "--port=80",
-        "--target-port=80",
-    )
-    await retry_async_with_timeout(
-        verify_ready,
-        (unit, "pod,svc", ["microbot"]),
-        timeout_msg="Unable to find microbot before timeout",
-    )
-    ingress_address = get_svc_ingress(model, "microbot")
-    resp = await tools.requests.get(
-        f"http://{ingress_address}",
-        proxies={"http": None, "https": None},
-    )
-    assert resp.status_code == 200
-    # cleanup
-    action = await unit.run_action("microbot", delete=True)
-    await action.wait()
-    await model.applications["openstack-integrator"].destroy()
+    try:
+        # remove and replace the service with an LB type
+        await kubectl(model, "delete", "svc", "microbot")
+        await kubectl(
+            model,
+            "expose",
+            "deployment",
+            "microbot",
+            "--type=LoadBalancer",
+            "microbot",
+            "--port=80",
+            "--target-port=80",
+        )
+        await retry_async_with_timeout(
+            verify_ready,
+            (unit, "pod,svc", ["microbot"]),
+            timeout_msg="Unable to find microbot before timeout",
+        )
+        ingress_address = get_svc_ingress(model, "microbot")
+        resp = await tools.requests.get(
+            f"http://{ingress_address}",
+            proxies={"http": None, "https": None},
+        )
+        assert resp.status_code == 200
+    finally:
+        # cleanup
+        action = await unit.run_action("microbot", delete=True)
+        await action.wait()
 
 
 @pytest.mark.asyncio
