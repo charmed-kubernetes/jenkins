@@ -2405,7 +2405,7 @@ async def test_cinder(model, tools, openstack_integrator):
 @pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
 async def test_octavia(model, tools, openstack_integrator):
-    # deploy microbot via action
+    log("Deploying microbot")
     unit = model.applications["kubernetes-worker"].units[0]
     action = await unit.run_action("microbot", delete=True)
     await action.wait()
@@ -2413,8 +2413,13 @@ async def test_octavia(model, tools, openstack_integrator):
     await action.wait()
     assert action.status == "completed"
     try:
-        # remove and replace the service with an LB type
+        log("Replacing microbot service with Octavia LB")
         await kubectl(model, "delete svc microbot")
+        await retry_async_with_timeout(
+            verify_deleted,
+            (unit, "svc", ["microbot"]),
+            timeout_msg="Timed out waiting for microbot service removal",
+        )
         await kubectl(
             model,
             "expose deployment microbot --type=LoadBalancer microbot --port=80 --target-port=80",
@@ -2422,7 +2427,7 @@ async def test_octavia(model, tools, openstack_integrator):
         await retry_async_with_timeout(
             verify_ready,
             (unit, "pod,svc", ["microbot"]),
-            timeout_msg="Unable to find microbot before timeout",
+            timeout_msg="Timed out waiting for new microbot service",
         )
         ingress_address = get_svc_ingress(model, "microbot")
         resp = await tools.requests.get(
