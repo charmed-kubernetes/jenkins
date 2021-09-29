@@ -2414,16 +2414,10 @@ async def test_octavia(model, tools, openstack_integrator):
     assert action.status == "completed"
     try:
         # remove and replace the service with an LB type
-        await kubectl(model, "delete", "svc", "microbot")
+        await kubectl(model, "delete svc microbot")
         await kubectl(
             model,
-            "expose",
-            "deployment",
-            "microbot",
-            "--type=LoadBalancer",
-            "microbot",
-            "--port=80",
-            "--target-port=80",
+            "expose deployment microbot --type=LoadBalancer microbot --port=80 --target-port=80",
         )
         await retry_async_with_timeout(
             verify_ready,
