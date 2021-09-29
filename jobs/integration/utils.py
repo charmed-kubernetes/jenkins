@@ -87,7 +87,7 @@ def apply_profile(model_name):
 
 
 def asyncify(f):
-    """ Convert a blocking function into a coroutine """
+    """Convert a blocking function into a coroutine"""
 
     async def wrapper(*args, **kwargs):
         loop = asyncio.get_event_loop()
@@ -583,11 +583,7 @@ async def get_svc_ingress(model, svc_name):
     for attempt in range(60):
         ingress_address = await kubectl(
             model,
-            "get",
-            "svc",
-            svc_name,
-            "-o",
-            "jsonpath={.status.loadBalancer.ingress[0].ip}",
+            f"get svc {svc_name} -o jsonpath={{.status.loadBalancer.ingress[0].ip}}",
         ).stdout
         log.info(f"Ingress address: {ingress_address}")
         if ingress_address != "":
