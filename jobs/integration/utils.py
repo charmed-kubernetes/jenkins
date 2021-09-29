@@ -581,10 +581,12 @@ async def get_ipv6_addr(unit):
 async def get_svc_ingress(model, svc_name):
     log.info(f"Waiting for ingress address for {svc_name}")
     for attempt in range(60):
-        ingress_address = await kubectl(
+        result = await kubectl(
             model,
             f"get svc {svc_name} -o jsonpath={{.status.loadBalancer.ingress[0].ip}}",
-        ).stdout
+        )
+        assert result.code == 0
+        ingress_address = result.stdout
         log.info(f"Ingress address: {ingress_address}")
         if ingress_address != "":
             return ingress_address
