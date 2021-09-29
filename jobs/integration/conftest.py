@@ -418,25 +418,30 @@ def skip_by_cloud(request, cloud):
 async def openstack_integrator(model):
     if "openstack-integrator" in model.applications:
         log("openstack-integrator already deployed")
-        return
-    log("deploying openstack-integrator")
-    series = "focal"
-    await model.deploy(
-        "cs:~containers/openstack-integrator",
-        num_units=1,
-        series=series,
-        trust=True,
-    )
-
-    try:
-        log("adding relations")
-        await model.add_relation("openstack-integrator:clients", "kubernetes-master")
-        await model.add_relation("openstack-integrator:clients", "kubernetes-worker")
-        await model.wait_for_idle()
         yield
-    finally:
-        # cleanup
-        await model.applications["openstack-integrator"].destroy()
+    else:
+        log("deploying openstack-integrator")
+        series = "focal"
+        await model.deploy(
+            "cs:~containers/openstack-integrator",
+            num_units=1,
+            series=series,
+            trust=True,
+        )
+
+        try:
+            log("adding relations")
+            await model.add_relation(
+                "openstack-integrator:clients", "kubernetes-master"
+            )
+            await model.add_relation(
+                "openstack-integrator:clients", "kubernetes-worker"
+            )
+            await model.wait_for_idle(timeout=20 * 60)
+            yield
+        finally:
+            # cleanup
+            await model.applications["openstack-integrator"].destroy()
 
 
 # def pytest_itemcollected(item):
