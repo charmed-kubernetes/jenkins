@@ -2422,14 +2422,14 @@ async def test_octavia(model, tools, openstack_integrator):
         )
         await kubectl(
             model,
-            "expose deployment microbot --type=LoadBalancer microbot --port=80 --target-port=80",
+            "expose deployment microbot --type=LoadBalancer --port=80 --target-port=80",
         )
         await retry_async_with_timeout(
             verify_ready,
             (unit, "pod,svc", ["microbot"]),
             timeout_msg="Timed out waiting for new microbot service",
         )
-        ingress_address = get_svc_ingress(model, "microbot")
+        ingress_address = await get_svc_ingress(model, "microbot")
         resp = await tools.requests.get(
             f"http://{ingress_address}",
             proxies={"http": None, "https": None},
