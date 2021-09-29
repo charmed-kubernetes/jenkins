@@ -15,7 +15,15 @@ from tempfile import NamedTemporaryFile
 from juju.model import Model
 from aioify import aioify
 from traceback import format_exc
-from .utils import upgrade_charms, upgrade_snaps, arch, log_snap_versions, scp_from
+from .utils import (
+    upgrade_charms,
+    upgrade_snaps,
+    arch,
+    log_snap_versions,
+    scp_from,
+    retry_async_with_timeout,
+    verify_ready,
+)
 from .logger import log
 
 
@@ -438,6 +446,21 @@ async def openstack_integrator(model):
                 "openstack-integrator:clients", "kubernetes-worker"
             )
             await model.wait_for_idle(timeout=20 * 60)
+            log("Waiting for OpenStack pods to settle")
+            unit = model.applications["kubernetes-master"].units[0]
+            await retry_async_with_timeout(
+                verify_ready,
+                (
+                    unit,
+                    "po",
+                    [
+                        "openstack-cloud-controller-manager",
+                        "csi-cinder-controllerplugin-0",
+                    ],
+                    "-n kube-system",
+                ),
+                timeout_msg="OpenStack pods not ready",
+            )
             yield
         finally:
             # cleanup

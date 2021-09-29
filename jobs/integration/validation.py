@@ -2398,13 +2398,6 @@ async def test_series_upgrade(model, tools):
 @pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
 async def test_cinder(model, tools, openstack_integrator):
-    log("waiting for csi to settle")
-    unit = model.applications["kubernetes-master"].units[0]
-    await retry_async_with_timeout(
-        verify_ready,
-        (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
-        timeout_msg="CSI pod not ready!",
-    )
     # create pod that writes to a pv from cinder
     await validate_storage_class(model, "cdk-cinder", "Cinder")
 
@@ -2412,13 +2405,6 @@ async def test_cinder(model, tools, openstack_integrator):
 @pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
 async def test_octavia(model, tools, openstack_integrator):
-    log("waiting for cloud-controller-openstack to settle")
-    unit = model.applications["kubernetes-master"].units[0]
-    await retry_async_with_timeout(
-        verify_ready,
-        (unit, "po", ["cloud-controller-openstack-0"], "-n kube-system"),
-        timeout_msg="Cloud Controller OpenStack pod not ready!",
-    )
     # deploy microbot via action
     unit = model.applications["kubernetes-worker"].units[0]
     action = await unit.run_action("microbot", delete=True)
