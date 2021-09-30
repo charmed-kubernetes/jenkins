@@ -2429,7 +2429,7 @@ async def test_octavia(model, tools, openstack_integrator):
             (unit, "pod,svc", ["microbot"]),
             timeout_msg="Timed out waiting for new microbot service",
         )
-        ingress_address = await get_svc_ingress(model, "microbot")
+        ingress_address = await get_svc_ingress(model, "microbot", timeout=5 * 60)
         resp = await tools.requests.get(
             f"http://{ingress_address}",
             proxies={"http": None, "https": None},
