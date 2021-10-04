@@ -39,6 +39,7 @@ from .utils import (
     get_ipv6_addr,
     vault,
     vault_status,
+    get_svc_ingress,
 )
 import urllib.request
 from .logger import log
@@ -59,7 +60,7 @@ class AuditTimestampError(Exception):
 
 
 async def wait_for_process(model, arg):
-    """ Retry api_server_with_arg <checks> times with a 5 sec interval """
+    """Retry api_server_with_arg <checks> times with a 5 sec interval"""
     checks = 60
     ready = False
     while not ready:
@@ -73,7 +74,7 @@ async def wait_for_process(model, arg):
 
 
 async def wait_for_not_process(model, arg):
-    """ Retry api_server_with_arg <checks> times with a 5 sec interval """
+    """Retry api_server_with_arg <checks> times with a 5 sec interval"""
     checks = 60
     ready = False
     while not ready:
@@ -248,7 +249,7 @@ async def test_auth_file_propagation(model, tools):
 @pytest.mark.asyncio
 @pytest.mark.flaky(max_runs=5, min_passes=1)
 async def test_status_messages(model):
-    """ Validate that the status messages are correct. """
+    """Validate that the status messages are correct."""
     expected_messages = {
         "kubernetes-master": "Kubernetes master running.",
         "kubernetes-worker": "Kubernetes worker running.",
@@ -307,7 +308,7 @@ async def test_snap_versions(model):
 
 @pytest.mark.asyncio
 async def test_rbac(model):
-    """ When RBAC is enabled, validate kubelet creds cannot get ClusterRoles """
+    """When RBAC is enabled, validate kubelet creds cannot get ClusterRoles"""
     app = model.applications["kubernetes-master"]
     config = await app.get_config()
     if "RBAC" not in config["authorization-mode"]["value"]:
@@ -321,7 +322,7 @@ async def test_rbac(model):
 @pytest.mark.asyncio
 @pytest.mark.clouds(["aws"])
 async def test_microbot(model, tools):
-    """ Validate the microbot action """
+    """Validate the microbot action"""
     unit = model.applications["kubernetes-worker"].units[0]
     action = await unit.run_action("microbot", delete=True)
     await action.wait()
@@ -349,7 +350,7 @@ async def test_microbot(model, tools):
 @pytest.mark.clouds(["aws", "vsphere"])
 @backoff.on_exception(backoff.expo, TypeError, max_tries=5)
 async def test_dashboard(model, log_dir, tools):
-    """ Validate that the dashboard is operational """
+    """Validate that the dashboard is operational"""
     unit = model.applications["kubernetes-master"].units[0]
     with NamedTemporaryFile() as f:
         await scp_from(unit, "config", f.name, tools.controller_name, tools.connection)
@@ -416,7 +417,7 @@ async def test_dashboard(model, log_dir, tools):
 
 @pytest.mark.asyncio
 async def test_kubelet_anonymous_auth_disabled(model, tools):
-    """ Validate that kubelet has anonymous auth disabled """
+    """Validate that kubelet has anonymous auth disabled"""
 
     async def validate_unit(unit):
         await unit.run("open-port 10250")
@@ -463,7 +464,7 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
 @pytest.mark.asyncio
 @pytest.mark.skip_apps(["canal", "calico", "tigera-secure-ee"])
 async def test_network_policies(model, tools):
-    """ Apply network policy and use two busyboxes to validate it. """
+    """Apply network policy and use two busyboxes to validate it."""
     here = os.path.dirname(os.path.abspath(__file__))
     unit = model.applications["kubernetes-master"].units[0]
 
@@ -2396,34 +2397,48 @@ async def test_series_upgrade(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
-async def test_cinder(model, tools):
-    # setup
-    log("deploying openstack-integrator")
-    series = "bionic"
-    await model.deploy(
-        "openstack-integrator",
-        num_units=1,
-        series=series,
-        trust=True,
-    )
-
-    log("adding relations")
-    await model.add_relation("openstack-integrator", "kubernetes-master")
-    await model.add_relation("openstack-integrator", "kubernetes-worker")
-    log("waiting...")
-    await tools.juju_wait()
-
-    log("waiting for csi to settle")
-    unit = model.applications["kubernetes-master"].units[0]
-    await retry_async_with_timeout(
-        verify_ready,
-        (unit, "po", ["csi-cinder-controllerplugin-0"], "-n kube-system"),
-        timeout_msg="CSI pod not ready!",
-    )
+async def test_cinder(model, tools, openstack_integrator):
     # create pod that writes to a pv from cinder
     await validate_storage_class(model, "cdk-cinder", "Cinder")
-    # cleanup
-    await model.applications["openstack-integrator"].destroy()
+
+
+@pytest.mark.asyncio
+@pytest.mark.clouds(["openstack"])
+async def test_octavia(model, tools, openstack_integrator):
+    log("Deploying microbot")
+    unit = model.applications["kubernetes-worker"].units[0]
+    action = await unit.run_action("microbot", delete=True)
+    await action.wait()
+    action = await unit.run_action("microbot", replicas=3)
+    await action.wait()
+    assert action.status == "completed"
+    try:
+        log("Replacing microbot service with Octavia LB")
+        await kubectl(model, "delete svc microbot")
+        await retry_async_with_timeout(
+            verify_deleted,
+            (unit, "svc", ["microbot"]),
+            timeout_msg="Timed out waiting for microbot service removal",
+        )
+        await kubectl(
+            model,
+            "expose deployment microbot --type=LoadBalancer --port=80 --target-port=80",
+        )
+        await retry_async_with_timeout(
+            verify_ready,
+            (unit, "pod,svc", ["microbot"]),
+            timeout_msg="Timed out waiting for new microbot service",
+        )
+        ingress_address = await get_svc_ingress(model, "microbot", timeout=5 * 60)
+        resp = await tools.requests.get(
+            f"http://{ingress_address}",
+            proxies={"http": None, "https": None},
+        )
+        assert resp.status_code == 200
+    finally:
+        # cleanup
+        action = await unit.run_action("microbot", delete=True)
+        await action.wait()
 
 
 @pytest.mark.asyncio

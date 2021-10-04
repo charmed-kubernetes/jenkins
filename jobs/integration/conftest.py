@@ -15,7 +15,16 @@ from tempfile import NamedTemporaryFile
 from juju.model import Model
 from aioify import aioify
 from traceback import format_exc
-from .utils import upgrade_charms, upgrade_snaps, arch, log_snap_versions, scp_from
+from .utils import (
+    upgrade_charms,
+    upgrade_snaps,
+    arch,
+    log_snap_versions,
+    scp_from,
+    retry_async_with_timeout,
+    verify_ready,
+)
+from .logger import log
 
 
 def pytest_addoption(parser):
@@ -350,7 +359,7 @@ def skip_by_model(request, model):
 
 @pytest.fixture
 def log_dir(request):
-    """ Fixture directory for storing arbitrary test logs. """
+    """Fixture directory for storing arbitrary test logs."""
     path = os.path.join(
         "logs", request.module.__name__, request.node.name.replace("/", "_")
     )
@@ -400,10 +409,10 @@ async def addons_model(request):
     await model.disconnect()
 
 
-@pytest.fixture
-def cloud(request):
-    cloud_name = request.config.getoption("--cloud")
-    return cloud_name.split("/")[0]
+@pytest.fixture(scope="module")
+async def cloud(model):
+    config = await model.get_config()
+    return config["type"].value
 
 
 @pytest.fixture(autouse=True)
@@ -411,6 +420,51 @@ def skip_by_cloud(request, cloud):
     clouds_marker = request.node.get_closest_marker("clouds")
     if clouds_marker and cloud not in clouds_marker.args[0]:
         pytest.skip("skipped on this cloud: {}".format(cloud))
+
+
+@pytest.fixture(scope="module")
+async def openstack_integrator(model):
+    if "openstack-integrator" in model.applications:
+        log("openstack-integrator already deployed")
+        yield
+    else:
+        log("deploying openstack-integrator")
+        series = "focal"
+        await model.deploy(
+            "cs:~containers/openstack-integrator",
+            num_units=1,
+            series=series,
+            trust=True,
+        )
+
+        try:
+            log("adding relations")
+            await model.add_relation(
+                "openstack-integrator:clients", "kubernetes-master"
+            )
+            await model.add_relation(
+                "openstack-integrator:clients", "kubernetes-worker"
+            )
+            await model.wait_for_idle(timeout=20 * 60)
+            log("Waiting for OpenStack pods to settle")
+            unit = model.applications["kubernetes-master"].units[0]
+            await retry_async_with_timeout(
+                verify_ready,
+                (
+                    unit,
+                    "po",
+                    [
+                        "openstack-cloud-controller-manager",
+                        "csi-cinder-controllerplugin-0",
+                    ],
+                    "-n kube-system",
+                ),
+                timeout_msg="OpenStack pods not ready",
+            )
+            yield
+        finally:
+            # cleanup
+            await model.applications["openstack-integrator"].destroy()
 
 
 # def pytest_itemcollected(item):
