@@ -21,8 +21,6 @@ from .utils import (
     arch,
     log_snap_versions,
     scp_from,
-    retry_async_with_timeout,
-    verify_ready,
 )
 from .logger import log
 
@@ -418,53 +416,37 @@ async def cloud(model):
 @pytest.fixture(autouse=True)
 def skip_by_cloud(request, cloud):
     clouds_marker = request.node.get_closest_marker("clouds")
-    if clouds_marker and cloud not in clouds_marker.args[0]:
-        pytest.skip("skipped on this cloud: {}".format(cloud))
-
-
-@pytest.fixture(scope="module")
-async def openstack_integrator(model):
-    if "openstack-integrator" in model.applications:
-        log("openstack-integrator already deployed")
-        yield
-    else:
-        log("deploying openstack-integrator")
-        series = "focal"
-        await model.deploy(
-            "cs:~containers/openstack-integrator",
-            num_units=1,
-            series=series,
-            trust=True,
+    if not clouds_marker:
+        return
+    allowed_clouds = set(clouds_marker.args[0])
+    # from: juju add-cloud --help
+    known_clouds = {
+        # private clouds
+        "lxd",
+        "maas",
+        "manual",
+        "openstack",
+        "vsphere",
+        # public clouds
+        "azure",
+        "cloudsigma",
+        "ec2",
+        "gce",
+        "oci",
+    }
+    unknown_clouds = allowed_clouds - known_clouds
+    if unknown_clouds:
+        nodeid = request.node.nodeid
+        s = "s" if len(unknown_clouds) > 1 else ""
+        unknown_clouds = ", ".join(unknown_clouds)
+        raise ValueError(
+            f"Unrecognized cloud{s} in marker for {nodeid}: {unknown_clouds}"
         )
-
-        try:
-            log("adding relations")
-            await model.add_relation(
-                "openstack-integrator:clients", "kubernetes-master"
-            )
-            await model.add_relation(
-                "openstack-integrator:clients", "kubernetes-worker"
-            )
-            await model.wait_for_idle(timeout=20 * 60)
-            log("Waiting for OpenStack pods to settle")
-            unit = model.applications["kubernetes-master"].units[0]
-            await retry_async_with_timeout(
-                verify_ready,
-                (
-                    unit,
-                    "po",
-                    [
-                        "openstack-cloud-controller-manager",
-                        "csi-cinder-controllerplugin-0",
-                    ],
-                    "-n kube-system",
-                ),
-                timeout_msg="OpenStack pods not ready",
-            )
-            yield
-        finally:
-            # cleanup
-            await model.applications["openstack-integrator"].destroy()
+    if cloud not in allowed_clouds:
+        log(
+            f"Skipping due to unsupported cloud: {cloud} not in [{', '.join(allowed_clouds)}]"
+        )
+        pytest.skip("unsupported cloud")
 
 
 # def pytest_itemcollected(item):

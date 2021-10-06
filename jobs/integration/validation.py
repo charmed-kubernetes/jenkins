@@ -320,7 +320,7 @@ async def test_rbac(model):
 
 
 @pytest.mark.asyncio
-@pytest.mark.clouds(["aws"])
+@pytest.mark.clouds(["ec2"])
 async def test_microbot(model, tools):
     """Validate the microbot action"""
     unit = model.applications["kubernetes-worker"].units[0]
@@ -347,7 +347,7 @@ async def test_microbot(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.clouds(["aws", "vsphere"])
+@pytest.mark.clouds(["ec2", "vsphere"])
 @backoff.on_exception(backoff.expo, TypeError, max_tries=5)
 async def test_dashboard(model, log_dir, tools):
     """Validate that the dashboard is operational"""
@@ -1159,7 +1159,7 @@ async def test_audit_default_config(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.flaky(max_runs=5, min_passes=1)
-@pytest.mark.clouds(["aws", "vsphere"])
+@pytest.mark.clouds(["ec2", "vsphere"])
 async def test_toggle_metrics(model, tools):
     """Turn metrics on/off via the 'enable-metrics' config on kubernetes-master,
     and check that workload status returns to 'active', and that the metrics-server
@@ -1352,7 +1352,7 @@ async def test_audit_webhook(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.skip_arch(["aarch64"])
-@pytest.mark.clouds(["aws", "vsphere"])
+@pytest.mark.clouds(["ec2", "vsphere"])
 async def test_keystone(model, tools):
     masters = model.applications["kubernetes-master"]
     k8s_version_str = masters.data["workload-version"]
@@ -1750,7 +1750,7 @@ async def test_encryption_at_rest(model, tools):
 
 
 @pytest.mark.asyncio
-@pytest.mark.clouds(["aws", "vsphere"])
+@pytest.mark.clouds(["ec2", "vsphere"])
 async def test_dns_provider(model, k8s_model, tools):
     master_app = model.applications["kubernetes-master"]
     master_unit = master_app.units[0]
@@ -2397,14 +2397,16 @@ async def test_series_upgrade(model, tools):
 
 @pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
-async def test_cinder(model, tools, openstack_integrator):
+async def test_cinder(model, tools):
+    assert "openstack-integrator" in model.applications, "Missing integrator"
     # create pod that writes to a pv from cinder
     await validate_storage_class(model, "cdk-cinder", "Cinder")
 
 
 @pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
-async def test_octavia(model, tools, openstack_integrator):
+async def test_octavia(model, tools):
+    assert "openstack-integrator" in model.applications, "Missing integrator"
     log("Deploying microbot")
     unit = model.applications["kubernetes-worker"].units[0]
     action = await unit.run_action("microbot", delete=True)
