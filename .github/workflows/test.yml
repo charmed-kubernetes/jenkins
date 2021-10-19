@@ -30,6 +30,4 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox pip-tools wheel
       - name: Test
-        env:
-          TOX_WORK_DIR: .tox
         run: tox -e py
