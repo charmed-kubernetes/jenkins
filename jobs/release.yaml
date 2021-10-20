@@ -54,16 +54,15 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.22/candidate
             - 1.21/candidate
             - 1.20/candidate
-            - 1.19/candidate
       - axis:
           type: user-defined
           name: series
           values:
             - focal
             - bionic
-            - xenial
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release"
