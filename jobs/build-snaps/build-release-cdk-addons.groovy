@@ -26,6 +26,7 @@ pipeline {
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.rocks.canonical.com:5000'
         REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/library/ docker.io/ gcr.io/ nvcr.io/ quay.io/'
+        SNAPCRAFT_ENABLE_DEVELOPER_DEBUG = '1'
     }
     options {
         ansiColor('xterm')
