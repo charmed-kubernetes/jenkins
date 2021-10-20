@@ -37,6 +37,7 @@ pipeline {
             steps {
                 sh "git config --global user.email 'cdkbot@juju.solutions'"
                 sh "git config --global user.name 'cdkbot'"
+                sh "ls -l /var/lib/jenkins/snapcraft-creds"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
                 sh "snapcraft whoami"
                 sh "sudo chown jenkins:jenkins -R /var/lib/jenkins/.config/snapcraft"
