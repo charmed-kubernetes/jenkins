@@ -102,6 +102,15 @@ This will build and promote the stable charms to candidate channel for testing.
 Verify the charm manifests for the build charms matches the commit SHAs of
 the stable branches of what was built in the previous build-charms job.
 
+### Build cdk-addons
+
+Run build jobs for n, n-1, and n-2 versions of cdk-addons. For example, if
+doing a 1.22+ckX release, then you would run:
+
+* build-release-cdk-addons-amd64-1.22
+* build-release-cdk-addons-amd64-1.21
+* build-release-cdk-addons-amd64-1.20
+
 ### Run **validate-charm-bugfix** job
 
 **Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix/
