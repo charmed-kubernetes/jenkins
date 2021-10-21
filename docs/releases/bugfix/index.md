@@ -133,7 +133,18 @@ Same as charm promotion.
 
 ### Promote cdk-addons
 
-Promote **cdk-addons** snap from edge to proper snap channels for ck release.
+Promote **cdk-addons** snaps from candidate to stable for n, n-1, and n-2
+tracks. For example, if doing a 1.22+ckX release, then you would promote:
+
+* 1.22/candidate -> 1.22/stable
+* 1.21/candidate -> 1.21/stable
+* 1.20/candidate -> 1.20/stable
+
+This could be done using the following one-liner:
+
+```
+for track in 1.22 1.21 1.20; do for rev in `snapcraft revisions cdk-addons | grep "$track/candidate\*" | cut -d ' ' -f 1`; do snapcraft release cdk-addons "$rev" "$track/stable"; done; done
+```
 
 ### Send announcement to k8s-crew with any relevant information.
 
