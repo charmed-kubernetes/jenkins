@@ -146,6 +146,15 @@ This could be done using the following one-liner:
 for track in 1.22 1.21 1.20; do for rev in `snapcraft revisions cdk-addons | grep "$track/candidate\*" | cut -d ' ' -f 1`; do snapcraft release cdk-addons "$rev" "$track/stable"; done; done
 ```
 
+### Close the milestone
+
+From the [cdk-scripts repo](https://github.com/canonical/cdk-scripts), run the
+close-milestone.py script. For example:
+
+```
+./close-milestone.py 1.22+ck1
+```
+
 ### Send announcement to k8s-crew with any relevant information.
 
 [milestones]: https://launchpad.net/charmed-kubernetes/+milestones
