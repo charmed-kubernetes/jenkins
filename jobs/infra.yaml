@@ -27,7 +27,6 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
       - shell: |
-          export DEBIAN_FRONTEND="noninteractive"
           rm -rf /var/lib/jenkins/slaves/*/workspace/validate*
 
           # infra job needs exclusive dpkg access to keep pkgs updated; kill
@@ -37,8 +36,8 @@
           sudo dpkg --configure -a --force-confdef --force-confnew
 
           sudo apt update
-          sudo apt -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confnew -qy dist-upgrade
-          sudo apt install -qyf python3-venv
+          sudo DEBIAN_FRONTEND=noninteractive apt -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confnew -qy dist-upgrade
+          sudo apt install -qy python3-venv
       - run-venv:
           COMMAND: |
               #!/bin/bash
