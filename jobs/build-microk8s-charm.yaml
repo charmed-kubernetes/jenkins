@@ -82,6 +82,7 @@
           run 'sudo snap install charmcraft --classic'
           run 'mkdir -p snap/charmcraft/common/config'
 
+          # TODO: update when charmcraft supports non-interactive logins
           # juju scp $CHARMCRAFT_CREDENTIALS ubuntu/leader:snap/charmcraft/common/config/charmcraft.credentials
           run 'charmcraft login'
 
