@@ -198,13 +198,13 @@ pipeline {
                         STAGING_IMAGE=\${STAGING_PREFIX}/\${RAW_IMAGE}
 
                         # Report yet skip pull/tag/push images that we already host in rocks.
-                        # Ensure all other images are included in the report.
                         if echo \${RAW_IMAGE} | grep -qi -e 'rocks.canonical.com' -e 'image-registry.canonical.com'
                         then
                             REPORT_IMAGES="\${REPORT_IMAGES} \${RAW_IMAGE}"
                             continue
                         else
-                            REPORT_IMAGES="\${REPORT_IMAGES} \${PROD_IMAGE}"
+                            # Add rocks/cdk prefix (cant use PROD_IMAGE because that would be upload.rocks.c.c)
+                            REPORT_IMAGES="\${REPORT_IMAGES} rocks.canonical.com/cdk/\${RAW_IMAGE}"
                         fi
 
                         if ${params.dry_run}
