@@ -1,0 +1,94 @@
+# Builds microk8s charm and uploads to CharmHub
+
+- job:
+    name: 'build-microk8s-charm'
+    description: |
+      Build MicroK8s charm and upload revision to CharmHub.
+    project-type: freestyle
+    node: runner-amd64
+    wrappers:
+      - ansicolor
+      - timestamps
+      - workspace-cleanup
+      - credentials-binding:
+          - file:
+              credential-id: JUJUCONTROLLERS_SERVERSTACK
+              variable: JUJUCONTROLLERS_SERVERSTACK
+          - file:
+              credential-id: JUJUACCOUNTS_SERVERSTACK
+              variable: JUJUACCOUNTS_SERVERSTACK
+    parameters:
+      - string:
+          name: REPOSITORY
+          default: "https://github.com/canonical/charm-microk8s.git"
+          description: |
+            Source repository for MicroK8s charm.
+      - string:
+          name: BRANCH
+          default: "master"
+          description: |
+            Branch from which to build the MicroK8s charm.
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "infra.*"
+          block-level: 'NODE'
+
+    publishers:
+      - archive:
+          artifacts: '*.charm'
+
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          function cleanup() {
+            set +e
+            run 'charmcraft logout'
+            juju destroy-model $JUJU_MODEL -y --timeout 1m --force
+            rm -rf $JUJU_DATA
+            set -e
+          }
+          trap cleanup EXIT
+
+          export JUJU_DATA=$PWD/data
+          export JUJU_MODEL=build-microk8s-charm-${BUILD_NUMBER}
+          mkdir -p $JUJU_DATA
+          cp $JUJUACCOUNTS_SERVERSTACK $JUJU_DATA/accounts.yaml
+          cp $JUJUCONTROLLERS_SERVERSTACK $JUJU_DATA/controllers.yaml
+
+          export PROXY=http://squid.internal:3128
+
+          juju add-model $JUJU_MODEL
+          juju model-config http-proxy=$PROXY https-proxy=$PROXY ftp-proxy=$PROXY no-proxy=10.0.0.0/8,192.168.0.0/16,127.0.0.1
+
+          juju deploy ubuntu --constraints 'cores=8 mem=4G root-disk=20G allocate-public-ip=true'
+          juju-wait -e $JUJU_MODEL -w
+
+          function run() {
+            juju ssh ubuntu/leader -- $@
+          }
+
+          run 'sudo snap install lxd'
+          run 'sudo lxd init --auto'
+          run 'sudo usermod -a -G lxd ubuntu'
+          run 'sudo snap install charmcraft --classic'
+          run 'mkdir -p snap/charmcraft/common/config'
+
+          # TODO: update when charmcraft supports non-interactive logins
+          # juju scp $CHARMCRAFT_CREDENTIALS ubuntu/leader:snap/charmcraft/common/config/charmcraft.credentials
+          run 'charmcraft login'
+
+          run 'charmcraft whoami'
+          run "git clone ${REPOSITORY} -b ${BRANCH} charm"
+          run 'cd charm && charmcraft build -v'
+          run 'cd charm && charmcraft upload *.charm'
+
+          juju scp 'ubuntu/leader:charm/*.charm' ./
