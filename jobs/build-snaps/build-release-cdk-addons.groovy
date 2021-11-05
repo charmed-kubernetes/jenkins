@@ -197,13 +197,14 @@ pipeline {
                         PROD_IMAGE=\${PROD_PREFIX}/\${RAW_IMAGE}
                         STAGING_IMAGE=\${STAGING_PREFIX}/\${RAW_IMAGE}
 
-                        # Skip images that we already host; ensure report has rocks as the image prefix
+                        # Report yet skip pull/tag/push images that we already host in rocks.
+                        # Ensure all other images are included in the report.
                         if echo \${RAW_IMAGE} | grep -qi -e 'rocks.canonical.com' -e 'image-registry.canonical.com'
                         then
                             REPORT_IMAGES="\${REPORT_IMAGES} \${RAW_IMAGE}"
                             continue
                         else
-                            REPORT_IMAGES="\${REPORT_IMAGES} rocks.canonical.com/\${RAW_IMAGE}"
+                            REPORT_IMAGES="\${REPORT_IMAGES} \${PROD_IMAGE}"
                         fi
 
                         if ${params.dry_run}
