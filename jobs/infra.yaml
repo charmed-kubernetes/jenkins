@@ -22,7 +22,7 @@
     properties:
       - block-on-build-release
       - build-discarder:
-          num-to-keep: 1
+          num-to-keep: 3
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
@@ -31,8 +31,9 @@
           rm -rf /var/lib/jenkins/slaves/*/workspace/validate*
 
           # infra job needs exclusive dpkg access to keep pkgs updated; kill
-          # and clean up if any dpkg procs are running.
-          sudo pkill -9 -e -f ^/usr/bin/dpkg || true
+          # and clean up if any dpkg procs/locks are found.
+          sudo pkill -9 -e -f ^/usr/bin/dpkg && sleep 5 || true
+          sudo fuser -v -k /var/cache/debconf/config.dat && sleep 5 || true
           sudo dpkg --configure -a --force-confdef --force-confnew
 
           sudo apt update
@@ -67,7 +68,7 @@
     properties:
       - block-on-build-release
       - build-discarder:
-          num-to-keep: 1
+          num-to-keep: 3
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
