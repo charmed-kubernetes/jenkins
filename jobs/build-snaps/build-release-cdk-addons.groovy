@@ -184,12 +184,6 @@ pipeline {
 
                     for i in \${ALL_IMAGES}
                     do
-                        # Skip images that we already host
-                        if echo \${i} | grep -qi -e 'rocks.canonical.com' -e 'image-registry.canonical.com'
-                        then
-                            continue
-                        fi
-
                         # Set appropriate production/staging image name
                         RAW_IMAGE=\${i}
                         for repl in ${env.REGISTRY_REPLACE}
@@ -202,7 +196,16 @@ pipeline {
                         done
                         PROD_IMAGE=\${PROD_PREFIX}/\${RAW_IMAGE}
                         STAGING_IMAGE=\${STAGING_PREFIX}/\${RAW_IMAGE}
-                        REPORT_IMAGES="\${REPORT_IMAGES} \${RAW_IMAGE}"
+
+                        # Report yet skip pull/tag/push images that we already host in rocks.
+                        if echo \${RAW_IMAGE} | grep -qi -e 'rocks.canonical.com' -e 'image-registry.canonical.com'
+                        then
+                            REPORT_IMAGES="\${REPORT_IMAGES} \${RAW_IMAGE}"
+                            continue
+                        else
+                            # Add rocks/cdk prefix (cant use PROD_IMAGE because that would be upload.rocks.c.c)
+                            REPORT_IMAGES="\${REPORT_IMAGES} rocks.canonical.com/cdk/\${RAW_IMAGE}"
+                        fi
 
                         if ${params.dry_run}
                         then
