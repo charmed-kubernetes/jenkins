@@ -312,7 +312,7 @@ pymacaroons==0.13.0
     #   surl
 pymdown-extensions==8.1.1
     # via mkdocs-material
-pynacl==1.1.2
+pynacl==1.2.0
     # via
     #   -r requirements.in
     #   macaroonbakery
@@ -483,7 +483,8 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
-websockets==7.0
+websockets==7.0 ; python_version<"3.9"
+websockets==8.0 ; python_version>="3.9"
     # via juju
 wheel==0.36.2
     # via -r requirements.in
