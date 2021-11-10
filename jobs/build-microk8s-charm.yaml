@@ -54,3 +54,84 @@
 
           git clone https://github.com/charmed-kubernetes/jenkins.git -b master jenkins
           bash -eux jenkins/jobs/microk8s/charms/build.sh
+
+- job:
+    name: 'release-microk8s-charm'
+    description: |
+      Run integration tests on the MicroK8s charm and release to stable.
+    project-type: freestyle
+    node: runner-amd64
+    wrappers:
+      - ansicolor
+      - timestamps
+      - workspace-cleanup
+      - credentials-binding:
+          - file:
+              credential-id: JUJUCONTROLLERS_SERVERSTACK
+              variable: JUJUCONTROLLERS
+          - file:
+              credential-id: JUJUACCOUNTS_SERVERSTACK
+              variable: JUJUACCOUNTS
+    parameters:
+      - string:
+          name: REPOSITORY
+          default: "https://github.com/canonical/charm-microk8s.git"
+          description: |
+            Source repository for MicroK8s charm tests.
+      - string:
+          name: BRANCH
+          default: "master"
+          description: |
+            Branch from which to run the MicroK8s charm tests.
+      - string:
+          name: CHARM_NAME
+          default: "microk8s"
+          description: |
+            MicroK8s charm to release.
+      - string:
+          name: FROM_CHANNEL
+          default: "latest/edge"
+          description: |
+            Integration tests will be run against this channel. Must be in `track/risk` or `track/risk/branch` format.
+      - string:
+          name: TO_CHANNEL
+          default: "latest/stable"
+          description: |
+            After tests pass, charm will be pushed to this channel. Must be in `track/risk` or `track/risk/branch` format.
+      - string:
+          name: CLUSTER_SIZE
+          default: "3"
+          description: |
+            Cluster size for integration tests.
+      - string:
+          name: SNAP_CHANNELS
+          default: "1.20 1.21 1.22"
+          description: |
+            MicroK8s snap channels to test (space or comma separated).
+      - bool:
+          name: SKIP_TESTS
+          default: "false"
+          description: |
+            Skip tests before running release (NOT RECOMMENDED).
+      - bool:
+          name: SKIP_RELEASE
+          default: "false"
+          description: |
+            Skip releasing to TO_CHANNEL after tests succeed.
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "infra.*"
+          block-level: 'NODE'
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+          git clone https://github.com/charmed-kubernetes/jenkins.git -b master jenkins
+          bash -eux jenkins/jobs/microk8s/charms/release.sh
