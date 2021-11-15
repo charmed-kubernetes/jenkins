@@ -1,0 +1,35 @@
+- name: calico
+  type: file
+  path: calico.tar.gz
+  description: Calico resource tarball for amd64
+  revision: 995
+  fingerprint: 138be996a09dca8cd279d756d8169c6a415a7ca3842625a00a6cc5666b386541a82d7d5922cd664c48fd62e6f6c9350f
+  size: 34660481
+- name: calico-arm64
+  type: file
+  path: calico.tar.gz
+  description: Calico resource tarball for arm64
+  revision: 994
+  fingerprint: 7e299af678643095b0ba17e13f9295ab9fca6fae8f2499f936396ccb7e57f2c644d9a42e9fcdc73ed5b6a2fad7d25180
+  size: 31369824
+- name: calico-node-image
+  type: file
+  path: calico-node-image.tar.gz
+  description: calico-node container image
+  revision: 677
+  fingerprint: 38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b
+  size: 0
+- name: calico-upgrade
+  type: file
+  path: calico-upgrade.tar.gz
+  description: calico-upgrade tool for amd64
+  revision: 822
+  fingerprint: 55ecc0179d80786a36b62191dbeaad369b4fd14736670809507c86354ea9a96624ea6a62c005d4a591063900edf5af18
+  size: 8763397
+- name: calico-upgrade-arm64
+  type: file
+  path: calico-upgrade.tar.gz
+  description: calico-upgrade tool for arm64
+  revision: 822
+  fingerprint: c6e835c99878e083744284c6ffcd68454e1d1c770b514cd496e9ef03b786d99ccf8da19818101e5cd31de206aafb1d12
+  size: 8095475

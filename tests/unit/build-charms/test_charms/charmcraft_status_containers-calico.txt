@@ -1,0 +1,13 @@
+Track    Base                Channel    Version    Revision    Resources
+latest   ubuntu 16.04 (all)  stable     838        838         calico (r977), calico-arm64 (r976), calico-node-image (r659), calico-upgrade (r804), calico-upgrade-arm64 (r804)
+                             candidate  838        838         calico (r977), calico-arm64 (r976), calico-node-image (r659), calico-upgrade (r804), calico-upgrade-arm64 (r804)
+                             beta       824        824         calico (r917), calico-arm64 (r916), calico-node-image (r599), calico-upgrade (r744), calico-upgrade-arm64 (r744)
+                             edge       845        845         calico (r994), calico-arm64 (r993), calico-node-image (r676), calico-upgrade (r821), calico-upgrade-arm64 (r821)
+         ubuntu 18.04 (all)  stable     838        838         calico (r977), calico-arm64 (r976), calico-node-image (r659), calico-upgrade (r804), calico-upgrade-arm64 (r804)
+                             candidate  838        838         calico (r977), calico-arm64 (r976), calico-node-image (r659), calico-upgrade (r804), calico-upgrade-arm64 (r804)
+                             beta       824        824         calico (r917), calico-arm64 (r916), calico-node-image (r599), calico-upgrade (r744), calico-upgrade-arm64 (r744)
+                             edge       845        845         calico (r994), calico-arm64 (r993), calico-node-image (r676), calico-upgrade (r821), calico-upgrade-arm64 (r821)
+         ubuntu 20.04 (all)  stable     838        838         calico (r977), calico-arm64 (r976), calico-node-image (r659), calico-upgrade (r804), calico-upgrade-arm64 (r804)
+                             candidate  838        838         calico (r977), calico-arm64 (r976), calico-node-image (r659), calico-upgrade (r804), calico-upgrade-arm64 (r804)
+                             beta       824        824         calico (r917), calico-arm64 (r916), calico-node-image (r599), calico-upgrade (r744), calico-upgrade-arm64 (r744)
+                             edge       845        845         calico (r994), calico-arm64 (r993), calico-node-image (r676), calico-upgrade (r821), calico-upgrade-arm64 (r821)

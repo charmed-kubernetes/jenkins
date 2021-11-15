@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 charms.py - Interface to building and publishing charms
 
@@ -54,19 +55,23 @@ class LayerType(Enum):
 class BuildEnv:
     """Charm or Bundle build data class"""
 
-    try:
-        build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
-        layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
-        interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
-        charms_dir = Path(os.environ.get("CHARM_CHARMS_DIR"))
-        work_dir = Path(os.environ.get("WORKSPACE"))
-        tmp_dir = work_dir / "tmp"
-        home_dir = Path(os.environ.get("HOME"))
-    except TypeError:
-        raise BuildException(
-            "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE, HOME: "
-            "Unable to find some or all of these charm build environment variables."
-        )
+    CHARMCRAFT_RESOURCE = re.compile(r"(\S+) \(r(\d+)\)")
+
+    def __new__(cls, *args, **kwargs):
+        try:
+            cls.build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
+            cls.layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
+            cls.interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
+            cls.charms_dir = Path(os.environ.get("CHARM_CHARMS_DIR"))
+            cls.work_dir = Path(os.environ.get("WORKSPACE"))
+            cls.tmp_dir = cls.work_dir / "tmp"
+            cls.home_dir = Path(os.environ.get("HOME"))
+        except TypeError:
+            raise BuildException(
+                "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE, HOME: "
+                "Unable to find some or all of these charm build environment variables."
+            )
+        return super(BuildEnv, cls).__new__(cls)
 
     def __init__(self, build_type):
         self.store = Store("BuildCharms")
@@ -157,40 +162,94 @@ class BuildEnv:
         self.db_json.write_text(json.dumps(dict(self.db)))
         self.store.put_item(Item=dict(self.db))
 
-    def promote_all(self, from_channel="unpublished", to_channel="edge"):
+    def _cs_promote(self, charm_namespace, charm_name, from_channel, to_channel):
+        charm_entity = f"cs:~{charm_namespace}/{charm_name}"
+        click.echo(
+            f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
+        )
+        charm_id = sh.charm.show(charm_entity, "--channel", from_channel, "id")
+        charm_id = yaml.safe_load(charm_id.stdout.decode())
+        resources_args = []
+        try:
+            resources = sh.charm(
+                "list-resources",
+                charm_id["id"]["Id"],
+                channel=from_channel,
+                format="yaml",
+            )
+            resources = yaml.safe_load(resources.stdout.decode())
+            if resources:
+                resources_args = [
+                    (
+                        "--resource",
+                        "{}-{}".format(resource["name"], resource["revision"]),
+                    )
+                    for resource in resources
+                ]
+        except sh.ErrorReturnCode_1:
+            click.echo("No resources for {}".format(charm_id))
+        sh.charm.release(charm_id["id"]["Id"], "--channel", to_channel, *resources_args)
+
+    def _charmcraft_status(self, charm_entity):
+        """Read CLI Table output from charmcraft status and parse"""
+        charm_status = sh.charmcraft.status(charm_entity)
+        header, *body = charm_status.stdout.decode().splitlines()
+        channel_status = []
+        for line in body:
+            row, head = {}, line
+            for key in reversed(header.split()):
+                head, *value = head.strip().rsplit("  ", 1)
+                head, value = ("", head.strip()) if not value else (head, value[0])
+                row[key] = value or channel_status[-1].get(key)
+            resources = row.get("Resources", "")
+            if resources == "-":
+                row["Resources"] = []
+            elif resources == "↑":
+                row["Resources"] = channel_status[-1]["Resources"]
+            else:
+                row["Resources"] = self.CHARMCRAFT_RESOURCE.findall(resources)
+            channel_status.append(row)
+        return channel_status
+
+    def _ch_promote(self, charm_namespace, charm_name, from_channel, to_channel):
+        charm_entity = f"{charm_namespace}-{charm_name}"
+        click.echo(
+            f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
+        )
+        charm_status = [
+            stat
+            for stat in self._charmcraft_status(charm_entity)
+            if stat["Channel"] == from_channel
+        ]
+        calls = set()
+        for charm_by_base in charm_status:
+            revision = charm_by_base["Revision"]
+            resources = charm_by_base.get("Resources", [])
+            resource_args = [f"--resource={name}:{rev}" for name, rev in resources]
+            calls.add(
+                (
+                    charm_entity,
+                    f"--revision={revision}",
+                    f"--channel={to_channel}",
+                    *resource_args,
+                )
+            )
+        for args in calls:
+            sh.charmcraft.release(*args)
+
+    def promote_all(self, from_channel="unpublished", to_channel="edge", store="cs"):
         for charm_map in self.artifacts:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
                     continue
-
-                charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
-                click.echo(
-                    f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
-                )
-                charm_id = sh.charm.show(charm_entity, "--channel", from_channel, "id")
-                charm_id = yaml.safe_load(charm_id.stdout.decode())
-                resources_args = []
-                try:
-                    resources = sh.charm(
-                        "list-resources",
-                        charm_id["id"]["Id"],
-                        channel=from_channel,
-                        format="yaml",
+                if store == "cs":
+                    self._cs_promote(
+                        charm_opts["namespace"], charm_name, from_channel, to_channel
                     )
-                    resources = yaml.safe_load(resources.stdout.decode())
-                    if resources:
-                        resources_args = [
-                            (
-                                "--resource",
-                                "{}-{}".format(resource["name"], resource["revision"]),
-                            )
-                            for resource in resources
-                        ]
-                except sh.ErrorReturnCode_1:
-                    click.echo("No resources for {}".format(charm_id))
-                sh.charm.release(
-                    charm_id["id"]["Id"], "--channel", to_channel, *resources_args
-                )
+                elif store == "ch":
+                    self._ch_promote(
+                        charm_opts["namespace"], charm_name, from_channel, to_channel
+                    )
 
     def download(self, layer_name):
         out = capture(

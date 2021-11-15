@@ -2,6 +2,23 @@ name: Repo Status
 on: [push, pull_request]
 
 jobs:
+  unit-tests:
+    name: Lint, Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: [ 3.8, 3.9 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Tox
+        run: pip install tox
+      - name: Run Line,Unit
+        run: tox -e lint,unit # Run tox using the version of Python in `PATH`
+
   build:
     name: Verify
     runs-on: ubuntu-latest

@@ -1,5 +1,6 @@
 .tox
 .cache/
+.coverage
 .pytest_cache/
 cleanup-vpc*
 __pycache__/
