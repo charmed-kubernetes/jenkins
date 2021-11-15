@@ -53,7 +53,7 @@ def cilib_store():
 @pytest.fixture()
 def charm_cmd():
     """Create a fixture defining mock for `charm` cli command."""
-    with patch("charms.sh.charm") as cmd:
+    with patch("sh.charm", create=True) as cmd:
         cmd.show.return_value.stdout = b"""
             id:
               Id: cs:~containers/calico-845
@@ -70,7 +70,7 @@ def charm_cmd():
 @pytest.fixture()
 def charmcraft_cmd():
     """Create a fixture defining mock for `charmcraft` cli command."""
-    with patch('charms.sh.charmcraft') as cmd:
+    with patch('sh.charmcraft', create=True) as cmd:
         cmd.status.return_value.stdout = (
             STATIC_TEST_PATH / "charmcraft_status_containers-calico.txt"
         ).read_bytes()
