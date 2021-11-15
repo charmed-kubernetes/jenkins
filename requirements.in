@@ -31,7 +31,7 @@ ogc-plugins-juju>=1.0.39
 ogc-plugins-runner>=1.0.24
 ogc>=1.0.1
 requests
-pynacl==1.1.2
+pynacl==1.2.0
 pymacaroons
 pyyaml>=5.1.2
 pytest-asyncio
