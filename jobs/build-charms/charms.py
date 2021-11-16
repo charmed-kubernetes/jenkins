@@ -330,22 +330,21 @@ class BuildEntity:
     def echo(self, msg):
         click.echo(f"[{self.name}] {msg}")
 
-    def get_charmstore_rev_url(self):
-        # Grab charmstore revision for channels charm
-        response = capture(
-            [
-                "charm",
-                "show",
+    def _cs_show(self):
+        try:
+            charm_id = sh.charm.show(
                 self.entity,
                 "--channel",
                 self.build.db["build_args"]["to_channel"],
                 "id",
-            ]
-        )
-        if not response.ok:
+            )
+        except sh.ErrorReturnCode:
             return None
-        response = yaml.safe_load(response.stdout.decode().strip())
-        return response["id"]["Id"]
+        return yaml.safe_load(charm_id.stdout.decode().strip())
+
+    def get_charmstore_rev_url(self):
+        # Grab charmstore revision for channels charm
+        return self._cs_show()["id"]["Id"]
 
     def download(self, fname):
         if not self.full_entity:
@@ -567,8 +566,7 @@ class BuildEntity:
         self.echo(
             f"Promoting :: {self.entity:^35} :: from:{from_channel} to: {to_channel}"
         )
-        charm_id = sh.charm.show(self.entity, "--channel", from_channel, "id")
-        charm_id = yaml.safe_load(charm_id.stdout.decode())
+        charm_id = self._cs_show()
         resources_args = []
         try:
             resources = sh.charm(
@@ -844,7 +842,13 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
     help="Charm channel to publish from",
 )
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
-def promote(charm_list, filter_by_tag, from_channel, to_channel):
+@click.option(
+    "--store",
+    type=click.Choice(["cs", "ch"], case_sensitive=False),
+    help="Charmstore (cs) or Charmhub (ch)",
+    default="cs",
+)
+def promote(charm_list, filter_by_tag, from_channel, to_channel, store):
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
         "artifact_list": charm_list,
@@ -852,7 +856,9 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel):
         "to_channel": to_channel,
         "from_channel": from_channel,
     }
-    return build_env.promote_all(from_channel=from_channel, to_channel=to_channel)
+    return build_env.promote_all(
+        from_channel=from_channel, to_channel=to_channel, store=store
+    )
 
 
 if __name__ == "__main__":

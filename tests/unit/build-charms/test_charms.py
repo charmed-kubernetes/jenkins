@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, call
 
 from click.testing import CliRunner
 import charms
@@ -50,7 +50,7 @@ def cilib_store():
         yield store
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def charm_cmd():
     """Create a fixture defining mock for `charm` cli command."""
     with patch("sh.charm", create=True) as cmd:
@@ -67,10 +67,10 @@ def charm_cmd():
         yield cmd
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def charmcraft_cmd():
     """Create a fixture defining mock for `charmcraft` cli command."""
-    with patch('sh.charmcraft', create=True) as cmd:
+    with patch("sh.charmcraft", create=True) as cmd:
         cmd.status.return_value.stdout = (
             STATIC_TEST_PATH / "charmcraft_status_containers-calico.txt"
         ).read_bytes()
@@ -125,7 +125,7 @@ def test_build_env_promote_all_charmhub(test_environment, cilib_store, charmcraf
         "--resource=calico-upgrade-arm64:821",
     ]
     charmcraft_cmd.release.assert_called_once_with(
-        'containers-calico', "--revision=845", "--channel=beta", *resource_args
+        "containers-calico", "--revision=845", "--channel=beta", *resource_args
     )
 
 
@@ -138,22 +138,25 @@ def mock_build_env():
         yield mock_env_inst
 
 
+@pytest.fixture()
+def mock_build_entity():
+    """Create a fixture defining a mock BuildEntity object."""
+    with patch("charms.BuildEntity") as mock_ent:
+        yield mock_ent
+
+
 def test_promote_command(mock_build_env):
-    """Tests cli command which is run by jenkins job."""
+    """Tests cli promote command which is run by jenkins job."""
     runner = CliRunner()
     result = runner.invoke(
         charms.promote,
         [
-            "--charm-list",
-            "test-charm",
-            "--filter-by-tag",
-            "tag1",
-            "--filter-by-tag",
-            "tag2",
-            "--from-channel",
-            "unpublished",
-            "--to-channel",
-            "edge",
+            "--charm-list=test-charm",
+            "--filter-by-tag=tag1",
+            "--filter-by-tag=tag2",
+            "--from-channel=unpublished",
+            "--to-channel=edge",
+            "--store=CH",
         ],
     )
     assert result.exit_code == 0
@@ -164,5 +167,60 @@ def test_promote_command(mock_build_env):
         "from_channel": "unpublished",
     }
     mock_build_env.promote_all.assert_called_once_with(
-        from_channel="unpublished", to_channel="edge"
+        from_channel="unpublished", to_channel="edge", store="ch"
     )
+
+
+def test_build_command(mock_build_env, mock_build_entity):
+    """Tests cli build command which is run by jenkins job."""
+    runner = CliRunner()
+    mock_build_env.artifacts = [
+        {
+            "calico": dict(
+                tags=["tag1", "k8s"],
+                namespace="containers",
+                downstream="charmed-kubernetes/layer-calico.git",
+            )
+        }
+    ]
+    entity = mock_build_entity.return_value
+    result = runner.invoke(
+        charms.build,
+        [
+            "--charm-list=jobs/includes/charm-support-matrix.inc",
+            "--resource-spec=jobs/build-charms/resource-spec.yaml",
+            "--filter-by-tag=tag1",
+            "--filter-by-tag=tag2",
+            "--layer-index=https://charmed-kubernetes.github.io/layer-index/",
+            "--layer-list=jobs/includes/charm-layer-list.inc",
+            "--force",
+        ],
+    )
+    assert result.exit_code == 0, result.stdout
+    assert mock_build_env.db["build_args"] == {
+        "artifact_list": "jobs/includes/charm-support-matrix.inc",
+        "layer_list": "jobs/includes/charm-layer-list.inc",
+        "charm_branch": "master",
+        "layer_branch": "master",
+        "layer_index": "https://charmed-kubernetes.github.io/layer-index/",
+        "resource_spec": "jobs/build-charms/resource-spec.yaml",
+        "filter_by_tag": ["tag1", "tag2"],
+        "to_channel": "edge",
+        "force": True,
+    }
+    mock_build_env.pull_layers.assert_called_once_with()
+    mock_build_env.save.assert_called_once_with()
+
+    entity.echo.assert_has_calls(
+        [
+            call("Starting"),
+            call(f"Details: {entity}"),
+            call("Stopping"),
+        ],
+        any_order=False,
+    )
+    entity.setup.assert_called_once_with()
+    entity.charm_build.assert_called_once_with()
+    entity.push.assert_called_once_with()
+    entity.attach_resources.assert_called_once_with()
+    entity.promote.assert_called_once_with(to_channel="edge")
