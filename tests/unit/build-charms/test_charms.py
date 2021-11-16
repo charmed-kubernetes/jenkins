@@ -4,8 +4,9 @@ import os
 from pathlib import Path
 
 import pytest
-from unittest.mock import patch, call
+from unittest.mock import patch, call, PropertyMock
 
+import yaml
 from click.testing import CliRunner
 import charms
 
@@ -20,15 +21,14 @@ def test_build_env_missing_env():
 
 
 @pytest.fixture()
-def test_environment():
+def test_environment(tmpdir):
     """Creates a fixture defining test environment variables."""
-    test_path = "/tmp"
     saved_env, test_env = {}, dict(
-        CHARM_BUILD_DIR=test_path,
-        CHARM_LAYERS_DIR=test_path,
-        CHARM_INTERFACES_DIR=test_path,
-        CHARM_CHARMS_DIR=test_path,
-        WORKSPACE=test_path,
+        CHARM_BUILD_DIR=f'{tmpdir / "build"}',
+        CHARM_LAYERS_DIR=f'{tmpdir / "layers"}',
+        CHARM_INTERFACES_DIR=f'{tmpdir / "interfaces"}',
+        CHARM_CHARMS_DIR=f'{tmpdir / "charms"}',
+        WORKSPACE=f'{tmpdir / "scratch"}',
     )
 
     for k, v in test_env.items():
@@ -43,7 +43,7 @@ def test_environment():
             os.environ[v] = saved_env[k]
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def cilib_store():
     """Create a fixture defining mock for cilib Store."""
     with patch("charms.Store") as store:
@@ -55,11 +55,13 @@ def charm_cmd():
     """Create a fixture defining mock for `charm` cli command."""
     with patch("sh.charm", create=True) as cmd:
         cmd.show.return_value.stdout = b"""
-            id:
-              Id: cs:~containers/calico-845
-              Name: calico
-              Revision: 845
-              User: containers
+id:
+  Id: cs:~containers/calico-845
+  Name: calico
+  Revision: 845
+  User: containers
+extra-info:
+  commit: 96b4e06d5d35fec30cdf2cc25076dd25c51b893c
         """
         cmd.return_value.stdout = (
             STATIC_TEST_PATH / "charm_list-resources_cs_containers_calico-845.yaml"
@@ -107,7 +109,7 @@ def test_build_env_promote_all_charmstore(test_environment, cilib_store, charm_c
     )
 
 
-def test_build_env_promote_all_charmhub(test_environment, cilib_store, charmcraft_cmd):
+def test_build_env_promote_all_charmhub(test_environment, charmcraft_cmd):
     """Tests promote_all to charmhub."""
     charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
     charm_env.db["build_args"] = {
@@ -125,8 +127,138 @@ def test_build_env_promote_all_charmhub(test_environment, cilib_store, charmcraf
         "--resource=calico-upgrade-arm64:821",
     ]
     charmcraft_cmd.release.assert_called_once_with(
-        "containers-calico", "--revision=845", "--channel=beta", *resource_args
+        "calico", "--revision=845", "--channel=beta", *resource_args
     )
+
+
+def test_build_entity_setup(test_environment):
+    """Tests build entity setup."""
+    charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
+    charm_env.db["build_args"] = {
+        "artifact_list": Path(__file__).parent / "test_charms" / "artifacts.yaml",
+        "filter_by_tag": ["k8s"],
+        "to_channel": "beta",
+        "from_channel": "edge",
+    }
+    artifacts = yaml.safe_load(
+        (Path("tests") / "data" / "ci-testing-charms.inc").read_text()
+    )
+    charm_name, charm_opts = next(iter(artifacts[0].items()))
+    charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "ch")
+    assert charm_entity.legacy_charm is False, "Initializes as false"
+    charm_entity.setup()
+    assert charm_entity.legacy_charm is True, "test charm requires legacy builds"
+
+
+def test_build_entity_has_changed(test_environment, charm_cmd):
+    """Tests has_changed property."""
+    charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
+    charm_env.db["build_args"] = {
+        "artifact_list": Path(__file__).parent / "test_charms" / "artifacts.yaml",
+        "filter_by_tag": ["k8s"],
+        "to_channel": "edge",
+        "from_channel": "beta",
+    }
+    charm_env.db["pull_layer_manifest"] = []
+    artifacts = yaml.safe_load(
+        (Path("tests") / "data" / "ci-testing-charms.inc").read_text()
+    )
+    charm_name, charm_opts = next(iter(artifacts[0].items()))
+    charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "cs")
+    charm_cmd.show.assert_called_once_with(
+        "cs:~containers/calico", "--channel", "edge", "id"
+    )
+    charm_cmd.show.reset_mock()
+    with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
+        # Test non-legacy charms with the commit rev checked in with charm matching
+        commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
+        assert charm_entity.has_changed is False
+        charm_cmd.show.assert_called_once_with(
+            "cs:~containers/calico-845", "extra-info", format="yaml"
+        )
+        charm_cmd.show.reset_mock()
+
+        # Test non-legacy charms with the commit rev checked in with charm not matching
+        commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893d"
+        assert charm_entity.has_changed is True
+        charm_cmd.show.assert_called_once_with(
+            "cs:~containers/calico-845", "extra-info", format="yaml"
+        )
+        charm_cmd.show.reset_mock()
+
+        # Test legacy charms by comparing charmstore .build.manifest
+        charm_entity.legacy_charm = True
+        assert charm_entity.has_changed is True
+        charm_cmd.show.assert_not_called()
+        charm_cmd.show.reset_mock()
+
+    # Test all charmhub charms comparing .build.manifest to revision
+    charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "ch")
+    charm_cmd.show.assert_not_called()
+    with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
+        commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
+        assert charm_entity.has_changed is True
+
+
+def test_build_entity_charm_build(test_environment, charm_cmd, charmcraft_cmd, tmpdir):
+    """Test that BuildEntity runs charm_build."""
+    charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
+    charm_env.db["build_args"] = {
+        "artifact_list": Path(__file__).parent / "test_charms" / "artifacts.yaml",
+        "filter_by_tag": ["k8s"],
+        "to_channel": "edge",
+        "from_channel": "beta",
+    }
+    artifacts = yaml.safe_load(
+        (Path("tests") / "data" / "ci-testing-charms.inc").read_text()
+    )
+    charm_name, charm_opts = next(iter(artifacts[0].items()))
+    charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "ch")
+
+    charm_entity.legacy_charm = True
+    charm_entity.charm_build()
+    assert charm_entity.dst_path == tmpdir / "charms" / "calico" / "calico.charm"
+    charm_cmd.build.assert_called_once_with(
+        "-r",
+        "--force",
+        "-i",
+        "https://localhost",
+        "--charm-file",
+        _cwd=tmpdir / "charms" / "calico",
+        _out=charm_entity.echo,
+    )
+    charmcraft_cmd.build.assert_not_called()
+    charm_cmd.build.reset_mock()
+
+    charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "cs")
+
+    charm_entity.legacy_charm = True
+    charm_entity.charm_build()
+    assert charm_entity.dst_path == tmpdir / "build" / "calico"
+    charm_cmd.build.assert_called_once_with(
+        "-r",
+        "--force",
+        "-i",
+        "https://localhost",
+        _cwd=tmpdir / "charms" / "calico",
+        _out=charm_entity.echo,
+    )
+    charmcraft_cmd.build.assert_not_called()
+    charm_cmd.build.reset_mock()
+
+    charm_entity.legacy_charm = False
+    charm_entity.charm_build()
+    charm_cmd.build.assert_not_called()
+    charmcraft_cmd.build.assert_called_once_with(
+        "-f",
+        f"{tmpdir / 'charms' / 'calico'}",
+        _cwd=tmpdir / "build",
+        _out=charm_entity.echo,
+    )
+
+
+#   --------------------------------------------------
+#  test click command functions
 
 
 @pytest.fixture()
@@ -180,14 +312,15 @@ def test_build_command(mock_build_env, mock_build_entity):
                 tags=["tag1", "k8s"],
                 namespace="containers",
                 downstream="charmed-kubernetes/layer-calico.git",
-            )
+            ),
+            "ignored": dict(tags=["ignore-me"]),
         }
     ]
     entity = mock_build_entity.return_value
     result = runner.invoke(
         charms.build,
         [
-            "--charm-list=jobs/includes/charm-support-matrix.inc",
+            "--charm-list=tests/data/ci-testing-charms.inc",
             "--resource-spec=jobs/build-charms/resource-spec.yaml",
             "--filter-by-tag=tag1",
             "--filter-by-tag=tag2",
@@ -198,7 +331,7 @@ def test_build_command(mock_build_env, mock_build_entity):
     )
     assert result.exit_code == 0, result.stdout
     assert mock_build_env.db["build_args"] == {
-        "artifact_list": "jobs/includes/charm-support-matrix.inc",
+        "artifact_list": "tests/data/ci-testing-charms.inc",
         "layer_list": "jobs/includes/charm-layer-list.inc",
         "charm_branch": "master",
         "layer_branch": "master",

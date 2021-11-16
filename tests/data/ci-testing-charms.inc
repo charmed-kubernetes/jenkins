@@ -1,0 +1,8 @@
+# -*- mode:yaml; -*-
+- calico:
+    upstream: "https://github.com/charmed-kubernetes/layer-calico.git"
+    downstream: 'charmed-kubernetes/layer-calico.git'
+    build-resources: "cd {out_path}; bash {src_path}/build-calico-resource.sh"
+    namespace: 'containers'
+    tags: ['k8s', 'calico']
+    override-push: echo 'push overridden'
