@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-charms.py - Interface to building and publishing charms
+charms.py - Interface to building and publishing charms.
 
 Make sure that charm environments variables are set appropriately
 
@@ -41,15 +41,19 @@ import re
 
 
 class BuildException(Exception):
-    pass
+    """Define build Exception."""
 
 
 class BuildType(Enum):
+    """Enumeration for the build type."""
+
     CHARM = 1
     BUNDLE = 2
 
 
 class LayerType(Enum):
+    """Enumeration for the layer type."""
+
     LAYER = 1
     INTERFACE = 2
 
@@ -108,7 +112,7 @@ def _charmhub_refresh(name, channel=None, architecture=None):
 
 
 def _charmcraft_status(charm_entity):
-    """Read CLI Table output from charmcraft status and parse"""
+    """Read CLI Table output from charmcraft status and parse."""
     charm_status = sh.charmcraft.status(charm_entity)
     header, *body = charm_status.stdout.decode().splitlines()
     channel_status = []
@@ -130,9 +134,10 @@ def _charmcraft_status(charm_entity):
 
 
 class BuildEnv:
-    """Charm or Bundle build data class"""
+    """Charm or Bundle build data class."""
 
     def __new__(cls, *args, **kwargs):
+        """Initialize class variables used during the build from the CI environment."""
         try:
             cls.build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
             cls.layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
@@ -149,6 +154,7 @@ class BuildEnv:
         return super(BuildEnv, cls).__new__(cls)
 
     def __init__(self, build_type):
+        """Create a BuildEnv to hold/save build metadata."""
         self.store = Store("BuildCharms")
         self.now = datetime.utcnow()
         self.build_type = build_type
@@ -171,67 +177,63 @@ class BuildEnv:
 
     @property
     def layers(self):
-        """List of layers defined in our jobs/includes/charm-layer-list.inc"""
+        """List of layers defined in our jobs/includes/charm-layer-list.inc."""
         return yaml.safe_load(
             Path(self.db["build_args"]["layer_list"]).read_text(encoding="utf8")
         )
 
     @property
     def artifacts(self):
-        """List of charms or bundles to process"""
+        """List of charms or bundles to process."""
         return yaml.safe_load(
             Path(self.db["build_args"]["artifact_list"]).read_text(encoding="utf8")
         )
 
     @property
     def layer_index(self):
-        """Remote Layer index"""
+        """Remote Layer index."""
         return self.db["build_args"].get("layer_index", None)
 
     @property
     def layer_branch(self):
-        """Remote Layer branch"""
+        """Remote Layer branch."""
         return self.db["build_args"].get("layer_branch", None)
 
     @property
     def filter_by_tag(self):
-        """filter tag"""
+        """Filter by tag."""
         return self.db["build_args"].get("filter_by_tag", None)
 
     @property
     def resource_spec(self):
+        """Get Resource specs."""
         return self.db["build_args"].get("resource_spec", None)
 
     @property
     def to_channel(self):
+        """Get destination channel."""
         return self.db["build_args"].get("to_channel", None)
 
     @property
     def from_channel(self):
+        """Get source channel."""
         return self.db["build_args"].get("from_channel", None)
 
     @property
     def force(self):
+        """Get if we should force a build."""
         return self.db["build_args"].get("force", None)
 
     def _layer_type(self, ltype):
-        """Check the type of an individual layer set in the layer list"""
+        """Check the type of an individual layer set in the layer list."""
         if ltype == "layer":
             return LayerType.LAYER
         elif ltype == "interface":
             return LayerType.INTERFACE
         raise BuildException(f"Unknown layer type for {ltype}")
 
-    def build_path(self, layer):
-        ltype, name = layer.split(":")
-        if self._layer_type(ltype) == LayerType.LAYER:
-            return str(self.layers_dir / name)
-        elif self._layer_type(ltype) == LayerType.INTERFACE:
-            return str(self.interfaces_dir / name)
-        else:
-            return None
-
     def save(self):
+        """Store build metadata into stateful db."""
         click.echo("Saving build")
         click.echo(dict(self.db))
         self.db_json.write_text(json.dumps(dict(self.db)))
@@ -281,6 +283,7 @@ class BuildEnv:
             sh.charmcraft.release(*args)
 
     def promote_all(self, from_channel="unpublished", to_channel="edge", store="cs"):
+        """Promote set of charm artifacts in the store."""
         for charm_map in self.artifacts:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
@@ -293,6 +296,7 @@ class BuildEnv:
                     self._ch_promote(charm_name, from_channel, to_channel)
 
     def download(self, layer_name):
+        """Pull layer source from the charm store."""
         out = capture(
             f"charm pull-source -i {self.layer_index} -b {self.layer_branch} {layer_name}"
         )
@@ -305,7 +309,7 @@ class BuildEnv:
         return layer_manifest
 
     def pull_layers(self):
-        """clone all downstream layers to be processed locally when doing charm builds"""
+        """Clone all downstream layers to be processed locally when doing charm builds."""
         layers_to_pull = []
         for layer_map in self.layers:
             layer_name = list(layer_map.keys())[0]
@@ -322,9 +326,10 @@ class BuildEnv:
 
 
 class BuildEntity:
-    """The Build data class"""
+    """The Build data class."""
 
     def __init__(self, build, name, opts, store):
+        """Represent a charm or bundle which should be built and published."""
         # Build env
         self.build = build
 
@@ -375,9 +380,11 @@ class BuildEntity:
         self.new_entity = None
 
     def __str__(self):
+        """Represent build entity as a string."""
         return f"<BuildEntity: {self.name} ({self.full_entity}) (legacy charm: {self.legacy_charm})>"
 
     def echo(self, msg):
+        """Click echo wrapper."""
         click.echo(f"[{self.name}] {msg}")
 
     def _get_full_entity(self):
@@ -415,7 +422,7 @@ class BuildEntity:
 
     @property
     def has_changed(self):
-        """Determine if the charm/layers commits have changed since last publish to charmstore"""
+        """Determine if the charm/layers commits have changed since last publish to charmstore."""
         if not self.legacy_charm and self.store == "cs":
             # Operator framework charms won't have a .build.manifest and it's
             # sufficient to just compare the charm repo's commit rev.
@@ -472,7 +479,7 @@ class BuildEntity:
 
     @property
     def commit(self):
-        """Commit hash of downstream repo"""
+        """Commit hash of downstream repo."""
         if not Path(self.src_path).exists():
             raise BuildException(f"Could not locate {self.src_path}")
 
@@ -490,7 +497,7 @@ class BuildEntity:
         return metadata.get("resources", {})
 
     def setup(self):
-        """Setup directory for charm build"""
+        """Set up directory for charm build."""
         downstream = f"https://github.com/{self.opts['downstream']}"
         self.echo(f"Cloning repo from {downstream}")
 
@@ -507,7 +514,7 @@ class BuildEntity:
             self.dst_path += ".charm"
 
     def charm_build(self):
-        """Perform charm build against charm/bundle"""
+        """Perform a build against charm/bundle."""
         ret = SimpleNamespace(ok=True)
         if "override-build" in self.opts:
             self.echo("Override build found, running in place of charm build.")
@@ -544,7 +551,6 @@ class BuildEntity:
 
     def push(self):
         """Pushes a built charm to Charmstore."""
-
         if "override-push" in self.opts:
             self.echo("Override push found, running in place of charm push.")
             script(
@@ -570,6 +576,7 @@ class BuildEntity:
         sh.charm.set(self.new_entity, f"commit={self.commit}", _out=self.echo)
 
     def attach_resources(self):
+        """Assemble charm's resources and associate in the store."""
         out_path = Path(self.src_path) / "tmp"
         os.makedirs(str(out_path), exist_ok=True)
         resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
@@ -624,6 +631,7 @@ class BuildEntity:
             )
 
     def promote(self, from_channel="unpublished", to_channel="edge"):
+        """Promote charm and its resources from a channel to another."""
         self.echo(
             f"Promoting :: {self.entity:^35} :: from:{from_channel} to: {to_channel}"
         )
@@ -647,14 +655,16 @@ class BuildEntity:
 
 
 class BundleBuildEntity(BuildEntity):
+    """Overrides BuildEntity with bundle specific methods."""
+
     def __init__(self, *args, **kwargs):
+        """Create a BuildEntity for Charm Bundles."""
         super().__init__(*args, **kwargs)
         self.src_path = str(self.opts["src_path"])
         self.dst_path = str(self.opts["dst_path"])
 
     def push(self):
         """Pushes a built charm to Charmstore."""
-
         click.echo(f"Pushing bundle {self.name} from {self.dst_path} to {self.entity}")
         out = sh.charm.push(self.dst_path, self.entity)
         click.echo(f"Charm push returned: {out}")
@@ -666,6 +676,7 @@ class BundleBuildEntity(BuildEntity):
 
     @property
     def has_changed(self):
+        """Determine if this charm has changes to include in a new build."""
         charmstore_bundle = self.download("bundle.yaml")
         charmstore_bundle_services = charmstore_bundle.get(
             "applications", charmstore_bundle.get("services", {})
@@ -693,6 +704,7 @@ class BundleBuildEntity(BuildEntity):
 
 @click.group()
 def cli():
+    """Define click group."""
     pass
 
 
@@ -745,6 +757,7 @@ def build(
     store,
     force,
 ):
+    """Build a set of charms and publish with their resources."""
     cmd_ok("which charm", echo=lambda m: click.echo(f"charm -> {m}"))
     cmd_ok("which charmcraft", echo=lambda m: click.echo(f"charmcraft -> {m}"))
 
@@ -827,6 +840,7 @@ def build(
 def build_bundles(
     bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, store
 ):
+    """Build list of bundles from a specific branch according to filters."""
     build_env = BuildEnv(build_type=BuildType.BUNDLE)
     build_env.db["build_args"] = {
         "artifact_list": bundle_list,
@@ -910,6 +924,7 @@ def build_bundles(
     default="cs",
 )
 def promote(charm_list, filter_by_tag, from_channel, to_channel, store):
+    """Promote channel for a set of charms filtered by tag."""
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
         "artifact_list": charm_list,
