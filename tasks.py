@@ -39,14 +39,14 @@ def black_check(c):
 def flake8(c):
     """Runs flake8 against project"""
     c.run(
-        "flake8 --ignore=E501,W503 jobs/integration jobs/build-charms jobs/build-snaps"
+        "flake8 --ignore=E501,W503 jobs/integration jobs/build-charms jobs/build-snaps tests/"
     )
 
 
 @task(pre=[flake8, black_check])
 def test(c):
     """Run unittest suite"""
-    c.run("pytest cilib")
+    c.run("pytest cilib tests/unit")
 
 
 @task

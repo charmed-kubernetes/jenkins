@@ -388,13 +388,12 @@ class BuildEntity:
         if store == "cs":
             # Entity path, ie cs:~containers/kubernetes-master
             entity = f"cs:~{opts['namespace']}/{name}"
-            self.store = store
         elif store == "ch":
             # Entity path, ie containers-kubernetes-master
             entity = f"{name}"
-            self.store = store
         else:
             raise BuildException(f"'{store}' doesn't exist")
+        self.store = store
         self.entity = entity
 
         # Entity path with current revision (from target channel)
