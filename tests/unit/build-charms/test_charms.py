@@ -61,6 +61,9 @@ def charm_cmd():
         cmd.return_value.stdout = (
             CLI_RESPONSES / "charm_list-resources_cs_containers-calico-845.yaml"
         ).read_bytes()
+        cmd.push.return_value.stdout = (
+            CLI_RESPONSES / "charm_push_containers-calico.yaml"
+        ).read_bytes()
         yield cmd
 
 
@@ -73,6 +76,9 @@ def charmcraft_cmd():
         ).read_bytes()
         cmd.revisions.return_value.stderr = (
             CLI_RESPONSES / "charmcraft_revisions_containers-calico.txt"
+        ).read_bytes()
+        cmd.upload.return_value.stderr = (
+            CLI_RESPONSES / "charmcraft_upload.txt"
         ).read_bytes()
         yield cmd
 
@@ -127,7 +133,7 @@ def test_build_env_promote_all_charmhub(test_environment, charmcraft_cmd):
     )
 
 
-def test_build_entity_setup(test_environment):
+def test_build_entity_setup(test_environment, tmpdir):
     """Tests build entity setup."""
     charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
     charm_env.db["build_args"] = {
@@ -247,8 +253,44 @@ def test_build_entity_charm_build(test_environment, charm_cmd, charmcraft_cmd, t
     )
 
 
-def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdir):
+def test_build_entity_push(test_environment, charm_cmd, charmcraft_cmd, tmpdir):
     """Test that BuildEntity pushes to appropriate store."""
+    charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
+    charm_env.db["build_args"] = {
+        "artifact_list": str(CI_TESTING_CHARMS),
+        "filter_by_tag": ["k8s"],
+        "to_channel": "edge",
+        "from_channel": "beta",
+    }
+    artifacts = charm_env.artifacts
+    charm_name, charm_opts = next(iter(artifacts[0].items()))
+
+    with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
+        charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "cs")
+        commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
+        charm_entity.push()
+    charmcraft_cmd.upload.assert_not_called()
+    charm_cmd.push.assert_called_once_with(
+        charm_entity.dst_path, "cs:~containers/calico", _out=charm_entity.echo
+    )
+    charm_cmd.set.assert_called_once_with(
+        "cs:~containers/calico-845",
+        "commit=96b4e06d5d35fec30cdf2cc25076dd25c51b893c",
+        _out=charm_entity.echo,
+    )
+
+    charm_cmd.push.reset_mock()
+    charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "ch")
+    charm_entity.push()
+    charm_cmd.push.assert_not_called()
+    charmcraft_cmd.upload.assert_called_once_with(
+        charm_entity.dst_path, _out=charm_entity.echo
+    )
+    charmcraft_cmd.release.reset_mock()
+
+
+def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdir):
+    """Test that BuildEntity releases to appropriate store."""
     charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
     charm_env.db["build_args"] = {
         "artifact_list": str(CI_TESTING_CHARMS),

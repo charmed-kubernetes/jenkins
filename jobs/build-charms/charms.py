@@ -104,6 +104,21 @@ class _CharmStore:
     def grant(charm_id):
         sh.charm.grant(charm_id, "everyone", acl="read")
 
+    @staticmethod
+    def upload(dst_path, entity, echo):
+        out = sh.charm.push(dst_path, entity, _out=echo)
+        echo(f"Charm push returned: {out}")
+
+        # Output includes lots of ansi escape sequences from the docker push,
+        # and we only care about the first line, which contains the url as yaml.
+        out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
+        return out["url"]
+
+    @staticmethod
+    def set(new_entity, commit, echo):
+        echo(f"Setting {new_entity} metadata: {commit}")
+        sh.charm.set(new_entity, f"commit={commit}", _out=echo)
+
 
 class _CharmHub:
     @staticmethod
@@ -207,6 +222,13 @@ class _CharmHub:
             )
         for args in calls:
             sh.charmcraft.release(*args)
+
+    @staticmethod
+    def upload(dst_path, echo):
+        out = sh.charmcraft.upload(dst_path, _out=echo)
+        echo(f"Charmcraft upload returned: {out}")
+        (revision,) = re.findall(r"^Revision (\d+) of ", out.stderr.decode())
+        return revision
 
 
 class BuildEnv:
@@ -586,17 +608,13 @@ class BuildEntity:
             return
 
         self.echo(f"Pushing built {self.dst_path} to {self.entity}")
-
-        out = sh.charm.push(self.dst_path, self.entity)
-
-        self.echo(f"Charm push returned: {out}")
-        # Output includes lots of ansi escape sequences from the docker push,
-        # and we only care about the first line, which contains the url as yaml.
-        out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
-        self.new_entity = out["url"]
-        self.echo(f"Setting {self.new_entity} metadata: {self.commit}")
-        # Needs Charmhub push
-        sh.charm.set(self.new_entity, f"commit={self.commit}", _out=self.echo)
+        if self.store == "cs":
+            self.new_entity = _CharmStore.upload(
+                self.dst_path, self.entity, echo=self.echo
+            )
+            _CharmStore.set(self.new_entity, self.commit, echo=self.echo)
+        elif self.store == "ch":
+            self.new_entity = _CharmHub.upload(self.dst_path, echo=self.echo)
 
     def attach_resources(self):
         """Assemble charm's resources and associate in the store."""
