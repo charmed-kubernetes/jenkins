@@ -26,13 +26,13 @@ def upload_docs(c):
 @task
 def format(c):
     """Formats py code"""
-    c.run("black jobs cilib")
+    c.run("black jobs cilib tests")
 
 
 @task
 def black_check(c):
     """Checks black format"""
-    c.run("black --check jobs cilib")
+    c.run("black --check jobs cilib tests")
 
 
 @task

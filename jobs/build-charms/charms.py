@@ -75,14 +75,18 @@ class _CharmStore:
     @staticmethod
     def resources(charm_id, channel):
         try:
-            resources = sh.charm("list-resources", charm_id, channel=channel, format="yaml")
+            resources = sh.charm(
+                "list-resources", charm_id, channel=channel, format="yaml"
+            )
             return yaml.safe_load(resources.stdout.decode())
         except sh.ErrorReturnCode:
             return []
 
     @classmethod
     def promote(cls, charm_entity, from_channel, to_channel):
-        click.echo(f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}")
+        click.echo(
+            f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
+        )
         charm_id = cls.id(charm_entity, from_channel)
         charm_resources = cls.resources(charm_id, from_channel)
         if not charm_resources:
@@ -169,7 +173,9 @@ class _CharmHub:
 
     @staticmethod
     def promote(charm_entity, from_channel, to_channel):
-        click.echo(f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}")
+        click.echo(
+            f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
+        )
         if from_channel == "unpublished":
             # get first non-released version as the unpublished version
             # its possible this doesn't exist
@@ -239,19 +245,25 @@ class BuildEnv:
             self.db["build_datetime"] = self.now.strftime("%Y/%m/%d")
 
         # Reload data from current day
-        response = self.store.get_item(Key={"build_datetime": self.db["build_datetime"]})
+        response = self.store.get_item(
+            Key={"build_datetime": self.db["build_datetime"]}
+        )
         if response and "Item" in response:
             self.db = response["Item"]
 
     @property
     def layers(self):
         """List of layers defined in our jobs/includes/charm-layer-list.inc."""
-        return yaml.safe_load(Path(self.db["build_args"]["layer_list"]).read_text(encoding="utf8"))
+        return yaml.safe_load(
+            Path(self.db["build_args"]["layer_list"]).read_text(encoding="utf8")
+        )
 
     @property
     def artifacts(self):
         """List of charms or bundles to process."""
-        return yaml.safe_load(Path(self.db["build_args"]["artifact_list"]).read_text(encoding="utf8"))
+        return yaml.safe_load(
+            Path(self.db["build_args"]["artifact_list"]).read_text(encoding="utf8")
+        )
 
     @property
     def layer_index(self):
@@ -309,7 +321,9 @@ class BuildEnv:
 
     def download(self, layer_name):
         """Pull layer source from the charm store."""
-        out = capture(f"charm pull-source -i {self.layer_index} -b {self.layer_branch} {layer_name}")
+        out = capture(
+            f"charm pull-source -i {self.layer_index} -b {self.layer_branch} {layer_name}"
+        )
         click.echo(f"-  {out.stdout.decode()}")
         rev = re.compile("rev: ([a-zA-Z0-9]+)")
         layer_manifest = {
@@ -356,7 +370,9 @@ class BuildEntity:
         if "branch" in opts:
             self.charm_branch = opts["branch"]
         else:
-            self.charm_branch = self.build.db["build_args"].get("charm_branch", "master")
+            self.charm_branch = self.build.db["build_args"].get(
+                "charm_branch", "master"
+            )
 
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
@@ -398,7 +414,9 @@ class BuildEntity:
     def _get_full_entity(self):
         """Grab identifying revision for charm's channel."""
         if self.store == "cs":
-            return _CharmStore.id(self.entity, self.build.db["build_args"]["to_channel"])
+            return _CharmStore.id(
+                self.entity, self.build.db["build_args"]["to_channel"]
+            )
         else:
             return f'{self.entity}:{self.build.db["build_args"]["to_channel"]}'
 
@@ -456,17 +474,26 @@ class BuildEntity:
         charmstore_build_manifest = self.download(".build.manifest")
 
         if not charmstore_build_manifest:
-            self.echo("No build.manifest located, unable to determine if any changes occurred.")
+            self.echo(
+                "No build.manifest located, unable to determine if any changes occurred."
+            )
             return True
 
-        current_build_manifest = [{"rev": curr["rev"], "url": curr["url"]} for curr in self.build.db["pull_layer_manifest"]]
+        current_build_manifest = [
+            {"rev": curr["rev"], "url": curr["url"]}
+            for curr in self.build.db["pull_layer_manifest"]
+        ]
 
         # Check the current git cloned charm repo commit and add that to
         # current pull-layer-manifest as that would no be known at the
         # time of pull_layers
         current_build_manifest.append({"rev": self.commit, "url": self.name})
 
-        the_diff = [i for i in charmstore_build_manifest["layers"] if i not in current_build_manifest]
+        the_diff = [
+            i
+            for i in charmstore_build_manifest["layers"]
+            if i not in current_build_manifest
+        ]
         if the_diff:
             self.echo("Changes found:")
             self.echo(the_diff)
@@ -536,7 +563,9 @@ class BuildEntity:
             args = f"-f {self.src_path}"
             self.echo(f"Building with: charmcraft build {args}")
             try:
-                sh.charmcraft.build(*args.split(), _cwd=self.build.build_dir, _out=self.echo)
+                sh.charmcraft.build(
+                    *args.split(), _cwd=self.build.build_dir, _out=self.echo
+                )
             except sh.ErrorReturnCode:
                 ret.ok = False
 
@@ -580,7 +609,9 @@ class BuildEntity:
         # Build any custom resources.
         resource_builder = self.opts.get("build-resources", None)
         if resource_builder and not resources:
-            raise SystemExit("Custom build-resources specified for {self.entity} but no spec found")
+            raise SystemExit(
+                "Custom build-resources specified for {self.entity} but no spec found"
+            )
         if resource_builder:
             resource_builder = resource_builder.format(
                 out_path=out_path,
@@ -658,11 +689,21 @@ class BundleBuildEntity(BuildEntity):
     def has_changed(self):
         """Determine if this charm has changes to include in a new build."""
         charmstore_bundle = self.download("bundle.yaml")
-        charmstore_bundle_services = charmstore_bundle.get("applications", charmstore_bundle.get("services", {}))
+        charmstore_bundle_services = charmstore_bundle.get(
+            "applications", charmstore_bundle.get("services", {})
+        )
 
-        local_built_bundle = yaml.safe_load((Path(self.name) / "bundle.yaml").read_text(encoding="utf8"))
-        local_built_bundle_services = local_built_bundle.get("applications", local_built_bundle.get("services", {}))
-        the_diff = [i["charm"] for _, i in charmstore_bundle_services.items() if i["charm"] not in local_built_bundle_services]
+        local_built_bundle = yaml.safe_load(
+            (Path(self.name) / "bundle.yaml").read_text(encoding="utf8")
+        )
+        local_built_bundle_services = local_built_bundle.get(
+            "applications", local_built_bundle.get("services", {})
+        )
+        the_diff = [
+            i["charm"]
+            for _, i in charmstore_bundle_services.items()
+            if i["charm"] not in local_built_bundle_services
+        ]
         if the_diff:
             click.echo("Changes found:")
             click.echo(the_diff)
@@ -678,7 +719,9 @@ def cli():
 
 
 @cli.command()
-@click.option("--charm-list", required=True, help="path to a file with list of charms in YAML")
+@click.option(
+    "--charm-list", required=True, help="path to a file with list of charms in YAML"
+)
 @click.option("--layer-list", required=True, help="list of layers in YAML format")
 @click.option("--layer-index", required=True, help="Charm layer index")
 @click.option(
@@ -693,14 +736,18 @@ def cli():
     help="Git branch to pull layers/interfaces from",
     default="master",
 )
-@click.option("--resource-spec", required=True, help="YAML Spec of resource keys and filenames")
+@click.option(
+    "--resource-spec", required=True, help="YAML Spec of resource keys and filenames"
+)
 @click.option(
     "--filter-by-tag",
     required=True,
     help="only build for charms matching a tag, comma separate list",
     multiple=True,
 )
-@click.option("--to-channel", required=True, help="channel to promote charm to", default="edge")
+@click.option(
+    "--to-channel", required=True, help="channel to promote charm to", default="edge"
+)
 @click.option(
     "--store",
     type=click.Choice(["cs", "ch"], case_sensitive=False),
@@ -791,14 +838,18 @@ def build(
     help="upstream repo for bundle builder",
     default="https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git",
 )
-@click.option("--to-channel", required=True, help="channel to promote bundle to", default="edge")
+@click.option(
+    "--to-channel", required=True, help="channel to promote bundle to", default="edge"
+)
 @click.option(
     "--store",
     type=click.Choice(["cs", "ch"], case_sensitive=False),
     help="Charmstore (cs) or Charmhub (ch)",
     default="cs",
 )
-def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, store):
+def build_bundles(
+    bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, store
+):
     """Build list of bundles from a specific branch according to filters."""
     build_env = BuildEnv(build_type=BuildType.BUNDLE)
     build_env.db["build_args"] = {
@@ -891,7 +942,9 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel, store):
         "to_channel": to_channel,
         "from_channel": from_channel,
     }
-    return build_env.promote_all(from_channel=from_channel, to_channel=to_channel, store=store)
+    return build_env.promote_all(
+        from_channel=from_channel, to_channel=to_channel, store=store
+    )
 
 
 if __name__ == "__main__":

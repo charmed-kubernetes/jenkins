@@ -55,8 +55,12 @@ def cilib_store():
 def charm_cmd():
     """Create a fixture defining mock for `charm` cli command."""
     with patch("sh.charm", create=True) as cmd:
-        cmd.show.return_value.stdout = (CLI_RESPONSES / "charm_show_containers-calico.yaml").read_bytes()
-        cmd.return_value.stdout = (CLI_RESPONSES / "charm_list-resources_cs_containers-calico-845.yaml").read_bytes()
+        cmd.show.return_value.stdout = (
+            CLI_RESPONSES / "charm_show_containers-calico.yaml"
+        ).read_bytes()
+        cmd.return_value.stdout = (
+            CLI_RESPONSES / "charm_list-resources_cs_containers-calico-845.yaml"
+        ).read_bytes()
         yield cmd
 
 
@@ -64,8 +68,12 @@ def charm_cmd():
 def charmcraft_cmd():
     """Create a fixture defining mock for `charmcraft` cli command."""
     with patch("sh.charmcraft", create=True) as cmd:
-        cmd.status.return_value.stderr = (CLI_RESPONSES / "charmcraft_status_containers-calico.txt").read_bytes()
-        cmd.revisions.return_value.stderr = (CLI_RESPONSES / "charmcraft_revisions_containers-calico.txt").read_bytes()
+        cmd.status.return_value.stderr = (
+            CLI_RESPONSES / "charmcraft_status_containers-calico.txt"
+        ).read_bytes()
+        cmd.revisions.return_value.stderr = (
+            CLI_RESPONSES / "charmcraft_revisions_containers-calico.txt"
+        ).read_bytes()
         yield cmd
 
 
@@ -82,7 +90,9 @@ def test_build_env_promote_all_charmstore(test_environment, cilib_store, charm_c
     charm_entity = "cs:~containers/calico"
     charm_entity_ver = f"{charm_entity}-845"
     charm_cmd.show.assert_called_once_with(charm_entity, "id", channel="unpublished")
-    charm_cmd.assert_called_once_with("list-resources", charm_entity_ver, channel="unpublished", format="yaml")
+    charm_cmd.assert_called_once_with(
+        "list-resources", charm_entity_ver, channel="unpublished", format="yaml"
+    )
     resource_args = [
         ("--resource", "calico-995"),
         ("--resource", "calico-arm64-994"),
@@ -90,7 +100,9 @@ def test_build_env_promote_all_charmstore(test_environment, cilib_store, charm_c
         ("--resource", "calico-upgrade-822"),
         ("--resource", "calico-upgrade-arm64-822"),
     ]
-    charm_cmd.release.assert_called_once_with(charm_entity_ver, "--channel=edge", *resource_args)
+    charm_cmd.release.assert_called_once_with(
+        charm_entity_ver, "--channel=edge", *resource_args
+    )
 
 
 def test_build_env_promote_all_charmhub(test_environment, charmcraft_cmd):
@@ -110,7 +122,9 @@ def test_build_env_promote_all_charmhub(test_environment, charmcraft_cmd):
         "--resource=calico-upgrade:821",
         "--resource=calico-upgrade-arm64:821",
     ]
-    charmcraft_cmd.release.assert_called_once_with("calico", "--revision=845", "--channel=beta", *resource_args)
+    charmcraft_cmd.release.assert_called_once_with(
+        "calico", "--revision=845", "--channel=beta", *resource_args
+    )
 
 
 def test_build_entity_setup(test_environment):
@@ -143,19 +157,25 @@ def test_build_entity_has_changed(test_environment, charm_cmd):
     artifacts = charm_env.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
     charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "cs")
-    charm_cmd.show.assert_called_once_with("cs:~containers/calico", "id", channel="edge")
+    charm_cmd.show.assert_called_once_with(
+        "cs:~containers/calico", "id", channel="edge"
+    )
     charm_cmd.show.reset_mock()
     with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
         # Test non-legacy charms with the commit rev checked in with charm matching
         commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
         assert charm_entity.has_changed is False
-        charm_cmd.show.assert_called_once_with("cs:~containers/calico-845", "extra-info", format="yaml")
+        charm_cmd.show.assert_called_once_with(
+            "cs:~containers/calico-845", "extra-info", format="yaml"
+        )
         charm_cmd.show.reset_mock()
 
         # Test non-legacy charms with the commit rev checked in with charm not matching
         commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893d"
         assert charm_entity.has_changed is True
-        charm_cmd.show.assert_called_once_with("cs:~containers/calico-845", "extra-info", format="yaml")
+        charm_cmd.show.assert_called_once_with(
+            "cs:~containers/calico-845", "extra-info", format="yaml"
+        )
         charm_cmd.show.reset_mock()
 
         # Test legacy charms by comparing charmstore .build.manifest
@@ -242,7 +262,9 @@ def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdi
     charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "ch")
     charm_entity.promote(to_channel="edge")
     charm_cmd.release.assert_not_called()
-    charmcraft_cmd.release.assert_called_once_with("calico", "--revision=3", "--channel=edge")
+    charmcraft_cmd.release.assert_called_once_with(
+        "calico", "--revision=3", "--channel=edge"
+    )
     charmcraft_cmd.release.reset_mock()
 
     charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "cs")
@@ -256,7 +278,9 @@ def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdi
         ("--resource", "calico-upgrade-822"),
         ("--resource", "calico-upgrade-arm64-822"),
     )
-    charm_cmd.grant.assert_called_once_with("cs:~containers/calico-845", "everyone", acl="read")
+    charm_cmd.grant.assert_called_once_with(
+        "cs:~containers/calico-845", "everyone", acl="read"
+    )
     charmcraft_cmd.release.assert_not_called()
 
 
@@ -301,7 +325,9 @@ def test_promote_command(mock_build_env):
         "to_channel": "edge",
         "from_channel": "unpublished",
     }
-    mock_build_env.promote_all.assert_called_once_with(from_channel="unpublished", to_channel="edge", store="ch")
+    mock_build_env.promote_all.assert_called_once_with(
+        from_channel="unpublished", to_channel="edge", store="ch"
+    )
 
 
 def test_build_command(mock_build_env, mock_build_entity):
