@@ -1,0 +1,7 @@
+id:
+  Id: cs:~containers/calico-845
+  Name: calico
+  Revision: 845
+  User: containers
+extra-info:
+  commit: 96b4e06d5d35fec30cdf2cc25076dd25c51b893c
