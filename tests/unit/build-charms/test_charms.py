@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import pytest
+from types import SimpleNamespace
 from unittest.mock import patch, call, Mock, PropertyMock
 
 from click.testing import CliRunner
@@ -28,7 +29,7 @@ def test_environment(tmpdir):
     saved_env, test_env = {}, dict(
         CHARM_BUILD_DIR=f'{tmpdir / "build"}',
         CHARM_LAYERS_DIR=f'{tmpdir / "layers"}',
-        CHARM_INTERFACES_DIR=f'{tmpdir / "interfaces" }',
+        CHARM_INTERFACES_DIR=f'{tmpdir / "interfaces"}',
         CHARM_CHARMS_DIR=f'{STATIC_TEST_PATH / "charms"}',
         WORKSPACE=f'{tmpdir / "scratch"}',
     )
@@ -73,14 +74,33 @@ def charmcraft_cmd():
     """Create a fixture defining mock for `charmcraft` cli command."""
     with patch("sh.charmcraft", create=True) as cmd:
         cmd.status.return_value.stderr = (
-            CLI_RESPONSES / "charmcraft_status_containers-k8s-ci-charm.txt"
+            CLI_RESPONSES / "charmcraft_status_k8s-ci-charm.txt"
+        ).read_bytes()
+        cmd.resources.return_value.stderr = (
+            CLI_RESPONSES / "charmcraft_resources_k8s-ci-charm.txt"
         ).read_bytes()
         cmd.revisions.return_value.stderr = (
-            CLI_RESPONSES / "charmcraft_revisions_containers-k8s-ci-charm.txt"
+            CLI_RESPONSES / "charmcraft_revisions_k8s-ci-charm.txt"
         ).read_bytes()
         cmd.upload.return_value.stderr = (
             CLI_RESPONSES / "charmcraft_upload.txt"
         ).read_bytes()
+
+        def hyphened_commands(*args, **kwargs):
+            command, *cmd_args = args
+            if command == "resource-revisions":
+                _, resource = cmd_args
+                return SimpleNamespace(
+                    stderr=(
+                        CLI_RESPONSES
+                        / f"charmcraft_resource_revisions_k8s-ci-charm_{resource}.txt"
+                    ).read_bytes()
+                )
+            elif command == "upload-resource":
+                return
+            pass
+
+        cmd.side_effect = hyphened_commands
         yield cmd
 
 
@@ -370,7 +390,11 @@ def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdi
     charm_entity.promote(to_channel="edge")
     charm_cmd.release.assert_not_called()
     charmcraft_cmd.release.assert_called_once_with(
-        "k8s-ci-charm", "--revision=3", "--channel=edge"
+        "k8s-ci-charm",
+        "--revision=6",
+        "--channel=edge",
+        "--resource=test-file:3",
+        "--resource=test-image:4",
     )
     charmcraft_cmd.release.reset_mock()
 

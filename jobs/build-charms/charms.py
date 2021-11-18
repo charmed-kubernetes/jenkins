@@ -61,6 +61,11 @@ class LayerType(Enum):
 CHARMCRAFT_RESOURCE = re.compile(r"(\S+) \(r(\d+)\)")
 
 
+def _first_of(iterable, predicate=lambda _: True, default=None):
+    result = list(takewhile(predicate, iterable))
+    return result[0] if result else default
+
+
 class _CharmStore:
     @staticmethod
     def id(charm_entity, channel):
@@ -137,6 +142,12 @@ class _CharmStore:
 
 
 class _CharmHub:
+    HEADER_RE = re.compile(r"\W+\s{2}")
+
+    @classmethod
+    def headers(cls, header):
+        return cls.HEADER_RE.split(header)
+
     @staticmethod
     def refresh(name, channel=None, architecture=None):
         channel = channel or "stable"
@@ -184,8 +195,8 @@ class _CharmHub:
             channel_status.append(row)
         return channel_status
 
-    @staticmethod
-    def revisions(charm_entity):
+    @classmethod
+    def revisions(cls, charm_entity):
         """Read CLI Table output from charmcraft revisions and parse."""
         charm_status = sh.charmcraft.revisions(charm_entity)
         header, *body = charm_status.stderr.decode().splitlines()
@@ -194,7 +205,7 @@ class _CharmHub:
         channel_status = []
         for line in body:
             row, head = {}, line
-            for key in reversed(re.split(r"\W+\s{2}", header)):
+            for key in reversed(cls.headers(header)):
                 head, *value = head.strip().rsplit("  ", 1)
                 head, value = ("", head.strip()) if not value else (head, value[0])
                 row[key] = value or channel_status[-1].get(key)
@@ -202,8 +213,42 @@ class _CharmHub:
             channel_status.append(row)
         return channel_status
 
-    @staticmethod
-    def promote(charm_entity, from_channel, to_channel):
+    @classmethod
+    def resources(cls, charm_entity):
+        """Read CLI Table output from charmcraft resources and parse."""
+        charmcraft_out = sh.charmcraft.resources(charm_entity)
+        header, *body = charmcraft_out.stderr.decode().splitlines()
+        if not body:
+            return None
+        resources = []
+        for line in body:
+            row, head = {}, line
+            for key in reversed(cls.headers(header)):
+                head, *value = head.strip().rsplit("  ", 1)
+                head, value = ("", head.strip()) if not value else (head, value[0])
+                row[key] = value or resources[-1].get(key)
+            resources.append(row)
+        return resources
+
+    @classmethod
+    def resource_revisions(cls, charm_entity, resource):
+        """Read CLI Table output from charmcraft resource-revisions and parse."""
+        charmcraft_out = sh.charmcraft("resource-revisions", charm_entity, resource)
+        header, *body = charmcraft_out.stderr.decode().splitlines()
+        if not body:
+            return None
+        revisions = []
+        for line in body:
+            row, head = {}, line
+            for key in reversed(cls.headers(header)):
+                head, *value = head.strip().rsplit("  ", 1)
+                head, value = ("", head.strip()) if not value else (head, value[0])
+                row[key] = value or revisions[-1].get(key)
+            revisions.append(row)
+        return revisions
+
+    @classmethod
+    def promote(cls, charm_entity, from_channel, to_channel):
         click.echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
         )
@@ -212,15 +257,32 @@ class _CharmHub:
             # its possible this doesn't exist
             # its also possible multiple unreleased versions exist before the first released one
             # we want ONLY the most recent of that list
-            charm_status = takewhile(
-                lambda rev: rev["Status"] != "released",
-                _CharmHub.revisions(charm_entity),
+            charm_status = []
+            unpublished_rev = _first_of(
+                cls.revisions(charm_entity),
+                predicate=lambda rev: rev["Status"] != "released",
             )
-            charm_status = list(charm_status)[:1]
+            if unpublished_rev:
+                charm_resources = [
+                    rsc
+                    for rsc in cls.resources(charm_entity)
+                    if rsc["Charm Rev"] == unpublished_rev["Version"]
+                ]
+                unpublished_rev["Resources"] = [
+                    (
+                        resource["Resource"],
+                        _first_of(
+                            cls.resource_revisions(charm_entity, resource["Resource"]),
+                            default=dict(),
+                        ).get("Revision"),
+                    )
+                    for resource in charm_resources
+                ]
+                charm_status = [unpublished_rev]
         else:
             charm_status = filter(
                 lambda rev: rev["Channel"] == from_channel,
-                _CharmHub.status(charm_entity),
+                cls.status(charm_entity),
             )
 
         calls = set()
@@ -642,11 +704,11 @@ class BuildEntity:
         out_path = Path(self.src_path) / "tmp"
         os.makedirs(str(out_path), exist_ok=True)
         resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
-        resources = resource_spec.get(self.name, {})
+        resource_spec = resource_spec.get(self.name, {})
 
         # Build any custom resources.
         resource_builder = self.opts.get("build-resources", None)
-        if resource_builder and not resources:
+        if resource_builder and not resource_spec:
             raise SystemExit(
                 f"Custom build-resources specified for {self.name} but no spec found"
             )
@@ -662,20 +724,23 @@ class BuildEntity:
 
         # Pull any `upstream-image` annotated resources.
         for name, details in self._read_metadata_resources().items():
-            resource_fmt = resources[name]
+            resource_fmt = resource_spec.get(name) or ""
             if details["type"] == "oci-image":
-                upstream_image = details.get("upstream-source")
-                if upstream_image:
-                    self.echo(f"Pulling {upstream_image}...")
-                    sh.docker.pull(upstream_image)
-                    resource_fmt = upstream_image
-                resources[name] = ("image", resource_fmt)
-            else:
-                resources[name] = ("filepath", resource_fmt.format(out_path=out_path))
+                upstream_source = details.get("upstream-source")
+                if upstream_source:
+                    self.echo(f"Pulling {upstream_source}...")
+                    sh.docker.pull(upstream_source)
+                    resource_fmt = upstream_source
+                resource_spec[name] = ("image", resource_fmt)
+            elif details["type"] == "file":
+                resource_spec[name] = (
+                    "filepath",
+                    resource_fmt.format(out_path=out_path),
+                )
 
-        self.echo(f"Attaching resources:\n{pformat(resources)}")
+        self.echo(f"Attaching resources:\n{pformat(resource_spec)}")
         # Attach all resources.
-        for resource_name, resource in resources.items():
+        for resource_name, resource in resource_spec.items():
             if self.store == "cs":
                 _CharmStore.upload_resource(
                     self.new_entity, resource_name, resource[1], self.echo
