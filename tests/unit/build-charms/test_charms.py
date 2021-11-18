@@ -4,12 +4,13 @@ import os
 from pathlib import Path
 
 import pytest
-from unittest.mock import patch, call, PropertyMock
+from unittest.mock import patch, call, Mock, PropertyMock
 
 from click.testing import CliRunner
 import charms
 
 STATIC_TEST_PATH = Path(__file__).parent.parent.parent / "data"
+K8S_CI_CHARM = STATIC_TEST_PATH / "charms" / "k8s-ci-charm"
 CI_TESTING_CHARMS = STATIC_TEST_PATH / "ci-testing-charms.inc"
 CLI_RESPONSES = STATIC_TEST_PATH / "cli_response"
 
@@ -27,8 +28,8 @@ def test_environment(tmpdir):
     saved_env, test_env = {}, dict(
         CHARM_BUILD_DIR=f'{tmpdir / "build"}',
         CHARM_LAYERS_DIR=f'{tmpdir / "layers"}',
-        CHARM_INTERFACES_DIR=f'{tmpdir / "interfaces"}',
-        CHARM_CHARMS_DIR=f'{tmpdir / "charms"}',
+        CHARM_INTERFACES_DIR=f'{tmpdir / "interfaces" }',
+        CHARM_CHARMS_DIR=f'{STATIC_TEST_PATH / "charms"}',
         WORKSPACE=f'{tmpdir / "scratch"}',
     )
 
@@ -56,13 +57,13 @@ def charm_cmd():
     """Create a fixture defining mock for `charm` cli command."""
     with patch("sh.charm", create=True) as cmd:
         cmd.show.return_value.stdout = (
-            CLI_RESPONSES / "charm_show_containers-calico.yaml"
+            CLI_RESPONSES / "charm_show_containers-k8s-ci-charm.yaml"
         ).read_bytes()
         cmd.return_value.stdout = (
-            CLI_RESPONSES / "charm_list-resources_cs_containers-calico-845.yaml"
+            CLI_RESPONSES / "charm_list-resources_cs_containers-k8s-ci-charm-845.yaml"
         ).read_bytes()
         cmd.push.return_value.stdout = (
-            CLI_RESPONSES / "charm_push_containers-calico.yaml"
+            CLI_RESPONSES / "charm_push_containers-k8s-ci-charm.yaml"
         ).read_bytes()
         yield cmd
 
@@ -72,10 +73,10 @@ def charmcraft_cmd():
     """Create a fixture defining mock for `charmcraft` cli command."""
     with patch("sh.charmcraft", create=True) as cmd:
         cmd.status.return_value.stderr = (
-            CLI_RESPONSES / "charmcraft_status_containers-calico.txt"
+            CLI_RESPONSES / "charmcraft_status_containers-k8s-ci-charm.txt"
         ).read_bytes()
         cmd.revisions.return_value.stderr = (
-            CLI_RESPONSES / "charmcraft_revisions_containers-calico.txt"
+            CLI_RESPONSES / "charmcraft_revisions_containers-k8s-ci-charm.txt"
         ).read_bytes()
         cmd.upload.return_value.stderr = (
             CLI_RESPONSES / "charmcraft_upload.txt"
@@ -93,18 +94,15 @@ def test_build_env_promote_all_charmstore(test_environment, cilib_store, charm_c
         "from_channel": "unpublished",
     }
     charm_env.promote_all()
-    charm_entity = "cs:~containers/calico"
+    charm_entity = "cs:~containers/k8s-ci-charm"
     charm_entity_ver = f"{charm_entity}-845"
     charm_cmd.show.assert_called_once_with(charm_entity, "id", channel="unpublished")
     charm_cmd.assert_called_once_with(
         "list-resources", charm_entity_ver, channel="unpublished", format="yaml"
     )
     resource_args = [
-        ("--resource", "calico-995"),
-        ("--resource", "calico-arm64-994"),
-        ("--resource", "calico-node-image-677"),
-        ("--resource", "calico-upgrade-822"),
-        ("--resource", "calico-upgrade-arm64-822"),
+        ("--resource", "test-file-995"),
+        ("--resource", "test-image-995"),
     ]
     charm_cmd.release.assert_called_once_with(
         charm_entity_ver, "--channel=edge", *resource_args
@@ -122,18 +120,17 @@ def test_build_env_promote_all_charmhub(test_environment, charmcraft_cmd):
     }
     charm_env.promote_all(from_channel="edge", to_channel="beta", store="ch")
     resource_args = [
-        "--resource=calico:994",
-        "--resource=calico-arm64:993",
-        "--resource=calico-node-image:676",
-        "--resource=calico-upgrade:821",
-        "--resource=calico-upgrade-arm64:821",
+        "--resource=test-file:994",
+        "--resource=test-file-2:993",
     ]
     charmcraft_cmd.release.assert_called_once_with(
-        "calico", "--revision=845", "--channel=beta", *resource_args
+        "k8s-ci-charm", "--revision=845", "--channel=beta", *resource_args
     )
 
 
-def test_build_entity_setup(test_environment, tmpdir):
+@patch("charms.os.makedirs", Mock())
+@patch("charms.cmd_ok")
+def test_build_entity_setup(cmd_ok, test_environment, tmpdir):
     """Tests build entity setup."""
     charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
     charm_env.db["build_args"] = {
@@ -148,6 +145,10 @@ def test_build_entity_setup(test_environment, tmpdir):
     assert charm_entity.legacy_charm is False, "Initializes as false"
     charm_entity.setup()
     assert charm_entity.legacy_charm is True, "test charm requires legacy builds"
+    cmd_ok.assert_called_once_with(
+        f"git clone --branch master https://github.com/charmed-kubernetes/jenkins.git {charm_entity.checkout_path}",
+        echo=charm_entity.echo,
+    )
 
 
 def test_build_entity_has_changed(test_environment, charm_cmd):
@@ -164,7 +165,7 @@ def test_build_entity_has_changed(test_environment, charm_cmd):
     charm_name, charm_opts = next(iter(artifacts[0].items()))
     charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "cs")
     charm_cmd.show.assert_called_once_with(
-        "cs:~containers/calico", "id", channel="edge"
+        "cs:~containers/k8s-ci-charm", "id", channel="edge"
     )
     charm_cmd.show.reset_mock()
     with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
@@ -172,7 +173,7 @@ def test_build_entity_has_changed(test_environment, charm_cmd):
         commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
         assert charm_entity.has_changed is False
         charm_cmd.show.assert_called_once_with(
-            "cs:~containers/calico-845", "extra-info", format="yaml"
+            "cs:~containers/k8s-ci-charm-845", "extra-info", format="yaml"
         )
         charm_cmd.show.reset_mock()
 
@@ -180,7 +181,7 @@ def test_build_entity_has_changed(test_environment, charm_cmd):
         commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893d"
         assert charm_entity.has_changed is True
         charm_cmd.show.assert_called_once_with(
-            "cs:~containers/calico-845", "extra-info", format="yaml"
+            "cs:~containers/k8s-ci-charm-845", "extra-info", format="yaml"
         )
         charm_cmd.show.reset_mock()
 
@@ -213,14 +214,14 @@ def test_build_entity_charm_build(test_environment, charm_cmd, charmcraft_cmd, t
 
     charm_entity.legacy_charm = True
     charm_entity.charm_build()
-    assert charm_entity.dst_path == tmpdir / "charms" / "calico" / "calico.charm"
+    assert charm_entity.dst_path == K8S_CI_CHARM / "k8s-ci-charm.charm"
     charm_cmd.build.assert_called_once_with(
         "-r",
         "--force",
         "-i",
         "https://localhost",
         "--charm-file",
-        _cwd=tmpdir / "charms" / "calico",
+        _cwd=str(K8S_CI_CHARM),
         _out=charm_entity.echo,
     )
     charmcraft_cmd.build.assert_not_called()
@@ -230,13 +231,13 @@ def test_build_entity_charm_build(test_environment, charm_cmd, charmcraft_cmd, t
 
     charm_entity.legacy_charm = True
     charm_entity.charm_build()
-    assert charm_entity.dst_path == tmpdir / "build" / "calico"
+    assert charm_entity.dst_path == tmpdir / "build" / "k8s-ci-charm"
     charm_cmd.build.assert_called_once_with(
         "-r",
         "--force",
         "-i",
         "https://localhost",
-        _cwd=tmpdir / "charms" / "calico",
+        _cwd=str(K8S_CI_CHARM),
         _out=charm_entity.echo,
     )
     charmcraft_cmd.build.assert_not_called()
@@ -247,7 +248,7 @@ def test_build_entity_charm_build(test_environment, charm_cmd, charmcraft_cmd, t
     charm_cmd.build.assert_not_called()
     charmcraft_cmd.build.assert_called_once_with(
         "-f",
-        f"{tmpdir / 'charms' / 'calico'}",
+        str(K8S_CI_CHARM),
         _cwd=tmpdir / "build",
         _out=charm_entity.echo,
     )
@@ -271,13 +272,14 @@ def test_build_entity_push(test_environment, charm_cmd, charmcraft_cmd, tmpdir):
         charm_entity.push()
     charmcraft_cmd.upload.assert_not_called()
     charm_cmd.push.assert_called_once_with(
-        charm_entity.dst_path, "cs:~containers/calico", _out=charm_entity.echo
+        charm_entity.dst_path, "cs:~containers/k8s-ci-charm", _out=charm_entity.echo
     )
     charm_cmd.set.assert_called_once_with(
-        "cs:~containers/calico-845",
+        "cs:~containers/k8s-ci-charm-845",
         "commit=96b4e06d5d35fec30cdf2cc25076dd25c51b893c",
         _out=charm_entity.echo,
     )
+    assert charm_entity.new_entity == "cs:~containers/k8s-ci-charm-845"
 
     charm_cmd.push.reset_mock()
     charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "ch")
@@ -286,7 +288,70 @@ def test_build_entity_push(test_environment, charm_cmd, charmcraft_cmd, tmpdir):
     charmcraft_cmd.upload.assert_called_once_with(
         charm_entity.dst_path, _out=charm_entity.echo
     )
-    charmcraft_cmd.release.reset_mock()
+    assert charm_entity.new_entity == "845"
+
+
+@patch("charms.os.makedirs", Mock())
+def test_build_entity_attach_resource(
+    test_environment, charm_cmd, charmcraft_cmd, tmpdir
+):
+    charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
+    charm_env.db["build_args"] = {
+        "artifact_list": str(CI_TESTING_CHARMS),
+        "filter_by_tag": ["k8s"],
+        "to_channel": "edge",
+        "from_channel": "beta",
+        "resource_spec": str(STATIC_TEST_PATH / "ci-testing-resource-spec.yaml"),
+    }
+    artifacts = charm_env.artifacts
+    charm_name, charm_opts = next(iter(artifacts[0].items()))
+    charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "cs")
+
+    with patch("charms.script") as mock_script:
+        charm_entity.new_entity = charm_revision = "cs:~containers/k8s-ci-charm-845"
+        charm_entity.attach_resources()
+    mock_script.assert_called_once()
+    charm_cmd.attach.assert_has_calls(
+        [
+            call(
+                charm_revision,
+                f"test-file={K8S_CI_CHARM / 'tmp' / 'test-file.txt'}",
+                _out=charm_entity.echo,
+            ),
+            call(
+                charm_revision,
+                "test-image=test-image",
+                _out=charm_entity.echo,
+            ),
+        ],
+        any_order=False,
+    )
+    charmcraft_cmd.assert_not_called()
+
+    charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "ch")
+    with patch("charms.script") as mock_script:
+        charm_entity.attach_resources()
+    mock_script.assert_called_once()
+    charmcraft_cmd.assert_has_calls(
+        [
+            call(
+                "upload-resource",
+                "k8s-ci-charm",
+                "test-file",
+                filepath=str(K8S_CI_CHARM / "tmp" / "test-file.txt"),
+                _out=charm_entity.echo,
+            ),
+            call(
+                "upload-resource",
+                "k8s-ci-charm",
+                "test-image",
+                image="test-image",
+                _out=charm_entity.echo,
+            ),
+        ],
+        any_order=False,
+    )
+    charm_cmd.assert_not_called()
 
 
 def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdir):
@@ -305,23 +370,20 @@ def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdi
     charm_entity.promote(to_channel="edge")
     charm_cmd.release.assert_not_called()
     charmcraft_cmd.release.assert_called_once_with(
-        "calico", "--revision=3", "--channel=edge"
+        "k8s-ci-charm", "--revision=3", "--channel=edge"
     )
     charmcraft_cmd.release.reset_mock()
 
     charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "cs")
     charm_entity.promote(to_channel="edge")
     charm_cmd.release.assert_called_once_with(
-        "cs:~containers/calico-845",
+        "cs:~containers/k8s-ci-charm-845",
         "--channel=edge",
-        ("--resource", "calico-995"),
-        ("--resource", "calico-arm64-994"),
-        ("--resource", "calico-node-image-677"),
-        ("--resource", "calico-upgrade-822"),
-        ("--resource", "calico-upgrade-arm64-822"),
+        ("--resource", "test-file-995"),
+        ("--resource", "test-image-995"),
     )
     charm_cmd.grant.assert_called_once_with(
-        "cs:~containers/calico-845", "everyone", acl="read"
+        "cs:~containers/k8s-ci-charm-845", "everyone", acl="read"
     )
     charmcraft_cmd.release.assert_not_called()
 
@@ -377,10 +439,10 @@ def test_build_command(mock_build_env, mock_build_entity):
     runner = CliRunner()
     mock_build_env.artifacts = [
         {
-            "calico": dict(
+            "k8s-ci-charm": dict(
                 tags=["tag1", "k8s"],
                 namespace="containers",
-                downstream="charmed-kubernetes/layer-calico.git",
+                downstream="charmed-kubernetes/layer-k8s-ci-charm.git",
             ),
             "ignored": dict(tags=["ignore-me"]),
         }

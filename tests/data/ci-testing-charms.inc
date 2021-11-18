@@ -1,7 +1,7 @@
 # -*- mode:yaml; -*-
-- calico:
-    upstream: "https://github.com/charmed-kubernetes/layer-calico.git"
-    downstream: 'charmed-kubernetes/layer-calico.git'
-    build-resources: "cd {out_path}; bash {src_path}/build-calico-resource.sh"
+- k8s-ci-charm:
+    upstream: "https://github.com/charmed-kubernetes/jenkins.git"
+    downstream: 'charmed-kubernetes/jenkins.git'
+    build-resources: "cd {out_path}; bash {src_path}/build-k8s-ci-charm-resource.sh"
     namespace: 'containers'
-    tags: ['k8s', 'calico']
+    tags: ['k8s', 'k8s-ci-charm']

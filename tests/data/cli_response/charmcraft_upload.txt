@@ -1,1 +1,1 @@
-Revision 845 of 'containers-calico' created
+Revision 845 of 'containers-k8s-ci-charm' created

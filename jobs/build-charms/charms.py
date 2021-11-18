@@ -28,7 +28,6 @@ from datetime import datetime
 from enum import Enum
 from itertools import takewhile
 from retry.api import retry_call
-from subprocess import CalledProcessError
 from types import SimpleNamespace
 from pathos.threading import ThreadPool
 from pprint import pformat
@@ -115,9 +114,26 @@ class _CharmStore:
         return out["url"]
 
     @staticmethod
-    def set(new_entity, commit, echo):
-        echo(f"Setting {new_entity} metadata: {commit}")
-        sh.charm.set(new_entity, f"commit={commit}", _out=echo)
+    def set(entity, commit, echo):
+        echo(f"Setting {entity} metadata: {commit}")
+        sh.charm.set(entity, f"commit={commit}", _out=echo)
+
+    @staticmethod
+    def upload_resource(entity, resource_name, resource, echo):
+        # If the resource is a file, populate the path where it was built.
+        # If it's a custom image, it will be in Docker and this will be a no-op.
+        retry_call(
+            sh.charm.attach,
+            fargs=[
+                entity,
+                f"{resource_name}={resource}",
+            ],
+            fkwargs={"_out": echo},
+            delay=2,
+            backoff=2,
+            tries=15,
+            exceptions=sh.ErrorReturnCode,
+        )
 
 
 class _CharmHub:
@@ -229,6 +245,11 @@ class _CharmHub:
         echo(f"Charmcraft upload returned: {out}")
         (revision,) = re.findall(r"^Revision (\d+) of ", out.stderr.decode())
         return revision
+
+    @staticmethod
+    def upload_resource(charm_name, resource_name, resource, echo):
+        kwargs = dict([resource])
+        sh.charmcraft("upload-resource", charm_name, resource_name, **kwargs, _out=echo)
 
 
 class BuildEnv:
@@ -621,13 +642,13 @@ class BuildEntity:
         out_path = Path(self.src_path) / "tmp"
         os.makedirs(str(out_path), exist_ok=True)
         resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
-        resources = resource_spec.get(self.entity, {})
+        resources = resource_spec.get(self.name, {})
 
         # Build any custom resources.
         resource_builder = self.opts.get("build-resources", None)
         if resource_builder and not resources:
             raise SystemExit(
-                "Custom build-resources specified for {self.entity} but no spec found"
+                f"Custom build-resources specified for {self.name} but no spec found"
             )
         if resource_builder:
             resource_builder = resource_builder.format(
@@ -641,35 +662,26 @@ class BuildEntity:
 
         # Pull any `upstream-image` annotated resources.
         for name, details in self._read_metadata_resources().items():
-            upstream_image = details.get("upstream-source")
-            if details["type"] == "oci-image" and upstream_image:
-                self.echo(f"Pulling {upstream_image}...")
-                sh.docker.pull(upstream_image)
-                resources[name] = upstream_image
+            resource_fmt = resources[name]
+            if details["type"] == "oci-image":
+                upstream_image = details.get("upstream-source")
+                if upstream_image:
+                    self.echo(f"Pulling {upstream_image}...")
+                    sh.docker.pull(upstream_image)
+                    resource_fmt = upstream_image
+                resources[name] = ("image", resource_fmt)
+            else:
+                resources[name] = ("filepath", resource_fmt.format(out_path=out_path))
 
         self.echo(f"Attaching resources:\n{pformat(resources)}")
         # Attach all resources.
-        for name, resource in resources.items():
-            # If the resource is a file, populate the path where it was built.
-            # If it's a custom image, it will be in Docker and this will be a no-op.
-            resource = resource.format(out_path=out_path)
-            # needs charmcraft upload-resource
-            retry_call(
-                cmd_ok,
-                fargs=[
-                    [
-                        "charm",
-                        "attach",
-                        self.new_entity,
-                        f"{name}={resource}",
-                    ]
-                ],
-                fkwargs={"check": True, "echo": self.echo},
-                delay=2,
-                backoff=2,
-                tries=15,
-                exceptions=CalledProcessError,
-            )
+        for resource_name, resource in resources.items():
+            if self.store == "cs":
+                _CharmStore.upload_resource(
+                    self.new_entity, resource_name, resource[1], self.echo
+                )
+            elif self.store == "ch":
+                _CharmHub.upload_resource(self.name, resource_name, resource, self.echo)
 
     def promote(self, from_channel="unpublished", to_channel="edge"):
         """Promote charm and its resources from a channel to another."""

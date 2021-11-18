@@ -1,6 +1,6 @@
 id:
-  Id: cs:~containers/calico-845
-  Name: calico
+  Id: cs:~containers/k8s-ci-charm-845
+  Name: k8s-ci-charm
   Revision: 845
   User: containers
 extra-info:

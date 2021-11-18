@@ -1,0 +1,20 @@
+name: k8s-ci-charm
+summary: A test charm for the k8s ci pipeline
+maintainers:
+- Adam Dyess <adam.dyess@canonical.com>
+description: |
+  Doesn't do anything
+resources:
+  test-file:
+    type: file
+    description: a test-file
+    filename: test-file.txt
+  test-image:
+    type: oci-image
+    description: a test-image
+tags:
+- k8s
+series:
+- focal
+- bionic
+- xenial

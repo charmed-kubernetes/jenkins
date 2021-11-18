@@ -1,0 +1,16 @@
+"includes":
+- "layer:options"
+- "layer:basic"
+- "layer:status"
+"exclude": [".travis.yml", "tests", "tox.ini", "test-requirements.txt", "unit_tests"]
+"options":
+  "basic":
+    "packages": []
+    "python_packages": []
+    "use_venv": !!bool "true"
+    "include_system_packages": !!bool "false"
+  "status":
+    "patch-hookenv": !!bool "true"
+  "k8s-ci-charm": {}
+"repo": "https://github.com/charmed-kubernetes/jenkins/tree/master/tests/data/charms/k8s-ci-charm"
+"is": "nothing"
