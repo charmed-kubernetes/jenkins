@@ -231,7 +231,7 @@ mypy-extensions==0.4.3
     # via
     #   black
     #   typing-inspect
-nltk==3.5
+nltk==3.6.5
     # via lunr
 oauthlib==3.1.0
     # via lazr.restfulclient
@@ -376,7 +376,7 @@ pyyaml==5.3.1
     #   pyyaml-include
 pyyaml-include==1.2.post2
     # via ogc
-regex==2021.3.17
+regex==2021.11.10
     # via
     #   black
     #   nltk
@@ -483,9 +483,6 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
-# The following websocket requirements are environment marked because of juju
-# https://github.com/juju/python-libjuju/blob/master/setup.py#L38-L39
-websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
