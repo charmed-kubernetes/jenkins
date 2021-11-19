@@ -405,7 +405,7 @@ secretstorage==3.3.1
     # via keyring
 semver==2.13.0
     # via ogc
-sh==1.14.1
+sh==1.14.2
     # via
     #   -r requirements.in
     #   ogc
@@ -483,9 +483,6 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
-# The following websocket requirements are environment marked because of juju
-# https://github.com/juju/python-libjuju/blob/master/setup.py#L38-L39
-websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
