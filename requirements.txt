@@ -164,7 +164,7 @@ jsonschema==3.2.0
     # via charmcraft
 juju==2.8.6
     # via -r requirements.in
-jujubundlelib==0.5.6
+jujubundlelib==0.5.7
     # via
     #   -r requirements.in
     #   theblues
@@ -405,7 +405,7 @@ secretstorage==3.3.1
     # via keyring
 semver==2.13.0
     # via ogc
-sh==1.14.1
+sh==1.14.2
     # via
     #   -r requirements.in
     #   ogc
