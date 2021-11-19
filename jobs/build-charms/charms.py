@@ -26,7 +26,6 @@ from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture, script
 from datetime import datetime
 from enum import Enum
-from itertools import takewhile
 from retry.api import retry_call
 from types import SimpleNamespace
 from pathos.threading import ThreadPool
@@ -58,43 +57,46 @@ class LayerType(Enum):
     INTERFACE = 2
 
 
-CHARMCRAFT_RESOURCE = re.compile(r"(\S+) \(r(\d+)\)")
-
-
-def _first_of(iterable, predicate=lambda _: True, default=None):
-    result = list(takewhile(predicate, iterable))
-    return result[0] if result else default
+def _next_match(seq, predicate=lambda _: _, default=None):
+    """Finds the first item of an iterable matching a predicate, or default if none exists."""
+    return next(filter(predicate, seq), default)
 
 
 class _CharmStore:
-    @staticmethod
-    def id(charm_entity, channel):
+    def __init__(self, build_entity):
+        self._echo = build_entity.echo
+
+    def id(self, charm_entity, channel):
         try:
-            charm_id = sh.charm.show(charm_entity, "id", channel=channel)
+            charm_id = sh.charm.show(
+                charm_entity, "id", channel=channel, _out=self._echo
+            )
         except sh.ErrorReturnCode:
             return None
         response = yaml.safe_load(charm_id.stdout.decode().strip())
         return response["id"]["Id"]
 
-    @staticmethod
-    def resources(charm_id, channel):
+    def resources(self, charm_id, channel):
         try:
             resources = sh.charm(
-                "list-resources", charm_id, channel=channel, format="yaml"
+                "list-resources",
+                charm_id,
+                channel=channel,
+                format="yaml",
+                _out=self._echo,
             )
             return yaml.safe_load(resources.stdout.decode())
         except sh.ErrorReturnCode:
             return []
 
-    @classmethod
-    def promote(cls, charm_entity, from_channel, to_channel):
-        click.echo(
+    def promote(self, charm_entity, from_channel, to_channel):
+        self._echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
         )
-        charm_id = cls.id(charm_entity, from_channel)
-        charm_resources = cls.resources(charm_id, from_channel)
+        charm_id = self.id(charm_entity, from_channel)
+        charm_resources = self.resources(charm_id, from_channel)
         if not charm_resources:
-            click.echo("No resources for {}".format(charm_id))
+            self._echo("No resources for {}".format(charm_id))
         resources_args = [
             (
                 "--resource",
@@ -102,29 +104,27 @@ class _CharmStore:
             )
             for resource in charm_resources
         ]
-        sh.charm.release(charm_id, f"--channel={to_channel}", *resources_args)
+        sh.charm.release(
+            charm_id, f"--channel={to_channel}", *resources_args, _out=self._echo
+        )
 
-    @staticmethod
-    def grant(charm_id):
-        sh.charm.grant(charm_id, "everyone", acl="read")
+    def grant(self, charm_id):
+        sh.charm.grant(charm_id, "everyone", acl="read", _out=self._echo)
 
-    @staticmethod
-    def upload(dst_path, entity, echo):
-        out = sh.charm.push(dst_path, entity, _out=echo)
-        echo(f"Charm push returned: {out}")
+    def upload(self, dst_path, entity):
+        out = sh.charm.push(dst_path, entity, _out=self._echo)
+        self._echo(f"Charm push returned: {out}")
 
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
         out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
         return out["url"]
 
-    @staticmethod
-    def set(entity, commit, echo):
-        echo(f"Setting {entity} metadata: {commit}")
-        sh.charm.set(entity, f"commit={commit}", _out=echo)
+    def set(self, entity, commit):
+        self._echo(f"Setting {entity} metadata: {commit}")
+        sh.charm.set(entity, f"commit={commit}", _out=self._echo)
 
-    @staticmethod
-    def upload_resource(entity, resource_name, resource, echo):
+    def upload_resource(self, entity, resource_name, resource):
         # If the resource is a file, populate the path where it was built.
         # If it's a custom image, it will be in Docker and this will be a no-op.
         retry_call(
@@ -133,7 +133,7 @@ class _CharmStore:
                 entity,
                 f"{resource_name}={resource}",
             ],
-            fkwargs={"_out": echo},
+            fkwargs={"_out": self._echo},
             delay=2,
             backoff=2,
             tries=15,
@@ -143,15 +143,29 @@ class _CharmStore:
 
 class _CharmHub:
     HEADER_RE = re.compile(r"\W+\s{2}")
+    STATUS_RESOURCE = re.compile(r"(\S+) \(r(\d+)\)")
 
-    @classmethod
-    def headers(cls, header):
-        return cls.HEADER_RE.split(header)
+    def __init__(self, build_entity):
+        self._echo = build_entity.echo
+
+    def _table_to_list(self, header, body):
+        if not body:
+            return None
+        rows = []
+        for line in body:
+            row, head = {}, line
+            for key in reversed(self.HEADER_RE.split(header)):
+                head, *value = head.strip().rsplit("  ", 1)
+                head, value = (head, value[0]) if value else ("", head.strip())
+                row[key] = value or rows[-1].get(key)
+            rows.append(row)
+        return rows
 
     @staticmethod
-    def refresh(name, channel=None, architecture=None):
+    def refresh(name, channel=None, architecture=None, base_channel=None):
         channel = channel or "stable"
         architecture = architecture or "amd64"
+        base_channel = base_channel or "20.04"
         data = {
             "context": [],
             "actions": [
@@ -160,7 +174,7 @@ class _CharmHub:
                     "base": {
                         "name": "ubuntu",
                         "architecture": architecture,
-                        "channel": "19.04",
+                        "channel": base_channel,
                     },
                     "channel": channel,
                     "action": "install",
@@ -171,125 +185,91 @@ class _CharmHub:
         resp = requests.post("https://api.charmhub.io/v2/charms/refresh", json=data)
         return resp.json()
 
-    @staticmethod
-    def status(charm_entity):
+    def status(self, charm_entity):
         """Read CLI Table output from charmcraft status and parse."""
-        charm_status = sh.charmcraft.status(charm_entity)
+        charm_status = sh.charmcraft.status(charm_entity, _out=self._echo)
         header, *body = charm_status.stderr.decode().splitlines()
-        if not body:
-            return None
-        channel_status = []
-        for line in body:
-            row, head = {}, line
-            for key in reversed(header.split()):
-                head, *value = head.strip().rsplit("  ", 1)
-                head, value = ("", head.strip()) if not value else (head, value[0])
-                row[key] = value or channel_status[-1].get(key)
+        channel_status = self._table_to_list(header, body)
+
+        for idx, row in enumerate(channel_status):
             resources = row.get("Resources", "")
             if resources == "-":
                 row["Resources"] = []
             elif resources == "↑":
-                row["Resources"] = channel_status[-1]["Resources"]
+                row["Resources"] = channel_status[idx - 1]["Resources"]
             else:
-                row["Resources"] = CHARMCRAFT_RESOURCE.findall(resources)
-            channel_status.append(row)
+                row["Resources"] = dict(self.STATUS_RESOURCE.findall(resources))
         return channel_status
 
-    @classmethod
-    def revisions(cls, charm_entity):
+    def revisions(self, charm_entity):
         """Read CLI Table output from charmcraft revisions and parse."""
-        charm_status = sh.charmcraft.revisions(charm_entity)
+        charm_status = sh.charmcraft.revisions(charm_entity, _out=self._echo)
         header, *body = charm_status.stderr.decode().splitlines()
-        if not body:
-            return None
-        channel_status = []
-        for line in body:
-            row, head = {}, line
-            for key in reversed(cls.headers(header)):
-                head, *value = head.strip().rsplit("  ", 1)
-                head, value = ("", head.strip()) if not value else (head, value[0])
-                row[key] = value or channel_status[-1].get(key)
-            row["Resources"] = []
-            channel_status.append(row)
-        return channel_status
+        return self._table_to_list(header, body)
 
-    @classmethod
-    def resources(cls, charm_entity):
+    def resources(self, charm_entity):
         """Read CLI Table output from charmcraft resources and parse."""
-        charmcraft_out = sh.charmcraft.resources(charm_entity)
+        charmcraft_out = sh.charmcraft.resources(charm_entity, _out=self._echo)
         header, *body = charmcraft_out.stderr.decode().splitlines()
-        if not body:
-            return None
-        resources = []
-        for line in body:
-            row, head = {}, line
-            for key in reversed(cls.headers(header)):
-                head, *value = head.strip().rsplit("  ", 1)
-                head, value = ("", head.strip()) if not value else (head, value[0])
-                row[key] = value or resources[-1].get(key)
-            resources.append(row)
-        return resources
+        return self._table_to_list(header, body)
 
-    @classmethod
-    def resource_revisions(cls, charm_entity, resource):
+    def resource_revisions(self, charm_entity, resource):
         """Read CLI Table output from charmcraft resource-revisions and parse."""
-        charmcraft_out = sh.charmcraft("resource-revisions", charm_entity, resource)
+        charmcraft_out = sh.charmcraft(
+            "resource-revisions", charm_entity, resource, _out=self._echo
+        )
         header, *body = charmcraft_out.stderr.decode().splitlines()
-        if not body:
-            return None
-        revisions = []
-        for line in body:
-            row, head = {}, line
-            for key in reversed(cls.headers(header)):
-                head, *value = head.strip().rsplit("  ", 1)
-                head, value = ("", head.strip()) if not value else (head, value[0])
-                row[key] = value or revisions[-1].get(key)
-            revisions.append(row)
-        return revisions
+        return self._table_to_list(header, body)
 
-    @classmethod
-    def promote(cls, charm_entity, from_channel, to_channel):
-        click.echo(
+    def _unpublished_revisions(self, charm_entity):
+        """
+        Get the most recent non-released version.
+
+        It's possible no unreleased charm exists
+        It's possible multiple unreleased versions exist since the last released one
+        We want ONLY the most recent of that list
+
+        This also gathers the most recently published resource, whether or not
+        it is associated with a particular prior release or not.
+        """
+        charm_status = []
+        unpublished_rev = _next_match(
+            self.revisions(charm_entity),
+            predicate=lambda rev: rev["Status"] != "released",
+        )
+        if unpublished_rev:
+            charm_resources = filter(
+                lambda rsc: rsc["Charm Rev"] == unpublished_rev["Version"],
+                self.resources(charm_entity),
+            )
+            unpublished_rev["Resources"] = {
+                resource["Resource"]: _next_match(
+                    self.resource_revisions(charm_entity, resource["Resource"]),
+                    default=dict(),
+                ).get("Revision")
+                for resource in charm_resources
+            }
+            charm_status = [unpublished_rev]
+        return charm_status
+
+    def promote(self, charm_entity, from_channel, to_channel):
+        self._echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
         )
         if from_channel == "unpublished":
-            # get first non-released version as the unpublished version
-            # its possible this doesn't exist
-            # its also possible multiple unreleased versions exist before the first released one
-            # we want ONLY the most recent of that list
-            charm_status = []
-            unpublished_rev = _first_of(
-                cls.revisions(charm_entity),
-                predicate=lambda rev: rev["Status"] != "released",
-            )
-            if unpublished_rev:
-                charm_resources = [
-                    rsc
-                    for rsc in cls.resources(charm_entity)
-                    if rsc["Charm Rev"] == unpublished_rev["Version"]
-                ]
-                unpublished_rev["Resources"] = [
-                    (
-                        resource["Resource"],
-                        _first_of(
-                            cls.resource_revisions(charm_entity, resource["Resource"]),
-                            default=dict(),
-                        ).get("Revision"),
-                    )
-                    for resource in charm_resources
-                ]
-                charm_status = [unpublished_rev]
+            charm_status = self._unpublished_revisions(charm_entity)
         else:
             charm_status = filter(
                 lambda rev: rev["Channel"] == from_channel,
-                cls.status(charm_entity),
+                self.status(charm_entity),
             )
 
         calls = set()
         for charm_by_base in charm_status:
-            revision = charm_by_base["Revision"]
-            resources = charm_by_base.get("Resources", [])
-            resource_args = [f"--resource={name}:{rev}" for name, rev in resources]
+            revision, resources = charm_by_base["Revision"], charm_by_base["Resources"]
+            resource_args = (
+                f"--resource={name}:{rev}" for name, rev in resources.items() if rev
+            )
             calls.add(
                 (
                     charm_entity,
@@ -299,19 +279,19 @@ class _CharmHub:
                 )
             )
         for args in calls:
-            sh.charmcraft.release(*args)
+            sh.charmcraft.release(*args, _out=self._echo)
 
-    @staticmethod
-    def upload(dst_path, echo):
-        out = sh.charmcraft.upload(dst_path, _out=echo)
-        echo(f"Charmcraft upload returned: {out}")
+    def upload(self, dst_path):
+        out = sh.charmcraft.upload(dst_path, _out=self._echo)
+        self._echo(f"Charmcraft upload returned: {out}")
         (revision,) = re.findall(r"^Revision (\d+) of ", out.stderr.decode())
         return revision
 
-    @staticmethod
-    def upload_resource(charm_name, resource_name, resource, echo):
+    def upload_resource(self, charm_name, resource_name, resource):
         kwargs = dict([resource])
-        sh.charmcraft("upload-resource", charm_name, resource_name, **kwargs, _out=echo)
+        sh.charmcraft(
+            "upload-resource", charm_name, resource_name, **kwargs, _out=self._echo
+        )
 
 
 class BuildEnv:
@@ -405,10 +385,14 @@ class BuildEnv:
         """Get if we should force a build."""
         return self.db["build_args"].get("force", None)
 
+    def echo(self, msg):
+        """Click echo wrapper."""
+        click.echo(f"[BuildEnv] {msg}")
+
     def save(self):
         """Store build metadata into stateful db."""
-        click.echo("Saving build")
-        click.echo(dict(self.db))
+        self.echo("Saving build")
+        self.echo(dict(self.db))
         self.db_json.write_text(json.dumps(dict(self.db)))
         self.store.put_item(Item=dict(self.db))
 
@@ -420,16 +404,16 @@ class BuildEnv:
                     continue
                 if store == "cs":
                     charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
-                    _CharmStore.promote(charm_entity, from_channel, to_channel)
+                    _CharmStore(self).promote(charm_entity, from_channel, to_channel)
                 elif store == "ch":
-                    _CharmHub.promote(charm_name, from_channel, to_channel)
+                    _CharmHub(self).promote(charm_name, from_channel, to_channel)
 
     def download(self, layer_name):
         """Pull layer source from the charm store."""
         out = capture(
             f"charm pull-source -i {self.layer_index} -b {self.layer_branch} {layer_name}"
         )
-        click.echo(f"-  {out.stdout.decode()}")
+        self.echo(f"-  {out.stdout.decode()}")
         rev = re.compile("rev: ([a-zA-Z0-9]+)")
         layer_manifest = {
             "rev": rev.search(out.stdout.decode()).group(1),
@@ -492,14 +476,13 @@ class BuildEntity:
 
         if store == "cs":
             # Entity path, ie cs:~containers/kubernetes-master
-            entity = f"cs:~{opts['namespace']}/{name}"
+            self.entity = f"cs:~{opts['namespace']}/{name}"
         elif store == "ch":
             # Entity path, ie containers-kubernetes-master
-            entity = f"{name}"
+            self.entity = f"{name}"
         else:
             raise BuildException(f"'{store}' doesn't exist")
         self.store = store
-        self.entity = entity
 
         # Entity path with current revision (from target channel)
         self.full_entity = self._get_full_entity()
@@ -518,7 +501,7 @@ class BuildEntity:
     def _get_full_entity(self):
         """Grab identifying revision for charm's channel."""
         if self.store == "cs":
-            return _CharmStore.id(
+            return _CharmStore(self).id(
                 self.entity, self.build.db["build_args"]["to_channel"]
             )
         else:
@@ -692,12 +675,11 @@ class BuildEntity:
 
         self.echo(f"Pushing built {self.dst_path} to {self.entity}")
         if self.store == "cs":
-            self.new_entity = _CharmStore.upload(
-                self.dst_path, self.entity, echo=self.echo
-            )
-            _CharmStore.set(self.new_entity, self.commit, echo=self.echo)
+            cs = _CharmStore(self)
+            self.new_entity = cs.upload(self.dst_path, self.entity)
+            cs.set(self.new_entity, self.commit)
         elif self.store == "ch":
-            self.new_entity = _CharmHub.upload(self.dst_path, echo=self.echo)
+            self.new_entity = _CharmHub(self).upload(self.dst_path)
 
     def attach_resources(self):
         """Assemble charm's resources and associate in the store."""
@@ -742,21 +724,22 @@ class BuildEntity:
         # Attach all resources.
         for resource_name, resource in resource_spec.items():
             if self.store == "cs":
-                _CharmStore.upload_resource(
-                    self.new_entity, resource_name, resource[1], self.echo
+                _CharmStore(self).upload_resource(
+                    self.new_entity, resource_name, resource[1]
                 )
             elif self.store == "ch":
-                _CharmHub.upload_resource(self.name, resource_name, resource, self.echo)
+                _CharmHub(self).upload_resource(self.name, resource_name, resource)
 
     def promote(self, from_channel="unpublished", to_channel="edge"):
         """Promote charm and its resources from a channel to another."""
         if self.store == "cs":
-            charm_id = _CharmStore.id(self.entity, from_channel)
-            _CharmStore.promote(self.entity, from_channel, to_channel)
+            cs = _CharmStore(self)
+            charm_id = cs.id(self.entity, from_channel)
+            cs.promote(self.entity, from_channel, to_channel)
             self.echo(f"Setting {charm_id} permissions for read everyone")
-            _CharmStore.grant(charm_id)
+            cs.grant(charm_id)
         elif self.store == "ch":
-            _CharmHub.promote(self.name, from_channel, to_channel)
+            _CharmHub(self).promote(self.name, from_channel, to_channel)
 
 
 class BundleBuildEntity(BuildEntity):

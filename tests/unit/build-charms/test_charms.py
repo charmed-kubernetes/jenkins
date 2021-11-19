@@ -116,16 +116,22 @@ def test_build_env_promote_all_charmstore(test_environment, cilib_store, charm_c
     charm_env.promote_all()
     charm_entity = "cs:~containers/k8s-ci-charm"
     charm_entity_ver = f"{charm_entity}-845"
-    charm_cmd.show.assert_called_once_with(charm_entity, "id", channel="unpublished")
+    charm_cmd.show.assert_called_once_with(
+        charm_entity, "id", channel="unpublished", _out=charm_env.echo
+    )
     charm_cmd.assert_called_once_with(
-        "list-resources", charm_entity_ver, channel="unpublished", format="yaml"
+        "list-resources",
+        charm_entity_ver,
+        channel="unpublished",
+        format="yaml",
+        _out=charm_env.echo,
     )
     resource_args = [
         ("--resource", "test-file-995"),
         ("--resource", "test-image-995"),
     ]
     charm_cmd.release.assert_called_once_with(
-        charm_entity_ver, "--channel=edge", *resource_args
+        charm_entity_ver, "--channel=edge", *resource_args, _out=charm_env.echo
     )
 
 
@@ -144,7 +150,11 @@ def test_build_env_promote_all_charmhub(test_environment, charmcraft_cmd):
         "--resource=test-file-2:993",
     ]
     charmcraft_cmd.release.assert_called_once_with(
-        "k8s-ci-charm", "--revision=845", "--channel=beta", *resource_args
+        "k8s-ci-charm",
+        "--revision=845",
+        "--channel=beta",
+        *resource_args,
+        _out=charm_env.echo,
     )
 
 
@@ -185,7 +195,7 @@ def test_build_entity_has_changed(test_environment, charm_cmd):
     charm_name, charm_opts = next(iter(artifacts[0].items()))
     charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "cs")
     charm_cmd.show.assert_called_once_with(
-        "cs:~containers/k8s-ci-charm", "id", channel="edge"
+        "cs:~containers/k8s-ci-charm", "id", channel="edge", _out=charm_entity.echo
     )
     charm_cmd.show.reset_mock()
     with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
@@ -395,6 +405,7 @@ def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdi
         "--channel=edge",
         "--resource=test-file:3",
         "--resource=test-image:4",
+        _out=charm_entity.echo,
     )
     charmcraft_cmd.release.reset_mock()
 
@@ -405,9 +416,13 @@ def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdi
         "--channel=edge",
         ("--resource", "test-file-995"),
         ("--resource", "test-image-995"),
+        _out=charm_entity.echo,
     )
     charm_cmd.grant.assert_called_once_with(
-        "cs:~containers/k8s-ci-charm-845", "everyone", acl="read"
+        "cs:~containers/k8s-ci-charm-845",
+        "everyone",
+        acl="read",
+        _out=charm_entity.echo,
     )
     charmcraft_cmd.release.assert_not_called()
 
