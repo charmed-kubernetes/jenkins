@@ -164,7 +164,7 @@ jsonschema==3.2.0
     # via charmcraft
 juju==2.8.6
     # via -r requirements.in
-jujubundlelib==0.5.6
+jujubundlelib==0.5.7
     # via
     #   -r requirements.in
     #   theblues
