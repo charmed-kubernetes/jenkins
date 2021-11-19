@@ -164,7 +164,7 @@ jsonschema==3.2.0
     # via charmcraft
 juju==2.8.6
     # via -r requirements.in
-jujubundlelib==0.5.6
+jujubundlelib==0.5.7
     # via
     #   -r requirements.in
     #   theblues
@@ -483,9 +483,6 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
-# The following websocket requirements are environment marked because of juju
-# https://github.com/juju/python-libjuju/blob/master/setup.py#L38-L39
-websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
