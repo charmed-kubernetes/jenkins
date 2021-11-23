@@ -16,6 +16,10 @@
   flannel-amd64: '{out_path}/flannel-amd64.tar.gz'
   flannel-arm64: '{out_path}/flannel-arm64.tar.gz'
   flannel-s390x: '{out_path}/flannel-s390x.tar.gz'
+'cs:~containers/kubernetes-master':
+  cni-amd64: '{out_path}/cni-amd64.tgz'
+  cni-arm64: '{out_path}/cni-arm64.tgz'
+  cni-s390x: '{out_path}/cni-s390x.tgz'
 'cs:~containers/kubernetes-worker':
   cni-amd64: '{out_path}/cni-amd64.tgz'
   cni-arm64: '{out_path}/cni-arm64.tgz'
