@@ -30,7 +30,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -83,7 +82,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -141,7 +139,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -432,7 +429,6 @@
              - 1.22/edge
              - 1.21/edge
              - 1.20/edge
-             - 1.19/edge
       - axis:
            type: user-defined
            name: series
@@ -475,7 +471,6 @@
              - 1.22/edge
              - 1.21/edge
              - 1.20/edge
-             - 1.19/edge
       - axis:
            type: user-defined
            name: series
@@ -521,7 +516,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -573,7 +567,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -616,7 +609,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -659,7 +651,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -703,7 +694,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -747,7 +737,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -791,7 +780,6 @@
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
