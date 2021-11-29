@@ -27,7 +27,7 @@
       - run-env:
           COMMAND: |
             parallel --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.22/stable ::: focal bionic ::: beta ::: arm64 amd64
-            parallel --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} {5} ::: 1.21/stable 1.20/stable ::: focal bionic xenial ::: beta ::: arm64 amd64 ::: 1.22/stable
+            parallel --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} {5} ::: 1.21/stable 1.20/stable ::: focal bionic ::: beta ::: arm64 amd64 ::: 1.22/stable
 
 - job:
     name: 'validate-charm-bugfix'
@@ -102,7 +102,6 @@
           values:
             - focal
             - bionic
-            - xenial
       - axis:
           type: user-defined
           name: arch

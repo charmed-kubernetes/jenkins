@@ -390,7 +390,7 @@
           type: user-defined
           name: series
           values:
-            - xenial
+            - bionic
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
