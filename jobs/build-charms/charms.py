@@ -325,6 +325,13 @@ class BuildEnv:
             self.db_json = Path("buildcharms.json")
         elif self.build_type == BuildType.BUNDLE:
             self.db_json = Path("buildbundles.json")
+            self.repos_dir = self.tmp_dir / "repos"
+            self.bundles_dir = self.tmp_dir / "bundles"
+            self.default_repo_dir = self.repos_dir / "bundles-kubernetes"
+            for each in (self.repos_dir, self.bundles_dir):
+                if each.exists():
+                    shutil.rmtree(each)
+                each.mkdir(parents=True)
 
         if not self.db.get("build_datetime", None):
             self.db["build_datetime"] = self.now.strftime("%Y/%m/%d")
@@ -448,13 +455,11 @@ class BuildEntity:
 
         # Bundle or charm name
         self.name = name
+        self.type = "Charm"
 
         self.checkout_path = build.charms_dir / self.name
 
-        if "subdir" in opts:
-            src_path = self.checkout_path / opts["subdir"]
-        else:
-            src_path = self.checkout_path
+        src_path = self.checkout_path / opts.get("subdir", "")
 
         if "branch" in opts:
             self.charm_branch = opts["branch"]
@@ -673,7 +678,9 @@ class BuildEntity:
             )
             return
 
-        self.echo(f"Pushing built {self.dst_path} to {self.entity}")
+        self.echo(
+            f"Pushing {self.type}({self.name}) from {self.dst_path} to {self.entity}"
+        )
         if self.store == "cs":
             cs = _CharmStore(self)
             self.new_entity = cs.upload(self.dst_path, self.entity)
@@ -748,19 +755,9 @@ class BundleBuildEntity(BuildEntity):
     def __init__(self, *args, **kwargs):
         """Create a BuildEntity for Charm Bundles."""
         super().__init__(*args, **kwargs)
+        self.type = "Bundle"
         self.src_path = str(self.opts["src_path"])
         self.dst_path = str(self.opts["dst_path"])
-
-    def push(self):
-        """Pushes a built charm to Charmstore."""
-        click.echo(f"Pushing bundle {self.name} from {self.dst_path} to {self.entity}")
-        out = sh.charm.push(self.dst_path, self.entity)
-        click.echo(f"Charm push returned: {out}")
-        # Output includes lots of ansi escape sequences from the docker push,
-        # and we only care about the first line, which contains the url as yaml.
-        out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
-        click.echo(f"Setting {out['url']} metadata: {self.commit}")
-        sh.charm.set(out["url"], f"commit={self.commit}", _bg_exc=False)
 
     @property
     def has_changed(self):
@@ -936,17 +933,7 @@ def build_bundles(
         "to_channel": to_channel,
     }
 
-    repos_dir = build_env.tmp_dir / "repos"
-    if repos_dir.exists():
-        shutil.rmtree(repos_dir)
-    repos_dir.mkdir()
-
-    bundles_dir = build_env.tmp_dir / "bundles"
-    if bundles_dir.exists():
-        shutil.rmtree(bundles_dir)
-    bundles_dir.mkdir()
-
-    default_repo_dir = repos_dir / "bundles-kubernetes"
+    default_repo_dir = build_env.default_repo_dir
     cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {default_repo_dir}")
 
     for bundle_map in build_env.artifacts:
@@ -956,10 +943,10 @@ def build_bundles(
                 continue
             click.echo(f"Processing {bundle_name}")
             if "repo" in bundle_opts:
-                src_path = bundle_opts["src_path"] = repos_dir / bundle_name
+                src_path = bundle_opts["src_path"] = build_env.repos_dir / bundle_name
             else:
-                src_path = bundle_opts["src_path"] = default_repo_dir
-            dst_path = bundle_opts["dst_path"] = bundles_dir / bundle_name
+                src_path = bundle_opts["src_path"] = build_env.default_repo_dir
+            dst_path = bundle_opts["dst_path"] = build_env.bundles_dir / bundle_name
 
             build_entity = BundleBuildEntity(build_env, bundle_name, bundle_opts, store)
 

@@ -13,6 +13,7 @@ import charms
 STATIC_TEST_PATH = Path(__file__).parent.parent.parent / "data"
 K8S_CI_CHARM = STATIC_TEST_PATH / "charms" / "k8s-ci-charm"
 CI_TESTING_CHARMS = STATIC_TEST_PATH / "ci-testing-charms.inc"
+CI_TESTING_BUNDLES = STATIC_TEST_PATH / "ci-testing-bundles.inc"
 CLI_RESPONSES = STATIC_TEST_PATH / "cli_response"
 
 
@@ -53,20 +54,26 @@ def cilib_store():
         yield store
 
 
+def charm_push_result(*args, **kwargs):
+    directory, charm_or_bundle_id = args
+    entity_fname = charm_or_bundle_id[4:].replace("/", "_")
+    return SimpleNamespace(
+        stdout=(CLI_RESPONSES / f"charm_push_{entity_fname}.yaml").read_bytes()
+    )
+
+
 @pytest.fixture(autouse=True)
 def charm_cmd():
     """Create a fixture defining mock for `charm` cli command."""
-    with patch("sh.charm", create=True) as cmd:
-        cmd.show.return_value.stdout = (
+    with patch("sh.charm", create=True) as charm:
+        charm.show.return_value.stdout = (
             CLI_RESPONSES / "charm_show_containers-k8s-ci-charm.yaml"
         ).read_bytes()
-        cmd.return_value.stdout = (
+        charm.return_value.stdout = (
             CLI_RESPONSES / "charm_list-resources_cs_containers-k8s-ci-charm-845.yaml"
         ).read_bytes()
-        cmd.push.return_value.stdout = (
-            CLI_RESPONSES / "charm_push_containers-k8s-ci-charm.yaml"
-        ).read_bytes()
-        yield cmd
+        charm.push.side_effect = charm_push_result
+        yield charm
 
 
 @pytest.fixture(autouse=True)
@@ -81,9 +88,6 @@ def charmcraft_cmd():
         ).read_bytes()
         cmd.revisions.return_value.stderr = (
             CLI_RESPONSES / "charmcraft_revisions_k8s-ci-charm.txt"
-        ).read_bytes()
-        cmd.upload.return_value.stderr = (
-            CLI_RESPONSES / "charmcraft_upload.txt"
         ).read_bytes()
 
         def hyphened_commands(*args, **kwargs):
@@ -312,6 +316,10 @@ def test_build_entity_push(test_environment, charm_cmd, charmcraft_cmd, tmpdir):
     assert charm_entity.new_entity == "cs:~containers/k8s-ci-charm-845"
 
     charm_cmd.push.reset_mock()
+    charmcraft_cmd.upload.return_value.stderr = (
+        CLI_RESPONSES / "charmcraft_upload_k8s-ci-charm.txt"
+    ).read_bytes()
+
     charm_entity = charms.BuildEntity(charm_env, charm_name, charm_opts, "ch")
     charm_entity.push()
     charm_cmd.push.assert_not_called()
@@ -425,6 +433,53 @@ def test_build_entity_promote(test_environment, charm_cmd, charmcraft_cmd, tmpdi
         _out=charm_entity.echo,
     )
     charmcraft_cmd.release.assert_not_called()
+
+
+def test_bundle_build_entity_push(test_environment, charm_cmd, charmcraft_cmd, tmpdir):
+    """Test that BundleBuildEntity pushes to appropriate store."""
+    charm_env = charms.BuildEnv(build_type=charms.BuildType.BUNDLE)
+    charm_env.db["build_args"] = {
+        "artifact_list": str(CI_TESTING_BUNDLES),
+        "bundle_branch": "master",
+        "filter_by_tag": ["k8s"],
+        "to_channel": "edge",
+    }
+    artifacts = charm_env.artifacts
+    bundle_name, bundle_opts = next(iter(artifacts[0].items()))
+
+    with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
+        bundle_opts["src_path"] = charm_env.default_repo_dir
+        bundle_opts["dst_path"] = charm_env.bundles_dir / bundle_name
+        bundle_entity = charms.BundleBuildEntity(
+            charm_env, bundle_name, bundle_opts, "cs"
+        )
+        commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
+        bundle_entity.push()
+
+    charmcraft_cmd.upload.assert_not_called()
+    charm_cmd.push.assert_called_once_with(
+        bundle_entity.dst_path,
+        "cs:~containers/bundle/canonical-kubernetes",
+        _out=bundle_entity.echo,
+    )
+    charm_cmd.set.assert_called_once_with(
+        "cs:~containers/bundle/canonical-kubernetes-123",
+        "commit=96b4e06d5d35fec30cdf2cc25076dd25c51b893c",
+        _out=bundle_entity.echo,
+    )
+    assert bundle_entity.new_entity == "cs:~containers/bundle/canonical-kubernetes-123"
+
+    charm_cmd.push.reset_mock()
+    charmcraft_cmd.upload.return_value.stderr = (
+        CLI_RESPONSES / "charmcraft_upload_canonical-kubernetes.txt"
+    ).read_bytes()
+    charm_entity = charms.BuildEntity(charm_env, bundle_name, bundle_opts, "ch")
+    charm_entity.push()
+    charm_cmd.push.assert_not_called()
+    charmcraft_cmd.upload.assert_called_once_with(
+        charm_entity.dst_path, _out=charm_entity.echo
+    )
+    assert charm_entity.new_entity == "123"
 
 
 #   --------------------------------------------------
