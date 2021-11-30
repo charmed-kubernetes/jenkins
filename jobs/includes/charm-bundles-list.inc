@@ -28,13 +28,13 @@
     tags: ['general', 'kubeflow']
 - metallb:
     namespace: containers
-    repo: "https://github.com/charmed-kubernetes/metallb-operator"
+    downstream: charmed-kubernetes/metallb-operator.git
     skip-build: true
     subdir: "bundle"
     tags: ['k8s', 'addons', 'metallb']
 - kubernetes-dashboard-bundle:
     namespace: containers
-    repo: "https://github.com/charmed-kubernetes/kubernetes-dashboard-operator"
+    downstream: charmed-kubernetes/kubernetes-dashboard-operator.git
     skip-build: true
     subdir: "bundles"
     tags: ['k8s', 'addons', 'kubernetes-dashboard-bundle']

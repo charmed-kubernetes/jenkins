@@ -323,6 +323,7 @@ class BuildEnv:
 
         if self.build_type == BuildType.CHARM:
             self.db_json = Path("buildcharms.json")
+            self.repos_dir = None
         elif self.build_type == BuildType.BUNDLE:
             self.db_json = Path("buildbundles.json")
             self.repos_dir = self.tmp_dir / "repos"
@@ -457,16 +458,13 @@ class BuildEntity:
         self.name = name
         self.type = "Charm"
 
-        self.checkout_path = build.charms_dir / self.name
+        self.checkout_path = build.repos_dir or build.charms_dir / self.name
 
         src_path = self.checkout_path / opts.get("subdir", "")
 
-        if "branch" in opts:
-            self.charm_branch = opts["branch"]
-        else:
-            self.charm_branch = self.build.db["build_args"].get(
-                "charm_branch", "master"
-            )
+        self.branch = (
+            opts.get("branch") or self.build.db["build_args"].get("branch") or "master"
+        )
 
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
@@ -619,7 +617,7 @@ class BuildEntity:
 
         os.makedirs(self.checkout_path)
         ret = cmd_ok(
-            f"git clone --branch {self.charm_branch} {downstream} {self.checkout_path}",
+            f"git clone --branch {self.branch} {downstream} {self.checkout_path}",
             echo=self.echo,
         )
         if not ret.ok:
@@ -761,30 +759,31 @@ class BundleBuildEntity(BuildEntity):
 
     @property
     def has_changed(self):
-        """Determine if this charm has changes to include in a new build."""
+        """Determine if this bundle has changes to include in a new push."""
         charmstore_bundle = self.download("bundle.yaml")
-        charmstore_bundle_services = charmstore_bundle.get(
-            "applications", charmstore_bundle.get("services", {})
-        )
 
         local_built_bundle = yaml.safe_load(
-            (Path(self.name) / "bundle.yaml").read_text(encoding="utf8")
+            (Path(self.dst_path) / "bundle.yaml").read_text(encoding="utf8")
         )
-        local_built_bundle_services = local_built_bundle.get(
-            "applications", local_built_bundle.get("services", {})
-        )
-        the_diff = [
-            i["charm"]
-            for _, i in charmstore_bundle_services.items()
-            if i["charm"] not in local_built_bundle_services
-        ]
-        if the_diff:
-            click.echo("Changes found:")
-            click.echo(the_diff)
+
+        if charmstore_bundle != local_built_bundle:
+            self.echo("Local bundle differs.")
             return True
 
-        click.echo(f"No charm changes found, not pushing new bundle {self.entity}")
+        self.echo(f"No differences found, not pushing new bundle {self.entity}")
         return False
+
+    def bundle_build(self, to_channel):
+        if not self.opts.get("skip-build"):
+            cmd = f"{self.src_path}/bundle -o {self.dst_path} -c {to_channel} {self.opts['fragments']}"
+            self.echo(f"Running {cmd}")
+            cmd_ok(cmd, echo=self.echo)
+        else:
+            # If we're not building the bundle from the repo, we have
+            # to copy it to the expected output location instead.
+            shutil.copytree(
+                Path(self.src_path) / self.opts.get("subdir", ""), self.dst_path
+            )
 
 
 @click.group()
@@ -850,7 +849,7 @@ def build(
         "artifact_list": charm_list,
         "layer_list": layer_list,
         "layer_index": layer_index,
-        "charm_branch": charm_branch,
+        "branch": charm_branch,
         "layer_branch": layer_branch,
         "resource_spec": resource_spec,
         "filter_by_tag": list(filter_by_tag),
@@ -928,7 +927,7 @@ def build_bundles(
     build_env = BuildEnv(build_type=BuildType.BUNDLE)
     build_env.db["build_args"] = {
         "artifact_list": bundle_list,
-        "bundle_branch": bundle_branch,
+        "branch": bundle_branch,
         "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
     }
@@ -936,42 +935,33 @@ def build_bundles(
     default_repo_dir = build_env.default_repo_dir
     cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {default_repo_dir}")
 
+    entities = []
     for bundle_map in build_env.artifacts:
         for bundle_name, bundle_opts in bundle_map.items():
             if not any(match in filter_by_tag for match in bundle_opts["tags"]):
-                click.echo(f"Skipping {bundle_name}")
                 continue
-            click.echo(f"Processing {bundle_name}")
             if "repo" in bundle_opts:
-                src_path = bundle_opts["src_path"] = build_env.repos_dir / bundle_name
+                bundle_opts["src_path"] = build_env.repos_dir / bundle_name
             else:
-                src_path = bundle_opts["src_path"] = build_env.default_repo_dir
-            dst_path = bundle_opts["dst_path"] = build_env.bundles_dir / bundle_name
+                bundle_opts["src_path"] = build_env.default_repo_dir
+            bundle_opts["dst_path"] = build_env.bundles_dir / bundle_name
 
             build_entity = BundleBuildEntity(build_env, bundle_name, bundle_opts, store)
+            entities.append(build_entity)
 
-            if "repo" in bundle_opts:
+    for entity in entities:
+        entity.echo("Starting")
+
+        try:
+            if "downstream" in entity.opts:
                 # clone bundle repo override
-                bundle_repo = bundle_opts["repo"]
-                if "branch" in bundle_opts:
-                    bundle_branch = bundle_opts["branch"]
-                build_entity.echo(f"Cloning {bundle_repo}")
-                cmd_ok(
-                    f"git clone --branch {bundle_branch} {bundle_repo} {src_path}",
-                    echo=build_entity.echo,
-                )
-
-            if not bundle_opts.get("skip-build", False):
-                cmd = f"{src_path}/bundle -o {dst_path} -c {to_channel} {bundle_opts['fragments']}"
-                build_entity.echo(f"Running {cmd}")
-                cmd_ok(cmd, echo=build_entity.echo)
-            else:
-                # If we're not building the bundle from the repo, we have
-                # to copy it to the expected output location instead.
-                shutil.copytree(src_path / bundle_opts.get("subdir", ""), dst_path)
-
-            build_entity.push()
-            build_entity.promote(to_channel=to_channel)
+                entity.setup()
+            entity.echo(f"Details: {entity}")
+            entity.bundle_build(to_channel)
+            entity.push()
+            entity.promote(to_channel=to_channel)
+        finally:
+            entity.echo("Stopping")
 
     build_env.save()
 

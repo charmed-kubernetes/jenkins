@@ -1,17 +1,20 @@
 """Tests to verify jobs/build-charms/charms."""
 
 import os
+import re
 from pathlib import Path
 
 import pytest
 from types import SimpleNamespace
-from unittest.mock import patch, call, Mock, PropertyMock
+from unittest.mock import patch, call, Mock, MagicMock, PropertyMock
+from functools import partial
 
 from click.testing import CliRunner
 import charms
 
 STATIC_TEST_PATH = Path(__file__).parent.parent.parent / "data"
 K8S_CI_CHARM = STATIC_TEST_PATH / "charms" / "k8s-ci-charm"
+K8S_CI_BUNDLE = STATIC_TEST_PATH / "bundles" / "test-kubernetes"
 CI_TESTING_CHARMS = STATIC_TEST_PATH / "ci-testing-charms.inc"
 CI_TESTING_BUNDLES = STATIC_TEST_PATH / "ci-testing-bundles.inc"
 CLI_RESPONSES = STATIC_TEST_PATH / "cli_response"
@@ -54,25 +57,30 @@ def cilib_store():
         yield store
 
 
-def charm_push_result(*args, **kwargs):
-    directory, charm_or_bundle_id = args
-    entity_fname = charm_or_bundle_id[4:].replace("/", "_")
-    return SimpleNamespace(
-        stdout=(CLI_RESPONSES / f"charm_push_{entity_fname}.yaml").read_bytes()
-    )
-
-
 @pytest.fixture(autouse=True)
 def charm_cmd():
     """Create a fixture defining mock for `charm` cli command."""
+
+    def charm_command_response(cmd, *args, **_kwargs):
+        entity_fname = None
+        if cmd == "push":
+            _directory, entity_fname = args
+        elif cmd == "show":
+            charm_or_bundle_id, *fields = args
+            entity_fname = re.split(r"(-\d+)$", charm_or_bundle_id)[0]
+        elif cmd == "list-resources":
+            (entity_fname,) = args
+
+        if entity_fname:
+            entity_fname = entity_fname[4:].replace("/", "_")
+            return SimpleNamespace(
+                stdout=(CLI_RESPONSES / f"charm_{cmd}_{entity_fname}.yaml").read_bytes()
+            )
+
     with patch("sh.charm", create=True) as charm:
-        charm.show.return_value.stdout = (
-            CLI_RESPONSES / "charm_show_containers-k8s-ci-charm.yaml"
-        ).read_bytes()
-        charm.return_value.stdout = (
-            CLI_RESPONSES / "charm_list-resources_cs_containers-k8s-ci-charm-845.yaml"
-        ).read_bytes()
-        charm.push.side_effect = charm_push_result
+        charm.side_effect = charm_command_response
+        charm.show.side_effect = partial(charm_command_response, "show")
+        charm.push.side_effect = partial(charm_command_response, "push")
         yield charm
 
 
@@ -90,7 +98,7 @@ def charmcraft_cmd():
             CLI_RESPONSES / "charmcraft_revisions_k8s-ci-charm.txt"
         ).read_bytes()
 
-        def hyphened_commands(*args, **kwargs):
+        def hyphened_commands(*args, **_kwargs):
             command, *cmd_args = args
             if command == "resource-revisions":
                 _, resource = cmd_args
@@ -459,27 +467,93 @@ def test_bundle_build_entity_push(test_environment, charm_cmd, charmcraft_cmd, t
     charmcraft_cmd.upload.assert_not_called()
     charm_cmd.push.assert_called_once_with(
         bundle_entity.dst_path,
-        "cs:~containers/bundle/canonical-kubernetes",
+        "cs:~containers/bundle/test-kubernetes",
         _out=bundle_entity.echo,
     )
     charm_cmd.set.assert_called_once_with(
-        "cs:~containers/bundle/canonical-kubernetes-123",
+        "cs:~containers/bundle/test-kubernetes-123",
         "commit=96b4e06d5d35fec30cdf2cc25076dd25c51b893c",
         _out=bundle_entity.echo,
     )
-    assert bundle_entity.new_entity == "cs:~containers/bundle/canonical-kubernetes-123"
+    assert bundle_entity.new_entity == "cs:~containers/bundle/test-kubernetes-123"
 
     charm_cmd.push.reset_mock()
     charmcraft_cmd.upload.return_value.stderr = (
-        CLI_RESPONSES / "charmcraft_upload_canonical-kubernetes.txt"
+        CLI_RESPONSES / "charmcraft_upload_test-kubernetes.txt"
     ).read_bytes()
-    charm_entity = charms.BuildEntity(charm_env, bundle_name, bundle_opts, "ch")
-    charm_entity.push()
+    bundle_entity = charms.BundleBuildEntity(charm_env, bundle_name, bundle_opts, "ch")
+    bundle_entity.push()
     charm_cmd.push.assert_not_called()
     charmcraft_cmd.upload.assert_called_once_with(
-        charm_entity.dst_path, _out=charm_entity.echo
+        bundle_entity.dst_path, _out=bundle_entity.echo
     )
-    assert charm_entity.new_entity == "123"
+    assert bundle_entity.new_entity == "123"
+
+
+@patch("charms.cmd_ok")
+@patch("shutil.copytree")
+def test_bundle_build_entity_bundle_build(shutil_copytree, cmd_ok, test_environment):
+    """Tests bundle_build method."""
+    charm_env = charms.BuildEnv(build_type=charms.BuildType.BUNDLE)
+    charm_env.db["build_args"] = {
+        "artifact_list": str(CI_TESTING_BUNDLES),
+        "bundle_branch": "master",
+        "filter_by_tag": ["k8s"],
+        "to_channel": "edge",
+    }
+
+    artifacts = charm_env.artifacts
+    bundle_name, bundle_opts = next(iter(artifacts[0].items()))
+    bundle_opts["src_path"] = charm_env.default_repo_dir
+    bundle_opts["dst_path"] = K8S_CI_BUNDLE
+
+    bundle_opts["skip-build"] = True
+    bundle_entity = charms.BundleBuildEntity(charm_env, bundle_name, bundle_opts, "cs")
+    bundle_entity.bundle_build("edge")
+    shutil_copytree.assert_called_once_with(
+        charm_env.default_repo_dir, str(K8S_CI_BUNDLE)
+    )
+    cmd_ok.assert_not_called()
+    shutil_copytree.reset_mock()
+
+    del bundle_opts["skip-build"]
+    bundle_entity = charms.BundleBuildEntity(charm_env, bundle_name, bundle_opts, "cs")
+    bundle_entity.bundle_build("edge")
+    shutil_copytree.assert_not_called()
+    cmd = f"{charm_env.default_repo_dir/'bundle'} -o {K8S_CI_BUNDLE} -c edge k8s/core cni/flannel cri/containerd"
+    cmd_ok.assert_called_with(cmd, echo=bundle_entity.echo)
+
+
+def test_bundle_build_entity_has_changed(test_environment, charm_cmd):
+    """Tests has_changed property."""
+    charm_env = charms.BuildEnv(build_type=charms.BuildType.BUNDLE)
+    charm_env.db["build_args"] = {
+        "artifact_list": str(CI_TESTING_BUNDLES),
+        "bundle_branch": "master",
+        "filter_by_tag": ["k8s"],
+        "to_channel": "edge",
+    }
+    charm_env.db["pull_layer_manifest"] = []
+
+    artifacts = charm_env.artifacts
+    bundle_name, bundle_opts = next(iter(artifacts[0].items()))
+    bundle_opts["src_path"] = charm_env.default_repo_dir
+    bundle_opts["dst_path"] = K8S_CI_BUNDLE
+
+    bundle_entity = charms.BundleBuildEntity(charm_env, bundle_name, bundle_opts, "cs")
+    charm_cmd.show.assert_called_once_with(
+        "cs:~containers/bundle/test-kubernetes",
+        "id",
+        channel="edge",
+        _out=bundle_entity.echo,
+    )
+    assert bundle_entity.has_changed is True
+    charm_cmd.show.reset_mock()
+
+    # Test all charmhub charms comparing .build.manifest to revision
+    bundle_entity = charms.BundleBuildEntity(charm_env, bundle_name, bundle_opts, "ch")
+    charm_cmd.show.assert_not_called()
+    assert bundle_entity.has_changed is True
 
 
 #   --------------------------------------------------
@@ -499,6 +573,22 @@ def mock_build_env():
 def mock_build_entity():
     """Create a fixture defining a mock BuildEntity object."""
     with patch("charms.BuildEntity") as mock_ent:
+        yield mock_ent
+
+
+@pytest.fixture()
+def mock_bundle_build_entity():
+    """Create a fixture defining a mock BundleBuildEntity object."""
+    with patch("charms.BundleBuildEntity") as mock_ent:
+
+        def create_mock_bundle(*args, **kwargs):
+            mm = MagicMock()
+            mm.build, mm.name, mm.opts, mm.store = args
+            mock_ent.entities.append(mm)
+            return mm
+
+        mock_ent.side_effect = create_mock_bundle
+        mock_ent.entities = []
         yield mock_ent
 
 
@@ -558,7 +648,7 @@ def test_build_command(mock_build_env, mock_build_entity):
     assert mock_build_env.db["build_args"] == {
         "artifact_list": "tests/data/ci-testing-charms.inc",
         "layer_list": "jobs/includes/charm-layer-list.inc",
-        "charm_branch": "master",
+        "branch": "master",
         "layer_branch": "master",
         "layer_index": "https://charmed-kubernetes.github.io/layer-index/",
         "resource_spec": "jobs/build-charms/resource-spec.yaml",
@@ -582,3 +672,64 @@ def test_build_command(mock_build_env, mock_build_entity):
     entity.push.assert_called_once_with()
     entity.attach_resources.assert_called_once_with()
     entity.promote.assert_called_once_with(to_channel="edge")
+
+
+@patch("charms.cmd_ok")
+def test_bundle_build_command(cmd_ok, mock_build_env, mock_bundle_build_entity, tmpdir):
+    """Tests cli build command which is run by jenkins job."""
+    runner = CliRunner()
+    mock_build_env.artifacts = [
+        {
+            "test-kubernetes": dict(
+                tags=["k8s", "canonical-kubernetes"],
+                namespace="containers/bundle",
+                fragments="k8s/cdk cni/flannel cri/containerd",
+            ),
+            "ignored": dict(tags=["ignore-me"]),
+            "test-kubernetes-repo": dict(
+                tags=["k8s", "addons" "test-kubernetes-repo"],
+                namespace="containers",
+                downstream="charmed-kubernetes/test-kubernetes-repo.git",
+                **{"skip-build": True},
+            ),
+        }
+    ]
+    mock_build_env.tmp_dir = tmpdir
+    mock_build_env.repos_dir = mock_build_env.tmp_dir / "repos"
+    mock_build_env.bundles_dir = mock_build_env.tmp_dir / "bundles"
+    mock_build_env.default_repo_dir = mock_build_env.repos_dir / "bundles-kubernetes"
+
+    result = runner.invoke(
+        charms.build_bundles,
+        [
+            "--bundle-list=tests/data/ci-testing-bundles.inc",
+            "--filter-by-tag=k8s",
+        ],
+    )
+    assert result.exit_code == 0, result.stdout
+    assert mock_build_env.db["build_args"] == {
+        "artifact_list": "tests/data/ci-testing-bundles.inc",
+        "branch": "master",
+        "filter_by_tag": ["k8s"],
+        "to_channel": "edge",
+    }
+    cmd_ok.assert_called_once_with(
+        f"git clone --branch master https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git {mock_build_env.default_repo_dir}"
+    )
+    mock_build_env.pull_layers.assert_not_called()
+    mock_build_env.save.assert_called_once_with()
+
+    for entity in mock_bundle_build_entity.entities:
+        entity.echo.assert_has_calls(
+            [
+                call("Starting"),
+                call(f"Details: {entity}"),
+                call("Stopping"),
+            ],
+            any_order=False,
+        )
+        if "downstream" in entity.opts:
+            entity.setup.assert_called_once_with()
+        entity.bundle_build.assert_called_once_with("edge")
+        entity.push.assert_called_once_with()
+        entity.promote.assert_called_once_with(to_channel="edge")

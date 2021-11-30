@@ -1,0 +1,110 @@
+description: A minimal two-machine Kubernetes cluster, appropriate for development.
+series: focal
+machines:
+  '0':
+    constraints: cores=2 mem=4G root-disk=16G
+    series: focal
+  '1':
+    constraints: cores=4 mem=4G root-disk=16G
+    series: focal
+applications:
+  containerd:
+    annotations:
+      gui-x: '475'
+      gui-y: '800'
+    charm: cs:~containers/containerd-190
+    resources: {}
+  easyrsa:
+    annotations:
+      gui-x: '90'
+      gui-y: '420'
+    charm: cs:~containers/easyrsa-431
+    num_units: 1
+    resources:
+      easyrsa: 5
+    to:
+    - lxd:0
+  etcd:
+    annotations:
+      gui-x: '800'
+      gui-y: '420'
+    charm: cs:~containers/etcd-645
+    num_units: 1
+    options:
+      channel: 3.4/stable
+    resources:
+      core: 0
+      etcd: 3
+      snapshot: 0
+    to:
+    - '0'
+  flannel:
+    annotations:
+      gui-x: '475'
+      gui-y: '605'
+    charm: cs:~containers/flannel-608
+    resources:
+      flannel-amd64: 931
+      flannel-arm64: 928
+      flannel-s390x: 915
+  kubernetes-master:
+    annotations:
+      gui-x: '800'
+      gui-y: '850'
+    charm: cs:~containers/kubernetes-master-1094
+    constraints: cores=2 mem=4G root-disk=16G
+    expose: true
+    num_units: 1
+    options:
+      channel: 1.23/edge
+    resources:
+      cdk-addons: 0
+      core: 0
+      kube-apiserver: 0
+      kube-controller-manager: 0
+      kube-proxy: 0
+      kube-scheduler: 0
+      kubectl: 0
+    to:
+    - '0'
+  kubernetes-worker:
+    annotations:
+      gui-x: '90'
+      gui-y: '850'
+    charm: cs:~containers/kubernetes-worker-827
+    constraints: cores=4 mem=4G root-disk=16G
+    expose: true
+    num_units: 1
+    options:
+      channel: 1.23/edge
+    resources:
+      cni-amd64: 967
+      cni-arm64: 958
+      cni-s390x: 970
+      core: 0
+      kube-proxy: 0
+      kubectl: 0
+      kubelet: 0
+    to:
+    - '1'
+relations:
+- - kubernetes-master:kube-control
+  - kubernetes-worker:kube-control
+- - kubernetes-master:certificates
+  - easyrsa:client
+- - kubernetes-master:etcd
+  - etcd:db
+- - kubernetes-worker:certificates
+  - easyrsa:client
+- - etcd:certificates
+  - easyrsa:client
+- - flannel:etcd
+  - etcd:db
+- - flannel:cni
+  - kubernetes-master:cni
+- - flannel:cni
+  - kubernetes-worker:cni
+- - containerd:containerd
+  - kubernetes-worker:container-runtime
+- - containerd:containerd
+  - kubernetes-master:container-runtime
