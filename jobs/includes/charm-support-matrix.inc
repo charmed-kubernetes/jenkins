@@ -55,6 +55,7 @@
 - kubernetes-master:
     upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-master.git"
     downstream: 'charmed-kubernetes/charm-kubernetes-master.git'
+    build-resources: "cd {out_path}; bash {src_path}/build-cni-resources.sh"
     namespace: 'containers'
     tags: ['k8s', 'kubernetes-master']
 - kubernetes-worker:
