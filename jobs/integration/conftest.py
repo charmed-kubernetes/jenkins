@@ -345,6 +345,38 @@ def skip_by_app(request, model):
             pytest.skip("skipped, no matching applications found: {}".format(apps))
 
 
+def _charm_name(app):
+    """Resolve charm_name from juju.applications.Application"""
+    charm_url = app.data["charm-url"].rpartition("-")[0]
+    return charm_url.removeprefix("cs:")
+
+
+@pytest.fixture(autouse=True)
+def skip_unless_all_charms(request, model):
+    """Run tests only when specified charms are in the model."""
+    marker = request.node.get_closest_marker("skip_unless_all_charms")
+    if marker:
+        charms = marker.args[0]
+        current_charms = set(map(_charm_name, model.applications.values()))
+        all_are_available = all(charm in current_charms for charm in charms)
+        if not all_are_available:
+            pytest.skip("skipped, not all matching charms found: {}".format(charms))
+
+
+@pytest.fixture()
+def apps_by_charm(model):
+    """Pytest fixture to gather all apps matching a specific charm name."""
+
+    def _apps_by_charm(charm):
+        return {
+            name: app
+            for name, app in model.applications.items()
+            if _charm_name(app) == charm
+        }
+
+    return _apps_by_charm
+
+
 @pytest.fixture(autouse=True)
 def skip_by_model(request, model):
     """Skips tests if model isn't referenced, ie validate-vault for only
