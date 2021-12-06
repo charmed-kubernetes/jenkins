@@ -121,7 +121,7 @@ def bundle_environment(test_environment):
     charm_env = charms.BuildEnv(build_type=charms.BuildType.BUNDLE)
     charm_env.db["build_args"] = {
         "artifact_list": str(CI_TESTING_BUNDLES),
-        "bundle_branch": "master",
+        "branch": "master",
         "filter_by_tag": ["k8s"],
         "to_channel": "edge",
     }
