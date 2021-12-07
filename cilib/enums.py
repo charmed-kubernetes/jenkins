@@ -12,10 +12,10 @@ K8S_STABLE_VERSION = "1.22"
 # Next MAJOR.MINOR
 # This controls whether or not we build pre-release snaps in our channels.
 # Typically, this is K8S_STABLE_VERSION +1. However, when prepping the next
-# stable release, this will be +2. For example, 1.21 is currently stable and
-# we're working on the 1.22 GA. Set this value to '1.23' so we don't get
-# pre-release builds (e.g. 1.22.1-beta.0) in our 1.22/beta channels.
-K8S_NEXT_VERSION = "1.23"
+# stable release, this will be +2. For example, 1.22 is currently stable and
+# we're working on the 1.23 GA. Set this value to '1.24' so we don't get
+# pre-release builds (e.g. 1.23.1-beta.0) in our 1.23/beta channels.
+K8S_NEXT_VERSION = "1.24"
 
 # Lowest K8S SEMVER to process, this is usually stable - 3
 K8S_STARTING_SEMVER = "1.19.0"
@@ -59,7 +59,7 @@ SNAP_K8S_TRACK_MAP = {
     "1.20": ["1.20/stable", "1.20/candidate", "1.20/beta", "1.20/edge"],
     "1.21": ["1.21/stable", "1.21/candidate", "1.21/beta", "1.21/edge"],
     "1.22": ["1.22/stable", "1.22/candidate", "1.22/beta", "1.22/edge"],
-    "1.23": ["1.23/edge"],
+    "1.23": ["1.23/candidate", "1.23/beta", "1.23/edge"],
 }
 
 # Deb k8s version <-> ppa mapping
