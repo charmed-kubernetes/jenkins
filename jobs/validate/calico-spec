@@ -102,7 +102,7 @@ function juju::deploy
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.19/edge}
+SNAP_VERSION=${1:-1.23/edge}
 SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
 JUJU_DEPLOY_CHANNEL=${3:-edge}

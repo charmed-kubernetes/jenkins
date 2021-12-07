@@ -17,8 +17,8 @@ import click
 
 # note: we can't upgrade to focal until after it's released
 SERIES_ORDER = [
-    "xenial",
     "bionic",
+    "focal",
 ]
 
 
