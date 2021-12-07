@@ -41,12 +41,13 @@ Once upstream has an RC for the next stable release, our CI should stop
 building pre-prelease snaps. This ensures the 1.xx/edge channel will end up
 with 1.xx.0 instead of 1.xx.1-alpha.0.
 
+https://github.com/charmed-kubernetes/jenkins/pull/764
+
 Additionally, if not done already, CI should be including the 1.xx/edge in the
-version matrix for relevant tests.
+version matrix for relevant tests. For example, see the 1.23 update where we
+add n and drop n-4 from our test matrix:
 
-For example, see changes made to support the new 1.22 release:
-
-https://github.com/charmed-kubernetes/jenkins/pull/723
+https://github.com/charmed-kubernetes/jenkins/pull/761
 
 ### $next++ release
 
@@ -54,9 +55,9 @@ It may feel early, but part of releasing the next stable version requires
 preparing for the release that will follow. This requires opening tracks and
 building relevant snaps that will be used in the new 'edge' channel.
 
-For example, we requested 1.23 tracks while preparing for the 1.22 release:
+For example, we requested 1.24 tracks while preparing for the 1.23 release:
 
-https://forum.snapcraft.io/t/kubernetes-1-23-snap-tracks/26086
+https://forum.snapcraft.io/t/kubernetes-1-24-snap-tracks/27828
 
 We also added support for CI to build/upload to those requested tracks (k8s
 snaps as well as cdk-addons):
