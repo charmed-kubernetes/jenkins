@@ -924,21 +924,20 @@ async def test_extra_args(model, tools):
             "kubelet-extra-args": " ".join(
                 [
                     "v=1",  # int arg, overrides a charm default
-                    "add-dir-header",  # bool arg, implied true
-                    "alsologtostderr=false",  # bool arg, explicit false
+                    "log-flush-frequency=5s",  # duration arg, explicitly 5s
                 ]
             ),
             "proxy-extra-args": " ".join(
                 [
                     "v=1",  # int arg, overrides a charm default
                     "profiling",  # bool arg, implied true
-                    "alsologtostderr=false",  # bool arg, explicit false
+                    "log-flush-frequency=5s",  # duration arg, explicitly 5s
                 ]
             ),
         },
         expected_args={
-            "kubelet": {"v=1", "add-dir-header=true", "alsologtostderr=false"},
-            "kube-proxy": {"v=1", "profiling=true", "alsologtostderr=false"},
+            "kubelet": {"v=1", "log-flush-frequency=5s"},
+            "kube-proxy": {"v=1", "profiling=true", "log-flush-frequency=5s"},
         },
     )
 
