@@ -53,7 +53,7 @@ def timeout_for_current_task(timeout):
     asyncio task will be cancelled, and an asyncio.TimeoutError will be raised.
     """
     loop = asyncio.get_event_loop()
-    task = asyncio.Task.current_task()
+    task = asyncio.current_task()
     handle = loop.call_later(timeout, task.cancel)
     try:
         yield
