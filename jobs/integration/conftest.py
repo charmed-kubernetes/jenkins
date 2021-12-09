@@ -347,8 +347,10 @@ def skip_by_app(request, model):
 
 def _charm_name(app):
     """Resolve charm_name from juju.applications.Application"""
-    charm_url = app.data["charm-url"].rpartition("-")[0]
-    return charm_url.removeprefix("cs:")
+    cs, charm_url = "cs:", app.data["charm-url"].rpartition("-")[0]
+    if charm_url.startswith(cs):
+        return charm_url[len(cs) :]  # noqa: E203
+    return charm_url
 
 
 @pytest.fixture(autouse=True)
