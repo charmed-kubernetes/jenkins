@@ -18,7 +18,7 @@ K8S_STABLE_VERSION = "1.22"
 K8S_NEXT_VERSION = "1.24"
 
 # Lowest K8S SEMVER to process, this is usually stable - 3
-K8S_STARTING_SEMVER = "1.19.0"
+K8S_STARTING_SEMVER = "1.20.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -60,7 +60,7 @@ SNAP_K8S_TRACK_MAP = {
     "1.20": ["1.20/stable", "1.20/candidate", "1.20/beta", "1.20/edge"],
     "1.21": ["1.21/stable", "1.21/candidate", "1.21/beta", "1.21/edge"],
     "1.22": ["1.22/stable", "1.22/candidate", "1.22/beta", "1.22/edge"],
-    "1.23": ["1.23/candidate", "1.23/beta", "1.23/edge"],
+    "1.23": ["1.23/stable", "1.23/candidate", "1.23/beta", "1.23/edge"],
     "1.24": ["1.24/edge"],
 }
 

@@ -29,7 +29,7 @@ plan:
         if [ "$ARCH" == "amd64" ]; then
            juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "mem=16G root-disk=80G arch=$ARCH cores=8" ubuntu
         else
-           juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "instance-type=$INSTANCE_TYPE" ubuntu
+           juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" --constraints "instance-type=$INSTANCE_TYPE root-disk=80G" ubuntu
         fi
 
         juju-wait -e "$JUJU_CONTROLLER":"$JUJU_MODEL" -w
