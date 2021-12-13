@@ -267,7 +267,7 @@ pox==0.2.9
     # via pathos
 ppft==1.6.6.3
     # via pathos
-prettytable==2.1.0
+prettytable==2.4.0
     # via -r requirements.in
 prometheus-client==0.9.0
     # via canonicalwebteam.snapstoreapi
@@ -474,7 +474,6 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
-websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
