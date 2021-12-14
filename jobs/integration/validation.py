@@ -1,4 +1,6 @@
 import asyncio
+import base64
+
 import backoff
 import ipaddress
 import json
@@ -1355,8 +1357,7 @@ async def any_keystone(model, apps_by_charm, tools):
     def _find_relation(*specs):
         for rel in model.relations:
             if rel.matches(*specs):
-                return rel
-        return None
+                yield rel
 
     keystone_apps = apps_by_charm("keystone")
     masters = model.applications["kubernetes-master"]
@@ -1372,19 +1373,60 @@ async def any_keystone(model, apps_by_charm, tools):
     elif len(keystone_apps) == 1:
         # One keystone found, ensure related to kubernetes-master
         keystone, *_ = keystone_apps.values()
-        credentials_rel = _find_relation(keystone_creds)
-        if credentials_rel is None:
+        credentials_rel = list(_find_relation(keystone_creds))
+        if not credentials_rel:
             await keystone.add_relation("identity-credentials", keystone_creds)
             await tools.juju_wait()
 
         keystone_master = random.choice(keystone.units)
         action = await keystone_master.run("leader-get admin_passwd")
         admin_password = action.results.get("Stdout", "").strip()
+
+        # Work around the following bugs which lead to the CA used by Keystone not being passed along
+        # and honored from the keystone-credentials relation itself by getting the CA directly from Vault and
+        # passing it in via explicit config.
+        #   * https://bugs.launchpad.net/charm-keystone/+bug/1954835
+        #   * https://bugs.launchpad.net/charm-kubernetes-master/+bug/1954838
+        keystone_ssl_ca = (await masters.get_config())["keystone-ssl-ca"]["value"]
+        if not keystone_ssl_ca:
+            vault_root_ca = None
+            vault_apps = apps_by_charm("vault")
+            for name, vault_app in vault_apps.items():
+                vault_tls = f"{name}:certificates"
+                rels = set(
+                    app.name
+                    for rel in _find_relation(vault_tls)
+                    for app in rel.applications
+                )
+                if all(
+                    name in rels
+                    for name in [
+                        "kubernetes-master",
+                        "kubernetes-worker",
+                        keystone.name,
+                    ]
+                ):
+                    vault_unit = random.choice(vault_app.units)
+                    action = await vault_unit.run_action("get-root-ca")
+                    await action.wait()
+                    assert action.status not in ("pending", "running", "failed")
+                    vault_root_ca = action.results.get("output")
+                    if vault_root_ca:
+                        vault_root_ca = base64.b64encode(
+                            vault_root_ca.encode("ascii")
+                        ).decode("ascii")
+                        break
+
+            if vault_root_ca:
+                await masters.set_config({"keystone-ssl-ca": vault_root_ca})
+
         yield SimpleNamespace(app=keystone, admin_password=admin_password)
 
-        if credentials_rel is None:
+        if not credentials_rel:
             await keystone.destroy_relation("identity-credentials", keystone_creds)
             await tools.juju_wait()
+
+        await masters.set_config({"keystone-ssl-ca": keystone_ssl_ca})
     else:
         # No keystone available, add/setup one
         admin_password = "testpw"
