@@ -140,9 +140,10 @@ which must correspond to a valid tag in our
 ### Notify Solutions QA
 
 At the end of the first week and assuming all major blockers are resolved, the
-release is passed over to Solutions QA (SolQA) for a final sign-off. SolQA will
-then have the remaining week to test and file bugs as they happened so
-engineering can work towards getting them resolved prior to going GA.
+release is passed over to Solutions QA (SolQA) for a final sign-off. This is done
+by tagging the current Jenkins commit with the release version and informing SolQA
+of that taga. SolQA will then have the remaining week to test and file bugs as they
+happened so engineering can work towards getting them resolved prior to going GA.
 
 Please note the [Conflict Resolution Section](#conflict-resolution) for making
 any changes as a result of their testing.
