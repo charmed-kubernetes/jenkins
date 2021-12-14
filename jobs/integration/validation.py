@@ -1382,7 +1382,11 @@ async def any_keystone(model, apps_by_charm, tools):
         action = await keystone_master.run("leader-get admin_passwd")
         admin_password = action.results.get("Stdout", "").strip()
 
-        # is the same vault supplying tls-certificates for keystone, kubernetes-master, and kubernetes-worker
+        # Work around the following bugs which lead to the CA used by Keystone not being passed along
+        # and honored from the keystone-credentials relation itself by getting the CA directly from Vault and
+        # passing it in via explicit config.
+        #   * https://bugs.launchpad.net/charm-keystone/+bug/1954835
+        #   * https://bugs.launchpad.net/charm-kubernetes-master/+bug/1954838
         keystone_ssl_ca = (await masters.get_config())["keystone-ssl-ca"]["value"]
         if not keystone_ssl_ca:
             vault_root_ca = None
