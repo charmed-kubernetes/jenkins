@@ -927,21 +927,20 @@ async def test_extra_args(model, tools):
             "kubelet-extra-args": " ".join(
                 [
                     "v=1",  # int arg, overrides a charm default
-                    "add-dir-header",  # bool arg, implied true
-                    "alsologtostderr=false",  # bool arg, explicit false
+                    "log-flush-frequency=5s",  # duration arg, explicitly 5s
                 ]
             ),
             "proxy-extra-args": " ".join(
                 [
                     "v=1",  # int arg, overrides a charm default
                     "profiling",  # bool arg, implied true
-                    "alsologtostderr=false",  # bool arg, explicit false
+                    "log-flush-frequency=5s",  # duration arg, explicitly 5s
                 ]
             ),
         },
         expected_args={
-            "kubelet": {"v=1", "add-dir-header=true", "alsologtostderr=false"},
-            "kube-proxy": {"v=1", "profiling=true", "alsologtostderr=false"},
+            "kubelet": {"v=1", "log-flush-frequency=5s"},
+            "kube-proxy": {"v=1", "profiling=true", "log-flush-frequency=5s"},
         },
     )
 
@@ -1388,7 +1387,7 @@ async def any_keystone(model, apps_by_charm, tools):
         if not keystone_ssl_ca:
             vault_root_ca = None
             vault_apps = apps_by_charm("vault")
-            for name, vault_app in vault_apps.keys():
+            for name, vault_app in vault_apps.items():
                 vault_tls = f"{name}:certificates"
                 rels = set(
                     app.name
@@ -1424,7 +1423,6 @@ async def any_keystone(model, apps_by_charm, tools):
             await tools.juju_wait()
 
         await masters.set_config({"keystone-ssl-ca": keystone_ssl_ca})
-
     else:
         # No keystone available, add/setup one
         admin_password = "testpw"

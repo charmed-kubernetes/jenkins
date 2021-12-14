@@ -41,12 +41,13 @@ Once upstream has an RC for the next stable release, our CI should stop
 building pre-prelease snaps. This ensures the 1.xx/edge channel will end up
 with 1.xx.0 instead of 1.xx.1-alpha.0.
 
+https://github.com/charmed-kubernetes/jenkins/pull/764
+
 Additionally, if not done already, CI should be including the 1.xx/edge in the
-version matrix for relevant tests.
+version matrix for relevant tests. For example, see the 1.23 update where we
+add n and drop n-4 from our test matrix:
 
-For example, see changes made to support the new 1.22 release:
-
-https://github.com/charmed-kubernetes/jenkins/pull/723
+https://github.com/charmed-kubernetes/jenkins/pull/761
 
 ### $next++ release
 
@@ -54,15 +55,15 @@ It may feel early, but part of releasing the next stable version requires
 preparing for the release that will follow. This requires opening tracks and
 building relevant snaps that will be used in the new 'edge' channel.
 
-For example, we requested 1.23 tracks while preparing for the 1.22 release:
+For example, we requested 1.24 tracks while preparing for the 1.23 release:
 
-https://forum.snapcraft.io/t/kubernetes-1-23-snap-tracks/26086
+https://forum.snapcraft.io/t/kubernetes-1-24-snap-tracks/27828
 
 We also added support for CI to build/upload to those requested tracks (k8s
 snaps as well as cdk-addons):
 
-https://github.com/charmed-kubernetes/jenkins/commit/c2e4b5150c6f9e3cf6074ac51d249b14f0707386
-https://github.com/charmed-kubernetes/jenkins/commit/b0ce1fb0053908043ce25f10cca40be6531c3156
+- https://github.com/charmed-kubernetes/jenkins/pull/765/files
+- https://github.com/charmed-kubernetes/jenkins/commit/b0ce1fb0053908043ce25f10cca40be6531c3156
 
 ## Preparing the release
 
@@ -85,20 +86,23 @@ promote to the new stable release.
 
 We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
 are set to `<k8sver>/stable`. This should be done on each of the relevant git
-`stable` branches. For example, for 1.22 GA:
+`stable` branches. For example, for 1.23 GA:
 
-https://github.com/charmed-kubernetes/bundle/pull/808
-https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/14
-https://github.com/charmed-kubernetes/charm-kubernetes-master/pull/175
-https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/96
+- https://github.com/charmed-kubernetes/bundle/pull/815
+- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/15
+- https://github.com/charmed-kubernetes/charm-kubernetes-master/pull/192
+- https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/104
 
 > Note: The charms themselves also need to be done as some do not use our
   bundles for deployment.
 
 ### Bump snap channel to next minor release
 
-Once the rebase has occurred we need to bump the charms and bundle fragments
-to the next k8s minor version in the `master` git branches, e.g. 1.23/edge.
+Once the rebase has occurred we need to bump the same charms and bundle
+fragments in the `master` git branches to the next k8s minor version,
+e.g. `1.24/edge`. You don't have to do this right away; in fact, you
+should wait until you actually have snaps in the `$next/edge` tracks
+before making this change.
 
 ### Build new CK Charms from stable git branches
 
@@ -120,13 +124,18 @@ promoted to the **beta** channel in the charmstore.
 K8s snap promotion to `beta` is handled by the `sync-snaps` job and will happen
 automatically after following the `Prepare CI` section noted above. If for some
 reason you need to manually build K8s snaps from a specific branch, use the
-following job with a `branch` parameter like `1.22.1`:
+following job with a `branch` parameter like `1.23.0`:
 
 **Job**: https://jenkins.canonical.com/k8s/job/build-snap-from-branch/
 
+The `branch` parameter gets translated to `v$branch` by
+[snap.py](https://github.com/charmed-kubernetes/jenkins/blob/0b334c52b2c4f816b03ff866c44301724b8b471c/cilib/service/snap.py#L172)
+which must correspond to a valid tag in our
+[internal k8s mirror](https://git.launchpad.net/k8s-internal-mirror/refs/).
+
 > **Info**: Please note that currently **CDK-ADDONS** snap needs to be
     manually released to the appropriate channels:
-    **Job**: https://jenkins.canonical.com/k8s/job/build-release-cdk-addons-amd64-1.22/
+    **Job**: https://jenkins.canonical.com/k8s/job/build-release-cdk-addons-amd64-1.23/
 
 ### Notify Solutions QA
 
