@@ -475,6 +475,7 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
+websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
