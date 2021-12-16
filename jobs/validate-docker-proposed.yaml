@@ -3,7 +3,7 @@
 - job:
     name: 'validate-docker-proposed'
     description: |
-      Validates latest docker.io from proposed on bionic
+      Validates latest docker.io from proposed on focal
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -22,8 +22,7 @@
       - choice:
           name: series
           choices:
-            - xenial
-            - bionic
+            - focal
 
     properties:
       - build-discarder:

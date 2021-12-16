@@ -18,11 +18,11 @@ function juju::bootstrap
 {
     # VPC with multiple subnets and IPv6, created with:
     # NUM_SUBNETS=2 jobs/integration/tigera_aws.py create-vpc
-    vpc_id=vpc-0e296b9c1d803d8c9
+    vpc_id=vpc-0c1bef0e84fca294d
     if [ "$ROUTING_MODE" = "bgp-simple" ]; then
       # VPC with a single subnet and IPv6, created with:
       # NUM_SUBNETS=1 jobs/integration/tigera_aws.py create-vpc
-      vpc_id=vpc-031851c4ad28b316f
+      vpc_id=vpc-03f2c7351e64c6e0f
     fi
 
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
@@ -102,7 +102,7 @@ function juju::deploy
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.19/edge}
+SNAP_VERSION=${1:-1.23/edge}
 SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-calico
 JUJU_DEPLOY_CHANNEL=${3:-edge}

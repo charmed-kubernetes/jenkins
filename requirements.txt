@@ -103,7 +103,7 @@ drypy==1.0.1
     # via -r requirements.in
 fasteners==0.16
     # via jenkins-job-builder
-flake8==3.9.0
+flake8==4.0.1
     # via -r requirements.in
 flaky==3.7.0
     # via -r requirements.in
@@ -267,7 +267,7 @@ pox==0.2.9
     # via pathos
 ppft==1.6.6.3
     # via pathos
-prettytable==2.1.0
+prettytable==2.4.0
     # via -r requirements.in
 prometheus-client==0.9.0
     # via canonicalwebteam.snapstoreapi
@@ -285,7 +285,7 @@ pyasn1==0.4.8
     # via
     #   juju
     #   rsa
-pycodestyle==2.7.0
+pycodestyle==2.8.0
     # via
     #   autopep8
     #   flake8
@@ -293,7 +293,7 @@ pycountry==20.7.3
     # via canonicalwebteam.snapstoreapi
 pycparser==2.20
     # via cffi
-pyflakes==2.3.1
+pyflakes==2.4.0
     # via flake8
 pygments==2.8.1
     # via
@@ -474,6 +474,7 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
+websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in

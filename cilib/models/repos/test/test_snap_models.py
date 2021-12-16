@@ -1,5 +1,4 @@
 from cilib.models.repos.snaps import SnapKubeletRepoModel
-import semver
 
 
 def test_repo_matches_model():
@@ -11,12 +10,10 @@ def test_repo_matches_model():
 def test_get_proper_tracks():
     """Test that proper tracks are associated with known versions"""
     repo_model = SnapKubeletRepoModel()
-    repo_model.version = "1.22"
-    assert repo_model.tracks == [
-        "1.22/stable",
-        "1.22/candidate",
-        "1.22/beta",
-        "1.22/edge",
-    ]
     repo_model.version = "1.23"
-    assert repo_model.tracks == ["1.23/edge"]
+    assert repo_model.tracks == [
+        "1.23/stable",
+        "1.23/candidate",
+        "1.23/beta",
+        "1.23/edge",
+    ]

@@ -105,7 +105,7 @@
             Cluster size for integration tests.
       - string:
           name: SNAP_CHANNELS
-          default: "1.20 1.21 1.22"
+          default: "1.21 1.22 1.23"
           description: |
             MicroK8s snap channels to test (space or comma separated).
       - bool:

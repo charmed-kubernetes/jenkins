@@ -5,7 +5,7 @@
     name: 'validate-ck'
     node: runner-cloud
     description: |
-      Validates CK edge on amd64, supports last three recent releases.
+      Validates CK edge on amd64 for n-3 releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -27,10 +27,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -58,7 +58,7 @@
     name: 'validate-ck-cloud'
     node: runner-cloud
     description: |
-      Validates CK edge on amd64, supports last three recent releases on clouds AWS/GCE/Azure and runs weekly.
+      Validates CK edge on amd64 for n-3 releases on clouds AWS/GCE/Azure and runs weekly.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -80,10 +80,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -116,7 +116,7 @@
     name: 'validate-ck-arm64'
     node: runner-arm64
     description: |
-      Validates CK edge on arm64, supports last three recent releases.
+      Validates CK edge on arm64 for n-3 releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -138,10 +138,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -170,7 +170,7 @@
     name: 'validate-ck-stable'
     node: runner-validate
     description: |
-      Validates CK stable on amd64, supports last three recent releases.
+      Validates CK stable on amd64 for last three stable releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -192,9 +192,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/stable
             - 1.22/stable
             - 1.21/stable
-            - 1.20/stable
       - axis:
           type: user-defined
           name: series
@@ -326,7 +326,7 @@
     name: 'validate-ck-snapd-upgrade'
     node: runner-amd64
     description: |
-      Validates CK stable release using an upgraded core snap.
+      Validates latest CK stable release using an upgraded core snap.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -348,7 +348,7 @@
            type: user-defined
            name: snap_version
            values:
-             - 1.22/stable
+             - 1.23/stable
       - axis:
            type: user-defined
            name: series
@@ -366,7 +366,7 @@
     name: 'validate-ck-series-upgrade'
     node: runner-validate
     description: |
-      Validates CK stable release with machine series upgrades.
+      Validates latest CK stable release with machine series upgrades.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -388,12 +388,12 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.22/stable
+            - 1.23/stable
       - axis:
           type: user-defined
           name: series
           values:
-            - xenial
+            - bionic
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -407,7 +407,7 @@
     name: 'validate-ck-localhost'
     node: runner-validate
     description: |
-      Validates CK edge, supports last three recent releases on localhost.
+      Validates CK edge for n-3 releases on localhost.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -429,10 +429,10 @@
            type: user-defined
            name: snap_version
            values:
+             - 1.23/edge
              - 1.22/edge
              - 1.21/edge
              - 1.20/edge
-             - 1.19/edge
       - axis:
            type: user-defined
            name: series
@@ -450,7 +450,7 @@
     name: 'validate-ck-s390x'
     node: runner-validate
     description: |
-      Validates CK edge, supports last three recent releases on s390x localhost.
+      Validates CK edge for n-3 releases on s390x localhost.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -472,10 +472,10 @@
            type: user-defined
            name: snap_version
            values:
+             - 1.23/edge
              - 1.22/edge
              - 1.21/edge
              - 1.20/edge
-             - 1.19/edge
       - axis:
            type: user-defined
            name: series
@@ -493,7 +493,7 @@
 - job:
     name: 'validate-ck-calico'
     description: |
-      Validates CK, with calico.
+      Validates CK with calico for n-3 releases.
     node: runner-validate
     project-type: matrix
     scm:
@@ -518,10 +518,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -550,7 +550,7 @@
 - job:
     name: 'validate-ck-tigera-secure-ee'
     description: |
-      Validates CK, with tigera.
+      Validates CK with tigera for n-3 releases.
     node: runner-validate
     project-type: matrix
     scm:
@@ -570,10 +570,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -591,7 +591,7 @@
     name: 'validate-ck-vault'
     node: runner-validate
     description: |
-      Validates CK, with vault.
+      Validates CK with vault for n-3 releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -613,10 +613,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -634,7 +634,7 @@
     name: 'validate-ck-nvidia'
     node: runner-validate
     description: |
-      Validates CK, with NVidia.
+      Validates CK with NVidia for n-3 releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -656,10 +656,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -677,7 +677,7 @@
 - job:
     name: 'validate-ck-aws-iam'
     description: |
-      Validates CK, with AWS IAM.
+      Validates CK with AWS IAM for n-3 releases.
     node: runner-validate
     project-type: matrix
     scm:
@@ -700,10 +700,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -722,7 +722,7 @@
     name: 'validate-ck-multus'
     node: runner-validate
     description: |
-      Validates CK, with Multus.
+      Validates CK with Multus for n-3 releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -744,10 +744,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series
@@ -766,7 +766,7 @@
     name: 'validate-ck-sriov'
     node: runner-validate
     description: |
-      Validates CK, with SR-IOV.
+      Validates CK with SR-IOV for n-3 releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -788,10 +788,10 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.23/edge
             - 1.22/edge
             - 1.21/edge
             - 1.20/edge
-            - 1.19/edge
       - axis:
           type: user-defined
           name: series

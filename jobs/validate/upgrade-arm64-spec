@@ -82,10 +82,10 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION_UPGRADE_TO=${5:-1.19/edge}
+SNAP_VERSION_UPGRADE_TO=${5:-1.23/edge}
 export SNAP_VERSION_UPGRADE_TO
 
-SNAP_VERSION=${1:-1.16/stable}
+SNAP_VERSION=${1:-1.22/stable}
 SERIES=${2:-bionic}
 JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-stable}
