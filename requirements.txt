@@ -115,7 +115,7 @@ httplib2==0.19.1
     #   lazr.restfulclient
 humanize==3.3.0
     # via charmcraft
-hunter==3.3.2
+hunter==3.4.3
     # via -r requirements.in
 idna==2.10
     # via requests
