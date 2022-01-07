@@ -33,7 +33,7 @@ awscli==1.19.41
     # via -r requirements.in
 backcall==0.2.0
     # via ipython
-backoff==1.10.0
+backoff==1.11.1
     # via -r requirements.in
 bcrypt==3.2.0
     # via paramiko
