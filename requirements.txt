@@ -33,7 +33,7 @@ awscli==1.19.41
     # via -r requirements.in
 backcall==0.2.0
     # via ipython
-backoff==1.10.0
+backoff==1.11.1
     # via -r requirements.in
 bcrypt==3.2.0
     # via paramiko
@@ -85,6 +85,7 @@ cryptography==3.4.7
     #   secretstorage
 decorator==4.4.2
     # via
+    #   ipdb
     #   ipython
     #   retry
 defusedxml==0.7.1
@@ -130,7 +131,7 @@ iniconfig==1.1.1
     # via pytest
 invoke==1.5.0
     # via -r requirements.in
-ipdb==0.13.7
+ipdb==0.13.9
     # via -r requirements.in
 ipython==7.22.0
     # via ipdb
@@ -474,7 +475,6 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
-websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
