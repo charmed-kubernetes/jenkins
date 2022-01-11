@@ -11,12 +11,9 @@
       - timestamps
       - workspace-cleanup
       - credentials-binding:
-          - file:
-              credential-id: JUJUCONTROLLERS_SERVERSTACK
-              variable: JUJUCONTROLLERS
-          - file:
-              credential-id: JUJUACCOUNTS_SERVERSTACK
-              variable: JUJUACCOUNTS
+          - text:
+              credential-id: charmhub_microk8s
+              variable: CHARMCRAFT_AUTH
     parameters:
       - string:
           name: REPOSITORY
@@ -41,9 +38,6 @@
           blocking-jobs:
             - "infra.*"
           block-level: 'NODE'
-    publishers:
-      - archive:
-          artifacts: '*.charm'
     builders:
       - shell: |
           #!/bin/bash
