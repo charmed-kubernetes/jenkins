@@ -34,7 +34,7 @@
       command: "snap install {{item}}"
       ignore_errors: yes
       loop:
-        - "juju --classic --stable"
+        - "juju --classic --candidate"
         - "juju-wait --classic"
         - "juju-crashdump --classic --edge"
         - "lxd"
