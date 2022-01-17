@@ -331,7 +331,7 @@ pytest==6.2.2
     #   pytest-html
     #   pytest-metadata
     #   pytest-mock
-pytest-asyncio==0.14.0
+pytest-asyncio==0.17.1
     # via -r requirements.in
 pytest-html==3.1.1
     # via -r requirements.in
@@ -455,9 +455,10 @@ traitlets==5.0.5
     # via ipython
 typed-ast==1.4.2
     # via black
-typing-extensions==3.7.4.3
+typing-extensions==4.0.1
     # via
     #   black
+    #   pytest-asyncio
     #   typing-inspect
 typing-inspect==0.6.0
     # via juju
@@ -475,7 +476,6 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
-websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
