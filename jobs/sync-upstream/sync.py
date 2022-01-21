@@ -92,8 +92,10 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 if not any(match in filter_by_tag for match in tags):
                     continue
 
-            auth = (new_env.get('CDKBOT_GH_USR'), new_env.get('CDKBOT_GH_PSW'))
-            default_branch = repos.get("branch") or default_gh_branch(downstream, auth=auth)
+            auth = (new_env.get("CDKBOT_GH_USR"), new_env.get("CDKBOT_GH_PSW"))
+            default_branch = repos.get("branch") or default_gh_branch(
+                downstream, auth=auth
+            )
 
             log.info(
                 f"Releasing :: {layer_name:^35} :: from: {default_branch} to: stable"

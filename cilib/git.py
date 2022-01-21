@@ -1,7 +1,6 @@
 """ Git utils
 """
 
-import json
 import logging
 import sh
 from subprocess import run
@@ -11,7 +10,14 @@ import requests.auth
 log = logging.getLogger(__name__)
 
 
-def default_gh_branch(repo: str, ignore_errors=False, auth: tuple[str, str] = None):
+def default_gh_branch(repo: str, ignore_errors=False, auth=None):
+    """
+    Fetch the default GitHub branch.
+
+    :param str repo: GitHub repo path expressed by $org/$repo
+    :param bool ignore_errors: if errors are ignored, returns None
+    :param tuple[str, str] auth: username/password used by basic-auth
+    """
     repo = repo.replace(".git", "")
     url = f"https://api.github.com/repos/{repo}"
     if auth and all(auth):
