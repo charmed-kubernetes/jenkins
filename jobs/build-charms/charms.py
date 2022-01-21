@@ -239,19 +239,19 @@ class BuildEntity:
         else:
             src_path = self.checkout_path
 
-        auth = (os.environ.get("CDKBOT_GH_USR"), os.environ.get("CDKBOT_GH_PSW"))
-        default_branch = default_gh_branch(
-            opts["downstream"], ignore_errors=True, auth=auth
-        )
+        downstream = opts.get("downstream")
+        charm_branch = opts.get("branch")
 
-        if "branch" in opts:
-            self.charm_branch = opts["branch"]
-        elif default_branch:
-            self.charm_branch = default_branch
-        else:
-            self.charm_branch = (
-                self.build.db["build_args"].get("charm_branch") or "master"
-            )
+        if not charm_branch and downstream:
+            # if branch not specified, use repo's default branch
+            auth = os.environ.get("CDKBOT_GH_USR"), os.environ.get("CDKBOT_GH_PSW")
+            charm_branch = default_gh_branch(downstream, ignore_errors=True, auth=auth)
+
+        if not charm_branch:
+            # if branch not specified, use the build_args charm_branch
+            charm_branch = self.build.db["build_args"].get("charm_branch")
+
+        self.charm_branch = charm_branch or "master"
 
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
@@ -387,7 +387,7 @@ class BuildEntity:
     def setup(self):
         """Setup directory for charm build"""
         downstream = f"https://github.com/{self.opts['downstream']}"
-        self.echo(f"Cloning repo from {downstream}")
+        self.echo(f"Cloning repo from {downstream} branch {self.charm_branch}")
 
         os.makedirs(self.checkout_path)
         ret = cmd_ok(
@@ -757,7 +757,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 bundle_repo = bundle_opts["repo"]
                 if "branch" in bundle_opts:
                     bundle_branch = bundle_opts["branch"]
-                build_entity.echo(f"Cloning {bundle_repo}")
+                build_entity.echo(f"Cloning {bundle_repo} branch {bundle_branch}")
                 cmd_ok(
                     f"git clone --branch {bundle_branch} {bundle_repo} {src_path}",
                     echo=build_entity.echo,
