@@ -239,7 +239,10 @@ class BuildEntity:
         else:
             src_path = self.checkout_path
 
-        default_branch = default_gh_branch(opts["downstream"], ignore_errors=True)
+        auth = (os.environ.get("CDKBOT_GH_USR"), os.environ.get("CDKBOT_GH_PSW"))
+        default_branch = default_gh_branch(
+            opts["downstream"], ignore_errors=True, auth=auth
+        )
 
         if "branch" in opts:
             self.charm_branch = opts["branch"]
