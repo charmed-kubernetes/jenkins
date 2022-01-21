@@ -5,28 +5,31 @@ import json
 import logging
 import sh
 from subprocess import run
-from urllib.request import urlopen
-from urllib.error import HTTPError
+import requests
+import requests.auth
 
 log = logging.getLogger(__name__)
 
 
-def default_gh_branch(repo: str, ignore_errors=False):
+def default_gh_branch(repo: str, ignore_errors=False, auth: tuple[str, str] = None):
     repo = repo.replace(".git", "")
-    url = f"https://api.github/com/repos/{repo}"
+    url = f"https://api.github.com/repos/{repo}"
+    if auth and all(auth):
+        auth = requests.auth.HTTPBasicAuth(*auth)
+
     try:
-        r = urlopen(url)
-    except HTTPError:
-        log.error(f"Cannot locate repo {repo} on github")
+        r = requests.get(url, auth=auth)
+    except requests.HTTPError as e:
+        log.exception(f"HTTP error connecting to {repo}")
         if not ignore_errors:
             raise
         else:
             return None
-    if 200 <= r.status < 300:
-        repo_info = json.loads(r.read()).get("")
+    if 200 <= r.status_code < 300:
+        repo_info = r.json()
         return repo_info["default_branch"]
     if not ignore_errors:
-        msg = f"Bad response code ({r.status}( from {url}"
+        msg = f"Bad response code ({r.status_code}) from {url}"
         log.error(msg)
         raise RuntimeError(msg)
 

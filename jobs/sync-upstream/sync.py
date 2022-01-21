@@ -92,13 +92,14 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 if not any(match in filter_by_tag for match in tags):
                     continue
 
-            default_branch = repos.get("branch") or default_gh_branch(downstream)
+            auth = (new_env.get('CDKBOT_GH_USR'), new_env.get('CDKBOT_GH_PSW'))
+            default_branch = repos.get("branch") or default_gh_branch(downstream, auth=auth)
 
             log.info(
                 f"Releasing :: {layer_name:^35} :: from: {default_branch} to: stable"
             )
             if not dry_run:
-                downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
+                downstream = f"https://{':'.join(auth)}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 for line in git.clone(downstream, identifier, _iter=True):
