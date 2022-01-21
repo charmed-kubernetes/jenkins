@@ -387,7 +387,7 @@ class BuildEntity:
     def setup(self):
         """Setup directory for charm build"""
         downstream = f"https://github.com/{self.opts['downstream']}"
-        self.echo(f"Cloning repo from {downstream}")
+        self.echo(f"Cloning repo from {downstream} branch {self.charm_branch}")
 
         os.makedirs(self.checkout_path)
         ret = cmd_ok(
@@ -757,7 +757,7 @@ def build_bundles(bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_cha
                 bundle_repo = bundle_opts["repo"]
                 if "branch" in bundle_opts:
                     bundle_branch = bundle_opts["branch"]
-                build_entity.echo(f"Cloning {bundle_repo}")
+                build_entity.echo(f"Cloning {bundle_repo} branch {bundle_branch}")
                 cmd_ok(
                     f"git clone --branch {bundle_branch} {bundle_repo} {src_path}",
                     echo=build_entity.echo,
