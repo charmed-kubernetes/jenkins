@@ -1,17 +1,14 @@
 """ sync repo script
 """
-import sys
-import concurrent.futures
 import click
 import sh
 import os
 import uuid
 import yaml
 from pathlib import Path
-from urllib.parse import urlparse, quote
 from sh.contrib import git
-from cilib.run import capture, cmd_ok
 from cilib import log, enums, lp
+from cilib.git import default_gh_branch
 from cilib.models.repos.kubernetes import (
     UpstreamKubernetesRepoModel,
     InternalKubernetesRepoModel,
@@ -95,28 +92,36 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 if not any(match in filter_by_tag for match in tags):
                     continue
 
-            log.info(f"Releasing :: {layer_name:^35} :: from: master to: stable")
+            auth = (new_env.get("CDKBOT_GH_USR"), new_env.get("CDKBOT_GH_PSW"))
+            default_branch = repos.get("branch") or default_gh_branch(
+                downstream, auth=auth
+            )
+
+            log.info(
+                f"Releasing :: {layer_name:^35} :: from: {default_branch} to: stable"
+            )
             if not dry_run:
-                master_branch = repos["branch"] if "branch" in repos else "master"
-                downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
+                downstream = f"https://{':'.join(auth)}@github.com/{downstream}"
                 identifier = str(uuid.uuid4())
                 os.makedirs(identifier)
                 for line in git.clone(downstream, identifier, _iter=True):
                     log.info(line)
-                git_rev_master = git(
-                    "rev-parse", f"origin/{master_branch}", _cwd=identifier
+                git_rev_default = git(
+                    "rev-parse", f"origin/{default_branch}", _cwd=identifier
                 ).stdout.decode()
                 git_rev_stable = git(
                     "rev-parse", "origin/stable", _cwd=identifier
                 ).stdout.decode()
-                if git_rev_master == git_rev_stable:
-                    log.info(f"Skipping  :: {layer_name:^35} :: master == stable")
+                if git_rev_default == git_rev_stable:
+                    log.info(
+                        f"Skipping  :: {layer_name:^35} :: {default_branch} == stable"
+                    )
                     continue
                 git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
                 git.config("user.name", "cdkbot", _cwd=identifier)
                 git.config("--global", "push.default", "simple")
                 git.checkout("-f", "stable", _cwd=identifier)
-                git.reset(master_branch, _cwd=identifier)
+                git.reset(default_branch, _cwd=identifier)
                 for line in git.push(
                     "origin", "stable", "-f", _cwd=identifier, _iter=True
                 ):

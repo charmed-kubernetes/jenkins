@@ -1,8 +1,43 @@
 """ Git utils
 """
 
+import logging
 import sh
 from subprocess import run
+import requests
+import requests.auth
+
+log = logging.getLogger(__name__)
+
+
+def default_gh_branch(repo: str, ignore_errors=False, auth=None):
+    """
+    Fetch the default GitHub branch.
+
+    :param str repo: GitHub repo path expressed by $org/$repo
+    :param bool ignore_errors: if errors are ignored, returns None
+    :param tuple[str, str] auth: username/password used by basic-auth
+    """
+    repo = repo.replace(".git", "")
+    url = f"https://api.github.com/repos/{repo}"
+    if auth and all(auth):
+        auth = requests.auth.HTTPBasicAuth(*auth)
+
+    try:
+        r = requests.get(url, auth=auth)
+    except requests.HTTPError as e:
+        log.exception(f"HTTP error connecting to {repo}")
+        if not ignore_errors:
+            raise
+        else:
+            return None
+    if 200 <= r.status_code < 300:
+        repo_info = r.json()
+        return repo_info["default_branch"]
+    if not ignore_errors:
+        msg = f"Bad response code ({r.status_code}) from {url}"
+        log.error(msg)
+        raise RuntimeError(msg)
 
 
 def clone(url, **subprocess_kwargs):

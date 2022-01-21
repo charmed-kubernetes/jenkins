@@ -22,6 +22,7 @@ from io import BytesIO
 import zipfile
 from pathlib import Path
 from sh.contrib import git
+from cilib.git import default_gh_branch
 from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture, script
 from datetime import datetime
@@ -462,9 +463,19 @@ class BuildEntity:
 
         src_path = self.checkout_path / opts.get("subdir", "")
 
-        self.branch = (
-            opts.get("branch") or self.build.db["build_args"].get("branch") or "master"
-        )
+        downstream = opts.get("downstream")
+        branch = opts.get("branch")
+
+        if not branch and downstream:
+            # if branch not specified, use repo's default branch
+            auth = os.environ.get("CDKBOT_GH_USR"), os.environ.get("CDKBOT_GH_PSW")
+            branch = default_gh_branch(downstream, ignore_errors=True, auth=auth)
+
+        if not branch:
+            # if branch not specified, use the build_args branch
+            branch = self.build.db["build_args"].get("branch")
+
+        self.branch = branch or "master"
 
         self.layer_path = src_path / "layer.yaml"
         self.legacy_charm = False
@@ -613,7 +624,7 @@ class BuildEntity:
     def setup(self):
         """Set up directory for charm build."""
         downstream = f"https://github.com/{self.opts['downstream']}"
-        self.echo(f"Cloning repo from {downstream}")
+        self.echo(f"Cloning repo from {downstream} branch {self.branch}")
 
         os.makedirs(self.checkout_path)
         ret = cmd_ok(
