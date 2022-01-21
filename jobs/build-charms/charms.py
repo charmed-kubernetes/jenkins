@@ -19,6 +19,7 @@ Usage:
 import os
 from pathlib import Path
 from sh.contrib import git
+from cilib.git import default_gh_branch
 from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture, script
 from datetime import datetime
@@ -238,11 +239,15 @@ class BuildEntity:
         else:
             src_path = self.checkout_path
 
+        default_branch = default_gh_branch(opts["downstream"], ignore_errors=True)
+
         if "branch" in opts:
             self.charm_branch = opts["branch"]
+        elif default_branch:
+            self.charm_branch = default_branch
         else:
-            self.charm_branch = self.build.db["build_args"].get(
-                "charm_branch", "master"
+            self.charm_branch = (
+                self.build.db["build_args"].get("charm_branch") or "master"
             )
 
         self.layer_path = src_path / "layer.yaml"
