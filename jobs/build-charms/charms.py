@@ -92,7 +92,7 @@ class _CharmStore:
 
     def promote(self, charm_entity, from_channel, to_channel):
         self._echo(
-            f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
+            f"Promoting :: {charm_entity:^35} :: from: {from_channel} to: {to_channel}"
         )
         charm_id = self.id(charm_entity, from_channel)
         charm_resources = self.resources(charm_id, from_channel)
