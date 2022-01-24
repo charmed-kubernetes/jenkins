@@ -67,6 +67,9 @@ class _CharmStore:
     def __init__(self, build_entity):
         self._echo = build_entity.echo
 
+    def echo(self, msg):
+        return self._echo(f"Charmstore - {msg}")
+
     def id(self, charm_entity, channel):
         try:
             charm_id = sh.charm.show(
@@ -91,13 +94,13 @@ class _CharmStore:
             return []
 
     def promote(self, charm_entity, from_channel, to_channel):
-        self._echo(
+        self.echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
         )
         charm_id = self.id(charm_entity, from_channel)
         charm_resources = self.resources(charm_id, from_channel)
         if not charm_resources:
-            self._echo("No resources for {}".format(charm_id))
+            self.echo("No resources for {}".format(charm_id))
         resources_args = [
             (
                 "--resource",
@@ -110,11 +113,12 @@ class _CharmStore:
         )
 
     def grant(self, charm_id):
+        self.echo(f"Setting   :: {charm_id:^35} :: permissions for read everyone")
         sh.charm.grant(charm_id, "everyone", acl="read", _out=self._echo)
 
     def upload(self, dst_path, entity):
         out = sh.charm.push(dst_path, entity, _out=self._echo)
-        self._echo(f"Charm push returned: {out}")
+        self.echo(f"Pushing   :: {entity:^35} :: returns {out.stdout or out.stderr}")
 
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
@@ -122,7 +126,7 @@ class _CharmStore:
         return out["url"]
 
     def set(self, entity, commit):
-        self._echo(f"Setting {entity} metadata: {commit}")
+        self.echo(f"Setting {entity} metadata: {commit}")
         sh.charm.set(entity, f"commit={commit}", _out=self._echo)
 
     def upload_resource(self, entity, resource_name, resource):
@@ -148,6 +152,9 @@ class _CharmHub:
 
     def __init__(self, build_entity):
         self._echo = build_entity.echo
+
+    def echo(self, msg):
+        return self._echo(f"Charmhub   - {msg}")
 
     def _table_to_list(self, header, body):
         if not body:
@@ -226,11 +233,11 @@ class _CharmHub:
         """
         Get the most recent non-released version.
 
-        It's possible no unreleased charm exists
-        It's possible multiple unreleased versions exist since the last released one
+        It is possible no unreleased charm exists.
+        It is possible multiple unreleased versions exist since the last released one
         We want ONLY the most recent of that list
 
-        This also gathers the most recently published resource, whether or not
+        This also gathers the most recently published resource, whether
         it is associated with a particular prior release or not.
         """
         charm_status = []
@@ -254,7 +261,7 @@ class _CharmHub:
         return charm_status
 
     def promote(self, charm_entity, from_channel, to_channel):
-        self._echo(
+        self.echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
         )
         if from_channel == "unpublished":
@@ -284,14 +291,14 @@ class _CharmHub:
 
     def upload(self, dst_path):
         out = sh.charmcraft.upload(dst_path, _out=self._echo)
-        self._echo(f"Charmcraft upload returned: {out}")
         (revision,) = re.findall(r"^Revision (\d+) of ", out.stderr.decode())
+        self.echo(f"Pushing   :: returns {out.stderr or out.stdout}")
         return revision
 
-    def upload_resource(self, charm_name, resource_name, resource):
+    def upload_resource(self, charm_entity, resource_name, resource):
         kwargs = dict([resource])
         sh.charmcraft(
-            "upload-resource", charm_name, resource_name, **kwargs, _out=self._echo
+            "upload-resource", charm_entity, resource_name, **kwargs, _out=self._echo
         )
 
 
@@ -411,10 +418,11 @@ class BuildEnv:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
                     continue
-                if store == "cs":
+                cs_store = charm_opts.get("store") or store
+                if cs_store == "cs":
                     charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
                     _CharmStore(self).promote(charm_entity, from_channel, to_channel)
-                elif store == "ch":
+                elif cs_store == "ch":
                     _CharmHub(self).promote(charm_name, from_channel, to_channel)
 
     def download(self, layer_name):
@@ -450,8 +458,15 @@ class BuildEnv:
 class BuildEntity:
     """The Build data class."""
 
-    def __init__(self, build, name, opts, store):
-        """Represent a charm or bundle which should be built and published."""
+    def __init__(self, build, name, opts, default_store):
+        """
+        Represent a charm or bundle which should be built and published.
+
+        @param BuildEnv build:
+        @param str name: Name of the charm
+        @param dict[str,str] opts:
+        @param str default_store:
+        """
         # Build env
         self.build = build
 
@@ -488,15 +503,15 @@ class BuildEntity:
 
         self.namespace = opts["namespace"]
 
-        if store == "cs":
-            # Entity path, ie cs:~containers/kubernetes-master
+        self.store = opts.get('store') or default_store
+        if self.store == "cs":
+            # Entity path, ie. cs:~containers/kubernetes-worker
             self.entity = f"cs:~{opts['namespace']}/{name}"
-        elif store == "ch":
-            # Entity path, ie containers-kubernetes-master
-            self.entity = f"{name}"
+        elif self.store == "ch":
+            # Entity path, ie. kubernetes-worker
+            self.entity = opts.get("charmhub-entity") or name
         else:
-            raise BuildException(f"'{store}' doesn't exist")
-        self.store = store
+            raise BuildException(f"'{self.store}' doesn't exist")
 
         # Entity path with current revision (from target channel)
         self.full_entity = self._get_full_entity()
@@ -586,7 +601,7 @@ class BuildEntity:
         ]
 
         # Check the current git cloned charm repo commit and add that to
-        # current pull-layer-manifest as that would no be known at the
+        # current pull-layer-manifest as that would not be known at the
         # time of pull_layers
         current_build_manifest.append({"rev": self.commit, "url": self.name})
 
@@ -675,7 +690,7 @@ class BuildEntity:
             raise SystemExit(f"Failed to build {self.name}")
 
     def push(self):
-        """Pushes a built charm to Charmstore."""
+        """Pushes a built charm to Charm store/hub."""
         if "override-push" in self.opts:
             self.echo("Override push found, running in place of charm push.")
             script(
@@ -744,7 +759,7 @@ class BuildEntity:
                     self.new_entity, resource_name, resource[1]
                 )
             elif self.store == "ch":
-                _CharmHub(self).upload_resource(self.name, resource_name, resource)
+                _CharmHub(self).upload_resource(self.entity, resource_name, resource)
 
     def promote(self, from_channel="unpublished", to_channel="edge"):
         """Promote charm and its resources from a channel to another."""
@@ -752,10 +767,9 @@ class BuildEntity:
             cs = _CharmStore(self)
             charm_id = cs.id(self.entity, from_channel)
             cs.promote(self.entity, from_channel, to_channel)
-            self.echo(f"Setting {charm_id} permissions for read everyone")
             cs.grant(charm_id)
         elif self.store == "ch":
-            _CharmHub(self).promote(self.name, from_channel, to_channel)
+            _CharmHub(self).promote(self.entity, from_channel, to_channel)
 
 
 class BundleBuildEntity(BuildEntity):
@@ -835,7 +849,7 @@ def cli():
 @click.option(
     "--store",
     type=click.Choice(["cs", "ch"], case_sensitive=False),
-    help="Charmstore (cs) or Charmhub (ch)",
+    help="Publish to Charmstore (cs) or Charmhub (ch) if the resource-spec doesn't specify.",
     default="cs",
 )
 @click.option("--force", is_flag=True)
@@ -999,7 +1013,9 @@ def build_bundles(
     default="cs",
 )
 def promote(charm_list, filter_by_tag, from_channel, to_channel, store):
-    """Promote channel for a set of charms filtered by tag."""
+    """
+    Promote channel for a set of charms filtered by tag.
+    """
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
         "artifact_list": charm_list,

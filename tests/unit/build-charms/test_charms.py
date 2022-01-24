@@ -360,14 +360,14 @@ def test_build_entity_attach_resource(
         [
             call(
                 "upload-resource",
-                "k8s-ci-charm",
+                "kubernetes-ci-charm",
                 "test-file",
                 filepath=str(K8S_CI_CHARM / "tmp" / "test-file.txt"),
                 _out=charm_entity.echo,
             ),
             call(
                 "upload-resource",
-                "k8s-ci-charm",
+                "kubernetes-ci-charm",
                 "test-image",
                 image="test-image",
                 _out=charm_entity.echo,
@@ -387,7 +387,7 @@ def test_build_entity_promote(charm_environment, charm_cmd, charmcraft_cmd, tmpd
     charm_entity.promote(to_channel="edge")
     charm_cmd.release.assert_not_called()
     charmcraft_cmd.release.assert_called_once_with(
-        "k8s-ci-charm",
+        "kubernetes-ci-charm",
         "--revision=6",
         "--channel=edge",
         "--resource=test-file:3",
