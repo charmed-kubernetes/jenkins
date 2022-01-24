@@ -95,7 +95,7 @@ class _CharmStore:
 
     def promote(self, charm_entity, from_channel, to_channel):
         self.echo(
-            f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
+            f"Promoting :: {charm_entity:^35} :: from: {from_channel} to: {to_channel}"
         )
         charm_id = self.id(charm_entity, from_channel)
         charm_resources = self.resources(charm_id, from_channel)
@@ -503,7 +503,7 @@ class BuildEntity:
 
         self.namespace = opts["namespace"]
 
-        self.store = opts.get('store') or default_store
+        self.store = opts.get("store") or default_store
         if self.store == "cs":
             # Entity path, ie. cs:~containers/kubernetes-worker
             self.entity = f"cs:~{opts['namespace']}/{name}"
