@@ -78,16 +78,18 @@ def charm_cmd():
             )
 
     with patch("sh.charm", create=True) as charm:
-        charm.side_effect = charm_command_response
-        charm.show.side_effect = partial(charm_command_response, "show")
-        charm.push.side_effect = partial(charm_command_response, "push")
-        yield charm
+        cmd = charm.bake.return_value
+        cmd.side_effect = charm_command_response
+        cmd.show.side_effect = partial(charm_command_response, "show")
+        cmd.push.side_effect = partial(charm_command_response, "push")
+        yield cmd
 
 
 @pytest.fixture(autouse=True)
 def charmcraft_cmd():
     """Create a fixture defining mock for `charmcraft` cli command."""
-    with patch("sh.charmcraft", create=True) as cmd:
+    with patch("sh.charmcraft", create=True) as charmcraft:
+        cmd = charmcraft.bake.return_value
         cmd.status.return_value.stdout = (
             CLI_RESPONSES / "charmcraft_status_k8s-ci-charm.txt"
         ).read_bytes()
@@ -148,22 +150,19 @@ def test_build_env_promote_all_charmstore(charm_environment, cilib_store, charm_
     charm_environment.promote_all()
     charm_entity = "cs:~containers/k8s-ci-charm"
     charm_entity_ver = f"{charm_entity}-845"
-    charm_cmd.show.assert_called_once_with(
-        charm_entity, "id", channel="unpublished", _tee=True
-    )
+    charm_cmd.show.assert_called_once_with(charm_entity, "id", channel="unpublished")
     charm_cmd.assert_called_once_with(
         "list-resources",
         charm_entity_ver,
         channel="unpublished",
         format="yaml",
-        _tee=True,
     )
     resource_args = [
         ("--resource", "test-file-995"),
         ("--resource", "test-image-995"),
     ]
     charm_cmd.release.assert_called_once_with(
-        charm_entity_ver, "--channel=edge", *resource_args, _out=charm_environment.echo
+        charm_entity_ver, "--channel=edge", *resource_args
     )
 
 
@@ -175,7 +174,7 @@ def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
         "--resource=test-file-2:993",
     ]
     charmcraft_cmd.release.assert_called_once_with(
-        "k8s-ci-charm", "--revision=845", "--channel=beta", *resource_args, _tee=True
+        "k8s-ci-charm", "--revision=845", "--channel=beta", *resource_args
     )
 
 
@@ -201,7 +200,7 @@ def test_build_entity_has_changed(charm_environment, charm_cmd):
     charm_name, charm_opts = next(iter(artifacts[0].items()))
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
     charm_cmd.show.assert_called_once_with(
-        "cs:~containers/k8s-ci-charm", "id", channel="edge", _tee=True
+        "cs:~containers/k8s-ci-charm", "id", channel="edge"
     )
     charm_cmd.show.reset_mock()
     with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
@@ -243,7 +242,7 @@ def test_build_entity_charm_build(charm_environment, charm_cmd, charmcraft_cmd, 
 
     charm_entity.legacy_charm = True
     charm_entity.charm_build()
-    assert charm_entity.dst_path == K8S_CI_CHARM / "k8s-ci-charm.charm"
+    assert charm_entity.dst_path == str(K8S_CI_CHARM / "k8s-ci-charm.charm")
     charm_cmd.build.assert_called_once_with(
         "-r",
         "--force",
@@ -251,7 +250,6 @@ def test_build_entity_charm_build(charm_environment, charm_cmd, charmcraft_cmd, 
         "https://localhost",
         "--charm-file",
         _cwd=str(K8S_CI_CHARM),
-        _out=charm_entity.echo,
     )
     charmcraft_cmd.build.assert_not_called()
     charm_cmd.build.reset_mock()
@@ -267,7 +265,6 @@ def test_build_entity_charm_build(charm_environment, charm_cmd, charmcraft_cmd, 
         "-i",
         "https://localhost",
         _cwd=str(K8S_CI_CHARM),
-        _out=charm_entity.echo,
     )
     charmcraft_cmd.build.assert_not_called()
     charm_cmd.build.reset_mock()
@@ -279,7 +276,6 @@ def test_build_entity_charm_build(charm_environment, charm_cmd, charmcraft_cmd, 
         "-f",
         str(K8S_CI_CHARM),
         _cwd=tmpdir / "build",
-        _out=charm_entity.echo,
     )
 
 
@@ -296,12 +292,11 @@ def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir)
         charm_entity.push()
     charmcraft_cmd.upload.assert_not_called()
     charm_cmd.push.assert_called_once_with(
-        charm_entity.dst_path, "cs:~containers/k8s-ci-charm", _tee=True
+        charm_entity.dst_path, "cs:~containers/k8s-ci-charm"
     )
     charm_cmd.set.assert_called_once_with(
         "cs:~containers/k8s-ci-charm-845",
         "commit=96b4e06d5d35fec30cdf2cc25076dd25c51b893c",
-        _out=charm_entity.echo,
     )
     assert charm_entity.new_entity == "cs:~containers/k8s-ci-charm-845"
 
@@ -313,9 +308,7 @@ def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir)
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
     charm_entity.push()
     charm_cmd.push.assert_not_called()
-    charmcraft_cmd.upload.assert_called_once_with(
-        "-q", charm_entity.dst_path, _tee=True
-    )
+    charmcraft_cmd.upload.assert_called_once_with("-q", charm_entity.dst_path)
     assert charm_entity.new_entity == "845"
 
 
@@ -336,12 +329,10 @@ def test_build_entity_attach_resource(
             call(
                 charm_revision,
                 f"test-file={K8S_CI_CHARM / 'tmp' / 'test-file.txt'}",
-                _out=charm_entity.echo,
             ),
             call(
                 charm_revision,
                 "test-image=test-image",
-                _out=charm_entity.echo,
             ),
         ],
         any_order=False,
@@ -359,14 +350,12 @@ def test_build_entity_attach_resource(
                 "k8s-ci-charm",
                 "test-file",
                 filepath=str(K8S_CI_CHARM / "tmp" / "test-file.txt"),
-                _tee=True,
             ),
             call(
                 "upload-resource",
                 "k8s-ci-charm",
                 "test-image",
                 image="test-image",
-                _tee=True,
             ),
         ],
         any_order=False,
@@ -388,7 +377,6 @@ def test_build_entity_promote(charm_environment, charm_cmd, charmcraft_cmd, tmpd
         "--channel=latest/edge",
         "--resource=test-file:3",
         "--resource=test-image:4",
-        _tee=True,
     )
     charmcraft_cmd.release.reset_mock()
 
@@ -399,13 +387,11 @@ def test_build_entity_promote(charm_environment, charm_cmd, charmcraft_cmd, tmpd
         "--channel=edge",
         ("--resource", "test-file-995"),
         ("--resource", "test-image-995"),
-        _out=charm_entity.echo,
     )
     charm_cmd.grant.assert_called_once_with(
         "cs:~containers/k8s-ci-charm-845",
         "everyone",
         acl="read",
-        _out=charm_entity.echo,
     )
     charmcraft_cmd.release.assert_not_called()
 
@@ -428,12 +414,11 @@ def test_bundle_build_entity_push(
 
     charmcraft_cmd.upload.assert_not_called()
     charm_cmd.push.assert_called_once_with(
-        bundle_entity.dst_path, "cs:~containers/bundle/test-kubernetes", _tee=True
+        bundle_entity.dst_path, "cs:~containers/bundle/test-kubernetes"
     )
     charm_cmd.set.assert_called_once_with(
         "cs:~containers/bundle/test-kubernetes-123",
         "commit=96b4e06d5d35fec30cdf2cc25076dd25c51b893c",
-        _out=bundle_entity.echo,
     )
     assert bundle_entity.new_entity == "cs:~containers/bundle/test-kubernetes-123"
 
@@ -447,7 +432,8 @@ def test_bundle_build_entity_push(
     bundle_entity.push()
     charm_cmd.push.assert_not_called()
     charmcraft_cmd.upload.assert_called_once_with(
-        "-q", bundle_entity.dst_path, _tee=True
+        "-q",
+        bundle_entity.dst_path,
     )
     assert bundle_entity.new_entity == "123"
 
@@ -493,7 +479,7 @@ def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd):
         bundle_environment, bundle_name, bundle_opts, "cs"
     )
     charm_cmd.show.assert_called_once_with(
-        "cs:~containers/bundle/test-kubernetes", "id", channel="edge", _tee=True
+        "cs:~containers/bundle/test-kubernetes", "id", channel="edge"
     )
     assert bundle_entity.has_changed is True
     charm_cmd.show.reset_mock()

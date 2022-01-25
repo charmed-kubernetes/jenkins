@@ -67,10 +67,17 @@ def _next_match(seq, predicate=lambda _: _, default=None):
 class _CharmStore:
     def __init__(self, build_entity):
         self._echo = build_entity.echo
+        self.charm = sh.charm.bake(_tee=True, _out=self._echo)
+
+    def build(self, *args, **kwargs):
+        return self.charm.build(*args, **kwargs)
+
+    def show(self, *args, **kwargs):
+        return self.charm.show(*args, **kwargs)
 
     def id(self, charm_entity, channel):
         try:
-            charm_id = sh.charm.show(charm_entity, "id", channel=channel, _tee=True)
+            charm_id = self.show(charm_entity, "id", channel=channel)
         except sh.ErrorReturnCode:
             return None
         response = yaml.safe_load(charm_id.stdout.decode().strip())
@@ -78,12 +85,11 @@ class _CharmStore:
 
     def resources(self, charm_id, channel):
         try:
-            resources = sh.charm(
+            resources = self.charm(
                 "list-resources",
                 charm_id,
                 channel=channel,
                 format="yaml",
-                _tee=True,
             )
             return yaml.safe_load(resources.stdout.decode())
         except sh.ErrorReturnCode:
@@ -104,17 +110,15 @@ class _CharmStore:
             )
             for resource in charm_resources
         ]
-        sh.charm.release(
-            charm_id, f"--channel={to_channel}", *resources_args, _out=self._echo
-        )
+        self.charm.release(charm_id, f"--channel={to_channel}", *resources_args)
         return charm_id
 
     def grant(self, charm_id):
         self._echo(f"Setting   :: {charm_id:^35} :: permissions for read everyone")
-        sh.charm.grant(charm_id, "everyone", acl="read", _out=self._echo)
+        self.charm.grant(charm_id, "everyone", acl="read")
 
     def upload(self, dst_path, entity):
-        out = sh.charm.push(dst_path, entity, _tee=True)
+        out = self.charm.push(dst_path, entity)
         self._echo(f"Pushing   :: {entity:^35} :: returns {out.stdout or out.stderr}")
 
         # Output includes lots of ansi escape sequences from the docker push,
@@ -124,18 +128,17 @@ class _CharmStore:
 
     def set(self, entity, commit):
         self._echo(f"Setting {entity} metadata: {commit}")
-        sh.charm.set(entity, f"commit={commit}", _out=self._echo)
+        self.charm.set(entity, f"commit={commit}")
 
     def upload_resource(self, entity, resource_name, resource):
         # If the resource is a file, populate the path where it was built.
         # If it's a custom image, it will be in Docker and this will be a no-op.
         retry_call(
-            sh.charm.attach,
+            self.charm.attach,
             fargs=[
                 entity,
                 f"{resource_name}={resource}",
             ],
-            fkwargs={"_out": self._echo},
             delay=2,
             backoff=2,
             tries=15,
@@ -148,6 +151,7 @@ class _CharmHub:
 
     def __init__(self, build_entity):
         self._echo = build_entity.echo
+        self.charmcraft = sh.charmcraft.bake(_tee=True, _out=self._echo)
 
     @staticmethod
     def _table_to_list(header, body):
@@ -188,9 +192,12 @@ class _CharmHub:
         resp = requests.post("https://api.charmhub.io/v2/charms/refresh", json=data)
         return resp.json()
 
+    def build(self, *args, **kwargs):
+        return self.charmcraft.build(*args, **kwargs)
+
     def status(self, charm_entity):
         """Read CLI Table output from charmcraft status and parse."""
-        charm_status = sh.charmcraft.status(charm_entity, _tee=True, _out=self._echo)
+        charm_status = self.charmcraft.status(charm_entity)
         header, *body = charm_status.stdout.decode().splitlines()
         channel_status = self._table_to_list(header, body)
 
@@ -206,21 +213,19 @@ class _CharmHub:
 
     def revisions(self, charm_entity):
         """Read CLI Table output from charmcraft revisions and parse."""
-        charm_status = sh.charmcraft.revisions(charm_entity, _tee=True)
+        charm_status = self.charmcraft.revisions(charm_entity)
         header, *body = charm_status.stdout.decode().splitlines()
         return self._table_to_list(header, body)
 
     def resources(self, charm_entity):
         """Read CLI Table output from charmcraft resources and parse."""
-        charmcraft_out = sh.charmcraft.resources(charm_entity, _tee=True)
+        charmcraft_out = self.charmcraft.resources(charm_entity)
         header, *body = charmcraft_out.stdout.decode().splitlines()
         return self._table_to_list(header, body)
 
     def resource_revisions(self, charm_entity, resource):
         """Read CLI Table output from charmcraft resource-revisions and parse."""
-        charmcraft_out = sh.charmcraft(
-            "resource-revisions", charm_entity, resource, _tee=True
-        )
+        charmcraft_out = self.charmcraft("resource-revisions", charm_entity, resource)
         header, *body = charmcraft_out.stdout.decode().splitlines()
         return self._table_to_list(header, body)
 
@@ -283,10 +288,10 @@ class _CharmHub:
                 )
             )
         for args in calls:
-            sh.charmcraft.release(*args, _tee=True)
+            self.charmcraft.release(*args)
 
     def upload(self, dst_path):
-        out = sh.charmcraft.upload("-q", dst_path, _tee=True)
+        out = self.charmcraft.upload("-q", dst_path)
         (revision,) = re.findall(
             r"^Revision (\d+) of ", out.stdout.decode(), re.MULTILINE
         )
@@ -295,9 +300,7 @@ class _CharmHub:
 
     def upload_resource(self, charm_entity, resource_name, resource):
         kwargs = dict([resource])
-        sh.charmcraft(
-            "upload-resource", charm_entity, resource_name, **kwargs, _tee=True
-        )
+        self.charmcraft("upload-resource", charm_entity, resource_name, **kwargs)
 
 
 class BuildEnv:
@@ -571,9 +574,10 @@ class BuildEntity:
         if not self.legacy_charm and self.store == "cs":
             # Operator framework charms won't have a .build.manifest and it's
             # sufficient to just compare the charm repo's commit rev.
+            cs = _CharmStore(self)
             try:
                 extra_info = yaml.safe_load(
-                    sh.charm.show(
+                    cs.show(
                         self.full_entity,
                         "extra-info",
                         format="yaml",
@@ -675,10 +679,10 @@ class BuildEntity:
             args = "-r --force -i https://localhost"
             if self.store == "ch":
                 args += " --charm-file"
-                self.dst_path = Path(self.src_path) / f"{self.name}.charm"
+                self.dst_path = str(Path(self.src_path) / f"{self.name}.charm")
             self.echo(f"Building with: charm build {args}")
             try:
-                sh.charm.build(*args.split(), _cwd=self.src_path, _out=self.echo)
+                _CharmStore(self).build(*args.split(), _cwd=self.src_path)
             except sh.ErrorReturnCode:
                 ret.ok = False
 
@@ -686,9 +690,7 @@ class BuildEntity:
             args = f"-f {self.src_path}"
             self.echo(f"Building with: charmcraft build {args}")
             try:
-                sh.charmcraft.build(
-                    *args.split(), _cwd=self.build.build_dir, _out=self.echo
-                )
+                _CharmHub(self).build(*args.split(), _cwd=self.build.build_dir)
             except sh.ErrorReturnCode:
                 ret.ok = False
 
