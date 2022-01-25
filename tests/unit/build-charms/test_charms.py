@@ -149,14 +149,14 @@ def test_build_env_promote_all_charmstore(charm_environment, cilib_store, charm_
     charm_entity = "cs:~containers/k8s-ci-charm"
     charm_entity_ver = f"{charm_entity}-845"
     charm_cmd.show.assert_called_once_with(
-        charm_entity, "id", channel="unpublished", _out=charm_environment.echo
+        charm_entity, "id", channel="unpublished", _tee=True
     )
     charm_cmd.assert_called_once_with(
         "list-resources",
         charm_entity_ver,
         channel="unpublished",
         format="yaml",
-        _out=charm_environment.echo,
+        _tee=True,
     )
     resource_args = [
         ("--resource", "test-file-995"),
@@ -201,7 +201,7 @@ def test_build_entity_has_changed(charm_environment, charm_cmd):
     charm_name, charm_opts = next(iter(artifacts[0].items()))
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
     charm_cmd.show.assert_called_once_with(
-        "cs:~containers/k8s-ci-charm", "id", channel="edge", _out=charm_entity.echo
+        "cs:~containers/k8s-ci-charm", "id", channel="edge", _tee=True
     )
     charm_cmd.show.reset_mock()
     with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
@@ -296,7 +296,7 @@ def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir)
         charm_entity.push()
     charmcraft_cmd.upload.assert_not_called()
     charm_cmd.push.assert_called_once_with(
-        charm_entity.dst_path, "cs:~containers/k8s-ci-charm", _out=charm_entity.echo
+        charm_entity.dst_path, "cs:~containers/k8s-ci-charm", _tee=True
     )
     charm_cmd.set.assert_called_once_with(
         "cs:~containers/k8s-ci-charm-845",
@@ -428,9 +428,7 @@ def test_bundle_build_entity_push(
 
     charmcraft_cmd.upload.assert_not_called()
     charm_cmd.push.assert_called_once_with(
-        bundle_entity.dst_path,
-        "cs:~containers/bundle/test-kubernetes",
-        _out=bundle_entity.echo,
+        bundle_entity.dst_path, "cs:~containers/bundle/test-kubernetes", _tee=True
     )
     charm_cmd.set.assert_called_once_with(
         "cs:~containers/bundle/test-kubernetes-123",
@@ -495,10 +493,7 @@ def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd):
         bundle_environment, bundle_name, bundle_opts, "cs"
     )
     charm_cmd.show.assert_called_once_with(
-        "cs:~containers/bundle/test-kubernetes",
-        "id",
-        channel="edge",
-        _out=bundle_entity.echo,
+        "cs:~containers/bundle/test-kubernetes", "id", channel="edge", _tee=True
     )
     assert bundle_entity.has_changed is True
     charm_cmd.show.reset_mock()

@@ -28,7 +28,7 @@ from cilib.run import cmd_ok, capture, script
 from datetime import datetime
 from enum import Enum
 from retry.api import retry_call
-from tempfile import NamedTemporaryFile
+
 from types import SimpleNamespace
 from pathos.threading import ThreadPool
 from pprint import pformat
@@ -70,9 +70,7 @@ class _CharmStore:
 
     def id(self, charm_entity, channel):
         try:
-            charm_id = sh.charm.show(
-                charm_entity, "id", channel=channel, _out=self._echo
-            )
+            charm_id = sh.charm.show(charm_entity, "id", channel=channel, _tee=True)
         except sh.ErrorReturnCode:
             return None
         response = yaml.safe_load(charm_id.stdout.decode().strip())
@@ -85,7 +83,7 @@ class _CharmStore:
                 charm_id,
                 channel=channel,
                 format="yaml",
-                _out=self._echo,
+                _tee=True,
             )
             return yaml.safe_load(resources.stdout.decode())
         except sh.ErrorReturnCode:
@@ -109,13 +107,14 @@ class _CharmStore:
         sh.charm.release(
             charm_id, f"--channel={to_channel}", *resources_args, _out=self._echo
         )
+        return charm_id
 
     def grant(self, charm_id):
         self._echo(f"Setting   :: {charm_id:^35} :: permissions for read everyone")
         sh.charm.grant(charm_id, "everyone", acl="read", _out=self._echo)
 
     def upload(self, dst_path, entity):
-        out = sh.charm.push(dst_path, entity, _out=self._echo)
+        out = sh.charm.push(dst_path, entity, _tee=True)
         self._echo(f"Pushing   :: {entity:^35} :: returns {out.stdout or out.stderr}")
 
         # Output includes lots of ansi escape sequences from the docker push,
@@ -191,7 +190,7 @@ class _CharmHub:
 
     def status(self, charm_entity):
         """Read CLI Table output from charmcraft status and parse."""
-        charm_status = sh.charmcraft.status(charm_entity, _out=self._echo)
+        charm_status = sh.charmcraft.status(charm_entity, _tee=True, _out=self._echo)
         header, *body = charm_status.stdout.decode().splitlines()
         channel_status = self._table_to_list(header, body)
 
@@ -633,12 +632,14 @@ class BuildEntity:
         return git_commit.stdout.decode().strip()
 
     def _read_metadata_resources(self):
-        if self.legacy_charm:
-            # Legacy (reactive) charms can have resources added by layers,
-            # so we need to read from the built charm.
+        if not self.legacy_charm:
+            metadata_path = Path(self.src_path) / "metadata.yaml"
+        elif self.dst_path.endswith("charm"):
             metadata_path = zipfile.Path(self.dst_path) / "metadata.yaml"
         else:
-            metadata_path = Path(self.src_path) / "metadata.yaml"
+            # Legacy (reactive) charms can have resources added by layers,
+            # so we need to read from the built charm.
+            metadata_path = Path(self.dst_path) / "metadata.yaml"
         metadata = yaml.safe_load(metadata_path.read_text())
         return metadata.get("resources", {})
 
@@ -741,13 +742,15 @@ class BuildEntity:
             if not ret.ok:
                 raise SystemExit("Failed to build custom resources")
 
-        # Pull any `upstream-image` annotated resources.
-        empty_file = NamedTemporaryFile()
         for name, details in self._read_metadata_resources().items():
-            resource_fmt = resource_spec.get(name) or ""
+            resource_fmt = resource_spec.get(name)
+            if not resource_fmt:
+                # ignore pushing a resource not defined in `resource_spec`
+                continue
             if details["type"] == "oci-image":
                 upstream_source = details.get("upstream-source")
                 if upstream_source:
+                    # Pull any `upstream-image` annotated resources.
                     self.echo(f"Pulling {upstream_source}...")
                     sh.docker.pull(upstream_source)
                     resource_fmt = upstream_source
@@ -755,7 +758,7 @@ class BuildEntity:
             elif details["type"] == "file":
                 resource_spec[name] = (
                     "filepath",
-                    resource_fmt.format(out_path=out_path) or empty_file.name,
+                    resource_fmt.format(out_path=out_path),
                 )
 
         self.echo(f"Attaching resources:\n{pformat(resource_spec)}")
@@ -772,8 +775,7 @@ class BuildEntity:
         """Promote charm and its resources from a channel to another."""
         if self.store == "cs":
             cs = _CharmStore(self)
-            charm_id = cs.id(self.entity, from_channel)
-            cs.promote(self.entity, from_channel, to_channel)
+            charm_id = cs.promote(self.entity, from_channel, to_channel)
             cs.grant(charm_id)
         elif self.store == "ch":
             if to_channel == "edge" and from_channel == "unpublished":
