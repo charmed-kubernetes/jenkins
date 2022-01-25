@@ -88,13 +88,13 @@ def charm_cmd():
 def charmcraft_cmd():
     """Create a fixture defining mock for `charmcraft` cli command."""
     with patch("sh.charmcraft", create=True) as cmd:
-        cmd.status.return_value.stderr = (
+        cmd.status.return_value.stdout = (
             CLI_RESPONSES / "charmcraft_status_k8s-ci-charm.txt"
         ).read_bytes()
-        cmd.resources.return_value.stderr = (
+        cmd.resources.return_value.stdout = (
             CLI_RESPONSES / "charmcraft_resources_k8s-ci-charm.txt"
         ).read_bytes()
-        cmd.revisions.return_value.stderr = (
+        cmd.revisions.return_value.stdout = (
             CLI_RESPONSES / "charmcraft_revisions_k8s-ci-charm.txt"
         ).read_bytes()
 
@@ -103,7 +103,7 @@ def charmcraft_cmd():
             if command == "resource-revisions":
                 _, resource = cmd_args
                 return SimpleNamespace(
-                    stderr=(
+                    stdout=(
                         CLI_RESPONSES
                         / f"charmcraft_resource_revisions_k8s-ci-charm_{resource}.txt"
                     ).read_bytes()
@@ -175,11 +175,7 @@ def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
         "--resource=test-file-2:993",
     ]
     charmcraft_cmd.release.assert_called_once_with(
-        "k8s-ci-charm",
-        "--revision=845",
-        "--channel=beta",
-        *resource_args,
-        _out=charm_environment.echo,
+        "k8s-ci-charm", "--revision=845", "--channel=beta", *resource_args, _tee=True
     )
 
 
@@ -310,7 +306,7 @@ def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir)
     assert charm_entity.new_entity == "cs:~containers/k8s-ci-charm-845"
 
     charm_cmd.push.reset_mock()
-    charmcraft_cmd.upload.return_value.stderr = (
+    charmcraft_cmd.upload.return_value.stdout = (
         CLI_RESPONSES / "charmcraft_upload_k8s-ci-charm.txt"
     ).read_bytes()
 
@@ -318,7 +314,7 @@ def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir)
     charm_entity.push()
     charm_cmd.push.assert_not_called()
     charmcraft_cmd.upload.assert_called_once_with(
-        charm_entity.dst_path, _out=charm_entity.echo
+        "-q", charm_entity.dst_path, _tee=True
     )
     assert charm_entity.new_entity == "845"
 
@@ -360,17 +356,17 @@ def test_build_entity_attach_resource(
         [
             call(
                 "upload-resource",
-                "kubernetes-ci-charm",
+                "k8s-ci-charm",
                 "test-file",
                 filepath=str(K8S_CI_CHARM / "tmp" / "test-file.txt"),
-                _out=charm_entity.echo,
+                _tee=True,
             ),
             call(
                 "upload-resource",
-                "kubernetes-ci-charm",
+                "k8s-ci-charm",
                 "test-image",
                 image="test-image",
-                _out=charm_entity.echo,
+                _tee=True,
             ),
         ],
         any_order=False,
@@ -387,12 +383,12 @@ def test_build_entity_promote(charm_environment, charm_cmd, charmcraft_cmd, tmpd
     charm_entity.promote(to_channel="edge")
     charm_cmd.release.assert_not_called()
     charmcraft_cmd.release.assert_called_once_with(
-        "kubernetes-ci-charm",
+        "k8s-ci-charm",
         "--revision=6",
-        "--channel=edge",
+        "--channel=latest/edge",
         "--resource=test-file:3",
         "--resource=test-image:4",
-        _out=charm_entity.echo,
+        _tee=True,
     )
     charmcraft_cmd.release.reset_mock()
 
@@ -444,7 +440,7 @@ def test_bundle_build_entity_push(
     assert bundle_entity.new_entity == "cs:~containers/bundle/test-kubernetes-123"
 
     charm_cmd.push.reset_mock()
-    charmcraft_cmd.upload.return_value.stderr = (
+    charmcraft_cmd.upload.return_value.stdout = (
         CLI_RESPONSES / "charmcraft_upload_test-kubernetes.txt"
     ).read_bytes()
     bundle_entity = charms.BundleBuildEntity(
@@ -453,7 +449,7 @@ def test_bundle_build_entity_push(
     bundle_entity.push()
     charm_cmd.push.assert_not_called()
     charmcraft_cmd.upload.assert_called_once_with(
-        bundle_entity.dst_path, _out=bundle_entity.echo
+        "-q", bundle_entity.dst_path, _tee=True
     )
     assert bundle_entity.new_entity == "123"
 
@@ -616,6 +612,7 @@ def test_build_command(mock_build_env, mock_build_entity):
         "layer_index": "https://charmed-kubernetes.github.io/layer-index/",
         "resource_spec": "jobs/build-charms/resource-spec.yaml",
         "filter_by_tag": ["tag1", "tag2"],
+        "track": "latest",
         "to_channel": "edge",
         "force": True,
     }
@@ -676,6 +673,7 @@ def test_bundle_build_command(cmd_ok, mock_build_env, mock_bundle_build_entity, 
         "artifact_list": "tests/data/ci-testing-bundles.inc",
         "branch": "master",
         "filter_by_tag": ["k8s"],
+        "track": "latest",
         "to_channel": "edge",
     }
     cmd_ok.assert_called_once_with(

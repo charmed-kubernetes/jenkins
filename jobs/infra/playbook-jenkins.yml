@@ -132,6 +132,12 @@
       tags:
         - jenkins
         - adhoc
+    - name: upgrade charmcraft
+      command: "snap refresh charmcraft --channel latest/edge"
+      ignore_errors: yes
+      tags:
+        - jenkins
+        - adhoc
     - name: upgrade juju
       command: "snap refresh juju --channel latest/candidate"
       ignore_errors: yes
@@ -150,6 +156,7 @@
       loop:
         - "aws-cli --classic"
         - "charm --classic --edge"
+        - "charmcraft --classic --edge"
         - "go --classic --stable"
         - "juju --classic --candidate"
         - "juju-crashdump --classic --edge"

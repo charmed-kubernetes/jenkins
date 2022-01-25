@@ -28,6 +28,7 @@ from cilib.run import cmd_ok, capture, script
 from datetime import datetime
 from enum import Enum
 from retry.api import retry_call
+from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
 from pathos.threading import ThreadPool
 from pprint import pformat
@@ -67,9 +68,6 @@ class _CharmStore:
     def __init__(self, build_entity):
         self._echo = build_entity.echo
 
-    def echo(self, msg):
-        return self._echo(f"Charmstore - {msg}")
-
     def id(self, charm_entity, channel):
         try:
             charm_id = sh.charm.show(
@@ -94,13 +92,13 @@ class _CharmStore:
             return []
 
     def promote(self, charm_entity, from_channel, to_channel):
-        self.echo(
+        self._echo(
             f"Promoting :: {charm_entity:^35} :: from: {from_channel} to: {to_channel}"
         )
         charm_id = self.id(charm_entity, from_channel)
         charm_resources = self.resources(charm_id, from_channel)
         if not charm_resources:
-            self.echo("No resources for {}".format(charm_id))
+            self._echo("No resources for {}".format(charm_id))
         resources_args = [
             (
                 "--resource",
@@ -113,12 +111,12 @@ class _CharmStore:
         )
 
     def grant(self, charm_id):
-        self.echo(f"Setting   :: {charm_id:^35} :: permissions for read everyone")
+        self._echo(f"Setting   :: {charm_id:^35} :: permissions for read everyone")
         sh.charm.grant(charm_id, "everyone", acl="read", _out=self._echo)
 
     def upload(self, dst_path, entity):
         out = sh.charm.push(dst_path, entity, _out=self._echo)
-        self.echo(f"Pushing   :: {entity:^35} :: returns {out.stdout or out.stderr}")
+        self._echo(f"Pushing   :: {entity:^35} :: returns {out.stdout or out.stderr}")
 
         # Output includes lots of ansi escape sequences from the docker push,
         # and we only care about the first line, which contains the url as yaml.
@@ -126,7 +124,7 @@ class _CharmStore:
         return out["url"]
 
     def set(self, entity, commit):
-        self.echo(f"Setting {entity} metadata: {commit}")
+        self._echo(f"Setting {entity} metadata: {commit}")
         sh.charm.set(entity, f"commit={commit}", _out=self._echo)
 
     def upload_resource(self, entity, resource_name, resource):
@@ -147,22 +145,20 @@ class _CharmStore:
 
 
 class _CharmHub:
-    HEADER_RE = re.compile(r"\W+\s{2}")
     STATUS_RESOURCE = re.compile(r"(\S+) \(r(\d+)\)")
 
     def __init__(self, build_entity):
         self._echo = build_entity.echo
 
-    def echo(self, msg):
-        return self._echo(f"Charmhub   - {msg}")
-
-    def _table_to_list(self, header, body):
+    @staticmethod
+    def _table_to_list(header, body):
         if not body:
             return None
         rows = []
+        titles = [title for title in re.split(r"\s{2,}", header) if title]
         for line in body:
             row, head = {}, line
-            for key in reversed(self.HEADER_RE.split(header)):
+            for key in reversed(titles):
                 head, *value = head.strip().rsplit("  ", 1)
                 head, value = (head, value[0]) if value else ("", head.strip())
                 row[key] = value or rows[-1].get(key)
@@ -196,7 +192,7 @@ class _CharmHub:
     def status(self, charm_entity):
         """Read CLI Table output from charmcraft status and parse."""
         charm_status = sh.charmcraft.status(charm_entity, _out=self._echo)
-        header, *body = charm_status.stderr.decode().splitlines()
+        header, *body = charm_status.stdout.decode().splitlines()
         channel_status = self._table_to_list(header, body)
 
         for idx, row in enumerate(channel_status):
@@ -211,22 +207,22 @@ class _CharmHub:
 
     def revisions(self, charm_entity):
         """Read CLI Table output from charmcraft revisions and parse."""
-        charm_status = sh.charmcraft.revisions(charm_entity, _out=self._echo)
-        header, *body = charm_status.stderr.decode().splitlines()
+        charm_status = sh.charmcraft.revisions(charm_entity, _tee=True)
+        header, *body = charm_status.stdout.decode().splitlines()
         return self._table_to_list(header, body)
 
     def resources(self, charm_entity):
         """Read CLI Table output from charmcraft resources and parse."""
-        charmcraft_out = sh.charmcraft.resources(charm_entity, _out=self._echo)
-        header, *body = charmcraft_out.stderr.decode().splitlines()
+        charmcraft_out = sh.charmcraft.resources(charm_entity, _tee=True)
+        header, *body = charmcraft_out.stdout.decode().splitlines()
         return self._table_to_list(header, body)
 
     def resource_revisions(self, charm_entity, resource):
         """Read CLI Table output from charmcraft resource-revisions and parse."""
         charmcraft_out = sh.charmcraft(
-            "resource-revisions", charm_entity, resource, _out=self._echo
+            "resource-revisions", charm_entity, resource, _tee=True
         )
-        header, *body = charmcraft_out.stderr.decode().splitlines()
+        header, *body = charmcraft_out.stdout.decode().splitlines()
         return self._table_to_list(header, body)
 
     def _unpublished_revisions(self, charm_entity):
@@ -246,10 +242,11 @@ class _CharmHub:
             predicate=lambda rev: rev["Status"] != "released",
         )
         if unpublished_rev:
-            charm_resources = filter(
-                lambda rsc: rsc["Charm Rev"] == unpublished_rev["Version"],
-                self.resources(charm_entity),
-            )
+            charm_resources = [
+                rsc
+                for rsc in self.resources(charm_entity)
+                if rsc["Charm Rev"] == unpublished_rev["Revision"]
+            ]
             unpublished_rev["Resources"] = {
                 resource["Resource"]: _next_match(
                     self.resource_revisions(charm_entity, resource["Resource"]),
@@ -261,7 +258,7 @@ class _CharmHub:
         return charm_status
 
     def promote(self, charm_entity, from_channel, to_channel):
-        self.echo(
+        self._echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
         )
         if from_channel == "unpublished":
@@ -287,23 +284,27 @@ class _CharmHub:
                 )
             )
         for args in calls:
-            sh.charmcraft.release(*args, _out=self._echo)
+            sh.charmcraft.release(*args, _tee=True)
 
     def upload(self, dst_path):
-        out = sh.charmcraft.upload(dst_path, _out=self._echo)
-        (revision,) = re.findall(r"^Revision (\d+) of ", out.stderr.decode())
-        self.echo(f"Pushing   :: returns {out.stderr or out.stdout}")
+        out = sh.charmcraft.upload("-q", dst_path, _tee=True)
+        (revision,) = re.findall(
+            r"^Revision (\d+) of ", out.stdout.decode(), re.MULTILINE
+        )
+        self._echo(f"Pushing   :: returns {out.stdout or out.stderr}")
         return revision
 
     def upload_resource(self, charm_entity, resource_name, resource):
         kwargs = dict([resource])
         sh.charmcraft(
-            "upload-resource", charm_entity, resource_name, **kwargs, _out=self._echo
+            "upload-resource", charm_entity, resource_name, **kwargs, _tee=True
         )
 
 
 class BuildEnv:
     """Charm or Bundle build data class."""
+
+    REV = re.compile("rev: ([a-zA-Z0-9]+)")
 
     def __new__(cls, *args, **kwargs):
         """Initialize class variables used during the build from the CI environment."""
@@ -328,19 +329,19 @@ class BuildEnv:
         self.now = datetime.utcnow()
         self.build_type = build_type
         self.db = {}
+        self.clean_dirs = tuple()
 
         if self.build_type == BuildType.CHARM:
             self.db_json = Path("buildcharms.json")
             self.repos_dir = None
+            self.clean_dirs = (self.layers_dir, self.interfaces_dir, self.charms_dir)
+
         elif self.build_type == BuildType.BUNDLE:
             self.db_json = Path("buildbundles.json")
             self.repos_dir = self.tmp_dir / "repos"
             self.bundles_dir = self.tmp_dir / "bundles"
             self.default_repo_dir = self.repos_dir / "bundles-kubernetes"
-            for each in (self.repos_dir, self.bundles_dir):
-                if each.exists():
-                    shutil.rmtree(each)
-                each.mkdir(parents=True)
+            self.clean_dirs = (self.repos_dir, self.bundles_dir)
 
         if not self.db.get("build_datetime", None):
             self.db["build_datetime"] = self.now.strftime("%Y/%m/%d")
@@ -351,6 +352,12 @@ class BuildEnv:
         )
         if response and "Item" in response:
             self.db = response["Item"]
+
+    def clean(self):
+        for each in self.clean_dirs:
+            if each.exists():
+                shutil.rmtree(each)
+            each.mkdir(parents=True)
 
     @property
     def layers(self):
@@ -431,9 +438,8 @@ class BuildEnv:
             f"charm pull-source -i {self.layer_index} -b {self.layer_branch} {layer_name}"
         )
         self.echo(f"-  {out.stdout.decode()}")
-        rev = re.compile("rev: ([a-zA-Z0-9]+)")
         layer_manifest = {
-            "rev": rev.search(out.stdout.decode()).group(1),
+            "rev": self.REV.search(out.stdout.decode()).group(1),
             "url": layer_name,
         }
         return layer_manifest
@@ -509,7 +515,7 @@ class BuildEntity:
             self.entity = f"cs:~{opts['namespace']}/{name}"
         elif self.store == "ch":
             # Entity path, ie. kubernetes-worker
-            self.entity = opts.get("charmhub-entity") or name
+            self.entity = name
         else:
             raise BuildException(f"'{self.store}' doesn't exist")
 
@@ -557,8 +563,8 @@ class BuildEntity:
                 return None
             resp = requests.get(url, stream=True)
             if resp.ok:
-                zip_file = zipfile.ZipFile(BytesIO(resp.content))
-                return yaml.safe_load(zipfile.Path(zip_file, at=fname).read_text())
+                yaml_file = zipfile.Path(BytesIO(resp.content)) / fname
+                return yaml.safe_load(yaml_file.read_text())
 
     @property
     def has_changed(self):
@@ -630,7 +636,7 @@ class BuildEntity:
         if self.legacy_charm:
             # Legacy (reactive) charms can have resources added by layers,
             # so we need to read from the built charm.
-            metadata_path = Path(self.dst_path) / "metadata.yaml"
+            metadata_path = zipfile.Path(self.dst_path) / "metadata.yaml"
         else:
             metadata_path = Path(self.src_path) / "metadata.yaml"
         metadata = yaml.safe_load(metadata_path.read_text())
@@ -736,6 +742,7 @@ class BuildEntity:
                 raise SystemExit("Failed to build custom resources")
 
         # Pull any `upstream-image` annotated resources.
+        empty_file = NamedTemporaryFile()
         for name, details in self._read_metadata_resources().items():
             resource_fmt = resource_spec.get(name) or ""
             if details["type"] == "oci-image":
@@ -748,7 +755,7 @@ class BuildEntity:
             elif details["type"] == "file":
                 resource_spec[name] = (
                     "filepath",
-                    resource_fmt.format(out_path=out_path),
+                    resource_fmt.format(out_path=out_path) or empty_file.name,
                 )
 
         self.echo(f"Attaching resources:\n{pformat(resource_spec)}")
@@ -769,6 +776,9 @@ class BuildEntity:
             cs.promote(self.entity, from_channel, to_channel)
             cs.grant(charm_id)
         elif self.store == "ch":
+            if to_channel == "edge" and from_channel == "unpublished":
+                track = self.build.db["build_args"].get("track") or "latest"
+                to_channel = f"{track}/edge"
             _CharmHub(self).promote(self.entity, from_channel, to_channel)
 
 
@@ -844,6 +854,9 @@ def cli():
     multiple=True,
 )
 @click.option(
+    "--track", required=True, help="track to promote charm to", default="latest"
+)
+@click.option(
     "--to-channel", required=True, help="channel to promote charm to", default="edge"
 )
 @click.option(
@@ -861,6 +874,7 @@ def build(
     layer_branch,
     resource_spec,
     filter_by_tag,
+    track,
     to_channel,
     store,
     force,
@@ -878,10 +892,11 @@ def build(
         "layer_branch": layer_branch,
         "resource_spec": resource_spec,
         "filter_by_tag": list(filter_by_tag),
+        "track": track,
         "to_channel": to_channel,
         "force": force,
     }
-
+    build_env.clean()
     build_env.pull_layers()
 
     entities = []
@@ -911,8 +926,6 @@ def build(
         finally:
             entity.echo("Stopping")
 
-    # pool = ThreadPool()
-    # pool.map(_run_build, entities)
     build_env.save()
 
 
@@ -937,6 +950,9 @@ def build(
     default="https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git",
 )
 @click.option(
+    "--track", required=True, help="track to promote charm to", default="latest"
+)
+@click.option(
     "--to-channel", required=True, help="channel to promote bundle to", default="edge"
 )
 @click.option(
@@ -946,7 +962,7 @@ def build(
     default="cs",
 )
 def build_bundles(
-    bundle_list, bundle_branch, filter_by_tag, bundle_repo, to_channel, store
+    bundle_list, bundle_branch, filter_by_tag, bundle_repo, track, to_channel, store
 ):
     """Build list of bundles from a specific branch according to filters."""
     build_env = BuildEnv(build_type=BuildType.BUNDLE)
@@ -954,9 +970,11 @@ def build_bundles(
         "artifact_list": bundle_list,
         "branch": bundle_branch,
         "filter_by_tag": list(filter_by_tag),
+        "track": track,
         "to_channel": to_channel,
     }
 
+    build_env.clean()
     default_repo_dir = build_env.default_repo_dir
     cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {default_repo_dir}")
 
@@ -1023,6 +1041,7 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel, store):
         "to_channel": to_channel,
         "from_channel": from_channel,
     }
+    build_env.clean()
     return build_env.promote_all(
         from_channel=from_channel, to_channel=to_channel, store=store
     )
