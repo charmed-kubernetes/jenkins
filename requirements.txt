@@ -109,7 +109,7 @@ importlib-metadata==3.10.0
     #   mkdocs
 iniconfig==1.1.1
     # via pytest
-invoke==1.5.0
+invoke==1.6.0
     # via -r requirements.in
 iso8601==0.1.14
     # via surl
@@ -395,7 +395,6 @@ watchdog==2.1.6
     # via mkdocs
 wcwidth==0.2.5
     # via prettytable
-websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
