@@ -227,12 +227,15 @@ def test_build_entity_has_changed(charm_environment, charm_cmd):
         assert charm_entity.has_changed is True
 
 
-def test_build_entity_charm_build(charm_environment, charm_cmd, charmcraft_cmd, tmpdir):
+@patch("charms.script")
+def test_build_entity_charm_build(
+    mock_script, charm_environment, charm_cmd, charmcraft_cmd, tmpdir
+):
     """Test that BuildEntity runs charm_build."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
 
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
     charm_entity.legacy_charm = True
     charm_entity.charm_build()
     assert charm_entity.dst_path == str(K8S_CI_CHARM / "k8s-ci-charm.charm")
@@ -248,7 +251,6 @@ def test_build_entity_charm_build(charm_environment, charm_cmd, charmcraft_cmd, 
     charm_cmd.build.reset_mock()
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
-
     charm_entity.legacy_charm = True
     charm_entity.charm_build()
     assert charm_entity.dst_path == tmpdir / "build" / "k8s-ci-charm"
@@ -262,6 +264,7 @@ def test_build_entity_charm_build(charm_environment, charm_cmd, charmcraft_cmd, 
     charmcraft_cmd.build.assert_not_called()
     charm_cmd.build.reset_mock()
 
+    # Non-Legacy Charms, build with charmcraft
     charm_entity.legacy_charm = False
     charm_entity.charm_build()
     charm_cmd.build.assert_not_called()
@@ -269,6 +272,20 @@ def test_build_entity_charm_build(charm_environment, charm_cmd, charmcraft_cmd, 
         "-f",
         str(K8S_CI_CHARM),
         _cwd=tmpdir / "build",
+    )
+    charmcraft_cmd.build.reset_mock()
+
+    # Charms built with override
+    mock_script.assert_not_called()
+    charm_entity.opts["override-build"] = MagicMock()
+    charm_entity.charm_build()
+    charm_cmd.build.assert_not_called()
+    charmcraft_cmd.build.assert_not_called()
+    mock_script.assert_called_once_with(
+        charm_entity.opts["override-build"],
+        cwd=charm_entity.src_path,
+        charm=charm_entity.name,
+        echo=charm_entity.echo,
     )
 
 
@@ -457,7 +474,7 @@ def test_bundle_build_entity_bundle_build(shutil_copytree, cmd_ok, bundle_enviro
     )
     bundle_entity.bundle_build("edge")
     shutil_copytree.assert_not_called()
-    cmd = f"{bundle_environment.default_repo_dir/'bundle'} -o {K8S_CI_BUNDLE} -c edge k8s/core cni/flannel cri/containerd"
+    cmd = f"{bundle_environment.default_repo_dir / 'bundle'} -o {K8S_CI_BUNDLE} -c edge k8s/core cni/flannel cri/containerd"
     cmd_ok.assert_called_with(cmd, echo=bundle_entity.echo)
 
 

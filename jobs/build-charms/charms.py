@@ -63,14 +63,14 @@ def _next_match(seq, predicate=lambda _: _, default=None):
     return next(filter(predicate, seq), default)
 
 
-class _CharmStore:
-    def __init__(self, build_entity):
-        self._echo = build_entity.echo
-        self.charm = sh.charm.bake(_tee=True, _out=self._echo)
+class _WrappedCmd:
+    def __init__(self, entity, runner):
+        self._echo = entity.echo
+        self._run = runner
 
     def build(self, *args, **kwargs):
         try:
-            ret = self.charm.build(*args, **kwargs)
+            ret = self._run.build(*args, **kwargs)
             assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
             ret.ok = True
         except sh.ErrorReturnCode as ret:
@@ -79,6 +79,20 @@ class _CharmStore:
             ret.cmd = ret.full_cmd
         return ret
 
+
+class CharmCmd(_WrappedCmd):
+    def __init__(self, entity):
+        super().__init__(entity, sh.charm.bake(_tee=True, _out=entity.echo))
+        self.charm = self._run
+
+
+class CharmcraftCmd(_WrappedCmd):
+    def __init__(self, entity):
+        super().__init__(entity, sh.charmcraft.bake(_tee=True, _out=entity.echo))
+        self.charmcraft = self._run
+
+
+class _CharmStore(CharmCmd):
     def show(self, *args, **kwargs):
         return self.charm.show(*args, **kwargs)
 
@@ -153,12 +167,8 @@ class _CharmStore:
         )
 
 
-class _CharmHub:
+class _CharmHub(CharmcraftCmd):
     STATUS_RESOURCE = re.compile(r"(\S+) \(r(\d+)\)")
-
-    def __init__(self, build_entity):
-        self._echo = build_entity.echo
-        self.charmcraft = sh.charmcraft.bake(_tee=True, _out=self._echo)
 
     @staticmethod
     def _table_to_list(header, body):
@@ -198,17 +208,6 @@ class _CharmHub:
         }
         resp = requests.post("https://api.charmhub.io/v2/charms/refresh", json=data)
         return resp.json()
-
-    def build(self, *args, **kwargs):
-        try:
-            ret = self.charmcraft.build(*args, **kwargs)
-            assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
-            ret.ok = True
-        except sh.ErrorReturnCode as ret:
-            assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
-            ret.ok = False
-            ret.cmd = ret.full_cmd
-        return ret
 
     def status(self, charm_entity):
         """Read CLI Table output from charmcraft status and parse."""
@@ -696,11 +695,11 @@ class BuildEntity:
                 args += " --charm-file"
                 self.dst_path = str(Path(self.src_path) / f"{self.name}.charm")
             self.echo(f"Building with: charm build {args}")
-            ret = _CharmStore(self).build(*args.split(), _cwd=self.src_path)
+            ret = CharmCmd(self).build(*args.split(), _cwd=self.src_path)
         else:
             args = f"-f {self.src_path}"
             self.echo(f"Building with: charmcraft build {args}")
-            ret = _CharmHub(self).build(*args.split(), _cwd=self.build.build_dir)
+            ret = CharmcraftCmd(self).build(*args.split(), _cwd=self.build.build_dir)
         if not ret.ok:
             self.echo("Failed to build, aborting")
             raise SystemExit(f"Failed to build {self.name}")
