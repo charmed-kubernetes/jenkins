@@ -1,0 +1,13 @@
+Track    Base                Channel    Version    Revision    Resources
+latest   ubuntu 16.04 (all)  stable     838        838         test-file (r977), test-file-2 (r976)
+                             candidate  838        838         test-file (r977), test-file-2 (r976)
+                             beta       824        824         test-file (r917), test-file-2 (r916)
+                             edge       845        845         test-file (r994), test-file-2 (r993)
+         ubuntu 18.04 (all)  stable     838        838         test-file (r977), test-file-2 (r976)
+                             candidate  838        838         test-file (r977), test-file-2 (r976)
+                             beta       824        824         test-file (r917), test-file-2 (r916)
+                             edge       845        845         test-file (r994), test-file-2 (r993)
+         ubuntu 20.04 (all)  stable     838        838         test-file (r977), test-file-2 (r976)
+                             candidate  838        838         test-file (r977), test-file-2 (r976)
+                             beta       824        824         test-file (r917), test-file-2 (r916)
+                             edge       845        845         test-file (r994), test-file-2 (r993)

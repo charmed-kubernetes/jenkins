@@ -1,6 +1,7 @@
 """ AWS session
 """
 import boto3
+import botocore.exceptions
 
 
 class AWSSessionException(Exception):
@@ -21,7 +22,10 @@ class Store(AWSSession):
         self.table = self.resource.Table(table)
 
     def get_item(self, *args, **kwargs):
-        return self.table.get_item(*args, **kwargs)
+        try:
+            return self.table.get_item(*args, **kwargs)
+        except botocore.exceptions.NoCredentialsError:
+            return None
 
     def put_item(self, *args, **kwargs):
         return self.table.put_item(*args, **kwargs)

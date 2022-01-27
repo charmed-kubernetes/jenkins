@@ -53,11 +53,19 @@
     namespace: 'containers'
     tags: ['k8s', 'kubernetes-e2e']
 - kubernetes-master:
-    upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-master.git"
-    downstream: 'charmed-kubernetes/charm-kubernetes-master.git'
+    upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-control-plane.git"
+    downstream: 'charmed-kubernetes/charm-kubernetes-control-plane.git'
     build-resources: "cd {out_path}; bash {src_path}/build-cni-resources.sh"
     namespace: 'containers'
     tags: ['k8s', 'kubernetes-master']
+- kubernetes-control-plane:
+    upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-control-plane.git"
+    downstream: 'charmed-kubernetes/charm-kubernetes-control-plane.git'
+    build-resources: "cd {out_path}; bash {src_path}/build-cni-resources.sh"
+    namespace: 'containers'
+    tags: ['k8s', 'kubernetes-master', 'kubernetes-control-plane']
+    branch: 'inclusive-naming/rename-charm'
+    store: 'ch'
 - kubernetes-worker:
     upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-worker.git"
     downstream: 'charmed-kubernetes/charm-kubernetes-worker.git'

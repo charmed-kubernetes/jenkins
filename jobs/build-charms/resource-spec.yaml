@@ -1,4 +1,4 @@
-'cs:~containers/canal':
+'canal':
   calico: '{out_path}/calico-amd64.tar.gz'
   calico-arm64: '{out_path}/calico-arm64.tar.gz'
   calico-upgrade: '{out_path}/calico-upgrade-amd64.tar.gz'
@@ -6,30 +6,34 @@
   calico-node-image: '{out_path}/calico-node-image.tar.gz'
   flannel: '{out_path}/flannel-amd64.tar.gz'
   flannel-arm64: '{out_path}/flannel-arm64.tar.gz'
-'cs:~containers/calico':
+'calico':
   calico: '{out_path}/calico-amd64.tar.gz'
   calico-arm64: '{out_path}/calico-arm64.tar.gz'
   calico-upgrade: '{out_path}/calico-upgrade-amd64.tar.gz'
   calico-upgrade-arm64: '{out_path}/calico-upgrade-arm64.tar.gz'
   calico-node-image: '{out_path}/calico-node-image.tar.gz'
-'cs:~containers/flannel':
+'flannel':
   flannel-amd64: '{out_path}/flannel-amd64.tar.gz'
   flannel-arm64: '{out_path}/flannel-arm64.tar.gz'
   flannel-s390x: '{out_path}/flannel-s390x.tar.gz'
-'cs:~containers/kubernetes-master':
+'kubernetes-master':
   cni-amd64: '{out_path}/cni-amd64.tgz'
   cni-arm64: '{out_path}/cni-arm64.tgz'
   cni-s390x: '{out_path}/cni-s390x.tgz'
-'cs:~containers/kubernetes-worker':
+'kubernetes-control-plane':
   cni-amd64: '{out_path}/cni-amd64.tgz'
   cni-arm64: '{out_path}/cni-arm64.tgz'
   cni-s390x: '{out_path}/cni-s390x.tgz'
-'cs:~containers/tigera-secure-ee':
+'kubernetes-worker':
+  cni-amd64: '{out_path}/cni-amd64.tgz'
+  cni-arm64: '{out_path}/cni-arm64.tgz'
+  cni-s390x: '{out_path}/cni-s390x.tgz'
+'tigera-secure-ee':
   calico-cni: '{out_path}/calico-cni-amd64.tar.gz'
   calico-cni-arm64: '{out_path}/calico-cni-arm64.tar.gz'
   calicoctl-image: '{out_path}/calicoctl-image.tar.gz'
   calico-node-image: '{out_path}/calico-node-image.tar.gz'
-'cs:~containers/multus':
+'multus':
   net-attach-def-manager-image: 'net-attach-def-manager'
-'cs:~containers/sriov-cni':
+'sriov-cni':
   sriov-cni-image: 'sriov-cni'

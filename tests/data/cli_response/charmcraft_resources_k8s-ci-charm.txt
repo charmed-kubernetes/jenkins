@@ -1,0 +1,6 @@
+Charm Rev    Resource    Type       Optional
+6            test-file   file       True
+             test-image  oci-image  True
+5            test-file   file       True
+             test-image  oci-image  True
+4            test-file   file       True
