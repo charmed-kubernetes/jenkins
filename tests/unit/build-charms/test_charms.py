@@ -70,6 +70,12 @@ def charm_cmd():
             entity_fname = re.split(r"(-\d+)$", charm_or_bundle_id)[0]
         elif cmd == "list-resources":
             (entity_fname,) = args
+        elif cmd == "build":
+            return SimpleNamespace(
+                stdout=b"",
+                stderr=b"",
+                exit_code=0,
+            )
 
         if entity_fname:
             entity_fname = entity_fname[4:].replace("/", "_")
@@ -82,39 +88,31 @@ def charm_cmd():
         cmd.side_effect = charm_command_response
         cmd.show.side_effect = partial(charm_command_response, "show")
         cmd.push.side_effect = partial(charm_command_response, "push")
+        cmd.build.side_effect = partial(charm_command_response, "build")
         yield cmd
 
 
 @pytest.fixture(autouse=True)
 def charmcraft_cmd():
     """Create a fixture defining mock for `charmcraft` cli command."""
+
+    def command_response(*args, **_kwargs):
+        fname = "_".join(("charmcraft",) + args)
+        fpath = CLI_RESPONSES / f"{fname}.txt"
+        stdout = fpath.read_bytes() if fpath.exists() else b""
+        return SimpleNamespace(
+            stdout=stdout,
+            stderr=b"",
+            exit_code=0,
+        )
+
     with patch("sh.charmcraft", create=True) as charmcraft:
         cmd = charmcraft.bake.return_value
-        cmd.status.return_value.stdout = (
-            CLI_RESPONSES / "charmcraft_status_k8s-ci-charm.txt"
-        ).read_bytes()
-        cmd.resources.return_value.stdout = (
-            CLI_RESPONSES / "charmcraft_resources_k8s-ci-charm.txt"
-        ).read_bytes()
-        cmd.revisions.return_value.stdout = (
-            CLI_RESPONSES / "charmcraft_revisions_k8s-ci-charm.txt"
-        ).read_bytes()
-
-        def hyphened_commands(*args, **_kwargs):
-            command, *cmd_args = args
-            if command == "resource-revisions":
-                _, resource = cmd_args
-                return SimpleNamespace(
-                    stdout=(
-                        CLI_RESPONSES
-                        / f"charmcraft_resource_revisions_k8s-ci-charm_{resource}.txt"
-                    ).read_bytes()
-                )
-            elif command == "upload-resource":
-                return
-            pass
-
-        cmd.side_effect = hyphened_commands
+        cmd.side_effect = command_response
+        cmd.status.side_effect = partial(command_response, "status")
+        cmd.resources.side_effect = partial(command_response, "resources")
+        cmd.revisions.side_effect = partial(command_response, "revisions")
+        cmd.build.side_effect = partial(command_response, "build")
         yield cmd
 
 
@@ -168,13 +166,15 @@ def test_build_env_promote_all_charmstore(charm_environment, cilib_store, charm_
 
 def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
     """Tests promote_all to charmhub."""
-    charm_environment.promote_all(from_channel="edge", to_channel="beta", store="ch")
+    charm_environment.promote_all(
+        from_channel="latest/edge", to_channel="latest/beta", store="ch"
+    )
     resource_args = [
         "--resource=test-file:994",
         "--resource=test-file-2:993",
     ]
     charmcraft_cmd.release.assert_called_once_with(
-        "k8s-ci-charm", "--revision=845", "--channel=beta", *resource_args
+        "k8s-ci-charm", "--revision=845", "--channel=latest/beta", *resource_args
     )
 
 
@@ -538,8 +538,8 @@ def test_promote_command(mock_build_env):
             "--charm-list=test-charm",
             "--filter-by-tag=tag1",
             "--filter-by-tag=tag2",
-            "--from-channel=unpublished",
-            "--to-channel=edge",
+            "--from-channel=latest/edge",
+            "--to-channel=latest/beta",
             "--store=CH",
         ],
     )
@@ -548,11 +548,11 @@ def test_promote_command(mock_build_env):
     assert mock_build_env.db["build_args"] == {
         "artifact_list": "test-charm",
         "filter_by_tag": ["tag1", "tag2"],
-        "to_channel": "edge",
-        "from_channel": "unpublished",
+        "from_channel": "latest/edge",
+        "to_channel": "latest/beta",
     }
     mock_build_env.promote_all.assert_called_once_with(
-        from_channel="unpublished", to_channel="edge", store="ch"
+        from_channel="latest/edge", to_channel="latest/beta", store="ch"
     )
 
 

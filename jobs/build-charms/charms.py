@@ -29,7 +29,6 @@ from datetime import datetime
 from enum import Enum
 from retry.api import retry_call
 
-from types import SimpleNamespace
 from pathos.threading import ThreadPool
 from pprint import pformat
 import click
@@ -70,7 +69,15 @@ class _CharmStore:
         self.charm = sh.charm.bake(_tee=True, _out=self._echo)
 
     def build(self, *args, **kwargs):
-        return self.charm.build(*args, **kwargs)
+        try:
+            ret = self.charm.build(*args, **kwargs)
+            assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
+            ret.ok = True
+        except sh.ErrorReturnCode as ret:
+            assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
+            ret.ok = False
+            ret.cmd = ret.full_cmd
+        return ret
 
     def show(self, *args, **kwargs):
         return self.charm.show(*args, **kwargs)
@@ -193,7 +200,15 @@ class _CharmHub:
         return resp.json()
 
     def build(self, *args, **kwargs):
-        return self.charmcraft.build(*args, **kwargs)
+        try:
+            ret = self.charmcraft.build(*args, **kwargs)
+            assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
+            ret.ok = True
+        except sh.ErrorReturnCode as ret:
+            assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
+            ret.ok = False
+            ret.cmd = ret.full_cmd
+        return ret
 
     def status(self, charm_entity):
         """Read CLI Table output from charmcraft status and parse."""
@@ -268,14 +283,15 @@ class _CharmHub:
         if from_channel == "unpublished":
             charm_status = self._unpublished_revisions(charm_entity)
         else:
-            charm_status = filter(
-                lambda rev: rev["Channel"] == from_channel,
-                self.status(charm_entity),
-            )
+            charm_status = [
+                row
+                for row in self.status(charm_entity)
+                if f"{row['Track']}/{row['Channel']}" == from_channel
+            ]
 
         calls = set()
-        for charm_by_base in charm_status:
-            revision, resources = charm_by_base["Revision"], charm_by_base["Resources"]
+        for row in charm_status:
+            revision, resources = row["Revision"], row["Resources"]
             resource_args = (
                 f"--resource={name}:{rev}" for name, rev in resources.items() if rev
             )
@@ -666,7 +682,6 @@ class BuildEntity:
 
     def charm_build(self):
         """Perform a build against charm/bundle."""
-        ret = SimpleNamespace(ok=True)
         if "override-build" in self.opts:
             self.echo("Override build found, running in place of charm build.")
             ret = script(
@@ -681,19 +696,11 @@ class BuildEntity:
                 args += " --charm-file"
                 self.dst_path = str(Path(self.src_path) / f"{self.name}.charm")
             self.echo(f"Building with: charm build {args}")
-            try:
-                _CharmStore(self).build(*args.split(), _cwd=self.src_path)
-            except sh.ErrorReturnCode:
-                ret.ok = False
-
+            ret = _CharmStore(self).build(*args.split(), _cwd=self.src_path)
         else:
             args = f"-f {self.src_path}"
             self.echo(f"Building with: charmcraft build {args}")
-            try:
-                _CharmHub(self).build(*args.split(), _cwd=self.build.build_dir)
-            except sh.ErrorReturnCode:
-                ret.ok = False
-
+            ret = _CharmHub(self).build(*args.split(), _cwd=self.build.build_dir)
         if not ret.ok:
             self.echo("Failed to build, aborting")
             raise SystemExit(f"Failed to build {self.name}")
