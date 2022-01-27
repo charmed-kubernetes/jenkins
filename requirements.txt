@@ -275,7 +275,7 @@ pytest==6.2.2
     #   pytest-html
     #   pytest-metadata
     #   pytest-mock
-pytest-asyncio==0.14.0
+pytest-asyncio==0.17.2
     # via -r requirements.in
 pytest-html==3.1.1
     # via -r requirements.in
@@ -395,7 +395,6 @@ watchdog==2.1.6
     # via mkdocs
 wcwidth==0.2.5
     # via prettytable
-websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
