@@ -175,7 +175,6 @@
       loop:
         - "microk8s"
         - "bundletester"
-        - "charmcraft"
         - "surl"
       tags:
         - jenkins
