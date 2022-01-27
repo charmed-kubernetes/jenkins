@@ -61,34 +61,27 @@ def cilib_store():
 def charm_cmd():
     """Create a fixture defining mock for `charm` cli command."""
 
-    def charm_command_response(cmd, *args, **_kwargs):
-        entity_fname = None
+    def command_response(cmd, *args, **_kwargs):
+        entity_fname, *_ = args
         if cmd == "push":
-            _directory, entity_fname = args
+            _directory, entity_fname, *_ = args
         elif cmd == "show":
-            charm_or_bundle_id, *fields = args
-            entity_fname = re.split(r"(-\d+)$", charm_or_bundle_id)[0]
-        elif cmd == "list-resources":
-            (entity_fname,) = args
-        elif cmd == "build":
-            return SimpleNamespace(
-                stdout=b"",
-                stderr=b"",
-                exit_code=0,
-            )
-
-        if entity_fname:
-            entity_fname = entity_fname[4:].replace("/", "_")
-            return SimpleNamespace(
-                stdout=(CLI_RESPONSES / f"charm_{cmd}_{entity_fname}.yaml").read_bytes()
-            )
+            entity_fname = re.split(r"(-\d+)$", entity_fname)[0]
+        entity_fname = entity_fname[4:].replace("/", "_")
+        fpath = CLI_RESPONSES / f"charm_{cmd}_{entity_fname}.yaml"
+        stdout = fpath.read_bytes() if fpath.exists() else b""
+        return SimpleNamespace(
+            stdout=stdout,
+            stderr=b"",
+            exit_code=0,
+        )
 
     with patch("sh.charm", create=True) as charm:
         cmd = charm.bake.return_value
-        cmd.side_effect = charm_command_response
-        cmd.show.side_effect = partial(charm_command_response, "show")
-        cmd.push.side_effect = partial(charm_command_response, "push")
-        cmd.build.side_effect = partial(charm_command_response, "build")
+        cmd.side_effect = command_response
+        cmd.show.side_effect = partial(command_response, "show")
+        cmd.push.side_effect = partial(command_response, "push")
+        cmd.build.side_effect = partial(command_response, "build")
         yield cmd
 
 
