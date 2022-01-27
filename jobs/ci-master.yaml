@@ -417,3 +417,6 @@
           - text:
               credential-id: deb-gpg-key
               variable: K8STEAMCI_GPG_KEY
+          - text:
+              credential-id: charmcraft_creds
+              variable: CHARMCRAFT_AUTH
