@@ -295,7 +295,7 @@ python-jenkins==1.7.0
     # via jenkins-job-builder
 pytz==2021.1
     # via pyrfc3339
-pyyaml==5.3.1
+pyyaml==5.4
     # via
     #   -r requirements.in
     #   ansible-base
@@ -395,7 +395,6 @@ watchdog==2.1.6
     # via mkdocs
 wcwidth==0.2.5
     # via prettytable
-websockets==7.0 ; python_version < "3.9"
 websockets==8.0 ; python_version >= "3.9"
     # via
     #   -r requirements.in
