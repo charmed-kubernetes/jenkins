@@ -2,6 +2,7 @@
 
 import os
 import re
+import shutil
 from pathlib import Path
 
 import pytest
@@ -106,6 +107,7 @@ def charmcraft_cmd():
         cmd.resources.side_effect = partial(command_response, "resources")
         cmd.revisions.side_effect = partial(command_response, "revisions")
         cmd.build.side_effect = partial(command_response, "build")
+        cmd.pack.side_effect = partial(command_response, "pack")
         yield cmd
 
 
@@ -449,33 +451,47 @@ def test_bundle_build_entity_push(
 
 
 @patch("charms.cmd_ok")
-@patch("shutil.copytree")
-def test_bundle_build_entity_bundle_build(shutil_copytree, cmd_ok, bundle_environment):
+def test_bundle_build_entity_bundle_build(cmd_ok, charmcraft_cmd, bundle_environment):
     """Tests bundle_build method."""
     artifacts = bundle_environment.artifacts
     bundle_name, bundle_opts = next(iter(artifacts[0].items()))
-    bundle_opts["src_path"] = bundle_environment.default_repo_dir
-    bundle_opts["dst_path"] = K8S_CI_BUNDLE
+    bundle_opts["src_path"] = K8S_CI_BUNDLE
+    bundle_opts["dst_path"] = bundle_environment.bundles_dir
 
+    # Test a bundle copy takes place
     bundle_opts["skip-build"] = True
     bundle_entity = charms.BundleBuildEntity(
         bundle_environment, bundle_name, bundle_opts, "cs"
     )
     bundle_entity.bundle_build("edge")
-    shutil_copytree.assert_called_once_with(
-        bundle_environment.default_repo_dir, str(K8S_CI_BUNDLE)
-    )
+    assert (bundle_environment.bundles_dir / "bundle.yaml").exists()
+    assert (bundle_environment.bundles_dir / "tests/test.yaml").exists()
     cmd_ok.assert_not_called()
-    shutil_copytree.reset_mock()
+    shutil.rmtree(bundle_environment.bundles_dir)
 
+    # Test a bundle build takes place
     del bundle_opts["skip-build"]
     bundle_entity = charms.BundleBuildEntity(
         bundle_environment, bundle_name, bundle_opts, "cs"
     )
     bundle_entity.bundle_build("edge")
-    shutil_copytree.assert_not_called()
-    cmd = f"{bundle_environment.default_repo_dir / 'bundle'} -o {K8S_CI_BUNDLE} -c edge k8s/core cni/flannel cri/containerd"
+    assert not (bundle_environment.bundles_dir / "bundle.yaml").exists()
+    cmd = f"{K8S_CI_BUNDLE / 'bundle'} -o {bundle_environment.bundles_dir} -c edge k8s/core cni/flannel cri/containerd"
     cmd_ok.assert_called_with(cmd, echo=bundle_entity.echo)
+    cmd_ok.reset_mock()
+
+    # Test that a bundle pack occurs
+    bundle_opts["skip-build"] = True
+    bundle_entity = charms.BundleBuildEntity(
+        bundle_environment, bundle_name, bundle_opts, "ch"
+    )
+    bundle_entity.bundle_build("edge")
+    charmcraft_cmd.pack.assert_called_once_with(_cwd=bundle_environment.bundles_dir)
+    cmd_ok.assert_not_called()
+    assert (
+        bundle_entity.dst_path
+        == "/not/real/path/to/scratch/tmp/bundles/test-kuberenetes.zip"
+    )
 
 
 def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd):
