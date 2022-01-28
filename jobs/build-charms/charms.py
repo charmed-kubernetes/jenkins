@@ -619,8 +619,9 @@ class BuildEntity:
             )
             return True
 
+        comparisons = ["rev", "url"]
         current_build_manifest = [
-            {"rev": curr["rev"], "url": curr["url"]}
+            {k: curr[k] for k in comparisons}
             for curr in self.build.db["pull_layer_manifest"]
         ]
 
@@ -632,7 +633,7 @@ class BuildEntity:
         the_diff = [
             i
             for i in charmstore_build_manifest["layers"]
-            if i not in current_build_manifest
+            if {k: i[k] for k in comparisons} not in current_build_manifest
         ]
         if the_diff:
             self.echo("Changes found:")
@@ -993,7 +994,7 @@ def build_bundles(
         for bundle_name, bundle_opts in bundle_map.items():
             if not any(match in filter_by_tag for match in bundle_opts["tags"]):
                 continue
-            if "repo" in bundle_opts:
+            if "downstream" in bundle_opts:
                 bundle_opts["src_path"] = build_env.repos_dir / bundle_name
             else:
                 bundle_opts["src_path"] = build_env.default_repo_dir
