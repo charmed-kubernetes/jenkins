@@ -1,3 +1,4 @@
+name: test-kubernetes
 description: A minimal two-machine Kubernetes cluster, appropriate for development.
 series: focal
 machines:

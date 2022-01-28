@@ -91,6 +91,17 @@ class CharmcraftCmd(_WrappedCmd):
         super().__init__(entity, sh.charmcraft.bake(_tee=True, _out=entity.echo))
         self.charmcraft = self._run
 
+    def pack(self, *args, **kwargs):
+        try:
+            ret = self.charmcraft.pack(*args, **kwargs)
+        except sh.ErrorReturnCode:
+            self._echo(f"Failed to pack bundle in {kwargs.get('_cwd')}")
+            raise
+        (entity,) = re.findall(r"^Created '(\S+)'", ret.stdout.decode(), re.MULTILINE)
+        entity = Path(entity)
+        self._echo(f"Packing Bundle :: {entity.name:^35}")
+        return entity
+
 
 class _CharmStore(CharmCmd):
     def show(self, *args, **kwargs):
@@ -833,6 +844,27 @@ class BundleBuildEntity(BuildEntity):
             shutil.copytree(
                 Path(self.src_path) / self.opts.get("subdir", ""), self.dst_path
             )
+
+        if self.store == "ch":
+            # If we're building for charmhub, it needs to be packed
+            dst_path = Path(self.dst_path)
+            charmcraft_yaml = dst_path / "charmcraft.yaml"
+            contents = {
+                "type": "bundle",
+                "parts": {
+                    "bundle": {
+                        "prime": [
+                            str(_.relative_to(dst_path))
+                            for _ in dst_path.glob("**/*")
+                            if _.is_file()
+                        ]
+                    }
+                },
+            }
+            if not charmcraft_yaml.exists():
+                with charmcraft_yaml.open("w") as fp:
+                    yaml.safe_dump(contents, fp)
+            self.dst_path = str(CharmcraftCmd(self).pack(_cwd=dst_path))
 
 
 @click.group()
