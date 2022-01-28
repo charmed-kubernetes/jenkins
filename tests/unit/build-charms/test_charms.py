@@ -490,7 +490,7 @@ def test_bundle_build_entity_bundle_build(cmd_ok, charmcraft_cmd, bundle_environ
     cmd_ok.assert_not_called()
     assert (
         bundle_entity.dst_path
-        == "/not/real/path/to/scratch/tmp/bundles/test-kuberenetes.zip"
+        == "/not/real/path/to/scratch/tmp/bundles/test-kubernetes.zip"
     )
 
 
