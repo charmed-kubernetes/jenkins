@@ -497,7 +497,10 @@ class BuildEntity:
         self.name = name
         self.type = "Charm"
 
-        self.checkout_path = build.repos_dir or build.charms_dir / self.name
+        if build.repos_dir:
+            self.checkout_path = build.repos_dir / opts.get("sub-repo", "")
+        else:
+            self.checkout_path = build.charms_dir / self.name
 
         src_path = self.checkout_path / opts.get("subdir", "")
 
@@ -677,7 +680,7 @@ class BuildEntity:
             raise SystemExit("Clone failed")
 
         self.legacy_charm = self.layer_path.exists()
-        if not self.legacy_charm:
+        if not self.legacy_charm and self.type == "charm":
             self.dst_path += ".charm"
 
     def charm_build(self):
@@ -995,6 +998,7 @@ def build_bundles(
             if not any(match in filter_by_tag for match in bundle_opts["tags"]):
                 continue
             if "downstream" in bundle_opts:
+                bundle_opts["sub-repo"] = bundle_name
                 bundle_opts["src_path"] = build_env.repos_dir / bundle_name
             else:
                 bundle_opts["src_path"] = build_env.default_repo_dir
