@@ -97,9 +97,9 @@ class CharmcraftCmd(_WrappedCmd):
         except sh.ErrorReturnCode:
             self._echo(f"Failed to pack bundle in {kwargs.get('_cwd')}")
             raise
-        (entity,) = re.findall(r"^Created '(\S+)'", ret.stdout.decode(), re.MULTILINE)
+        (entity,) = re.findall(r"Created '(\S+)'", ret.stdout.decode(), re.MULTILINE)
         entity = Path(entity)
-        self._echo(f"Packing Bundle :: {entity.name:^35}")
+        self._echo(f"Packed Bundle :: {entity.name:^35}")
         return entity
 
 
@@ -850,19 +850,19 @@ class BundleBuildEntity(BuildEntity):
             # If we're building for charmhub, it needs to be packed
             dst_path = Path(self.dst_path)
             charmcraft_yaml = dst_path / "charmcraft.yaml"
-            contents = {
-                "type": "bundle",
-                "parts": {
-                    "bundle": {
-                        "prime": [
-                            str(_.relative_to(dst_path))
-                            for _ in dst_path.glob("**/*")
-                            if _.is_file()
-                        ]
-                    }
-                },
-            }
             if not charmcraft_yaml.exists():
+                contents = {
+                    "type": "bundle",
+                    "parts": {
+                        "bundle": {
+                            "prime": [
+                                str(_.relative_to(dst_path))
+                                for _ in dst_path.glob("**/*")
+                                if _.is_file()
+                            ]
+                        }
+                    },
+                }
                 with charmcraft_yaml.open("w") as fp:
                     yaml.safe_dump(contents, fp)
             self.dst_path = str(CharmcraftCmd(self).pack(_cwd=dst_path))
