@@ -3,13 +3,18 @@
     fragments: 'k8s/cdk cni/flannel cri/containerd'
     namespace: containers/bundle
     tags: ['k8s', 'charmed-kubernetes']
+    store: 'ch'
 - kubernetes-core:
     fragments: 'k8s/core cni/flannel cri/containerd'
     namespace: containers/bundle
     tags: ['k8s', 'kubernetes-core']
-- kubeflow:
-    namespace: kubeflow-charmers
-    tags: ['general', 'kubeflow']
+    store: 'ch'
+
+##########################################################################
+# Removed since it's built by github CI actions
+# - kubeflow:
+#     namespace: kubeflow-charmers
+#     tags: ['general', 'kubeflow']
 
 ##########################################################################
 # EOL CNI flavored bundles in favor for deploying with overlays
