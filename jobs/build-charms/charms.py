@@ -836,7 +836,7 @@ class BundleBuildEntity(BuildEntity):
 
     def bundle_build(self, to_channel):
         if not self.opts.get("skip-build"):
-            cmd = f"{self.src_path}/bundle -o {self.dst_path} -c {to_channel} {self.opts['fragments']}"
+            cmd = f"{self.src_path}/bundle -n {self.name} -o {self.dst_path} -c {to_channel} {self.opts['fragments']}"
             self.echo(f"Running {cmd}")
             cmd_ok(cmd, echo=self.echo)
         else:
