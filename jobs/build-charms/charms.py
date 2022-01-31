@@ -97,9 +97,9 @@ class CharmcraftCmd(_WrappedCmd):
         except sh.ErrorReturnCode:
             self._echo(f"Failed to pack bundle in {kwargs.get('_cwd')}")
             raise
-        (entity,) = re.findall(r"^Created '(\S+)'", ret.stdout.decode(), re.MULTILINE)
+        (entity,) = re.findall(r"Created '(\S+)'", ret.stdout.decode(), re.MULTILINE)
         entity = Path(entity)
-        self._echo(f"Packing Bundle :: {entity.name:^35}")
+        self._echo(f"Packed Bundle :: {entity.name:^35}")
         return entity
 
 
@@ -592,6 +592,7 @@ class BuildEntity:
             except (KeyError, TypeError):
                 self.echo(f"Failed to find in charmhub.io \n{refreshed}")
                 return None
+            self.echo(f"Downloading {fname} from {url}")
             resp = requests.get(url, stream=True)
             if resp.ok:
                 yaml_file = zipfile.Path(BytesIO(resp.content)) / fname
@@ -835,7 +836,7 @@ class BundleBuildEntity(BuildEntity):
 
     def bundle_build(self, to_channel):
         if not self.opts.get("skip-build"):
-            cmd = f"{self.src_path}/bundle -o {self.dst_path} -c {to_channel} {self.opts['fragments']}"
+            cmd = f"{self.src_path}/bundle -n {self.name} -o {self.dst_path} -c {to_channel} {self.opts['fragments']}"
             self.echo(f"Running {cmd}")
             cmd_ok(cmd, echo=self.echo)
         else:
@@ -849,19 +850,19 @@ class BundleBuildEntity(BuildEntity):
             # If we're building for charmhub, it needs to be packed
             dst_path = Path(self.dst_path)
             charmcraft_yaml = dst_path / "charmcraft.yaml"
-            contents = {
-                "type": "bundle",
-                "parts": {
-                    "bundle": {
-                        "prime": [
-                            str(_.relative_to(dst_path))
-                            for _ in dst_path.glob("**/*")
-                            if _.is_file()
-                        ]
-                    }
-                },
-            }
             if not charmcraft_yaml.exists():
+                contents = {
+                    "type": "bundle",
+                    "parts": {
+                        "bundle": {
+                            "prime": [
+                                str(_.relative_to(dst_path))
+                                for _ in dst_path.glob("**/*")
+                                if _.is_file()
+                            ]
+                        }
+                    },
+                }
                 with charmcraft_yaml.open("w") as fp:
                     yaml.safe_dump(contents, fp)
             self.dst_path = str(CharmcraftCmd(self).pack(_cwd=dst_path))
@@ -909,7 +910,7 @@ def cli():
     "--store",
     type=click.Choice(["cs", "ch"], case_sensitive=False),
     help="Publish to Charmstore (cs) or Charmhub (ch) if the resource-spec doesn't specify.",
-    default="cs",
+    default="ch",
 )
 @click.option("--force", is_flag=True)
 def build(
@@ -1005,7 +1006,7 @@ def build(
     "--store",
     type=click.Choice(["cs", "ch"], case_sensitive=False),
     help="Charmstore (cs) or Charmhub (ch)",
-    default="cs",
+    default="ch",
 )
 def build_bundles(
     bundle_list, bundle_branch, filter_by_tag, bundle_repo, track, to_channel, store

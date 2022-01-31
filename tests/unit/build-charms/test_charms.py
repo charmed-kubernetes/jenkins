@@ -465,7 +465,7 @@ def test_bundle_build_entity_bundle_build(cmd_ok, charmcraft_cmd, bundle_environ
     )
     bundle_entity.bundle_build("edge")
     assert (bundle_environment.bundles_dir / "bundle.yaml").exists()
-    assert (bundle_environment.bundles_dir / "tests/test.yaml").exists()
+    assert (bundle_environment.bundles_dir / "tests" / "test.yaml").exists()
     cmd_ok.assert_not_called()
     shutil.rmtree(bundle_environment.bundles_dir)
 
@@ -476,7 +476,7 @@ def test_bundle_build_entity_bundle_build(cmd_ok, charmcraft_cmd, bundle_environ
     )
     bundle_entity.bundle_build("edge")
     assert not (bundle_environment.bundles_dir / "bundle.yaml").exists()
-    cmd = f"{K8S_CI_BUNDLE / 'bundle'} -o {bundle_environment.bundles_dir} -c edge k8s/core cni/flannel cri/containerd"
+    cmd = f"{K8S_CI_BUNDLE / 'bundle'} -n test-kubernetes -o {bundle_environment.bundles_dir} -c edge k8s/core cni/flannel cri/containerd"
     cmd_ok.assert_called_with(cmd, echo=bundle_entity.echo)
     cmd_ok.reset_mock()
 
