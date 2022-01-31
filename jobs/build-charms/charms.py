@@ -592,6 +592,7 @@ class BuildEntity:
             except (KeyError, TypeError):
                 self.echo(f"Failed to find in charmhub.io \n{refreshed}")
                 return None
+            self.echo(f"Downloading {fname} from {url}")
             resp = requests.get(url, stream=True)
             if resp.ok:
                 yaml_file = zipfile.Path(BytesIO(resp.content)) / fname
@@ -909,7 +910,7 @@ def cli():
     "--store",
     type=click.Choice(["cs", "ch"], case_sensitive=False),
     help="Publish to Charmstore (cs) or Charmhub (ch) if the resource-spec doesn't specify.",
-    default="cs",
+    default="ch",
 )
 @click.option("--force", is_flag=True)
 def build(
@@ -1005,7 +1006,7 @@ def build(
     "--store",
     type=click.Choice(["cs", "ch"], case_sensitive=False),
     help="Charmstore (cs) or Charmhub (ch)",
-    default="cs",
+    default="ch",
 )
 def build_bundles(
     bundle_list, bundle_branch, filter_by_tag, bundle_repo, track, to_channel, store
