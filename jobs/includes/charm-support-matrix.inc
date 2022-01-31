@@ -36,7 +36,7 @@
     downstream: 'charmed-kubernetes/layer-etcd.git'
     namespace: 'containers'
     tags: ['k8s', 'etcd']
-    store: 'ch'
+    store: 'cs'
 - flannel:
     upstream: "https://github.com/charmed-kubernetes/charm-flannel.git"
     downstream: 'charmed-kubernetes/charm-flannel.git'
