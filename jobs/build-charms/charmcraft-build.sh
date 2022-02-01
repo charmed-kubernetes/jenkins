@@ -43,7 +43,7 @@ function cleanup() {
   sudo lxc delete $container --force
   set -e
 }
-#trap cleanup EXIT
+trap cleanup EXIT
 
 # Launch local LXD container to publish to charmcraft
 ci_lxc_launch ubuntu:20.04 $container
