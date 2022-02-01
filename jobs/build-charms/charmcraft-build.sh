@@ -8,7 +8,7 @@ if [[ ! -d "$_DIR" ]]; then _DIR="$PWD"; fi
 ## - LXD (initialized)
 
 ## Configuration
-## - REPOSITORY: Repository to pull the MicroK8s charm code from
+## - REPOSITORY: Repository to pull the charm code from
 ## - BRANCH: Tag to checkout
 ## - SUBDIR: Subdirectory under repository where charm exists
 ## - RELEASE_TO_EDGE: Release uploaded revision to CharmHub edge
