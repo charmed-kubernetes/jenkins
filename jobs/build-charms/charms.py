@@ -69,14 +69,9 @@ class _WrappedCmd:
         self._run = runner
 
     def build(self, *args, **kwargs):
-        try:
-            ret = self._run.build(*args, **kwargs)
-            assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
-            ret.ok = True
-        except sh.ErrorReturnCode as ret:
-            assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
-            ret.ok = False
-            ret.cmd = ret.full_cmd
+        ret = self._run.build(*args, **kwargs)
+        assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
+        ret.ok = True
         return ret
 
 
@@ -184,7 +179,7 @@ class _CharmHub(CharmcraftCmd):
     @staticmethod
     def _table_to_list(header, body):
         if not body:
-            return None
+            return []
         rows = []
         titles = [title for title in re.split(r"\s{2,}", header) if title]
         for line in body:

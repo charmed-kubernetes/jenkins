@@ -48,7 +48,7 @@
     upstream: "https://github.com/charmed-kubernetes/charm-kata.git"
     downstream: 'charmed-kubernetes/charm-kata.git'
     namespace: 'containers'
-    tags: ['k8s', 'containerd']
+    tags: ['k8s', 'kata']
     store: 'ch'
 - kubeapi-load-balancer:
     upstream: "https://github.com/charmed-kubernetes/charm-kubeapi-load-balancer.git"
