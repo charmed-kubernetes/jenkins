@@ -152,26 +152,26 @@
     downstream: "charmed-kubernetes/charm-multus"
     tags: ["k8s", "multus"]
     build-resources: "cd {src_path}/net-attach-def-manager; ./build"
-    store: 'ch'
+    store: 'cs'
 - sriov-cni:
     upstream: "https://github.com/charmed-kubernetes/charm-sriov-cni.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-sriov-cni"
     tags: ["k8s", "sriov", "sriov-cni"]
     build-resources: "cd {src_path}/image; ./build"
-    store: 'ch'
+    store: 'cs'
 - sriov-network-device-plugin:
     upstream: "https://github.com/charmed-kubernetes/charm-sriov-network-device-plugin.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-sriov-network-device-plugin"
     tags: ["k8s", "sriov", "sriov-network-device-plugin"]
-    store: 'ch'
+    store: 'cs'
 - coredns:
     upstream: "https://github.com/charmed-kubernetes/charm-coredns.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-coredns"
     tags: ["k8s", "coredns"]
-    store: 'ch'
+    store: 'cs'
 
 # EOL in favor of operator charm: https://charmhub.io/kubernetes-dashboard
 # - k8s-dashboard:
