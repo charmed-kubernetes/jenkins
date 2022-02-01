@@ -55,7 +55,7 @@ done
 
 # Build charm and fetch
 sudo lxc shell $container -- bash -c "git clone ${REPOSITORY} -b ${BRANCH} charm"
-sudo lxc shell $container --env CHARMCRAFT_MANAGED_MODE=1 -- bash -c "cd charm/$SUBDIR && charmcraft build -v"
+sudo lxc shell $container --env CHARMCRAFT_MANAGED_MODE=1 -- bash -c "charmcraft pack -v -p charm/$SUBDIR"
 
 if [[ "$UPLOAD_CHARM" == 'true' ]]; then
   # Upload to CharmHub, and optionally release
@@ -63,12 +63,12 @@ if [[ "$UPLOAD_CHARM" == 'true' ]]; then
   if [[ $RELEASE_TO_EDGE == 'true' ]]; then
     upload_args="$upload_args --release edge"
   fi
-  sudo lxc shell $container --env CHARMCRAFT_AUTH="$CHARMCRAFT_AUTH" -- bash -c "cd charm/$SUBDIR && charmcraft upload *.charm $upload_args"
+  sudo lxc shell $container --env CHARMCRAFT_AUTH="$CHARMCRAFT_AUTH" -- bash -c "charmcraft upload *.charm $upload_args"
 fi
 
 if [[ -n "$COPY_CHARM" ]]; then
   # Copy charm out of the container to a local directory
-  for charm in $(sudo lxc exec $container -- bash -c "ls /root/charm/$SUBDIR/*.charm"); do
+  for charm in $(sudo lxc exec $container -- bash -c "ls /root/*.charm"); do
     sudo lxc file pull ${container}${charm} $COPY_CHARM
   done
 fi
