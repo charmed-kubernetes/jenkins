@@ -138,14 +138,14 @@
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
     tags: ["k8s", "metallb", "metallb-controller"]
-    store: 'ch'
+    store: 'cs'
 - metallb-speaker:
     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
     subdir: "charms/metallb-speaker"
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
     tags: ["k8s", "metallb", "metallb-speaker"]
-    store: 'ch'
+    store: 'cs'
 - multus:
     upstream: "https://github.com/charmed-kubernetes/charm-multus.git"
     namespace: "containers"
