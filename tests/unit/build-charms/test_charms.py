@@ -106,7 +106,6 @@ def charmcraft_cmd():
         cmd.status.side_effect = partial(command_response, "status")
         cmd.resources.side_effect = partial(command_response, "resources")
         cmd.revisions.side_effect = partial(command_response, "revisions")
-        cmd.build.side_effect = partial(command_response, "build")
         cmd.pack.side_effect = partial(command_response, "pack")
         yield cmd
 
@@ -263,19 +262,17 @@ def test_build_entity_charm_build(
         "https://localhost",
         _cwd=str(K8S_CI_CHARM),
     )
-    charmcraft_cmd.build.assert_not_called()
+    mock_script.assert_not_called()
     charm_cmd.build.reset_mock()
 
     # Non-Legacy Charms, build with charmcraft
     charm_entity.legacy_charm = False
     charm_entity.charm_build()
     charm_cmd.build.assert_not_called()
-    charmcraft_cmd.build.assert_called_once_with(
-        "-f",
-        str(K8S_CI_CHARM),
-        _cwd=tmpdir / "build",
+    mock_script.assert_called_once_with(
+        "jobs/build-charms/charmcraft-build.sh", echo=charm_entity.echo
     )
-    charmcraft_cmd.build.reset_mock()
+    mock_script.reset_mock()
 
     # Charms built with override
     mock_script.assert_not_called()

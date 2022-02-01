@@ -26,6 +26,11 @@
           description: |
             Branch from which to build the MicroK8s charm.
       - bool:
+          name: UPLOAD_CHARM
+          default: "true"
+          description: |
+            Upload charm to charmhub.
+      - bool:
           name: RELEASE_TO_EDGE
           default: "true"
           description: |
@@ -47,7 +52,7 @@
           set +o allexport
 
           git clone https://github.com/charmed-kubernetes/jenkins.git -b master jenkins
-          bash -eux jenkins/jobs/microk8s/charms/build.sh
+          bash -eux jenkins/jobs/build-charms/charmcraft-build.sh
 
 - job:
     name: 'release-microk8s-charm'

@@ -57,7 +57,7 @@ bootstrap_env()
 
 deploy_env()
 {
-    tee overlay.yaml <<EOF> /dev/null
+    tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
   kubernetes-master:
@@ -101,4 +101,14 @@ print(unit[units[0]]['public-address'])
 # $0: current script
 scriptPath() {
     env python3 -c "import os,sys; print(os.path.dirname(os.path.abspath(\"$0\")))"
+}
+
+ci_lxc_launch()
+{
+    # Launch local LXD container to publish to charmcraft
+    local lxc_image=$1
+    local lxc_container=$2
+    sudo lxc launch ${lxc_image} ${lxc_container}
+    sleep 10
+    sudo lxc shell ${lxc_container} -- bash -c "apt-get update && apt-get install build-essential -y"
 }

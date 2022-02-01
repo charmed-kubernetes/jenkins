@@ -21,7 +21,6 @@ def _log_sub_out(pipe, echo):
 
 def script(script_data, **kwargs):
     is_single_command = len(script_data.splitlines()) == 1
-    process = None
     env = os.environ.copy()
     if "charm" in kwargs:
         env["CHARM"] = kwargs.pop("charm")

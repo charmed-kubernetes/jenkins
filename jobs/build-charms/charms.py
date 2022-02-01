@@ -17,6 +17,7 @@ Usage:
   tox -e py36 -- python3 jobs/build-charms/charms.py --help
 """
 
+import contextlib
 import os
 from io import BytesIO
 import zipfile
@@ -58,6 +59,22 @@ class LayerType(Enum):
     INTERFACE = 2
 
 
+@contextlib.contextmanager
+def set_env(**envs):
+    """
+    Temporarily set the process environment variables.
+
+    :param unicode envs: Environment variables to set
+    """
+    old_environ = dict(os.environ)
+    os.environ.update(envs)
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(old_environ)
+
+
 def _next_match(seq, predicate=lambda _: _, default=None):
     """Finds the first item of an iterable matching a predicate, or default if none exists."""
     return next(filter(predicate, seq), default)
@@ -68,17 +85,17 @@ class _WrappedCmd:
         self._echo = entity.echo
         self._run = runner
 
-    def build(self, *args, **kwargs):
-        ret = self._run.build(*args, **kwargs)
-        assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
-        ret.ok = True
-        return ret
-
 
 class CharmCmd(_WrappedCmd):
     def __init__(self, entity):
         super().__init__(entity, sh.charm.bake(_tee=True, _out=entity.echo))
         self.charm = self._run
+
+    def build(self, *args, **kwargs):
+        ret = self.charm.build(*args, **kwargs)
+        assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
+        ret.ok = True
+        return ret
 
 
 class CharmcraftCmd(_WrappedCmd):
@@ -510,13 +527,13 @@ class BuildEntity:
 
         src_path = self.checkout_path / opts.get("subdir", "")
 
-        downstream = opts.get("downstream")
+        self.downstream = opts.get("downstream")
         branch = opts.get("branch")
 
-        if not branch and downstream:
+        if not branch and self.downstream:
             # if branch not specified, use repo's default branch
             auth = os.environ.get("CDKBOT_GH_USR"), os.environ.get("CDKBOT_GH_PSW")
-            branch = default_gh_branch(downstream, ignore_errors=True, auth=auth)
+            branch = default_gh_branch(self.downstream, ignore_errors=True, auth=auth)
 
         if not branch:
             # if branch not specified, use the build_args branch
@@ -675,12 +692,12 @@ class BuildEntity:
 
     def setup(self):
         """Set up directory for charm build."""
-        downstream = f"https://github.com/{self.opts['downstream']}"
-        self.echo(f"Cloning repo from {downstream} branch {self.branch}")
+        repository = f"https://github.com/{self.downstream}"
+        self.echo(f"Cloning repo from {repository} branch {self.branch}")
 
         os.makedirs(self.checkout_path)
         ret = cmd_ok(
-            f"git clone --branch {self.branch} {downstream} {self.checkout_path}",
+            f"git clone --branch {self.branch} {repository} {self.checkout_path}",
             echo=self.echo,
         )
         if not ret.ok:
@@ -708,9 +725,17 @@ class BuildEntity:
             self.echo(f"Building with: charm build {args}")
             ret = CharmCmd(self).build(*args.split(), _cwd=self.src_path)
         else:
-            args = f"-f {self.src_path}"
-            self.echo(f"Building with: charmcraft build {args}")
-            ret = CharmcraftCmd(self).build(*args.split(), _cwd=self.build.build_dir)
+            charmcraft_script = Path("jobs") / "build-charms" / "charmcraft-build.sh"
+            self.echo(f"Building with: {charmcraft_script}")
+            repository = f"https://github.com/{self.downstream}"
+            self.dst_path += ".charm"
+            with set_env(
+                REPOSITORY=repository,
+                BRANCH=self.branch,
+                SUBDIR=self.opts.get("subdir") or "",
+                COPY_CHARM=self.dst_path,
+            ):
+                ret = script(str(charmcraft_script), echo=self.echo)
         if not ret.ok:
             self.echo("Failed to build, aborting")
             raise SystemExit(f"Failed to build {self.name}")
