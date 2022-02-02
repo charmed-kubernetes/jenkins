@@ -329,9 +329,9 @@ class _CharmHub(CharmcraftCmd):
             self.charmcraft.release(*args)
 
     def upload(self, dst_path):
-        out = self.charmcraft.upload("-q", dst_path)
+        out = self.charmcraft.upload(dst_path)
         (revision,) = re.findall(
-            r"^Revision (\d+) of ", out.stdout.decode(), re.MULTILINE
+            r"Revision (\d+) of ", out.stdout.decode(), re.MULTILINE
         )
         self._echo(f"Pushing   :: returns {out.stdout or out.stderr}")
         return revision
@@ -518,12 +518,13 @@ class BuildEntity:
 
         # Bundle or charm name
         self.name = name
-        self.type = "Charm"
-
-        if build.repos_dir:
-            self.checkout_path = build.repos_dir / opts.get("sub-repo", "")
-        else:
+        self.reactive = False
+        if self.build.build_type == BuildType.CHARM:
+            self.type = "Charm"
             self.checkout_path = build.charms_dir / self.name
+        elif self.build.build_type == BuildType.BUNDLE:
+            self.type = "Bundle"
+            self.checkout_path = build.repos_dir / opts.get("sub-repo", "")
 
         src_path = self.checkout_path / opts.get("subdir", "")
 
@@ -542,14 +543,11 @@ class BuildEntity:
         self.branch = branch or "master"
 
         self.layer_path = src_path / "layer.yaml"
-        self.legacy_charm = False
-
         self.src_path = str(src_path.absolute())
-        self.dst_path = str(self.build.build_dir / self.name)
+        self.dst_path = str(Path(self.src_path) / f"{self.name}.charm")
 
         # Bundle or charm opts as defined in the layer include
         self.opts = opts
-
         self.namespace = opts["namespace"]
 
         self.store = opts.get("store") or default_store
@@ -570,7 +568,7 @@ class BuildEntity:
 
     def __str__(self):
         """Represent build entity as a string."""
-        return f"<BuildEntity: {self.name} ({self.full_entity}) (legacy charm: {self.legacy_charm})>"
+        return f"<BuildEntity: {self.name} ({self.full_entity}) (reactive charm: {self.reactive})>"
 
     def echo(self, msg):
         """Click echo wrapper."""
@@ -610,82 +608,88 @@ class BuildEntity:
                 yaml_file = zipfile.Path(BytesIO(resp.content)) / fname
                 return yaml.safe_load(yaml_file.read_text())
 
+    def version_identification(self, source):
+        comparisons = ["rev", "url"]
+        version_id = []
+        if not self.reactive and source == "local":
+            version_id = [
+                {"rev": self.commit(short=self.store == "ch"), "url": self.entity}
+            ]
+        elif not self.reactive and source == "remote":
+            if self.store == "ch":
+                try:
+                    revisions = _CharmHub(self).revisions(self.entity)
+                except sh.ErrorReturnCode:
+                    revisions = []
+                released = [rev for rev in revisions if rev["Status"] == "released"]
+                if not released:
+                    self.echo("No revisions released to CharmHub")
+                else:
+                    latest = released[0]
+                    version_id = [{"rev": latest["Version"], "url": self.entity}]
+            else:
+                try:
+                    cs_show = _CharmStore(self).show(
+                        self.full_entity, "extra-info", format="yaml"
+                    )
+                except sh.ErrorReturnCode:
+                    cs_show = None
+                if not cs_show:
+                    self.echo("No revisions released to CharmStore")
+                else:
+                    info = yaml.safe_load(cs_show.stdout.decode())
+                    old_commit = info.get("extra-info", {}).get("commit")
+                    version_id = [{"rev": old_commit, "url": self.entity}]
+        elif self.reactive and source == "local":
+            version_id = [
+                {k: curr[k] for k in comparisons}
+                for curr in self.build.db["pull_layer_manifest"]
+            ]
+
+            # Check the current git cloned charm repo commit and add that to
+            # current pull-layer-manifest as that would not be known at the
+            # time of pull_layers
+            version_id.append({"rev": self.commit(), "url": self.name})
+        elif self.reactive and source == "remote":
+            build_manifest = self.download(".build.manifest")
+            if not build_manifest:
+                self.echo("No build.manifest located.")
+            else:
+                version_id = [
+                    {k: i[k] for k in comparisons} for i in build_manifest["layers"]
+                ]
+        else:
+            self.echo(f"Unexpected source={source} for determining version")
+        return version_id
+
     @property
     def has_changed(self):
-        """Determine if the charm/layers commits have changed since last publish to charmstore."""
-        if not self.legacy_charm and self.store == "cs":
-            # Operator framework charms won't have a .build.manifest and it's
-            # sufficient to just compare the charm repo's commit rev.
-            cs = _CharmStore(self)
-            try:
-                extra_info = yaml.safe_load(
-                    cs.show(
-                        self.full_entity,
-                        "extra-info",
-                        format="yaml",
-                    ).stdout.decode()
-                )["extra-info"]
-                old_commit = extra_info.get("commit")
-                new_commit = self.commit
-                changed = new_commit != old_commit
-            except sh.ErrorReturnCode:
-                changed = True
-                old_commit = None
-                new_commit = None
-            if changed:
-                self.echo(f"Changes found: {new_commit} (new) != {old_commit} (old)")
-            else:
-                self.echo(f"No changes found: {new_commit} (new) == {old_commit} (old)")
-            return changed
+        """Determine if the charm/layers commits have changed since last publish."""
+        local = self.version_identification("local")
+        remote = self.version_identification("remote")
 
-        charmstore_build_manifest = self.download(".build.manifest")
-
-        if not charmstore_build_manifest:
-            self.echo(
-                "No build.manifest located, unable to determine if any changes occurred."
-            )
-            return True
-
-        comparisons = ["rev", "url"]
-        current_build_manifest = [
-            {k: curr[k] for k in comparisons}
-            for curr in self.build.db["pull_layer_manifest"]
-        ]
-
-        # Check the current git cloned charm repo commit and add that to
-        # current pull-layer-manifest as that would not be known at the
-        # time of pull_layers
-        current_build_manifest.append({"rev": self.commit, "url": self.name})
-
-        the_diff = [
-            i
-            for i in charmstore_build_manifest["layers"]
-            if {k: i[k] for k in comparisons} not in current_build_manifest
-        ]
+        the_diff = [rev for rev in remote if rev not in local]
         if the_diff:
             self.echo("Changes found:")
             self.echo(the_diff)
             return True
-        self.echo(f"No changes found, not building a new {self.entity}")
+        self.echo(f"No changes found in {self.entity}")
         return False
 
-    @property
-    def commit(self):
+    def commit(self, short=False):
         """Commit hash of downstream repo."""
         if not Path(self.src_path).exists():
             raise BuildException(f"Could not locate {self.src_path}")
-
-        git_commit = git("rev-parse", "HEAD", _cwd=self.src_path)
+        if short:
+            git_commit = git("describe", dirty=True, always=True, _cwd=self.src_path)
+        else:
+            git_commit = git("rev-parse", "HEAD", _cwd=self.src_path)
         return git_commit.stdout.decode().strip()
 
     def _read_metadata_resources(self):
-        if not self.legacy_charm:
-            metadata_path = Path(self.src_path) / "metadata.yaml"
-        elif self.dst_path.endswith("charm"):
+        if self.dst_path.endswith(".charm"):
             metadata_path = zipfile.Path(self.dst_path) / "metadata.yaml"
         else:
-            # Legacy (reactive) charms can have resources added by layers,
-            # so we need to read from the built charm.
             metadata_path = Path(self.dst_path) / "metadata.yaml"
         metadata = yaml.safe_load(metadata_path.read_text())
         return metadata.get("resources", {})
@@ -703,9 +707,7 @@ class BuildEntity:
         if not ret.ok:
             raise SystemExit("Clone failed")
 
-        self.legacy_charm = self.layer_path.exists()
-        if not self.legacy_charm and self.type == "charm":
-            self.dst_path += ".charm"
+        self.reactive = self.layer_path.exists()
 
     def charm_build(self):
         """Perform a build against charm/bundle."""
@@ -717,18 +719,18 @@ class BuildEntity:
                 charm=self.name,
                 echo=self.echo,
             )
-        elif self.legacy_charm:
+        elif self.reactive:
             args = "-r --force -i https://localhost"
             if self.store == "ch":
                 args += " --charm-file"
-                self.dst_path = str(Path(self.src_path) / f"{self.name}.charm")
+            else:
+                self.dst_path = str(self.build.build_dir / self.name)
             self.echo(f"Building with: charm build {args}")
             ret = CharmCmd(self).build(*args.split(), _cwd=self.src_path)
         else:
             charmcraft_script = Path("jobs") / "build-charms" / "charmcraft-build.sh"
             self.echo(f"Building with: {charmcraft_script}")
             repository = f"https://github.com/{self.downstream}"
-            self.dst_path += ".charm"
             with set_env(
                 REPOSITORY=repository,
                 BRANCH=self.branch,
@@ -982,11 +984,13 @@ def build(
             entity.setup()
             entity.echo(f"Details: {entity}")
 
-            if not entity.has_changed and not build_env.force:
-                continue
+            if not build_env.force:
+                if not entity.has_changed:
+                    continue
+            else:
+                entity.echo(f"Build forced.")
 
             entity.charm_build()
-
             entity.push()
             entity.attach_resources()
             entity.promote(to_channel=to_channel)
