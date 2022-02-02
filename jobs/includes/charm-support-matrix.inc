@@ -138,40 +138,40 @@
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
     tags: ["k8s", "metallb", "metallb-controller"]
-    store: 'cs'
+    store: 'ch'
 - metallb-speaker:
     upstream: "https://github.com/charmed-kubernetes/metallb-operator.git"
     subdir: "charms/metallb-speaker"
     namespace: "containers"
     downstream: "charmed-kubernetes/metallb-operator"
     tags: ["k8s", "metallb", "metallb-speaker"]
-    store: 'cs'
+    store: 'ch'
 - multus:
     upstream: "https://github.com/charmed-kubernetes/charm-multus.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-multus"
     tags: ["k8s", "multus"]
     build-resources: "cd {src_path}/net-attach-def-manager; ./build"
-    store: 'cs'
+    store: 'ch'
 - sriov-cni:
     upstream: "https://github.com/charmed-kubernetes/charm-sriov-cni.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-sriov-cni"
     tags: ["k8s", "sriov", "sriov-cni"]
     build-resources: "cd {src_path}/image; ./build"
-    store: 'cs'
+    store: 'ch'
 - sriov-network-device-plugin:
     upstream: "https://github.com/charmed-kubernetes/charm-sriov-network-device-plugin.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-sriov-network-device-plugin"
     tags: ["k8s", "sriov", "sriov-network-device-plugin"]
-    store: 'cs'
+    store: 'ch'
 - coredns:
     upstream: "https://github.com/charmed-kubernetes/charm-coredns.git"
     namespace: "containers"
     downstream: "charmed-kubernetes/charm-coredns"
     tags: ["k8s", "coredns"]
-    store: 'cs'
+    store: 'ch'
 
 # EOL in favor of operator charm: https://charmhub.io/kubernetes-dashboard
 # - k8s-dashboard:
