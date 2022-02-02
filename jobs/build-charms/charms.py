@@ -608,6 +608,7 @@ class BuildEntity:
                 released = [rev for rev in revisions if rev["Status"] == "released"]
                 if not released:
                     self.echo("No revisions released to CharmHub")
+                    version_id = None
                 else:
                     latest = released[0]
                     version_id = [{"rev": latest["Version"], "url": self.entity}]
@@ -620,6 +621,7 @@ class BuildEntity:
                     cs_show = None
                 if not cs_show:
                     self.echo("No revisions released to CharmStore")
+                    version_id = None
                 else:
                     info = yaml.safe_load(cs_show.stdout.decode())
                     old_commit = info.get("extra-info", {}).get("commit")
@@ -638,6 +640,7 @@ class BuildEntity:
             build_manifest = self.download(".build.manifest")
             if not build_manifest:
                 self.echo("No build.manifest located.")
+                version_id = None
             else:
                 version_id = [
                     {k: i[k] for k in comparisons} for i in build_manifest["layers"]
@@ -652,11 +655,15 @@ class BuildEntity:
         local = self.version_identification("local")
         remote = self.version_identification("remote")
 
+        if remote is None:
+            self.echo("No released versions in the store. Building...")
+            return True
+
         the_diff = [rev for rev in remote if rev not in local]
         if the_diff:
-            self.echo("Changes found:")
-            self.echo(the_diff)
+            self.echo(f"Changes found {the_diff}")
             return True
+
         self.echo(f"No changes found in {self.entity}")
         return False
 
@@ -972,7 +979,7 @@ def build(
                 if not entity.has_changed:
                     continue
             else:
-                entity.echo(f"Build forced.")
+                entity.echo("Build forced.")
 
             entity.charm_build()
             entity.push()
