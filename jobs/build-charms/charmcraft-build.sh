@@ -55,6 +55,7 @@ done
 
 # Build charm and fetch
 sudo lxc shell $container -- bash -c "git clone ${REPOSITORY} -b ${BRANCH} charm"
+sudo lxc shell $container --env CHARMCRAFT_MANAGED_MODE=1 -- bash -c "cd charm/$SUBDIR; cat version || git describe --dirty --always | tee version"
 sudo lxc shell $container --env CHARMCRAFT_MANAGED_MODE=1 -- bash -c "charmcraft pack -v -p charm/$SUBDIR"
 
 if [[ "$UPLOAD_CHARM" == 'true' ]]; then

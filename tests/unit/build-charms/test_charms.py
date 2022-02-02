@@ -179,9 +179,9 @@ def test_build_entity_setup(cmd_ok, charm_environment, tmpdir):
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
-    assert charm_entity.legacy_charm is False, "Initializes as false"
+    assert charm_entity.reactive is False, "Initializes as false"
     charm_entity.setup()
-    assert charm_entity.legacy_charm is True, "test charm requires legacy builds"
+    assert charm_entity.reactive is True, "test charm requires legacy builds"
     cmd_ok.assert_called_once_with(
         f"git clone --branch master https://github.com/charmed-kubernetes/jenkins.git {charm_entity.checkout_path}",
         echo=charm_entity.echo,
@@ -197,7 +197,7 @@ def test_build_entity_has_changed(charm_environment, charm_cmd):
         "cs:~containers/k8s-ci-charm", "id", channel="edge"
     )
     charm_cmd.show.reset_mock()
-    with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
+    with patch("charms.BuildEntity.commit") as commit:
         # Test non-legacy charms with the commit rev checked in with charm matching
         commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
         assert charm_entity.has_changed is False
@@ -215,17 +215,19 @@ def test_build_entity_has_changed(charm_environment, charm_cmd):
         charm_cmd.show.reset_mock()
 
         # Test legacy charms by comparing charmstore .build.manifest
-        charm_entity.legacy_charm = True
+        charm_entity.reactive = True
         assert charm_entity.has_changed is True
         charm_cmd.show.assert_not_called()
         charm_cmd.show.reset_mock()
 
-    # Test all charmhub charms comparing .build.manifest to revision
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
-    charm_cmd.show.assert_not_called()
-    with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
-        commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
+        # Test all charmhub charms
+        charm_entity = charms.BuildEntity(
+            charm_environment, charm_name, charm_opts, "ch"
+        )
+        charm_entity.reactive = True
         assert charm_entity.has_changed is True
+        charm_cmd.show.assert_not_called()
+        charm_cmd.show.reset_mock()
 
 
 @patch("charms.script")
@@ -237,7 +239,7 @@ def test_build_entity_charm_build(
     charm_name, charm_opts = next(iter(artifacts[0].items()))
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
-    charm_entity.legacy_charm = True
+    charm_entity.reactive = True
     charm_entity.charm_build()
     assert charm_entity.dst_path == str(K8S_CI_CHARM / "k8s-ci-charm.charm")
     charm_cmd.build.assert_called_once_with(
@@ -252,7 +254,7 @@ def test_build_entity_charm_build(
     charm_cmd.build.reset_mock()
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
-    charm_entity.legacy_charm = True
+    charm_entity.reactive = True
     charm_entity.charm_build()
     assert charm_entity.dst_path == tmpdir / "build" / "k8s-ci-charm"
     charm_cmd.build.assert_called_once_with(
@@ -266,7 +268,7 @@ def test_build_entity_charm_build(
     charm_cmd.build.reset_mock()
 
     # Non-Legacy Charms, build with charmcraft
-    charm_entity.legacy_charm = False
+    charm_entity.reactive = False
     charm_entity.charm_build()
     charm_cmd.build.assert_not_called()
     mock_script.assert_called_once_with(
@@ -317,7 +319,7 @@ def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir)
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
     charm_entity.push()
     charm_cmd.push.assert_not_called()
-    charmcraft_cmd.upload.assert_called_once_with("-q", charm_entity.dst_path)
+    charmcraft_cmd.upload.assert_called_once_with(charm_entity.dst_path)
     assert charm_entity.new_entity == "845"
 
 
@@ -328,6 +330,7 @@ def test_build_entity_attach_resource(
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
+    charm_entity.dst_path = charm_entity.src_path
 
     with patch("charms.script") as mock_script:
         charm_entity.new_entity = charm_revision = "cs:~containers/k8s-ci-charm-845"
@@ -349,6 +352,7 @@ def test_build_entity_attach_resource(
     charmcraft_cmd.assert_not_called()
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
+    charm_entity.dst_path = charm_entity.src_path
     with patch("charms.script") as mock_script:
         charm_entity.attach_resources()
     mock_script.assert_called_once()
@@ -440,10 +444,7 @@ def test_bundle_build_entity_push(
     )
     bundle_entity.push()
     charm_cmd.push.assert_not_called()
-    charmcraft_cmd.upload.assert_called_once_with(
-        "-q",
-        bundle_entity.dst_path,
-    )
+    charmcraft_cmd.upload.assert_called_once_with(bundle_entity.dst_path)
     assert bundle_entity.new_entity == "123"
 
 
@@ -627,6 +628,7 @@ def test_build_command(mock_build_env, mock_build_entity):
         [
             call("Starting"),
             call(f"Details: {entity}"),
+            call("Build forced."),
             call("Stopping"),
         ],
         any_order=False,
