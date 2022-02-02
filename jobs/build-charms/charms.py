@@ -209,27 +209,9 @@ class _CharmHub(CharmcraftCmd):
         return rows
 
     @staticmethod
-    def refresh(name, channel=None, architecture=None, base_channel=None):
-        channel = channel or "stable"
-        architecture = architecture or "amd64"
-        base_channel = base_channel or "20.04"
-        data = {
-            "context": [],
-            "actions": [
-                {
-                    "name": name,
-                    "base": {
-                        "name": "ubuntu",
-                        "architecture": architecture,
-                        "channel": base_channel,
-                    },
-                    "channel": channel,
-                    "action": "install",
-                    "instance-key": "charmed-kubernetes/build-charms",
-                }
-            ],
-        }
-        resp = requests.post("https://api.charmhub.io/v2/charms/refresh", json=data)
+    def info(name, **query):
+        url = f"https://api.charmhub.io/v2/charms/info/{name}"
+        resp = requests.get(url, params=query)
         return resp.json()
 
     def status(self, charm_entity):
@@ -596,11 +578,13 @@ class BuildEntity:
                 return yaml.safe_load(resp.content.decode())
         elif self.store == "ch":
             name, channel = self.full_entity.rsplit(":")
-            refreshed = _CharmHub.refresh(name, channel)
+            info = _CharmHub.info(
+                name, channel=channel, fields="default-release.revision.download.url"
+            )
             try:
-                url = refreshed["results"][0]["charm"]["download"]["url"]
+                url = info["default-release"]["revision"]["download"]["url"]
             except (KeyError, TypeError):
-                self.echo(f"Failed to find in charmhub.io \n{refreshed}")
+                self.echo(f"Failed to find in charmhub.io \n{info}")
                 return None
             self.echo(f"Downloading {fname} from {url}")
             resp = requests.get(url, stream=True)
