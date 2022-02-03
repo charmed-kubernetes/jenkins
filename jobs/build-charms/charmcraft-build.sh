@@ -2,7 +2,7 @@
 
 _DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "$_DIR" ]]; then _DIR="$PWD"; fi
-. "$_DIR/../../cilib.sh"
+. "$_DIR/charmcraft-lib.sh"
 
 ## Requirements
 ## - LXD (initialized)
@@ -19,57 +19,29 @@ if [[ ! -d "$_DIR" ]]; then _DIR="$PWD"; fi
 
 
 ## Secrets
-## - CHARMCRAFT_AUTH: charmcraft credentials. output of `charmcraft login --charm microk8s --export auth; cat auth`
+## - CHARMCRAFT_AUTH: charmcraft credentials. output of `charmcraft login --export auth; cat auth`
 
 ## default optional variables
-COPY_CHARM="${COPY_CHARM:=}"
-JOB_NAME="${JOB_NAME:=unnamed-job}"
-BUILD_NUMBER="${BUILD_NUMBER:=0}"
-RELEASE_TO_EDGE="${RELEASE_TO_EDGE:=false}"
-UPLOAD_CHARM="${UPLOAD_CHARM:=false}"
+JOB_NAME="${JOB_NAME:-unnamed-job}"
+BUILD_NUMBER="${BUILD_NUMBER:-0}"
+SUBDIR="${SUBDIR:-}"
+RELEASE_TO_EDGE="${RELEASE_TO_EDGE:-}"
+UPLOAD_CHARM="${UPLOAD_CHARM:-}"
+COPY_CHARM="${COPY_CHARM:-}"
 
 # Cleanup old containers
-container_prefix="${JOB_NAME}"
-old_containers=$(sudo lxc list -c n -f csv "${container_prefix}" | xargs)
-if [[ ! -z $old_containers ]]; then
-  echo Removing old containers, $old_containers
-  sudo lxc delete --force $old_containers
-fi
+ci_lxc_delete "${JOB_NAME}"
 
 # Configure cleanup routine
-container="${container_prefix}-${BUILD_NUMBER}"
-function cleanup() {
-  set +e
-  sudo lxc delete $container --force
-  set -e
-}
-trap cleanup EXIT
+container="${JOB_NAME}-${BUILD_NUMBER}"
+trap 'ci_lxc_delete $container' EXIT
 
-# Launch local LXD container to publish to charmcraft
-ci_lxc_launch ubuntu:20.04 $container
-until sudo lxc shell $container -- bash -c 'snap install charmcraft --classic'; do
-  sleep 3
-  echo 'retrying charmcraft install'
-done
-
-
-# Build charm and fetch
-sudo lxc shell $container -- bash -c "git clone ${REPOSITORY} -b ${BRANCH} charm"
-sudo lxc shell $container --env CHARMCRAFT_MANAGED_MODE=1 -- bash -c "cd charm/$SUBDIR; cat version || git describe --dirty --always | tee version"
-sudo lxc shell $container --env CHARMCRAFT_MANAGED_MODE=1 -- bash -c "charmcraft pack -v -p charm/$SUBDIR"
-
+ci_charmcraft_launch $container
+ci_charmcraft_pack $container ${REPOSITORY} ${BRANCH} "${SUBDIR}"
 if [[ "$UPLOAD_CHARM" == 'true' ]]; then
-  # Upload to CharmHub, and optionally release
-  upload_args=''
-  if [[ $RELEASE_TO_EDGE == 'true' ]]; then
-    upload_args="$upload_args --release edge"
-  fi
-  sudo lxc shell $container --env CHARMCRAFT_AUTH="$CHARMCRAFT_AUTH" -- bash -c "charmcraft upload *.charm $upload_args"
+  ci_charmcraft_release $container $RELEASE_TO_EDGE
 fi
 
 if [[ -n "$COPY_CHARM" ]]; then
-  # Copy charm out of the container to a local directory
-  for charm in $(sudo lxc exec $container -- bash -c "ls /root/*.charm"); do
-    sudo lxc file pull ${container}${charm} $COPY_CHARM
-  done
+  ci_charmcraft_copy $container $COPY_CHARM
 fi

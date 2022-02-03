@@ -1,5 +1,10 @@
-#!/bin/bash
-set -eux
+#!/bin/bash -eux
+
+if [[ $0 == $BASH_SOURCE ]]; then
+  echo "$0 should be sourced";
+  exit
+fi
+echo "sourced ${BASH_SOURCE:-$0}"
 
 setup_env()
 {
@@ -111,4 +116,15 @@ ci_lxc_launch()
     sudo lxc launch ${lxc_image} ${lxc_container}
     sleep 10
     sudo lxc shell ${lxc_container} -- bash -c "apt-get update && apt-get install build-essential -y"
+}
+
+ci_lxc_delete()
+{
+    # Stop and delete containers matching a prefix
+    local lxc_container_prefix=$1
+    local existing_containers=$(sudo lxc list -c n -f csv "${lxc_container_prefix}" | xargs)
+    echo "Removing containers: ${existing_containers}"
+    set +e
+    sudo lxc delete --force "${existing_containers}"
+    set -e
 }

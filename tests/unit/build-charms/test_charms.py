@@ -13,12 +13,14 @@ from functools import partial
 from click.testing import CliRunner
 import charms
 
-STATIC_TEST_PATH = Path(__file__).parent.parent.parent / "data"
+TEST_PATH = Path(__file__).parent.parent.parent
+STATIC_TEST_PATH = TEST_PATH / "data"
 K8S_CI_CHARM = STATIC_TEST_PATH / "charms" / "k8s-ci-charm"
 K8S_CI_BUNDLE = STATIC_TEST_PATH / "bundles" / "test-kubernetes"
 CI_TESTING_CHARMS = STATIC_TEST_PATH / "ci-testing-charms.inc"
 CI_TESTING_BUNDLES = STATIC_TEST_PATH / "ci-testing-bundles.inc"
 CLI_RESPONSES = STATIC_TEST_PATH / "cli_response"
+CHARMCRAFT_LIB_SH = TEST_PATH.parent / "jobs" / "build-charms" / "charmcraft-lib.sh"
 
 
 def test_build_env_missing_env():
@@ -239,6 +241,22 @@ def test_build_entity_charm_build(
     charm_name, charm_opts = next(iter(artifacts[0].items()))
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
+
+    # Charms built with override
+    charm_entity.opts["override-build"] = MagicMock()
+    charm_entity.charm_build()
+    charm_cmd.build.assert_not_called()
+    charmcraft_cmd.build.assert_not_called()
+    mock_script.assert_called_once_with(
+        charm_entity.opts["override-build"],
+        cwd=charm_entity.src_path,
+        charm=charm_entity.name,
+        echo=charm_entity.echo,
+    )
+    mock_script.reset_mock()
+    del charm_entity.opts["override-build"]
+
+    # Reactive charms built with charm tools
     charm_entity.reactive = True
     charm_entity.charm_build()
     assert charm_entity.dst_path == str(K8S_CI_CHARM / "k8s-ci-charm.charm")
@@ -250,9 +268,11 @@ def test_build_entity_charm_build(
         "--charm-file",
         _cwd=str(K8S_CI_CHARM),
     )
+    mock_script.assert_not_called()
     charmcraft_cmd.build.assert_not_called()
     charm_cmd.build.reset_mock()
 
+    # Reactive charms built with charm tools without --charm-file option
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
     charm_entity.reactive = True
     charm_entity.charm_build()
@@ -265,29 +285,27 @@ def test_build_entity_charm_build(
         _cwd=str(K8S_CI_CHARM),
     )
     mock_script.assert_not_called()
+    charmcraft_cmd.build.assert_not_called()
     charm_cmd.build.reset_mock()
 
-    # Non-Legacy Charms, build with charmcraft
+    # Operator Charms, build with charmcraft container
     charm_entity.reactive = False
+    os.environ["charmcraft_lxc"] = "unnamed-job-0"
     charm_entity.charm_build()
     charm_cmd.build.assert_not_called()
     mock_script.assert_called_once_with(
-        "jobs/build-charms/charmcraft-build.sh", echo=charm_entity.echo
+        "#!/bin/bash -eux\n"
+        f"source {CHARMCRAFT_LIB_SH}\n"
+        f"ci_charmcraft_pack unnamed-job-0 https://github.com/{charm_entity.downstream} master \n"
+        f"ci_charmcraft_copy unnamed-job-0 {tmpdir}/build/k8s-ci-charm\n",
+        echo=charm_entity.echo,
     )
     mock_script.reset_mock()
 
-    # Charms built with override
-    mock_script.assert_not_called()
-    charm_entity.opts["override-build"] = MagicMock()
-    charm_entity.charm_build()
-    charm_cmd.build.assert_not_called()
-    charmcraft_cmd.build.assert_not_called()
-    mock_script.assert_called_once_with(
-        charm_entity.opts["override-build"],
-        cwd=charm_entity.src_path,
-        charm=charm_entity.name,
-        echo=charm_entity.echo,
-    )
+    # Operator Charms, fail build without charmcraft container
+    del os.environ["charmcraft_lxc"]
+    with pytest.raises(SystemExit):
+        charm_entity.charm_build()
 
 
 def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir):
