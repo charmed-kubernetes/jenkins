@@ -10,10 +10,7 @@
       - ansicolor
       - timestamps
       - workspace-cleanup
-      - credentials-binding:
-          - text:
-              credential-id: charmhub_microk8s
-              variable: CHARMCRAFT_AUTH
+      - ci-creds
     parameters:
       - string:
           name: REPOSITORY
