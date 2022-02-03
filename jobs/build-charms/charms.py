@@ -17,7 +17,6 @@ Usage:
   tox -e py36 -- python3 jobs/build-charms/charms.py --help
 """
 
-import contextlib
 import os
 from io import BytesIO
 import zipfile
@@ -29,6 +28,7 @@ from cilib.run import cmd_ok, capture, script
 from datetime import datetime
 from enum import Enum
 from retry.api import retry_call
+from types import SimpleNamespace
 
 from pathos.threading import ThreadPool
 from pprint import pformat
@@ -57,22 +57,6 @@ class LayerType(Enum):
 
     LAYER = 1
     INTERFACE = 2
-
-
-@contextlib.contextmanager
-def set_env(**envs):
-    """
-    Temporarily set the process environment variables.
-
-    :param unicode envs: Environment variables to set
-    """
-    old_environ = dict(os.environ)
-    os.environ.update(envs)
-    try:
-        yield
-    finally:
-        os.environ.clear()
-        os.environ.update(old_environ)
 
 
 def _next_match(seq, predicate=lambda _: _, default=None):
@@ -702,6 +686,8 @@ class BuildEntity:
 
     def charm_build(self):
         """Perform a build against charm/bundle."""
+        lxc = os.environ.get("charmcraft_lxc")
+        ret = SimpleNamespace(ok=False)
         if "override-build" in self.opts:
             self.echo("Override build found, running in place of charm build.")
             ret = script(
@@ -718,17 +704,19 @@ class BuildEntity:
                 self.dst_path = str(self.build.build_dir / self.name)
             self.echo(f"Building with: charm build {args}")
             ret = CharmCmd(self).build(*args.split(), _cwd=self.src_path)
-        else:
-            charmcraft_script = Path("jobs") / "build-charms" / "charmcraft-build.sh"
-            self.echo(f"Building with: {charmcraft_script}")
+        elif lxc:
+            self.echo(f"Building in container {lxc}")
             repository = f"https://github.com/{self.downstream}"
-            with set_env(
-                REPOSITORY=repository,
-                BRANCH=self.branch,
-                SUBDIR=self.opts.get("subdir") or "",
-                COPY_CHARM=self.dst_path,
-            ):
-                ret = script(str(charmcraft_script), echo=self.echo)
+            charmcraft_script = (
+                "#!/bin/bash -eux\n"
+                f"source {Path(__file__).parent / 'charmcraft-lib.sh'}\n"
+                f"ci_charmcraft_pack {lxc} {repository} {self.branch} {self.opts.get('subdir','')}\n"
+                f"ci_charmcraft_copy {lxc} {self.dst_path}\n"
+            )
+            ret = script(charmcraft_script, echo=self.echo)
+        else:
+            self.echo("No 'charmcraft_lxc' container available")
+
         if not ret.ok:
             self.echo("Failed to build, aborting")
             raise SystemExit(f"Failed to build {self.name}")
@@ -982,6 +970,7 @@ def build(
                 entity.echo("Build forced.")
 
             entity.charm_build()
+
             entity.push()
             entity.attach_resources()
             entity.promote(to_channel=to_channel)
