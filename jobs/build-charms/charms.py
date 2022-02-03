@@ -706,10 +706,11 @@ class BuildEntity:
             ret = CharmCmd(self).build(*args.split(), _cwd=self.src_path)
         elif lxc:
             self.echo(f"Building in container {lxc}")
+            repository = f"https://github.com/{self.downstream}"
             charmcraft_script = (
                 "#!/bin/bash -eux\n"
                 f"source {Path(__file__).parent / 'charmcraft-lib.sh'}\n"
-                f"ci_charmcraft_pack {lxc} https://github.com/{self.downstream} {self.branch} {self.opts.get('subdir','')}\n"
+                f"ci_charmcraft_pack {lxc} {repository} {self.branch} {self.opts.get('subdir','')}\n"
                 f"ci_charmcraft_copy {lxc} {self.dst_path}\n"
             )
             ret = script(charmcraft_script, echo=self.echo)

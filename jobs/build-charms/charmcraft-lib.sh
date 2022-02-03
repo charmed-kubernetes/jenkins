@@ -1,4 +1,5 @@
-#!/bin/bash -eux
+#!/bin/bash
+set -eux
 
 if [[ $0 == $BASH_SOURCE ]]; then
   echo "$0 should be sourced";
