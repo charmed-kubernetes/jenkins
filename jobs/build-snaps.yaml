@@ -57,7 +57,6 @@
 
 - job-template:
     name: 'build-release-eks-snaps-{arch}'
-    node: 'runner-{arch}'
     description: |
       Builds, releases and promotes Amazon EKS snaps for {version} to the snapstore.
 
@@ -71,8 +70,8 @@
       script-path: jobs/build-snaps/build-release-eks-snaps.groovy
     parameters:
       - string:
-          name: arch
-          default: '{arch}'
+          name: build_node
+          default: 'runner-{arch}'
       - string:
           name: k8s_tag
           default: 'v{version}'

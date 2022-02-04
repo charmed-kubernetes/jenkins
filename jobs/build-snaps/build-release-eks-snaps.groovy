@@ -5,6 +5,9 @@ def kube_ersion = kube_version.substring(1)
 def lxc_name = env.JOB_NAME+"-"+env.BUILD_NUMBER
 
 pipeline {
+    agent {
+        label "${params.build_node}"
+    }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
