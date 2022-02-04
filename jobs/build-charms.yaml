@@ -105,7 +105,7 @@
             #!/bin/bash
             set -eux
 
-            . $WORKSPACE/cilib.sh
+            . $WORKSPACE/jobs/build-charms/charmcraft-lib.sh
             
             sudo chown -R jenkins:jenkins /var/lib/jenkins/.config/ || true
 
