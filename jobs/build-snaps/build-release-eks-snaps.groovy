@@ -37,10 +37,10 @@ pipeline {
                     CK_SNAP_BRANCH="${kube_version}"
                     CK_SNAP_REPO_PREFIX="https://git.launchpad.net/snap-"
 
-                    for snap in ${env.CK_SNAPS}
+                    for snap in ${CK_SNAPS}
                     do
                         CK_SNAP_REPO="\${CK_SNAP_REPO_PREFIX}\${snap}"
-                        EKS_SNAP="\${snap}${env.EKS_SUFFIX}"
+                        EKS_SNAP="\${snap}${EKS_SUFFIX}"
 
                         if git ls-remote --exit-code --heads \${CK_SNAP_REPO} \${CK_SNAP_BRANCH}
                         then
@@ -54,7 +54,7 @@ pipeline {
                         # eks snaps have a suffix and different base than ck; adjust snapcraft.yaml
                         cd \${EKS_SNAP}
                         sed -i -e "s/^name: \${snap}/name: \${EKS_SNAP}/" \
-                               -e "s/^base: .*/base: ${env.EKS_BASE}/" snapcraft.yaml
+                               -e "s/^base: .*/base: ${EKS_BASE}/" snapcraft.yaml
                         cd -
                     done
                 """
@@ -63,12 +63,18 @@ pipeline {
         stage('Setup Build Container'){
             steps {
                 sh """
-                    source \$(dirname \${BASH_SOURCE:-\$0})/../../cilib.sh
+                    source \${WORKSPACE}/cilib.sh
 
                     ci_lxc_launch ubuntu:20.04 ${lxc_name}
                     until sudo lxc shell ${lxc_name} -- bash -c 'snap install snapcraft --classic'; do
                         echo 'retrying snapcraft install in 3s...'
                         sleep 3
+                    done
+
+                    for snap in ${CK_SNAPS}
+                    do
+                        EKS_SNAP="\${snap}${EKS_SUFFIX}"
+                        sudo lxc push \${EKS_SNAP} ${lxc_name}/\${EKS_SNAP} -p -r -v
                     done
                 """
             }
@@ -76,7 +82,7 @@ pipeline {
         stage('Build EKS Snaps'){
             steps {
                 sh """
-                    for snap in ${env.CK_SNAPS}
+                    for snap in ${CK_SNAPS}
                     do
                         EKS_SNAP="\${snap}${env.EKS_SUFFIX}"
 
