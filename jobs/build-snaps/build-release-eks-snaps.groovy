@@ -23,6 +23,7 @@ pipeline {
     }
     stages {
         stage('Setup User') {
+            /* Do this early; we want to fail fast if we don't have valid creds. */
             steps {
                 sh """
                     snapcraft logout
@@ -62,11 +63,15 @@ pipeline {
         }
         stage('Setup Build Container'){
             steps {
-                sh """
-                    source \${WORKSPACE}/cilib.sh
+                /* override sh for this step:
+
+                 Needed because cilib.sh has some non POSIX bits.
+                 */
+                sh """#!/usr/bin/env bash
+                    . \${WORKSPACE}/cilib.sh
 
                     ci_lxc_launch ubuntu:20.04 ${lxc_name}
-                    until sudo lxc shell ${lxc_name} -- bash -c 'snap install snapcraft --classic'; do
+                    until sudo lxc shell ${lxc_name} -- bash -c "snap install snapcraft --classic"; do
                         echo 'retrying snapcraft install in 3s...'
                         sleep 3
                     done
@@ -74,32 +79,59 @@ pipeline {
                     for snap in ${CK_SNAPS}
                     do
                         EKS_SNAP="\${snap}${EKS_SUFFIX}"
-                        sudo lxc push \${EKS_SNAP} ${lxc_name}/\${EKS_SNAP} -p -r -v
+
+                        echo "Copying \${EKS_SNAP} into container."
+                        sudo lxc file push \${EKS_SNAP} ${lxc_name}/ -p -r
                     done
                 """
             }
         }
-        stage('Build EKS Snaps'){
+        stage('Build Snaps'){
             steps {
                 sh """
                     for snap in ${CK_SNAPS}
                     do
-                        EKS_SNAP="\${snap}${env.EKS_SUFFIX}"
+                        EKS_SNAP="\${snap}${EKS_SUFFIX}"
 
                         echo "Building \${EKS_SNAP}."
-                        cd \${EKS_SNAP}
-                        SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft
-                        mv *.snap ..
-                        cd -
+                        # NB: kubelet snapcraft.yaml defines an alias, but
+                        # aliases wont work in 'bash -c'. Define a func that
+                        # is functionally equivalent to the alias. Single quote
+                        # it because we need literal vars passed to 'bash -c'.
+                        sudo lxc shell ${lxc_name} -- bash -c \
+                            'set -a; add-arg() { \$SNAPCRAFT_PART_BUILD/shared/add-arg-to-configure-hook \$@; }; set +a; '"cd /\${EKS_SNAP};"' SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft'
                     done
                 """
             }
         }
-        stage('Push EKS Snaps'){
+        stage('Fetch Snaps'){
+            steps {
+                sh """
+                    BUILD_ARCH=\$(dpkg --print-architecture)
+                    for snap in ${CK_SNAPS}
+                    do
+                        EKS_SNAP="\${snap}${EKS_SUFFIX}"
+                        BUILT_SNAP="\${EKS_SNAP}_${kube_ersion}_\${BUILD_ARCH}.snap"
+
+                        echo "Fetching \${BUILT_SNAP}."
+                        sudo lxc file pull ${lxc_name}/\${EKS_SNAP}/\${BUILT_SNAP} .
+                    done
+                """
+            }
+        }
+        stage('Push Snaps'){
             steps {
                 script {
                     if(params.dry_run) {
                         echo "Dry run; would have uploaded *.snap to ${params.channels}"
+                        sh "ls *eks*.snap"
+                    } else {
+                        sh """
+                            for snap in \$(ls *eks*.snap)
+                            do
+                                snapcraft -d upload \${snap} --release ${params.channels}
+                            done
+                        """
                     }
                 }
             }
@@ -107,8 +139,16 @@ pipeline {
     }
     post {
         always {
-            sh "sudo lxc delete -f ${lxc_name}"
-            sh "snapcraft logout"
+            /* override sh for this step:
+
+             Needed because cilib.sh has some non POSIX bits.
+             */
+            sh """#!/usr/bin/env bash
+                . \${WORKSPACE}/cilib.sh
+
+                ci_lxc_delete ${lxc_name}
+                snapcraft logout
+            """
         }
     }
 }
