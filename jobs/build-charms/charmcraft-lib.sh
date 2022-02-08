@@ -35,19 +35,19 @@ ci_charmcraft_pack()
 ci_charmcraft_release()
 {
   # Upload to CharmHub, and optionally release
-  local charmcraft=$1
+  local charmcraft_lxc=$1
   local do_release_to_edge=${2:-}
   local upload_args=$([[ $do_release_to_edge == 'true' ]] && echo ' --release edge')
-  sudo lxc shell $charmcraft --env CHARMCRAFT_AUTH="$CHARMCRAFT_AUTH" -- bash -c "cd charm; charmcraft upload *.charm $upload_args"
+  sudo lxc shell $charmcraft_lxc --env CHARMCRAFT_AUTH="$CHARMCRAFT_AUTH" -- bash -c "cd charm; charmcraft upload *.charm $upload_args"
 }
 
 ci_charmcraft_copy()
 {
   # Copy charm out of the container to a local directory
-  local charmcraft=$1
+  local charmcraft_lxc=$1
   local copy_destination=$2
-  for charm in $(sudo lxc exec $charmcraft -- bash -c "ls /root/charm/*.charm"); do
-    echo "Pulling ${container}${charm} to ${copy_destination}"
-    sudo lxc file pull ${container}${charm} ${copy_destination}
+  for charm in $(sudo lxc exec $charmcraft_lxc -- bash -c "ls /root/charm/*.charm"); do
+    echo "Pulling ${charmcraft_lxc}${charm} to ${copy_destination}"
+    sudo lxc file pull ${charmcraft_lxc}${charm} ${copy_destination}
   done
 }
