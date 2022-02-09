@@ -6,7 +6,7 @@
   vars:
     s390x: "{{ lookup('env', 'S3LP3') }}"
     arm64: "{{ lookup('env', 'NEADER') }}"
-    ch_creds: "{{ lookup('env', 'charmcraft_creds') }}"
+    ch_creds: "{{ lookup('env', 'CHARMCRAFT_AUTH') }}"
     columbo_version: 0.0.4
   tasks:
     - name: add golang ppa
@@ -444,8 +444,7 @@
       tags:
         - jenkins
     - name: login to charmhub
-      command: "CHARMCRAFT_AUTH={{ ch_creds }} charmcraft login"
-      become: false
+      shell: "CHARMCRAFT_AUTH={{ ch_creds }} charmcraft login"
       tags:
         - jenkins
     - name: login to snapstore
