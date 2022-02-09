@@ -114,6 +114,12 @@
     downstream: 'charmed-kubernetes/charm-gcp-integrator'
     tags: ['k8s', 'charm-gcp-integrator']
     store: 'ch'
+- github-runner:
+    upstream: https://github.com/charmed-kubernetes/github-runner-operator.git
+    namespace: 'containers'
+    downstream: 'charmed-kubernetes/github-runner-operator'
+    tags: ['k8s', 'github-runner']
+    store: 'ch'
 - aws-integrator:
     upstream: "https://github.com/juju-solutions/charm-aws-integrator.git"
     namespace: 'containers'
