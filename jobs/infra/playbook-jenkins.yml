@@ -442,10 +442,6 @@
         mode: 0644
       tags:
         - jenkins
-    - name: login to charmhub
-      shell: "CHARMCRAFT_AUTH={{ lookup('env', 'CHARMCRAFT_AUTH') }} charmcraft login"
-      tags:
-        - jenkins
     - name: login to snapstore
       command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
       become: false
