@@ -11,7 +11,6 @@ from unittest.mock import patch, call, Mock, MagicMock, PropertyMock
 from functools import partial
 
 from click.testing import CliRunner
-import charms
 
 TEST_PATH = Path(__file__).parent.parent.parent
 STATIC_TEST_PATH = TEST_PATH / "data"
@@ -23,7 +22,7 @@ CLI_RESPONSES = STATIC_TEST_PATH / "cli_response"
 CHARMCRAFT_LIB_SH = TEST_PATH.parent / "jobs" / "build-charms" / "charmcraft-lib.sh"
 
 
-def test_build_env_missing_env():
+def test_build_env_missing_env(charms):
     """Ensure missing environment variables raise Exception."""
     with pytest.raises(charms.BuildException) as ie:
         charms.BuildEnv()
@@ -54,7 +53,7 @@ def test_environment(tmpdir):
 
 
 @pytest.fixture(autouse=True)
-def cilib_store():
+def cilib_store(charms):
     """Create a fixture defining mock for cilib Store."""
     with patch("charms.Store") as store:
         yield store
@@ -113,7 +112,7 @@ def charmcraft_cmd():
 
 
 @pytest.fixture()
-def bundle_environment(test_environment):
+def bundle_environment(test_environment, charms):
     charm_env = charms.BuildEnv(build_type=charms.BuildType.BUNDLE)
     charm_env.db["build_args"] = {
         "artifact_list": str(CI_TESTING_BUNDLES),
@@ -126,7 +125,7 @@ def bundle_environment(test_environment):
 
 
 @pytest.fixture()
-def charm_environment(test_environment):
+def charm_environment(test_environment, charms):
     charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
     charm_env.db["build_args"] = {
         "artifact_list": str(CI_TESTING_CHARMS),
@@ -176,7 +175,7 @@ def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
 
 @patch("charms.os.makedirs", Mock())
 @patch("charms.cmd_ok")
-def test_build_entity_setup(cmd_ok, charm_environment, tmpdir):
+def test_build_entity_setup(cmd_ok, charm_environment, tmpdir, charms):
     """Tests build entity setup."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
@@ -190,7 +189,7 @@ def test_build_entity_setup(cmd_ok, charm_environment, tmpdir):
     )
 
 
-def test_build_entity_has_changed(charm_environment, charm_cmd):
+def test_build_entity_has_changed(charm_environment, charm_cmd, charms):
     """Tests has_changed property."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
@@ -234,7 +233,7 @@ def test_build_entity_has_changed(charm_environment, charm_cmd):
 
 @patch("charms.script")
 def test_build_entity_charm_build(
-    mock_script, charm_environment, charm_cmd, charmcraft_cmd, tmpdir
+    mock_script, charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
 ):
     """Test that BuildEntity runs charm_build."""
     artifacts = charm_environment.artifacts
@@ -308,7 +307,9 @@ def test_build_entity_charm_build(
         charm_entity.charm_build()
 
 
-def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir):
+def test_build_entity_push(
+    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
+):
     """Test that BuildEntity pushes to appropriate store."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
@@ -343,7 +344,7 @@ def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir)
 
 @patch("charms.os.makedirs", Mock())
 def test_build_entity_attach_resource(
-    charm_environment, charm_cmd, charmcraft_cmd, tmpdir
+    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
 ):
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
@@ -394,7 +395,9 @@ def test_build_entity_attach_resource(
     charm_cmd.assert_not_called()
 
 
-def test_build_entity_promote(charm_environment, charm_cmd, charmcraft_cmd, tmpdir):
+def test_build_entity_promote(
+    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
+):
     """Test that BuildEntity releases to appropriate store."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
@@ -428,7 +431,7 @@ def test_build_entity_promote(charm_environment, charm_cmd, charmcraft_cmd, tmpd
 
 
 def test_bundle_build_entity_push(
-    bundle_environment, charm_cmd, charmcraft_cmd, tmpdir
+    bundle_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
 ):
     """Test that BundleBuildEntity pushes to appropriate store."""
     artifacts = bundle_environment.artifacts
@@ -467,7 +470,9 @@ def test_bundle_build_entity_push(
 
 
 @patch("charms.cmd_ok")
-def test_bundle_build_entity_bundle_build(cmd_ok, charmcraft_cmd, bundle_environment):
+def test_bundle_build_entity_bundle_build(
+    cmd_ok, charmcraft_cmd, bundle_environment, charms
+):
     """Tests bundle_build method."""
     artifacts = bundle_environment.artifacts
     bundle_name, bundle_opts = next(iter(artifacts[0].items()))
@@ -510,7 +515,7 @@ def test_bundle_build_entity_bundle_build(cmd_ok, charmcraft_cmd, bundle_environ
     )
 
 
-def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd):
+def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd, charms):
     """Tests has_changed property."""
     artifacts = bundle_environment.artifacts
     bundle_name, bundle_opts = next(iter(artifacts[0].items()))
@@ -555,7 +560,7 @@ def mock_build_entity():
 
 
 @pytest.fixture()
-def mock_bundle_build_entity():
+def mock_bundle_build_entity(charms):
     """Create a fixture defining a mock BundleBuildEntity object."""
     spec = dir(charms.BundleBuildEntity)
     with patch("charms.BundleBuildEntity") as mock_ent:
@@ -571,7 +576,7 @@ def mock_bundle_build_entity():
         yield mock_ent
 
 
-def test_promote_command(mock_build_env):
+def test_promote_command(mock_build_env, charms):
     """Tests cli promote command which is run by jenkins job."""
     runner = CliRunner()
     result = runner.invoke(
@@ -598,7 +603,7 @@ def test_promote_command(mock_build_env):
     )
 
 
-def test_build_command(mock_build_env, mock_build_entity):
+def test_build_command(mock_build_env, mock_build_entity, charms):
     """Tests cli build command which is run by jenkins job."""
     runner = CliRunner()
     mock_build_env.artifacts = [
@@ -659,7 +664,9 @@ def test_build_command(mock_build_env, mock_build_entity):
 
 
 @patch("charms.cmd_ok")
-def test_bundle_build_command(cmd_ok, mock_build_env, mock_bundle_build_entity, tmpdir):
+def test_bundle_build_command(
+    cmd_ok, mock_build_env, mock_bundle_build_entity, tmpdir, charms
+):
     """Tests cli build command which is run by jenkins job."""
     runner = CliRunner()
     mock_build_env.artifacts = [
