@@ -2,6 +2,7 @@
 
 from . import BaseRepoModel
 from cilib.log import DebugMixin
+from cilib.git import default_gh_branch
 import os
 from urllib.parse import quote
 from pathlib import Path
@@ -25,6 +26,9 @@ class CharmRepoModel(DebugMixin):
     @property
     def base(self):
         return BaseRepoModel(repo=self.repo, git_user=self.git_user, name=self.name)
+
+    def default_gh_branch(self, remote):
+        return default_gh_branch(remote, auth=(self.git_user, self.password))
 
     @classmethod
     def load_repos(cls, repos):

@@ -30,6 +30,8 @@ class CharmService(DebugMixin):
             return
 
         self.log(f"Syncing {self.upstream_normalized} -> {self.downstream_normalized}")
+        upstream_ref = self.repo.default_gh_branch("upstream")
+        downstream_ref = self.repo.default_gh_branch("downstream")
         with tempfile.TemporaryDirectory() as tmpdir:
             src_path = Path(tmpdir) / self.repo.src
             self.repo.base.clone(cwd=tmpdir)
@@ -37,6 +39,6 @@ class CharmService(DebugMixin):
                 origin="upstream", url=self.repo.upstream, cwd=str(src_path)
             )
             self.repo.base.fetch(origin="upstream", cwd=str(src_path))
-            self.repo.base.checkout(ref="master", cwd=str(src_path))
-            self.repo.base.merge(origin="upstream", ref="master", cwd=str(src_path))
-            self.repo.base.push(origin="origin", ref="master", cwd=str(src_path))
+            self.repo.base.checkout(ref=upstream_ref, cwd=str(src_path))
+            self.repo.base.merge(origin="upstream", ref=upstream_ref, cwd=str(src_path))
+            self.repo.base.push(origin="origin", ref=downstream_ref, cwd=str(src_path))
