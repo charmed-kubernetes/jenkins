@@ -15,7 +15,13 @@ def test_sync_default_branch(mock_default_gh, mock_base, sync):
         ],
     )
     assert result.exception is None
-    mock_default_gh.assert_has_calls([mock.call("upstream"), mock.call("downstream")])
+    mock_default_gh.assert_has_calls(
+        [
+            mock.call("juju-solutions/interface-aws-iam"),
+            mock.call("charmed-kubernetes/interface-aws-iam"),
+        ],
+        any_order=False,
+    )
     for (name, args, kwargs) in mock_base().mock_calls:
         assert name in ["clone", "remote_add", "fetch", "checkout", "merge", "push"]
         if ref := kwargs.get("ref"):
