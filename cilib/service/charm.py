@@ -39,6 +39,6 @@ class CharmService(DebugMixin):
                 origin="upstream", url=self.repo.upstream, cwd=str(src_path)
             )
             self.repo.base.fetch(origin="upstream", cwd=str(src_path))
-            self.repo.base.checkout(ref=upstream_ref, cwd=str(src_path))
+            self.repo.base.checkout(ref=downstream_ref, cwd=str(src_path))
             self.repo.base.merge(origin="upstream", ref=upstream_ref, cwd=str(src_path))
             self.repo.base.push(origin="origin", ref=downstream_ref, cwd=str(src_path))
