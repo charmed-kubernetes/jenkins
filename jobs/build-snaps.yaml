@@ -55,57 +55,37 @@
     triggers:
         - timed: "@daily"
 
-
-- job:
-    name: 'build-release-eks-snaps'
-    node: runner-amd64
+- job-template:
+    name: 'build-release-eks-snaps-{arch}'
     description: |
       Builds, releases and promotes Amazon EKS snaps for {version} to the snapstore.
 
       If snapstore login fails due to an expired macaroon, run
       'snapcraft export-login ./snapcraft_cpc_creds' with credentials from LastPass,
       update the snapcraft_cpc_creds credential, and re-run the infrastructure jobs.
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/build-snaps"
-      - run-venv:
-          JOB_SPEC_DIR: "jobs/build-snaps"
-          COMMAND: |
-            IS_DRY_RUN=""
-            if [[ $DRY_RUN = "true" ]]; then
-              IS_DRY_RUN="--dry-run"
-            fi
-
-            snapcraft logout
-            snapcraft login --with /var/lib/jenkins/.config/snapcraft/snapcraft-cpc.cfg
-
-            python jobs/build-snaps/build-eks-snaps.py build $IS_DRY_RUN \
-                 --arch $ARCH \
-                 --version $VERSION \
-                 --snap kubelet \
-                 --snap kubectl \
-                 --snap kube-proxy \
-                 --snap kubernetes-test
-            python jobs/build-snaps/build-eks-snaps.py push $IS_DRY_RUN --version $VERSION
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-snaps/build-release-eks-snaps.groovy
     parameters:
       - string:
-          name: ARCH
-          default: 'amd64'
-          description: eks snap architecture to build/promote
+          name: build_node
+          default: 'runner-{arch}'
       - string:
-          name: VERSION
-          default: '1.21.2'
-          description: eks snap version to build/promote
+          name: k8s_tag
+          default: 'v{version}'
+          description: |
+            Source tag from https://github.com/kubernetes/kubernetes.
+      - string:
+          name: channels
+          default: '{version}/edge,{version}/beta,{version}/candidate'
+          description: |
+            Comma separated snap store channels to release the built snaps to.
       - bool:
-          name: DRY_RUN
+          name: dry_run
           default: false
-          description: if checked, only report what would be built/promoted
+          description: only report what would be done
     properties:
       - build-discarder:
           num-to-keep: 7
@@ -116,6 +96,13 @@
     version: ['1.20', '1.21', '1.22', '1.23']
     jobs:
       - 'build-release-cdk-addons-{arch}-{version}'
+
+- project:
+    name: build-release-eks-snaps
+    arch: ['amd64', 'arm64']
+    version: '1.22.4'
+    jobs:
+      - 'build-release-eks-snaps-{arch}'
 
 
 # Builds and releases latest snaps
