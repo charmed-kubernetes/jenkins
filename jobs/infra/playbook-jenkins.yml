@@ -442,12 +442,6 @@
         mode: 0644
       tags:
         - jenkins
-    - name: login to charmstore
-      command: "charm login -B"
-      become: false
-      register: charmstore_login
-      tags:
-        - jenkins
     - name: login to snapstore
       command: "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
       become: false
