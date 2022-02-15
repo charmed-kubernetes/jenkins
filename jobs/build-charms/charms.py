@@ -18,6 +18,7 @@ Usage:
 """
 
 import os
+import traceback
 from io import BytesIO
 import zipfile
 from pathlib import Path
@@ -976,15 +977,14 @@ def build(
             entity.push()
             entity.attach_resources()
             entity.promote(to_channel=to_channel)
-        except Exception as build_exc:
-            failed_entities.append((entity, build_exc))
+        except Exception:
+            entity.echo(traceback.format_exc())
+            failed_entities.append(entity)
         finally:
             entity.echo("Stopping")
 
-    for idx, (entity, build_exc) in enumerate(failed_entities):
-        entity.echo("Encountered failure")
-        if len(failed_entities) - idx == 1:
-            raise build_exc
+    if any(failed_entities):
+        raise BuildException("Encountered Charm Build Failure")
 
     build_env.save()
 
