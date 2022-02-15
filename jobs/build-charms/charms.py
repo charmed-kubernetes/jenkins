@@ -711,7 +711,7 @@ class BuildEntity:
             charmcraft_script = (
                 "#!/bin/bash -eux\n"
                 f"source {Path(__file__).parent / 'charmcraft-lib.sh'}\n"
-                f"ci_charmcraft_pack {lxc} {repository} {self.branch} {self.opts.get('subdir','')}\n"
+                f"ci_charmcraft_pack {lxc} {repository} {self.branch} {self.opts.get('subdir', '')}\n"
                 f"ci_charmcraft_copy {lxc} {self.dst_path}\n"
             )
             ret = script(charmcraft_script, echo=self.echo)
@@ -984,7 +984,12 @@ def build(
             entity.echo("Stopping")
 
     if any(failed_entities):
-        raise BuildException("Encountered Charm Build Failure")
+        count = len(failed_entities)
+        plural = "s" if count > 1 else ""
+        raise SystemExit(
+            f"Encountered {count} Charm Build Failure{plural}:\n\t"
+            + ", ".join(ch.name for ch in failed_entities)
+        )
 
     build_env.save()
 
