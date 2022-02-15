@@ -1080,7 +1080,7 @@ def build_bundles(
     "--store",
     type=click.Choice(["cs", "ch"], case_sensitive=False),
     help="Charmstore (cs) or Charmhub (ch)",
-    default="cs",
+    default="ch",
 )
 def promote(charm_list, filter_by_tag, from_channel, to_channel, store):
     """
