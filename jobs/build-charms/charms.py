@@ -680,7 +680,7 @@ class BuildEntity:
             echo=self.echo,
         )
         if not ret.ok:
-            raise SystemExit("Clone failed")
+            raise BuildException("Clone failed")
 
         self.reactive = self.layer_path.exists()
 
@@ -719,7 +719,7 @@ class BuildEntity:
 
         if not ret.ok:
             self.echo("Failed to build, aborting")
-            raise SystemExit(f"Failed to build {self.name}")
+            raise BuildException(f"Failed to build {self.name}")
 
     def push(self):
         """Pushes a built charm to Charm store/hub."""
@@ -754,7 +754,7 @@ class BuildEntity:
         # Build any custom resources.
         resource_builder = self.opts.get("build-resources", None)
         if resource_builder and not resource_spec:
-            raise SystemExit(
+            raise BuildException(
                 f"Custom build-resources specified for {self.name} but no spec found"
             )
         if resource_builder:
@@ -765,7 +765,7 @@ class BuildEntity:
             self.echo("Running custom build-resources")
             ret = script(resource_builder, echo=self.echo)
             if not ret.ok:
-                raise SystemExit("Failed to build custom resources")
+                raise BuildException("Failed to build custom resources")
 
         for name, details in self._read_metadata_resources().items():
             resource_fmt = resource_spec.get(name)
@@ -957,6 +957,8 @@ def build(
             entities.append(charm_entity)
             click.echo(f"Queued {charm_entity.entity} for building")
 
+    failed_entities = []
+
     for entity in entities:
         entity.echo("Starting")
         try:
@@ -974,8 +976,15 @@ def build(
             entity.push()
             entity.attach_resources()
             entity.promote(to_channel=to_channel)
+        except Exception as build_exc:
+            failed_entities.append((entity, build_exc))
         finally:
             entity.echo("Stopping")
+
+    for idx, (entity, build_exc) in enumerate(failed_entities):
+        entity.echo("Encountered failure")
+        if len(failed_entities) - idx == 1:
+            raise build_exc
 
     build_env.save()
 
