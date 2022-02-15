@@ -133,12 +133,12 @@
               --layer-index  "$LAYER_INDEX" \
               --layer-list "$LAYER_LIST" \
               --layer-branch "$LAYER_BRANCH" \
-              --store "$CHARM_STORE" \ 
+              --store "$CHARM_STORE" \
               $IS_FORCE
 
             tox -e py38 -- python jobs/build-charms/charms.py build-bundles \
                 --to-channel "$TO_CHANNEL" \
                 --bundle-list "$BUNDLE_LIST" \
                 --bundle-branch "$BUNDLE_BRANCH" \
-                --store "$CHARM_STORE" \ 
+                --store "$CHARM_STORE" \
                 --filter-by-tag "$FILTER_BY_TAG"
