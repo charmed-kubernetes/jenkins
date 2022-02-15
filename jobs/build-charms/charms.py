@@ -18,6 +18,7 @@ Usage:
 """
 
 import os
+import traceback
 from io import BytesIO
 import zipfile
 from pathlib import Path
@@ -680,7 +681,7 @@ class BuildEntity:
             echo=self.echo,
         )
         if not ret.ok:
-            raise SystemExit("Clone failed")
+            raise BuildException("Clone failed")
 
         self.reactive = self.layer_path.exists()
 
@@ -710,7 +711,7 @@ class BuildEntity:
             charmcraft_script = (
                 "#!/bin/bash -eux\n"
                 f"source {Path(__file__).parent / 'charmcraft-lib.sh'}\n"
-                f"ci_charmcraft_pack {lxc} {repository} {self.branch} {self.opts.get('subdir','')}\n"
+                f"ci_charmcraft_pack {lxc} {repository} {self.branch} {self.opts.get('subdir', '')}\n"
                 f"ci_charmcraft_copy {lxc} {self.dst_path}\n"
             )
             ret = script(charmcraft_script, echo=self.echo)
@@ -719,7 +720,7 @@ class BuildEntity:
 
         if not ret.ok:
             self.echo("Failed to build, aborting")
-            raise SystemExit(f"Failed to build {self.name}")
+            raise BuildException(f"Failed to build {self.name}")
 
     def push(self):
         """Pushes a built charm to Charm store/hub."""
@@ -754,7 +755,7 @@ class BuildEntity:
         # Build any custom resources.
         resource_builder = self.opts.get("build-resources", None)
         if resource_builder and not resource_spec:
-            raise SystemExit(
+            raise BuildException(
                 f"Custom build-resources specified for {self.name} but no spec found"
             )
         if resource_builder:
@@ -765,7 +766,7 @@ class BuildEntity:
             self.echo("Running custom build-resources")
             ret = script(resource_builder, echo=self.echo)
             if not ret.ok:
-                raise SystemExit("Failed to build custom resources")
+                raise BuildException("Failed to build custom resources")
 
         for name, details in self._read_metadata_resources().items():
             resource_fmt = resource_spec.get(name)
@@ -957,6 +958,8 @@ def build(
             entities.append(charm_entity)
             click.echo(f"Queued {charm_entity.entity} for building")
 
+    failed_entities = []
+
     for entity in entities:
         entity.echo("Starting")
         try:
@@ -974,8 +977,19 @@ def build(
             entity.push()
             entity.attach_resources()
             entity.promote(to_channel=to_channel)
+        except Exception:
+            entity.echo(traceback.format_exc())
+            failed_entities.append(entity)
         finally:
             entity.echo("Stopping")
+
+    if any(failed_entities):
+        count = len(failed_entities)
+        plural = "s" if count > 1 else ""
+        raise SystemExit(
+            f"Encountered {count} Charm Build Failure{plural}:\n\t"
+            + ", ".join(ch.name for ch in failed_entities)
+        )
 
     build_env.save()
 

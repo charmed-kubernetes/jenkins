@@ -303,7 +303,7 @@ def test_build_entity_charm_build(
 
     # Operator Charms, fail build without charmcraft container
     del os.environ["charmcraft_lxc"]
-    with pytest.raises(SystemExit):
+    with pytest.raises(charms.BuildException):
         charm_entity.charm_build()
 
 
