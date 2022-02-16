@@ -86,7 +86,7 @@
     tags: ['k8s']
 - interface:nrpe-external-master:
     downstream: "charmed-kubernetes/nrpe-external-master-interface.git"
-    upstream: "https://github.com/cmars/nrpe-external-master-interface.git"
+    upstream: "https://github.com/canonical/nrpe-external-master-interface.git"
     tags: ['k8s']
 - interface:openstack-integration:
     downstream: "charmed-kubernetes/interface-openstack-integration.git"
