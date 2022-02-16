@@ -26,3 +26,11 @@ def test_sync_default_branch(mock_default_gh, mock_base, sync):
         assert name in ["clone", "remote_add", "fetch", "checkout", "merge", "push"]
         if ref := kwargs.get("ref"):
             assert ref == "test-main"
+
+
+@mock.patch("sync.CharmRepoModel.base", new_callable=mock.PropertyMock)
+@mock.patch("sync.default_gh_branch", return_value=None)
+def test_sync_no_default_branch(mock_default_gh, mock_base, sync):
+    """Tests the repo default branch helper which runs when syncing forks."""
+    result = sync.CharmRepoModel.default_gh_branch(mock_base, remote="test-repo")
+    assert result == "master"
