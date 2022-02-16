@@ -28,7 +28,15 @@ class CharmRepoModel(DebugMixin):
         return BaseRepoModel(repo=self.repo, git_user=self.git_user, name=self.name)
 
     def default_gh_branch(self, remote):
-        return default_gh_branch(remote, auth=(self.git_user, self.password))
+        """Determine the default GitHub branch for a repo.
+
+        If the branch name cannot be determined, return 'master'.
+        """
+        # NB: ignore errors since not all CK layer repos come from github
+        branch = default_gh_branch(
+            remote, ignore_errors=True, auth=(self.git_user, self.password)
+        )
+        return branch or "master"
 
     @classmethod
     def load_repos(cls, repos):
