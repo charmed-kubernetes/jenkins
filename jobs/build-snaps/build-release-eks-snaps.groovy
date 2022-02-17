@@ -22,13 +22,13 @@ pipeline {
         timestamps()
     }
     stages {
-        stage('Setup User') {
+        stage('Verify User') {
             /* Do this early; we want to fail fast if we don't have valid creds. */
             steps {
                 sh """
-                    snapcraft logout
                     snapcraft login --with /var/lib/jenkins/.config/snapcraft/snapcraft-cpc.cfg
                     snapcraft whoami
+                    snapcraft logout
                 """
             }
         }
@@ -83,6 +83,9 @@ pipeline {
                         echo "Copying \${EKS_SNAP} into container."
                         sudo lxc file push \${EKS_SNAP} ${lxc_name}/ -p -r
                     done
+
+                    # we'll upload from within the container; put creds in place
+                    sudo lxc file push /var/lib/jenkins/.config/snapcraft/snapcraft-cpc.cfg ${lxc_name}/snapcraft-cpc.cfg
                 """
             }
         }
@@ -104,33 +107,26 @@ pipeline {
                 """
             }
         }
-        stage('Fetch Snaps'){
-            steps {
-                sh """
-                    BUILD_ARCH=\$(dpkg --print-architecture)
-                    for snap in ${CK_SNAPS}
-                    do
-                        EKS_SNAP="\${snap}${EKS_SUFFIX}"
-                        BUILT_SNAP="\${EKS_SNAP}_${kube_ersion}_\${BUILD_ARCH}.snap"
-
-                        echo "Fetching \${BUILT_SNAP}."
-                        sudo lxc file pull ${lxc_name}/\${EKS_SNAP}/\${BUILT_SNAP} .
-                    done
-                """
-            }
-        }
-        stage('Push Snaps'){
+        stage('Upload Snaps'){
             steps {
                 script {
                     if(params.dry_run) {
-                        echo "Dry run; would have uploaded *.snap to ${params.channels}"
-                        sh "ls *eks*.snap"
+                        echo "Dry run; would have uploaded snaps to ${params.channels}"
                     } else {
                         sh """
-                            for snap in \$(ls *eks*.snap)
+                            BUILD_ARCH=\$(dpkg --print-architecture)
+
+                            sudo lxc shell ${lxc_name} -- bash -c "snapcraft login --with /snapcraft-cpc.cfg"
+                            for snap in ${CK_SNAPS}
                             do
-                                snapcraft -d upload \${snap} --release ${params.channels}
+                                EKS_SNAP="\${snap}${EKS_SUFFIX}"
+                                BUILT_SNAP="\${EKS_SNAP}_${kube_ersion}_\${BUILD_ARCH}.snap"
+
+                                echo "Uploading \${BUILT_SNAP}."
+                                sudo lxc shell ${lxc_name} -- bash -c \
+                                    "snapcraft -d upload /\${EKS_SNAP}/\${BUILT_SNAP} --release ${params.channels}"
                             done
+                            sudo lxc shell ${lxc_name} -- bash -c "snapcraft logout"
                         """
                     }
                 }
@@ -147,7 +143,6 @@ pipeline {
                 . \${WORKSPACE}/cilib.sh
 
                 ci_lxc_delete ${lxc_name}
-                snapcraft logout
             """
         }
     }
