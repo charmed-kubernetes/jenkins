@@ -159,7 +159,7 @@ lazr-uri==1.0.5
     # via
     #   launchpadlib
     #   wadllib
-loguru==0.5.3
+loguru==0.6.0
     # via
     #   -r requirements.in
     #   ogc
