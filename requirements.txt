@@ -78,7 +78,7 @@ decorator==4.4.2
     # via retry
 dict-deep==2.0.2
     # via ogc
-dill==0.3.3
+dill==0.3.4
     # via
     #   multiprocess
     #   pathos
@@ -196,7 +196,7 @@ module-wrapper==0.3.1
     # via aioify
 multi-key-dict==2.0.3
     # via python-jenkins
-multiprocess==0.70.11.1
+multiprocess==0.70.12.2
     # via pathos
 mypy-extensions==0.4.3
     # via
@@ -222,7 +222,7 @@ packaging==20.9
     #   pytest
 paramiko==2.7.2
     # via juju
-pathos==0.2.7
+pathos==0.2.8
     # via -r requirements.in
 pathspec==0.8.1
     # via black
@@ -233,9 +233,9 @@ pbr==5.5.1
     #   stevedore
 pluggy==0.13.1
     # via pytest
-pox==0.2.9
+pox==0.3.0
     # via pathos
-ppft==1.6.6.3
+ppft==1.6.6.4
     # via pathos
 prettytable==2.4.0
     # via -r requirements.in
