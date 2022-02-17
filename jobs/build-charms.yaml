@@ -105,6 +105,8 @@
             #!/bin/bash
             set -eux
 
+            . $WORKSPACE/jobs/build-charms/charmcraft-lib.sh
+            
             sudo chown -R jenkins:jenkins /var/lib/jenkins/.config/ || true
 
             IS_FORCE=""
@@ -113,6 +115,14 @@
             fi
 
             rm -rf "$WORKSPACE/charms" || true
+
+            # Cleanup old charmcraft containers
+            ci_lxc_delete "${JOB_NAME}"
+            
+            # Configure cleanup routine for exit
+            charmcraft_lxc="${JOB_NAME}-${BUILD_NUMBER}"
+            trap 'ci_lxc_delete $charmcraft_lxc' EXIT
+            ci_charmcraft_launch $charmcraft_lxc
 
             tox -e py38 -- python jobs/build-charms/charms.py build \
               --charm-list "$CHARM_LIST" \
@@ -123,10 +133,12 @@
               --layer-index  "$LAYER_INDEX" \
               --layer-list "$LAYER_LIST" \
               --layer-branch "$LAYER_BRANCH" \
+              --store "$CHARM_STORE" \
               $IS_FORCE
 
             tox -e py38 -- python jobs/build-charms/charms.py build-bundles \
                 --to-channel "$TO_CHANNEL" \
                 --bundle-list "$BUNDLE_LIST" \
                 --bundle-branch "$BUNDLE_BRANCH" \
+                --store "$CHARM_STORE" \
                 --filter-by-tag "$FILTER_BY_TAG"

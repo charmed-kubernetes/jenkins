@@ -2,6 +2,7 @@
 
 from . import BaseRepoModel
 from cilib.log import DebugMixin
+from cilib.git import default_gh_branch
 import os
 from urllib.parse import quote
 from pathlib import Path
@@ -25,6 +26,17 @@ class CharmRepoModel(DebugMixin):
     @property
     def base(self):
         return BaseRepoModel(repo=self.repo, git_user=self.git_user, name=self.name)
+
+    def default_gh_branch(self, remote):
+        """Determine the default GitHub branch for a repo.
+
+        If the branch name cannot be determined, return 'master'.
+        """
+        # NB: ignore errors since not all CK layer repos come from github
+        branch = default_gh_branch(
+            remote, ignore_errors=True, auth=(self.git_user, self.password)
+        )
+        return branch or "master"
 
     @classmethod
     def load_repos(cls, repos):

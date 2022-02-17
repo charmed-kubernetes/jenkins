@@ -2,6 +2,7 @@
 
 import os
 import re
+import shutil
 from pathlib import Path
 
 import pytest
@@ -10,17 +11,18 @@ from unittest.mock import patch, call, Mock, MagicMock, PropertyMock
 from functools import partial
 
 from click.testing import CliRunner
-import charms
 
-STATIC_TEST_PATH = Path(__file__).parent.parent.parent / "data"
+TEST_PATH = Path(__file__).parent.parent.parent
+STATIC_TEST_PATH = TEST_PATH / "data"
 K8S_CI_CHARM = STATIC_TEST_PATH / "charms" / "k8s-ci-charm"
 K8S_CI_BUNDLE = STATIC_TEST_PATH / "bundles" / "test-kubernetes"
 CI_TESTING_CHARMS = STATIC_TEST_PATH / "ci-testing-charms.inc"
 CI_TESTING_BUNDLES = STATIC_TEST_PATH / "ci-testing-bundles.inc"
 CLI_RESPONSES = STATIC_TEST_PATH / "cli_response"
+CHARMCRAFT_LIB_SH = TEST_PATH.parent / "jobs" / "build-charms" / "charmcraft-lib.sh"
 
 
-def test_build_env_missing_env():
+def test_build_env_missing_env(charms):
     """Ensure missing environment variables raise Exception."""
     with pytest.raises(charms.BuildException) as ie:
         charms.BuildEnv()
@@ -51,7 +53,7 @@ def test_environment(tmpdir):
 
 
 @pytest.fixture(autouse=True)
-def cilib_store():
+def cilib_store(charms):
     """Create a fixture defining mock for cilib Store."""
     with patch("charms.Store") as store:
         yield store
@@ -105,12 +107,12 @@ def charmcraft_cmd():
         cmd.status.side_effect = partial(command_response, "status")
         cmd.resources.side_effect = partial(command_response, "resources")
         cmd.revisions.side_effect = partial(command_response, "revisions")
-        cmd.build.side_effect = partial(command_response, "build")
+        cmd.pack.side_effect = partial(command_response, "pack")
         yield cmd
 
 
 @pytest.fixture()
-def bundle_environment(test_environment):
+def bundle_environment(test_environment, charms):
     charm_env = charms.BuildEnv(build_type=charms.BuildType.BUNDLE)
     charm_env.db["build_args"] = {
         "artifact_list": str(CI_TESTING_BUNDLES),
@@ -123,7 +125,7 @@ def bundle_environment(test_environment):
 
 
 @pytest.fixture()
-def charm_environment(test_environment):
+def charm_environment(test_environment, charms):
     charm_env = charms.BuildEnv(build_type=charms.BuildType.CHARM)
     charm_env.db["build_args"] = {
         "artifact_list": str(CI_TESTING_CHARMS),
@@ -173,21 +175,21 @@ def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
 
 @patch("charms.os.makedirs", Mock())
 @patch("charms.cmd_ok")
-def test_build_entity_setup(cmd_ok, charm_environment, tmpdir):
+def test_build_entity_setup(cmd_ok, charm_environment, tmpdir, charms):
     """Tests build entity setup."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
-    assert charm_entity.legacy_charm is False, "Initializes as false"
+    assert charm_entity.reactive is False, "Initializes as false"
     charm_entity.setup()
-    assert charm_entity.legacy_charm is True, "test charm requires legacy builds"
+    assert charm_entity.reactive is True, "test charm requires legacy builds"
     cmd_ok.assert_called_once_with(
         f"git clone --branch master https://github.com/charmed-kubernetes/jenkins.git {charm_entity.checkout_path}",
         echo=charm_entity.echo,
     )
 
 
-def test_build_entity_has_changed(charm_environment, charm_cmd):
+def test_build_entity_has_changed(charm_environment, charm_cmd, charms):
     """Tests has_changed property."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
@@ -196,7 +198,7 @@ def test_build_entity_has_changed(charm_environment, charm_cmd):
         "cs:~containers/k8s-ci-charm", "id", channel="edge"
     )
     charm_cmd.show.reset_mock()
-    with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
+    with patch("charms.BuildEntity.commit") as commit:
         # Test non-legacy charms with the commit rev checked in with charm matching
         commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
         assert charm_entity.has_changed is False
@@ -214,69 +216,32 @@ def test_build_entity_has_changed(charm_environment, charm_cmd):
         charm_cmd.show.reset_mock()
 
         # Test legacy charms by comparing charmstore .build.manifest
-        charm_entity.legacy_charm = True
+        charm_entity.reactive = True
         assert charm_entity.has_changed is True
         charm_cmd.show.assert_not_called()
         charm_cmd.show.reset_mock()
 
-    # Test all charmhub charms comparing .build.manifest to revision
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
-    charm_cmd.show.assert_not_called()
-    with patch("charms.BuildEntity.commit", new_callable=PropertyMock) as commit:
-        commit.return_value = "96b4e06d5d35fec30cdf2cc25076dd25c51b893c"
+        # Test all charmhub charms
+        charm_entity = charms.BuildEntity(
+            charm_environment, charm_name, charm_opts, "ch"
+        )
+        charm_entity.reactive = True
         assert charm_entity.has_changed is True
+        charm_cmd.show.assert_not_called()
+        charm_cmd.show.reset_mock()
 
 
 @patch("charms.script")
 def test_build_entity_charm_build(
-    mock_script, charm_environment, charm_cmd, charmcraft_cmd, tmpdir
+    mock_script, charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
 ):
     """Test that BuildEntity runs charm_build."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
-    charm_entity.legacy_charm = True
-    charm_entity.charm_build()
-    assert charm_entity.dst_path == str(K8S_CI_CHARM / "k8s-ci-charm.charm")
-    charm_cmd.build.assert_called_once_with(
-        "-r",
-        "--force",
-        "-i",
-        "https://localhost",
-        "--charm-file",
-        _cwd=str(K8S_CI_CHARM),
-    )
-    charmcraft_cmd.build.assert_not_called()
-    charm_cmd.build.reset_mock()
-
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
-    charm_entity.legacy_charm = True
-    charm_entity.charm_build()
-    assert charm_entity.dst_path == tmpdir / "build" / "k8s-ci-charm"
-    charm_cmd.build.assert_called_once_with(
-        "-r",
-        "--force",
-        "-i",
-        "https://localhost",
-        _cwd=str(K8S_CI_CHARM),
-    )
-    charmcraft_cmd.build.assert_not_called()
-    charm_cmd.build.reset_mock()
-
-    # Non-Legacy Charms, build with charmcraft
-    charm_entity.legacy_charm = False
-    charm_entity.charm_build()
-    charm_cmd.build.assert_not_called()
-    charmcraft_cmd.build.assert_called_once_with(
-        "-f",
-        str(K8S_CI_CHARM),
-        _cwd=tmpdir / "build",
-    )
-    charmcraft_cmd.build.reset_mock()
 
     # Charms built with override
-    mock_script.assert_not_called()
     charm_entity.opts["override-build"] = MagicMock()
     charm_entity.charm_build()
     charm_cmd.build.assert_not_called()
@@ -287,9 +252,64 @@ def test_build_entity_charm_build(
         charm=charm_entity.name,
         echo=charm_entity.echo,
     )
+    mock_script.reset_mock()
+    del charm_entity.opts["override-build"]
+
+    # Reactive charms built with charm tools
+    charm_entity.reactive = True
+    charm_entity.charm_build()
+    assert charm_entity.dst_path == str(K8S_CI_CHARM / "k8s-ci-charm.charm")
+    charm_cmd.build.assert_called_once_with(
+        "-r",
+        "--force",
+        "-i",
+        "https://localhost",
+        "--charm-file",
+        _cwd=str(K8S_CI_CHARM),
+    )
+    mock_script.assert_not_called()
+    charmcraft_cmd.build.assert_not_called()
+    charm_cmd.build.reset_mock()
+
+    # Reactive charms built with charm tools without --charm-file option
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
+    charm_entity.reactive = True
+    charm_entity.charm_build()
+    assert charm_entity.dst_path == tmpdir / "build" / "k8s-ci-charm"
+    charm_cmd.build.assert_called_once_with(
+        "-r",
+        "--force",
+        "-i",
+        "https://localhost",
+        _cwd=str(K8S_CI_CHARM),
+    )
+    mock_script.assert_not_called()
+    charmcraft_cmd.build.assert_not_called()
+    charm_cmd.build.reset_mock()
+
+    # Operator Charms, build with charmcraft container
+    charm_entity.reactive = False
+    os.environ["charmcraft_lxc"] = "unnamed-job-0"
+    charm_entity.charm_build()
+    charm_cmd.build.assert_not_called()
+    mock_script.assert_called_once_with(
+        "#!/bin/bash -eux\n"
+        f"source {CHARMCRAFT_LIB_SH}\n"
+        f"ci_charmcraft_pack unnamed-job-0 https://github.com/{charm_entity.downstream} master \n"
+        f"ci_charmcraft_copy unnamed-job-0 {tmpdir}/build/k8s-ci-charm\n",
+        echo=charm_entity.echo,
+    )
+    mock_script.reset_mock()
+
+    # Operator Charms, fail build without charmcraft container
+    del os.environ["charmcraft_lxc"]
+    with pytest.raises(charms.BuildException):
+        charm_entity.charm_build()
 
 
-def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir):
+def test_build_entity_push(
+    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
+):
     """Test that BuildEntity pushes to appropriate store."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
@@ -318,17 +338,18 @@ def test_build_entity_push(charm_environment, charm_cmd, charmcraft_cmd, tmpdir)
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
     charm_entity.push()
     charm_cmd.push.assert_not_called()
-    charmcraft_cmd.upload.assert_called_once_with("-q", charm_entity.dst_path)
+    charmcraft_cmd.upload.assert_called_once_with(charm_entity.dst_path)
     assert charm_entity.new_entity == "845"
 
 
 @patch("charms.os.makedirs", Mock())
 def test_build_entity_attach_resource(
-    charm_environment, charm_cmd, charmcraft_cmd, tmpdir
+    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
 ):
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
+    charm_entity.dst_path = charm_entity.src_path
 
     with patch("charms.script") as mock_script:
         charm_entity.new_entity = charm_revision = "cs:~containers/k8s-ci-charm-845"
@@ -350,6 +371,7 @@ def test_build_entity_attach_resource(
     charmcraft_cmd.assert_not_called()
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
+    charm_entity.dst_path = charm_entity.src_path
     with patch("charms.script") as mock_script:
         charm_entity.attach_resources()
     mock_script.assert_called_once()
@@ -373,7 +395,9 @@ def test_build_entity_attach_resource(
     charm_cmd.assert_not_called()
 
 
-def test_build_entity_promote(charm_environment, charm_cmd, charmcraft_cmd, tmpdir):
+def test_build_entity_promote(
+    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
+):
     """Test that BuildEntity releases to appropriate store."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
@@ -407,7 +431,7 @@ def test_build_entity_promote(charm_environment, charm_cmd, charmcraft_cmd, tmpd
 
 
 def test_bundle_build_entity_push(
-    bundle_environment, charm_cmd, charmcraft_cmd, tmpdir
+    bundle_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
 ):
     """Test that BundleBuildEntity pushes to appropriate store."""
     artifacts = bundle_environment.artifacts
@@ -441,44 +465,57 @@ def test_bundle_build_entity_push(
     )
     bundle_entity.push()
     charm_cmd.push.assert_not_called()
-    charmcraft_cmd.upload.assert_called_once_with(
-        "-q",
-        bundle_entity.dst_path,
-    )
+    charmcraft_cmd.upload.assert_called_once_with(bundle_entity.dst_path)
     assert bundle_entity.new_entity == "123"
 
 
 @patch("charms.cmd_ok")
-@patch("shutil.copytree")
-def test_bundle_build_entity_bundle_build(shutil_copytree, cmd_ok, bundle_environment):
+def test_bundle_build_entity_bundle_build(
+    cmd_ok, charmcraft_cmd, bundle_environment, charms
+):
     """Tests bundle_build method."""
     artifacts = bundle_environment.artifacts
     bundle_name, bundle_opts = next(iter(artifacts[0].items()))
-    bundle_opts["src_path"] = bundle_environment.default_repo_dir
-    bundle_opts["dst_path"] = K8S_CI_BUNDLE
+    bundle_opts["src_path"] = K8S_CI_BUNDLE
+    bundle_opts["dst_path"] = bundle_environment.bundles_dir
 
+    # Test a bundle copy takes place
     bundle_opts["skip-build"] = True
     bundle_entity = charms.BundleBuildEntity(
         bundle_environment, bundle_name, bundle_opts, "cs"
     )
     bundle_entity.bundle_build("edge")
-    shutil_copytree.assert_called_once_with(
-        bundle_environment.default_repo_dir, str(K8S_CI_BUNDLE)
-    )
+    assert (bundle_environment.bundles_dir / "bundle.yaml").exists()
+    assert (bundle_environment.bundles_dir / "tests" / "test.yaml").exists()
     cmd_ok.assert_not_called()
-    shutil_copytree.reset_mock()
+    shutil.rmtree(bundle_environment.bundles_dir)
 
+    # Test a bundle build takes place
     del bundle_opts["skip-build"]
     bundle_entity = charms.BundleBuildEntity(
         bundle_environment, bundle_name, bundle_opts, "cs"
     )
     bundle_entity.bundle_build("edge")
-    shutil_copytree.assert_not_called()
-    cmd = f"{bundle_environment.default_repo_dir / 'bundle'} -o {K8S_CI_BUNDLE} -c edge k8s/core cni/flannel cri/containerd"
+    assert not (bundle_environment.bundles_dir / "bundle.yaml").exists()
+    cmd = f"{K8S_CI_BUNDLE / 'bundle'} -n test-kubernetes -o {bundle_environment.bundles_dir} -c edge k8s/core cni/flannel cri/containerd"
     cmd_ok.assert_called_with(cmd, echo=bundle_entity.echo)
+    cmd_ok.reset_mock()
+
+    # Test that a bundle pack occurs
+    bundle_opts["skip-build"] = True
+    bundle_entity = charms.BundleBuildEntity(
+        bundle_environment, bundle_name, bundle_opts, "ch"
+    )
+    bundle_entity.bundle_build("edge")
+    charmcraft_cmd.pack.assert_called_once_with(_cwd=bundle_environment.bundles_dir)
+    cmd_ok.assert_not_called()
+    assert (
+        bundle_entity.dst_path
+        == "/not/real/path/to/scratch/tmp/bundles/test-kubernetes.zip"
+    )
 
 
-def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd):
+def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd, charms):
     """Tests has_changed property."""
     artifacts = bundle_environment.artifacts
     bundle_name, bundle_opts = next(iter(artifacts[0].items()))
@@ -523,7 +560,7 @@ def mock_build_entity():
 
 
 @pytest.fixture()
-def mock_bundle_build_entity():
+def mock_bundle_build_entity(charms):
     """Create a fixture defining a mock BundleBuildEntity object."""
     spec = dir(charms.BundleBuildEntity)
     with patch("charms.BundleBuildEntity") as mock_ent:
@@ -539,7 +576,7 @@ def mock_bundle_build_entity():
         yield mock_ent
 
 
-def test_promote_command(mock_build_env):
+def test_promote_command(mock_build_env, charms):
     """Tests cli promote command which is run by jenkins job."""
     runner = CliRunner()
     result = runner.invoke(
@@ -566,7 +603,7 @@ def test_promote_command(mock_build_env):
     )
 
 
-def test_build_command(mock_build_env, mock_build_entity):
+def test_build_command(mock_build_env, mock_build_entity, charms):
     """Tests cli build command which is run by jenkins job."""
     runner = CliRunner()
     mock_build_env.artifacts = [
@@ -614,6 +651,7 @@ def test_build_command(mock_build_env, mock_build_entity):
         [
             call("Starting"),
             call(f"Details: {entity}"),
+            call("Build forced."),
             call("Stopping"),
         ],
         any_order=False,
@@ -626,7 +664,9 @@ def test_build_command(mock_build_env, mock_build_entity):
 
 
 @patch("charms.cmd_ok")
-def test_bundle_build_command(cmd_ok, mock_build_env, mock_bundle_build_entity, tmpdir):
+def test_bundle_build_command(
+    cmd_ok, mock_build_env, mock_bundle_build_entity, tmpdir, charms
+):
     """Tests cli build command which is run by jenkins job."""
     runner = CliRunner()
     mock_build_env.artifacts = [

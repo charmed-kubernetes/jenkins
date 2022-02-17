@@ -1,6 +1,12 @@
 #!/bin/bash
 set -eux
 
+if [[ $0 == $BASH_SOURCE ]]; then
+  echo "$0 should be sourced";
+  exit
+fi
+echo "sourced ${BASH_SOURCE:-$0}"
+
 setup_env()
 {
   ogc-collect set-key 'job_name_custom' "$JUJU_CONTROLLER-$SERIES-$SNAP_VERSION"
@@ -57,7 +63,7 @@ bootstrap_env()
 
 deploy_env()
 {
-    tee overlay.yaml <<EOF> /dev/null
+    tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
   kubernetes-master:
@@ -101,4 +107,25 @@ print(unit[units[0]]['public-address'])
 # $0: current script
 scriptPath() {
     env python3 -c "import os,sys; print(os.path.dirname(os.path.abspath(\"$0\")))"
+}
+
+ci_lxc_launch()
+{
+    # Launch local LXD container to publish to charmcraft
+    local lxc_image=$1
+    local lxc_container=$2
+    sudo lxc launch ${lxc_image} ${lxc_container}
+    sleep 10
+    sudo lxc shell ${lxc_container} -- bash -c "apt-get update && apt-get install build-essential -y"
+}
+
+ci_lxc_delete()
+{
+    # Stop and delete containers matching a prefix
+    local lxc_container_prefix=$1
+    local existing_containers=$(sudo lxc list -c n -f csv "${lxc_container_prefix}" | xargs)
+    echo "Removing containers: ${existing_containers}"
+    set +e
+    sudo lxc delete --force "${existing_containers}"
+    set -e
 }

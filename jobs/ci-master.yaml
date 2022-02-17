@@ -209,6 +209,12 @@
       - string:
           name: CHARM_INTERFACES_DIR
           default: 'build/interfaces'
+      - string:
+          name: CHARM_STORE
+          default: 'ch'
+          description: |
+            Destination store for publishing charms.  Currently supports
+            charmstore and charmhub.
       - bool:
           name: FORCE
           default: false
@@ -417,3 +423,6 @@
           - text:
               credential-id: deb-gpg-key
               variable: K8STEAMCI_GPG_KEY
+          - text:
+              credential-id: charmcraft_creds
+              variable: CHARMCRAFT_AUTH

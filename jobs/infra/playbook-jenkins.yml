@@ -175,7 +175,6 @@
       loop:
         - "microk8s"
         - "bundletester"
-        - "charmcraft"
         - "surl"
       tags:
         - jenkins
@@ -441,12 +440,6 @@
         owner: jenkins
         group: jenkins
         mode: 0644
-      tags:
-        - jenkins
-    - name: login to charmstore
-      command: "charm login -B"
-      become: false
-      register: charmstore_login
       tags:
         - jenkins
     - name: login to snapstore

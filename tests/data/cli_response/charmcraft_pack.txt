@@ -1,0 +1,2 @@
+Packing the bundle
+Created '/not/real/path/to/scratch/tmp/bundles/test-kubernetes.zip'.
