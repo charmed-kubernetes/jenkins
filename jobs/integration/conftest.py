@@ -164,8 +164,8 @@ async def tools(request):
 
 
 @pytest.fixture(scope="module")
-async def model(request, event_loop, tools):
-    model = Model(event_loop)
+async def model(request, tools):
+    model = Model()
     await model.connect(tools.connection)
     if request.config.getoption("--is-upgrade"):
         upgrade_snap_channel = request.config.getoption("--upgrade-snap-channel")
@@ -232,7 +232,7 @@ async def k8s_model(model, tools):
             "--no-switch",
         )
         created_k8s_model = True
-        k8s_model = Model(model.loop)
+        k8s_model = Model()
         await k8s_model.connect(tools.k8s_connection)
         yield k8s_model
     finally:
@@ -399,10 +399,11 @@ def log_dir(request):
     return path
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def event_loop():
     loop = asyncio.new_event_loop()
     yield loop
+    loop.close()
 
 
 @pytest.fixture
