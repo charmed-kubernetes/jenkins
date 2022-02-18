@@ -353,7 +353,9 @@ s3transfer==0.3.6
 secretstorage==3.3.1
     # via keyring
 semver==2.13.0
-    # via ogc
+    # via
+    #   -r requirements.in
+    #   ogc
 sh==1.14.2
     # via
     #   -r requirements.in
