@@ -151,7 +151,7 @@ kv==0.3
     #   ogc
 launchpadlib==1.10.16
     # via -r requirements.in
-lazr-restfulclient==0.14.3
+lazr-restfulclient==0.14.4
     # via
     #   -r requirements.in
     #   launchpadlib
