@@ -120,7 +120,7 @@
             ci_lxc_delete "${JOB_NAME}"
             
             # Configure cleanup routine for exit
-            charmcraft_lxc="${JOB_NAME}-${BUILD_NUMBER}"
+            export charmcraft_lxc="${JOB_NAME}-${BUILD_NUMBER}"
             trap 'ci_lxc_delete $charmcraft_lxc' EXIT
             ci_charmcraft_launch $charmcraft_lxc
 
