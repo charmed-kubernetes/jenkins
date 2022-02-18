@@ -1,10 +1,8 @@
 """
 Test Kata untrusted container runtimes.
 """
-import pytest
 
 
-@pytest.mark.asyncio
 async def test_kata(model, tools):
     """
     Deploy Kata, wait for it to

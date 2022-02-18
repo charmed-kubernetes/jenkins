@@ -27,7 +27,6 @@ async def log_docker_versions(model):
             log(unit.name + ": " + docker_version)
 
 
-@pytest.mark.asyncio
 @pytest.mark.skip("Needs to be a fixture instead")
 async def test_docker_proposed(request, model, log_dir, tools):
     # Enable <series>-proposed on this model

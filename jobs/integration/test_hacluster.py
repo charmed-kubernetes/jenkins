@@ -1,5 +1,4 @@
 import asyncio
-import pytest
 import random
 import os
 from .logger import log
@@ -90,7 +89,6 @@ async def do_verification(model, app, ip):
     await verify_ip_valid(model, ip)
 
 
-@pytest.mark.asyncio
 async def test_validate_existing_hacluster(model, tools):
     """Assume hacluster is already set up and do not modify the deploy"""
     name = get_master_name(model)
@@ -100,7 +98,6 @@ async def test_validate_existing_hacluster(model, tools):
         await do_verification(model, app, ip)
 
 
-@pytest.mark.asyncio
 async def test_validate_hacluster(model, tools):
     name = get_master_name(model)
     app = model.applications[name]
