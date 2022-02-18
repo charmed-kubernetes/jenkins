@@ -56,13 +56,13 @@ pipeline {
                         cd \${EKS_SNAP}
                         sed -i -e "s/^name: \${snap}/name: \${EKS_SNAP}/" \
                                -e "s/^base: .*/base: ${EKS_BASE}/" snapcraft.yaml
-                        cd -
 
                         # if we don't have any base defined at this point, add one
                         grep -q "^base: " snapcraft.yaml || echo "base: ${EKS_BASE}" >> snapcraft.yaml
 
                         echo "Prepared the following snapcraft.yaml:"
                         cat snapcraft.yaml
+                        cd -
                     done
                 """
             }
