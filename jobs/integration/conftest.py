@@ -399,11 +399,11 @@ def log_dir(request):
     return path
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def event_loop():
     loop = asyncio.new_event_loop()
     yield loop
-
+    loop.close()
 
 @pytest.fixture
 async def deploy(request, tools):
