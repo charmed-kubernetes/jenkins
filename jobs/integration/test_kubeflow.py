@@ -38,7 +38,6 @@ def kubectl_create(path: str):
     return check_output(["juju", "kubectl", "--", "create", "-f", path]).strip()
 
 
-@pytest.mark.asyncio
 async def test_validate(model, log_dir):
     """Validates a Kubeflow deployment"""
 

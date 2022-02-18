@@ -280,7 +280,7 @@ pyrfc3339==1.1
     # via
     #   juju
     #   macaroonbakery
-pytest==6.2.2
+pytest==7.0.1
     # via
     #   -r requirements.in
     #   pytest-asyncio
@@ -293,7 +293,7 @@ pytest-html==3.1.1
     # via -r requirements.in
 pytest-metadata==1.11.0
     # via pytest-html
-pytest-mock==3.5.1
+pytest-mock==3.7.0
     # via -r requirements.in
 python-dateutil==2.8.1
     # via
@@ -390,9 +390,9 @@ tabulate==0.8.7
 theblues==0.5.2
     # via juju
 toml==0.10.2
-    # via
-    #   black
-    #   pytest
+    # via black
+tomli==2.0.1
+    # via pytest
 toposort==1.6
     # via juju
 typed-ast==1.4.2
@@ -416,6 +416,7 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
+websockets==7.0 ; python_version < "3.9"
 websockets==8.1 ; python_version >= "3.9"
     # via
     #   -r requirements.in

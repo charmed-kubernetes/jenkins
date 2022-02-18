@@ -215,7 +215,6 @@ async def reset_audit_config(master_app, tools):
 
 
 # START TESTS
-@pytest.mark.asyncio
 async def test_auth_file_propagation(model, tools):
     """Validate that changes to /root/cdk/basic_auth.csv on the leader master
     unit are propagated to the other master units.
@@ -249,7 +248,6 @@ async def test_auth_file_propagation(model, tools):
     await tools.juju_wait()
 
 
-@pytest.mark.asyncio
 @pytest.mark.flaky(max_runs=5, min_passes=1)
 async def test_status_messages(model):
     """Validate that the status messages are correct."""
@@ -262,7 +260,6 @@ async def test_status_messages(model):
             assert unit.workload_status_message == message
 
 
-@pytest.mark.asyncio
 async def test_snap_versions(model):
     """Validate that the installed snap versions are consistent with channel
     config on the charms.
@@ -309,7 +306,6 @@ async def test_snap_versions(model):
                 assert snap_version.startswith(track + ".")
 
 
-@pytest.mark.asyncio
 async def test_rbac(model):
     """When RBAC is enabled, validate kubelet creds cannot get ClusterRoles"""
     app = model.applications["kubernetes-master"]
@@ -322,7 +318,6 @@ async def test_rbac(model):
     await run_until_success(worker, cmd + " 2>&1 | grep Forbidden")
 
 
-@pytest.mark.asyncio
 @pytest.mark.clouds(["ec2"])
 async def test_microbot(model, tools):
     """Validate the microbot action"""
@@ -349,7 +344,6 @@ async def test_microbot(model, tools):
         await asyncio.sleep(60)
 
 
-@pytest.mark.asyncio
 @pytest.mark.clouds(["ec2", "vsphere"])
 @backoff.on_exception(backoff.expo, TypeError, max_tries=5)
 async def test_dashboard(model, log_dir, tools):
@@ -418,7 +412,6 @@ async def test_dashboard(model, log_dir, tools):
     )
 
 
-@pytest.mark.asyncio
 async def test_kubelet_anonymous_auth_disabled(model, tools):
     """Validate that kubelet has anonymous auth disabled"""
 
@@ -464,7 +457,6 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
     await asyncio.gather(*(validate_unit(unit) for unit in units))
 
 
-@pytest.mark.asyncio
 @pytest.mark.skip_apps(["canal", "calico", "tigera-secure-ee"])
 async def test_network_policies(model, tools):
     """Apply network policy and use two busyboxes to validate it."""
@@ -578,7 +570,6 @@ async def test_network_policies(model, tools):
     assert cmd.status == "completed"
 
 
-@pytest.mark.asyncio
 async def test_ipv6(model, tools):
     master_app = model.applications["kubernetes-master"]
     master_config = await master_app.get_config()
@@ -687,7 +678,6 @@ spec:
                 await asyncio.sleep(1)
 
 
-@pytest.mark.asyncio
 @pytest.mark.skip("Unskip when this can be speed up considerably")
 async def test_worker_master_removal(model, tools):
     # Add a second master
@@ -741,7 +731,6 @@ async def test_worker_master_removal(model, tools):
     await tools.juju_wait()
 
 
-@pytest.mark.asyncio
 @pytest.mark.on_model("validate-nvidia")
 async def test_gpu_support(model, tools):
     """Test gpu support. Should be disabled if hardware
@@ -812,7 +801,6 @@ async def test_gpu_support(model, tools):
         )
 
 
-@pytest.mark.asyncio
 async def test_extra_args(model, tools):
     async def get_filtered_service_args(app, service):
         results = []
@@ -947,7 +935,6 @@ async def test_extra_args(model, tools):
     await asyncio.gather(master_task, worker_task)
 
 
-@pytest.mark.asyncio
 async def test_kubelet_extra_config(model, tools):
     worker_app = model.applications["kubernetes-worker"]
     k8s_version_str = worker_app.data["workload-version"]
@@ -1010,7 +997,6 @@ async def test_kubelet_extra_config(model, tools):
     )
 
 
-@pytest.mark.asyncio
 async def test_service_cidr_expansion(model):
     """Expand the service cidr by 1 and verify if kubernetes service is
     updated with the new cluster IP.
@@ -1045,7 +1031,6 @@ async def test_service_cidr_expansion(model):
     assert new_service_ip_str in raw_output
 
 
-@pytest.mark.asyncio
 async def test_sans(model):
     example_domain = "santest.example.com"
     app = model.applications["kubernetes-master"]
@@ -1131,7 +1116,6 @@ async def test_sans(model):
         await lb.set_config({"extra_sans": original_lb_config["extra_sans"]["value"]})
 
 
-@pytest.mark.asyncio
 async def test_audit_default_config(model, tools):
     app = model.applications["kubernetes-master"]
 
@@ -1159,7 +1143,6 @@ async def test_audit_default_config(model, tools):
     await reset_audit_config(app, tools)
 
 
-@pytest.mark.asyncio
 @pytest.mark.flaky(max_runs=5, min_passes=1)
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_toggle_metrics(model, tools):
@@ -1207,7 +1190,6 @@ async def test_toggle_metrics(model, tools):
     await check_svc(app, old_value)
 
 
-@pytest.mark.asyncio
 async def test_audit_empty_policy(model, tools):
     app = model.applications["kubernetes-master"]
 
@@ -1229,7 +1211,6 @@ async def test_audit_empty_policy(model, tools):
     await reset_audit_config(app, tools)
 
 
-@pytest.mark.asyncio
 async def test_audit_custom_policy(model, tools):
     app = model.applications["kubernetes-master"]
 
@@ -1284,7 +1265,6 @@ async def test_audit_custom_policy(model, tools):
     await reset_audit_config(app, tools)
 
 
-@pytest.mark.asyncio
 async def test_audit_webhook(model, tools):
     app = model.applications["kubernetes-master"]
     unit = app.units[0]
@@ -1467,7 +1447,6 @@ async def any_keystone(model, apps_by_charm, tools):
             pytest.fail("Timed out waiting for percona-cluster to go away")
 
 
-@pytest.mark.asyncio
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_keystone(model, tools, any_keystone):
@@ -1665,7 +1644,6 @@ data:
     assert "forbidden" not in output.data["results"].get("Stderr", "").lower()
 
 
-@pytest.mark.asyncio
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
@@ -1823,7 +1801,6 @@ async def test_encryption_at_rest(model, tools):
     assert b64_value not in result.output
 
 
-@pytest.mark.asyncio
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_dns_provider(model, k8s_model, tools):
     master_app = model.applications["kubernetes-master"]
@@ -2015,7 +1992,6 @@ async def test_dns_provider(model, k8s_model, tools):
         await remove_validation_pod()
 
 
-@pytest.mark.asyncio
 async def test_sysctl(model, tools):
     if await is_localhost(tools.controller_name):
         pytest.skip("sysctl options not available on localhost")
@@ -2066,7 +2042,6 @@ async def test_sysctl(model, tools):
         await app.set_config({"sysctl": config["sysctl"]["value"]})
 
 
-@pytest.mark.asyncio
 async def test_cloud_node_labels(model, tools):
     unit = model.applications["kubernetes-master"].units[0]
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get no -o json"
@@ -2089,7 +2064,6 @@ async def test_cloud_node_labels(model, tools):
         assert label is None
 
 
-@pytest.mark.asyncio
 async def test_multus(model, tools, addons_model):
     if "multus" not in addons_model.applications:
         pytest.skip("multus is not deployed")
@@ -2208,7 +2182,6 @@ async def wait_for_no_errors(url, opener):
         await asyncio.sleep(30)
 
 
-@pytest.mark.asyncio
 async def test_nagios(model, tools):
     """This test verifies the nagios relation is working
     properly. This requires:
@@ -2329,7 +2302,6 @@ async def test_nagios(model, tools):
     await wait_for_no_errors(status_url, opener)
 
 
-@pytest.mark.asyncio
 @pytest.mark.skip("Failing and being investigated on possible deprecation")
 async def test_nfs(model, tools):
     # setup
@@ -2357,7 +2329,6 @@ async def test_nfs(model, tools):
     await tools.juju_wait()
 
 
-@pytest.mark.asyncio
 async def test_ceph(model, tools):
     # setup
     series = os.environ["SERIES"]
@@ -2443,7 +2414,6 @@ async def test_ceph(model, tools):
     await tools.juju_wait()
 
 
-@pytest.mark.asyncio
 async def test_series_upgrade(model, tools):
     if not tools.is_series_upgrade:
         pytest.skip("No series upgrade argument found")
@@ -2469,7 +2439,6 @@ async def test_series_upgrade(model, tools):
             assert unit.workload_status_message == message
 
 
-@pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
 async def test_cinder(model, tools):
     assert "openstack-integrator" in model.applications, "Missing integrator"
@@ -2477,7 +2446,6 @@ async def test_cinder(model, tools):
     await validate_storage_class(model, "cdk-cinder", "Cinder")
 
 
-@pytest.mark.asyncio
 @pytest.mark.clouds(["openstack"])
 async def test_octavia(model, tools):
     assert "openstack-integrator" in model.applications, "Missing integrator"
@@ -2517,7 +2485,6 @@ async def test_octavia(model, tools):
         await action.wait()
 
 
-@pytest.mark.asyncio
 @pytest.mark.skip("Getting further")
 async def test_containerd_to_docker(model, tools):
     """
@@ -2561,7 +2528,6 @@ async def test_containerd_to_docker(model, tools):
     await tools.juju_wait()
 
 
-@pytest.mark.asyncio
 async def test_sriov_cni(model, tools, addons_model):
     if "sriov-cni" not in addons_model.applications:
         pytest.skip("sriov-cni is not deployed")
@@ -2572,7 +2538,6 @@ async def test_sriov_cni(model, tools, addons_model):
         assert action.data["results"]["Code"] == "0"
 
 
-@pytest.mark.asyncio
 async def test_sriov_network_device_plugin(model, tools, addons_model):
     if "sriov-network-device-plugin" not in addons_model.applications:
         pytest.skip("sriov-network-device-plugin is not deployed")

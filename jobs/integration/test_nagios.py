@@ -1,5 +1,4 @@
 import asyncio
-import pytest
 import urllib.request
 from .logger import log
 from bs4 import BeautifulSoup as bs
@@ -18,7 +17,6 @@ async def wait_for_no_errors(url, opener):
         await asyncio.sleep(30)
 
 
-@pytest.mark.asyncio
 async def test_nagios(model, tools):
     # This test verifies the nagios relation is working
     # properly. This requires:

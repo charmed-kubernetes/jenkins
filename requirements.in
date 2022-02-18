@@ -46,4 +46,4 @@ wheel
 # The following websocket requirements are environment marked because of juju
 # https://github.com/juju/python-libjuju/blob/master/setup.py#L38-L39
 websockets==7.0 ; python_version < "3.9"
-websockets==8.0 ; python_version >= "3.9"
+websockets==8.1 ; python_version >= "3.9"

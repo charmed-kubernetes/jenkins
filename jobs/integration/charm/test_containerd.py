@@ -1,13 +1,10 @@
 """
 Test Containerd charm specific.
 """
-import pytest
-
 from ..logger import log
 from ..utils import retry_async_with_timeout
 
 
-@pytest.mark.asyncio
 async def test_containerd_no_gpu(model, tools):
     """
     Mostly a place holder.

@@ -1,9 +1,7 @@
-import pytest
 import random
 from .logger import log
 
 
-@pytest.mark.asyncio
 async def test_cis_benchmark(model, tools):
     """ Validate cis benchmark passes on supported charms in 1.19+ """
     log("starting cis-benchmark test")
