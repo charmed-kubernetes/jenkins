@@ -1,13 +1,10 @@
 """ EasyRSA charm testing
 """
-import pytest
 import os
 import json
 from pathlib import Path
 from ..utils import asyncify
 from sh import curl, juju
-
-pytestmark = pytest.mark.asyncio
 
 # Locally built charm layer path
 CHARM_PATH = os.getenv("CHARM_PATH")
@@ -68,7 +65,7 @@ async def get_relation_data(controller, model, tools):
     return relation_data
 
 
-async def test_easyrsa_installed(deploy, event_loop):
+async def test_easyrsa_installed(deploy):
     """Test that EasyRSA software is installed."""
     controller, model = deploy
     await deploy_easyrsa(controller, model.info.name)
@@ -90,7 +87,7 @@ async def test_easyrsa_installed(deploy, event_loop):
     assert "Easy-RSA" in output
 
 
-async def test_ca(deploy, event_loop):
+async def test_ca(deploy):
     controller, model = deploy
     await deploy_easyrsa(controller, model.info.name)
     easyrsa = model.applications["easyrsa"]
@@ -138,7 +135,7 @@ async def test_ca(deploy, event_loop):
     assert ca_cert == installed_ca
 
 
-async def test_client(deploy, event_loop, tools):
+async def test_client(deploy, tools):
     """Test that the client certificate and key can be created."""
     controller, model = deploy
     relation_data = await get_relation_data(controller, model, tools)
@@ -146,7 +143,7 @@ async def test_client(deploy, event_loop, tools):
     assert validate_key(relation_data["client.key"])
 
 
-async def test_server(deploy, event_loop, tools):
+async def test_server(deploy, tools):
     """Test that the server certificate and key can be created."""
     controller, model = deploy
     relation_data = await get_relation_data(controller, model, tools)

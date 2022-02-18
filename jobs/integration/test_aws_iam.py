@@ -106,7 +106,6 @@ async def patch_kubeconfig_and_verify_aws_iam(one_master, arn):
     assert "aws-iam-user" in output.results.get("Stdout", "")
 
 
-@pytest.mark.asyncio
 async def test_validate_aws_iam(model, tools):
     # This test verifies the aws-iam charm is working
     # properly. This requires:

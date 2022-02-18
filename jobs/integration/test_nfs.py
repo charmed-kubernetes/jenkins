@@ -1,9 +1,7 @@
-import pytest
 from .utils import verify_ready, retry_async_with_timeout, validate_storage_class
 from .logger import log
 
 
-@pytest.mark.asyncio
 async def test_nfs(model, tools):
     # setup
     log("deploying nfs")

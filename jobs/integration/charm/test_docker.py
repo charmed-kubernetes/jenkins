@@ -1,13 +1,10 @@
 """
 Test Docker charm specific.
 """
-import pytest
-
 from ..logger import log
 from ..utils import retry_async_with_timeout
 
 
-@pytest.mark.asyncio
 async def test_docker_opts(model):
     worker_app = model.applications["docker"]
 

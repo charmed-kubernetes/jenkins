@@ -7,8 +7,6 @@ from pathlib import Path
 ws_logger = logging.getLogger("websockets.protocol")
 ws_logger.setLevel(logging.INFO)
 
-pytestmark = pytest.mark.asyncio
-
 
 async def test_etcd_actions(model, tools):
     """Test etcd charm actions"""
