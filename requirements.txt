@@ -123,7 +123,7 @@ jeepney==0.6.0
     # via
     #   keyring
     #   secretstorage
-jenkins-job-builder==3.9.0
+jenkins-job-builder==3.12.0
     # via -r requirements.in
 jinja2==2.11.3
     # via
@@ -416,8 +416,7 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
-websockets==7.0 ; python_version < "3.9"
-websockets==8.0 ; python_version >= "3.9"
+websockets==8.1 ; python_version >= "3.9"
     # via
     #   -r requirements.in
     #   juju
