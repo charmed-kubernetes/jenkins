@@ -1,5 +1,4 @@
 import json
-import pytest
 import random
 from .logger import log
 from yaml import safe_load
@@ -65,7 +64,6 @@ async def verify_custom_auth(one_master, cmd, endpoint):
     )
 
 
-@pytest.mark.asyncio
 async def test_validate_auth_webhook(model, tools):
     # This test verifies the auth-webhook service is working
     log("starting auth-webhook test")

@@ -1,5 +1,4 @@
 import sh
-import pytest
 import requests
 import yaml
 from .utils import asyncify, retry_async_with_timeout
@@ -72,7 +71,6 @@ async def cleanup():
     )
 
 
-@pytest.mark.asyncio
 async def test_nodeport_service_endpoint():
     """Create k8s Deployement and NodePort service, send request to NodePort"""
 
@@ -97,7 +95,6 @@ async def test_nodeport_service_endpoint():
         await cleanup()
 
 
-@pytest.mark.asyncio
 async def test_clusterip_service_endpoint(model):
     """Create k8s Deployement and ClusterIP service, send request to ClusterIP
     from each kubernetes master and worker

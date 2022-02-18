@@ -405,6 +405,7 @@ def event_loop():
     yield loop
     loop.close()
 
+
 @pytest.fixture
 async def deploy(request, tools):
     test_run_nonce = uuid.uuid4().hex[-4:]

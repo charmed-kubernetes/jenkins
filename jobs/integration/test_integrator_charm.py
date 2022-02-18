@@ -33,7 +33,6 @@ def setup_storage_elb_resource(request, cloud):
     # sh.kubectl.create(f=str(bbox_yml))
 
 
-@pytest.mark.asyncio
 async def test_load_balancer(setup_storage_elb_resource):
     """Performs a deployment of hello-world with newly created LB and attempts
     to do a requests.get and parse the html to verify the lb ip address is

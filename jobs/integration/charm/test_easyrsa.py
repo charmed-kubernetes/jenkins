@@ -1,13 +1,10 @@
 """ EasyRSA charm testing
 """
-import pytest
 import os
 import json
 from pathlib import Path
 from ..utils import asyncify
 from sh import curl, juju
-
-pytestmark = pytest.mark.asyncio
 
 # Locally built charm layer path
 CHARM_PATH = os.getenv("CHARM_PATH")
