@@ -29,3 +29,4 @@ snap_name = "microk8s"
 people_name = "microk8s-dev"
 cachedir = os.getenv("WORKSPACE", default="/var/tmp/") + "/cache"
 creds = os.getenv("LPCREDS")
+github_repo = "github.com/canonical/microk8s"

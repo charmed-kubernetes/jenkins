@@ -19,14 +19,14 @@ class LocalExecutor(ExecutorInterface):
         self._run_cmd(cmd)
 
     def clone_microk8s_repo(self):
-        cmd = "git clone https://github.com/ubuntu/microk8s"
+        cmd = "git clone https://{}".format(configbag.github_repo)
         self._run_cmd(cmd)
 
     def has_tests_for_track(self, track):
         cmd = (
             "git ls-remote --exit-code "
-            "--heads https://github.com/ubuntu/microk8s.git refs/heads/{}".format(
-                track
+            "--heads https://{}.git refs/heads/{}".format(
+                configbag.github_repo, track
             ).split()
         )
         run(cmd, check=True, stdout=PIPE, stderr=STDOUT)

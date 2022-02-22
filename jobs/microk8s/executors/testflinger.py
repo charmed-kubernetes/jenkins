@@ -1,5 +1,6 @@
 import time
 import json
+import configbag
 import click
 import sh
 import os
@@ -19,7 +20,7 @@ class TestFlingerExecutor(ExecutorInterface):
         """
         queue: the testflinger queue we want to submit the job
         """
-        self.repo = "https://github.com/ubuntu/microk8s"
+        self.repo = "https://{}".format(configbag.github_repo)
         self.tests_branch = "master"
         self.version_to_build = None
         self.queue = queue
@@ -35,7 +36,7 @@ test_data:
     ssh $DEVICE_IP <<EOF
       set -eux
       lxd init --auto
-      /usr/bin/git clone https://github.com/ubuntu/microk8s
+      /usr/bin/git clone https://{}
       cd microk8s
       /usr/bin/git checkout {}
       ./tests/test-distro.sh {} {} {} {}
@@ -51,8 +52,8 @@ test_data:
     def has_tests_for_track(self, track):
         cmd = (
             "git ls-remote --exit-code "
-            "--heads https://github.com/ubuntu/microk8s.git refs/heads/{}".format(
-                track
+            "--heads https://{}.git refs/heads/{}".format(
+                configbag.github_repo, track
             ).split()
         )
         run(cmd, check=True, stdout=PIPE, stderr=STDOUT)
@@ -78,6 +79,7 @@ test_data:
         fname = "testflinger-job.yaml"
         proxy_ep = "" if not proxy else proxy
         manifest = self.test_manifest.format(
+            configbag.github_repo,
             self.queue,
             self.tests_branch,
             distro,
