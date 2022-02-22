@@ -53,8 +53,7 @@ test_data:
         cmd = (
             "git ls-remote --exit-code "
             "--heads https://{}.git refs/heads/{}".format(
-                configbag.github_repo,
-                track
+                configbag.github_repo, track
             ).split()
         )
         run(cmd, check=True, stdout=PIPE, stderr=STDOUT)
