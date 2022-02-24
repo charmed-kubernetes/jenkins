@@ -496,16 +496,18 @@ class BuildEntity:
         src_path = self.checkout_path / opts.get("subdir", "")
 
         self.downstream = opts.get("downstream")
-        branch = opts.get("branch")
+
+        # prefer the jenkins build_args branch
+        branch = self.build.db["build_args"].get("branch")
+
+        if not branch:
+            # if there is no branch build arg, use the branch value from the charm stanza
+            branch = opts.get("branch")
 
         if not branch and self.downstream:
             # if branch not specified, use repo's default branch
             auth = os.environ.get("CDKBOT_GH_USR"), os.environ.get("CDKBOT_GH_PSW")
             branch = default_gh_branch(self.downstream, ignore_errors=True, auth=auth)
-
-        if not branch:
-            # if branch not specified, use the build_args branch
-            branch = self.build.db["build_args"].get("branch")
 
         self.branch = branch or "master"
 
