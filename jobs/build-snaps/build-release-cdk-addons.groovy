@@ -253,6 +253,10 @@ pipeline {
                             sudo lxc shell ${lxc_name} -- bash -c "snapcraft login --with /snapcraft-creds"
                             for arch in ${env.ADDONS_ARCHES}
                             do
+                                if [ "\${arch}" = "ppc64le" ]
+                                then
+                                    arch="ppc64el"
+                                fi
                                 BUILT_SNAP="cdk-addons_${kube_ersion}_\${arch}.snap"
 
                                 echo "Uploading \${BUILT_SNAP}."
