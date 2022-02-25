@@ -1,20 +1,22 @@
 # Builds and releases latest snaps
 
 - job-template:
-    name: 'build-release-cdk-addons-{arch}-{version}'
+    name: 'build-release-cdk-addons-{version}'
     description: |
-      Builds, releases and promotes cdk-addons for supported k8s versions on {arch} to the snapstore.
-      Container images required by CDK are known during the build, so this job also tags and pushes
-      those to the Canonical image registry.
+      Builds and uploads cdk-addons for supported k8s versions to the snapstore.
+      Container images required by CK are known during the build, so this job
+      also tags and pushes those to the Canonical image registry.
 
-      The full version of the cdk-addons snap is tied to the upstream k8s tag used during the build.
-      Explicitly set this with the `k8s_tag` parameter, or this job will determine it using the
-      `version` parameter and the contents of https://dl.k8s.io/release/[stable|latest]-`version`.txt.
+      The full version of the cdk-addons snap is tied to the upstream k8s tag
+      used during the build. Explicitly set this with the `k8s_tag` parameter,
+      or this job will determine it using the `version` parameter and the
+      contents of https://dl.k8s.io/release/[stable|latest]-`version`.txt.
 
-      If all `build-release-cdk-addons-$arch-$ver` jobs appear to stall during snap upload, check
-      for a revision for which the auto-approver has hung by logging into
-      https://dashboard.snapcraft.io/snaps/cdk-addons/ with cdkbot@gmail ubuntu lastpass creds
-      and manually rejecting the review for the oldest hung revision.
+      If all `build-release-cdk-addons-$ver` jobs appear to stall during snap
+      upload, check for a revision for which the auto-approver has hung by
+      logging into https://dashboard.snapcraft.io/snaps/cdk-addons/ with
+      cdkbot@gmail ubuntu lastpass creds. Manually reject the review for the
+      oldest hung revision.
     project-type: pipeline
     pipeline-scm:
       scm:
@@ -22,11 +24,8 @@
       script-path: jobs/build-snaps/build-release-cdk-addons.groovy
     parameters:
       - string:
-          name: arch
-          default: '{arch}'
-      - string:
           name: build_node
-          default: 'runner-amd64'
+          default: 'runner-{arch}'
       - string:
           name: version
           default: '{version}'
@@ -92,10 +91,10 @@
 
 - project:
     name: build-release-snaps
-    arch: ['amd64']
-    version: ['1.20', '1.21', '1.22', '1.23']
+    arch: 'amd64'
+    version: ['1.21', '1.22', '1.23', '1.24']
     jobs:
-      - 'build-release-cdk-addons-{arch}-{version}'
+      - 'build-release-cdk-addons-{version}'
 
 - project:
     name: build-release-eks-snaps
