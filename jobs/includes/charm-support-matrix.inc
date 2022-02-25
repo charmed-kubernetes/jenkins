@@ -56,6 +56,12 @@
     namespace: 'containers'
     tags: ['k8s', 'kubeapi-load-balancer']
     store: 'ch'
+- kubernetes-autoscaler:
+    upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-autoscaler.git"
+    downstream: 'charmed-kubernetes/charm-kubernetes-autoscaler.git'
+    namespace: 'containers'
+    tags: ['k8s', 'kubernetes-autoscaler']
+    store: 'ch'
 - kubernetes-e2e:
     upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-e2e.git"
     downstream: 'charmed-kubernetes/charm-kubernetes-e2e.git'
