@@ -166,7 +166,7 @@
             The layer git branch to checkout prior to building
       - string:
           name: CHARM_BRANCH
-          default: 'master'
+          default: ''
           description: |
             The charm git branch to checkout prior to building
       - string:

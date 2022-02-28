@@ -887,7 +887,7 @@ def cli():
     "--charm-branch",
     required=True,
     help="Git branch to build charm from",
-    default="master",
+    default="",
 )
 @click.option(
     "--layer-branch",
