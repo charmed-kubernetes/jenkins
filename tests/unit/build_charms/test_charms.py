@@ -635,7 +635,7 @@ def test_build_command(mock_build_env, mock_build_entity, charms):
     assert mock_build_env.db["build_args"] == {
         "artifact_list": "tests/data/ci-testing-charms.inc",
         "layer_list": "jobs/includes/charm-layer-list.inc",
-        "branch": "master",
+        "branch": "",
         "layer_branch": "master",
         "layer_index": "https://charmed-kubernetes.github.io/layer-index/",
         "resource_spec": "jobs/build-charms/resource-spec.yaml",
