@@ -7,7 +7,7 @@ def kube_ersion = null
 if (kube_version != "") {
     kube_ersion = kube_version.substring(1)
 }
-def lxc_name = "build-release-cdk-addons-"+env.BUILD_NUMBER
+def lxc_name = env.JOB_NAME.replaceAll('\\.', '-')+"-"+env.BUILD_NUMBER
 
 pipeline {
     agent {
