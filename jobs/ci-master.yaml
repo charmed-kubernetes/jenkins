@@ -169,6 +169,7 @@
           default: ''
           description: |
             The charm git branch to checkout prior to building
+            If empty, job will use the default github branch for the repo.
       - string:
           name: CHARM_LIST
           default: "jobs/includes/charm-support-matrix.inc"
