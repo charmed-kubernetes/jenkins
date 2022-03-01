@@ -702,13 +702,13 @@ def test_bundle_build_command(
 
     assert mock_build_env.db["build_args"] == {
         "artifact_list": "tests/data/ci-testing-bundles.inc",
-        "branch": "master",
+        "branch": "main",
         "filter_by_tag": ["k8s"],
         "track": "latest",
         "to_channel": "edge",
     }
     cmd_ok.assert_called_once_with(
-        f"git clone --branch master https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git {mock_build_env.default_repo_dir}"
+        f"git clone --branch main https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git {mock_build_env.default_repo_dir}"
     )
     mock_build_env.pull_layers.assert_not_called()
     mock_build_env.save.assert_called_once_with()
