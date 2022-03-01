@@ -1000,7 +1000,7 @@ def build(
 @click.option("--bundle-list", required=True, help="list of bundles in YAML format")
 @click.option(
     "--bundle-branch",
-    default="master",
+    default="main",
     required=True,
     help="Upstream branch to build bundles from",
 )

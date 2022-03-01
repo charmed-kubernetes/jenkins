@@ -177,7 +177,7 @@
           default: "jobs/includes/charm-bundles-list.inc"
       - string:
           name: BUNDLE_BRANCH
-          default: "master"
+          default: "main"
           description: |
             The bundle branch to build k8s from.
       - string:
