@@ -114,6 +114,11 @@
               IS_FORCE="--force"
             fi
 
+            WITH_CHARM_BRANCH=""
+            if [[ -n ${CHARM_BRANCH:-} ]]; then
+              WITH_CHARM_BRANCH="--charm-branch $CHARM_BRANCH"
+            fi 
+
             rm -rf "$WORKSPACE/charms" || true
 
             # Cleanup old charmcraft containers
@@ -126,7 +131,6 @@
 
             tox -e py38 -- python jobs/build-charms/charms.py build \
               --charm-list "$CHARM_LIST" \
-              --charm-branch "$CHARM_BRANCH" \
               --to-channel "$TO_CHANNEL" \
               --resource-spec "$RESOURCE_SPEC" \
               --filter-by-tag "$FILTER_BY_TAG" \
@@ -134,6 +138,7 @@
               --layer-list "$LAYER_LIST" \
               --layer-branch "$LAYER_BRANCH" \
               --store "$CHARM_STORE" \
+              $WITH_CHARM_BRANCH \
               $IS_FORCE
 
             tox -e py38 -- python jobs/build-charms/charms.py build-bundles \

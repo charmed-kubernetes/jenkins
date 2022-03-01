@@ -166,9 +166,10 @@
             The layer git branch to checkout prior to building
       - string:
           name: CHARM_BRANCH
-          default: 'master'
+          default: ''
           description: |
-            The charm git branch to checkout prior to building
+            The charm git branch to checkout prior to building.
+            If empty, the default repo branch will be used.
       - string:
           name: CHARM_LIST
           default: "jobs/includes/charm-support-matrix.inc"
@@ -182,7 +183,7 @@
             The bundle branch to build k8s from.
       - string:
           name: BUNDLE_REPO
-          default: "https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git"
+          default: "https://github.com/charmed-kubernetes/bundle.git"
       - string:
           name: RESOURCE_SPEC
           default: "jobs/build-charms/resource-spec.yaml"
@@ -193,7 +194,7 @@
       - string:
           name: FROM_CHANNEL
           default: 'edge'
-          description: Channel to publish from charm to
+          description: Channel to publish charm from (only used in promote jobs)
       - string:
           name: FILTER_BY_TAG
           default: 'k8s'
