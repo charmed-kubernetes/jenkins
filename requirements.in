@@ -37,6 +37,7 @@ pytest
 python-dotenv
 lazr.restfulclient
 launchpadlib
+semver
 sh
 surl
 retry
