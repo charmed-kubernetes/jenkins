@@ -161,7 +161,7 @@
           default: "jobs/includes/charm-layer-list.inc"
       - string:
           name: LAYER_BRANCH
-          default: 'master'
+          default: 'main'
           description: |
             The layer git branch to checkout prior to building
       - string:
