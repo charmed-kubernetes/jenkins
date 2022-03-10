@@ -181,7 +181,7 @@ async def model(request, tools):
         await upgrade_snaps(model, upgrade_snap_channel, tools)
     if request.config.getoption("--snapd-upgrade"):
         snapd_channel = request.config.getoption("--snapd-channel")
-        await model.deploy("cs:~containers/bundle/charmed-kubernetes")
+        await model.deploy("cs:~containers/charmed-kubernetes", series="bundle")
         await log_snap_versions(model, prefix="Before")
         await tools.juju_wait()
         for unit in model.units.values():
