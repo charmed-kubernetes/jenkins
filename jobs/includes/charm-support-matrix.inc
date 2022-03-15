@@ -124,7 +124,7 @@
     upstream: https://github.com/charmed-kubernetes/github-runner-operator.git
     namespace: 'containers'
     downstream: 'charmed-kubernetes/github-runner-operator'
-    tags: ['k8s', 'github-runner']
+    tags: ['github-runner']
     store: 'ch'
 - aws-integrator:
     upstream: "https://github.com/juju-solutions/charm-aws-integrator.git"
