@@ -485,6 +485,7 @@ class BuildEntity:
 
         # Bundle or charm name
         self.name = name
+        self.channel = self.build.db["build_args"]["to_channel"]
         self.reactive = False
         if self.build.build_type == BuildType.CHARM:
             self.type = "Charm"
@@ -546,11 +547,9 @@ class BuildEntity:
     def _get_full_entity(self):
         """Grab identifying revision for charm's channel."""
         if self.store == "cs":
-            return _CharmStore(self).id(
-                self.entity, self.build.db["build_args"]["to_channel"]
-            )
+            return _CharmStore(self).id(self.entity, self.channel)
         else:
-            return f'{self.entity}:{self.build.db["build_args"]["to_channel"]}'
+            return f"{self.entity}:{self.channel}"
 
     def download(self, fname):
         """Fetch single file from associated store/charm/channel."""
@@ -588,17 +587,15 @@ class BuildEntity:
             ]
         elif not self.reactive and source == "remote":
             if self.store == "ch":
-                try:
-                    revisions = _CharmHub(self).revisions(self.entity)
-                except sh.ErrorReturnCode:
-                    revisions = []
-                released = [rev for rev in revisions if rev["Status"] == "released"]
-                if not released:
-                    self.echo("No revisions released to CharmHub")
-                    version_id = None
-                else:
-                    latest = released[0]
-                    version_id = [{"rev": latest["Version"], "url": self.entity}]
+                info = _CharmHub.info(
+                    self.name,
+                    channel=self.channel,
+                    fields="default-release.revision.version",
+                )
+                version = (
+                    info.get("default-release", {}).get("revision", {}).get("version")
+                )
+                version_id = [{"rev": version, "url": self.entity}] if version else None
             else:
                 try:
                     cs_show = _CharmStore(self).show(
