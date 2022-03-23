@@ -547,11 +547,9 @@ class BuildEntity:
     def _get_full_entity(self):
         """Grab identifying revision for charm's channel."""
         if self.store == "cs":
-            return _CharmStore(self).id(
-                self.entity, self.channel
-            )
+            return _CharmStore(self).id(self.entity, self.channel)
         else:
-            return f'{self.entity}:{self.channel}'
+            return f"{self.entity}:{self.channel}"
 
     def download(self, fname):
         """Fetch single file from associated store/charm/channel."""
@@ -589,8 +587,14 @@ class BuildEntity:
             ]
         elif not self.reactive and source == "remote":
             if self.store == "ch":
-                info = _CharmHub.info(self.name, channel=self.channel, fields="default-release.revision.version")
-                version = info.get("default-release", {}).get("revision", {}).get("version")
+                info = _CharmHub.info(
+                    self.name,
+                    channel=self.channel,
+                    fields="default-release.revision.version",
+                )
+                version = (
+                    info.get("default-release", {}).get("revision", {}).get("version")
+                )
                 version_id = [{"rev": version, "url": self.entity}] if version else None
             else:
                 try:
