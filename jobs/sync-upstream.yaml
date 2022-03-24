@@ -256,7 +256,7 @@
 - job:
     name: 'cut-stable-release'
     description: |
-      Resets all layer stable branches from master branches.
+      Resets all layer stable branches from default branches.
     project-type: freestyle
     node: runner-cloud
     scm:

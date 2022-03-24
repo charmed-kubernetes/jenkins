@@ -3,7 +3,7 @@ runner:
   script: |
     #!/bin/bash
     set -x
-    wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/master/collect.py
+    wget https://raw.githubusercontent.com/juju-solutions/cdk-field-agent/main/collect.py
     python3 collect.py -m $JUJU_CONTROLLER:$JUJU_MODEL
 
     python3 jobs/infra/collect-debug.py push 'cdk_field_agent' results*.tar.gz

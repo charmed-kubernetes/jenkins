@@ -19,4 +19,4 @@ tox -e py38 -- python jobs/sync-upstream/sync.py snaps
 ```
 
 <!-- Links -->
-[Snap Support List]: https://github.com/charmed-kubernetes/jenkins/blob/master/jobs/includes/k8s-snap-list.inc
+[Snap Support List]: https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/k8s-snap-list.inc

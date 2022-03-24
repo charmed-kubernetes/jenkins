@@ -65,9 +65,9 @@ jobs are created by hand in the Jenkins UI.
 
 Adding a new test can be done by copying an existing one and modifying for your needs:
 
-[Spec](https://github.com/juju-solutions/kubernetes-jenkins/blob/master/jobs/validate/spec)
+[Spec](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/validate/spec)
 
-[JJB Validate](https://github.com/juju-solutions/kubernetes-jenkins/blob/master/jobs/validate.yaml)
+[JJB Validate](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/validate.yaml)
 
 ## Documentation
 

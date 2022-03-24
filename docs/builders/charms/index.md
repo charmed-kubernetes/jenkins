@@ -70,7 +70,7 @@ attached once and then never updated.)
 <!-- Links -->
 [build job]: https://jenkins.canonical.com/k8s/job/build-charms/
 [sync job]: https://jenkins.canonical.com/k8s/job/sync-upstream/
-[Charm Support Matrix]: https://github.com/charmed-kubernetes/jenkins/blob/master/jobs/includes/charm-support-matrix.inc
+[Charm Support Matrix]: https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-support-matrix.inc
 [charm tool]: https://snapcraft.io/charm
 [charmcraft]: https://snapcraft.io/charmcraft
-[Resource Spec]: https://github.com/charmed-kubernetes/jenkins/blob/master/jobs/build-charms/resource-spec.yaml
+[Resource Spec]: https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/build-charms/resource-spec.yaml

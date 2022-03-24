@@ -48,7 +48,7 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          git clone https://github.com/charmed-kubernetes/jenkins.git -b master jenkins
+          git clone https://github.com/charmed-kubernetes/jenkins.git -b main jenkins
           bash -eux jenkins/jobs/build-charms/charmcraft-build.sh
 
 - job:
@@ -129,5 +129,5 @@
           set -o allexport
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
-          git clone https://github.com/charmed-kubernetes/jenkins.git -b master jenkins
+          git clone https://github.com/charmed-kubernetes/jenkins.git -b main jenkins
           bash -eux jenkins/jobs/microk8s/charms/release.sh
