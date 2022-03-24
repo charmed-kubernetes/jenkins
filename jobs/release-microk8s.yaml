@@ -1,8 +1,24 @@
 # Tests and releases microk8s to beta
 
-- parameter:
-    name: microk8s-params
+- job-template:
+    name: 'release-microk8s-{arch}'
+    description: |
+      Tests and releases microk8s. Affects all tracks on {arch}.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release-microk8s/release-microk8s.groovy
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
     parameters:
+      - string:
+          name: build_node
+          default: 'runner-{arch}'
+      - string:
+          name: ARCH
+          default: '{arch}'
       - string:
           name: DRY_RUN
           default: "no"
@@ -37,22 +53,8 @@
             - arm64/beta
             - amd64/stable
             - arm64/stable
-            - amd64/prerelease
-            - arm64/prerelease
-
-- job-template:
-    name: 'release-microk8s-{arch}'
-    description: |
-      Tests and releases microk8s. Affects all tracks on {arch}.
-    project-type: freestyle
-    node: runner-{arch}
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    parameters:
-      - microk8s-params
+            - amd64/pre-release
+            - arm64/pre-release
     triggers:
         - timed: "@daily"
     properties:
@@ -63,18 +65,6 @@
           blocking-jobs:
             - "infra.*"
           block-level: 'NODE'
-
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/release-microk8s"
-      - run-tox:
-          COMMAND: |
-            TAG="-t {arch}"
-            if [ "$ARCH_TRACK" != "all" ]; then
-                TAG="-t $ARCH_TRACK"
-            fi
-            snapcraft login --with /var/lib/jenkins/snapcraft-creds
-            tox -e py38 -- ogc --spec jobs/release-microk8s/spec.yml $TAG
 
 - project:
     name: release-microk8s
