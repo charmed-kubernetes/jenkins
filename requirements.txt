@@ -172,7 +172,7 @@ mkdocs==1.2.3
     # via
     #   -r requirements.in
     #   mkdocs-material
-mkdocs-material==8.2.1
+mkdocs-material==8.2.7
     # via
     #   -r requirements.in
     #   mkdocs-material-extensions
@@ -381,7 +381,6 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
-websockets==7.0 ; python_version < "3.9"
 websockets==8.1 ; python_version >= "3.9"
     # via
     #   -r requirements.in
