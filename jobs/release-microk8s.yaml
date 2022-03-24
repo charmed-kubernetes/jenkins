@@ -4,11 +4,6 @@
     name: 'release-microk8s-{arch}'
     description: |
       Tests and releases microk8s. Affects all tracks on {arch}.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/release-microk8s/release-microk8s.groovy
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -49,12 +44,9 @@
             Choose a specific architecture and track to release against
           choices:
             - all
-            - amd64/beta
-            - arm64/beta
-            - amd64/stable
-            - arm64/stable
-            - amd64/pre-release
-            - arm64/pre-release
+            - "{arch}/beta"
+            - "{arch}/stable"
+            - "{arch}/pre-release"
     triggers:
         - timed: "@daily"
     properties:
@@ -73,6 +65,11 @@
       - arm64
     jobs:
       - 'release-microk8s-{arch}'
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release-microk8s/release-microk8s.groovy
 
 - job:
     name: 'release-microk8s-edge'
