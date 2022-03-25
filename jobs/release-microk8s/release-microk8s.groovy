@@ -1,8 +1,9 @@
 @Library('juju-pipeline@master') _
 
+
 pipeline {
     agent {
-        label "${params.build_node}"
+        label "runner-${params.ARCH}"
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
@@ -10,12 +11,6 @@ pipeline {
     environment {
         PATH                 = "${utils.cipaths}"
         ARCH                 = "${params.ARCH}"
-        DRY_RUN              = "${params.DRY_RUN}"
-        ALWAYS_RELEASE       = "${params.ALWAYS_RELEASE}"
-        TRACKS               = "${params.TRACKS}"
-        TESTS_BRANCH         = "${params.TESTS_BRANCH}"
-        PROXY                = "${params.PROXY}"
-        ARCH_TRACK           = "${params.ARCH_TRACK}"
         JUJU_CLOUD           = "aws/us-east-1"
         K8STEAMCI            = credentials('k8s_team_ci_lp')
         CDKBOT_GH            = credentials('cdkbot_github')
@@ -40,13 +35,13 @@ pipeline {
         timestamps()
     }
     stages {
-        stage("Setup Track Tag") {
+        stage("Setup Tracks") {
             steps {
                 script {
-                    if (env.ARCH_TRACK != "all") {
-                        env.all_tracks = ["beta", "stable", "pre-release"]
+                    if (params.ARCH_TRACK == "all") {
+                        all_tracks = ["beta", "stable", "pre-release"]
                     } else {
-                        env.all_tracks = [env.ARCH_TRACK.split('/').pop()]
+                        all_tracks = [params.ARCH_TRACK.tokenize('/').last()]
                     }
                 }
             }
@@ -56,72 +51,79 @@ pipeline {
                 sh "snapcraft login --with ${SNAPCRAFTCREDS}"
             }
         }
+        stage("Setup tox environment") {
+            steps {
+                sh """
+                tox -e py38 -- python -c 'print("Tox Environment Ready")'
+                """
+            }
+        }
         stage("Release Tracks") {
             steps {
                 script {
-                    env.all_tracks.each { track -> 
-                        stages {
-                            stage("Setup Track ${track}") {
-                                steps {
-                                    script {
-                                        env.JUJU_CONTROLLER="release-microk8s-${track}-${env.ARCH}"
-                                        env.JUJU_MODEL="release-microk8s-${track}-model"
-                                        if (env.ARCH == "arm64") {
-                                            env.INSTANCE_TYPE = "a1.2xlarge"
-                                            env.constraints = "instance-type=${env.INSTANCE_TYPE} arch=$ARCH root-disk=80G"
-                                        } else if (env.ARCH == "amd64") {
-                                            env.INSTANCE_TYPE = "m5.large"
-                                            env.constraints = "instance-type=${env.INSTANCE_TYPE} arch=$ARCH root-disk=80G mem=16G cores=8"
-                                        } else {
-                                            error("Aborting build due to unknown arch=${env.ARCH}")
-                                        }
-                                    }
+                    all_tracks.each { track -> 
+                        stage("Track ${track}") {
+                            script {
+                                def juju_controller="release-microk8s-${track}-${env.ARCH}"
+                                def juju_model="release-microk8s-${track}-model"
+                                def juju_full_model="${juju_controller}:${juju_model}"
+                                def instance_type = ""
+                                def constraints = ""
+                                if (env.ARCH == "arm64") {
+                                    instance_type = "a1.2xlarge"
+                                    constraints = "instance-type=${instance_type} arch=$ARCH root-disk=80G"
+                                } else if (env.ARCH == "amd64") {
+                                    instance_type = "m5.large"
+                                    constraints = "instance-type=${instance_type} arch=$ARCH root-disk=80G mem=16G cores=8"
+                                } else {
+                                    error("Aborting build due to unknown arch=${env.ARCH}")
+                                }
+                                sh """
+                                if ! timeout 4m juju destroy-controller -y --destroy-all-models --destroy-storage "${juju_controller}"; then
+                                   timeout 4m juju kill-controller -y "${juju_controller}" || true
+                                fi
+                                """
+                                sh """
+                                juju bootstrap "${env.JUJU_CLOUD}" "${juju_controller}" \
+                                    -d "${juju_model}" \
+                                    --model-default test-mode=true \
+                                    --model-default resource-tags=owner=k8sci \
+                                    --bootstrap-constraints "instance-type=${instance_type}"
+
+                                juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu
+
+                                juju-wait -e "${juju_full_model}" -w
+
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd init --auto'
+                                """
+                                if (track == "pre-release"){
                                     sh """
-                                        if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "${JUJU_CONTROLLER}"; then
-                                        timeout 2m juju kill-controller -y "${JUJU_CONTROLLER}"
-                                        fi
-
-                                        juju bootstrap "${JUJU_CLOUD}" "${JUJU_CONTROLLER}" \
-                                        -d "${JUJU_MODEL}" \
-                                        --model-default test-mode=true \
-                                        --model-default resource-tags=owner=k8sci \
-                                        --bootstrap-constraints "instance-type=${env.INSTANCE_TYPE}"
-
-                                        juju deploy -m "${JUJU_CONTROLLER}":"${JUJU_MODEL}" --constraints "${env.constraints}" ubuntu
-
-                                        juju-wait -e "${JUJU_CONTROLLER}":"${JUJU_MODEL}" -w
-
-                                        juju ssh -m "${JUJU_CONTROLLER}":"${JUJU_MODEL}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
-                                        juju ssh -m "${JUJU_CONTROLLER}":"${JUJU_MODEL}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes'
-                                        juju ssh -m "${JUJU_CONTROLLER}":"${JUJU_MODEL}" --pty=true ubuntu/0 -- 'sudo lxd init --auto'
+                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
                                     """
                                 }
-                            }
-                            stage("Snapcraft Install") {
-                                when { expression { track == "pre-release"}}
-                                steps {
-                                    sh "juju ssh -m "${JUJU_CONTROLLER}":"${JUJU_MODEL}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'"
-                                }
-                            }
-
-                            stage("Release") {
-                                steps {
-                                    sh """
-                                        tox -e py38 -- \
-                                        DRY_RUN=${DRY_RUN} ALWAYS_RELEASE=${ALWAYS_RELEASE} \
-                                        TRACKS=${TRACKS} TESTS_BRANCH=${TESTS_BRANCH} \
-                                        PROXY=${PROXY} JUJU_UNIT=ubuntu/0 \
-                                        timeout 6h python jobs/microk8s/release-to-${track}.py
-                                    """
-                                }
-                            }
-                            post {
-                                always {
-                                    sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${JUJU_CONTROLLER}"
-                                }
+                                sh """
+                                . .tox/py38/bin/activate
+                                DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} \
+                                    TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} \
+                                    PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0 \
+                                    timeout 6h python jobs/microk8s/release-to-${track}.py
+                                """
+                                sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${juju_controller} || true"
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                all_tracks.each { track -> 
+                    def juju_controller="release-microk8s-${track}-${env.ARCH}"
+                    sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${juju_controller} || true"
                 }
             }
         }

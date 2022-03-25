@@ -1,19 +1,21 @@
 # Tests and releases microk8s to beta
 
 - job-template:
-    name: 'release-microk8s-{arch}'
+    name: 'release-microk8s-arch-{arch}'
     description: |
       Tests and releases microk8s. Affects all tracks on {arch}.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release-microk8s/release-microk8s.groovy
     wrappers:
       - default-job-wrapper
       - ci-creds
     parameters:
       - string:
-          name: build_node
-          default: 'runner-{arch}'
-      - string:
           name: ARCH
-          default: '{arch}'
+          default: "{arch}"
       - string:
           name: DRY_RUN
           default: "no"
@@ -26,16 +28,19 @@
             Run all tests and release.
       - string:
           name: TRACKS
+          default: ""
           description: |
             The tracks you want to test and release. For example latest 1.10
             1.11 1.12. Leave empty to iterate over all tracks.
       - string:
           name: TESTS_BRANCH
+          default: ""
           description: |
             You might want to test with a set of tests that are in your own
             branch. Here is where you set the branch name.
       - string:
           name: PROXY
+          default: ""
           description: |
             Proxy endpoint
       - choice:
@@ -59,17 +64,12 @@
           block-level: 'NODE'
 
 - project:
-    name: release-microk8s
+    name: release-microk8s-arch
     arch:
       - amd64
       - arm64
     jobs:
-      - 'release-microk8s-{arch}'
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/release-microk8s/release-microk8s.groovy
+      - 'release-microk8s-arch-{arch}'
 
 - job:
     name: 'release-microk8s-edge'
