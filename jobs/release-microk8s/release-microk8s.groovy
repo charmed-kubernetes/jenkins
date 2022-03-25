@@ -71,10 +71,10 @@ pipeline {
                                 def constraints = ""
                                 if (env.ARCH == "arm64") {
                                     instance_type = "a1.2xlarge"
-                                    constraints = "instance-type=${instance_type} arch=$ARCH root-disk=80G"
+                                    constraints = "instance-type=${instance_type} root-disk=80G arch=$ARCH"
                                 } else if (env.ARCH == "amd64") {
                                     instance_type = "m5.large"
-                                    constraints = "instance-type=${instance_type} arch=$ARCH root-disk=80G mem=16G cores=8"
+                                    constraints = "mem=16G cores=8 root-disk=80G arch=$ARCH"
                                 } else {
                                     error("Aborting build due to unknown arch=${env.ARCH}")
                                 }
@@ -106,8 +106,9 @@ pipeline {
                                 sh """
                                 . .tox/py38/bin/activate
                                 DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} \
-                                    TRACKS=${params.TRACKS} TESTS_BRANCH=${params.TESTS_BRANCH} \
+                                    TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS} \
                                     PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0 \
+                                    JUJU_CONTROLLER=${juju_controller} JUJU_MODEL=${juju_model}\
                                     timeout 6h python jobs/microk8s/release-to-${track}.py
                                 """
                                 sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${juju_controller} || true"
