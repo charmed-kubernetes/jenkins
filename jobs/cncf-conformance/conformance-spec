@@ -16,10 +16,27 @@ set -x
 ###############################################################################
 function juju::bootstrap::before
 {
-    rm -rf sonobuoy.*
-    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v"$SONOBUOY_VERSION"/sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
-    tar xvf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
-    rm -rf sonobuoy_"$SONOBUOY_VERSION"_linux_amd64.tar.gz
+    rm -rf sonobuoy*
+    SB_FILE="sonobuoy_${SONOBUOY_VERSION}_linux_${ARCH}.tar.gz"
+    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERSION}/${SB_FILE}
+    tar xvf ${SB_FILE}
+    rm -f ${SB_FILE}
+    ./sonobuoy version || exit 1
+}
+
+function juju::deploy::overlay
+{
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  kubernetes-master:
+    options:
+      channel: $SNAP_VERSION
+      allow-privileged: 'true'
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+EOF
 }
 
 function test::execute
@@ -27,43 +44,82 @@ function test::execute
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
-    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
-    export RBAC_ENABLED=$(kubectl api-versions | grep \"rbac.authorization.k8s.io/v1beta1\" -c)
+    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/leader:config $HOME/.kube/
+    export RBAC_ENABLED=$(kubectl api-versions | grep "rbac.authorization.k8s.io/v1" -c)
     kubectl version
-    ./sonobuoy version
     ./sonobuoy run --mode=certified-conformance --wait 2>&1
     ret=$?
     is_pass="True"
     if (( $ret > 0 )); then
         is_pass="False"
     fi
-    if which juju-crashdump; then
-        juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
-    fi
-    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* *_sonobuoy*tar.gz
 }
 
 function test::capture
 {
+    # Get artifacts into s3 asap
     ./sonobuoy retrieve
+    if which juju-crashdump; then
+        juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
+    fi
+    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* *_sonobuoy*tar.gz || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
+
+    echo "@@@ CAPTURE RESULTS @@@"
+    echo "@"
+    echo "@  http://jenkaas.s3-website-us-east-1.amazonaws.com/$JOB_ID/artifacts.tar.gz"
+    echo "@"
+    echo "@@@"
+
+    # We cant auto-create a PR upstream, but we can setup a branch
+    # in our fork to make the manual PR process easier.
+    PR_BRANCH=${K8S_VERSION}-ck
+    PROJECT_DIR=v${K8S_VERSION}/cdk
+    git config --global user.email 'cdkbot@juju.solutions'
+    git config --global user.name 'cdkbot'
+    tar xvf *_sonobuoy*.tar.gz plugins/e2e/results/global/e2e.log plugins/e2e/results/global/junit_01.xml
+
+    if git ls-remote --exit-code --heads https://github.com/charmed-kubernetes/k8s-conformance.git ${PR_BRANCH}
+    then
+        git clone https://github.com/charmed-kubernetes/k8s-conformance.git --branch ${PR_BRANCH} --depth 1
+    else
+        git clone https://github.com/charmed-kubernetes/k8s-conformance.git --depth 1
+        pushd k8s-conformance
+        git checkout -b ${PR_BRANCH}
+        popd
+    fi
+
+    pushd k8s-conformance
+    # if we dont have a project dir yet, prime one with known good cdk contents
+    test -d ${PROJECT_DIR} || cp -a v1.23/cdk ${PROJECT_DIR}
+    mv ../plugins/e2e/results/global/* ${PROJECT_DIR}
+    sed -i -e "s/version: .*/version: ${K8S_VERSION}/" ${PROJECT_DIR}/PRODUCT.yaml
+    git add ${PROJECT_DIR}
+    git commit -am "Conformance results for v${K8S_VERSION}/cdk"
+    git push https://${CDKBOT_GH_USR}:${CDKBOT_GH_PSW}@github.com/charmed-kubernetes/k8s-conformance.git --all
+    popd
+
+    rm -rf k8s-conformance
 }
 
 
 ###############################################################################
 # ENV
 ###############################################################################
-SONOBUOY_VERSION=0.20.0
-SNAP_VERSION=${1:-1.23/stable}
-SERIES=${2:-focal}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${3:-stable}
 JUJU_CLOUD=aws/us-east-1
-JUJU_CONTROLLER=validate-$(identifier::short)
-JUJU_MODEL=validate-ck
-ARCH=${4:-amd64}
-JOB_NAME_CUSTOM="validate-ck-conformance-$SERIES-$SNAP_VERSION"
+JUJU_CONTROLLER=cncf-ck-$(identifier::short)
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=stable
+JUJU_MODEL=cncf-ck
+
+ARCH=amd64
+K8S_VERSION=1.23
+SERIES=focal
+SNAP_VERSION=${K8S_VERSION}/stable
+SONOBUOY_VERSION=0.56.3
+
 JOB_ID=$(identifier)
+JOB_NAME_CUSTOM="cncf-ck-${SERIES}-${SNAP_VERSION}"
 
 
 ###############################################################################

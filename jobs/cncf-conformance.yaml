@@ -2,22 +2,8 @@
 # https://github.com/cncf/k8s-conformance
 #
 
-# - job:
-#     name: 'conformance-s390x'
-#     description: |
-#       CNCF Conformance testing for Kubernetes on s390x.
-
-#       Please see https://git.io/fNwXY for more information.
-#     project-type: freestyle
-#     scm:
-#       - k8s-jenkins-jenkaas
-#     properties:
-#       - build-discarder:
-#           num-to-keep: 7
-
-
 - job:
-    name: 'conformance'
+    name: 'conformance-cncf-ck'
     node: runner-amd64
     description: |
       CNCF Conformance testing for Kubernetes.
@@ -28,10 +14,12 @@
       - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
-          num-to-keep: 4
+          num-to-keep: 7
     wrappers:
       - default-job-wrapper
       - ci-creds
+    triggers:
+      - timed: "@weekly"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/cncf-conformance"
