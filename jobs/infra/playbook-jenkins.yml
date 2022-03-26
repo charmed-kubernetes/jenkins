@@ -13,15 +13,6 @@
         repo: "ppa:longsleep/golang-backports"
       tags:
         - jenkins
-    - name: make sure permissions are correct
-      file:
-        path: /var/lib/jenkins/slaves
-        owner: jenkins
-        group: jenkins
-        recurse: yes
-      ignore_errors: yes
-      tags:
-        - jenkins
     - name: update /etc/environment
       copy:
         src: "fixtures/environment"
