@@ -13,21 +13,20 @@
 
 
 # PROPERTIES ----------------------------------------------------------------- #
-# Dont run jobs if a release, charm building, or infrastructure changes are
-# happening
+# Dont run jobs if build, conformance, release, sync, or validation are running
 - property:
     name: block-on-build-release
     properties:
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:
-            - "build-release-cdk-addons.*"
+            - "build-release.*"
             - "bundle-.*"
+            - "conformance-.*"
             - "release-microk8s.*"
             - "sync-oci-images.*"
             - "validate-ck.*"
             - "validate-charm.*"
-            - "validate-kubeflow.*"
           block-level: 'GLOBAL'
 
 
