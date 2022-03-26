@@ -119,11 +119,10 @@ EOF
       -e "s/^AZ_CLIENT_ID=.*/AZ_CLIENT_ID=${AZ_CLIENT_ID}/" \
       -e "s/^AZ_OBJECT_ID=.*/AZ_OBJECT_ID='${AZ_OBJECT_ID}'/" \
       -e "s/^AZ_CLIENT_SECRET=.*/AZ_CLIENT_SECRET=${AZ_CLIENT_SECRET}/" \
-      -e "s/^AZ_STORAGE_ACCOUNT=.*/AZ_STORAGE_ACCOUNT='${AZ_STORAGE_ACCOUNT}'/" \
-      -e "s/^AZ_STORAGE_ACCOUNT_SAS=.*/AZ_STORAGE_ACCOUNT_SAS='${AZ_STORAGE_ACCOUNT_SAS}'/" \
+      -e "s/^AZ_STORAGE_ACCOUNT=.*/AZ_STORAGE_ACCOUNT='canonicalarcsa'/" \
+      -e "s/^AZ_STORAGE_ACCOUNT_SAS=.*/AZ_STORAGE_ACCOUNT_SAS='canonicalarcsa'/" \
       -e "s/^RESOURCE_GROUP=.*/RESOURCE_GROUP=external-canonical/" \
       -e "s/^OFFERING_NAME=.*/OFFERING_NAME=charmed-kubernetes/" \
-      -e "s/^CLUSTERNAME=.*/CLUSTERNAME=${CLUSTER_NAME}/" \
       -e "s/^LOCATION=.*/LOCATION=${CLUSTER_REGION}/" \
       k8s-conformance-test-suite.sh
     set -x
@@ -170,7 +169,6 @@ SERIES=focal
 SNAP_VERSION=${CK_VERSION}/${CK_CHANNEL}
 SONOBUOY_VERSION=0.56.3
 
-CLUSTER_NAME=arc-partner-canonical
 CLUSTER_REGION=eastus
 JOB_ID=$(identifier)
 JOB_NAME_CUSTOM="arc-ck-$SERIES-$SNAP_VERSION"
