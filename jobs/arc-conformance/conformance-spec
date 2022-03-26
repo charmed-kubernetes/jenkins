@@ -19,14 +19,29 @@ function juju::bootstrap::before
     # azure-cli
     which az || sudo apt-get install -qyf azure-cli
     rm -rf ${HOME}/.azure/cliextensions/*
-    # NB: can't get to az extension index from jenkins worker, so install the bundled extensions
+
+    # can't get to az extension index from jenkins worker, so install the bundled extensions
     az extension add -y --source ./jobs/arc-conformance/arcdata-1.2.3-py2.py3-none-any.whl --pip-proxy http://squid.internal:3128
     az extension add -y --source ./jobs/arc-conformance/connectedk8s-1.2.7-py2.py3-none-any.whl --pip-proxy http://squid.internal:3128
     az extension add -y --source ./jobs/arc-conformance/k8s_configuration-1.4.1-py3-none-any.whl --pip-proxy http://squid.internal:3128
     az version || exit 1
 
-    # helm
-    which helm || sudo snap install helm --classic
+    # login and register required providers
+    set +x
+    source /var/lib/jenkins/.local/share/juju/azure-arc.sh
+    az login --service-principal -u $AZ_CLIENT_ID -p $AZ_CLIENT_SECRET --tenant $AZ_TENANT_ID
+    set -x
+    az provider register --namespace Microsoft.Kubernetes
+    az provider register --namespace Microsoft.KubernetesConfiguration
+    az provider register --namespace Microsoft.ExtendedLocation
+
+    # helm needs to be < 3.7.0 for:
+    #  https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/troubleshooting#azure-cli-is-unable-to-download-helm-chart-for-azure-arc-agents
+    if snap list helm 2>/dev/null; then
+        sudo snap refresh helm --channel=3.6/stable
+    else
+        sudo snap install helm --classic --channel=3.6/stable
+    fi
     helm version || exit 1
 
     # sonobuoy
@@ -83,6 +98,7 @@ function test::execute
     kubectl version
 
     # prep azure env
+    helm uninstall azure-arc || true
     export PATH=${PATH}:$(pwd)
     git clone https://github.com/Azure/azure-arc-validation
     pushd azure-arc-validation/testsuite
