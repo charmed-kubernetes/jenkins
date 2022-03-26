@@ -83,6 +83,7 @@ function test::execute
     kubectl version
 
     # prep azure env
+    export PATH=${PATH}:$(pwd)
     git clone https://github.com/Azure/azure-arc-validation
     pushd azure-arc-validation/testsuite
     cat <<EOF > ./partner-metadata.md
@@ -109,13 +110,10 @@ EOF
       -e "s/^CLUSTERNAME=.*/CLUSTERNAME=${CLUSTER_NAME}/" \
       -e "s/^LOCATION=.*/LOCATION=${CLUSTER_REGION}/" \
       k8s-conformance-test-suite.sh
-    chmod +x k8s-conformance-test-suite.sh
     set -x
-    popd
-
-    export PATH=${PATH}:.
-    ./azure-arc-validation/testsuite/k8s-conformance-test-suite.sh
+    timeout -s INT 3h bash ./k8s-conformance-test-suite.sh
     ret=$?
+    popd
 
     is_pass="True"
     if (( $ret > 0 )); then
@@ -125,11 +123,11 @@ EOF
 
 function test::capture
 {
-    ./sonobuoy retrieve
+    mv azure-arc-validation/testsuite/conformance-results*tar.gz . || true
     if which juju-crashdump; then
         juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
-    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* *_sonobuoy*tar.gz || true
+    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* conformance-results*tar.gz || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 
     echo "@@@ CAPTURE RESULTS @@@"
@@ -137,6 +135,8 @@ function test::capture
     echo "@  http://jenkaas.s3-website-us-east-1.amazonaws.com/$JOB_ID/artifacts.tar.gz"
     echo "@"
     echo "@@@"
+
+    rm -rf azure-arc-validation
 }
 
 
