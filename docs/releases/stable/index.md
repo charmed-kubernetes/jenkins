@@ -28,7 +28,7 @@ Solutions QA a solid base to test from.
 #### Conflict resolution
 
 At the time of the feature freeze, the stable branches are git reset to match
-the default branches at that point, per the documentation below. During the
+the master branches at that point, per the documentation below. During the
 feature freeze and Solutions QA period, fixes which need to be applied to
 address CI or QA failures, and only those specific fixes, are cherry-picked in
 to the stable branches.
