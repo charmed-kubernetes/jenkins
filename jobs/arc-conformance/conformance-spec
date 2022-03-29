@@ -104,9 +104,12 @@ EOF
 
     set +x
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
-    # Disable storage account if we don't want to upload results (doesn't impact the actual test)
     if [[ "${UPLOAD_RESULTS}" == "false" ]]; then
+      # disable storage account if we don't want to upload results (doesn't impact the test)
       export AZ_STORAGE_ACCOUNT_SAS='invalid'
+    else
+      # sed treats '&' specially; make sure we escape it if we have any in the key
+      export AZ_STORAGE_ACCOUNT_SAS=$(echo ${AZ_STORAGE_ACCOUNT_SAS} | sed -e "s/&/\\\&/g")
     fi
     sed -i \
       -e "s/^AZ_TENANT_ID=.*/AZ_TENANT_ID=${AZ_TENANT_ID}/" \
