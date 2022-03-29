@@ -197,7 +197,7 @@ packaging==20.9
     #   ansible-base
     #   mkdocs
     #   pytest
-paramiko==2.7.2
+paramiko==2.10.1
     # via juju
 pathos==0.2.8
     # via -r requirements.in
@@ -336,6 +336,7 @@ six==1.15.0
     #   launchpadlib
     #   lazr-restfulclient
     #   macaroonbakery
+    #   paramiko
     #   ppft
     #   protobuf
     #   pymacaroons
@@ -381,7 +382,6 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
-websockets==7.0 ; python_version < "3.9"
 websockets==8.1 ; python_version >= "3.9"
     # via
     #   -r requirements.in
