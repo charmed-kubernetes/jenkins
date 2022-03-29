@@ -29,6 +29,16 @@
             - "validate-charm.*"
           block-level: 'GLOBAL'
 
+# Dont run jobs if infrastructure jobs are running
+- property:
+    name: block-on-infra
+    properties:
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "infra.*"
+          block-level: 'GLOBAL'
+
 
 # PARAMETERS ----------------------------------------------------------------- #
 - parameter:
@@ -42,7 +52,6 @@
           name: FORCE
           default: false
           description: force run regardless of condition
-
 
 - parameter:
     name: snap-params
