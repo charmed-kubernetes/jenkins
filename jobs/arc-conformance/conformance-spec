@@ -26,15 +26,6 @@ function juju::bootstrap::before
     az extension add -y --source ./jobs/arc-conformance/k8s_configuration-1.4.1-py3-none-any.whl --pip-proxy http://squid.internal:3128
     az version || exit 1
 
-    # login and register required providers
-    set +x
-    source /var/lib/jenkins/.local/share/juju/azure-arc.sh
-    az login --service-principal -u $AZ_CLIENT_ID -p $AZ_CLIENT_SECRET --tenant $AZ_TENANT_ID
-    set -x
-    az provider register --namespace Microsoft.Kubernetes
-    az provider register --namespace Microsoft.KubernetesConfiguration
-    az provider register --namespace Microsoft.ExtendedLocation
-
     # helm needs to be < 3.7.0 for:
     #  https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/troubleshooting#azure-cli-is-unable-to-download-helm-chart-for-azure-arc-agents
     if snap list helm 2>/dev/null; then
@@ -113,14 +104,18 @@ EOF
 
     set +x
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
+    # Disable storage account if we don't want to upload results (doesn't impact the actual test)
+    if [[ "${UPLOAD_RESULTS}" == "false" ]]; then
+      export AZ_STORAGE_ACCOUNT_SAS='invalid'
+    fi
     sed -i \
       -e "s/^AZ_TENANT_ID=.*/AZ_TENANT_ID=${AZ_TENANT_ID}/" \
       -e "s/^AZ_SUBSCRIPTION_ID=.*/AZ_SUBSCRIPTION_ID=${AZ_SUBSCRIPTION_ID}/" \
       -e "s/^AZ_CLIENT_ID=.*/AZ_CLIENT_ID=${AZ_CLIENT_ID}/" \
       -e "s/^AZ_OBJECT_ID=.*/AZ_OBJECT_ID='${AZ_OBJECT_ID}'/" \
       -e "s/^AZ_CLIENT_SECRET=.*/AZ_CLIENT_SECRET=${AZ_CLIENT_SECRET}/" \
-      -e "s/^AZ_STORAGE_ACCOUNT=.*/AZ_STORAGE_ACCOUNT='canonicalarcsa'/" \
-      -e "s/^AZ_STORAGE_ACCOUNT_SAS=.*/AZ_STORAGE_ACCOUNT_SAS='canonicalarcsa'/" \
+      -e "s/^AZ_STORAGE_ACCOUNT=.*/AZ_STORAGE_ACCOUNT=${AZ_STORAGE_ACCOUNT}/" \
+      -e "s/^AZ_STORAGE_ACCOUNT_SAS=.*/AZ_STORAGE_ACCOUNT_SAS='${AZ_STORAGE_ACCOUNT_SAS}'/" \
       -e "s/^RESOURCE_GROUP=.*/RESOURCE_GROUP=external-canonical/" \
       -e "s/^OFFERING_NAME=.*/OFFERING_NAME=charmed-kubernetes/" \
       -e "s/^LOCATION=.*/LOCATION=${CLUSTER_REGION}/" \
