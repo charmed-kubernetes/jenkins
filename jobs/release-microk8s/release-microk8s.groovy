@@ -71,8 +71,10 @@ pipeline {
                     channels.each { channel -> 
                         stage("Channel ${channel}") {
                             script {
-                                def juju_controller="release-microk8s-${channel}-${arch}"
-                                def juju_model="release-microk8s-${channel}-model"
+                                def job="release-microk8s"
+                                def stage="${channel}-${arch}"
+                                def juju_controller="${job}-${stage}"
+                                def juju_model="${job}-${stage}-model"
                                 def juju_full_model="${juju_controller}:${juju_model}"
                                 def instance_type = ""
                                 def constraints = ""
@@ -96,7 +98,7 @@ pipeline {
                                 juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
                                     -d "${juju_model}" \
                                     --model-default test-mode=true \
-                                    --model-default resource-tags="owner=k8sci name=${juju_controller}" \
+                                    --model-default resource-tags="owner=k8sci job=${job} stage=${stage}" \
                                     --bootstrap-constraints "instance-type=${instance_type}"
 
                                 juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu
@@ -131,8 +133,10 @@ pipeline {
     post {
         always {
             script {
-                chanels.each { channel -> 
-                    def juju_controller="release-microk8s-${channel}-${arch}"
+                channels.each { channel -> 
+                    def job="release-microk8s"
+                    def stage="${channel}-${arch}"
+                    def juju_controller="${job}-${stage}"
                     sh destroy_controller(juju_controller)
                 }
             }
