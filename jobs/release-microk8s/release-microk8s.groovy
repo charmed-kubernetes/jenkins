@@ -114,15 +114,20 @@ pipeline {
                                     juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
                                     """
                                 }
-                                sh """
-                                . .tox/py38/bin/activate
-                                DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
-                                    TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS}\
-                                    PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0\
-                                    JUJU_CONTROLLER=${juju_controller} JUJU_MODEL=${juju_model}\
-                                    timeout 6h python jobs/microk8s/${job_name[channel]}
-                                """
-                                sh destroy_controller(juju_controller)
+                                try {
+                                    sh """
+                                    . .tox/py38/bin/activate
+                                    DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
+                                        TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS}\
+                                        PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0\
+                                        JUJU_CONTROLLER=${juju_controller} JUJU_MODEL=${juju_model}\
+                                        timeout 6h python jobs/microk8s/${job_name[channel]}
+                                    """
+                                } catch (err) {
+                                    unstable("${job_name[channel]} completed with errors.")
+                                } finally {
+                                    sh destroy_controller(juju_controller)
+                                }
                             }
                         }
                     }
