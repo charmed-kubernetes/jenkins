@@ -13,25 +13,41 @@
       - default-job-wrapper
       - ci-creds
     parameters:
-      - string:
+      - choice:
           name: ARCH
-          default: "{arch}"
-      - string:
-          name: DRY_RUN
-          default: "no"
           description: |
-            Do not release. Run all tests but do not release.
-      - string:
-          name: ALWAYS_RELEASE
-          default: "no"
+            Architecture associated with this job
+          choices:
+            - "{arch}"
+      - choice:
+          name: CHANNEL
           description: |
-            Run all tests and release.
+            Choose a specific release channel
+          choices:
+            - all
+            - beta
+            - stable
+            - pre-release
       - string:
           name: TRACKS
           default: ""
           description: |
             The tracks you want to test and release. For example latest 1.10
             1.11 1.12. Leave empty to iterate over all tracks.
+      - choice:
+          name: DRY_RUN
+          description: |
+            Do not release. Run all tests but do not release.
+          choices:
+            - "no"
+            - "yes"
+      - choice:
+          name: ALWAYS_RELEASE
+          description: |
+            Run all tests and release.
+          choices:
+            - "no"
+            - "yes"
       - string:
           name: TESTS_BRANCH
           default: ""
@@ -43,15 +59,6 @@
           default: ""
           description: |
             Proxy endpoint
-      - choice:
-          name: ARCH_TRACK
-          description: |
-            Choose a specific architecture and track to release against
-          choices:
-            - all
-            - "{arch}/beta"
-            - "{arch}/stable"
-            - "{arch}/pre-release"
     triggers:
         - timed: "@daily"
     properties:

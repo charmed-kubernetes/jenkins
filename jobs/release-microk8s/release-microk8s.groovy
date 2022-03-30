@@ -1,6 +1,14 @@
 @Library('juju-pipeline@master') _
 
 
+def destroy_controller(controller) {
+    return """
+    if ! timeout 4m juju destroy-controller -y --destroy-all-models --destroy-storage "${controller}"; then
+        timeout 4m juju kill-controller -y "${controller}" || true
+    fi
+    """
+}
+
 pipeline {
     agent {
         label "runner-${params.ARCH}"
@@ -10,7 +18,6 @@ pipeline {
      */
     environment {
         PATH                 = "${utils.cipaths}"
-        ARCH                 = "${params.ARCH}"
         JUJU_CLOUD           = "aws/us-east-1"
         K8STEAMCI            = credentials('k8s_team_ci_lp')
         CDKBOT_GH            = credentials('cdkbot_github')
@@ -35,14 +42,14 @@ pipeline {
         timestamps()
     }
     stages {
-        stage("Setup Tracks") {
+        stage("Setup Channels") {
             steps {
                 script {
-                    if (params.ARCH_TRACK == "all") {
-                        all_tracks = ["beta", "stable", "pre-release"]
-                    } else {
-                        all_tracks = [params.ARCH_TRACK.tokenize('/').last()]
+                    arch = params.ARCH
+                    channels = ["beta", "stable", "pre-release"].findAll { channel ->
+                        params.CHANNEL == "all" || params.CHANNEL == channel
                     }
+                    echo "Running for channels ${arch}/${channels}"
                 }
             }
         }
@@ -58,36 +65,38 @@ pipeline {
                 """
             }
         }
-        stage("Release Tracks") {
+        stage("Run Release Steps") {
             steps {
                 script {
-                    all_tracks.each { track -> 
-                        stage("Track ${track}") {
+                    channels.each { channel -> 
+                        stage("Channel ${channel}") {
                             script {
-                                def juju_controller="release-microk8s-${track}-${env.ARCH}"
-                                def juju_model="release-microk8s-${track}-model"
+                                def juju_controller="release-microk8s-${channel}-${arch}"
+                                def juju_model="release-microk8s-${channel}-model"
                                 def juju_full_model="${juju_controller}:${juju_model}"
                                 def instance_type = ""
                                 def constraints = ""
-                                if (env.ARCH == "arm64") {
+                                def job_name = [
+                                    beta: "release-to-beta.py",
+                                    stable: "release-to-stable.py",
+                                    "pre-release": "release-pre-release.py",
+                                ]
+
+                                if (arch == "arm64") {
                                     instance_type = "a1.2xlarge"
-                                    constraints = "instance-type=${instance_type} root-disk=80G arch=$ARCH"
-                                } else if (env.ARCH == "amd64") {
+                                    constraints = "instance-type=${instance_type} root-disk=80G arch=${arch}"
+                                } else if (arch == "amd64") {
                                     instance_type = "m5.large"
-                                    constraints = "mem=16G cores=8 root-disk=80G arch=$ARCH"
+                                    constraints = "mem=16G cores=8 root-disk=80G arch=${arch}"
                                 } else {
-                                    error("Aborting build due to unknown arch=${env.ARCH}")
+                                    error("Aborting build due to unknown arch=${arch}")
                                 }
+                                sh destroy_controller(juju_controller)
                                 sh """
-                                if ! timeout 4m juju destroy-controller -y --destroy-all-models --destroy-storage "${juju_controller}"; then
-                                   timeout 4m juju kill-controller -y "${juju_controller}" || true
-                                fi
-                                """
-                                sh """
-                                juju bootstrap "${env.JUJU_CLOUD}" "${juju_controller}" \
+                                juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
                                     -d "${juju_model}" \
                                     --model-default test-mode=true \
-                                    --model-default resource-tags=owner=k8sci \
+                                    --model-default resource-tags="owner=k8sci name=${juju_controller}" \
                                     --bootstrap-constraints "instance-type=${instance_type}"
 
                                 juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu
@@ -98,20 +107,20 @@ pipeline {
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd init --auto'
                                 """
-                                if (track == "pre-release"){
+                                if (channel == "pre-release"){
                                     sh """
                                     juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
                                     """
                                 }
                                 sh """
                                 . .tox/py38/bin/activate
-                                DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE} \
-                                    TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS} \
-                                    PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0 \
+                                DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
+                                    TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS}\
+                                    PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0\
                                     JUJU_CONTROLLER=${juju_controller} JUJU_MODEL=${juju_model}\
-                                    timeout 6h python jobs/microk8s/release-to-${track}.py
+                                    timeout 6h python jobs/microk8s/${job_name[channel]}
                                 """
-                                sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${juju_controller} || true"
+                                sh destroy_controller(juju_controller)
                             }
                         }
                     }
@@ -122,9 +131,9 @@ pipeline {
     post {
         always {
             script {
-                all_tracks.each { track -> 
-                    def juju_controller="release-microk8s-${track}-${env.ARCH}"
-                    sh "juju destroy-controller -y --destroy-all-models --destroy-storage ${juju_controller} || true"
+                chanels.each { channel -> 
+                    def juju_controller="release-microk8s-${channel}-${arch}"
+                    sh destroy_controller(juju_controller)
                 }
             }
         }
