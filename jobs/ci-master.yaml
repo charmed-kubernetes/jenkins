@@ -11,18 +11,6 @@
         shallow-clone: true
         clean: {before: true}
 
-- scm:
-    name: k8s-jenkins-bm
-    scm:
-      - git:
-          url: https://github.com/battlemidget/kubernetes-jenkins.git
-          branches:
-            - 'stokes-ogc'
-        skip-tag: true
-        fastpoll: true
-        shallow-clone: true
-        clean: {before: true}
-
 
 # PROPERTIES ----------------------------------------------------------------- #
 # Dont run jobs if a release, charm building, or infrastructure changes are
@@ -55,21 +43,6 @@
           name: FORCE
           default: false
           description: force run regardless of condition
-
-
-- parameter:
-    name: ogc-spec-params
-    parameters:
-      - string:
-          name: JOB_SPEC_DIR
-          description: Directory housing the spec to run
-      - string:
-          name: JOB_SPEC_FILE
-          description: Spec filename to execute within JOB_SPEC_DIR
-          default: spec.yml
-      - string:
-          name: JOB_TAGS
-          description: Optional tags to pass to spec, in the form of `-t tagname -t tagname2`
 
 
 - parameter:
@@ -264,21 +237,6 @@
 
           env > $WORKSPACE/.env
 
-
-- builder:
-    name: ogc-execute-spec
-    builders:
-      - shell: |-
-          #!/bin/bash
-          set -eux
-          set -o allexport
-          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-          set +o allexport
-
-          python3.6 -m venv venv
-          venv/bin/python -m pip install pip-tools
-          venv/bin/pip-sync requirements.txt
-          venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
 
 - builder:
     name: run-env
