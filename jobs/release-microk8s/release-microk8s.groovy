@@ -138,11 +138,13 @@ pipeline {
     post {
         always {
             script {
-                channels.each { channel -> 
-                    def job="release-microk8s"
-                    def stage="${channel}-${arch}"
-                    def juju_controller="${job}-${stage}"
-                    sh destroy_controller(juju_controller)
+                if (getBinding().hasVariable("channels")) {
+                    channels.each { channel -> 
+                        def job="release-microk8s"
+                        def stage="${channel}-${arch}"
+                        def juju_controller="${job}-${stage}"
+                        sh destroy_controller(juju_controller)
+                    }
                 }
             }
         }
