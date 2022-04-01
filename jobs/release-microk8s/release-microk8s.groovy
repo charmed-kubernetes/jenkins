@@ -35,6 +35,7 @@ pipeline {
         K8STEAMCI_GPG_PUB    = credentials('deb-gpg-public')
         K8STEAMCI_GPG_PRIVATE= credentials('deb-gpg-private')
         K8STEAMCI_GPG_KEY    = credentials('deb-gpg-key')
+        NOTIFY_EMAIL         = credentials('microk8s_notify_email')
 
     }
     options {
@@ -125,6 +126,11 @@ pipeline {
                                     """
                                 } catch (err) {
                                     unstable("${job_name[channel]} completed with errors.")
+                                    emailext(
+                                             body: 'You can do this. Stay strong!', 
+                                             to: env.NOTIFY_EMAIL, 
+                                             subject: "${job_name[channel]} completed with errors."
+                                    )
                                 } finally {
                                     sh destroy_controller(juju_controller)
                                 }
