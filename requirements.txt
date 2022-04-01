@@ -262,7 +262,7 @@ pytest==7.0.1
     #   pytest-html
     #   pytest-metadata
     #   pytest-mock
-pytest-asyncio==0.18.1
+pytest-asyncio==0.18.3
     # via -r requirements.in
 pytest-html==3.1.1
     # via -r requirements.in
