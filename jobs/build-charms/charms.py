@@ -510,7 +510,7 @@ class BuildEntity:
             auth = os.environ.get("CDKBOT_GH_USR"), os.environ.get("CDKBOT_GH_PSW")
             branch = default_gh_branch(self.downstream, ignore_errors=True, auth=auth)
 
-        self.branch = branch or "master"
+        self.branch = branch or "main"
 
         self.layer_path = src_path / "layer.yaml"
         self.src_path = str(src_path.absolute())
@@ -890,7 +890,7 @@ def cli():
     "--layer-branch",
     required=True,
     help="Git branch to pull layers/interfaces from",
-    default="master",
+    default="main",
 )
 @click.option(
     "--resource-spec", required=True, help="YAML Spec of resource keys and filenames"

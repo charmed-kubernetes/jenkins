@@ -62,7 +62,7 @@ pipeline {
                         echo "Getting cdk-addons from \$ADDONS_BRANCH branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --branch \$ADDONS_BRANCH --depth 1
                     else
-                        echo "Getting cdk-addons from master branch."
+                        echo "Getting cdk-addons from default branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
                     fi
 
