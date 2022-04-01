@@ -367,7 +367,7 @@ typing-extensions==3.7.4.3
     #   typing-inspect
 typing-inspect==0.6.0
     # via juju
-urllib3==1.25.11
+urllib3==1.26.5
     # via
     #   botocore
     #   kubernetes
@@ -380,7 +380,6 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
-websockets==7.0 ; python_version < "3.9"
 websockets==8.1 ; python_version >= "3.9"
     # via
     #   -r requirements.in
