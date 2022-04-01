@@ -35,6 +35,7 @@ pipeline {
         K8STEAMCI_GPG_PUB    = credentials('deb-gpg-public')
         K8STEAMCI_GPG_PRIVATE= credentials('deb-gpg-private')
         K8STEAMCI_GPG_KEY    = credentials('deb-gpg-key')
+        NOTIFY_EMAIL         = credentials('microk8s_notify_email')
 
     }
     options {
@@ -125,6 +126,11 @@ pipeline {
                                     """
                                 } catch (err) {
                                     unstable("${job_name[channel]} completed with errors.")
+                                    emailext(
+                                             to: env.NOTIFY_EMAIL,
+                                             subject: "Job '${JOB_NAME}' (${BUILD_NUMBER}) had an on stage ${job_name[channel]}",
+                                             body: "Please go to ${BUILD_URL} and verify the build"
+                                    )
                                 } finally {
                                     sh destroy_controller(juju_controller)
                                 }
