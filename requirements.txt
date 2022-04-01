@@ -52,7 +52,7 @@ cffi==1.14.5
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==3.0.4
+charset-normalizer==2.0.12
     # via requests
 click==7.1.2
     # via
@@ -296,7 +296,7 @@ pyyaml-env-tag==0.1
     # via mkdocs
 regex==2021.3.17
     # via black
-requests==2.24.0
+requests==2.27.1
     # via
     #   -r requirements.in
     #   kubernetes
