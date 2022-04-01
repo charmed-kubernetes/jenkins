@@ -127,9 +127,9 @@ pipeline {
                                 } catch (err) {
                                     unstable("${job_name[channel]} completed with errors.")
                                     emailext(
-                                             body: 'You can do this. Stay strong!', 
-                                             to: env.NOTIFY_EMAIL, 
-                                             subject: "${job_name[channel]} completed with errors."
+                                             to: env.NOTIFY_EMAIL,
+                                             subject: "Job '${JOB_NAME}' (${BUILD_NUMBER}) had an on stage ${job_name[channel]}",
+                                             body: "Please go to ${BUILD_URL} and verify the build"
                                     )
                                 } finally {
                                     sh destroy_controller(juju_controller)
