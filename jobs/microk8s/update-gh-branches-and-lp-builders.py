@@ -36,8 +36,8 @@ def is_latest(release):
 
 def gh_branch_exists(branch):
     """Return true if the branch is already available on the repository"""
-    cmd = "git ls-remote --exit-code --heads https://github.com/ubuntu/microk8s.git refs/heads/{}".format(
-        branch
+    cmd = "git ls-remote --exit-code --heads https://{}.git refs/heads/{}".format(
+        configbag.github_repo, branch
     ).split()
     try:
         check_call(cmd)
@@ -52,7 +52,7 @@ def create_gh_branch(branch, gh_user, gh_token):
     """Create a branch on the repo using the credentials passed"""
     cmd = "rm -rf microk8s".split()
     check_call(cmd)
-    cmd = "git clone https://github.com/ubuntu/microk8s".split()
+    cmd = "git clone https://{}".format(configbag.github_repo).split()
     check_call(cmd)
     os.chdir("microk8s")
     cmd = "git config user.name cdkbot".split()
@@ -74,8 +74,8 @@ def create_gh_branch(branch, gh_user, gh_token):
     cmd = "git commit -m".split()
     cmd.append("Creating branch {}".format(branch))
     check_call(cmd)
-    cmd = "git push https://{}:{}@github.com/ubuntu/microk8s.git {}".format(
-        gh_user, gh_token, branch
+    cmd = "git push https://{}:{}@{}.git {}".format(
+        gh_user, gh_token, configbag.github_repo, branch
     ).split()
     check_call(cmd)
 

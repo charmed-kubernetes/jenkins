@@ -7,8 +7,6 @@
 'calico':
   calico: '{out_path}/calico-amd64.tar.gz'
   calico-arm64: '{out_path}/calico-arm64.tar.gz'
-  calico-upgrade: '{out_path}/calico-upgrade-amd64.tar.gz'
-  calico-upgrade-arm64: '{out_path}/calico-upgrade-arm64.tar.gz'
   calico-node-image: '{out_path}/calico-node-image.tar.gz'
 'flannel':
   flannel-amd64: '{out_path}/flannel-amd64.tar.gz'

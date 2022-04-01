@@ -12,5 +12,5 @@
   "status":
     "patch-hookenv": !!bool "true"
   "k8s-ci-charm": {}
-"repo": "https://github.com/charmed-kubernetes/jenkins/tree/master/tests/data/charms/k8s-ci-charm"
+"repo": "https://github.com/charmed-kubernetes/jenkins/tree/main/tests/data/charms/k8s-ci-charm"
 "is": "nothing"

@@ -7,10 +7,7 @@ def kube_ersion = null
 if (kube_version != "") {
     kube_ersion = kube_version.substring(1)
 }
-def lxc_name = 'sync-image-processor'
-def lxd_exec(String container, String cmd) {
-    sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
-}
+def lxc_name = env.JOB_NAME+"-"+env.BUILD_NUMBER
 
 pipeline {
     agent {
@@ -65,16 +62,30 @@ pipeline {
                         echo "Getting cdk-addons from \$ADDONS_BRANCH branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --branch \$ADDONS_BRANCH --depth 1
                     else
-                        echo "Getting cdk-addons from master branch."
+                        echo "Getting cdk-addons from default branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
                     fi
 
-                    echo "Getting bundle from master branch."
-                    git clone https://github.com/charmed-kubernetes/bundle.git --branch master --depth 1
+                    echo "Getting bundle from main branch."
+                    git clone https://github.com/charmed-kubernetes/bundle.git --branch main --depth 1
                 """
             }
         }
-        stage('Build image list'){
+        stage('Setup Build Container'){
+            steps {
+                /* override sh for this step:
+
+                 Needed because cilib.sh has some non POSIX bits.
+                 */
+                sh """#!/usr/bin/env bash
+                    . \${WORKSPACE}/cilib.sh
+
+                    ci_lxc_launch ubuntu:20.04 ${lxc_name}
+                    sudo lxc shell ${lxc_name} -- bash -c "apt-get install containerd -y"
+                """
+            }
+        }
+        stage('Build Image List'){
             steps {
                 echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
@@ -108,26 +119,25 @@ pipeline {
                 """
             }
         }
-        stage('Setup LXD container for ctr'){
-            steps {
-                sh "sudo lxc launch ubuntu:20.04 ${lxc_name}"
-                lxd_exec("${lxc_name}", "sleep 10")
-                lxd_exec("${lxc_name}", "apt update")
-                lxd_exec("${lxc_name}", "apt install containerd -y")
-            }
-        }
         stage('Process CI Images'){
             steps {
                 sh """
+                    # We need jujud-operator in rocks so we can bootstrap k8s models on
+                    # vsphere, but the image tag has the juju version baked in. Try to
+                    # determine a good image based on the installed juju snap.
+                    JUJUD_VER=\$(snap list juju | grep juju | awk '{print \$2}')
+
+                    # Prime our image list with the jujud-op image
+                    CI_IMAGES="docker.io/jujusolutions/jujud-operator:\$JUJUD_VER"
+
                     # Key from the bundle_image_file used to identify images for CI
                     CI_KEY=ci-static:
 
-                    CI_IMAGES=""
                     ARCHES="amd64 arm64 ppc64le s390x"
                     for arch in \${ARCHES}
                     do
                         ARCH_IMAGES=\$(grep -e \${CI_KEY} ${bundle_image_file} | sed -e "s|\${CI_KEY}||g" -e "s|{{ arch }}|\${arch}|g")
-                        CI_IMAGES="\${ALL_IMAGES} \${ARCH_IMAGES}"
+                        CI_IMAGES="\${CI_IMAGES} \${ARCH_IMAGES}"
                     done
 
                     # Clean up dupes by making a sortable list, uniq it, and turn it back to a string
@@ -147,7 +157,7 @@ pipeline {
                             continue
                         fi
 
-                        # Pull
+                        # Pull upstream image
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${i}"
@@ -234,7 +244,7 @@ pipeline {
                             continue
                         fi
 
-                        # Pull
+                        # Pull upstream image
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${i}"
@@ -259,7 +269,7 @@ pipeline {
                             fi
                         done
 
-                        # Tag and push
+                        # Tag and push to staging area
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have tagged: \${i}"
@@ -292,12 +302,17 @@ pipeline {
     }
     post {
         always {
-            echo "All images known to this builder:"
-            sh "sudo lxc exec ${lxc_name} -- ctr image ls"
             sh "echo Disk usage before cleanup"
             sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
-            sh "sudo lxc delete -f ${lxc_name}"
-            sh "sudo rm -rf cdk-addons/build"
+
+            /* override sh since cilib.sh has some non POSIX bits. */
+            sh """#!/usr/bin/env bash
+                . \${WORKSPACE}/cilib.sh
+
+                ci_lxc_delete ${lxc_name}
+                sudo rm -rf cdk-addons/build
+            """
+
             sh "echo Disk usage after cleanup"
             sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
         }

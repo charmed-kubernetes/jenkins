@@ -1,58 +1,64 @@
 # Tests and releases microk8s to beta
 
-- parameter:
-    name: microk8s-params
+- job-template:
+    name: 'release-microk8s-arch-{arch}'
+    description: |
+      Tests and releases microk8s. Affects all tracks on {arch}.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release-microk8s/release-microk8s.groovy
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
     parameters:
-      - string:
-          name: DRY_RUN
-          default: "no"
+      - choice:
+          name: ARCH
           description: |
-            Do not release. Run all tests but do not release.
-      - string:
-          name: ALWAYS_RELEASE
-          default: "no"
+            Architecture associated with this job
+          choices:
+            - "{arch}"
+      - choice:
+          name: CHANNEL
           description: |
-            Run all tests and release.
+            Choose a specific release channel
+          choices:
+            - all
+            - beta
+            - stable
+            - pre-release
       - string:
           name: TRACKS
+          default: ""
           description: |
             The tracks you want to test and release. For example latest 1.10
             1.11 1.12. Leave empty to iterate over all tracks.
+      - choice:
+          name: DRY_RUN
+          description: |
+            Do not release. Run all tests but do not release.
+          choices:
+            - "no"
+            - "yes"
+      - choice:
+          name: ALWAYS_RELEASE
+          description: |
+            Run all tests and release.
+          choices:
+            - "no"
+            - "yes"
       - string:
           name: TESTS_BRANCH
+          default: ""
           description: |
             You might want to test with a set of tests that are in your own
             branch. Here is where you set the branch name.
       - string:
           name: PROXY
+          default: ""
           description: |
             Proxy endpoint
-      - choice:
-          name: ARCH_TRACK
-          description: |
-            Choose a specific architecture and track to release against
-          choices:
-            - all
-            - amd64/beta
-            - arm64/beta
-            - amd64/stable
-            - arm64/stable
-            - amd64/prerelease
-            - arm64/prerelease
-
-- job-template:
-    name: 'release-microk8s-{arch}'
-    description: |
-      Tests and releases microk8s. Affects all tracks on {arch}.
-    project-type: freestyle
-    node: runner-{arch}
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    parameters:
-      - microk8s-params
     triggers:
         - timed: "@daily"
     properties:
@@ -64,25 +70,13 @@
             - "infra.*"
           block-level: 'NODE'
 
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/release-microk8s"
-      - run-tox:
-          COMMAND: |
-            TAG="-t {arch}"
-            if [ "$ARCH_TRACK" != "all" ]; then
-                TAG="-t $ARCH_TRACK"
-            fi
-            snapcraft login --with /var/lib/jenkins/snapcraft-creds
-            tox -e py38 -- ogc --spec jobs/release-microk8s/spec.yml $TAG
-
 - project:
-    name: release-microk8s
+    name: release-microk8s-arch
     arch:
       - amd64
       - arm64
     jobs:
-      - 'release-microk8s-{arch}'
+      - 'release-microk8s-arch-{arch}'
 
 - job:
     name: 'release-microk8s-edge'

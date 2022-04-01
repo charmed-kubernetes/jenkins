@@ -5,19 +5,7 @@
       - git:
           url: https://github.com/charmed-kubernetes/jenkins.git
           branches:
-            - 'master'
-        skip-tag: true
-        fastpoll: true
-        shallow-clone: true
-        clean: {before: true}
-
-- scm:
-    name: k8s-jenkins-bm
-    scm:
-      - git:
-          url: https://github.com/battlemidget/kubernetes-jenkins.git
-          branches:
-            - 'stokes-ogc'
+            - 'main'
         skip-tag: true
         fastpoll: true
         shallow-clone: true
@@ -55,21 +43,6 @@
           name: FORCE
           default: false
           description: force run regardless of condition
-
-
-- parameter:
-    name: ogc-spec-params
-    parameters:
-      - string:
-          name: JOB_SPEC_DIR
-          description: Directory housing the spec to run
-      - string:
-          name: JOB_SPEC_FILE
-          description: Spec filename to execute within JOB_SPEC_DIR
-          default: spec.yml
-      - string:
-          name: JOB_TAGS
-          description: Optional tags to pass to spec, in the form of `-t tagname -t tagname2`
 
 
 - parameter:
@@ -161,14 +134,15 @@
           default: "jobs/includes/charm-layer-list.inc"
       - string:
           name: LAYER_BRANCH
-          default: 'master'
+          default: 'main'
           description: |
             The layer git branch to checkout prior to building
       - string:
           name: CHARM_BRANCH
-          default: 'master'
+          default: ''
           description: |
-            The charm git branch to checkout prior to building
+            The charm git branch to checkout prior to building.
+            If empty, the default repo branch will be used.
       - string:
           name: CHARM_LIST
           default: "jobs/includes/charm-support-matrix.inc"
@@ -177,12 +151,12 @@
           default: "jobs/includes/charm-bundles-list.inc"
       - string:
           name: BUNDLE_BRANCH
-          default: "master"
+          default: "main"
           description: |
             The bundle branch to build k8s from.
       - string:
           name: BUNDLE_REPO
-          default: "https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git"
+          default: "https://github.com/charmed-kubernetes/bundle.git"
       - string:
           name: RESOURCE_SPEC
           default: "jobs/build-charms/resource-spec.yaml"
@@ -193,7 +167,7 @@
       - string:
           name: FROM_CHANNEL
           default: 'edge'
-          description: Channel to publish from charm to
+          description: Channel to publish charm from (only used in promote jobs)
       - string:
           name: FILTER_BY_TAG
           default: 'k8s'
@@ -263,21 +237,6 @@
 
           env > $WORKSPACE/.env
 
-
-- builder:
-    name: ogc-execute-spec
-    builders:
-      - shell: |-
-          #!/bin/bash
-          set -eux
-          set -o allexport
-          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-          set +o allexport
-
-          python3.6 -m venv venv
-          venv/bin/python -m pip install pip-tools
-          venv/bin/pip-sync requirements.txt
-          venv/bin/ogc --spec {JOB_SPEC_DIR}/{JOB_SPEC_FILE} {JOB_TAGS|}
 
 - builder:
     name: run-env

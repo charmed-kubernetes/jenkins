@@ -7,10 +7,7 @@ def kube_ersion = null
 if (kube_version != "") {
     kube_ersion = kube_version.substring(1)
 }
-def lxc_name = "build-release-cdk-addons-"+env.BUILD_NUMBER
-def lxd_exec(String container, String cmd) {
-    sh "sudo lxc exec ${container} -- bash -c '${cmd}'"
-}
+def lxc_name = env.JOB_NAME.replaceAll('\\.', '-')+"-"+env.BUILD_NUMBER
 
 pipeline {
     agent {
@@ -33,12 +30,13 @@ pipeline {
     }
     stages {
         stage('Setup User') {
+            /* Do this early; we want to fail fast if we don't have valid creds. */
             steps {
                 sh "git config --global user.email 'cdkbot@juju.solutions'"
                 sh "git config --global user.name 'cdkbot'"
                 sh "snapcraft login --with /var/lib/jenkins/snapcraft-creds"
                 sh "snapcraft whoami"
-                sh "sudo chown jenkins:jenkins -R /var/lib/jenkins/.config/snapcraft"
+                sh "snapcraft logout"
             }
         }
         stage('Ensure valid K8s version'){
@@ -68,7 +66,7 @@ pipeline {
                         echo "Getting cdk-addons from \$ADDONS_BRANCH branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --branch \$ADDONS_BRANCH --depth 1
                     else
-                        echo "Getting cdk-addons from master branch."
+                        echo "Getting cdk-addons from default branch."
                         git clone https://github.com/charmed-kubernetes/cdk-addons.git --depth 1
                         if [ "${kube_status}" = "stable" ]
                         then
@@ -88,74 +86,57 @@ pipeline {
                 sh "git clone https://github.com/charmed-kubernetes/bundle.git"
             }
         }
-        stage('Build cdk-addons and image list'){
+        stage('Setup Build Container'){
+            steps {
+                /* override sh for this step:
+
+                 Needed because cilib.sh has some non POSIX bits.
+                 */
+                sh """#!/usr/bin/env bash
+                    . \${WORKSPACE}/cilib.sh
+
+                    ci_lxc_launch ubuntu:20.04 ${lxc_name}
+                    until sudo lxc shell ${lxc_name} -- bash -c "snap install snapcraft --classic"; do
+                        echo 'retrying snapcraft install in 3s...'
+                        sleep 3
+                    done
+                    sudo lxc shell ${lxc_name} -- bash -c "apt-get install containerd -y"
+
+                    # we'll upload snaps from within the container; put creds in place
+                    sudo lxc file push /var/lib/jenkins/snapcraft-creds ${lxc_name}/snapcraft-creds
+                """
+            }
+        }
+        stage('Build Snaps'){
             steps {
                 echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
                     cd cdk-addons
-                    # prep ./build/templates and track upstream images
-                    UPSTREAM_KEY=${kube_version}-upstream:
-                    UPSTREAM_LINE=\$(make KUBE_VERSION=${kube_version} prep upstream-images 2>/dev/null | grep ^\${UPSTREAM_KEY})
+                    make KUBE_VERSION=${kube_version} prep 2>/dev/null
 
-                    # build snap
                     for arch in ${env.ADDONS_ARCHES}
                     do
-                        echo "Building cdk-addons snap for arch \${arch}."
+                        echo "Prepping cdk-addons (\${arch}) snap source."
                         wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
                         chmod +x build/kubectl
                         sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
                         if [ "\${arch}" = "ppc64le" ]
                         then
-                          sed -i "s/KUBE_ARCH/ppc64el/g" build/snapcraft.yaml
-                          cd build
-                          SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft clean || exit 1
-                          SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft --target-arch=ppc64el || exit 1
-                          mv *.snap ..
-                          cd ..
-                        else
-                          sed -i "s/KUBE_ARCH/\${arch}/g" build/snapcraft.yaml
-                          cd build
-                          SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft clean || exit 1
-                          SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft --target-arch=\${arch} || exit 1
-                          mv *.snap ..
-                          cd ..
+                          arch="ppc64el"
                         fi
+                        sed -i "s/KUBE_ARCH/\${arch}/g" build/snapcraft.yaml
+
+                        echo "Copying cdk-addons (\${arch}) into container."
+                        sudo lxc shell ${lxc_name} -- bash -c "rm -rf /cdk-addons"
+                        sudo lxc file push . ${lxc_name}/ -p -r
+
+                        echo "Build cdk-addons (\${arch}) snap."
+                        sudo lxc shell ${lxc_name} -- bash -c \
+                            "cd /cdk-addons/build; SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft --target-arch=\${arch}"
+                        sudo lxc shell ${lxc_name} -- bash -c "mv /cdk-addons/build/*.snap /"
                     done
-                    cd ..
-
-                    echo "Updating bundle with upstream images."
-                    if grep -q ^\${UPSTREAM_KEY} ${bundle_image_file}
-                    then
-                        sed -i -e "s|^\${UPSTREAM_KEY}.*|\${UPSTREAM_LINE}|g" ${bundle_image_file}
-                    else
-                        echo \${UPSTREAM_LINE} >> ${bundle_image_file}
-                    fi
-                    sort -o ${bundle_image_file} ${bundle_image_file}
-
-                    cd bundle
-                    git pull origin master
-                    if git status | grep -qi "nothing to commit"
-                    then
-                        echo "No image changes; nothing to commit"
-                    else
-                        git commit -am "Updating \${UPSTREAM_KEY} images"
-                        if ${params.dry_run}
-                        then
-                            echo "Dry run; would have updated ${bundle_image_file} with: \${UPSTREAM_LINE}"
-                        else
-                            git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
-                        fi
-                    fi
                     cd -
                 """
-            }
-        }
-        stage('Setup LXD container for ctr'){
-            steps {
-                sh "sudo lxc launch ubuntu:20.04 ${lxc_name}"
-                lxd_exec("${lxc_name}", "sleep 10")
-                lxd_exec("${lxc_name}", "apt update")
-                lxd_exec("${lxc_name}", "apt install containerd -y")
             }
         }
         stage('Process Images'){
@@ -241,7 +222,7 @@ pipeline {
                     cd bundle
                     REPORT_FILE=container-images/${kube_version}.txt
                     echo \${REPORT_IMAGES} | xargs -n1 | sort -u > \${REPORT_FILE}
-                    git pull origin master
+                    git pull origin main
                     git add \${REPORT_FILE}
                     if git status | grep -qi "nothing to commit"
                     then
@@ -262,16 +243,28 @@ pipeline {
                 """
             }
         }
-        stage('Push cdk-addons snap'){
+        stage('Upload Snaps'){
             steps {
                 script {
                     if(params.dry_run) {
                         echo "Dry run; would have uploaded cdk-addons/*.snap to ${params.channels}"
                     } else {
-                        sh "snapcraft -d upload cdk-addons/cdk-addons_${kube_ersion}_amd64.snap --release ${params.channels}"
-                        sh "snapcraft -d upload cdk-addons/cdk-addons_${kube_ersion}_arm64.snap --release ${params.channels}"
-                        sh "snapcraft -d upload cdk-addons/cdk-addons_${kube_ersion}_ppc64el.snap --release ${params.channels}"
-                        sh "snapcraft -d upload cdk-addons/cdk-addons_${kube_ersion}_s390x.snap --release ${params.channels}"
+                        sh """
+                            sudo lxc shell ${lxc_name} -- bash -c "snapcraft login --with /snapcraft-creds"
+                            for arch in ${env.ADDONS_ARCHES}
+                            do
+                                if [ "\${arch}" = "ppc64le" ]
+                                then
+                                    arch="ppc64el"
+                                fi
+                                BUILT_SNAP="cdk-addons_${kube_ersion}_\${arch}.snap"
+
+                                echo "Uploading \${BUILT_SNAP}."
+                                sudo lxc shell ${lxc_name} -- bash -c \
+                                    "snapcraft -d upload /\${BUILT_SNAP} --release ${params.channels}"
+                            done
+                            sudo lxc shell ${lxc_name} -- bash -c "snapcraft logout"
+                        """
                     }
                 }
             }
@@ -281,9 +274,15 @@ pipeline {
         always {
             sh "echo Disk usage before cleanup"
             sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
-            sh "sudo lxc delete -f ${lxc_name}"
-            sh "sudo rm -rf cdk-addons/build"
-            sh "snapcraft logout"
+
+            /* override sh since cilib.sh has some non POSIX bits. */
+            sh """#!/usr/bin/env bash
+                . \${WORKSPACE}/cilib.sh
+
+                ci_lxc_delete ${lxc_name}
+                sudo rm -rf cdk-addons/build
+            """
+
             sh "echo Disk usage after cleanup"
             sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
         }

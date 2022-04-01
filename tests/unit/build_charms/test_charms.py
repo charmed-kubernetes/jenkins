@@ -116,7 +116,7 @@ def bundle_environment(test_environment, charms):
     charm_env = charms.BuildEnv(build_type=charms.BuildType.BUNDLE)
     charm_env.db["build_args"] = {
         "artifact_list": str(CI_TESTING_BUNDLES),
-        "branch": "master",
+        "branch": "main",
         "filter_by_tag": ["k8s"],
         "to_channel": "edge",
     }
@@ -184,7 +184,7 @@ def test_build_entity_setup(cmd_ok, charm_environment, tmpdir, charms):
     charm_entity.setup()
     assert charm_entity.reactive is True, "test charm requires legacy builds"
     cmd_ok.assert_called_once_with(
-        f"git clone --branch master https://github.com/charmed-kubernetes/jenkins.git {charm_entity.checkout_path}",
+        f"git clone --branch main https://github.com/charmed-kubernetes/jenkins.git {charm_entity.checkout_path}",
         echo=charm_entity.echo,
     )
 
@@ -295,7 +295,7 @@ def test_build_entity_charm_build(
     mock_script.assert_called_once_with(
         "#!/bin/bash -eux\n"
         f"source {CHARMCRAFT_LIB_SH}\n"
-        f"ci_charmcraft_pack unnamed-job-0 https://github.com/{charm_entity.downstream} master \n"
+        f"ci_charmcraft_pack unnamed-job-0 https://github.com/{charm_entity.downstream} main \n"
         f"ci_charmcraft_copy unnamed-job-0 {tmpdir}/build/k8s-ci-charm\n",
         echo=charm_entity.echo,
     )
@@ -635,8 +635,8 @@ def test_build_command(mock_build_env, mock_build_entity, charms):
     assert mock_build_env.db["build_args"] == {
         "artifact_list": "tests/data/ci-testing-charms.inc",
         "layer_list": "jobs/includes/charm-layer-list.inc",
-        "branch": "master",
-        "layer_branch": "master",
+        "branch": "",
+        "layer_branch": "main",
         "layer_index": "https://charmed-kubernetes.github.io/layer-index/",
         "resource_spec": "jobs/build-charms/resource-spec.yaml",
         "filter_by_tag": ["tag1", "tag2"],
@@ -702,13 +702,13 @@ def test_bundle_build_command(
 
     assert mock_build_env.db["build_args"] == {
         "artifact_list": "tests/data/ci-testing-bundles.inc",
-        "branch": "master",
+        "branch": "main",
         "filter_by_tag": ["k8s"],
         "track": "latest",
         "to_channel": "edge",
     }
     cmd_ok.assert_called_once_with(
-        f"git clone --branch master https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git {mock_build_env.default_repo_dir}"
+        f"git clone --branch main https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git {mock_build_env.default_repo_dir}"
     )
     mock_build_env.pull_layers.assert_not_called()
     mock_build_env.save.assert_called_once_with()

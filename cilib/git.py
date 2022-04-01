@@ -20,6 +20,8 @@ def default_gh_branch(repo: str, ignore_errors=False, auth=None):
     """
     repo = repo.replace(".git", "")
     url = f"https://api.github.com/repos/{repo}"
+    if not all(isinstance(_, (str, bytes)) for _ in auth):
+        auth = None
     if auth and all(auth):
         auth = requests.auth.HTTPBasicAuth(*auth)
 

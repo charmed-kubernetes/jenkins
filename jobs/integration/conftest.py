@@ -77,7 +77,7 @@ def pytest_addoption(parser):
         help="Charm channel to use (stable, candidate, beta, edge)",
     )
 
-    # Set when testing a different snap core channel
+    # Set when testing a different snapd/core channel
     parser.addoption(
         "--snapd-upgrade",
         action="store_true",
@@ -89,7 +89,7 @@ def pytest_addoption(parser):
         action="store",
         required=False,
         default="beta",
-        help="Snap channel to install snapcore from",
+        help="Snap channel to install snapd/core snaps from",
     )
 
     # Set when performing series upgrade tests
@@ -181,13 +181,14 @@ async def model(request, tools):
         await upgrade_snaps(model, upgrade_snap_channel, tools)
     if request.config.getoption("--snapd-upgrade"):
         snapd_channel = request.config.getoption("--snapd-channel")
-        await model.deploy("cs:~containers/charmed-kubernetes")
+        await model.deploy("ch:charmed-kubernetes")
         await log_snap_versions(model, prefix="Before")
         await tools.juju_wait()
         for unit in model.units.values():
             if unit.dead:
                 continue
             await unit.run(f"sudo snap refresh core --{snapd_channel}")
+            await unit.run(f"sudo snap refresh snapd --{snapd_channel}")
         await tools.juju_wait()
         await log_snap_versions(model, prefix="After")
     yield model
