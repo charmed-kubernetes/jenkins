@@ -108,7 +108,7 @@ importlib-metadata==4.11.3
     #   mkdocs
 iniconfig==1.1.1
     # via pytest
-invoke==1.6.0
+invoke==1.7.0
     # via -r requirements.in
 iso8601==0.1.14
     # via surl
