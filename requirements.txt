@@ -357,7 +357,7 @@ tomli==2.0.1
     #   pytest
 toposort==1.6
     # via juju
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.2
     # via typing-inspect
 typing-inspect==0.6.0
     # via juju
@@ -374,6 +374,7 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
+websockets==7.0 ; python_version < "3.9"
 websockets==8.1 ; python_version >= "3.9"
     # via
     #   -r requirements.in
