@@ -1,7 +1,7 @@
 # Name
 
 - **Job**: `arc-conformance.yaml`
-- **Project Name**: `k8s-conformance`
+- **Project Name**: `conformance-arc-ck`
 
 # Description
 
@@ -11,4 +11,4 @@ pass before the process of releasing to beta, candidate, and stable can occur.
 
 # References
 
-- https://github.com/Azure/azure-arc-certification
+- https://github.com/Azure/azure-arc-validation
