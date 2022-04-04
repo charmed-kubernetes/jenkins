@@ -138,7 +138,7 @@ async def test_snapshot_restore(model, tools):
 
 
 async def test_leader_status(model, tools):
-    """ Verify our leader is running the etcd daemon """
+    """Verify our leader is running the etcd daemon"""
     etcd = model.applications["etcd"]
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
@@ -149,7 +149,7 @@ async def test_leader_status(model, tools):
 
 
 async def test_config_snapd_refresh(model, tools):
-    """ Verify initial snap refresh config is set and can be changed """
+    """Verify initial snap refresh config is set and can be changed"""
     etcd = model.applications["etcd"]
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()

@@ -3,7 +3,7 @@ from .logger import log
 
 
 async def test_cis_benchmark(model, tools):
-    """ Validate cis benchmark passes on supported charms in 1.19+ """
+    """Validate cis benchmark passes on supported charms in 1.19+"""
     log("starting cis-benchmark test")
     masters = model.applications["kubernetes-master"]
     k8s_version_str = masters.data["workload-version"]

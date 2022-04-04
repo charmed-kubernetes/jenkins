@@ -76,7 +76,7 @@ class DebService(DebugMixin):
                 self.deb_model.base.push(ref=branch, cwd=str(src_path))
 
     def sync_debs(self, force=False):
-        """ Builds latest deb from each major.minor and uploads to correct ppa"""
+        """Builds latest deb from each major.minor and uploads to correct ppa"""
         for _version in self.supported_versions:
             exclude_pre = True
             if _version == enums.K8S_NEXT_VERSION:
