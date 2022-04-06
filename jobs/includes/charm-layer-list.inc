@@ -164,6 +164,10 @@
     downstream: "charmed-kubernetes/layer-kubernetes-master-worker-base"
     upstream: "https://github.com/charmed-kubernetes/layer-kubernetes-master-worker-base.git"
     tags: ['k8s']
+- layer:kubernetes-node-base:
+    downstream: "charmed-kubernetes/layer-kubernetes-node-base"
+    upstream: "https://github.com/charmed-kubernetes/layer-kubernetes-node-base.git"
+    tags: ['k8s']
 - layer:leadership:
     downstream: "charmed-kubernetes/layer-leadership.git"
     upstream: "https://git.launchpad.net/layer-leadership"
