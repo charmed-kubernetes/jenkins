@@ -46,7 +46,7 @@
         - jenkins
     - name: install columbo
       shell: |
-        wget https://github.com/battlemidget/columbo-go/releases/download/{{ columbo_version }}/columbo-go_{{ columbo_version }}_linux_{{ machine_arch.stdout }}.tar.gz
+        wget https://github.com/charmed-kubernetes/columbo-go/releases/download/{{ columbo_version }}/columbo-go_{{ columbo_version }}_linux_{{ machine_arch.stdout }}.tar.gz
         tar xvf columbo-go_{{ columbo_version }}_linux_{{ machine_arch.stdout }}.tar.gz
         mv columbo /usr/local/bin
       tags:
