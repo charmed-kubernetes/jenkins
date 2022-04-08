@@ -4,32 +4,6 @@
 
 
 - job:
-    name: 'validate-minor-release'
-    description: |
-      Promote, Validate, Release to stable. This job will run through all
-      necessary steps to validate a particular version of k8s and make sure the
-      charms and snaps are published accordingly.
-    node: runner-validate
-    project-type: freestyle
-    parameters:
-      - global-params
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    scm:
-      - k8s-jenkins-jenkaas
-    properties:
-      - build-discarder:
-          num-to-keep: 3
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/release"
-      - run-env:
-          COMMAND: |
-            parallel --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.23/stable ::: focal bionic ::: beta ::: arm64 amd64
-            parallel --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} {5} ::: 1.22/stable 1.21/stable ::: focal bionic ::: beta ::: arm64 amd64 ::: 1.23/stable
-
-- job:
     name: 'validate-charm-bugfix'
     node: runner-validate
     description: |
