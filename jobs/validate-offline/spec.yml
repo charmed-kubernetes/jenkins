@@ -1,8 +1,8 @@
 plan:
   - &BASE_JOB
     env:
-      - SNAP_VERSION=1.23/edge
-      - JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+      - SNAP_VERSION=1.24/edge
+      - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1
       - JUJU_CONTROLLER=validate-ck-offline
