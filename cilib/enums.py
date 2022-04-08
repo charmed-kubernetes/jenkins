@@ -23,13 +23,6 @@ K8S_STARTING_SEMVER = "1.20.0"
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
 
-# Supported Versions
-K8S_SUPPORT_VERSION_LIST = yaml.safe_load(
-    Path(JOBS_PATH / "includes/k8s-snap-support-versions.inc").read_text(
-        encoding="utf8"
-    )
-)
-
 # Kubernetes CNI version
 K8S_CNI_SEMVER = "0.8"
 
