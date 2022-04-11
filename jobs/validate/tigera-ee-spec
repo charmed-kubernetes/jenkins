@@ -50,9 +50,9 @@ function juju::deploy
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.23/edge}
-SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-tigera-secure-ee
+SNAP_VERSION=${1:-1.24/edge}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)

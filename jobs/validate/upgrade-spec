@@ -37,12 +37,12 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION_UPGRADE_TO=${5:-1.23/edge}
+SNAP_VERSION_UPGRADE_TO=${5:-1.24/edge}
 export SNAP_VERSION_UPGRADE_TO
 
-SNAP_VERSION=${1:-1.22/stable}
+SNAP_VERSION=${1:-1.23/stable}
 SERIES=${2:-focal}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-stable}
 JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)

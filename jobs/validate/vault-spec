@@ -38,13 +38,13 @@ applications:
       channel: $SNAP_VERSION
   easyrsa: null
   vault:
-    charm: cs:vault
+    charm: vault
     num_units: 2
     options:
       auto-generate-root-ca-cert: true
       disable-mlock: true
   percona-cluster:
-    charm: cs:percona-cluster
+    charm: percona-cluster
     series: bionic
     num_units: 1
     options:
@@ -94,9 +94,9 @@ function test::execute
 
 # Setup Environment
 
-SNAP_VERSION=${1:-1.23/edge}
-SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+SNAP_VERSION=${1:-1.24/edge}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)

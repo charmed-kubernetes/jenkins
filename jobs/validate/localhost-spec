@@ -18,7 +18,7 @@ function juju::deploy
         --constraints "mem=32G root-disk=100G cores=8" \
         ubuntu
 
-        juju deploy cs:~adam-stokes/localhost-ci-setup --channel edge
+        juju deploy adam-stokes-localhost-ci-setup --channel edge
         juju add-relation ubuntu ci-setup
 }
 
@@ -61,7 +61,7 @@ juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
     --channel $JUJU_DEPLOY_CHANNEL \
     --force \
     --overlay overlay.yaml \
-    cs:~containers/charmed-kubernetes 1>&2
+    charmed-kubernetes 1>&2
 
 timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
@@ -101,9 +101,9 @@ function ci::cleanup::before
 }
 
 # Setup Environment
-SNAP_VERSION=${1:-1.23/edge}
-SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+SNAP_VERSION=${1:-1.24/edge}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)

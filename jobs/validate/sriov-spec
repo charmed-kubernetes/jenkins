@@ -50,9 +50,9 @@ function juju::deploy::after
     juju add-k8s k8s --controller "$JUJU_CONTROLLER"
     juju add-model -c "$JUJU_CONTROLLER" addons k8s --config test-mode=true
     juju deploy -m "$JUJU_CONTROLLER:addons" \
-          --channel "$JUJU_DEPLOY_CHANNEL" cs:~containers/sriov-cni
+          --channel "$JUJU_DEPLOY_CHANNEL" sriov-cni
     juju deploy -m "$JUJU_CONTROLLER:addons" \
-          --channel "$JUJU_DEPLOY_CHANNEL" cs:~containers/sriov-network-device-plugin
+          --channel "$JUJU_DEPLOY_CHANNEL" sriov-network-device-plugin
     juju config -m "$JUJU_CONTROLLER:addons" sriov-network-device-plugin resource-list="
     - resourceName: sriov
       selectors:
@@ -89,9 +89,9 @@ function ci::cleanup::before
 ###############################################################################
 # Setup Environment
 ###############################################################################
-SNAP_VERSION=${1:-1.23/edge}
-SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+SNAP_VERSION=${1:-1.24/edge}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-1
 JUJU_CONTROLLER=validate-$(identifier::short)

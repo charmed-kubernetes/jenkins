@@ -64,7 +64,7 @@ juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
     --channel $JUJU_DEPLOY_CHANNEL \
     --force \
     --overlay overlay.yaml \
-    cs:~containers/charmed-kubernetes
+    charmed-kubernetes
 
 timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
@@ -106,9 +106,9 @@ function ci::cleanup::before
 ###############################################################################
 # Setup Environment
 ###############################################################################
-SNAP_VERSION=${1:-1.23/edge}
-SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+SNAP_VERSION=${1:-1.24/edge}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=localhost/localhost
 JUJU_CONTROLLER=validate-$(identifier::short)
