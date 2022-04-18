@@ -13,7 +13,7 @@ async def test_nfs(model, tools):
     await tools.juju_wait()
 
     log("waiting for nfs pod to settle")
-    unit = model.applications["kubernetes-master"].units[0]
+    unit = model.applications["kubernetes-control-plane"].units[0]
     await retry_async_with_timeout(
         verify_ready,
         (unit, "po", ["nfs-client-provisioner"]),

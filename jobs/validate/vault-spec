@@ -30,7 +30,7 @@ function juju::deploy::overlay
     cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
-  kubernetes-master:
+  kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:
@@ -51,13 +51,13 @@ applications:
       innodb-buffer-pool-size: 256M
       max-connections: 1000
 relations:
-  - ["vault:certificates", "kubernetes-master:certificates"]
+  - ["vault:certificates", "kubernetes-control-plane:certificates"]
   - ["vault:certificates", "kubernetes-worker:certificates"]
   - ["vault:certificates", "kubeapi-load-balancer:certificates"]
   - ["vault:certificates", "etcd:certificates"]
   - ["vault:shared-db", "percona-cluster:shared-db"]
   - ["vault:etcd", "etcd:db"]
-  - ["kubernetes-master:vault-kv", "vault:secrets"]
+  - ["kubernetes-control-plane:vault-kv", "vault:secrets"]
 EOF
 }
 

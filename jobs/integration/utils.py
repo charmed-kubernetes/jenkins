@@ -110,7 +110,7 @@ async def upgrade_charms(model, channel, tools):
 
 async def upgrade_snaps(model, channel, tools):
     for app_name, blocking in {
-        "kubernetes-master": True,
+        "kubernetes-control-plane": True,
         "kubernetes-worker": True,
         "kubernetes-e2e": False,
     }.items():
@@ -307,7 +307,7 @@ async def log_snap_versions(model, prefix="before"):
 
 
 async def validate_storage_class(model, sc_name, test_name):
-    master = model.applications["kubernetes-master"].units[0]
+    master = model.applications["kubernetes-control-plane"].units[0]
     # write a string to a file on the pvc
     pod_definition = """
 apiVersion: v1
@@ -533,7 +533,7 @@ async def juju_run(unit, cmd, check=True):
 
 
 async def kubectl(model, cmd, check=True):
-    master = model.applications["kubernetes-master"].units[0]
+    master = model.applications["kubernetes-control-plane"].units[0]
     return await juju_run(
         master, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
     )

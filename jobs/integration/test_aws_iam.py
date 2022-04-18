@@ -121,7 +121,7 @@ async def test_validate_aws_iam(model, tools):
     # 10) Verify access
 
     log("starting aws-iam test")
-    masters = model.applications["kubernetes-master"]
+    masters = model.applications["kubernetes-control-plane"]
     k8s_version_str = masters.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 15):
@@ -131,7 +131,7 @@ async def test_validate_aws_iam(model, tools):
     # 1) deploy
     log("deploying aws-iam")
     await model.deploy("cs:~containers/aws-iam", channel="edge", num_units=0)
-    await model.add_relation("aws-iam", "kubernetes-master")
+    await model.add_relation("aws-iam", "kubernetes-control-plane")
     await model.add_relation("aws-iam", "easyrsa")
     log("waiting for cluster to settle...")
     await tools.juju_wait()

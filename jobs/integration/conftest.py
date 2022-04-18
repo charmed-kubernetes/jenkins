@@ -197,7 +197,7 @@ async def model(request, tools):
 
 @pytest.fixture(scope="module")
 async def k8s_model(model, tools):
-    master_app = model.applications["kubernetes-master"]
+    master_app = model.applications["kubernetes-control-plane"]
     master_unit = master_app.units[0]
     created_k8s_cloud = False
     created_k8s_model = False

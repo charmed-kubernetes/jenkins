@@ -67,7 +67,7 @@ async def verify_custom_auth(one_master, cmd, endpoint):
 async def test_validate_auth_webhook(model, tools):
     # This test verifies the auth-webhook service is working
     log("starting auth-webhook test")
-    masters = model.applications["kubernetes-master"]
+    masters = model.applications["kubernetes-control-plane"]
     k8s_version_str = masters.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 17):

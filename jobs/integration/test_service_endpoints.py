@@ -112,7 +112,7 @@ async def test_clusterip_service_endpoint(model):
         cmd = f'curl -vk --noproxy "{ip}" {set_url}'
 
         # Curl the ClusterIP from each kubernetes master and worker
-        master = model.applications["kubernetes-master"]
+        master = model.applications["kubernetes-control-plane"]
         worker = model.applications["kubernetes-worker"]
         nodes_lst = master.units + worker.units
         for unit in nodes_lst:

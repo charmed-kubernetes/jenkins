@@ -70,7 +70,7 @@ function juju::deploy::overlay
     cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
-  kubernetes-master:
+  kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
       allow-privileged: 'true'
@@ -85,7 +85,7 @@ function test::execute
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
-    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/leader:config $HOME/.kube/
+    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader:config $HOME/.kube/
     kubectl version
 
     # prep azure env

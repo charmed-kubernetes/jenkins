@@ -19,7 +19,7 @@ function juju::deploy
    tee overlay.yaml <<EOF> /dev/null
 series: $SERIES
 applications:
-  kubernetes-master:
+  kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:
@@ -36,14 +36,14 @@ EOF
          --storage osd-devices=32G,2 \
          --storage osd-journals=8G,1
     juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-osd ceph-mon
-    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:admin kubernetes-master
-    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:client kubernetes-master
+    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:admin kubernetes-control-plane
+    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:client kubernetes-control-plane
 }
 
 function juju::deploy::after
 {
     juju scp -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
-          kubernetes-master/0:config "kubeconfig"
+          kubernetes-control-plane/0:config "kubeconfig"
     export KUBECONFIG="kubeconfig"
     juju add-k8s k8s --controller "$JUJU_CONTROLLER"
     juju add-model -c "$JUJU_CONTROLLER" addons k8s --config test-mode=true

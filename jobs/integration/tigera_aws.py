@@ -472,21 +472,21 @@ def configure_bgp():
     router_instance_id = get_instance_id(router_machine_id)
     router_ips = get_instance_ips(router_instance_id)
 
-    # Get kubernetes-master IPs
+    # Get kubernetes-control-plane IPs
     master_ips = set()
-    for unit_name in ["kubernetes-master/0", "kubernetes-master/1"]:
+    for unit_name in ["kubernetes-control-plane/0", "kubernetes-control-plane/1"]:
         machine_id = get_machine_id(unit_name)
         instance_id = get_instance_id(machine_id)
         ips = get_instance_ips(instance_id)
         master_ips.update(ips)
 
-    # Get kubernetes-master calico unit IDs
+    # Get kubernetes-control-plane calico unit IDs
     master_calico_units = []
-    for unit_name in ["kubernetes-master/0", "kubernetes-master/1"]:
+    for unit_name in ["kubernetes-control-plane/0", "kubernetes-control-plane/1"]:
         log("Getting calico unit attached to " + unit_name)
         while True:
             status = juju_json("status")
-            unit = status["applications"]["kubernetes-master"]["units"][unit_name]
+            unit = status["applications"]["kubernetes-control-plane"]["units"][unit_name]
             subordinate_names = [
                 name
                 for name in unit.get("subordinates", [])

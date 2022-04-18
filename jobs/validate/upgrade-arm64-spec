@@ -45,7 +45,7 @@ applications:
     constraints: $constraints
   kubeapi-load-balancer:
     constraints: $constraints
-  kubernetes-master:
+  kubernetes-control-plane:
     constraints: $constraints
     options:
       channel: $SNAP_VERSION
