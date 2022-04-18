@@ -38,7 +38,7 @@
     target:
       - 'kubeapi-load-balancer':
           version_overlay: 'jobs/overlays/scapestack-overlay.yaml'
-          starting_bundle: 'canonical-kubernetes'
+          starting_bundle: 'charmed-kubernetes'
       - 'kubernetes-master':
           version_overlay: 'jobs/overlays/scapestack-core-overlay.yaml'
           starting_bundle: 'kubernetes-core'

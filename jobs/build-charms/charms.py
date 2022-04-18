@@ -1011,7 +1011,7 @@ def build(
     "--bundle-repo",
     required=True,
     help="upstream repo for bundle builder",
-    default="https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git",
+    default="https://github.com/charmed-kubernetes/bundle.git",
 )
 @click.option(
     "--track", required=True, help="track to promote charm to", default="latest"

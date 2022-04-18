@@ -708,7 +708,7 @@ def test_bundle_build_command(
         "to_channel": "edge",
     }
     cmd_ok.assert_called_once_with(
-        f"git clone --branch main https://github.com/charmed-kubernetes/bundle-canonical-kubernetes.git {mock_build_env.default_repo_dir}"
+        f"git clone --branch main https://github.com/charmed-kubernetes/bundle.git {mock_build_env.default_repo_dir}"
     )
     mock_build_env.pull_layers.assert_not_called()
     mock_build_env.save.assert_called_once_with()
