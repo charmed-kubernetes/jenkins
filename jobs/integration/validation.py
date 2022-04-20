@@ -1767,7 +1767,9 @@ async def test_encryption_at_rest(model, tools):
             break
         click.echo("Retrying failed k8s-control-plane hook for Vault restart")
         await asyncio.gather(*(retry_hook(unit) for unit in errored_units))
-        await model.wait_for_idle(apps=["kubernetes-control-plane"], raise_on_error=False)
+        await model.wait_for_idle(
+            apps=["kubernetes-control-plane"], raise_on_error=False
+        )
 
     # The cluster is probably mostly settled by this point, since the masters typically
     # take the longest to go into quiescence. However, in case they got into an errored

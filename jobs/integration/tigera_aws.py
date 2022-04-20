@@ -486,7 +486,9 @@ def configure_bgp():
         log("Getting calico unit attached to " + unit_name)
         while True:
             status = juju_json("status")
-            unit = status["applications"]["kubernetes-control-plane"]["units"][unit_name]
+            unit = status["applications"]["kubernetes-control-plane"]["units"][
+                unit_name
+            ]
             subordinate_names = [
                 name
                 for name in unit.get("subordinates", [])
