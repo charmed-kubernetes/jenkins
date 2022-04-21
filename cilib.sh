@@ -29,7 +29,7 @@ deploy_env()
     tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
-  kubernetes-master:
+  kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:

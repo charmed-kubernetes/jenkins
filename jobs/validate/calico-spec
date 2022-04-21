@@ -50,7 +50,7 @@ function juju::deploy::overlay
       cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
-  kubernetes-master:
+  kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:
@@ -67,7 +67,7 @@ EOF
       cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
-  kubernetes-master:
+  kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
       service-cidr: "10.152.183.0/24,fd00:c00b:2::/112"

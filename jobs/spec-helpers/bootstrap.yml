@@ -14,7 +14,7 @@ juju:
     bundle: $JUJU_DEPLOY_BUNDLE
     overlay: |
       applications:
-        kubernetes-master:
+        kubernetes-control-plane:
           options:
             channel: $SNAP_VERSION
         kubernetes-worker:

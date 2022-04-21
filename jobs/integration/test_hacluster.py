@@ -17,7 +17,7 @@ def get_master_name(model):
     if "kubeapi-load-balancer" in model.applications:
         return "kubeapi-load-balancer"
     else:
-        return "kubernetes-master"
+        return "kubernetes-control-plane"
 
 
 def is_app_in_model(app_str, model):
@@ -30,7 +30,7 @@ def is_app_in_model(app_str, model):
 
 async def verify_kubeconfig_has_ip(model, ip):
     log("validating generated kubectl config file")
-    one_master = random.choice(model.applications["kubernetes-master"].units)
+    one_master = random.choice(model.applications["kubernetes-control-plane"].units)
     for i in range(5):
         action = await one_master.run("cat /home/ubuntu/config")
         if ip in action.results.get("Stdout", ""):
@@ -56,7 +56,7 @@ async def verify_kubelet_uses_ip(model, ip):
 async def verify_ip_valid(model, ip):
     log("validating ip {} is pingable".format(ip))
     cmd = "ping -c 1 {}".format(ip)
-    one_master = random.choice(model.applications["kubernetes-master"].units)
+    one_master = random.choice(model.applications["kubernetes-control-plane"].units)
     one_worker = random.choice(model.applications["kubernetes-worker"].units)
     for unit in [one_master, one_worker]:
         action = await unit.run(cmd)
@@ -102,7 +102,7 @@ async def test_validate_hacluster(model, tools):
     name = get_master_name(model)
     app = model.applications[name]
 
-    masters = model.applications["kubernetes-master"]
+    masters = model.applications["kubernetes-control-plane"]
     k8s_version_str = masters.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 14):

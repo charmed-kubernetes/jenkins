@@ -16,7 +16,7 @@ async def test_kata(model, tools):
     )
 
     await kata_app.add_relation(
-        "kata:containerd", "kubernetes-master:container-runtime"
+        "kata:containerd", "kubernetes-control-plane:container-runtime"
     )
 
     await kata_app.add_relation(

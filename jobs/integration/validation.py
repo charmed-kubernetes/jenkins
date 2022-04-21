@@ -91,8 +91,8 @@ async def wait_for_not_process(model, arg):
 
 
 async def api_server_with_arg(model, argument):
-    master = model.applications["kubernetes-master"]
-    for unit in master.units:
+    control_plane = model.applications["kubernetes-control-plane"]
+    for unit in control_plane.units:
         search = "ps -ef | grep {} | grep apiserver".format(argument)
         action = await unit.run(search)
         assert action.status == "completed"
@@ -221,7 +221,7 @@ async def test_auth_file_propagation(model, tools):
 
     """
     # Get a leader and non-leader unit to test with
-    masters = model.applications["kubernetes-master"]
+    masters = model.applications["kubernetes-control-plane"]
     if len(masters.units) < 2:
         pytest.skip("Auth file propagation test requires multiple masters")
 
@@ -252,7 +252,7 @@ async def test_auth_file_propagation(model, tools):
 async def test_status_messages(model):
     """Validate that the status messages are correct."""
     expected_messages = {
-        "kubernetes-master": "Kubernetes master running.",
+        "kubernetes-control-plane": "Kubernetes control-plane running.",
         "kubernetes-worker": "Kubernetes worker running.",
     }
     for app, message in expected_messages.items():
@@ -265,7 +265,7 @@ async def test_snap_versions(model):
     config on the charms.
     """
     snaps_to_validate = {
-        "kubernetes-master": [
+        "kubernetes-control-plane": [
             "kubectl",
             "kube-apiserver",
             "kube-controller-manager",
@@ -308,7 +308,7 @@ async def test_snap_versions(model):
 
 async def test_rbac(model):
     """When RBAC is enabled, validate kubelet creds cannot get ClusterRoles"""
-    app = model.applications["kubernetes-master"]
+    app = model.applications["kubernetes-control-plane"]
     config = await app.get_config()
     if "RBAC" not in config["authorization-mode"]["value"]:
         pytest.skip("Cluster does not have RBAC enabled")
@@ -348,7 +348,7 @@ async def test_microbot(model, tools):
 @backoff.on_exception(backoff.expo, TypeError, max_tries=5)
 async def test_dashboard(model, log_dir, tools):
     """Validate that the dashboard is operational"""
-    unit = model.applications["kubernetes-master"].units[0]
+    unit = model.applications["kubernetes-control-plane"].units[0]
     with NamedTemporaryFile() as f:
         await scp_from(unit, "config", f.name, tools.controller_name, tools.connection)
         with open(f.name, "r") as stream:
@@ -374,7 +374,7 @@ async def test_dashboard(model, log_dir, tools):
     assert can_access_dashboard.status_code == 200
 
     # get k8s version
-    app_config = await model.applications["kubernetes-master"].get_config()
+    app_config = await model.applications["kubernetes-control-plane"].get_config()
     channel = app_config["channel"]["value"]
     # if we do not detect the version from the channel eg edge, stable etc
     # we should default to the latest dashboard url format
@@ -461,7 +461,7 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
 async def test_network_policies(model, tools):
     """Apply network policy and use two busyboxes to validate it."""
     here = os.path.dirname(os.path.abspath(__file__))
-    unit = model.applications["kubernetes-master"].units[0]
+    unit = model.applications["kubernetes-control-plane"].units[0]
 
     # Clean-up namespace from any previous runs.
     cmd = await unit.run(
@@ -571,11 +571,11 @@ async def test_network_policies(model, tools):
 
 
 async def test_ipv6(model, tools):
-    master_app = model.applications["kubernetes-master"]
+    master_app = model.applications["kubernetes-control-plane"]
     master_config = await master_app.get_config()
     service_cidr = master_config["service-cidr"]["value"]
     if all(ipaddress.ip_network(cidr).version != 6 for cidr in service_cidr.split(",")):
-        pytest.skip("kubernetes-master not configured for IPv6")
+        pytest.skip("kubernetes-control-plane not configured for IPv6")
 
     k8s_version_str = master_app.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
@@ -681,7 +681,7 @@ spec:
 @pytest.mark.skip("Unskip when this can be speed up considerably")
 async def test_worker_master_removal(model, tools):
     # Add a second master
-    masters = model.applications["kubernetes-master"]
+    masters = model.applications["kubernetes-control-plane"]
     original_master_count = len(masters.units)
     if original_master_count < 2:
         await masters.add_unit(1)
@@ -721,7 +721,7 @@ async def test_worker_master_removal(model, tools):
 
     # Try and restore the cluster state
     # Tests following this were passing, but they actually
-    # would fail in a multi-master situation
+    # would fail in a multi-control-plane situation
     while len(workers.units) < original_worker_count:
         await workers.add_unit(1)
     while len(masters.units) < original_master_count:
@@ -743,7 +743,7 @@ async def test_gpu_support(model, tools):
         True if action.results.get("Stdout", "").lower().count("nvidia") > 0 else False
     )
 
-    master_unit = model.applications["kubernetes-master"].units[0]
+    master_unit = model.applications["kubernetes-control-plane"].units[0]
     if not nvidia:
         # nvidia should not be running
         await retry_async_with_timeout(
@@ -874,7 +874,7 @@ async def test_extra_args(model, tools):
                 raise
 
     master_task = run_extra_args_test(
-        app_name="kubernetes-master",
+        app_name="kubernetes-control-plane",
         new_config={
             "api-extra-args": " ".join(
                 [
@@ -964,9 +964,9 @@ async def test_kubelet_extra_config(model, tools):
 
     # wait for and validate new maxPods value
     click.echo("waiting for nodes to show new pod capacity")
-    master_unit = model.applications["kubernetes-master"].units[0]
+    master_unit = model.applications["kubernetes-control-plane"].units[0]
     while True:
-        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node"
+        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node -l 'juju-application=kubernetes-worker'"
         action = await master_unit.run(str(cmd))
         if action.status == "completed" and action.results["Code"] == "0":
             nodes = yaml.safe_load(action.results.get("Stdout", ""))
@@ -1003,7 +1003,7 @@ async def test_service_cidr_expansion(model):
 
     Note the cluster cannot be revert back to the oiriginal service cidr.
     """
-    app = model.applications["kubernetes-master"]
+    app = model.applications["kubernetes-control-plane"]
     original_config = await app.get_config()
     original_service_cidr = original_config["service-cidr"]["value"]
 
@@ -1022,8 +1022,8 @@ async def test_service_cidr_expansion(model):
     await wait_for_process(model, service_cluster_ip_range)
 
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get service kubernetes"
-    master = model.applications["kubernetes-master"].units[0]
-    output = await master.run(cmd)
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
+    output = await control_plane.run(cmd)
     assert output.status == "completed"
 
     # Check if k8s service ip is changed as per new service cidr
@@ -1033,7 +1033,7 @@ async def test_service_cidr_expansion(model):
 
 async def test_sans(model):
     example_domain = "santest.example.com"
-    app = model.applications["kubernetes-master"]
+    app = model.applications["kubernetes-control-plane"]
     original_config = await app.get_config()
     lb = None
     original_lb_config = None
@@ -1117,7 +1117,7 @@ async def test_sans(model):
 
 
 async def test_audit_default_config(model, tools):
-    app = model.applications["kubernetes-master"]
+    app = model.applications["kubernetes-control-plane"]
 
     # Ensure we're using default configuration
     await reset_audit_config(app, tools)
@@ -1146,7 +1146,7 @@ async def test_audit_default_config(model, tools):
 @pytest.mark.flaky(max_runs=5, min_passes=1)
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_toggle_metrics(model, tools):
-    """Turn metrics on/off via the 'enable-metrics' config on kubernetes-master,
+    """Turn metrics on/off via the 'enable-metrics' config on kubernetes-control-plane,
     and check that workload status returns to 'active', and that the metrics-server
     svc is started and stopped appropriately.
 
@@ -1167,7 +1167,7 @@ async def test_toggle_metrics(model, tools):
                 timeout_msg="metrics-server svc still exists after timeout",
             )
 
-    app = model.applications["kubernetes-master"]
+    app = model.applications["kubernetes-control-plane"]
 
     k8s_version_str = app.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
@@ -1191,7 +1191,7 @@ async def test_toggle_metrics(model, tools):
 
 
 async def test_audit_empty_policy(model, tools):
-    app = model.applications["kubernetes-master"]
+    app = model.applications["kubernetes-control-plane"]
 
     # Set audit-policy to blank
     await reset_audit_config(app, tools)
@@ -1212,12 +1212,12 @@ async def test_audit_empty_policy(model, tools):
 
 
 async def test_audit_custom_policy(model, tools):
-    app = model.applications["kubernetes-master"]
+    app = model.applications["kubernetes-control-plane"]
 
     # Set a custom policy that only logs requests to a special namespace
     namespace = "validate-audit-custom-policy"
     policy = {
-        "apiVersion": "audit.k8s.io/v1beta1",
+        "apiVersion": "audit.k8s.io/v1",
         "kind": "Policy",
         "rules": [{"level": "Metadata", "namespaces": [namespace]}, {"level": "None"}],
     }
@@ -1266,7 +1266,7 @@ async def test_audit_custom_policy(model, tools):
 
 
 async def test_audit_webhook(model, tools):
-    app = model.applications["kubernetes-master"]
+    app = model.applications["kubernetes-control-plane"]
     unit = app.units[0]
 
     async def get_webhook_server_entry_count():
@@ -1340,18 +1340,18 @@ async def any_keystone(model, apps_by_charm, tools):
                 yield rel
 
     keystone_apps = apps_by_charm("keystone")
-    masters = model.applications["kubernetes-master"]
+    masters = model.applications["kubernetes-control-plane"]
     k8s_version_str = masters.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 12):
         pytest.skip(f"skipping, k8s version v{k8s_version_str} isn't supported")
         return
 
-    keystone_creds = "kubernetes-master:keystone-credentials"
+    keystone_creds = "kubernetes-control-plane:keystone-credentials"
     if len(keystone_apps) > 1:
         pytest.fail(f"More than one keystone app available {','.join(keystone_apps)}")
     elif len(keystone_apps) == 1:
-        # One keystone found, ensure related to kubernetes-master
+        # One keystone found, ensure related to kubernetes-control-plane
         keystone, *_ = keystone_apps.values()
         credentials_rel = list(_find_relation(keystone_creds))
         if not credentials_rel:
@@ -1366,7 +1366,7 @@ async def any_keystone(model, apps_by_charm, tools):
         # and honored from the keystone-credentials relation itself by getting the CA directly from Vault and
         # passing it in via explicit config.
         #   * https://bugs.launchpad.net/charm-keystone/+bug/1954835
-        #   * https://bugs.launchpad.net/charm-kubernetes-master/+bug/1954838
+        #   * https://bugs.launchpad.net/charm-kubernetes-control-plane/+bug/1954838
         keystone_ssl_ca = (await masters.get_config())["keystone-ssl-ca"]["value"]
         if not keystone_ssl_ca:
             vault_root_ca = None
@@ -1381,7 +1381,7 @@ async def any_keystone(model, apps_by_charm, tools):
                 if all(
                     name in rels
                     for name in [
-                        "kubernetes-master",
+                        "kubernetes-control-plane",
                         "kubernetes-worker",
                         keystone.name,
                     ]
@@ -1450,10 +1450,10 @@ async def any_keystone(model, apps_by_charm, tools):
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_keystone(model, tools, any_keystone):
-    masters = model.applications["kubernetes-master"]
+    masters = model.applications["kubernetes-control-plane"]
 
     # save off config
-    config = await model.applications["kubernetes-master"].get_config()
+    config = await model.applications["kubernetes-control-plane"].get_config()
 
     # verify kubectl config file has keystone in it
     one_master = random.choice(masters.units)
@@ -1648,7 +1648,7 @@ data:
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
-    master_app = model.applications["kubernetes-master"]
+    master_app = model.applications["kubernetes-control-plane"]
     etcd_app = model.applications["etcd"]
     vault_app = model.applications["vault"]
 
@@ -1743,10 +1743,10 @@ async def test_encryption_at_rest(model, tools):
     ]
 
     # Until https://github.com/juju-solutions/layer-vault-kv/pull/11 lands, the
-    # k8s-master units can go into error due to trying to talk to Vault during
+    # k8s-control-plane units can go into error due to trying to talk to Vault during
     # the restart. Once Vault is back up, the errored hooks can just be retried.
     await model.wait_for_idle(
-        apps=["kubernetes-master"], raise_on_error=False, timeout=60 * 60
+        apps=["kubernetes-control-plane"], raise_on_error=False, timeout=60 * 60
     )
 
     async def retry_hook(unit):
@@ -1765,9 +1765,11 @@ async def test_encryption_at_rest(model, tools):
         ]
         if not errored_units:
             break
-        click.echo("Retrying failed k8s-master hook for Vault restart")
+        click.echo("Retrying failed k8s-control-plane hook for Vault restart")
         await asyncio.gather(*(retry_hook(unit) for unit in errored_units))
-        await model.wait_for_idle(apps=["kubernetes-master"], raise_on_error=False)
+        await model.wait_for_idle(
+            apps=["kubernetes-control-plane"], raise_on_error=False
+        )
 
     # The cluster is probably mostly settled by this point, since the masters typically
     # take the longest to go into quiescence. However, in case they got into an errored
@@ -1803,7 +1805,7 @@ async def test_encryption_at_rest(model, tools):
 
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_dns_provider(model, k8s_model, tools):
-    master_app = model.applications["kubernetes-master"]
+    master_app = model.applications["kubernetes-control-plane"]
     master_unit = master_app.units[0]
 
     async def deploy_validation_pod():
@@ -1948,7 +1950,7 @@ async def test_dns_provider(model, k8s_model, tools):
             await model.consume(offer_name, controller_name=tools.controller_name)
 
             log("Adding cross-model relation to CK")
-            await model.add_relation("kubernetes-master", "coredns")
+            await model.add_relation("kubernetes-control-plane", "coredns")
             await tools.juju_wait()
 
             log("Verifying that stale pod doesn't pick up new DNS provider")
@@ -2023,7 +2025,7 @@ async def test_sysctl(model, tools):
         },
     ]
     test_applications = [
-        model.applications["kubernetes-master"],
+        model.applications["kubernetes-control-plane"],
         model.applications["kubernetes-worker"],
     ]
 
@@ -2043,7 +2045,7 @@ async def test_sysctl(model, tools):
 
 
 async def test_cloud_node_labels(model, tools):
-    unit = model.applications["kubernetes-master"].units[0]
+    unit = model.applications["kubernetes-control-plane"].units[0]
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get no -o json"
     raw_nodes = await run_until_success(unit, cmd)
     nodes = json.loads(raw_nodes)["items"]
@@ -2068,7 +2070,7 @@ async def test_multus(model, tools, addons_model):
     if "multus" not in addons_model.applications:
         pytest.skip("multus is not deployed")
 
-    unit = model.applications["kubernetes-master"].units[0]
+    unit = model.applications["kubernetes-control-plane"].units[0]
     multus_app = addons_model.applications["multus"]
 
     async def cleanup():
@@ -2198,7 +2200,7 @@ async def test_nagios(model, tools):
     """
 
     log("starting nagios test")
-    masters = model.applications["kubernetes-master"]
+    masters = model.applications["kubernetes-control-plane"]
     k8s_version_str = masters.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     series = os.environ["SERIES"]
@@ -2214,7 +2216,7 @@ async def test_nagios(model, tools):
         "nrpe", series="bionic", config={"swap": "", "swap_activity": ""}, num_units=0
     )
     await nagios.expose()
-    await model.add_relation("nrpe", "kubernetes-master")
+    await model.add_relation("nrpe", "kubernetes-control-plane")
     await model.add_relation("nrpe", "kubernetes-worker")
     await model.add_relation("nrpe", "etcd")
     await model.add_relation("nrpe", "easyrsa")
@@ -2244,7 +2246,7 @@ async def test_nagios(model, tools):
     log("breaking api server")
     await masters.set_config({"api-extra-args": "broken=true"})
 
-    # 5) make sure nagios is complaining for kubernetes-master
+    # 5) make sure nagios is complaining for kubernetes-control-plane
     #    AND kubernetes-worker
     log("Verifying complaints")
     criticals = []
@@ -2256,7 +2258,7 @@ async def test_nagios(model, tools):
             found_worker = []
             for c in criticals:
                 for link in c.find_all("a", recursive=False):
-                    if "kubernetes-master" in link.string:
+                    if "kubernetes-control-plane" in link.string:
                         found_master.append(link.string)
                     elif "kubernetes-worker" in link.string:
                         found_worker.append(link.string)
@@ -2314,7 +2316,7 @@ async def test_nfs(model, tools):
     await tools.juju_wait()
 
     log("waiting for nfs pod to settle")
-    unit = model.applications["kubernetes-master"].units[0]
+    unit = model.applications["kubernetes-control-plane"].units[0]
     await retry_async_with_timeout(
         verify_ready,
         (unit, "po", ["nfs-client-provisioner"]),
@@ -2338,8 +2340,8 @@ async def test_ceph(model, tools):
     check_cephfs = snap_ver not in ("1.15", "1.16")
     ceph_config = {}
     if check_cephfs and series == "bionic":
-        log("adding cloud:train to k8s-master")
-        await model.applications["kubernetes-master"].set_config(
+        log("adding cloud:train to k8s-control-plane")
+        await model.applications["kubernetes-control-plane"].set_config(
             {"install_sources": "[cloud:{}-train]".format(series)}
         )
         await tools.juju_wait()
@@ -2377,19 +2379,19 @@ async def test_ceph(model, tools):
     await model.add_relation("ceph-mon", "ceph-osd")
     if check_cephfs:
         await model.add_relation("ceph-mon", "ceph-fs")
-    await model.add_relation("ceph-mon:admin", "kubernetes-master")
-    await model.add_relation("ceph-mon:client", "kubernetes-master")
+    await model.add_relation("ceph-mon:admin", "kubernetes-control-plane")
+    await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
     log("waiting...")
     await tools.juju_wait()
 
-    # until bug https://bugs.launchpad.net/charm-kubernetes-master/+bug/1824035 fixed
+    # until bug https://bugs.launchpad.net/charm-kubernetes-control-plane/+bug/1824035 fixed
     unit = model.applications["ceph-mon"].units[0]
     action = await unit.run_action("create-pool", name="ext4-pool")
     await action.wait()
     assert action.status == "completed"
 
     log("waiting for csi to settle")
-    unit = model.applications["kubernetes-master"].units[0]
+    unit = model.applications["kubernetes-control-plane"].units[0]
     await retry_async_with_timeout(
         verify_ready, (unit, "po", ["csi-rbdplugin"]), timeout_msg="CSI pods not ready!"
     )
@@ -2417,8 +2419,8 @@ async def test_ceph(model, tools):
 async def test_series_upgrade(model, tools):
     if not tools.is_series_upgrade:
         pytest.skip("No series upgrade argument found")
-    k8s_master_0 = model.applications["kubernetes-master"].units[0]
-    old_series = k8s_master_0.machine.series
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
+    old_series = control_plane.machine.series
     try:
         new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
     except IndexError:
@@ -2431,7 +2433,7 @@ async def test_series_upgrade(model, tools):
         await finish_series_upgrade(machine, tools)
         assert machine.series == new_series
     expected_messages = {
-        "kubernetes-master": "Kubernetes master running.",
+        "kubernetes-control-plane": "Kubernetes control-plane running.",
         "kubernetes-worker": "Kubernetes worker running.",
     }
     for app, message in expected_messages.items():
@@ -2504,7 +2506,7 @@ async def test_containerd_to_docker(model, tools):
         "cs:~containers/docker", num_units=0, channel="edge"  # Subordinate.
     )
 
-    await docker_app.add_relation("docker", "kubernetes-master")
+    await docker_app.add_relation("docker", "kubernetes-control-plane")
 
     await docker_app.add_relation("docker", "kubernetes-worker")
 
@@ -2521,7 +2523,7 @@ async def test_containerd_to_docker(model, tools):
         "cs:~containers/containerd", num_units=0, channel="edge"  # Subordinate.
     )
 
-    await containerd_app.add_relation("containerd", "kubernetes-master")
+    await containerd_app.add_relation("containerd", "kubernetes-control-plane")
 
     await containerd_app.add_relation("containerd", "kubernetes-worker")
 
@@ -2550,7 +2552,7 @@ async def test_sriov_network_device_plugin(model, tools, addons_model):
         resource_prefix + "/" + resource["resourceName"] for resource in resource_list
     ]
 
-    master_unit = model.applications["kubernetes-master"].units[0]
+    master_unit = model.applications["kubernetes-control-plane"].units[0]
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get node -o json"
     raw_output = await run_until_success(master_unit, cmd)
     data = json.loads(raw_output)
