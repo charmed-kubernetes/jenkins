@@ -1217,7 +1217,7 @@ async def test_audit_custom_policy(model, tools):
     # Set a custom policy that only logs requests to a special namespace
     namespace = "validate-audit-custom-policy"
     policy = {
-        "apiVersion": "audit.k8s.io/v1beta1",
+        "apiVersion": "audit.k8s.io/v1",
         "kind": "Policy",
         "rules": [{"level": "Metadata", "namespaces": [namespace]}, {"level": "None"}],
     }
