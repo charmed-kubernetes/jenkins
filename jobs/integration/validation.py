@@ -252,7 +252,7 @@ async def test_auth_file_propagation(model, tools):
 async def test_status_messages(model):
     """Validate that the status messages are correct."""
     expected_messages = {
-        "kubernetes-control-plane": "Kubernetes master running.",
+        "kubernetes-control-plane": "Kubernetes control-plane running.",
         "kubernetes-worker": "Kubernetes worker running.",
     }
     for app, message in expected_messages.items():
@@ -966,7 +966,7 @@ async def test_kubelet_extra_config(model, tools):
     click.echo("waiting for nodes to show new pod capacity")
     master_unit = model.applications["kubernetes-control-plane"].units[0]
     while True:
-        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node"
+        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node -l 'juju-application=kubernetes-worker'"
         action = await master_unit.run(str(cmd))
         if action.status == "completed" and action.results["Code"] == "0":
             nodes = yaml.safe_load(action.results.get("Stdout", ""))
