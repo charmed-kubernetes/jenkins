@@ -307,7 +307,7 @@ async def log_snap_versions(model, prefix="before"):
 
 
 async def validate_storage_class(model, sc_name, test_name):
-    master = model.applications["kubernetes-control-plane"].units[0]
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
     # write a string to a file on the pvc
     pod_definition = """
 apiVersion: v1
@@ -348,13 +348,13 @@ spec:
         pod_definition
     )
     click.echo("{}: {} writing test".format(test_name, sc_name))
-    output = await master.run(cmd)
+    output = await control_plane.run(cmd)
     assert output.status == "completed"
 
     # wait for completion
     await retry_async_with_timeout(
         verify_completed,
-        (master, "po", ["{}-write-test".format(sc_name)]),
+        (control_plane, "po", ["{}-write-test".format(sc_name)]),
         timeout_msg="Unable to create write pod for {} test".format(test_name),
     )
 
@@ -385,17 +385,17 @@ spec:
         pod_definition
     )
     click.echo("{}: {} reading test".format(test_name, sc_name))
-    output = await master.run(cmd)
+    output = await control_plane.run(cmd)
     assert output.status == "completed"
 
     # wait for completion
     await retry_async_with_timeout(
         verify_completed,
-        (master, "po", ["{}-read-test".format(sc_name)]),
+        (control_plane, "po", ["{}-read-test".format(sc_name)]),
         timeout_msg="Unable to create write" " pod for ceph test",
     )
 
-    output = await master.run(
+    output = await control_plane.run(
         "/snap/bin/kubectl --kubeconfig /root/.kube/config logs {}-read-test".format(
             sc_name
         )
@@ -407,23 +407,23 @@ spec:
     click.echo("{}: {} cleanup".format(test_name, sc_name))
     pods = "{0}-read-test {0}-write-test".format(sc_name)
     pvcs = "{}-pvc".format(sc_name)
-    output = await master.run(
+    output = await control_plane.run(
         "/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {}".format(pods)
     )
     assert output.status == "completed"
-    output = await master.run(
+    output = await control_plane.run(
         "/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {}".format(pvcs)
     )
     assert output.status == "completed"
 
     await retry_async_with_timeout(
         verify_deleted,
-        (master, "po", pods.split()),
+        (control_plane, "po", pods.split()),
         timeout_msg="Unable to remove {} test pods".format(test_name),
     )
     await retry_async_with_timeout(
         verify_deleted,
-        (master, "pvc", pvcs.split()),
+        (control_plane, "pvc", pvcs.split()),
         timeout_msg="Unable to remove {} test pvcs".format(test_name),
     )
 
@@ -533,9 +533,9 @@ async def juju_run(unit, cmd, check=True):
 
 
 async def kubectl(model, cmd, check=True):
-    master = model.applications["kubernetes-control-plane"].units[0]
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
     return await juju_run(
-        master, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
+        control_plane, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
     )
 
 

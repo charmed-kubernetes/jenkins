@@ -91,8 +91,8 @@ async def wait_for_not_process(model, arg):
 
 
 async def api_server_with_arg(model, argument):
-    master = model.applications["kubernetes-control-plane"]
-    for unit in master.units:
+    control_plane = model.applications["kubernetes-control-plane"]
+    for unit in control_plane.units:
         search = "ps -ef | grep {} | grep apiserver".format(argument)
         action = await unit.run(search)
         assert action.status == "completed"
@@ -1022,8 +1022,8 @@ async def test_service_cidr_expansion(model):
     await wait_for_process(model, service_cluster_ip_range)
 
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get service kubernetes"
-    master = model.applications["kubernetes-control-plane"].units[0]
-    output = await master.run(cmd)
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
+    output = await control_plane.run(cmd)
     assert output.status == "completed"
 
     # Check if k8s service ip is changed as per new service cidr
@@ -2419,8 +2419,8 @@ async def test_ceph(model, tools):
 async def test_series_upgrade(model, tools):
     if not tools.is_series_upgrade:
         pytest.skip("No series upgrade argument found")
-    k8s_master_0 = model.applications["kubernetes-control-plane"].units[0]
-    old_series = k8s_master_0.machine.series
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
+    old_series = control_plane.machine.series
     try:
         new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
     except IndexError:
@@ -2433,7 +2433,7 @@ async def test_series_upgrade(model, tools):
         await finish_series_upgrade(machine, tools)
         assert machine.series == new_series
     expected_messages = {
-        "kubernetes-control-plane": "Kubernetes master running.",
+        "kubernetes-control-plane": "Kubernetes control-plane running.",
         "kubernetes-worker": "Kubernetes worker running.",
     }
     for app, message in expected_messages.items():
