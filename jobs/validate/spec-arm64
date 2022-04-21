@@ -48,6 +48,7 @@ applications:
     constraints: $constraints
     options:
       channel: $SNAP_VERSION
+      controller-manager-extra-args: 'feature-gates=RotateKubeletServerCertificate=true,LegacyServiceAccountTokenNoAutoGeneration=false'
   kubernetes-worker:
     constraints: $constraints
     options:

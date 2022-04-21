@@ -74,6 +74,7 @@ applications:
     options:
       channel: $SNAP_VERSION
       allow-privileged: 'true'
+      controller-manager-extra-args: 'feature-gates=RotateKubeletServerCertificate=true,LegacyServiceAccountTokenNoAutoGeneration=false'
   kubernetes-worker:
     options:
       channel: $SNAP_VERSION

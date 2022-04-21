@@ -18,6 +18,7 @@ applications:
     constraints: cores=2 mem=8G root-disk=16G
     options:
       channel: $SNAP_VERSION
+      controller-manager-extra-args: 'feature-gates=RotateKubeletServerCertificate=true,LegacyServiceAccountTokenNoAutoGeneration=false'
   kubernetes-worker:
     constraints: instance-type=p2.xlarge
     options:
