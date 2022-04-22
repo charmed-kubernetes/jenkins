@@ -55,6 +55,7 @@ applications:
   kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
+      controller-manager-extra-args: 'feature-gates=RotateKubeletServerCertificate=true,LegacyServiceAccountTokenNoAutoGeneration=false'
   kubernetes-worker:
     options:
       channel: $SNAP_VERSION
