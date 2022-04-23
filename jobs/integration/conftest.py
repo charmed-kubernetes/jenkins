@@ -181,15 +181,12 @@ async def model(request, tools):
         await upgrade_snaps(model, upgrade_snap_channel, tools)
     if request.config.getoption("--snapd-upgrade"):
         snapd_channel = request.config.getoption("--snapd-channel")
-        await model.deploy("ch:charmed-kubernetes")
         await log_snap_versions(model, prefix="Before")
-        await tools.juju_wait()
         for unit in model.units.values():
             if unit.dead:
                 continue
             await unit.run(f"sudo snap refresh core --{snapd_channel}")
             await unit.run(f"sudo snap refresh snapd --{snapd_channel}")
-        await tools.juju_wait()
         await log_snap_versions(model, prefix="After")
     yield model
     await model.disconnect()

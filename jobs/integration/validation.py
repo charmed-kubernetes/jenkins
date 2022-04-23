@@ -318,7 +318,7 @@ async def test_rbac(model):
     await run_until_success(worker, cmd + " 2>&1 | grep Forbidden")
 
 
-@pytest.mark.clouds(["ec2"])
+@pytest.mark.clouds(["ec2", "vsphere"])
 async def test_microbot(model, tools):
     """Validate the microbot action"""
     unit = model.applications["kubernetes-worker"].units[0]
@@ -2419,8 +2419,8 @@ async def test_ceph(model, tools):
 async def test_series_upgrade(model, tools):
     if not tools.is_series_upgrade:
         pytest.skip("No series upgrade argument found")
-    control_plane = model.applications["kubernetes-control-plane"].units[0]
-    old_series = control_plane.machine.series
+    worker = model.applications["kubernetes-worker"].units[0]
+    old_series = worker.machine.series
     try:
         new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
     except IndexError:
