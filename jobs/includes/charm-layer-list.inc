@@ -8,6 +8,10 @@
     downstream: 'charmed-kubernetes/juju-relation-mysql.git'
     upstream: 'https://github.com/johnsca/juju-relation-mysql.git'
     tags: ['k8s']
+- interface:prometheus:
+    downstream: 'charmed-kubernetes/interface-prometheus.git'
+    upstream: 'https://git.launchpad.net/interface-prometheus'
+    tags: ['k8s']
 - interface:prometheus-manual:
     downstream: 'charmed-kubernetes/interface-prometheus-manual.git'
     upstream: 'https://github.com/charmed-kubernetes/interface-prometheus-manual'
