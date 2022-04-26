@@ -56,6 +56,12 @@
     namespace: 'containers'
     tags: ['k8s', 'kubeapi-load-balancer']
     store: 'ch'
+- kube-state-metrics:
+    upstream: "https://github.com/charmed-kubernetes/kube-state-metrics-operator.git"
+    downstream: 'charmed-kubernetes/kube-state-metrics-operator.git'
+    namespace: 'containers'
+    tags: ['kube-state-metrics']
+    store: 'ch'
 - kubernetes-autoscaler:
     upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-autoscaler.git"
     downstream: 'charmed-kubernetes/charm-kubernetes-autoscaler.git'
