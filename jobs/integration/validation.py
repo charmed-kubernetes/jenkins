@@ -318,7 +318,7 @@ async def test_rbac(model):
     await run_until_success(worker, cmd + " 2>&1 | grep Forbidden")
 
 
-@pytest.mark.clouds(["ec2"])
+@pytest.mark.clouds(["ec2", "vsphere"])
 async def test_microbot(model, tools):
     """Validate the microbot action"""
     unit = model.applications["kubernetes-worker"].units[0]
@@ -2334,10 +2334,7 @@ async def test_nfs(model, tools):
 async def test_ceph(model, tools):
     # setup
     series = os.environ["SERIES"]
-    if series == "xenial":
-        pytest.skip("Ceph not supported fully on xenial")
-    snap_ver = os.environ["SNAP_VERSION"].split("/")[0]
-    check_cephfs = snap_ver not in ("1.15", "1.16")
+    check_cephfs = True
     ceph_config = {}
     if check_cephfs and series == "bionic":
         log("adding cloud:train to k8s-control-plane")
@@ -2379,7 +2376,6 @@ async def test_ceph(model, tools):
     await model.add_relation("ceph-mon", "ceph-osd")
     if check_cephfs:
         await model.add_relation("ceph-mon", "ceph-fs")
-    await model.add_relation("ceph-mon:admin", "kubernetes-control-plane")
     await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
     log("waiting...")
     await tools.juju_wait()
@@ -2419,8 +2415,8 @@ async def test_ceph(model, tools):
 async def test_series_upgrade(model, tools):
     if not tools.is_series_upgrade:
         pytest.skip("No series upgrade argument found")
-    control_plane = model.applications["kubernetes-control-plane"].units[0]
-    old_series = control_plane.machine.series
+    worker = model.applications["kubernetes-worker"].units[0]
+    old_series = worker.machine.series
     try:
         new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
     except IndexError:
