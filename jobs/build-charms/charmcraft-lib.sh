@@ -51,3 +51,13 @@ ci_charmcraft_copy()
     sudo lxc file pull ${charmcraft_lxc}${charm} ${copy_destination}
   done
 }
+
+ci_charmcraft_promote()
+{
+  # Promote an existing charm revision to a channel
+  local charmcraft_lxc=$1
+  local charm=$2
+  local revision=$3
+  local channel=$4
+  sudo lxc shell $charmcraft_lxc --env CHARMCRAFT_AUTH="$CHARMCRAFT_AUTH" -- bash -c "charmcraft release $charm --revision $revision --channel $channel"
+}
