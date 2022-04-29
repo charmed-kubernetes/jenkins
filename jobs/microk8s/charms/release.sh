@@ -38,8 +38,8 @@ ci_lxc_delete "${JOB_NAME}"
 # Configure cleanup routine
 export charmcraft_lxc="${JOB_NAME}-${BUILD_NUMBER}"
 function cleanup() {
-  set +e
   ci_lxc_delete $charmcraft_lxc
+  set +e
   juju destroy-model $JUJU_MODEL -y --timeout 1m --force
   rm -rf $JUJU_DATA
   set -e
