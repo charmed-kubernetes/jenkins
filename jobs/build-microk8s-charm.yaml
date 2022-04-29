@@ -68,6 +68,9 @@
           - file:
               credential-id: JUJUACCOUNTS_SERVERSTACK
               variable: JUJUACCOUNTS
+          - text:
+              credential-id: charmcraft_creds
+              variable: CHARMCRAFT_AUTH
     parameters:
       - string:
           name: REPOSITORY
@@ -75,7 +78,7 @@
           description: |
             Source repository for MicroK8s charm tests.
       - string:
-          name: BRANCH
+          name: TAG
           default: "master"
           description: |
             Branch from which to run the MicroK8s charm tests.
@@ -86,14 +89,14 @@
             MicroK8s charm to release.
       - string:
           name: FROM_CHANNEL
-          default: "latest/edge"
+          default: "edge"
           description: |
-            Integration tests will be run against this channel. Must be in `track/risk` or `track/risk/branch` format.
+            Run integration tests against this channel.
       - string:
           name: TO_CHANNEL
-          default: "latest/stable"
+          default: "stable"
           description: |
-            After tests pass, charm will be pushed to this channel. Must be in `track/risk` or `track/risk/branch` format.
+            After tests pass, charm will be pushed to this channel.
       - string:
           name: CLUSTER_SIZE
           default: "3"
@@ -104,6 +107,11 @@
           default: "1.21 1.22 1.23"
           description: |
             MicroK8s snap channels to test (space or comma separated).
+      - string:
+          name: SERIES
+          default: "focal jammy"
+          description:
+            Test MicroK8s snap under these series.
       - bool:
           name: SKIP_TESTS
           default: "false"
