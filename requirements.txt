@@ -29,7 +29,7 @@ bcrypt==3.2.0
 beautifulsoup4==4.9.3
     # via bs4
 black==22.3.0
-    # via -r requirements.in
+    # via -r requirements.in7
 boto3==1.17.41
     # via -r requirements.in
 botocore==1.20.41
@@ -374,6 +374,7 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
+websockets==7.0 ; python_version < "3.9"
 websockets==8.1 ; python_version >= "3.9"
     # via
     #   -r requirements.in
