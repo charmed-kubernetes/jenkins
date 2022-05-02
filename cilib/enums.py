@@ -5,20 +5,22 @@ import yaml
 
 JOBS_PATH = Path("jobs")
 
-# Current supported STABLE K8s MAJOR.MINOR release
-# This should be updated whenever a new CK major.minor is GA
+# Current supported STABLE K8s MAJOR.MINOR release. This determines what the
+# latest/stable channel is set to. It should be updated whenever a new CK
+# major.minor is GA.
 K8S_STABLE_VERSION = "1.23"
 
 # Next MAJOR.MINOR
-# This controls whether or not we build pre-release snaps in our channels.
+# This controls whether or not we publish pre-release snaps in our channels.
 # Typically, this is K8S_STABLE_VERSION +1. However, when prepping the next
-# stable release, this will be +2. For example, 1.22 is currently stable and
-# we're working on the 1.23 GA. Set this value to '1.24' so we don't get
-# pre-release builds (e.g. 1.23.1-beta.0) in our 1.23/beta channels.
-K8S_NEXT_VERSION = "1.24"
+# stable release, this will be +2. For example, 1.23 is currently stable and
+# we're working on the 1.24 GA. Set this value to '1.25' sometime between the
+# final RC and GA so we don't get pre-release builds (e.g. 1.24.1-alpha.0) in
+# our 1.24 tracks.
+K8S_NEXT_VERSION = "1.25"
 
 # Lowest K8S SEMVER to process, this is usually stable - 3
-K8S_STARTING_SEMVER = "1.20.0"
+K8S_STARTING_SEMVER = "1.21.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -54,7 +56,7 @@ SNAP_K8S_TRACK_MAP = {
     "1.21": ["1.21/stable", "1.21/candidate", "1.21/beta", "1.21/edge"],
     "1.22": ["1.22/stable", "1.22/candidate", "1.22/beta", "1.22/edge"],
     "1.23": ["1.23/stable", "1.23/candidate", "1.23/beta", "1.23/edge"],
-    "1.24": ["1.24/candidate", "1.24/beta", "1.24/edge"],
+    "1.24": ["1.24/stable", "1.24/candidate", "1.24/beta", "1.24/edge"],
 }
 
 # Deb k8s version <-> ppa mapping
