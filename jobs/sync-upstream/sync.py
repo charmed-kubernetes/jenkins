@@ -125,7 +125,10 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 "rev-list", f"origin/stable..origin/{default_branch}", _cwd=identifier
             ):
                 for line in git.show(
-                    "--format=%h %an %cr", "--no-patch", line.strip(), _cwd=identifier
+                    "--format=%h %an '%s' %cr",
+                    "--no-patch",
+                    line.strip(),
+                    _cwd=identifier,
                 ):
                     log.info("    " + line.strip())
             if not dry_run:

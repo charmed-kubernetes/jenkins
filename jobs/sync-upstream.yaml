@@ -264,6 +264,8 @@
     properties:
       - build-discarder:
           days-to-keep: 2
+    parameters:
+      - global-params
     wrappers:
       - default-job-wrapper
       - ci-creds
