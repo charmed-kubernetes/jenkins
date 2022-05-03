@@ -100,23 +100,35 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
             log.info(
                 f"Releasing :: {layer_name:^35} :: from: {default_branch} to: stable"
             )
+            downstream = f"https://{':'.join(auth)}@github.com/{downstream}"
+            identifier = str(uuid.uuid4())
+            os.makedirs(identifier)
+            for line in git.clone(downstream, identifier, _iter=True):
+                log.info(line)
+            git_rev_default = (
+                git("rev-parse", f"origin/{default_branch}", _cwd=identifier)
+                .stdout.decode()
+                .strip()
+            )
+            git_rev_stable = (
+                git("rev-parse", "origin/stable", _cwd=identifier)
+                .stdout.decode()
+                .strip()
+            )
+            if git_rev_default == git_rev_stable:
+                log.info(f"Skipping  :: {layer_name:^35} :: {default_branch} == stable")
+                continue
+            log.info(f"Commits   :: {layer_name:^35} :: {default_branch} != stable")
+            log.info(f"  {default_branch:10}= {git_rev_default:32}")
+            log.info(f"  {'stable':10}= {git_rev_stable:32}")
+            for line in git(
+                "rev-list", f"origin/stable..origin/{default_branch}", _cwd=identifier
+            ):
+                for line in git.show(
+                    "--format=%h %an %cr", "--no-patch", line.strip(), _cwd=identifier
+                ):
+                    log.info("    " + line.strip())
             if not dry_run:
-                downstream = f"https://{':'.join(auth)}@github.com/{downstream}"
-                identifier = str(uuid.uuid4())
-                os.makedirs(identifier)
-                for line in git.clone(downstream, identifier, _iter=True):
-                    log.info(line)
-                git_rev_default = git(
-                    "rev-parse", f"origin/{default_branch}", _cwd=identifier
-                ).stdout.decode()
-                git_rev_stable = git(
-                    "rev-parse", "origin/stable", _cwd=identifier
-                ).stdout.decode()
-                if git_rev_default == git_rev_stable:
-                    log.info(
-                        f"Skipping  :: {layer_name:^35} :: {default_branch} == stable"
-                    )
-                    continue
                 git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
                 git.config("user.name", "cdkbot", _cwd=identifier)
                 git.config("--global", "push.default", "simple")
