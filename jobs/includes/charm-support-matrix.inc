@@ -81,6 +81,11 @@
     namespace: 'containers'
     tags: ['k8s', 'kubernetes-control-plane']
     store: 'ch'
+- kubernetes-metrics-server:
+    upstream: "https://github.com/charmed-kubernetes/kubernetes-metrics-server-operator.git"
+    downstream: 'charmed-kubernetes/kubernetes-metrics-server-operator.git'
+    namespace: 'containers'
+    tags: ['kubernetes-metrics-server']
 - kubernetes-worker:
     upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-worker.git"
     downstream: 'charmed-kubernetes/charm-kubernetes-worker.git'
