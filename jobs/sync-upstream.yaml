@@ -275,7 +275,7 @@
       - run-venv:
           COMMAND: |
             IS_DRY_RUN=""
-            if [ ! -z ${DRY_RUN+x} ]; then
+            if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
             $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py cut-stable-release \
