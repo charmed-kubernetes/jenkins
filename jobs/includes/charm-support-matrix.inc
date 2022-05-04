@@ -60,13 +60,13 @@
     upstream: "https://github.com/charmed-kubernetes/kube-state-metrics-operator.git"
     downstream: 'charmed-kubernetes/kube-state-metrics-operator.git'
     namespace: 'containers'
-    tags: ['kube-state-metrics']
+    tags: ['k8s-operator', 'kube-state-metrics']
     store: 'ch'
 - kubernetes-autoscaler:
     upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-autoscaler.git"
     downstream: 'charmed-kubernetes/charm-kubernetes-autoscaler.git'
     namespace: 'containers'
-    tags: ['k8s', 'kubernetes-autoscaler']
+    tags: ['k8s-operator', 'kubernetes-autoscaler']
     store: 'ch'
 - kubernetes-e2e:
     upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-e2e.git"
@@ -85,7 +85,7 @@
     upstream: "https://github.com/charmed-kubernetes/kubernetes-metrics-server-operator.git"
     downstream: 'charmed-kubernetes/kubernetes-metrics-server-operator.git'
     namespace: 'containers'
-    tags: ['kubernetes-metrics-server']
+    tags: ['k8s-operator', 'kubernetes-metrics-server']
 - kubernetes-worker:
     upstream: "https://github.com/charmed-kubernetes/charm-kubernetes-worker.git"
     downstream: 'charmed-kubernetes/charm-kubernetes-worker.git'
