@@ -33,6 +33,7 @@ def test_build_env_missing_env(charms):
 def test_environment(tmpdir):
     """Creates a fixture defining test environment variables."""
     saved_env, test_env = {}, dict(
+        CHARM_BASE_DIR=str(tmpdir),
         CHARM_BUILD_DIR=f'{tmpdir / "build"}',
         CHARM_LAYERS_DIR=f'{tmpdir / "layers"}',
         CHARM_INTERFACES_DIR=f'{tmpdir / "interfaces"}',
