@@ -316,6 +316,7 @@ class BuildEnv:
     def __new__(cls, *args, **kwargs):
         """Initialize class variables used during the build from the CI environment."""
         try:
+            cls.base_dir = Path(os.environ.get("CHARM_BASE_DIR"))
             cls.build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
             cls.layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
             cls.interfaces_dir = Path(os.environ.get("CHARM_INTERFACES_DIR"))
@@ -337,6 +338,9 @@ class BuildEnv:
         self.build_type = build_type
         self.db = {}
         self.clean_dirs = tuple()
+
+        # poison base_dir to prevent `git rev-parse` from working in this subdirectory
+        (self.base_dir / ".git").touch(0o664, exist_ok=True)
 
         if self.build_type == BuildType.CHARM:
             self.db_json = Path("buildcharms.json")
@@ -562,6 +566,9 @@ class BuildEntity:
             resp = requests.get(url)
             if resp.ok:
                 return yaml.safe_load(resp.content.decode())
+            self.echo(
+                f"Failed to read {fname} due to {resp.status_code} - {resp.content}"
+            )
         elif self.store == "ch":
             name, channel = self.full_entity.rsplit(":")
             info = _CharmHub.info(
@@ -577,6 +584,9 @@ class BuildEntity:
             if resp.ok:
                 yaml_file = zipfile.Path(BytesIO(resp.content)) / fname
                 return yaml.safe_load(yaml_file.read_text())
+            self.echo(
+                f"Failed to read {fname} due to {resp.status_code} - {resp.content}"
+            )
 
     def version_identification(self, source):
         comparisons = ["rev", "url"]
