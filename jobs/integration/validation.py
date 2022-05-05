@@ -1926,10 +1926,7 @@ async def test_dns_provider(model, k8s_model, tools):
             return
 
         log("Deploying CoreDNS charm")
-        coredns = await k8s_model.deploy(
-            "cs:~containers/coredns",
-            channel=tools.charm_channel,
-        )
+        coredns = await k8s_model.deploy("coredns", channel=tools.charm_channel)
 
         log("Waiting for CoreDNS charm to be ready")
         while (
@@ -2499,7 +2496,7 @@ async def test_containerd_to_docker(model, tools):
     # Block until containerd's removed, ignore `blocked` worker.
 
     docker_app = await model.deploy(
-        "cs:~containers/docker", num_units=0, channel="edge"  # Subordinate.
+        "docker", num_units=0, channel=tools.charm_channel  # Subordinate.
     )
 
     await docker_app.add_relation("docker", "kubernetes-control-plane")
@@ -2516,7 +2513,7 @@ async def test_containerd_to_docker(model, tools):
     # Block until docker's removed, ignore `blocked` worker.
 
     containerd_app = await model.deploy(
-        "cs:~containers/containerd", num_units=0, channel="edge"  # Subordinate.
+        "containerd", num_units=0, channel=tools.charm_channel  # Subordinate.
     )
 
     await containerd_app.add_relation("containerd", "kubernetes-control-plane")
