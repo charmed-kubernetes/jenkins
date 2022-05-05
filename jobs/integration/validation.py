@@ -2499,7 +2499,7 @@ async def test_containerd_to_docker(model, tools):
     # Block until containerd's removed, ignore `blocked` worker.
 
     docker_app = await model.deploy(
-        "docker", num_units=0, channel="edge"  # Subordinate.
+        "docker", num_units=0, channel=tools.charm_channel  # Subordinate.
     )
 
     await docker_app.add_relation("docker", "kubernetes-control-plane")
