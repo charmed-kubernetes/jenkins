@@ -147,13 +147,12 @@ class Tools:
             )
         return stdout.decode("utf8"), stderr.decode("utf8")
 
-    async def juju_wait(self, *args, **kwargs):
-        cmd = ["/snap/bin/juju-wait", "-e", self.connection, "-w"]
-        if args:
-            cmd.extend(args)
-        if "timeout_secs" in kwargs and kwargs["timeout_secs"]:
-            cmd.extend(["-t", str(kwargs["timeout_secs"])])
-        return await self.run(*cmd)
+    async def juju_wait(self, exclude_apps=None, timeout=None):
+        model = Model()
+        await model.connect(self.connection)
+        apps = set(model.applications) - set(exclude_apps or [])
+        await model.wait_for_idle(apps=apps, status="active", timeout=timeout)
+        await model.disconnect()
 
 
 @pytest.fixture(scope="module")

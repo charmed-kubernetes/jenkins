@@ -198,7 +198,7 @@ async def set_config_and_wait(app, config, tools, timeout_secs=None):
 
     async with assert_hook_occurs_on_all_units(app, "config-changed"):
         await app.set_config(config)
-        await tools.juju_wait(timeout_secs=timeout_secs)
+        await tools.juju_wait(timeout=timeout_secs)
 
 
 async def reset_audit_config(master_app, tools):
@@ -1431,20 +1431,21 @@ async def any_keystone(model, apps_by_charm, tools):
         yield SimpleNamespace(app=keystone, admin_password=admin_password)
 
         # cleanup
-        await model.applications["keystone"].destroy()
-        await tools.juju_wait()
-        await model.applications["percona-cluster"].destroy()
-        await tools.juju_wait()
+        cleanup = ["percona-cluster", "keystone"]
+        for app in cleanup:
+            await model.applications[app].destroy()
 
-        # apparently, juju-wait will consider the model settled before an
-        # application has fully gone away (presumably, when all units are gone) but
-        # but having a dying percona-cluster in the model can break the vault test
         try:
+            # wait 5-min for these apps to drop from the model
             await model.block_until(
-                lambda: "percona-cluster" not in model.applications, timeout=120
+                lambda: all(app not in model.applications for app in cleanup),
+                timeout=5 * 60,
             )
         except asyncio.TimeoutError:
-            pytest.fail("Timed out waiting for percona-cluster to go away")
+            pytest.fail(f"Timed out waiting for {','.join(cleanup)} to go away")
+
+        # ensure the model is stable
+        await tools.juju_wait()
 
 
 @pytest.mark.skip_arch(["aarch64"])
@@ -2495,7 +2496,7 @@ async def test_containerd_to_docker(model, tools):
     containerd_app = model.applications["containerd"]
 
     await containerd_app.remove()
-    await tools.juju_wait("-x", "kubernetes-worker")
+    await tools.juju_wait(exclude_apps=["kubernetes-worker"])
     # Block until containerd's removed, ignore `blocked` worker.
 
     docker_app = await model.deploy(
@@ -2512,7 +2513,7 @@ async def test_containerd_to_docker(model, tools):
     # workloads.
 
     await docker_app.remove()
-    await tools.juju_wait("-x", "kubernetes-worker")
+    await tools.juju_wait(exclude_apps=["kubernetes-worker"])
     # Block until docker's removed, ignore `blocked` worker.
 
     containerd_app = await model.deploy(
