@@ -33,7 +33,7 @@ pipeline {
                 deployCDK(controller: params.controller,
                           cloud: params.cloud,
                           model: juju_model,
-                          bundle: "cs:~containers/${params.bundle}",
+                          bundle: "${params.bundle}",
                           version_overlay: params.overlay,
                           bundle_channel: params.bundle_channel)
             }
