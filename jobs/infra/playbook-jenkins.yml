@@ -136,7 +136,7 @@
         - jenkins
         - adhoc
     - name: upgrade snapcraft
-      command: "snap refresh snapcraft --channel latest/edge"
+      command: "snap refresh snapcraft --channel latest/candidate"
       ignore_errors: yes
       tags:
         - jenkins
