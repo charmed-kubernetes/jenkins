@@ -12,7 +12,7 @@ async def test_kata(model, tools):
     :return: None
     """
     kata_app = await model.deploy(
-        "cs:~containers/kata", num_units=0, channel="edge"  # Subordinate.
+        "kata", num_units=0, channel="edge"  # Subordinate.
     )
 
     await kata_app.add_relation(

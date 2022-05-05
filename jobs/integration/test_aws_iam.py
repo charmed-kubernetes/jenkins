@@ -130,7 +130,7 @@ async def test_validate_aws_iam(model, tools):
 
     # 1) deploy
     log("deploying aws-iam")
-    await model.deploy("cs:~containers/aws-iam", channel="edge", num_units=0)
+    await model.deploy("aws-iam", channel="edge", num_units=0)
     await model.add_relation("aws-iam", "kubernetes-control-plane")
     await model.add_relation("aws-iam", "easyrsa")
     log("waiting for cluster to settle...")
