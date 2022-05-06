@@ -1929,6 +1929,7 @@ async def test_dns_provider(model, k8s_model, tools):
         coredns = await k8s_model.deploy(
             "coredns",
             channel=tools.charm_channel,
+            trust=True,
         )
 
         log("Waiting for CoreDNS charm to be ready")
@@ -1951,6 +1952,7 @@ async def test_dns_provider(model, k8s_model, tools):
 
             log("Adding cross-model relation to CK")
             await model.add_relation("kubernetes-control-plane", "coredns")
+            await k8s_model.wait_for_idle(status="active")
             await tools.juju_wait()
 
             log("Verifying that stale pod doesn't pick up new DNS provider")
