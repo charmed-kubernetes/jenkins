@@ -212,7 +212,7 @@ pox==0.3.0
     # via pathos
 ppft==1.6.6.4
     # via pathos
-prettytable==3.2.0
+prettytable==3.3.0
     # via -r requirements.in
 protobuf==3.15.6
     # via macaroonbakery
@@ -374,7 +374,6 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
-websockets==7.0 ; python_version < "3.9"
 websockets==8.1 ; python_version >= "3.9"
     # via
     #   -r requirements.in
