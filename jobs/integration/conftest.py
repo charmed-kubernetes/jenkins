@@ -217,20 +217,19 @@ async def k8s_cloud(model, tools):
             created_k8s_cloud = True
             yield tools.k8s_cloud
         finally:
-            if created_k8s_cloud:
-                click.echo("Cleaning up k8s model")
-                try:
-                    if created_k8s_cloud:
-                        click.echo("Removing k8s cloud")
-                        await tools.run(
-                            "juju",
-                            "remove-cloud",
-                            "-c",
-                            tools.controller_name,
-                            tools.k8s_cloud,
-                        )
-                except Exception:
-                    click.echo(format_exc())
+            if not created_k8s_cloud:
+                return
+            click.echo("Removing k8s cloud")
+            try:
+                await tools.run(
+                    "juju",
+                    "remove-cloud",
+                    "-c",
+                    tools.controller_name,
+                    tools.k8s_cloud,
+                )
+            except Exception:
+                click.echo(format_exc())
 
 
 @pytest.fixture(scope="module")
