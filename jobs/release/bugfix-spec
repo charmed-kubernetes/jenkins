@@ -15,7 +15,7 @@ set -x
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.23/stable}
+SNAP_VERSION=${1:-1.24/stable}
 SERIES=${2:-focal}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=candidate
