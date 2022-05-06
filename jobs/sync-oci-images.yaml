@@ -16,7 +16,7 @@
           default: 'runner-amd64'
       - string:
           name: version
-          default: '1.23'
+          default: '1.24'
           description: |
             CK version. This job will clone the cdk-addons release-`version` branch if one
             exists (otherwise 'master'), then process the image list for this `version`.
