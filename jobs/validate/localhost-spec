@@ -32,7 +32,6 @@ applications:
       channel: $SNAP_VERSION
       enable-metrics: false
       enable-dashboard-addons: false
-      controller-manager-extra-args: 'feature-gates=RotateKubeletServerCertificate=true,LegacyServiceAccountTokenNoAutoGeneration=false'
   kubernetes-worker:
     options:
       ingress: false
