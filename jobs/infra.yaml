@@ -2,7 +2,7 @@
 
 - project:
     name: infra
-    arch: ['amd64-0', 'amd64-1', 'amd64-2', 'amd64-3', 's390x', 'arm64', 'ppc64le']
+    arch: ['amd64-0', 'amd64-1', 'amd64-2', 'amd64-3', 's390x', 'arm64']
     jobs:
       - 'infra-maintain-nodes-{arch}'
 
@@ -50,27 +50,3 @@
 
               venv/bin/pip install ansible
               venv/bin/ansible-playbook jobs/infra/playbook-jenkins.yml --limit localhost --tags 'jenkins' -i jobs/infra/hosts
-
-- job:
-    name: 'infra-maintain-nodes-s390x-2'
-    description: |
-      Keeps jenkins slave nodes configured properly.
-    node: runner-s390x
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    triggers:
-        - timed: "0 */6 * * *"
-    properties:
-      - block-on-build-release
-      - build-discarder:
-          num-to-keep: 3
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/infra"
-      - shell: |
-          scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa jobs/infra/fixtures/cleanup-s390x-env.sh  ubuntu@10.13.6.3:cleanup.sh
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- bash cleanup.sh
