@@ -11,10 +11,13 @@ set -x
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
 function test::execute
 {
     declare -n is_pass=$1
-    timeout -s INT 4h pytest \
+    timeout -s INT 3h pytest \
                 --full-trace \
                 jobs/integration/validation.py \
                 --cloud "$JUJU_CLOUD" \
@@ -30,22 +33,20 @@ function test::execute
     fi
 }
 
-
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.24/edge}
-SERIES=${2:-focal}
+SNAP_VERSION=${SNAP_VERSION}
+SERIES=${SERIES}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_DEPLOY_CHANNEL=stable
 JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-ck-snapd-upgrade
 TEST_UPGRADE_SNAPD_CHANNEL=beta
-ARCH=${4:-amd64}
+ARCH=amd64
 JOB_NAME_CUSTOM="validate-ck-snapd-upgrade-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-
 
 ###############################################################################
 # START

@@ -9,7 +9,9 @@ set -xe
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
-
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
 function juju::deploy
 {
         juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
@@ -24,7 +26,7 @@ function juju::deploy
 
 function juju::deploy::after
 {
-    tee overlay.yaml <<EOF> /dev/null
+    tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
   kubernetes-control-plane:
@@ -38,8 +40,7 @@ applications:
       channel: $SNAP_VERSION
 EOF
 
-
-    tee setup <<EOF> /dev/null
+    tee setup <<EOF > /dev/null
 #!/bin/bash
 set -eux
 export PATH=/snap/bin:$PATH
@@ -73,7 +74,6 @@ timeout -s INT 3h tox --workdir .tox -e py38 -- pytest \
     --model $JUJU_MODEL \
     --controller $JUJU_CONTROLLER
 popd
-
 EOF
 
     chmod +x setup
@@ -100,7 +100,9 @@ function ci::cleanup::before
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.html . || true
 }
 
-# Setup Environment
+###############################################################################
+# ENV
+###############################################################################
 SNAP_VERSION=${1:-1.24/edge}
 SERIES=${2:-focal}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
@@ -112,4 +114,7 @@ ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-localhost-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
+###############################################################################
+# START
+###############################################################################
 ci::run

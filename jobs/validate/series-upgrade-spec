@@ -3,17 +3,21 @@
 
 set -x
 
-# Init
+###############################################################################
+# INITIALIZE
+###############################################################################
 : "${WORKSPACE:=$(pwd)}"
 
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
-
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
 function test::execute
 {
     declare -n is_pass=$1
-    timeout -s INT 2h pytest \
+    timeout -s INT 3h pytest \
                 --full-trace \
                 jobs/integration/validation.py \
                 --is-series-upgrade \
@@ -27,18 +31,21 @@ function test::execute
     fi
 }
 
-
-# Setup Environment
-
-SNAP_VERSION=${1:-1.24/edge}
-SERIES=${2:-focal}
+###############################################################################
+# ENV
+###############################################################################
+SNAP_VERSION=${SNAP_VERSION}
+SERIES=${SERIES}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_DEPLOY_CHANNEL=edge
 JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-series-upgrade
-ARCH=${4:-amd64}
+ARCH=amd64
 JOB_NAME_CUSTOM="validate-ck-series-upgrade-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
+###############################################################################
+# START
+###############################################################################
 ci::run

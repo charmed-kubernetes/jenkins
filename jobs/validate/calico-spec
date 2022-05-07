@@ -59,7 +59,6 @@ applications:
   calico:
     options:
       vxlan: Always
-      ignore-loose-rpf: true
 EOF
       vxlan_mode=Always
     else
@@ -77,7 +76,6 @@ applications:
   calico:
     options:
       cidr: "192.168.0.0/16,fd00:c00b:1::/112"
-      ignore-loose-rpf: true
 EOF
     fi
 }
@@ -113,8 +111,6 @@ ARCH=${4:-amd64}
 ROUTING_MODE=${5:bgp-simple}
 JOB_NAME_CUSTOM="validate-ck-calico-$ROUTING_MODE-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-
-
 
 ###############################################################################
 # START
