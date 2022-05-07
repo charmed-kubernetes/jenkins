@@ -3,12 +3,17 @@
 
 set -x
 
-# Init
+###############################################################################
+# INITIALIZE
+###############################################################################
 : "${WORKSPACE:=$(pwd)}"
 
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
 function juju::bootstrap
 {
     echo "skip bootstrap on s390x"
@@ -21,7 +26,7 @@ function juju::wait
 
 function juju::deploy
 {
-    tee overlay.yaml <<EOF> /dev/null
+    tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
   kubernetes-control-plane:
@@ -32,8 +37,7 @@ applications:
       channel: $SNAP_VERSION
 EOF
 
-
-    tee setup <<EOF> /dev/null
+    tee setup <<EOF > /dev/null
 #!/bin/bash
 set -eux
 export PATH=/snap/bin:$PATH
@@ -76,6 +80,7 @@ timeout -s INT 3h tox -e py36 -- pytest \
     --model $JUJU_MODEL \
     --controller $JUJU_CONTROLLER
 EOF
+
     chmod +x setup
     scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa setup ubuntu@10.13.6.3:setup
     scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa overlay.yaml ubuntu@10.13.6.3:overlay.yaml
@@ -104,7 +109,7 @@ function ci::cleanup::before
 }
 
 ###############################################################################
-# Setup Environment
+# ENV
 ###############################################################################
 SNAP_VERSION=${1:-1.24/edge}
 SERIES=${2:-focal}
@@ -117,4 +122,7 @@ ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-s390x-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
+###############################################################################
+# START
+###############################################################################
 ci::run

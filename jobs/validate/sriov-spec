@@ -4,7 +4,7 @@
 set -x
 
 ###############################################################################
-# Init
+# INITIALIZE
 ###############################################################################
 : "${WORKSPACE:=$(pwd)}"
 
@@ -12,20 +12,20 @@ set -x
 . "$WORKSPACE/juju.bash"
 
 ###############################################################################
-# Overrides
+# FUNCTION OVERRIDES
 ###############################################################################
 function juju::deploy
 {
-   tee overlay.yaml <<EOF> /dev/null
+   tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
   kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:
+    constraints: 'instance-type=c4.xlarge root-disk=16G'
     options:
       channel: $SNAP_VERSION
-      constraints: 'instance-type=c4.xlarge root-disk=16G'
 EOF
 
     juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
@@ -37,7 +37,6 @@ EOF
          --storage osd-devices=32G,2 \
          --storage osd-journals=8G,1
     juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-osd ceph-mon
-    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:admin kubernetes-control-plane
     juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:client kubernetes-control-plane
 }
 
@@ -85,9 +84,8 @@ function ci::cleanup::before
     juju destroy-model -y --destroy-storage "$JUJU_CONTROLLER:addons" || true
 }
 
-
 ###############################################################################
-# Setup Environment
+# ENV
 ###############################################################################
 SNAP_VERSION=${1:-1.24/edge}
 SERIES=${2:-focal}
@@ -100,4 +98,7 @@ ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-sriov-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
+###############################################################################
+# START
+###############################################################################
 ci::run

@@ -11,6 +11,27 @@ set -x
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function juju::deploy::overlay
+{
+    local constraints
+    constraints="arch=$ARCH cores=2 mem=8G root-disk=16G"
+
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  kubernetes-control-plane:
+    constraints: $constraints
+    options:
+      channel: $SNAP_VERSION
+  kubernetes-worker:
+    constraints: $constraints
+    options:
+      channel: $SNAP_VERSION
+EOF
+}
 
 ###############################################################################
 # ENV
@@ -19,13 +40,13 @@ SNAP_VERSION=${1:-1.24/edge}
 SERIES=${2:-focal}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
-JUJU_CLOUD=vsphere/Boston
+JUJU_CLOUD=${5:-vsphere/Boston}
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-ck
 ARCH=${4:-amd64}
-JOB_NAME_CUSTOM="validate-ck-$ARCH-$SERIES-$SNAP_VERSION"
+CUSTOM_CLOUD=$(echo "$JUJU_CLOUD" | cut -f1 -d/)
+JOB_NAME_CUSTOM="validate-ck-$CUSTOM_CLOUD-$ARCH-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
-
 
 ###############################################################################
 # START

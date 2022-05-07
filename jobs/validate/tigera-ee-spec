@@ -22,9 +22,8 @@ function juju::bootstrap
 
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
       -d "$JUJU_MODEL" \
-      --bootstrap-series "$SERIES" \
-      --force \
-      --bootstrap-constraints arch="$ARCH" \
+      --force --bootstrap-series "$SERIES" \
+      --bootstrap-constraints arch="amd64" \
       --model-default test-mode=true \
       --model-default resource-tags=owner=k8sci \
       --model-default image-stream=daily \
