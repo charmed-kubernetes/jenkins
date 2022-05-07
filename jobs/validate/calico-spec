@@ -76,6 +76,7 @@ applications:
   calico:
     options:
       cidr: "192.168.0.0/16,fd00:c00b:1::/112"
+      vxlan: Never
 EOF
     fi
 }

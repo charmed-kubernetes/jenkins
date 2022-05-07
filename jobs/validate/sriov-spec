@@ -20,7 +20,6 @@ function juju::deploy
 series: $SERIES
 applications:
   kubernetes-control-plane:
-    constraints: 'cores=2 mem=8G root-disk=16G'
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:
