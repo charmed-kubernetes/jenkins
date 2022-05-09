@@ -394,8 +394,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
-    execution-strategy:
-      sequential: true
+    #execution-strategy:
+    #  sequential: true
     axes:
       - axis:
           type: slave
