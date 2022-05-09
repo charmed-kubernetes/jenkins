@@ -291,7 +291,6 @@ def disable_source_dest_check():
     global REGION
     REGION = status["model"]["region"]
 
-    status = juju_json("status")
     for machine_id in status["machines"]:
         instance_id = get_instance_id(machine_id)
         if instance_id:
@@ -336,7 +335,6 @@ def assign_ipv6_addrs():
     global REGION
     REGION = status["model"]["region"]
 
-    status = juju_json("status")
     for machine_id in status["machines"]:
         instance_id = get_instance_id(machine_id)
         if instance_id:
