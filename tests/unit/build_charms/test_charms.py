@@ -22,6 +22,23 @@ CLI_RESPONSES = STATIC_TEST_PATH / "cli_response"
 CHARMCRAFT_LIB_SH = TEST_PATH.parent / "jobs" / "build-charms" / "charmcraft-lib.sh"
 
 
+@pytest.mark.parametrize(
+    "risk, expected_channels",
+    [
+        ("edge", ["edge", "2.14/edge"]),
+        ("stable", ["stable", "0.15/stable"]),
+        ("candidate", ["candidate"]),
+    ],
+)
+def test_matched_numerical_channel(charms, risk, expected_channels):
+    track_map = {
+        "0.15": ["0.15/edge", "0.15/beta", "0.15/stable"],
+        "2.14": ["2.14/edge", "2.14/beta"],
+    }
+    channels = charms.matched_numerical_channel(risk, track_map)
+    assert channels == expected_channels
+
+
 def test_build_env_missing_env(charms):
     """Ensure missing environment variables raise Exception."""
     with pytest.raises(charms.BuildException) as ie:
@@ -163,7 +180,7 @@ def test_build_env_promote_all_charmstore(charm_environment, cilib_store, charm_
 def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
     """Tests promote_all to charmhub."""
     charm_environment.promote_all(
-        from_channel="latest/edge", to_channel="latest/beta", store="ch"
+        from_channel="latest/edge", to_channels=["latest/beta"], store="ch"
     )
     resource_args = [
         "--resource=test-file:994",
@@ -404,19 +421,48 @@ def test_build_entity_promote(
     charm_name, charm_opts = next(iter(artifacts[0].items()))
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
-    charm_entity.promote(to_channel="edge")
+    charm_entity.promote(to_channels=("edge", "0.15/edge"))
     charm_cmd.release.assert_not_called()
     charmcraft_cmd.release.assert_called_once_with(
         "k8s-ci-charm",
         "--revision=6",
         "--channel=latest/edge",
+        "--channel=0.15/edge",
+        "--resource=test-file:3",
+        "--resource=test-image:4",
+    )
+    charmcraft_cmd.release.reset_mock()
+
+    charm_entity.promote(to_channels=("stable", "0.15/stable"))
+    charm_cmd.release.assert_not_called()
+    charmcraft_cmd.release.assert_called_once_with(
+        "k8s-ci-charm",
+        "--revision=6",
+        "--channel=latest/stable",
+        "--channel=0.15/stable",
+        "--resource=test-file:3",
+        "--resource=test-image:4",
+    )
+    charmcraft_cmd.release.reset_mock()
+    charm_entity.promote(to_channels=("0.14/stable",))
+    charm_cmd.release.assert_not_called()
+    charmcraft_cmd.release.assert_called_once_with(
+        "k8s-ci-charm",
+        "--revision=6",
+        "--channel=0.14/stable",
         "--resource=test-file:3",
         "--resource=test-image:4",
     )
     charmcraft_cmd.release.reset_mock()
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
-    charm_entity.promote(to_channel="edge")
+    with pytest.raises(AssertionError):
+        charm_entity.promote(to_channels=("edge", "0.15/edge"))
+    charm_cmd.release.assert_not_called()
+    charmcraft_cmd.release.assert_not_called()
+
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "cs")
+    charm_entity.promote(to_channels=("edge",))
     charm_cmd.release.assert_called_once_with(
         "cs:~containers/k8s-ci-charm-845",
         "--channel=edge",
@@ -600,7 +646,7 @@ def test_promote_command(mock_build_env, charms):
         "to_channel": "latest/beta",
     }
     mock_build_env.promote_all.assert_called_once_with(
-        from_channel="latest/edge", to_channel="latest/beta", store="ch"
+        from_channel="latest/edge", to_channels=mock_build_env.to_channels, store="ch"
     )
 
 
@@ -661,7 +707,7 @@ def test_build_command(mock_build_env, mock_build_entity, charms):
     entity.charm_build.assert_called_once_with()
     entity.push.assert_called_once_with()
     entity.attach_resources.assert_called_once_with()
-    entity.promote.assert_called_once_with(to_channel="edge")
+    entity.promote.assert_called_once_with(to_channels=mock_build_env.to_channels)
 
 
 @patch("charms.cmd_ok")
@@ -690,6 +736,7 @@ def test_bundle_build_command(
     mock_build_env.repos_dir = mock_build_env.tmp_dir / "repos"
     mock_build_env.bundles_dir = mock_build_env.tmp_dir / "bundles"
     mock_build_env.default_repo_dir = mock_build_env.repos_dir / "bundles-kubernetes"
+    mock_build_env.to_channels = ("edge", "0.15/edge")
 
     result = runner.invoke(
         charms.build_bundles,
@@ -725,6 +772,11 @@ def test_bundle_build_command(
         )
         if "downstream" in entity.opts:
             entity.setup.assert_called_once_with()
-        entity.bundle_build.assert_called_once_with("edge")
-        entity.push.assert_called_once_with()
-        entity.promote.assert_called_once_with(to_channel="edge")
+
+        assert entity.bundle_build.mock_calls == [
+            call(channel) for channel in mock_build_env.to_channels
+        ]
+        assert entity.push.mock_calls == [call(), call()]
+        assert entity.promote.mock_calls == [
+            call(to_channels=[channel]) for channel in mock_build_env.to_channels
+        ]
