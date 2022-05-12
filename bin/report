@@ -172,6 +172,11 @@ def _gen_metadata():
         deploy_result, _, _ = get_file_prefix("deployresult-", files)
         obj["deploy_result"] = True if deploy_result == "True" else False
 
+
+        # Validate jobs are now cloud-specific; drop old jobs from the report
+        if "validate-ck-amd64" in job_name:
+            continue
+        # Keep all other validate jobs; skip anything else
         if "validate" not in job_name:
             continue
 
