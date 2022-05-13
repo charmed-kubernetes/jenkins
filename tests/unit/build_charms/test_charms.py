@@ -779,3 +779,4 @@ def test_bundle_build_command(
         assert entity.promote.mock_calls == [
             call(to_channels=[channel]) for channel in mock_build_env.to_channels
         ]
+        assert entity.reset_dst_path.mock_calls == [call(), call()]

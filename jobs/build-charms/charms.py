@@ -940,6 +940,20 @@ class BundleBuildEntity(BuildEntity):
                     yaml.safe_dump(contents, fp)
             self.dst_path = str(CharmcraftCmd(self).pack(_cwd=dst_path))
 
+    def reset_dst_path(self):
+        """Reset the dst_path in order to facilitate multiple bundle builds by the same entity."""
+
+        def delete_file_or_dir(d):
+            cur_dst_path = Path(d)
+            try:
+                cur_dst_path.unlink(missing_ok=True)
+            except IsADirectoryError:
+                shutil.rmtree(cur_dst_path)
+
+        delete_file_or_dir(self.dst_path)  # delete any zip'd bundle file
+        self.dst_path = str(self.opts["dst_path"])  # reset the state
+        delete_file_or_dir(self.dst_path)  # delete any unzipped bundle directory
+
 
 @click.group()
 def cli():
@@ -1140,6 +1154,7 @@ def build_bundles(
                 entity.bundle_build(channel)
                 entity.push()
                 entity.promote(to_channels=[channel])
+                entity.reset_dst_path()
         finally:
             entity.echo("Stopping")
 
