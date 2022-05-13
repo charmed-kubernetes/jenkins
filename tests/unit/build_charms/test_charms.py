@@ -23,20 +23,19 @@ CHARMCRAFT_LIB_SH = TEST_PATH.parent / "jobs" / "build-charms" / "charmcraft-lib
 
 
 @pytest.mark.parametrize(
-    "risk, expected_channels",
+    "risk, expected",
     [
-        ("edge", ["edge", "2.14/edge"]),
-        ("stable", ["stable", "0.15/stable"]),
-        ("candidate", ["candidate"]),
+        ("edge", "2.14/edge"),
+        ("stable", "0.15/stable"),
+        ("candidate", None),
     ],
 )
-def test_matched_numerical_channel(charms, risk, expected_channels):
+def test_matched_numerical_channel(charms, risk, expected):
     track_map = {
         "0.15": ["0.15/edge", "0.15/beta", "0.15/stable"],
         "2.14": ["2.14/edge", "2.14/beta"],
     }
-    channels = charms.matched_numerical_channel(risk, track_map)
-    assert channels == expected_channels
+    assert charms.matched_numerical_channel(risk, track_map) == expected
 
 
 def test_build_env_missing_env(charms):

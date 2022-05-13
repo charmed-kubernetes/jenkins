@@ -31,6 +31,7 @@ from datetime import datetime
 from enum import Enum
 from retry.api import retry_call
 from types import SimpleNamespace
+from typing import List, Mapping, NamedTuple, Optional
 
 from pathos.threading import ThreadPool
 from pprint import pformat
@@ -46,17 +47,38 @@ import re
 RISKS = ["stable", "candidate", "beta", "edge"]
 
 
-def matched_numerical_channel(risk, track_map):
-    chans = [risk]
+class Release(NamedTuple):
+    """Converts kubernetes release ids to sortable object and back to str."""
+
+    major: int
+    minor: int
+
+    @classmethod
+    def make(cls, as_str):
+        major, minor = (int(n) for n in as_str.split("."))
+        return cls(major, minor)
+
+    def __str__(self):
+        return ".".join(map(str, self))
+
+
+def matched_numerical_channel(
+    risk: str, track_map: Mapping[str, List[str]]
+) -> Optional[str]:
+    """
+    Given a risk, provide the most recently available channel matching that risk.
+
+    @param risk: one of the 4 Risks
+    @param track_map: mapping of kubernetes releases to available channels
+    """
     if risk in RISKS:
-        versions = ((float(k), v) for k, v in track_map.items())
+        versions = ((Release.make(k), v) for k, v in track_map.items())
         ordered = sorted(versions, reverse=True)
         for release, tracks in ordered:
-            check_for = f"{release}/{risk}"
-            if check_for in tracks:
-                chans.append(check_for)
-                return chans
-    return chans
+            chan = f"{release}/{risk}"
+            if chan in tracks:
+                return chan
+    return None
 
 
 class BuildException(Exception):
@@ -422,10 +444,19 @@ class BuildEnv:
         return self.db["build_args"].get("resource_spec", None)
 
     @property
-    def to_channels(self):
-        """Get destination channels."""
+    def to_channels(self) -> List[str]:
+        """
+        Returns destination channels.
+
+        Based on the build_args for historical reasons a *risk*
+        can be returned in the list of channels which implies
+        latest/<risk> when necessary.
+
+        Numerical channels will always be in the format i.ii/risk
+        """
         chan = self.db["build_args"].get("to_channel", None)
-        return matched_numerical_channel(chan, SNAP_K8S_TRACK_MAP)
+        numerical = matched_numerical_channel(chan, SNAP_K8S_TRACK_MAP)
+        return list(filter(None, [chan, numerical]))
 
     @property
     def from_channel(self):
