@@ -35,7 +35,7 @@
           COMMAND: |
             #!/bin/bash
             set -eux
-            python jobs/build-charms/charms.py promote \
+            tox -e py38 -- python jobs/build-charms/charms.py promote \
                 --from-channel $FROM_CHANNEL \
                 --to-channel $TO_CHANNEL \
                 --charm-list $CHARM_LIST \
@@ -77,7 +77,7 @@
           COMMAND: |
             #!/bin/bash
             set -eux
-            python jobs/build-charms/charms.py promote \
+            tox -e py38 -- python jobs/build-charms/charms.py promote \
                 --to-channel $TO_CHANNEL \
                 --from-channel $FROM_CHANNEL \
                 --charm-list $BUNDLE_LIST \

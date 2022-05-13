@@ -278,6 +278,10 @@
           set +o allexport
 
           python3.8 -m venv venv
+
+          # le sigh. pin for https://github.com/jazzband/pip-tools/issues/1617
+          python3 -m pip install pip==22.0.4
+
           venv/bin/python -m pip install pip-tools wheel
           venv/bin/pip-sync requirements.txt
 
