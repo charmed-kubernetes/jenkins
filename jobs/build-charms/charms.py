@@ -53,13 +53,13 @@ class Release(NamedTuple):
     major: int
     minor: int
 
-    @classmethod
-    def make(cls, as_str):
-        major, minor = (int(n) for n in as_str.split("."))
-        return cls(major, minor)
-
     def __str__(self):
         return ".".join(map(str, self))
+
+
+def mk_release(rel: str) -> Release:
+    major, minor = (int(n) for n in rel.split("."))
+    return Release(major, minor)
 
 
 def matched_numerical_channel(
@@ -72,13 +72,12 @@ def matched_numerical_channel(
     @param track_map: mapping of kubernetes releases to available channels
     """
     if risk in RISKS:
-        versions = ((Release.make(k), v) for k, v in track_map.items())
+        versions = ((mk_release(k), v) for k, v in track_map.items())
         ordered = sorted(versions, reverse=True)
         for release, tracks in ordered:
             chan = f"{release}/{risk}"
             if chan in tracks:
                 return chan
-    return None
 
 
 class BuildException(Exception):
@@ -491,6 +490,9 @@ class BuildEnv:
                 if cs_store == "cs":
                     charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
                     assert len(to_channels) == 1, "Charmstore only supports one channel"
+                    assert (
+                        to_channels[0] in RISKS
+                    ), "Charmstore supports risk for its channel"
                     _CharmStore(self).promote(
                         charm_entity, from_channel, to_channels[0]
                     )
@@ -864,7 +866,8 @@ class BuildEntity:
         """Promote charm and its resources from a channel to another."""
         if self.store == "cs":
             cs = _CharmStore(self)
-            assert len(to_channels) == 1, "Charmstore only supports one channel"
+            assert len(to_channels) == 1, "Charmstore supports only one channel"
+            assert to_channels[0] in RISKS, "Charmstore supports risk for its channel"
             charm_id = cs.promote(self.entity, from_channel, to_channels[0])
             cs.grant(charm_id)
         elif self.store == "ch":
