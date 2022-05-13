@@ -24,12 +24,14 @@ import zipfile
 from pathlib import Path
 from sh.contrib import git
 from cilib.git import default_gh_branch
+from cilib.enums import SNAP_K8S_TRACK_MAP
 from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture, script
 from datetime import datetime
 from enum import Enum
 from retry.api import retry_call
 from types import SimpleNamespace
+from typing import List, Mapping, NamedTuple, Optional
 
 from pathos.threading import ThreadPool
 from pprint import pformat
@@ -40,6 +42,42 @@ import yaml
 import json
 import requests
 import re
+
+
+RISKS = ["stable", "candidate", "beta", "edge"]
+
+
+class Release(NamedTuple):
+    """Converts kubernetes release ids to sortable object and back to str."""
+
+    major: int
+    minor: int
+
+    def __str__(self):
+        return ".".join(map(str, self))
+
+
+def mk_release(rel: str) -> Release:
+    major, minor = (int(n) for n in rel.split("."))
+    return Release(major, minor)
+
+
+def matched_numerical_channel(
+    risk: str, track_map: Mapping[str, List[str]]
+) -> Optional[str]:
+    """
+    Given a risk, provide the most recently available channel matching that risk.
+
+    @param risk: one of the 4 Risks
+    @param track_map: mapping of kubernetes releases to available channels
+    """
+    if risk in RISKS:
+        versions = ((mk_release(k), v) for k, v in track_map.items())
+        ordered = sorted(versions, reverse=True)
+        for release, tracks in ordered:
+            chan = f"{release}/{risk}"
+            if chan in tracks:
+                return chan
 
 
 class BuildException(Exception):
@@ -265,9 +303,9 @@ class _CharmHub(CharmcraftCmd):
             charm_status = [unpublished_rev]
         return charm_status
 
-    def promote(self, charm_entity, from_channel, to_channel):
+    def promote(self, charm_entity, from_channel, to_channels):
         self._echo(
-            f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channel}"
+            f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channels}"
         )
         if from_channel == "unpublished":
             charm_status = self._unpublished_revisions(charm_entity)
@@ -288,7 +326,7 @@ class _CharmHub(CharmcraftCmd):
                 (
                     charm_entity,
                     f"--revision={revision}",
-                    f"--channel={to_channel}",
+                    *(f"--channel={chan}" for chan in to_channels),
                     *resource_args,
                 )
             )
@@ -405,9 +443,19 @@ class BuildEnv:
         return self.db["build_args"].get("resource_spec", None)
 
     @property
-    def to_channel(self):
-        """Get destination channel."""
-        return self.db["build_args"].get("to_channel", None)
+    def to_channels(self) -> List[str]:
+        """
+        Returns destination channels.
+
+        Based on the build_args for historical reasons a *risk*
+        can be returned in the list of channels which implies
+        latest/<risk> when necessary.
+
+        Numerical channels will always be in the format i.ii/risk
+        """
+        chan = self.db["build_args"].get("to_channel", None)
+        numerical = matched_numerical_channel(chan, SNAP_K8S_TRACK_MAP)
+        return list(filter(None, [chan, numerical]))
 
     @property
     def from_channel(self):
@@ -430,7 +478,9 @@ class BuildEnv:
         self.db_json.write_text(json.dumps(dict(self.db)))
         self.store.put_item(Item=dict(self.db))
 
-    def promote_all(self, from_channel="unpublished", to_channel="edge", store="cs"):
+    def promote_all(
+        self, from_channel="unpublished", to_channels=("edge",), store="cs"
+    ):
         """Promote set of charm artifacts in the store."""
         for charm_map in self.artifacts:
             for charm_name, charm_opts in charm_map.items():
@@ -439,9 +489,15 @@ class BuildEnv:
                 cs_store = charm_opts.get("store") or store
                 if cs_store == "cs":
                     charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
-                    _CharmStore(self).promote(charm_entity, from_channel, to_channel)
+                    assert len(to_channels) == 1, "Charmstore only supports one channel"
+                    assert (
+                        to_channels[0] in RISKS
+                    ), "Charmstore supports risk for its channel"
+                    _CharmStore(self).promote(
+                        charm_entity, from_channel, to_channels[0]
+                    )
                 elif cs_store == "ch":
-                    _CharmHub(self).promote(charm_name, from_channel, to_channel)
+                    _CharmHub(self).promote(charm_name, from_channel, to_channels)
 
     def download(self, layer_name):
         """Pull layer source from the charm store."""
@@ -806,17 +862,23 @@ class BuildEntity:
             elif self.store == "ch":
                 _CharmHub(self).upload_resource(self.entity, resource_name, resource)
 
-    def promote(self, from_channel="unpublished", to_channel="edge"):
+    def promote(self, from_channel="unpublished", to_channels=("edge",)):
         """Promote charm and its resources from a channel to another."""
         if self.store == "cs":
             cs = _CharmStore(self)
-            charm_id = cs.promote(self.entity, from_channel, to_channel)
+            assert len(to_channels) == 1, "Charmstore supports only one channel"
+            assert to_channels[0] in RISKS, "Charmstore supports risk for its channel"
+            charm_id = cs.promote(self.entity, from_channel, to_channels[0])
             cs.grant(charm_id)
         elif self.store == "ch":
-            if to_channel == "edge" and from_channel == "unpublished":
-                track = self.build.db["build_args"].get("track") or "latest"
-                to_channel = f"{track}/edge"
-            _CharmHub(self).promote(self.entity, from_channel, to_channel)
+            track = self.build.db["build_args"].get("track") or "latest"
+            ch_channels = [
+                f"{track}/{chan.lower()}"
+                if (chan.lower() in RISKS and from_channel == "unpublished")
+                else chan
+                for chan in to_channels
+            ]
+            _CharmHub(self).promote(self.entity, from_channel, ch_channels)
 
 
 class BundleBuildEntity(BuildEntity):
@@ -985,7 +1047,7 @@ def build(
 
             entity.push()
             entity.attach_resources()
-            entity.promote(to_channel=to_channel)
+            entity.promote(to_channels=build_env.to_channels)
         except Exception:
             entity.echo(traceback.format_exc())
             failed_entities.append(entity)
@@ -1027,7 +1089,7 @@ def build(
     "--track", required=True, help="track to promote charm to", default="latest"
 )
 @click.option(
-    "--to-channel", required=True, help="channel to promote bundle to", default="edge"
+    "--to-channel", required=True, help="channels to promote bundle to", default="edge"
 )
 @click.option(
     "--store",
@@ -1069,15 +1131,15 @@ def build_bundles(
 
     for entity in entities:
         entity.echo("Starting")
-
         try:
             if "downstream" in entity.opts:
                 # clone bundle repo override
                 entity.setup()
             entity.echo(f"Details: {entity}")
-            entity.bundle_build(to_channel)
-            entity.push()
-            entity.promote(to_channel=to_channel)
+            for channel in build_env.to_channels:
+                entity.bundle_build(channel)
+                entity.push()
+                entity.promote(to_channels=[channel])
         finally:
             entity.echo("Stopping")
 
@@ -1118,7 +1180,7 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel, store):
     }
     build_env.clean()
     return build_env.promote_all(
-        from_channel=from_channel, to_channel=to_channel, store=store
+        from_channel=from_channel, to_channels=build_env.to_channels, store=store
     )
 
 
