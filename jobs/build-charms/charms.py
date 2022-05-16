@@ -578,12 +578,12 @@ class BuildEntity:
 
         # Bundle or charm opts as defined in the layer include
         self.opts = opts
-        self.namespace = opts["namespace"]
+        self.namespace = ns = opts.get("namespace")
 
         self.store = opts.get("store") or default_store
         if self.store == "cs":
             # Entity path, ie. cs:~containers/kubernetes-worker
-            self.entity = f"cs:~{opts['namespace']}/{name}"
+            self.entity = "cs:" + f"~{ns}/{name}" if ns else name
         elif self.store == "ch":
             # Entity path, ie. kubernetes-worker
             self.entity = name
@@ -791,13 +791,14 @@ class BuildEntity:
         """Pushes a built charm to Charm store/hub."""
         if "override-push" in self.opts:
             self.echo("Override push found, running in place of charm push.")
-            script(
-                self.opts["override-push"],
+            args = dict(
                 cwd=self.src_path,
                 charm=self.name,
-                namespace=self.namespace,
                 echo=self.echo,
             )
+            if self.namespace:
+                args["namespace"] = self.namespace
+            script(self.opts["override-push"], **args)
             return
 
         self.echo(
