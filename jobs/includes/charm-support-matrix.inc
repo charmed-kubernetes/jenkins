@@ -108,6 +108,7 @@
     tags:
       - k8s-operator
       - kube-state-metrics
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/kube-state-metrics-operator.git'
 - kubernetes-autoscaler:
     bugs: 'https://bugs.launchpad.net/charmed-kubernetes'
@@ -118,6 +119,7 @@
     tags:
       - k8s-operator
       - kubernetes-autoscaler
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-autoscaler.git'
 - kubernetes-e2e:
     bugs: 'https://bugs.launchpad.net/charm-kubernetes-e2e'
@@ -128,6 +130,7 @@
     tags:
       - k8s
       - kubernetes-e2e
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-e2e.git'
 - kubernetes-control-plane:
     bugs: 'https://bugs.launchpad.net/charm-kubernetes-master'
@@ -150,6 +153,7 @@
     tags:
       - k8s-operator
       - kubernetes-metrics-server
+      - docs-extra
     upstream: >-
       https://github.com/charmed-kubernetes/kubernetes-metrics-server-operator.git
 - kubernetes-worker:
@@ -187,6 +191,7 @@
       - general
       - keepalived
       - k8s
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-keepalived.git'
 - docker-registry:
     bugs: 'https://bugs.launchpad.net/layer-docker-registry'
@@ -198,6 +203,7 @@
       - general
       - docker-registry
       - k8s
+      - docs-extra
     upstream: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
 - aws-iam:
     bugs: 'https://bugs.launchpad.net/charm-aws-iam'
@@ -208,6 +214,7 @@
     tags:
       - k8s
       - aws-iam
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-aws-iam.git'
 - azure-integrator:
     bugs: 'https://bugs.launchpad.net/charm-azure-integrator'
@@ -278,6 +285,7 @@
     summary: Controller charm for the metallb loadbalancer
     tags:
       - k8s
+      - docs-extra
       - metallb
       - metallb-controller
     upstream: 'https://github.com/charmed-kubernetes/metallb-operator.git'
@@ -290,6 +298,7 @@
     summary: Speaker charm for the metallb loadbalancer
     tags:
       - k8s
+      - docs-extra
       - metallb
       - metallb-speaker
     upstream: 'https://github.com/charmed-kubernetes/metallb-operator.git'
