@@ -133,7 +133,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-e2e.git'
 - kubernetes-control-plane:
-    bugs: 'https://bugs.launchpad.net/charm-kubernetes-master'
+    bugs: 'https://bugs.launchpad.net/charm-kubernetes-control-plane'
     build-resources: 'cd {out_path}; bash {src_path}/build-cni-resources.sh'
     docs: 'https://charmhub.io/kubernetes-control-plane/docs'
     downstream: charmed-kubernetes/charm-kubernetes-control-plane.git
