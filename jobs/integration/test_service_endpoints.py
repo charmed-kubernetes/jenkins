@@ -1,7 +1,7 @@
 import sh
 import requests
 import yaml
-from .utils import asyncify, retry_async_with_timeout
+from .utils import retry_async_with_timeout
 from .logger import log
 
 
@@ -87,7 +87,7 @@ async def test_nodeport_service_endpoint():
 
         # Build the url
         set_url = f"http://{ip}:{port}"
-        html = await asyncify(requests.get)(set_url)
+        html = await requests.get(set_url)
 
         assert "Hello Kubernetes!" in html.content.decode()
 
