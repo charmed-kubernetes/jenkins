@@ -42,7 +42,7 @@ async def setup_svc(svc_type):
     sh.kubectl.create(
         "deployment",
         "hello-world",
-        image="rocks.canonical.com/cdk/google-samples/node-hello:1.0",
+        image="rocks.canonical.com/cdk/google-samples/hello-app:1.0",
     )
     sh.kubectl.set("env", "deployment/hello-world", "PORT=50000")
 
@@ -89,7 +89,7 @@ async def test_nodeport_service_endpoint():
         set_url = f"http://{ip}:{port}"
         html = await requests.get(set_url)
 
-        assert "Hello Kubernetes!" in html.content.decode()
+        assert "Hello, world!\n" in html.content.decode()
 
     finally:
         await cleanup()
@@ -118,7 +118,7 @@ async def test_clusterip_service_endpoint(model):
         for unit in nodes_lst:
             action = await unit.run(cmd)
             try:
-                assert "Hello Kubernetes!" in action.results.get("Stdout", "")
+                assert "Hello, world!\n" in action.results.get("Stdout", "")
             except AssertionError as e:
                 log(f"connection on {unit} failed")
                 raise e
