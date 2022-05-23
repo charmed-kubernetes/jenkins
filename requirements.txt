@@ -97,7 +97,7 @@ idna==2.10
     # via requests
 immutables==0.15
     # via contextvars
-importlib-metadata==4.11.3
+importlib-metadata==4.11.4
     # via
     #   -r requirements.in
     #   keyring
