@@ -1,0 +1,36 @@
+# Build Charmed-Kubernetes Documentation
+
+- job:
+    name: build-ck-docs
+    node: runner-cloud
+    description: |
+      Build Charmed-Kubernetes Documentation for a given release
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/build-docs/build-ck-docs.groovy
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    parameters:
+      - string:
+          name: RELEASE
+          default: "1.24"
+          description: |
+            Which release would you like to generate docs? (eg. 1.24, 1.25)
+      - string:
+          name: BRANCH
+          default: "main"
+          description: |
+            Which branch of kubernetes-docs repo to checkout?
+      - choice:
+          name: DRY_RUN
+          description: |
+            If true, only show differences without creating a new branch
+          choices:
+            - "no"
+            - "yes"
+    properties:
+      - build-discarder:
+          num-to-keep: 5
