@@ -19,12 +19,6 @@
     namespace: 'containers'
     tags: ['k8s', 'containerd']
     store: 'ch'
-- docker:
-    upstream: "https://github.com/charmed-kubernetes/charm-docker.git"
-    downstream: 'charmed-kubernetes/charm-docker.git'
-    namespace: 'containers'
-    tags: ['k8s', 'docker']
-    store: 'ch'
 - easyrsa:
     upstream: "https://github.com/charmed-kubernetes/layer-easyrsa.git"
     downstream: 'charmed-kubernetes/layer-easyrsa.git'
