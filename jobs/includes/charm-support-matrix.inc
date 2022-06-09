@@ -36,13 +36,6 @@
       - core
       - cri
     upstream: 'https://github.com/charmed-kubernetes/charm-containerd.git'
-- docker:
-    downstream: charmed-kubernetes/charm-docker.git
-    store: ch
-    tags:
-      - k8s
-      - docker
-    upstream: 'https://github.com/charmed-kubernetes/charm-docker.git'
 - easyrsa:
     bugs: 'https://bugs.launchpad.net/charm-easyrsa'
     docs: 'https://charmhub.io/easyrsa/docs'
