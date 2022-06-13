@@ -29,7 +29,6 @@ from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture, script
 from datetime import datetime
 from enum import Enum
-from retry.api import retry_call
 from types import SimpleNamespace
 from typing import List, Mapping, NamedTuple, Optional
 
@@ -136,81 +135,6 @@ class CharmcraftCmd(_WrappedCmd):
         entity = Path(entity)
         self._echo(f"Packed Bundle :: {entity.name:^35}")
         return entity
-
-
-class _CharmStore(CharmCmd):
-    def show(self, *args, **kwargs):
-        return self.charm.show(*args, **kwargs)
-
-    def id(self, charm_entity, channel):
-        try:
-            charm_id = self.show(charm_entity, "id", channel=channel)
-        except sh.ErrorReturnCode:
-            return None
-        response = yaml.safe_load(charm_id.stdout.decode().strip())
-        return response["id"]["Id"]
-
-    def resources(self, charm_id, channel):
-        try:
-            resources = self.charm(
-                "list-resources",
-                charm_id,
-                channel=channel,
-                format="yaml",
-            )
-            return yaml.safe_load(resources.stdout.decode())
-        except sh.ErrorReturnCode:
-            return []
-
-    def promote(self, charm_entity, from_channel, to_channel):
-        self._echo(
-            f"Promoting :: {charm_entity:^35} :: from: {from_channel} to: {to_channel}"
-        )
-        charm_id = self.id(charm_entity, from_channel)
-        charm_resources = self.resources(charm_id, from_channel)
-        if not charm_resources:
-            self._echo("No resources for {}".format(charm_id))
-        resources_args = [
-            (
-                "--resource",
-                "{}-{}".format(resource["name"], resource["revision"]),
-            )
-            for resource in charm_resources
-        ]
-        self.charm.release(charm_id, f"--channel={to_channel}", *resources_args)
-        return charm_id
-
-    def grant(self, charm_id):
-        self._echo(f"Setting   :: {charm_id:^35} :: permissions for read everyone")
-        self.charm.grant(charm_id, "everyone", acl="read")
-
-    def upload(self, dst_path, entity):
-        out = self.charm.push(dst_path, entity)
-        self._echo(f"Pushing   :: {entity:^35} :: returns {out.stdout or out.stderr}")
-
-        # Output includes lots of ansi escape sequences from the docker push,
-        # and we only care about the first line, which contains the url as yaml.
-        out = yaml.safe_load(out.stdout.decode().strip().splitlines()[0])
-        return out["url"]
-
-    def set(self, entity, commit):
-        self._echo(f"Setting {entity} metadata: {commit}")
-        self.charm.set(entity, f"commit={commit}")
-
-    def upload_resource(self, entity, resource_name, resource):
-        # If the resource is a file, populate the path where it was built.
-        # If it's a custom image, it will be in Docker and this will be a no-op.
-        retry_call(
-            self.charm.attach,
-            fargs=[
-                entity,
-                f"{resource_name}={resource}",
-            ],
-            delay=2,
-            backoff=2,
-            tries=15,
-            exceptions=sh.ErrorReturnCode,
-        )
 
 
 class _CharmHub(CharmcraftCmd):
@@ -486,18 +410,7 @@ class BuildEnv:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
                     continue
-                store = charm_opts.get("store_push") or default_store
-                if store == "cs":
-                    charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
-                    assert len(to_channels) == 1, "Charmstore only supports one channel"
-                    assert (
-                        to_channels[0] in RISKS
-                    ), "Charmstore supports risk for its channel"
-                    _CharmStore(self).promote(
-                        charm_entity, from_channel, to_channels[0]
-                    )
-                elif store == "ch":
-                    _CharmHub(self).promote(charm_name, from_channel, to_channels)
+                _CharmHub(self).promote(charm_name, from_channel, to_channels)
 
     def download(self, layer_name):
         """Pull layer source from the charm store."""
@@ -578,17 +491,10 @@ class BuildEntity:
 
         # Bundle or charm opts as defined in the layer include
         self.opts = opts
-        self.namespace = ns = opts.get("namespace")
+        self.namespace = opts.get("namespace")
 
-        self.store = opts.get("store-push") or default_store
-        if self.store == "cs":
-            # Entity path, ie. cs:~containers/kubernetes-worker
-            self.entity = "cs:" + f"~{ns}/{name}" if ns else name
-        elif self.store == "ch":
-            # Entity path, ie. kubernetes-worker
-            self.entity = name
-        else:
-            raise BuildException(f"'{self.store}' doesn't exist")
+        # Entity path, ie. kubernetes-worker
+        self.entity = name
 
         # Entity path with current revision (from target channel)
         self.full_entity = self._get_full_entity()
@@ -606,76 +512,41 @@ class BuildEntity:
 
     def _get_full_entity(self):
         """Grab identifying revision for charm's channel."""
-        if self.store == "cs":
-            return _CharmStore(self).id(self.entity, self.channel)
-        else:
-            return f"{self.entity}:{self.channel}"
+        return f"{self.entity}:{self.channel}"
 
     def download(self, fname):
         """Fetch single file from associated store/charm/channel."""
         if not self.full_entity:
             return None
-        elif self.store == "cs":
-            entity_p = self.full_entity.lstrip("cs:")
-            url = f"https://api.jujucharms.com/charmstore/v5/{entity_p}/archive/{fname}"
-            self.echo(f"Downloading {fname} from {url}")
-            resp = requests.get(url)
-            if resp.ok:
-                return yaml.safe_load(resp.content.decode())
-            self.echo(
-                f"Failed to read {fname} due to {resp.status_code} - {resp.content}"
-            )
-        elif self.store == "ch":
-            name, channel = self.full_entity.rsplit(":")
-            info = _CharmHub.info(
-                name, channel=channel, fields="default-release.revision.download.url"
-            )
-            try:
-                url = info["default-release"]["revision"]["download"]["url"]
-            except (KeyError, TypeError):
-                self.echo(f"Failed to find in charmhub.io \n{info}")
-                return None
-            self.echo(f"Downloading {fname} from {url}")
-            resp = requests.get(url, stream=True)
-            if resp.ok:
-                yaml_file = zipfile.Path(BytesIO(resp.content)) / fname
-                return yaml.safe_load(yaml_file.read_text())
-            self.echo(
-                f"Failed to read {fname} due to {resp.status_code} - {resp.content}"
-            )
+        name, channel = self.full_entity.rsplit(":")
+        info = _CharmHub.info(
+            name, channel=channel, fields="default-release.revision.download.url"
+        )
+        try:
+            url = info["default-release"]["revision"]["download"]["url"]
+        except (KeyError, TypeError):
+            self.echo(f"Failed to find in charmhub.io \n{info}")
+            return None
+        self.echo(f"Downloading {fname} from {url}")
+        resp = requests.get(url, stream=True)
+        if resp.ok:
+            yaml_file = zipfile.Path(BytesIO(resp.content)) / fname
+            return yaml.safe_load(yaml_file.read_text())
+        self.echo(f"Failed to read {fname} due to {resp.status_code} - {resp.content}")
 
     def version_identification(self, source):
         comparisons = ["rev", "url"]
         version_id = []
         if not self.reactive and source == "local":
-            version_id = [
-                {"rev": self.commit(short=self.store == "ch"), "url": self.entity}
-            ]
+            version_id = [{"rev": self.commit(short=True), "url": self.entity}]
         elif not self.reactive and source == "remote":
-            if self.store == "ch":
-                info = _CharmHub.info(
-                    self.name,
-                    channel=self.channel,
-                    fields="default-release.revision.version",
-                )
-                version = (
-                    info.get("default-release", {}).get("revision", {}).get("version")
-                )
-                version_id = [{"rev": version, "url": self.entity}] if version else None
-            else:
-                try:
-                    cs_show = _CharmStore(self).show(
-                        self.full_entity, "extra-info", format="yaml"
-                    )
-                except sh.ErrorReturnCode:
-                    cs_show = None
-                if not cs_show:
-                    self.echo("No revisions released to CharmStore")
-                    version_id = None
-                else:
-                    info = yaml.safe_load(cs_show.stdout.decode())
-                    old_commit = info.get("extra-info", {}).get("commit")
-                    version_id = [{"rev": old_commit, "url": self.entity}]
+            info = _CharmHub.info(
+                self.name,
+                channel=self.channel,
+                fields="default-release.revision.version",
+            )
+            version = info.get("default-release", {}).get("revision", {}).get("version")
+            version_id = [{"rev": version, "url": self.entity}] if version else None
         elif self.reactive and source == "local":
             version_id = [
                 {k: curr[k] for k in comparisons}
@@ -763,11 +634,7 @@ class BuildEntity:
                 echo=self.echo,
             )
         elif self.reactive:
-            args = "-r --force -i https://localhost"
-            if self.store == "ch":
-                args += " --charm-file"
-            else:
-                self.dst_path = str(self.build.build_dir / self.name)
+            args = "-r --force -i https://localhost --charm-file"
             self.echo(f"Building with: charm build {args}")
             ret = CharmCmd(self).build(*args.split(), _cwd=self.src_path)
         elif lxc:
@@ -804,12 +671,7 @@ class BuildEntity:
         self.echo(
             f"Pushing {self.type}({self.name}) from {self.dst_path} to {self.entity}"
         )
-        if self.store == "cs":
-            cs = _CharmStore(self)
-            self.new_entity = cs.upload(self.dst_path, self.entity)
-            cs.set(self.new_entity, self.commit)
-        elif self.store == "ch":
-            self.new_entity = _CharmHub(self).upload(self.dst_path)
+        self.new_entity = _CharmHub(self).upload(self.dst_path)
 
     def attach_resources(self):
         """Assemble charm's resources and associate in the store."""
@@ -856,30 +718,18 @@ class BuildEntity:
         self.echo(f"Attaching resources:\n{pformat(resource_spec)}")
         # Attach all resources.
         for resource_name, resource in resource_spec.items():
-            if self.store == "cs":
-                _CharmStore(self).upload_resource(
-                    self.new_entity, resource_name, resource[1]
-                )
-            elif self.store == "ch":
-                _CharmHub(self).upload_resource(self.entity, resource_name, resource)
+            _CharmHub(self).upload_resource(self.entity, resource_name, resource)
 
     def promote(self, from_channel="unpublished", to_channels=("edge",)):
         """Promote charm and its resources from a channel to another."""
-        if self.store == "cs":
-            cs = _CharmStore(self)
-            assert len(to_channels) == 1, "Charmstore supports only one channel"
-            assert to_channels[0] in RISKS, "Charmstore supports risk for its channel"
-            charm_id = cs.promote(self.entity, from_channel, to_channels[0])
-            cs.grant(charm_id)
-        elif self.store == "ch":
-            track = self.build.db["build_args"].get("track") or "latest"
-            ch_channels = [
-                f"{track}/{chan.lower()}"
-                if (chan.lower() in RISKS and from_channel == "unpublished")
-                else chan
-                for chan in to_channels
-            ]
-            _CharmHub(self).promote(self.entity, from_channel, ch_channels)
+        track = self.build.db["build_args"].get("track") or "latest"
+        ch_channels = [
+            f"{track}/{chan.lower()}"
+            if (chan.lower() in RISKS and from_channel == "unpublished")
+            else chan
+            for chan in to_channels
+        ]
+        _CharmHub(self).promote(self.entity, from_channel, ch_channels)
 
 
 class BundleBuildEntity(BuildEntity):
@@ -920,26 +770,25 @@ class BundleBuildEntity(BuildEntity):
                 Path(self.src_path) / self.opts.get("subdir", ""), self.dst_path
             )
 
-        if self.store == "ch":
-            # If we're building for charmhub, it needs to be packed
-            dst_path = Path(self.dst_path)
-            charmcraft_yaml = dst_path / "charmcraft.yaml"
-            if not charmcraft_yaml.exists():
-                contents = {
-                    "type": "bundle",
-                    "parts": {
-                        "bundle": {
-                            "prime": [
-                                str(_.relative_to(dst_path))
-                                for _ in dst_path.glob("**/*")
-                                if _.is_file()
-                            ]
-                        }
-                    },
-                }
-                with charmcraft_yaml.open("w") as fp:
-                    yaml.safe_dump(contents, fp)
-            self.dst_path = str(CharmcraftCmd(self).pack(_cwd=dst_path))
+        # If we're building for charmhub, it needs to be packed
+        dst_path = Path(self.dst_path)
+        charmcraft_yaml = dst_path / "charmcraft.yaml"
+        if not charmcraft_yaml.exists():
+            contents = {
+                "type": "bundle",
+                "parts": {
+                    "bundle": {
+                        "prime": [
+                            str(_.relative_to(dst_path))
+                            for _ in dst_path.glob("**/*")
+                            if _.is_file()
+                        ]
+                    }
+                },
+            }
+            with charmcraft_yaml.open("w") as fp:
+                yaml.safe_dump(contents, fp)
+        self.dst_path = str(CharmcraftCmd(self).pack(_cwd=dst_path))
 
     def reset_dst_path(self):
         """Reset the dst_path in order to facilitate multiple bundle builds by the same entity."""
