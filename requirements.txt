@@ -20,7 +20,7 @@ attrs==20.3.0
     # via pytest
 awscli==1.19.41
     # via -r requirements.in
-backoff==2.0.1
+backoff==2.1.2
     # via -r requirements.in
 bcrypt==3.2.0
     # via paramiko
