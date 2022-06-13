@@ -269,6 +269,17 @@
       - charm-vsphere-integrator
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-vsphere-integrator.git'
+- vsphere-cloud-provider:
+    bugs: 'https://bugs.launchpad.net/charm-vsphere-cloud-provider'
+    docs: 'https://charmhub.io/vsphere-cloud-provider/docs'
+    downstream: charmed-kubernetes/vsphere-cloud-provider
+    store: 'https://charmhub.io/vsphere-cloud-provider'
+    summary: Charm which enables vSphere out of tree provider for Juju
+    tags:
+      - k8s
+      - vsphere-cloud-provider
+      - integrator
+    upstream: 'https://github.com/charmed-kubernetes/vsphere-cloud-provider.git'
 - metallb-controller:
     bugs: 'https://bugs.launchpad.net/operator-metallb'
     docs: 'https://charmhub.io/metallb-controller/docs'
