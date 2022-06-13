@@ -137,7 +137,6 @@
               --layer-index  "$LAYER_INDEX" \
               --layer-list "$LAYER_LIST" \
               --layer-branch "$LAYER_BRANCH" \
-              --store "$CHARM_STORE" \
               $WITH_CHARM_BRANCH \
               $IS_FORCE
 
@@ -145,5 +144,4 @@
                 --to-channel "$TO_CHANNEL" \
                 --bundle-list "$BUNDLE_LIST" \
                 --bundle-branch "$BUNDLE_BRANCH" \
-                --store "$CHARM_STORE" \
                 --filter-by-tag "$FILTER_BY_TAG"

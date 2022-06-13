@@ -402,10 +402,8 @@ class BuildEnv:
         self.db_json.write_text(json.dumps(dict(self.db)))
         self.store.put_item(Item=dict(self.db))
 
-    def promote_all(
-        self, from_channel="unpublished", to_channels=("edge",), default_store="cs"
-    ):
-        """Promote set of charm artifacts in the store."""
+    def promote_all(self, from_channel="unpublished", to_channels=("edge",)):
+        """Promote set of charm artifacts in charmhub."""
         for charm_map in self.artifacts:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
@@ -444,7 +442,7 @@ class BuildEnv:
 class BuildEntity:
     """The Build data class."""
 
-    def __init__(self, build, name, opts, default_store):
+    def __init__(self, build, name, opts):
         """
         Represent a charm or bundle which should be built and published.
 
@@ -577,7 +575,7 @@ class BuildEntity:
         remote = self.version_identification("remote")
 
         if remote is None:
-            self.echo("No released versions in the store. Building...")
+            self.echo("No released versions in charmhub. Building...")
             return True
 
         the_diff = [rev for rev in remote if rev not in local]
@@ -655,7 +653,7 @@ class BuildEntity:
             raise BuildException(f"Failed to build {self.name}")
 
     def push(self):
-        """Pushes a built charm to Charm store/hub."""
+        """Pushes a built charm to Charmhub."""
         if "override-push" in self.opts:
             self.echo("Override push found, running in place of charm push.")
             args = dict(
@@ -674,7 +672,7 @@ class BuildEntity:
         self.new_entity = _CharmHub(self).upload(self.dst_path)
 
     def attach_resources(self):
-        """Assemble charm's resources and associate in the store."""
+        """Assemble charm's resources and associate in charmhub."""
         out_path = Path(self.src_path) / "tmp"
         os.makedirs(str(out_path), exist_ok=True)
         resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
@@ -745,13 +743,13 @@ class BundleBuildEntity(BuildEntity):
     @property
     def has_changed(self):
         """Determine if this bundle has changes to include in a new push."""
-        charmstore_bundle = self.download("bundle.yaml")
+        remote_bundle = self.download("bundle.yaml")
 
         local_built_bundle = yaml.safe_load(
             (Path(self.dst_path) / "bundle.yaml").read_text(encoding="utf8")
         )
 
-        if charmstore_bundle != local_built_bundle:
+        if remote_bundle != local_built_bundle:
             self.echo("Local bundle differs.")
             return True
 
@@ -843,12 +841,6 @@ def cli():
 @click.option(
     "--to-channel", required=True, help="channel to promote charm to", default="edge"
 )
-@click.option(
-    "--store",
-    type=click.Choice(["cs", "ch"], case_sensitive=False),
-    help="Publish to Charmstore (cs) or Charmhub (ch) if the resource-spec doesn't specify.",
-    default="ch",
-)
 @click.option("--force", is_flag=True)
 def build(
     charm_list,
@@ -860,7 +852,6 @@ def build(
     filter_by_tag,
     track,
     to_channel,
-    store,
     force,
 ):
     """Build a set of charms and publish with their resources."""
@@ -889,7 +880,7 @@ def build(
             if not any(match in filter_by_tag for match in charm_opts["tags"]):
                 continue
 
-            charm_entity = BuildEntity(build_env, charm_name, charm_opts, store)
+            charm_entity = BuildEntity(build_env, charm_name, charm_opts)
             entities.append(charm_entity)
             click.echo(f"Queued {charm_entity.entity} for building")
 
@@ -955,14 +946,8 @@ def build(
 @click.option(
     "--to-channel", required=True, help="channels to promote bundle to", default="edge"
 )
-@click.option(
-    "--store",
-    type=click.Choice(["cs", "ch"], case_sensitive=False),
-    help="Charmstore (cs) or Charmhub (ch)",
-    default="ch",
-)
 def build_bundles(
-    bundle_list, bundle_branch, filter_by_tag, bundle_repo, track, to_channel, store
+    bundle_list, bundle_branch, filter_by_tag, bundle_repo, track, to_channel
 ):
     """Build list of bundles from a specific branch according to filters."""
     build_env = BuildEnv(build_type=BuildType.BUNDLE)
@@ -990,7 +975,7 @@ def build_bundles(
                 bundle_opts["src_path"] = build_env.default_repo_dir
             bundle_opts["dst_path"] = build_env.bundles_dir / bundle_name
 
-            build_entity = BundleBuildEntity(build_env, bundle_name, bundle_opts, store)
+            build_entity = BundleBuildEntity(build_env, bundle_name, bundle_opts)
             entities.append(build_entity)
 
     for entity in entities:
@@ -1026,13 +1011,7 @@ def build_bundles(
     help="Charm channel to publish from",
 )
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
-@click.option(
-    "--default-store",
-    type=click.Choice(["cs", "ch"], case_sensitive=False),
-    help="Charmstore (cs) or Charmhub (ch)",
-    default="ch",
-)
-def promote(charm_list, filter_by_tag, from_channel, to_channel, default_store):
+def promote(charm_list, filter_by_tag, from_channel, to_channel):
     """
     Promote channel for a set of charms filtered by tag.
     """
@@ -1045,9 +1024,7 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel, default_store):
     }
     build_env.clean()
     return build_env.promote_all(
-        from_channel=from_channel,
-        to_channels=build_env.to_channels,
-        default_store=default_store,
+        from_channel=from_channel, to_channels=build_env.to_channels
     )
 
 

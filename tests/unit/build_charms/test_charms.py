@@ -1,9 +1,9 @@
 """Tests to verify jobs/build-charms/charms."""
 
-import json
 import os
 import shutil
 from pathlib import Path
+import yaml
 
 import pytest
 from types import SimpleNamespace
@@ -103,9 +103,9 @@ def charmhub_info():
     """Create a fixture defining mock for Charmhub info."""
 
     def command_response(entity_fname, **_kwargs):
-        fpath = CLI_RESPONSES / f"charmhub_info_{entity_fname}.json"
+        fpath = CLI_RESPONSES / f"charmhub_info_{entity_fname}.yaml"
         if fpath.exists():
-            return json.loads(fpath.read_text())
+            return yaml.safe_load(fpath.read_text())
         return {}
 
     with patch("charms._CharmHub.info", side_effect=command_response) as mock_info:
@@ -166,7 +166,7 @@ def charm_environment(test_environment, charms):
 def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
     """Tests promote_all to charmhub."""
     charm_environment.promote_all(
-        from_channel="latest/edge", to_channels=["latest/beta"], default_store="ch"
+        from_channel="latest/edge", to_channels=["latest/beta"]
     )
     resource_args = [
         "--resource=test-file:994",
@@ -183,7 +183,7 @@ def test_build_entity_setup(cmd_ok, charm_environment, tmpdir, charms):
     """Tests build entity setup."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
     assert charm_entity.reactive is False, "Initializes as false"
     charm_entity.setup()
     assert charm_entity.reactive is True, "test charm requires legacy builds"
@@ -197,7 +197,7 @@ def test_build_entity_has_changed(charm_environment, charm_cmd, charms):
     """Tests has_changed property."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
     with patch("charms.BuildEntity.commit") as commit:
         # Test non-legacy charms with the commit rev checked in with charm matching
         commit.return_value = "51b893c"
@@ -220,7 +220,7 @@ def test_build_entity_charm_build(
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
 
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
 
     # Charms built with override
     charm_entity.opts["override-build"] = MagicMock()
@@ -283,7 +283,7 @@ def test_build_entity_push(
         CLI_RESPONSES / "charmcraft_upload_k8s-ci-charm.txt"
     ).read_bytes()
 
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
     charm_entity.push()
     charm_cmd.push.assert_not_called()
     charmcraft_cmd.upload.assert_called_once_with(charm_entity.dst_path)
@@ -297,7 +297,7 @@ def test_build_entity_attach_resource(
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
 
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
     charm_entity.dst_path = charm_entity.src_path
     with patch("charms.script") as mock_script:
         charm_entity.attach_resources()
@@ -329,7 +329,7 @@ def test_build_entity_promote(
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
 
-    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts, "ch")
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
     charm_entity.promote(to_channels=("edge", "0.15/edge"))
     charm_cmd.release.assert_not_called()
     charmcraft_cmd.release.assert_called_once_with(
@@ -378,7 +378,7 @@ def test_bundle_build_entity_push(
         CLI_RESPONSES / "charmcraft_upload_test-kubernetes.txt"
     ).read_bytes()
     bundle_entity = charms.BundleBuildEntity(
-        bundle_environment, bundle_name, bundle_opts, "ch"
+        bundle_environment, bundle_name, bundle_opts
     )
     bundle_entity.push()
     charm_cmd.push.assert_not_called()
@@ -400,7 +400,7 @@ def test_bundle_build_entity_bundle_build(
     # Test that a bundle pack occurs
     bundle_opts["skip-build"] = True
     bundle_entity = charms.BundleBuildEntity(
-        bundle_environment, bundle_name, bundle_opts, "ch"
+        bundle_environment, bundle_name, bundle_opts
     )
     bundle_entity.bundle_build("edge")
     charmcraft_cmd.pack.assert_called_once_with(_cwd=dst_path)
@@ -417,7 +417,7 @@ def test_bundle_build_entity_bundle_build(
     # Test a bundle build takes place
     del bundle_opts["skip-build"]
     bundle_entity = charms.BundleBuildEntity(
-        bundle_environment, bundle_name, bundle_opts, "ch"
+        bundle_environment, bundle_name, bundle_opts
     )
     bundle_entity.bundle_build("edge")
     assert not (dst_path / "bundle.yaml").exists()
@@ -436,7 +436,7 @@ def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd, charms):
 
     # Test all charmhub charms comparing .build.manifest to revision
     bundle_entity = charms.BundleBuildEntity(
-        bundle_environment, bundle_name, bundle_opts, "ch"
+        bundle_environment, bundle_name, bundle_opts
     )
     assert bundle_entity.has_changed is True
 
@@ -469,7 +469,7 @@ def mock_bundle_build_entity(charms):
 
         def create_mock_bundle(*args):
             mm = MagicMock(spec=spec)
-            mm.build, mm.name, mm.opts, mm.push_store = args
+            mm.build, mm.name, mm.opts = args
             mock_ent.entities.append(mm)
             return mm
 
@@ -489,7 +489,6 @@ def test_promote_command(mock_build_env, charms):
             "--filter-by-tag=tag2",
             "--from-channel=latest/edge",
             "--to-channel=latest/beta",
-            "--default-store=CH",
         ],
     )
     if result.exception:
@@ -503,7 +502,6 @@ def test_promote_command(mock_build_env, charms):
     mock_build_env.promote_all.assert_called_once_with(
         from_channel="latest/edge",
         to_channels=mock_build_env.to_channels,
-        default_store="ch",
     )
 
 
