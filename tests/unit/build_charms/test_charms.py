@@ -179,7 +179,7 @@ def test_build_env_promote_all_charmstore(charm_environment, cilib_store, charm_
 def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
     """Tests promote_all to charmhub."""
     charm_environment.promote_all(
-        from_channel="latest/edge", to_channels=["latest/beta"], store="ch"
+        from_channel="latest/edge", to_channels=["latest/beta"], default_store="ch"
     )
     resource_args = [
         "--resource=test-file:994",
@@ -613,7 +613,7 @@ def mock_bundle_build_entity(charms):
 
         def create_mock_bundle(*args):
             mm = MagicMock(spec=spec)
-            mm.build, mm.name, mm.opts, mm.store = args
+            mm.build, mm.name, mm.opts, mm.push_store = args
             mock_ent.entities.append(mm)
             return mm
 
@@ -633,7 +633,7 @@ def test_promote_command(mock_build_env, charms):
             "--filter-by-tag=tag2",
             "--from-channel=latest/edge",
             "--to-channel=latest/beta",
-            "--store=CH",
+            "--default-store=CH",
         ],
     )
     if result.exception:
@@ -645,7 +645,9 @@ def test_promote_command(mock_build_env, charms):
         "to_channel": "latest/beta",
     }
     mock_build_env.promote_all.assert_called_once_with(
-        from_channel="latest/edge", to_channels=mock_build_env.to_channels, store="ch"
+        from_channel="latest/edge",
+        to_channels=mock_build_env.to_channels,
+        default_store="ch",
     )
 
 

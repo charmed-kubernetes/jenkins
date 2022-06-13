@@ -479,15 +479,15 @@ class BuildEnv:
         self.store.put_item(Item=dict(self.db))
 
     def promote_all(
-        self, from_channel="unpublished", to_channels=("edge",), store="cs"
+        self, from_channel="unpublished", to_channels=("edge",), default_store="cs"
     ):
         """Promote set of charm artifacts in the store."""
         for charm_map in self.artifacts:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
                     continue
-                cs_store = charm_opts.get("store") or store
-                if cs_store == "cs":
+                store = charm_opts.get("store_push") or default_store
+                if store == "cs":
                     charm_entity = f"cs:~{charm_opts['namespace']}/{charm_name}"
                     assert len(to_channels) == 1, "Charmstore only supports one channel"
                     assert (
@@ -496,7 +496,7 @@ class BuildEnv:
                     _CharmStore(self).promote(
                         charm_entity, from_channel, to_channels[0]
                     )
-                elif cs_store == "ch":
+                elif store == "ch":
                     _CharmHub(self).promote(charm_name, from_channel, to_channels)
 
     def download(self, layer_name):
@@ -578,12 +578,12 @@ class BuildEntity:
 
         # Bundle or charm opts as defined in the layer include
         self.opts = opts
-        self.namespace = opts["namespace"]
+        self.namespace = ns = opts.get("namespace")
 
-        self.store = opts.get("store") or default_store
+        self.store = opts.get("store-push") or default_store
         if self.store == "cs":
             # Entity path, ie. cs:~containers/kubernetes-worker
-            self.entity = f"cs:~{opts['namespace']}/{name}"
+            self.entity = "cs:" + f"~{ns}/{name}" if ns else name
         elif self.store == "ch":
             # Entity path, ie. kubernetes-worker
             self.entity = name
@@ -791,13 +791,14 @@ class BuildEntity:
         """Pushes a built charm to Charm store/hub."""
         if "override-push" in self.opts:
             self.echo("Override push found, running in place of charm push.")
-            script(
-                self.opts["override-push"],
+            args = dict(
                 cwd=self.src_path,
                 charm=self.name,
-                namespace=self.namespace,
                 echo=self.echo,
             )
+            if self.namespace:
+                args["namespace"] = self.namespace
+            script(self.opts["override-push"], **args)
             return
 
         self.echo(
@@ -1177,12 +1178,12 @@ def build_bundles(
 )
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
 @click.option(
-    "--store",
+    "--default-store",
     type=click.Choice(["cs", "ch"], case_sensitive=False),
     help="Charmstore (cs) or Charmhub (ch)",
     default="ch",
 )
-def promote(charm_list, filter_by_tag, from_channel, to_channel, store):
+def promote(charm_list, filter_by_tag, from_channel, to_channel, default_store):
     """
     Promote channel for a set of charms filtered by tag.
     """
@@ -1195,7 +1196,9 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel, store):
     }
     build_env.clean()
     return build_env.promote_all(
-        from_channel=from_channel, to_channels=build_env.to_channels, store=store
+        from_channel=from_channel,
+        to_channels=build_env.to_channels,
+        default_store=default_store,
     )
 
 
