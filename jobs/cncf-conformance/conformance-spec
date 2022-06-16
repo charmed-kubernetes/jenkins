@@ -92,7 +92,7 @@ function test::capture
 
     pushd k8s-conformance
     # if we dont have a project dir yet, prime one with known good cdk contents
-    test -d ${PROJECT_DIR} || cp -a v1.23/cdk ${PROJECT_DIR}
+    test -d ${PROJECT_DIR} || cp -a v1.24/cdk ${PROJECT_DIR}
     mv ../plugins/e2e/results/global/* ${PROJECT_DIR}
     sed -i -e "s/version: .*/version: ${K8S_VERSION}/" ${PROJECT_DIR}/PRODUCT.yaml
     git add ${PROJECT_DIR}
