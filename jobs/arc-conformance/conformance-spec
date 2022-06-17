@@ -127,8 +127,10 @@ EOF
     kubectl apply -k .
     # give the arc pod 5 minutes to get settled before tailing its logs
     sleep 300
-    ARC_POD=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n azure-arc-kubernetes-conformance)
-    timeout -s INT 3h bash -c "kubectl logs -n azure-arc-kubernetes-conformance ${ARC_POD} -f || true"
+    ARC_POD=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n ${ARC_NS})
+    # NB: we always want the logging to succeed so we can watch progress in jenkins;
+    # the tail will disconnect when arc tears down (or we timeout)
+    timeout -s INT 3h bash -c "kubectl logs -n ${ARC_NS} ${ARC_POD} -f || true"
     ret=$?
     popd
 
@@ -140,11 +142,18 @@ EOF
 
 function test::capture
 {
-    mv azure-arc-validation/testsuite/conformance-results*tar.gz . || true
+    # Arc does 3ish runs; get all of them for our artifacts tarball.
+    # NB: strip leading '/' and trailing carriage return since busybox 'find' cant.
+    ARC_POD=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n ${ARC_NS})
+    for res in $(kubectl exec -it ${ARC_POD} -n ${ARC_NS} -- find / -name conformance-results*.gz | sed -e 's|^/||' -e 's|\r$||')
+    do
+        kubectl cp ${ARC_NS}/${ARC_POD}:${res} ${res} || true
+    done
+
     if which juju-crashdump; then
         juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
-    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* conformance-results*tar.gz || true
+    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* conformance-results*.gz || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 
     echo "@@@ CAPTURE RESULTS @@@"
@@ -166,6 +175,7 @@ JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${CK_CHANNEL}
 JUJU_MODEL=arc-ck
 
+ARC_NS=azure-arc-kubernetes-conformance
 ARCH=amd64
 SERIES=focal
 SNAP_VERSION=${CK_VERSION}/${CK_CHANNEL}
