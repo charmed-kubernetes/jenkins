@@ -104,7 +104,8 @@
           type: user-defined
           name: arch
           values:
-            - amd64      - axis:
+            - amd64
+      - axis:
           type: user-defined
           name: cloud
           values:
