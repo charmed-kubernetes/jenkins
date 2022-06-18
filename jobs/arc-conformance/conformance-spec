@@ -90,13 +90,14 @@ function test::execute
     kubectl version
 
     # prep azure env
+    CK_SEMVER=$(snap find kube-apiserver | grep -o ${CK_VERSION}.[0-9])
     helm uninstall azure-arc || true
     export PATH=${PATH}:$(pwd)
     git clone https://github.com/Azure/azure-arc-validation
     pushd azure-arc-validation/testsuite
     cat <<EOF > ./partner-metadata.md
 - Upstream Kubernetes Version: Charmed Kubernetes ${CK_VERSION}
-- K8s Distribution Version: v${CK_VERSION}
+- K8s Distribution Version: v${CK_SEMVER}
 - Additional Storage/Network Driver details (if applicable):
 - Private Cloud details (if applicable):
 - Bare-metal Node details (if applicable):
