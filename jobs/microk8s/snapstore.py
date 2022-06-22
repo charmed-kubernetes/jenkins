@@ -124,7 +124,7 @@ class Microk8sSnap:
 
         if not tests_branch:
             if self.track == "latest":
-                tests_branch = "master"
+                tests_branch = "master"  # wokeignore:rule=master
             else:
                 # See if we have tests for the track we are using. If not, we should default to master branch.
                 # This may happen for the tracks that are building from master GH branch.
@@ -133,7 +133,10 @@ class Microk8sSnap:
                     tests_branch = self.track
                 except CalledProcessError:
                     click.echo("GH branch {} does not exist.".format(self.track))
-                    tests_branch = "master"
+                    if "strict" in self.track:
+                        tests_branch = "strict"
+                    else:
+                        tests_branch = "master" # wokeignore:rule=master
         click.echo("Tests are taken from branch {}".format(tests_branch))
         self.executor.checkout_branch(tests_branch)
 
@@ -168,6 +171,9 @@ class Microk8sSnap:
             if not release.startswith("v"):
                 release = "v{}".format(release)
             self.executor.set_version_to_build(release)
+
+        if "strict" in self.track:
+            self.executor.checkout_branch("strict")
 
         self.executor.build_snap()
 
