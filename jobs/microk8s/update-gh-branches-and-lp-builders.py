@@ -105,7 +105,7 @@ class Builder:
         elif "strict" in track:
             self.gh_branch = "refs/heads/strict"
         else:
-            self.gh_branch = "refs/heads/master" # wokeignore:rule=master
+            self.gh_branch = "refs/heads/master"  # wokeignore:rule=master
         self.snap = None
         self.lp = None
 

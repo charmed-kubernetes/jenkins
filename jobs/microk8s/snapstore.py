@@ -136,7 +136,7 @@ class Microk8sSnap:
                     if "strict" in self.track:
                         tests_branch = "strict"
                     else:
-                        tests_branch = "master" # wokeignore:rule=master
+                        tests_branch = "master"  # wokeignore:rule=master
         click.echo("Tests are taken from branch {}".format(tests_branch))
         self.executor.checkout_branch(tests_branch)
 
