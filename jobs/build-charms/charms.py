@@ -677,6 +677,10 @@ class BuildEntity:
         os.makedirs(str(out_path), exist_ok=True)
         resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
         resource_spec = resource_spec.get(self.name, {})
+        context = dict(
+            src_path=self.src_path,
+            out_path=out_path,
+        )
 
         # Build any custom resources.
         resource_builder = self.opts.get("build-resources", None)
@@ -685,10 +689,7 @@ class BuildEntity:
                 f"Custom build-resources specified for {self.name} but no spec found"
             )
         if resource_builder:
-            resource_builder = resource_builder.format(
-                out_path=out_path,
-                src_path=self.src_path,
-            )
+            resource_builder = resource_builder.format(**context)
             self.echo("Running custom build-resources")
             ret = script(resource_builder, echo=self.echo)
             if not ret.ok:
@@ -710,7 +711,7 @@ class BuildEntity:
             elif details["type"] == "file":
                 resource_spec[name] = (
                     "filepath",
-                    resource_fmt.format(out_path=out_path),
+                    resource_fmt.format(**context),
                 )
 
         self.echo(f"Attaching resources:\n{pformat(resource_spec)}")

@@ -81,6 +81,17 @@
       - kata
       - core
     upstream: 'https://github.com/charmed-kubernetes/charm-kata.git'
+- kube-ovn:
+    bugs: 'https://bugs.launchpad.net/charm-kube-ovn'
+    docs: 'https://charmhub.io/kube-ovn/docs'
+    downstream: charmed-kubernetes/charm-kube-ovn.git
+    store: 'https://charmhub.io/kube-ovn'
+    summary: A Software Defined Network based on Kube-OVN
+    tags:
+      - k8s
+      - kube-ovn
+      - cni
+    upstream: 'https://github.com/charmed-kubernetes/charm-kube-ovn.git'
 - kubeapi-load-balancer:
     bugs: 'https://bugs.launchpad.net/charm-kubeapi-load-balancer'
     docs: 'https://charmhub.io/kubeapi-load-balancer/docs'
