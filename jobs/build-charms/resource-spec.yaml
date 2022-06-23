@@ -24,6 +24,8 @@
   cni-amd64: '{out_path}/cni-amd64.tgz'
   cni-arm64: '{out_path}/cni-arm64.tgz'
   cni-s390x: '{out_path}/cni-s390x.tgz'
+'kube-ovn':
+  kubectl-ko: '{src_path}/plugins/kubectl-ko'
 'tigera-secure-ee':
   calico-cni: '{out_path}/calico-cni-amd64.tar.gz'
   calico-cni-arm64: '{out_path}/calico-cni-arm64.tar.gz'
