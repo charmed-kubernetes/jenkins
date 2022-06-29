@@ -30,7 +30,7 @@ from cilib.run import cmd_ok, capture, script
 from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
-from types import SimpleNamespace
+from types import SimpleNamespace, NoneType
 from typing import List, Mapping, Optional, Union
 
 from pathos.threading import ThreadPool
@@ -456,7 +456,7 @@ class BuildEnv:
         entity = next((_[name] for _ in self.artifacts if name in _.keys()), {})
         range_def = entity.get("channel-range", {})
         definitions = range_def.get("min"), range_def.get("max")
-        assert all(isinstance(_, Optional[str]) for _ in definitions)
+        assert all(isinstance(_, (str, NoneType)) for _ in definitions)
         channel_range = ChannelRange(*definitions)
         return [channel for channel in to_channels if channel in channel_range]
 
