@@ -70,7 +70,7 @@ class Release:
 
     @classmethod
     def mk(cls, rel: str) -> "Release":
-        has_risk = rel.split("/")
+        has_risk = str(rel).split("/")
         if len(has_risk) == 2:
             track, risk = has_risk
         else:
