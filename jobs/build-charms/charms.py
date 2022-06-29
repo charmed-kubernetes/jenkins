@@ -69,7 +69,9 @@ class Release:
         )
 
     @classmethod
-    def mk(cls, rel: str) -> "Release":
+    def mk(cls, rel: str|float) -> "Release":
+        if isinstance(rel, float):
+            rel = str(rel)
         has_risk = rel.split("/")
         if len(has_risk) == 2:
             track, risk = has_risk
@@ -117,8 +119,8 @@ class ChannelRange:
         assert "1.24/edge" in ChannelRange(None, None)              # No bounds
     """
 
-    _min: Optional[str]
-    _max: Optional[str]
+    _min: Optional[str|float]
+    _max: Optional[str|float]
 
     @property
     def min(self) -> Optional[Release]:
@@ -132,7 +134,7 @@ class ChannelRange:
 
     def __contains__(self, other: Union[str, Release]) -> bool:
         """Implements comparitor."""
-        if other.startswith("latest"):
+        if isinstance(other, str) and other.startswith("latest"):
             return True
         if not isinstance(other, Release):
             other = Release.mk(str(other))
