@@ -69,10 +69,8 @@ class Release:
         )
 
     @classmethod
-    def mk(cls, rel: str|float) -> "Release":
-        if isinstance(rel, float):
-            rel = str(rel)
-        has_risk = rel.split("/")
+    def mk(cls, rel: Union[str, float]) -> "Release":
+        has_risk = str(rel).split("/")
         if len(has_risk) == 2:
             track, risk = has_risk
         else:
@@ -119,8 +117,8 @@ class ChannelRange:
         assert "1.24/edge" in ChannelRange(None, None)              # No bounds
     """
 
-    _min: Optional[str|float]
-    _max: Optional[str|float]
+    _min: Optional[Union[str, float]]
+    _max: Optional[Union[str, float]]
 
     @property
     def min(self) -> Optional[Release]:
