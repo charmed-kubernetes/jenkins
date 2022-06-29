@@ -28,9 +28,10 @@ from cilib.enums import SNAP_K8S_TRACK_MAP
 from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture, script
 from datetime import datetime
+from dataclasses import dataclass
 from enum import Enum
 from types import SimpleNamespace
-from typing import List, Mapping, NamedTuple, Optional
+from typing import List, Mapping, Optional, Union
 
 from pathos.threading import ThreadPool
 from pprint import pformat
@@ -46,19 +47,44 @@ import re
 RISKS = ["stable", "candidate", "beta", "edge"]
 
 
-class Release(NamedTuple):
-    """Converts kubernetes release ids to sortable object and back to str."""
+@dataclass
+class Release:
+    """Representation of Charm or Snap Release version."""
 
     major: int
     minor: int
+    risk: Optional[str]
 
     def __str__(self):
-        return ".".join(map(str, self))
+        risk = ""
+        if self.risk:
+            risk = f"/{self.risk}" if self.risk.lower() in RISKS else ""
+        return f"{self.major}.{self.minor}{risk}"
 
+    def _as_cmp(self):
+        return (
+            self.major,
+            self.minor,
+            RISKS[::-1].index(self.risk.lower()) + 1 if self.risk else 0,
+        )
 
-def mk_release(rel: str) -> Release:
-    major, minor = (int(n) for n in rel.split("."))
-    return Release(major, minor)
+    @classmethod
+    def mk(cls, rel: str) -> "Release":
+        has_risk = rel.split("/")
+        if len(has_risk) == 2:
+            track, risk = has_risk
+        else:
+            track, risk = has_risk[0], None
+        return cls(*map(int, track.split(".")), risk)
+
+    def __eq__(self, other: "Release") -> bool:
+        return self._as_cmp() == other._as_cmp()
+
+    def __gt__(self, other: "Release") -> bool:
+        return self._as_cmp() > other._as_cmp()
+
+    def __lt__(self, other: "Release") -> bool:
+        return self._as_cmp() < other._as_cmp()
 
 
 def matched_numerical_channel(
@@ -71,12 +97,50 @@ def matched_numerical_channel(
     @param track_map: mapping of kubernetes releases to available channels
     """
     if risk in RISKS:
-        versions = ((mk_release(k), v) for k, v in track_map.items())
+        versions = ((Release.mk(k), v) for k, v in track_map.items())
         ordered = sorted(versions, reverse=True)
         for release, tracks in ordered:
             chan = f"{release}/{risk}"
             if chan in tracks:
                 return chan
+
+
+@dataclass
+class ChannelRange:
+    """Determine if channel is within a channel range.
+
+    Usage:
+        assert "latest/edge" in ChannelRange("1.18", "1.25/stable") # latest/<anything> is ignored
+        assert "1.24/edge" in ChannelRange("1.18", "1.25/stable")   # within bounds inclusively
+        assert "1.24/edge" in ChannelRange("1.18", None)            # No upper bound
+        assert "1.24/edge" in ChannelRange(None, "1.25/stable")     # No lower bound
+        assert "1.24/edge" in ChannelRange(None, None)              # No bounds
+    """
+
+    _min: Optional[str]
+    _max: Optional[str]
+
+    @property
+    def min(self) -> Optional[Release]:
+        """Release object representing the minimum."""
+        return self._min and Release.mk(self._min)
+
+    @property
+    def max(self) -> Optional[Release]:
+        """Release object representing the maximum."""
+        return self._max and Release.mk(self._max)
+
+    def __contains__(self, other: Union[str, Release]) -> bool:
+        """Implements comparitor."""
+        if other.startswith("latest"):
+            return True
+        if not isinstance(other, Release):
+            other = Release.mk(str(other))
+        if self.min and other < self.min:
+            return False
+        if self.max and other > self.max:
+            return False
+        return True
 
 
 class BuildException(Exception):
@@ -381,6 +445,20 @@ class BuildEnv:
         numerical = matched_numerical_channel(chan, SNAP_K8S_TRACK_MAP)
         return list(filter(None, [chan, numerical]))
 
+    def apply_channel_bounds(self, name: str, to_channels: List[str]) -> List[str]:
+        """
+        Applies boundaries to a charm or bundle's target channel.
+
+        Uses the channel-range.min and channel-range.max arguments in self.artifacts
+        to filter the channels list.
+        """
+
+        entity = next((_[name] for _ in self.artifacts if name in _.keys()), {})
+        range_def = entity.get("channel-range", {})
+        definitions = range_def.get("min"), range_def.get("max")
+        channel_range = ChannelRange(*definitions)
+        return [channel for channel in to_channels if channel in channel_range]
+
     @property
     def from_channel(self):
         """Get source channel."""
@@ -408,6 +486,7 @@ class BuildEnv:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
                     continue
+                to_channels = self.apply_channel_bounds(charm_name, to_channels)
                 _CharmHub(self).promote(charm_name, from_channel, to_channels)
 
     def download(self, layer_name):
@@ -728,6 +807,7 @@ class BuildEntity:
             else chan
             for chan in to_channels
         ]
+        ch_channels = self.build.apply_channel_bounds(self.entity, ch_channels)
         _CharmHub(self).promote(self.entity, from_channel, ch_channels)
 
 
