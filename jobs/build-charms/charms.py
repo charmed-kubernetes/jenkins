@@ -69,8 +69,8 @@ class Release:
         )
 
     @classmethod
-    def mk(cls, rel: Union[str, float]) -> "Release":
-        has_risk = str(rel).split("/")
+    def mk(cls, rel: str) -> "Release":
+        has_risk = rel.split("/")
         if len(has_risk) == 2:
             track, risk = has_risk
         else:
@@ -117,8 +117,8 @@ class ChannelRange:
         assert "1.24/edge" in ChannelRange(None, None)              # No bounds
     """
 
-    _min: Optional[Union[str, float]]
-    _max: Optional[Union[str, float]]
+    _min: Optional[str]
+    _max: Optional[str]
 
     @property
     def min(self) -> Optional[Release]:
@@ -456,6 +456,7 @@ class BuildEnv:
         entity = next((_[name] for _ in self.artifacts if name in _.keys()), {})
         range_def = entity.get("channel-range", {})
         definitions = range_def.get("min"), range_def.get("max")
+        assert all(isinstance(_, Optional[str]) for _ in definitions)
         channel_range = ChannelRange(*definitions)
         return [channel for channel in to_channels if channel in channel_range]
 

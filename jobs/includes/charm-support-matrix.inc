@@ -93,7 +93,7 @@
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-kube-ovn.git'
     channel-range:
-      min: 1.25
+      min: '1.25'
 - kubeapi-load-balancer:
     bugs: 'https://bugs.launchpad.net/charm-kubeapi-load-balancer'
     docs: 'https://charmhub.io/kubeapi-load-balancer/docs'
@@ -294,7 +294,7 @@
       - integrator
     upstream: 'https://github.com/charmed-kubernetes/vsphere-cloud-provider.git'
     channel-range:
-      min: 1.25
+      min: '1.25'
 - metallb-controller:
     bugs: 'https://bugs.launchpad.net/operator-metallb'
     docs: 'https://charmhub.io/metallb-controller/docs'

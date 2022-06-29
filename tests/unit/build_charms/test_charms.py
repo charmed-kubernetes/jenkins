@@ -72,7 +72,6 @@ def test_channel_comparitor(charms, channel):
     assert channel in charms.ChannelRange(None, None)
 
     # all channel params are greater than 0.14 and 0.14/stable
-    assert channel in charms.ChannelRange(0.14, None)
     assert channel in charms.ChannelRange("0.14", None)
     assert channel in charms.ChannelRange("0.14/stable", None)
 
