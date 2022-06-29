@@ -70,7 +70,7 @@ class Release:
 
     @classmethod
     def mk(cls, rel: str) -> "Release":
-        has_risk = str(rel).split("/")
+        has_risk = rel.split("/")
         if len(has_risk) == 2:
             track, risk = has_risk
         else:
@@ -132,7 +132,7 @@ class ChannelRange:
 
     def __contains__(self, other: Union[str, Release]) -> bool:
         """Implements comparitor."""
-        if other.startswith("latest"):
+        if isinstance(other, str) and other.startswith("latest"):
             return True
         if not isinstance(other, Release):
             other = Release.mk(str(other))
@@ -456,6 +456,7 @@ class BuildEnv:
         entity = next((_[name] for _ in self.artifacts if name in _.keys()), {})
         range_def = entity.get("channel-range", {})
         definitions = range_def.get("min"), range_def.get("max")
+        assert all(isinstance(_, (str, type(None))) for _ in definitions)
         channel_range = ChannelRange(*definitions)
         return [channel for channel in to_channels if channel in channel_range]
 
