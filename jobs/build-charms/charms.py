@@ -456,7 +456,7 @@ class BuildEnv:
         entity = next((_[name] for _ in self.artifacts if name in _.keys()), {})
         range_def = entity.get("channel-range", {})
         definitions = range_def.get("min"), range_def.get("max")
-        assert all(isinstance(_, (str, None)) for _ in definitions)
+        assert all(isinstance(_, (str, type(None))) for _ in definitions)
         channel_range = ChannelRange(*definitions)
         return [channel for channel in to_channels if channel in channel_range]
 
