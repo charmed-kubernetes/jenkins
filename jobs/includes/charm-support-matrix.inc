@@ -6,6 +6,7 @@
     downstream: charmed-kubernetes/layer-calico.git
     store: 'https://charmhub.io/calico'
     summary: A robust Software Defined Network from Project Calico
+    architectures: [amd64, arm64]
     tags:
       - k8s
       - calico
