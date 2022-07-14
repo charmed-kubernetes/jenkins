@@ -261,7 +261,7 @@ pipeline {
 
                                 echo "Uploading \${BUILT_SNAP}."
                                 sudo lxc shell ${lxc_name} -- bash -c \
-                                    "snapcraft -d upload /\${BUILT_SNAP} --release ${params.channels}"
+                                    "snapcraft -v upload /\${BUILT_SNAP} --release ${params.channels}"
                             done
                             sudo lxc shell ${lxc_name} -- bash -c "snapcraft logout"
                         """
