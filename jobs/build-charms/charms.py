@@ -146,12 +146,18 @@ class ChannelRange:
 def generate_manifest(reactive_charm, archs):
     """Generate a manifest.yaml for a reactive charm.
 
-    Charmhub requires a manifest.yaml
+    Charmhub requires a manifest.yaml in order to identify
+    ubuntu series starting with jammy.
     """
     metadata_path = Path(reactive_charm) / "metadata.yaml"
     manifest_path = Path(reactive_charm) / "manifest.yaml"
     if not metadata_path.exists() or manifest_path.exists():
         return
+
+    class NoAliasDumper(yaml.SafeDumper):
+        """Prevent yaml aliases in manifest.yaml"""
+        def ignore_aliases(self, _data):
+            return True
 
     def _generate_base(series: str):
         return {
@@ -174,7 +180,8 @@ def generate_manifest(reactive_charm, archs):
     metadata = yaml.safe_load(metadata_path.read_bytes())
     manifest["bases"] = [_generate_base(series) for series in metadata["series"]]
     with manifest_path.open("w") as fwrite:
-        yaml.safe_dump(manifest, fwrite)
+        yaml.dump(manifest, fwrite, Dumper=NoAliasDumper)
+    return manifest_path
 
 
 class BuildException(Exception):
@@ -384,11 +391,11 @@ class BuildEnv:
             cls.work_dir = Path(os.environ.get("WORKSPACE"))
             cls.tmp_dir = cls.work_dir / "tmp"
             cls.home_dir = Path(os.environ.get("HOME"))
-        except TypeError:
+        except TypeError as ex:
             raise BuildException(
                 "CHARM_BUILD_DIR, CHARM_LAYERS_DIR, CHARM_INTERFACES_DIR, WORKSPACE, HOME: "
                 "Unable to find some or all of these charm build environment variables."
-            )
+            ) from ex
         return super(BuildEnv, cls).__new__(cls)
 
     def __init__(self, build_type):
@@ -749,7 +756,11 @@ class BuildEntity:
             supported_architectures = (
                 self.opts.get("architectures") or K8S_CHARM_SUPPORT_ARCHES
             )
-            generate_manifest(self.src_path, supported_architectures)
+            manifest_path = generate_manifest(self.src_path, supported_architectures)
+            if manifest_path:
+                self.echo(f"Manifest path generated: {manifest_path}")
+            else:
+                self.echo("Manifest path not generated.")
             args = "-r --force -i https://localhost --charm-file"
             self.echo(f"Building with: charm build {args}")
             ret = CharmCmd(self).build(*args.split(), _cwd=self.src_path)
