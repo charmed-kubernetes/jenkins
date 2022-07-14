@@ -24,7 +24,7 @@ import zipfile
 from pathlib import Path
 from sh.contrib import git
 from cilib.git import default_gh_branch
-from cilib.enums import SNAP_K8S_TRACK_MAP
+from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_SERIES_MAP, K8S_CHARM_SUPPORT_ARCHES
 from cilib.service.aws import Store
 from cilib.run import cmd_ok, capture, script
 from datetime import datetime
@@ -141,6 +141,40 @@ class ChannelRange:
         if self.max and other > self.max:
             return False
         return True
+
+
+def generate_manifest(reactive_charm, archs):
+    """Generate a manifest.yaml for a reactive charm.
+
+    Charmhub requires a manifest.yaml
+    """
+    metadata_path = Path(reactive_charm) / "metadata.yaml"
+    manifest_path = Path(reactive_charm) / "manifest.yaml"
+    if not metadata_path.exists() or manifest_path.exists():
+        return
+
+    def _generate_base(series: str):
+        return {
+            "architectures": archs,
+            "channel": K8S_SERIES_MAP[series.lower()],
+            "name": "ubuntu",
+        }
+
+    manifest = {
+        "analysis": {
+            "attributes": [
+                {"name": "language", "result": "python"},
+                {"name": "framework", "result": "reactive"},
+            ],
+        },
+        "charmcraft-started-at": "2022-07-14T00:00:00.000000Z",
+        "charmcraft-version": "1.7.1",
+    }
+
+    metadata = yaml.safe_load(metadata_path.read_bytes())
+    manifest["bases"] = [_generate_base(series) for series in metadata["series"]]
+    with manifest_path.open("w") as fwrite:
+        yaml.safe_dump(manifest, fwrite)
 
 
 class BuildException(Exception):
@@ -712,6 +746,10 @@ class BuildEntity:
                 echo=self.echo,
             )
         elif self.reactive:
+            supported_architectures = (
+                self.opts.get("architectures") or K8S_CHARM_SUPPORT_ARCHES
+            )
+            generate_manifest(self.src_path, supported_architectures)
             args = "-r --force -i https://localhost --charm-file"
             self.echo(f"Building with: charm build {args}")
             ret = CharmCmd(self).build(*args.split(), _cwd=self.src_path)

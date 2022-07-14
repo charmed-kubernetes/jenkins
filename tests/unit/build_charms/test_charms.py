@@ -287,6 +287,11 @@ def test_build_entity_charm_build(
     # Reactive charms built with charm tools
     charm_entity.reactive = True
     charm_entity.charm_build()
+
+    manifest_yaml = Path(charm_entity.src_path, "manifest.yaml")
+    assert manifest_yaml.exists(), "Manifest not generated"
+    manifest_yaml.unlink()
+
     assert charm_entity.dst_path == str(K8S_CI_CHARM / "k8s-ci-charm.charm")
     charm_cmd.build.assert_called_once_with(
         "-r",

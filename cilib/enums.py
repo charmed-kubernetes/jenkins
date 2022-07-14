@@ -25,6 +25,17 @@ K8S_STARTING_SEMVER = "1.21.0"
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
 
+# Supported charm arches
+K8S_CHARM_SUPPORT_ARCHES = ["amd64", "s390x", "arm64"]
+
+# Support series map
+K8S_SERIES_MAP = {
+    "xenial": "16.04",
+    "bionic": "18.04",
+    "focal": "20.04",
+    "jammy": "22.04",
+}
+
 # Kubernetes CNI version
 K8S_CNI_SEMVER = "0.8"
 

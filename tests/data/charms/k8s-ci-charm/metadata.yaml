@@ -15,4 +15,5 @@ resources:
 tags:
 - k8s
 series:
-- kubernetes
+- focal
+- bionic
