@@ -156,6 +156,7 @@ def generate_manifest(reactive_charm, archs):
 
     class NoAliasDumper(yaml.SafeDumper):
         """Prevent yaml aliases in manifest.yaml"""
+
         def ignore_aliases(self, _data):
             return True
 
