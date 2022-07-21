@@ -45,7 +45,7 @@ class JujuExecutor(ExecutorInterface):
         self._run_cmd(cmd)
 
     def set_version_to_build(self, version):
-        cmd = "sed -i '/^set.*/a export KUBE_VERSION={}' microk8s/build-scripts/set-env-variables.sh".format(
+        cmd = "sed -i 's/^KUBE_VERSION=.*/KUBE_VERSION={}/' microk8s/build-scripts/components/kubernetes/version.sh".format(
             version
         )
         self._run_cmd(cmd)

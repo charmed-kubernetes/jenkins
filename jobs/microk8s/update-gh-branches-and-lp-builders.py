@@ -72,7 +72,7 @@ def create_gh_branch(branch, gh_user, gh_token):
 
     # The branch would look like 1.24 for classic builds or 1.24-strict for strict
     kubetrack = branch.replace("-strict", "")
-    cmd = "sed -i s/KUBE_TRACK:-/KUBE_TRACK:-{}/g build-scripts/set-env-variables.sh".format(
+    cmd = "sed -i s/^KUBE_TRACK=.*/KUBE_TRACK={}/g build-scripts/components/kubernetes/version.sh".format(
         kubetrack
     ).split()
     check_call(cmd)

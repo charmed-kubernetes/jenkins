@@ -42,8 +42,8 @@ class LocalExecutor(ExecutorInterface):
         cmd_array = [
             "sed",
             "-i",
-            "/^set.*/a export KUBE_VERSION={}".format(version),
-            "microk8s/build-scripts/set-env-variables.sh",
+            "s/KUBE_VERSION=.*/KUBE_VERSION={}/".format(version),
+            "microk8s/build-scripts/components/kubernetes/version.sh",
         ]
         sh2.env(cmd_array)
 
