@@ -12,9 +12,9 @@ consistent experience across all code bases. Any external or shared repositories
 into the charmed-kubernetes namespace and have the common branches added.
 
 Branches:
- * `master`: The primary development branch. Merges are made against this branch as they are
+ * `main`: The primary development branch. Merges are made against this branch as they are
    approved.
- * `stable`: Stable is the release branch. Major release have `master` directly merged to
+ * `stable`: Stable is the release branch. Major release have `main` directly merged to
    `stable` while bug-fix releases have specific commits cherry-picked onto `stable` to create a
    release.
 
