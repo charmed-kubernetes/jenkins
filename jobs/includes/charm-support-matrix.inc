@@ -32,7 +32,7 @@
     store: 'https://charmhub.io/ceph-csi'
     summary: |
       Deploys Container Storage Interface (CSI) plugin that
-      enables Charmed Kubernetes (CDK) to use ceph as a storage backend.
+      enables Charmed Kubernetes to use ceph as a storage backend.
     tags:
       - k8s
       - ceph-csi
