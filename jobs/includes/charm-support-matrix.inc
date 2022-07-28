@@ -25,6 +25,21 @@
       - canal
       - cni
     upstream: 'https://github.com/charmed-kubernetes/layer-canal.git'
+- ceph-csi:
+    bugs: 'https://bugs.launchpad.net/charm-ceph-csi'
+    docs: 'https://charmhub.io/ceph-csi/README.md'
+    downstream: charmed-kubernetes/ceph-csi.git
+    store: 'https://charmhub.io/ceph-csi'
+    summary: |
+      Deploys Container Storage Interface (CSI) plugin that
+      enables Charmed Kubernetes (CDK) to use ceph as a storage backend.
+    tags:
+      - k8s
+      - ceph-csi
+      - csi
+    upstream: 'https://github.com/charmed-kubernetes/ceph-csi-operator.git'
+    channel-range:
+      min: '1.25'
 - containerd:
     bugs: 'https://bugs.launchpad.net/charm-containerd'
     docs: 'https://charmhub.io/containerd/docs'
