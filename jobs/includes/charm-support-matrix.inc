@@ -28,7 +28,7 @@
 - ceph-csi:
     bugs: 'https://bugs.launchpad.net/charm-ceph-csi'
     docs: 'https://charmhub.io/ceph-csi/README.md'
-    downstream: charmed-kubernetes/ceph-csi.git
+    downstream: charmed-kubernetes/ceph-csi-operator.git
     store: 'https://charmhub.io/ceph-csi'
     summary: |
       Deploys Container Storage Interface (CSI) plugin that
