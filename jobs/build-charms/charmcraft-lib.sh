@@ -17,6 +17,9 @@ ci_charmcraft_launch()
     echo 'retrying charmcraft install in 3s...'
     sleep 3
   done
+  sudo lxc shell $charmcraft_lxc -- git config --global --add http.proxy http://squid.internal:3128
+  sudo lxc shell $charmcraft_lxc -- git config --global --add https.proxy http://squid.internal:3128
+
 }
 
 ci_charmcraft_pack()
