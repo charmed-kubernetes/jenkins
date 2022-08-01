@@ -31,7 +31,7 @@ ci_charmcraft_pack()
   local subdir=${4:-.}
   sudo lxc shell $charmcraft_lxc -- bash -c "rm -rf /root/*"
   sudo lxc shell $charmcraft_lxc -- bash -c "git clone ${repository} -b ${branch} charm"
-  sudo lxc shell $charmcraft_lxc -- bash -c "cd charm/$subdir; cat version || git describe --dirty --always | tee version"
+  sudo lxc shell $charmcraft_lxc -- bash -c "cd charm/$subdir; cat version || git rev-parse --short HEAD | tee version"
   sudo lxc shell $charmcraft_lxc --env CHARMCRAFT_MANAGED_MODE=1 -- bash -c "cd charm; charmcraft pack -v -p $subdir"
 }
 
