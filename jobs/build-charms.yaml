@@ -129,6 +129,9 @@
             trap 'ci_lxc_delete $charmcraft_lxc' EXIT
             ci_charmcraft_launch $charmcraft_lxc
 
+            set +e
+
+            EXIT_STATUS=0
             tox -e py38 -- python jobs/build-charms/charms.py build \
               --charm-list "$CHARM_LIST" \
               --to-channel "$TO_CHANNEL" \
@@ -138,10 +141,13 @@
               --layer-list "$LAYER_LIST" \
               --layer-branch "$LAYER_BRANCH" \
               $WITH_CHARM_BRANCH \
-              $IS_FORCE
+              $IS_FORCE || EXIT_STATUS=$?
 
             tox -e py38 -- python jobs/build-charms/charms.py build-bundles \
                 --to-channel "$TO_CHANNEL" \
                 --bundle-list "$BUNDLE_LIST" \
                 --bundle-branch "$BUNDLE_BRANCH" \
-                --filter-by-tag "$FILTER_BY_TAG"
+                --filter-by-tag "$FILTER_BY_TAG" || EXIT_STATUS=$?
+            
+            set -e
+            exit $EXIT_STATUS
