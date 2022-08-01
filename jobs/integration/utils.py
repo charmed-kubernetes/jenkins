@@ -19,6 +19,7 @@ import click
 SERIES_ORDER = [
     "bionic",
     "focal",
+    "jammy",
 ]
 
 
