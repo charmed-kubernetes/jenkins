@@ -713,7 +713,7 @@ class BuildEntity:
         if not Path(self.src_path).exists():
             raise BuildException(f"Could not locate {self.src_path}")
         if short:
-            git_commit = git("describe", dirty=True, always=True, _cwd=self.src_path)
+            git_commit = git("rev-parse", "--short", "HEAD", _cwd=self.src_path)
         else:
             git_commit = git("rev-parse", "HEAD", _cwd=self.src_path)
         return git_commit.stdout.decode().strip()
