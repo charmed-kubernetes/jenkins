@@ -37,6 +37,7 @@
           values:
             - focal
             - bionic
+            - jammy
       - axis:
           type: user-defined
           name: channel
@@ -95,6 +96,7 @@
           values:
             - focal
             - bionic
+            - jammy
       - axis:
           type: user-defined
           name: channel
@@ -152,6 +154,7 @@
           name: series
           values:
             - focal
+            - jammy
       - axis:
           type: user-defined
           name: channel

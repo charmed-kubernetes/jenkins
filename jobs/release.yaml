@@ -35,6 +35,7 @@
           values:
             - focal
             - bionic
+            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release"
