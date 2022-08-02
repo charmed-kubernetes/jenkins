@@ -2206,7 +2206,10 @@ async def test_nagios(model, tools):
     k8s_version_str = masters.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     series = os.environ["SERIES"]
-    if series in ("xenial",):
+    if series in (
+        "xenial",
+        "jammy",
+    ):
         pytest.skip(f"skipping unsupported series {series}")
     if k8s_minor_version < (1, 17):
         pytest.skip(f"skipping, k8s version v{k8s_version_str}")
@@ -2336,21 +2339,27 @@ async def test_nfs(model, tools):
 async def test_ceph(model, tools):
     # setup
     series = os.environ["SERIES"]
-    check_cephfs = True
+    series_idx = SERIES_ORDER.index(series)
     ceph_config = {}
-    if check_cephfs and series == "bionic":
+    ceph_charms_channel = "latest/stable"
+    if series == "bionic":
         log("adding cloud:train to k8s-control-plane")
         await model.applications["kubernetes-control-plane"].set_config(
             {"install_sources": "[cloud:{}-train]".format(series)}
         )
         await tools.juju_wait()
         ceph_config["source"] = "cloud:{}-train".format(series)
+    elif series == "jammy":
+        ceph_charms_channel = "quincy/stable"
+    elif series_idx > SERIES_ORDER.index("jammy"):
+        pytest.fail("ceph_charm_channel is undefined past jammy")
     log("deploying ceph mon")
     await model.deploy(
         "ceph-mon",
         num_units=3,
         series=series,
         config=ceph_config,
+        channel=ceph_charms_channel,
     )
     cs = {
         "osd-devices": {"size": 8 * 1024, "count": 1},
@@ -2364,20 +2373,21 @@ async def test_ceph(model, tools):
         series=series,
         config=ceph_config,
         constraints="root-disk=32G",
+        channel=ceph_charms_channel,
     )
-    if check_cephfs:
-        log("deploying ceph fs")
-        await model.deploy(
-            "ceph-fs",
-            num_units=1,
-            series=series,
-            config=ceph_config,
-        )
+
+    log("deploying ceph fs")
+    await model.deploy(
+        "ceph-fs",
+        num_units=1,
+        series=series,
+        config=ceph_config,
+        channel=ceph_charms_channel,
+    )
 
     log("adding relations")
     await model.add_relation("ceph-mon", "ceph-osd")
-    if check_cephfs:
-        await model.add_relation("ceph-mon", "ceph-fs")
+    await model.add_relation("ceph-mon", "ceph-fs")
     await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
     log("waiting...")
     await tools.juju_wait()
@@ -2396,17 +2406,15 @@ async def test_ceph(model, tools):
     # create pod that writes to a pv from ceph
     await validate_storage_class(model, "ceph-xfs", "Ceph")
     await validate_storage_class(model, "ceph-ext4", "Ceph")
-    if check_cephfs:
-        await validate_storage_class(model, "cephfs", "Ceph")
+    await validate_storage_class(model, "cephfs", "Ceph")
     # cleanup
     log("removing ceph applications")
     tasks = {
         model.applications["ceph-mon"].destroy(),
         model.applications["ceph-osd"].destroy(),
     }
-    if check_cephfs:
-        tasks.add(model.applications["ceph-fs"].destroy())
-    (done1, pending1) = await asyncio.wait(tasks)
+    tasks.add(model.applications["ceph-fs"].destroy())
+    (done1, _) = await asyncio.wait(tasks)
     for task in done1:
         # read and ignore any exception so that it doesn't get raised
         # when the task is GC'd
