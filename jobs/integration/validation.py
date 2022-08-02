@@ -1410,9 +1410,12 @@ async def any_keystone(model, apps_by_charm, tools):
     else:
         # No keystone available, add/setup one
         admin_password = "testpw"
+        series = "bionic"
+        channel = "latest/stable"
         keystone = await model.deploy(
             "keystone",
-            series="bionic",
+            series=series,
+            channel=channel,
             config={
                 "admin-password": admin_password,
                 "preferred-api-version": "3",
@@ -1421,6 +1424,8 @@ async def any_keystone(model, apps_by_charm, tools):
         )
         await model.deploy(
             "percona-cluster",
+            series=series,
+            channel=channel,
             config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
         )
 
