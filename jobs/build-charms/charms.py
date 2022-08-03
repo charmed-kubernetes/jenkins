@@ -276,8 +276,10 @@ class _CharmHub(CharmcraftCmd):
 
         for idx, row in enumerate(channel_status):
             base_split = self.BASE_RE.findall(row.get("Base"))
-            assert base_split, "Failed to split base into name, channel, and arch"
-            row["Base"] = dict(zip(["name", "channel", "architecture"], base_split[0]))
+            if base_split:
+                row["Base"] = dict(
+                    zip(["name", "channel", "architecture"], base_split[0])
+                )
             for prop in ["Resources", "Revision", "Version"]:
                 value = row.get(prop, "")
                 if value == "↑":
@@ -377,6 +379,7 @@ class _CharmHub(CharmcraftCmd):
         # Act on the charm with the highest revision number
         # This should always be the most recently built charm
         for _, *args in sorted(calls)[-1:]:
+            # self._echo(" ".join(["charmcraft", "release", *args]))
             self.charmcraft.release(*args)
 
     def upload(self, dst_path):
