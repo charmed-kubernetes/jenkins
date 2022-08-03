@@ -551,6 +551,7 @@ def test_promote_command(mock_build_env, charms):
         "filter_by_tag": ["tag1", "tag2"],
         "from_channel": "latest/edge",
         "to_channel": "latest/beta",
+        "track": "latest",
     }
     mock_build_env.promote_all.assert_called_once_with(
         from_channel="latest/edge",
