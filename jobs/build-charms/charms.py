@@ -352,12 +352,7 @@ class _CharmHub(CharmcraftCmd):
             charm_status = [
                 row
                 for row in self.status(charm_entity)
-                if all(
-                    (
-                        row["Revision"],
-                        f"{row['Track']}/{row['Channel']}" == from_channel,
-                    )
-                )
+                if row["Revision"] and f"{row['Track']}/{row['Channel']}" == from_channel
             ]
 
         calls = set()
