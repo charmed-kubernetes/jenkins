@@ -245,6 +245,7 @@ class CharmcraftCmd(_WrappedCmd):
 
 class _CharmHub(CharmcraftCmd):
     STATUS_RESOURCE = re.compile(r"(\S+) \(r(\d+)\)")
+    BASE_RE = re.compile(r"(\S+) (\S+) \((\S+)\)")
 
     @staticmethod
     def _table_to_list(header, body):
@@ -269,18 +270,26 @@ class _CharmHub(CharmcraftCmd):
 
     def status(self, charm_entity):
         """Read CLI Table output from charmcraft status and parse."""
-        charm_status = self.charmcraft.status(charm_entity)
+        charm_status = self.charmcraft.status(charm_entity, _out=None)
         header, *body = charm_status.stdout.decode().splitlines()
         channel_status = self._table_to_list(header, body)
 
         for idx, row in enumerate(channel_status):
-            resources = row.get("Resources", "")
-            if resources == "-":
-                row["Resources"] = []
-            elif resources == "↑":
-                row["Resources"] = channel_status[idx - 1]["Resources"]
-            else:
-                row["Resources"] = dict(self.STATUS_RESOURCE.findall(resources))
+            base_split = self.BASE_RE.findall(row.get("Base"))
+            if base_split:
+                row["Base"] = dict(
+                    zip(["name", "channel", "architecture"], base_split[0])
+                )
+            for prop in ["Resources", "Revision", "Version"]:
+                value = row.get(prop, "")
+                if value == "↑":
+                    row[prop] = channel_status[idx - 1][prop]
+                elif value == "-":
+                    row[prop] = {} if prop == "Resources" else None
+                elif prop == "Resources":
+                    row[prop] = dict(self.STATUS_RESOURCE.findall(value))
+                else:
+                    row[prop] = value
         return channel_status
 
     def revisions(self, charm_entity):
@@ -337,30 +346,36 @@ class _CharmHub(CharmcraftCmd):
         self._echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channels}"
         )
-        if from_channel == "unpublished":
+        if "unpublished" == from_channel:
             charm_status = self._unpublished_revisions(charm_entity)
         else:
             charm_status = [
                 row
                 for row in self.status(charm_entity)
-                if f"{row['Track']}/{row['Channel']}" == from_channel
+                if row["Revision"]
+                and f"{row['Track']}/{row['Channel']}" == from_channel
             ]
 
         calls = set()
         for row in charm_status:
-            revision, resources = row["Revision"], row["Resources"]
+            revision, resources = int(row["Revision"]), row["Resources"]
             resource_args = (
                 f"--resource={name}:{rev}" for name, rev in resources.items() if rev
             )
             calls.add(
                 (
+                    revision,
                     charm_entity,
                     f"--revision={revision}",
                     *(f"--channel={chan}" for chan in to_channels),
                     *resource_args,
                 )
             )
-        for args in calls:
+
+        # Act on the charm with the highest revision number
+        # This should always be the most recently built charm
+        for _, *args in sorted(calls)[-1:]:
+            # self._echo(" ".join(["charmcraft", "release", *args]))
             self.charmcraft.release(*args)
 
     def upload(self, dst_path):
@@ -523,14 +538,37 @@ class BuildEnv:
         self.db_json.write_text(json.dumps(dict(self.db)))
         self.store.put_item(Item=dict(self.db))
 
-    def promote_all(self, from_channel="unpublished", to_channels=("edge",)):
+    def promote_all(self, from_channel="beta", to_channels=("edge",)):
         """Promote set of charm artifacts in charmhub."""
+        track = self.db["build_args"].get("track") or "latest"
+        if from_channel.lower() in RISKS:
+            from_channel = f"{track}/{from_channel.lower()}"
+        assert (
+            from_channel != "unpublished"
+        ), "It's unwise to promote unpublished charms."
+        ch_channels = [
+            f"{track}/{chan.lower()}" if (chan.lower() in RISKS) else chan
+            for chan in to_channels
+        ]
+        failed_entities = []
         for charm_map in self.artifacts:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
                     continue
-                to_channels = self.apply_channel_bounds(charm_name, to_channels)
-                _CharmHub(self).promote(charm_name, from_channel, to_channels)
+                ch_channels = self.apply_channel_bounds(charm_name, ch_channels)
+                try:
+                    _CharmHub(self).promote(charm_name, from_channel, ch_channels)
+                except Exception:
+                    self.echo(traceback.format_exc())
+                    failed_entities.append(charm_name)
+
+        if any(failed_entities):
+            count = len(failed_entities)
+            plural = "s" if count > 1 else ""
+            raise SystemExit(
+                f"Encountered {count} Promote All Failure{plural}:\n\t"
+                + ", ".join(failed_entities)
+            )
 
     def download(self, layer_name):
         """Pull layer source from the charm store."""
@@ -1137,13 +1175,16 @@ def build_bundles(
     multiple=True,
 )
 @click.option(
+    "--track", required=True, help="track to promote charm to", default="latest"
+)
+@click.option(
     "--from-channel",
     default="unpublished",
     required=True,
     help="Charm channel to publish from",
 )
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
-def promote(charm_list, filter_by_tag, from_channel, to_channel):
+def promote(charm_list, filter_by_tag, track, from_channel, to_channel):
     """
     Promote channel for a set of charms filtered by tag.
     """
@@ -1153,6 +1194,7 @@ def promote(charm_list, filter_by_tag, from_channel, to_channel):
         "filter_by_tag": list(filter_by_tag),
         "to_channel": to_channel,
         "from_channel": from_channel,
+        "track": track,
     }
     build_env.clean()
     return build_env.promote_all(
