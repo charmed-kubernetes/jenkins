@@ -352,12 +352,8 @@ class _CharmHub(CharmcraftCmd):
             charm_status = [
                 row
                 for row in self.status(charm_entity)
-                if all(
-                    (
-                        row["Revision"],
-                        f"{row['Track']}/{row['Channel']}" == from_channel,
-                    )
-                )
+                if row["Revision"]
+                and f"{row['Track']}/{row['Channel']}" == from_channel
             ]
 
         calls = set()
@@ -379,7 +375,7 @@ class _CharmHub(CharmcraftCmd):
         # Act on the charm with the highest revision number
         # This should always be the most recently built charm
         for _, *args in sorted(calls)[-1:]:
-            #self._echo(" ".join(["charmcraft", "release", *args]))
+            # self._echo(" ".join(["charmcraft", "release", *args]))
             self.charmcraft.release(*args)
 
     def upload(self, dst_path):
