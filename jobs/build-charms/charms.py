@@ -546,7 +546,7 @@ class BuildEnv:
         assert (
             from_channel != "unpublished"
         ), "It's unwise to promote unpublished charms."
-        ch_channels = [
+        to_channels = [
             f"{track}/{chan.lower()}" if (chan.lower() in RISKS) else chan
             for chan in to_channels
         ]
@@ -555,7 +555,7 @@ class BuildEnv:
             for charm_name, charm_opts in charm_map.items():
                 if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
                     continue
-                ch_channels = self.apply_channel_bounds(charm_name, ch_channels)
+                ch_channels = self.apply_channel_bounds(charm_name, to_channels)
                 try:
                     _CharmHub(self).promote(charm_name, from_channel, ch_channels)
                 except Exception:
