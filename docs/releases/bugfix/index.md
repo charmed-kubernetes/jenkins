@@ -127,13 +127,12 @@ others are kubeflow related).
 
 ### Build stable bundles
 
-**Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
+**Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
 bundles shouldn't be promoted because a candidate bundle points to candidate channel charms
 
 Instead BUILD the bundles targetting the stable channels:
 
-https://jenkins.canonical.com/k8s/job/build-charms/
 Run the build with parameters:
   * layer_branch = stable
   * charm_branch = stable
