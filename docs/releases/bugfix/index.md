@@ -125,11 +125,28 @@ This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
 it will only promote the necessary charms that make up charmed-kuberneetes (the
 others are kubeflow related).
 
-### Promote bundles from **candidate** to **stable**
+### Build stable bundles
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
 
-Same as charm promotion.
+bundles shouldn't be promoted because a candidate bundle points to candidate channel charms
+
+Instead BUILD the bundles targetting the stable channels:
+
+https://jenkins.canonical.com/k8s/job/build-charms/
+Run the build with parameters:
+  * layer_branch = stable
+  * charm_branch = stable
+  * bundle_branch = stable
+  * to_channel = stable (will build both 1.xx/stable and latest/stable)
+  * filter_by_tag = charmed-kubernetes
+
+Repeat the build with parameters:
+  * layer_branch = stable
+  * charm_branch = stable
+  * bundle_branch = stable
+  * to_channel = stable (will build both 1.xx/stable and latest/stable)
+  * filter_by_tag = kubernetes-core
 
 ### Promote cdk-addons
 
