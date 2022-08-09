@@ -139,7 +139,7 @@
     tags:
         - k8s
         - interface
-        - interface:kube-masters
+        - interface:kube-masters  # wokeignore:rule=master
 - interface:kubernetes-cni:
     downstream: "charmed-kubernetes/interface-kubernetes-cni.git"
     upstream: "https://github.com/juju-solutions/interface-kubernetes-cni.git"
@@ -160,7 +160,7 @@
     tags:
         - k8s
         - interface
-        - interface:nrpe-external-master
+        - interface:nrpe-external-master  # wokeignore:rule=master
 - interface:openstack-integration:
     downstream: "charmed-kubernetes/interface-openstack-integration.git"
     upstream: "https://github.com/juju-solutions/interface-openstack-integration.git"
@@ -293,7 +293,7 @@
     tags:
         - k8s
         - layer
-        - layer:kubernetes-master-worker-base
+        - layer:kubernetes-master-worker-base  # wokeignore:rule=master
 - layer:kubernetes-node-base:
     downstream: "charmed-kubernetes/layer-kubernetes-node-base"
     upstream: "https://github.com/charmed-kubernetes/layer-kubernetes-node-base.git"
