@@ -2,11 +2,17 @@
 - charmed-kubernetes:
     fragments: 'k8s/cdk cni/calico cri/containerd'
     namespace: containers/bundle
-    tags: ['k8s', 'charmed-kubernetes']
+    tags: 
+        - k8s
+        - charmed-kubernetes
+        - bundle
 - kubernetes-core:
     fragments: 'k8s/core cni/calico cri/containerd'
     namespace: containers/bundle
-    tags: ['k8s', 'kubernetes-core']
+    tags: 
+        - k8s
+        - kubernetes-core
+        - bundle
 
 ##########################################################################
 # Removed since it's built by github CI actions

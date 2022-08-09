@@ -266,6 +266,12 @@
           days-to-keep: 2
     parameters:
       - global-params
+      - string:
+          name: TRACK
+          description: |
+            Next stable Version of Kubernetes, in the form of
+            <major>.<minor> (ie, 1.16).
+
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -282,4 +288,5 @@
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc \
                --ancillary-list jobs/includes/ancillary-list.inc \
+               --track $TRACK \
                --filter-by-tag k8s $IS_DRY_RUN

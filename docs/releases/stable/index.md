@@ -53,7 +53,7 @@ https://github.com/charmed-kubernetes/jenkins/pull/761
 
 It may feel early, but part of releasing the next stable version requires
 preparing for the release that will follow. This requires opening tracks and
-building relevant snaps that will be used in the new 'edge' channel.
+building relevant snaps and charms that will be used in the new 'edge' channel.
 
 For example, we requested 1.24 tracks while preparing for the 1.23 release:
 
@@ -65,26 +65,53 @@ snaps as well as cdk-addons):
 - https://github.com/charmed-kubernetes/jenkins/pull/765/files
 - https://github.com/charmed-kubernetes/jenkins/commit/b0ce1fb0053908043ce25f10cca40be6531c3156
 
+Charm tracks can be created by contacting [~snapstore](https://chat.canonical.com/canonical/channels/snapstore) and asking for new tracks to be opened for every neccessary [charm](https://charmhub.io/charm) and [bundle](https://charmhub.io/bundle) owned by `Canonical Kubernetes` on [charmhub.io](https://charmhub.io)
+
 ## Preparing the release
 
 ### Tag existing stable branches with the current stable bundle
+#### :warning: **Deprecated Step**
 
-For all charm repos that make up CK, tag the existing stable branches with
-the most recently released stable `cs:charmed-kubernetes` bundle revision.
+Starting with release 1.24, each repo has a unique branch for each 
+Charm release. This step is no longer necessary. Below is the original
+text.
 
-**Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
+> For all charm repos that make up CK, tag the existing stable branches with
+> the most recently released stable `cs:charmed-kubernetes` bundle revision.
+>
+> **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
 
-### Reset stable with master git branches
+### Submit PR to bump K8S Track Map
 
-Once all repositories are tagged, we need to reset stable branches with
-master. This will be our snapshot from which we test, fix, and subsequently
-promote to the new stable release.
+Add the next release to the track map enumerations. To use the newly created tracks, 
+include the next release to the track map.
+
+```python
+...
+    "1.25": ["1.25/beta", "1.25/edge"],
+}
+```
+
+Example PR:
+ - https://github.com/charmed-kubernetes/jenkins/pull/974
+
+This will allow and charm-builds targetting `edge` or `beta` channels to flow to the
+`1.25` tracks while any charm-builds targetting `candidate` or `stable` will flow to
+`1.24` tracks.
+
+:warning: Nightly charm and bundle builds will target `latest/edge` and this `{channel}/edge`
+
+### Reset release_x.xx from `default` git branches
+
+Once all repositories are tagged, we need to create release branches from
+`main`. This will be our snapshot from which we test, fix, and subsequently
+promote to the new release.
 
 **Job**: https://jenkins.canonical.com/k8s/job/cut-stable-release/
 
-### Submit PR's to bundle and charms to pin snap channel on the stable branches
+### Submit PR's to bundle and charms to pin snap channel on the release branches
 
-We need to make sure that the bundle fragments and kubernetes-worker/master/e2e
+We need to make sure that the bundle fragments and kubernetes-worker/control-plane/e2e
 are set to `<k8sver>/stable`. This should be done on each of the relevant git
 `stable` branches. For example, for 1.23 GA:
 
@@ -99,16 +126,16 @@ are set to `<k8sver>/stable`. This should be done on each of the relevant git
 ### Bump snap channel to next minor release
 
 Once the rebase has occurred we need to bump the same charms and bundle
-fragments in the `master` git branches to the next k8s minor version,
+fragments in the `main` git branches to the next k8s minor version,
 e.g. `1.24/edge`. You don't have to do this right away; in fact, you
 should wait until you actually have snaps in the `$next/edge` tracks
 before making this change.
 
-### Build new CK Charms from stable git branches
+### Build new CK Charms from release git branches
 
 **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
-Pull down all layers and checkout their stable branches. From there build
+Pull down all layers and checkout their release branches. From there build
 each charm against those local branches. After the charms are built they need to be
 promoted to the **beta** channel in the charmstore.
 
@@ -160,10 +187,10 @@ any changes as a result of their testing.
 
 ## Performing the release
 
-### Promote charms and bundles from **beta** to **stable**
+### Promote charms from **beta** to **stable**
 
 This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
-it will only promote the necessary charms that make up charmed-kuberneetes (the
+it will only promote the necessary charms that make up charmed-kubernetes (the
 others are kubeflow related).
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
@@ -174,9 +201,28 @@ others are kubeflow related).
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
 
-#### Promote bundle Options
 
-![promote bundle options](promote-bundles.png)
+### Submit PR to bump K8S Track Map
+
+Add candidate and stable branches to the track map
+
+```diff
+-     "1.25": ["1.25/beta", "1.25/edge"],
++     "1.25": ["1.25/stable", "1.25/candidate", "1.25/beta", "1.25/edge"],
+}
+```
+
+This will allow and charm-builds targetting all channels to flow to the
+`1.25` tracks.
+
+### Build bundles to **stable**
+
+Bundles cannot be promoted because when built they reference specific charm channels
+Therefore, it's required to build bundles which reference the stable charm channels. 
+
+#### Build bundle Options
+
+![build bundle options](build-bundle-options.png)
 
 ### Promote snaps from <stable track>/stable to latest/<risks>
 
