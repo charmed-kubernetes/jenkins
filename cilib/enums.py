@@ -69,7 +69,7 @@ SNAP_K8S_TRACK_MAP = {
     "1.22": ["1.22/stable", "1.22/candidate", "1.22/beta", "1.22/edge"],
     "1.23": ["1.23/stable", "1.23/candidate", "1.23/beta", "1.23/edge"],
     "1.24": ["1.24/stable", "1.24/candidate", "1.24/beta", "1.24/edge"],
-    "1.25": ["1.25/edge",]
+    "1.25": ["1.25/edge"],
 }
 
 # Deb k8s version <-> ppa mapping
