@@ -100,3 +100,28 @@ def test_tag_stable_bugfix(mock_tag_branch, sync):
         )
     assert result.exception is None
     mock_tag_branch.assert_called_once_with("release_1.2.3", "1.2.3+ck2")
+
+
+@mock.patch(
+    "sync.Repository.branches",
+    mock.PropertyMock(return_value=["main", "release_1.2.3"]),
+)
+@mock.patch("sync.Repository.rename_branch")
+def test_rename_branch(mock_rename_branch, sync):
+    """Tests that tag stable bundle job creates a tags selected branch with release."""
+    runner = CliRunner()
+    with mock.patch.object(sync, "SNAP_K8S_TRACK_LIST", [("1.2.3", None)]):
+        result = runner.invoke(
+            sync.rename_branch,
+            [
+                "--layer-list=jobs/includes/charm-layer-list.inc",
+                "--charm-list=jobs/includes/charm-support-matrix.inc",
+                "--ancillary-list=jobs/includes/ancillary-list.inc",
+                "--from-name=release_1.2.3",
+                "--to-name=release-1.2.3",
+                "--dry-run",
+                "--filter-by-tag=calico",
+            ],
+        )
+    assert result.exception is None
+    mock_rename_branch.assert_called_once_with("release_1.2.3", "release-1.2.3")

@@ -390,3 +390,4 @@
     upstream: "https://github.com/juju/layer-index.git"
     needs_stable: no
     needs_tagging: no
+    supports_rename: no

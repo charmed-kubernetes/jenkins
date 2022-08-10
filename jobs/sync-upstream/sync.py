@@ -81,6 +81,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
         for layer_name, params in layer_map.items():
             downstream = params["downstream"]
             if not params.get("needs_stable", True):
+                log.info(f"Skipping {layer_name} :: does not require stable branch")
                 continue
 
             tags = params.get("tags", None)
@@ -105,6 +106,76 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 repo.copy_branch(default_branch, new_branch)
             except HTTPError:
                 log.exception("Failed to copy branch")
+                failed.append(layer_name)
+    if failed:
+        raise RuntimeError("Couldn't create branch for " + ", ".join(failed))
+
+
+@cli.command()
+@click.option("--layer-list", required=True, help="Path to supported layer list")
+@click.option("--charm-list", required=True, help="Path to supported charm list")
+@click.option(
+    "--ancillary-list",
+    required=True,
+    help="Path to additionally repos that need to be rebased.",
+)
+@click.option(
+    "--filter-by-tag", required=False, help="only build for tags", multiple=True
+)
+@click.option("--dry-run", is_flag=True)
+@click.option("--from-name", required=True, help="Name of the original branch")
+@click.option("--to-name", required=True, help="Name of the new branch")
+def rename_branch(
+    layer_list, charm_list, ancillary_list, filter_by_tag, dry_run, from_name, to_name
+):
+    return _rename_branch(
+        layer_list,
+        charm_list,
+        ancillary_list,
+        filter_by_tag,
+        dry_run,
+        from_name,
+        to_name,
+    )
+
+
+def _rename_branch(
+    layer_list, charm_list, ancillary_list, filter_by_tag, dry_run, from_name, to_name
+):
+    layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
+    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+    ancillary_list = yaml.safe_load(Path(ancillary_list).read_text(encoding="utf8"))
+    failed = []
+    for layer_map in layer_list + charm_list + ancillary_list:
+        for layer_name, params in layer_map.items():
+            downstream = params["downstream"]
+
+            tags = params.get("tags", None)
+            if tags:
+                if not any(match in filter_by_tag for match in tags):
+                    continue
+
+            if not params.get("supports_rename", True):
+                log.info(f"Skipping {layer_name} :: does not support branch renaming")
+                continue
+
+            repo = Repository.with_session(*downstream.split("/"), read_only=dry_run)
+            log.info(
+                f"Renaming Branch:: {layer_name:^35} :: from: {from_name} to:{to_name}"
+            )
+
+            if from_name not in repo.branches:
+                log.info(f"Skipping  :: {layer_name:^35} :: {from_name} doesn't exist")
+                continue
+
+            if to_name in repo.branches:
+                log.info(f"Skipping  :: {layer_name:^35} :: {to_name} already exists")
+                continue
+
+            try:
+                repo.rename_branch(from_name, to_name)
+            except HTTPError:
+                log.exception("Failed to rename branch")
                 failed.append(layer_name)
     if failed:
         raise RuntimeError("Couldn't create branch for " + ", ".join(failed))
