@@ -73,8 +73,9 @@ Charm tracks can be created by contacting [~snapstore](https://chat.canonical.co
 #### :warning: **Deprecated Step**
 
 Starting with release 1.24, each repo has a unique branch for each 
-Charm release. This step is no longer necessary. Below is the original
-text.
+Charm release. This step was previously necessary to tag the 
+previous stable release before resyncing each branch from `main` -> `stable`.
+Tagging of the `release_x.xx` branch will now take place at the end of the release.
 
 > For all charm repos that make up CK, tag the existing stable branches with
 > the most recently released stable `cs:charmed-kubernetes` bundle revision.
@@ -223,6 +224,19 @@ Therefore, it's required to build bundles which reference the stable charm chann
 #### Build bundle Options
 
 ![build bundle options](build-bundle-options.png)
+
+### Tag release branches with the current stable bundle
+
+For all charm repos that make up CK, tag the existing release branches with
+the most recently released stable `charmed-kubernetes` bundle revision.
+
+Use the `x.xx/stable` version number from [charmhub.io/charmed-kubernetes](https://charmhub.io/charmed-kubernetes), not the `latest/stable` version number
+
+> **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
+
+#### Sync Stable Tag Bundle Rev Options
+
+![sync stable tag bundle rev options](sync-stable-tag-bundle-rev-options.png)
 
 ### Promote snaps from <stable track>/stable to latest/<risks>
 
