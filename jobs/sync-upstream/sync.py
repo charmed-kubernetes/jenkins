@@ -54,15 +54,23 @@ def cli():
 @click.option(
     "--ancillary-list",
     required=True,
-    help="Path to additional repos that need to be rebased.",
+    help="Path to additionall repos that need to be rebased.",
 )
-@click.option("--track", required=True, help="Kubernetes track number: ex) 1.25")
 @click.option(
     "--filter-by-tag", required=False, help="only build for tags", multiple=True
 )
 @click.option("--dry-run", is_flag=True)
 def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
-    """This will merge each layers' main onto the release_x.xx branches.
+    return _cut_stable_release(
+        layer_list, charm_list, ancillary_list, filter_by_tag, dry_run
+    )
+
+
+def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
+    """This will merge each layers master onto the stable branches.
+
+    PLEASE NOTE: This step should come after each stable branch has been tagged
+    and references a current stable bundle revision.
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
     charm_list: YAML spec containing git repos and their upstream/downstream properties
@@ -89,9 +97,8 @@ def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dr
                 downstream, auth=auth
             )
 
-            new_branch = f"release_{track}"
             log.info(
-                f"Releasing :: {layer_name:^35} :: from: {default_branch} to: {new_branch}"
+                f"Releasing :: {layer_name:^35} :: from: {default_branch} to: stable"
             )
             downstream = f"https://{':'.join(auth)}@github.com/{downstream}"
             identifier = str(uuid.uuid4())
@@ -104,24 +111,18 @@ def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dr
                 .strip()
             )
             git_rev_stable = (
-                git("rev-parse", f"origin/{new_branch}", _cwd=identifier)
+                git("rev-parse", "origin/stable", _cwd=identifier)
                 .stdout.decode()
                 .strip()
             )
             if git_rev_default == git_rev_stable:
-                log.info(
-                    f"Skipping  :: {layer_name:^35} :: {default_branch} == {new_branch}"
-                )
+                log.info(f"Skipping  :: {layer_name:^35} :: {default_branch} == stable")
                 continue
-            log.info(
-                f"Commits   :: {layer_name:^35} :: {default_branch} != {new_branch}"
-            )
+            log.info(f"Commits   :: {layer_name:^35} :: {default_branch} != stable")
             log.info(f"  {default_branch:10}= {git_rev_default:32}")
-            log.info(f"  {new_branch:10}= {git_rev_stable:32}")
+            log.info(f"  {'stable':10}= {git_rev_stable:32}")
             for line in git(
-                "rev-list",
-                f"origin/{new_branch}..origin/{default_branch}",
-                _cwd=identifier,
+                "rev-list", f"origin/stable..origin/{default_branch}", _cwd=identifier
             ):
                 for line in git.show(
                     "--format=%h %an '%s' %cr",
@@ -134,10 +135,10 @@ def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dr
                 git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
                 git.config("user.name", "cdkbot", _cwd=identifier)
                 git.config("--global", "push.default", "simple")
-                git.checkout("-f", new_branch, _cwd=identifier)
+                git.checkout("-f", "stable", _cwd=identifier)
                 git.reset(default_branch, _cwd=identifier)
                 for line in git.push(
-                    "origin", new_branch, "-f", _cwd=identifier, _iter=True
+                    "origin", "stable", "-f", _cwd=identifier, _iter=True
                 ):
                     log.info(line)
 
