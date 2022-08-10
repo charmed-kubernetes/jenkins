@@ -638,8 +638,7 @@ class BuildEntity:
 
         if not branch and self.downstream:
             # if branch not specified, use repo's default branch
-            auth = os.environ.get("CDKBOT_GH_USR"), os.environ.get("CDKBOT_GH_PSW")
-            branch = default_gh_branch(self.downstream, ignore_errors=True, auth=auth)
+            branch = default_gh_branch(self.downstream, ignore_errors=True)
 
         self.branch = branch or "main"
 
