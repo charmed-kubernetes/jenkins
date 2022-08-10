@@ -55,3 +55,48 @@ def test_sync_cut_stable_release(mock_copy_branch, sync):
         )
     assert result.exception is None
     mock_copy_branch.assert_called_once_with("main", "release_1.2.3")
+
+
+@mock.patch("sync.Repository.default_branch", mock.PropertyMock(return_value="main"))
+@mock.patch("sync.Repository.tags", mock.PropertyMock(return_value=[]))
+@mock.patch("sync.Repository.tag_branch")
+def test_tag_stable_bundle(mock_tag_branch, sync):
+    """Tests that tag stable bundle job creates a tags selected branch with release."""
+    runner = CliRunner()
+    with mock.patch.object(sync, "SNAP_K8S_TRACK_LIST", [("1.2.3", None)]):
+        result = runner.invoke(
+            sync.tag_stable,
+            [
+                "--layer-list=jobs/includes/charm-layer-list.inc",
+                "--charm-list=jobs/includes/charm-support-matrix.inc",
+                "--k8s-version=1.2.3",
+                "--bundle-revision=1234",
+                "--dry-run",
+                "--filter-by-tag=calico",
+            ],
+        )
+    assert result.exception is None
+    mock_tag_branch.assert_called_once_with("release_1.2.3", "ck-1.2.3-1234")
+
+
+@mock.patch("sync.Repository.default_branch", mock.PropertyMock(return_value="main"))
+@mock.patch("sync.Repository.tags", mock.PropertyMock(return_value=["ck-1.2.3-1234"]))
+@mock.patch("sync.Repository.tag_branch")
+def test_tag_stable_bugfix(mock_tag_branch, sync):
+    """Tests that tag stable bundle job creates a tags selected branch with release."""
+    runner = CliRunner()
+    with mock.patch.object(sync, "SNAP_K8S_TRACK_LIST", [("1.2.3", None)]):
+        result = runner.invoke(
+            sync.tag_stable,
+            [
+                "--layer-list=jobs/includes/charm-layer-list.inc",
+                "--charm-list=jobs/includes/charm-support-matrix.inc",
+                "--k8s-version=1.2.3",
+                "--bundle-revision=ck2",
+                "--dry-run",
+                "--bugfix",
+                "--filter-by-tag=calico",
+            ],
+        )
+    assert result.exception is None
+    mock_tag_branch.assert_called_once_with("release_1.2.3", "1.2.3+ck2")

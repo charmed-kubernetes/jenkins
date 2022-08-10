@@ -2,13 +2,9 @@
 """
 from urllib.error import HTTPError
 import click
-import sh
-import os
-import uuid
 import yaml
 from pathlib import Path
 from cilib.github_api import Repository
-from sh.contrib import git
 from cilib import log, enums, lp
 from cilib.enums import SNAP_K8S_TRACK_LIST
 from cilib.models.repos.kubernetes import (
@@ -77,7 +73,8 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     ancillary_list = yaml.safe_load(Path(ancillary_list).read_text(encoding="utf8"))
-    next_stable_release, _ = SNAP_K8S_TRACK_LIST[-1]
+    stable_release, _ = SNAP_K8S_TRACK_LIST[-1]
+    new_branch = f"release_{stable_release}"
 
     failed = []
     for layer_map in layer_list + charm_list + ancillary_list:
@@ -93,7 +90,6 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
 
             repo = Repository.with_session(*downstream.split("/"), read_only=dry_run)
             default_branch = params.get("branch") or repo.default_branch
-            new_branch = f"release_{next_stable_release}"
 
             log.info(
                 f"Releasing :: {layer_name:^35} :: from: {default_branch} to:{new_branch} "
@@ -111,7 +107,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 log.exception("Failed to copy branch")
                 failed.append(layer_name)
     if failed:
-        raise RuntimeError("Couldn't create branch for" + ", ".join(failed))
+        raise RuntimeError("Couldn't create branch for " + ", ".join(failed))
 
 
 def _tag_stable_forks(
@@ -125,63 +121,44 @@ def _tag_stable_forks(
     git tag (ie. ck-{bundle_rev}), this would mean we tagged current
     stable branches for 1.14 with the latest charmed kubernetes(ck) bundle rev
     of {bundle_rev}
-
-    TODO: Switch to different merge strategy
-    git checkout master
-    git checkout -b staging
-    git merge stable -s ours
-    git checkout stable
-    git reset staging
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
-    new_env = os.environ.copy()
-    for layer_map in layer_list + charm_list:
-        for layer_name, repos in layer_map.items():
+    stable_branch = f"release_{k8s_version}"
 
-            tags = repos.get("tags", None)
+    failed = []
+    for layer_map in layer_list + charm_list:
+        for layer_name, params in layer_map.items():
+
+            tags = params.get("tags", None)
             if tags:
                 if not any(match in filter_by_tag for match in tags):
                     continue
 
-            downstream = repos["downstream"]
+            if not params.get("needs_tagging", True):
+                log.info(f"Skipping {layer_name} :: does not require tagging")
+                continue
+
+            downstream = params["downstream"]
             if bugfix:
                 tag = f"{k8s_version}+{bundle_rev}"
             else:
                 tag = f"ck-{k8s_version}-{bundle_rev}"
-            if not repos.get("needs_tagging", True):
-                log.info(f"Skipping {layer_name} :: does not require tagging")
+            repo = Repository.with_session(*downstream.split("/"), read_only=dry_run)
+
+            log.info(f"Tagging {layer_name} ({tag}) :: {downstream}")
+
+            if tag in repo.tags:
+                log.info(f"Skipping  :: {layer_name:^35} :: {tag} already exists")
                 continue
 
-            log.info(f"Tagging {layer_name} ({tag}) :: {repos['downstream']}")
-            if not dry_run:
-                downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
-                identifier = str(uuid.uuid4())
-                os.makedirs(identifier)
-                for line in git.clone(downstream, identifier, _iter=True):
-                    log.info(line)
-                git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
-                git.config("user.name", "cdkbot", _cwd=identifier)
-                git.config("--global", "push.default", "simple")
-                git.checkout("stable", _cwd=identifier)
-                try:
-                    for line in git.tag(
-                        "--force", tag, _cwd=identifier, _iter=True, _bg_exc=False
-                    ):
-                        log.info(line)
-                    for line in git.push(
-                        "--force",
-                        "origin",
-                        tag,
-                        _cwd=identifier,
-                        _bg_exc=False,
-                        _iter=True,
-                    ):
-                        log.info(line)
-                except sh.ErrorReturnCode as error:
-                    log.info(
-                        f"Problem tagging: {error.stderr.decode().strip()}, will skip for now.."
-                    )
+            try:
+                repo.tag_branch(stable_branch, tag)
+            except HTTPError:
+                log.exception(f"Problem tagging {layer_name}, skipping..")
+                failed.append(layer_name)
+    if failed:
+        raise RuntimeError("Couldn't create tag for " + ", ".join(failed))
 
 
 @cli.command()
