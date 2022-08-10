@@ -84,12 +84,12 @@ text.
 ### Submit PR to bump K8S Track Map
 
 Add the next release to the track map enumerations. To use the newly created tracks, 
-include the next release to the track map.
+include the next release to the track list/map.
 
 ```python
-...
-    "1.25": ["1.25/beta", "1.25/edge"],
-}
+    ...
+    ("1.25", ["1.25/beta", "1.25/edge"]),
+]
 ```
 
 Example PR:
