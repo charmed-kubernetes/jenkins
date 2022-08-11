@@ -17,7 +17,7 @@ K8S_STABLE_VERSION = "1.24"
 # we're working on the 1.24 GA. Set this value to '1.25' sometime between the
 # final RC and GA so we don't get pre-release builds (e.g. 1.24.1-alpha.0) in
 # our 1.24 tracks.
-K8S_NEXT_VERSION = "1.26"
+K8S_NEXT_VERSION = "1.25"
 
 # Lowest K8S SEMVER to process, this is usually stable - 3
 K8S_STARTING_SEMVER = "1.21.0"
@@ -44,7 +44,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
-    "1.25": "go/1.19/stable",
+    "1.25": "go/1.19/candidate",
     "1.24": "go/1.18/stable",
     "1.23": "go/1.17/stable",
     "1.22": "go/1.16/stable",
@@ -69,7 +69,7 @@ SNAP_K8S_TRACK_LIST = [
     ("1.22", ["1.22/stable", "1.22/candidate", "1.22/beta", "1.22/edge"]),
     ("1.23", ["1.23/stable", "1.23/candidate", "1.23/beta", "1.23/edge"]),
     ("1.24", ["1.24/stable", "1.24/candidate", "1.24/beta", "1.24/edge"]),
-    ("1.25", ["1.25/beta", "1.25/edge"]),
+    ("1.25", ["1.25/candidate", "1.25/beta", "1.25/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
