@@ -100,7 +100,7 @@ This will allow and charm-builds targetting `edge` or `beta` channels to flow to
 `1.25` tracks while any charm-builds targetting `candidate` or `stable` will flow to
 `1.24` tracks.
 
-:warning: Nightly charm and bundle builds will target `latest/edge` and this `{channel}/edge`
+:warning: Nightly charm and bundle builds will target `latest/edge` and this `{track}/edge`
 
 ### Reset release_x.xx from `default` git branches
 
