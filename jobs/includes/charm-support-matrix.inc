@@ -243,23 +243,12 @@
     docs: 'https://charmhub.io/azure-integrator/docs'
     downstream: charmed-kubernetes/charm-azure-integrator
     store: 'https://charmhub.io/azure-integrator'
-    summary: 'Charm which enables Azure integrations for Juju'
+    summary: ''
     tags:
       - k8s
       - charm-azure-integrator
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-azure-integrator.git'
-- azure-cloud-provider:
-    bugs: 'https://bugs.launchpad.net/charm-azure-cloud-provider'
-    docs: 'https://charmhub.io/azure-cloud-provider/docs'
-    downstream: charmed-kubernetes/charm-azure-cloud-provider
-    store: 'https://charmhub.io/azure-cloud-provider'
-    summary: 'Charm which enables Azure out-of-tree integrations for Charmed Kubernetes'
-    tags:
-      - k8s
-      - charm-azure-cloud-provider
-      - integrator
-    upstream: 'https://github.com/charmed-kubernetes/charm-azure-cloud-provider.git'
 - gcp-integrator:
     bugs: 'https://bugs.launchpad.net/charm-gcp-integrator'
     docs: 'https://charmhub.io/gcp-integrator/docs'
