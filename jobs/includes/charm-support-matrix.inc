@@ -260,6 +260,8 @@
       - charm-azure-cloud-provider
       - integrator
     upstream: 'https://github.com/charmed-kubernetes/charm-azure-cloud-provider.git'
+    channel-range:
+      min: '1.25'
 - gcp-integrator:
     bugs: 'https://bugs.launchpad.net/charm-gcp-integrator'
     docs: 'https://charmhub.io/gcp-integrator/docs'
