@@ -1,14 +1,12 @@
 """ sync repo script
 """
+from urllib.error import HTTPError
 import click
-import sh
-import os
-import uuid
 import yaml
 from pathlib import Path
-from sh.contrib import git
+from cilib.github_api import Repository
 from cilib import log, enums, lp
-from cilib.git import default_gh_branch
+from cilib.enums import SNAP_K8S_TRACK_LIST
 from cilib.models.repos.kubernetes import (
     UpstreamKubernetesRepoModel,
     InternalKubernetesRepoModel,
@@ -54,7 +52,7 @@ def cli():
 @click.option(
     "--ancillary-list",
     required=True,
-    help="Path to additionall repos that need to be rebased.",
+    help="Path to additional repos that need to be rebased.",
 )
 @click.option(
     "--filter-by-tag", required=False, help="only build for tags", multiple=True
@@ -67,10 +65,7 @@ def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dr
 
 
 def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
-    """This will merge each layers master onto the stable branches.
-
-    PLEASE NOTE: This step should come after each stable branch has been tagged
-    and references a current stable bundle revision.
+    """This will create a new branch based on the main branch used for the next release.
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
     charm_list: YAML spec containing git repos and their upstream/downstream properties
@@ -78,69 +73,112 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     ancillary_list = yaml.safe_load(Path(ancillary_list).read_text(encoding="utf8"))
-    new_env = os.environ.copy()
+    stable_release, _ = SNAP_K8S_TRACK_LIST[-1]
+    new_branch = f"release_{stable_release}"
 
-    failed_to_release = []
+    failed = []
     for layer_map in layer_list + charm_list + ancillary_list:
-        for layer_name, repos in layer_map.items():
-            downstream = repos["downstream"]
-            if not repos.get("needs_stable", True):
+        for layer_name, params in layer_map.items():
+            downstream = params["downstream"]
+            if not params.get("needs_stable", True):
+                log.info(f"Skipping {layer_name} :: does not require stable branch")
                 continue
 
-            tags = repos.get("tags", None)
+            tags = params.get("tags", None)
             if tags:
                 if not any(match in filter_by_tag for match in tags):
                     continue
 
-            auth = (new_env.get("CDKBOT_GH_USR"), new_env.get("CDKBOT_GH_PSW"))
-            default_branch = repos.get("branch") or default_gh_branch(
-                downstream, auth=auth
-            )
+            repo = Repository.with_session(*downstream.split("/"), read_only=dry_run)
+            default_branch = params.get("branch") or repo.default_branch
 
             log.info(
-                f"Releasing :: {layer_name:^35} :: from: {default_branch} to: stable"
+                f"Releasing :: {layer_name:^35} :: from: {default_branch} to:{new_branch} "
             )
-            downstream = f"https://{':'.join(auth)}@github.com/{downstream}"
-            identifier = str(uuid.uuid4())
-            os.makedirs(identifier)
-            for line in git.clone(downstream, identifier, _iter=True):
-                log.info(line)
-            git_rev_default = (
-                git("rev-parse", f"origin/{default_branch}", _cwd=identifier)
-                .stdout.decode()
-                .strip()
-            )
-            git_rev_stable = (
-                git("rev-parse", "origin/stable", _cwd=identifier)
-                .stdout.decode()
-                .strip()
-            )
-            if git_rev_default == git_rev_stable:
-                log.info(f"Skipping  :: {layer_name:^35} :: {default_branch} == stable")
+
+            if new_branch in repo.branches:
+                log.info(
+                    f"Skipping  :: {layer_name:^35} :: {new_branch} already exists"
+                )
                 continue
-            log.info(f"Commits   :: {layer_name:^35} :: {default_branch} != stable")
-            log.info(f"  {default_branch:10}= {git_rev_default:32}")
-            log.info(f"  {'stable':10}= {git_rev_stable:32}")
-            for line in git(
-                "rev-list", f"origin/stable..origin/{default_branch}", _cwd=identifier
-            ):
-                for line in git.show(
-                    "--format=%h %an '%s' %cr",
-                    "--no-patch",
-                    line.strip(),
-                    _cwd=identifier,
-                ):
-                    log.info("    " + line.strip())
-            if not dry_run:
-                git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
-                git.config("user.name", "cdkbot", _cwd=identifier)
-                git.config("--global", "push.default", "simple")
-                git.checkout("-f", "stable", _cwd=identifier)
-                git.reset(default_branch, _cwd=identifier)
-                for line in git.push(
-                    "origin", "stable", "-f", _cwd=identifier, _iter=True
-                ):
-                    log.info(line)
+
+            try:
+                repo.copy_branch(default_branch, new_branch)
+            except HTTPError:
+                log.exception("Failed to copy branch")
+                failed.append(layer_name)
+    if failed:
+        raise RuntimeError("Couldn't create branch for " + ", ".join(failed))
+
+
+@cli.command()
+@click.option("--layer-list", required=True, help="Path to supported layer list")
+@click.option("--charm-list", required=True, help="Path to supported charm list")
+@click.option(
+    "--ancillary-list",
+    required=True,
+    help="Path to additionally repos that need to be rebased.",
+)
+@click.option(
+    "--filter-by-tag", required=False, help="only build for tags", multiple=True
+)
+@click.option("--dry-run", is_flag=True)
+@click.option("--from-name", required=True, help="Name of the original branch")
+@click.option("--to-name", required=True, help="Name of the new branch")
+def rename_branch(
+    layer_list, charm_list, ancillary_list, filter_by_tag, dry_run, from_name, to_name
+):
+    return _rename_branch(
+        layer_list,
+        charm_list,
+        ancillary_list,
+        filter_by_tag,
+        dry_run,
+        from_name,
+        to_name,
+    )
+
+
+def _rename_branch(
+    layer_list, charm_list, ancillary_list, filter_by_tag, dry_run, from_name, to_name
+):
+    layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
+    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+    ancillary_list = yaml.safe_load(Path(ancillary_list).read_text(encoding="utf8"))
+    failed = []
+    for layer_map in layer_list + charm_list + ancillary_list:
+        for layer_name, params in layer_map.items():
+            downstream = params["downstream"]
+
+            tags = params.get("tags", None)
+            if tags:
+                if not any(match in filter_by_tag for match in tags):
+                    continue
+
+            if not params.get("supports_rename", True):
+                log.info(f"Skipping {layer_name} :: does not support branch renaming")
+                continue
+
+            repo = Repository.with_session(*downstream.split("/"), read_only=dry_run)
+            log.info(
+                f"Renaming Branch:: {layer_name:^35} :: from: {from_name} to:{to_name}"
+            )
+
+            if from_name not in repo.branches:
+                log.info(f"Skipping  :: {layer_name:^35} :: {from_name} doesn't exist")
+                continue
+
+            if to_name in repo.branches:
+                log.info(f"Skipping  :: {layer_name:^35} :: {to_name} already exists")
+                continue
+
+            try:
+                repo.rename_branch(from_name, to_name)
+            except HTTPError:
+                log.exception("Failed to rename branch")
+                failed.append(layer_name)
+    if failed:
+        raise RuntimeError("Couldn't create branch for " + ", ".join(failed))
 
 
 def _tag_stable_forks(
@@ -154,63 +192,44 @@ def _tag_stable_forks(
     git tag (ie. ck-{bundle_rev}), this would mean we tagged current
     stable branches for 1.14 with the latest charmed kubernetes(ck) bundle rev
     of {bundle_rev}
-
-    TODO: Switch to different merge strategy
-    git checkout master
-    git checkout -b staging
-    git merge stable -s ours
-    git checkout stable
-    git reset staging
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
-    new_env = os.environ.copy()
-    for layer_map in layer_list + charm_list:
-        for layer_name, repos in layer_map.items():
+    stable_branch = f"release_{k8s_version}"
 
-            tags = repos.get("tags", None)
+    failed = []
+    for layer_map in layer_list + charm_list:
+        for layer_name, params in layer_map.items():
+
+            tags = params.get("tags", None)
             if tags:
                 if not any(match in filter_by_tag for match in tags):
                     continue
 
-            downstream = repos["downstream"]
+            if not params.get("needs_tagging", True):
+                log.info(f"Skipping {layer_name} :: does not require tagging")
+                continue
+
+            downstream = params["downstream"]
             if bugfix:
                 tag = f"{k8s_version}+{bundle_rev}"
             else:
                 tag = f"ck-{k8s_version}-{bundle_rev}"
-            if not repos.get("needs_tagging", True):
-                log.info(f"Skipping {layer_name} :: does not require tagging")
+            repo = Repository.with_session(*downstream.split("/"), read_only=dry_run)
+
+            log.info(f"Tagging {layer_name} ({tag}) :: {downstream}")
+
+            if tag in repo.tags:
+                log.info(f"Skipping  :: {layer_name:^35} :: {tag} already exists")
                 continue
 
-            log.info(f"Tagging {layer_name} ({tag}) :: {repos['downstream']}")
-            if not dry_run:
-                downstream = f"https://{new_env['CDKBOT_GH_USR']}:{new_env['CDKBOT_GH_PSW']}@github.com/{downstream}"
-                identifier = str(uuid.uuid4())
-                os.makedirs(identifier)
-                for line in git.clone(downstream, identifier, _iter=True):
-                    log.info(line)
-                git.config("user.email", "cdkbot@juju.solutions", _cwd=identifier)
-                git.config("user.name", "cdkbot", _cwd=identifier)
-                git.config("--global", "push.default", "simple")
-                git.checkout("stable", _cwd=identifier)
-                try:
-                    for line in git.tag(
-                        "--force", tag, _cwd=identifier, _iter=True, _bg_exc=False
-                    ):
-                        log.info(line)
-                    for line in git.push(
-                        "--force",
-                        "origin",
-                        tag,
-                        _cwd=identifier,
-                        _bg_exc=False,
-                        _iter=True,
-                    ):
-                        log.info(line)
-                except sh.ErrorReturnCode as error:
-                    log.info(
-                        f"Problem tagging: {error.stderr.decode().strip()}, will skip for now.."
-                    )
+            try:
+                repo.tag_branch(stable_branch, tag)
+            except HTTPError:
+                log.exception(f"Problem tagging {layer_name}, skipping..")
+                failed.append(layer_name)
+    if failed:
+        raise RuntimeError("Couldn't create tag for " + ", ".join(failed))
 
 
 @cli.command()
