@@ -52,7 +52,7 @@ def cli():
 @click.option(
     "--ancillary-list",
     required=True,
-    help="Path to additionally repos that need to be rebased.",
+    help="Path to additional repos that need to be rebased.",
 )
 @click.option(
     "--filter-by-tag", required=False, help="only build for tags", multiple=True
