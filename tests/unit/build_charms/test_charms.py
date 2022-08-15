@@ -492,7 +492,9 @@ def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd, charms):
     bundle_entity = charms.BundleBuildEntity(
         bundle_environment, bundle_name, bundle_opts
     )
-    with patch.object(bundle_entity, "download", return_value=MagicMock(autospec=ZipFile)):
+    with patch.object(
+        bundle_entity, "download", return_value=MagicMock(autospec=ZipFile)
+    ):
         assert bundle_entity.has_changed is True
 
 
@@ -679,8 +681,8 @@ def test_bundle_build_command(
             [
                 call("Starting"),
                 call(f"Details: {entity}"),
-                call(f"Pushing built bundle for channel=edge (forced=False)."),
-                call(f"Pushing built bundle for channel=0.15/edge (forced=False)."),
+                call("Pushing built bundle for channel=edge (forced=False)."),
+                call("Pushing built bundle for channel=0.15/edge (forced=False)."),
                 call("Stopping"),
             ],
             any_order=False,

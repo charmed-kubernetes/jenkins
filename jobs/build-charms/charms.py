@@ -921,7 +921,13 @@ class BundleBuildEntity(BuildEntity):
         local_bundle = zipfile.ZipFile(self.dst_path)
 
         def _crc_list(bundle_zip):
-            return sorted([(_.filename, _.CRC) for _ in bundle_zip.infolist() if _.filename != "manifest.yaml"])
+            return sorted(
+                [
+                    (_.filename, _.CRC)
+                    for _ in bundle_zip.infolist()
+                    if _.filename != "manifest.yaml"
+                ]
+            )
 
         if _crc_list(remote_bundle) != _crc_list(local_bundle):
             self.echo("Local bundle differs.")
@@ -1163,7 +1169,6 @@ def build_bundles(
                 # clone bundle repo override
                 entity.setup()
 
-
             entity.echo(f"Details: {entity}")
             for channel in build_env.to_channels:
                 entity.bundle_build(channel)
@@ -1171,7 +1176,9 @@ def build_bundles(
                 # Bundles are built easily, but it's pointless to push the bundle
                 # if the crcs of each file in the bundle zips are the same
                 if build_env.force or entity.has_changed:
-                    entity.echo(f"Pushing built bundle for channel={channel} (forced={build_env.force}).")
+                    entity.echo(
+                        f"Pushing built bundle for channel={channel} (forced={build_env.force})."
+                    )
                     entity.push()
                     entity.promote(to_channels=[channel])
 
