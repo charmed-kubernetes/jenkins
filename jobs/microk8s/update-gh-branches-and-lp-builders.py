@@ -145,6 +145,7 @@ class Builder:
                 "/+processors/amd64",
                 "/+processors/arm64",
                 "/+processors/s390x",
+                "/+processors/ppc64el",
             ],
             auto_build=workingsnap.auto_build,
             auto_build_archive=workingsnap.auto_build_archive,
