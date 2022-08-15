@@ -674,9 +674,7 @@ class BuildEntity:
 
     def download(self, fname):
         """Fetch single file from associated store/charm/channel."""
-        if not self.full_entity:
-            return None
-        name, channel = self.full_entity.rsplit(":")
+        name, channel = self.entity, self.channel
         info = _CharmHub.info(
             name, channel=channel, fields="default-release.revision.download.url"
         )
@@ -685,11 +683,15 @@ class BuildEntity:
         except (KeyError, TypeError):
             self.echo(f"Failed to find in charmhub.io \n{info}")
             return None
-        self.echo(f"Downloading {fname} from {url}")
+        self.echo(f"Downloading {fname or ''} from {url}")
         resp = requests.get(url, stream=True)
         if resp.ok:
-            yaml_file = zipfile.Path(BytesIO(resp.content)) / fname
-            return yaml.safe_load(yaml_file.read_text())
+            zip_entity = zipfile.ZipFile(BytesIO(resp.content))
+            if fname:
+                yaml_file = zipfile.Path(zip_entity) / fname
+                return yaml.safe_load(yaml_file.read_text())
+            elif fname is None:
+                return zip_entity
         self.echo(f"Failed to read {fname} due to {resp.status_code} - {resp.content}")
 
     def version_identification(self, source):
@@ -913,13 +915,15 @@ class BundleBuildEntity(BuildEntity):
     @property
     def has_changed(self):
         """Determine if this bundle has changes to include in a new push."""
-        remote_bundle = self.download("bundle.yaml")
+        remote_bundle = self.download(None)
+        if not remote_bundle:
+            return True
+        local_bundle = zipfile.ZipFile(self.dst_path)
 
-        local_built_bundle = yaml.safe_load(
-            (Path(self.dst_path) / "bundle.yaml").read_text(encoding="utf8")
-        )
+        def _crc_list(bundle_zip):
+            return sorted([(_.filename, _.CRC) for _ in bundle_zip.infolist() if _.filename != "manifest.yaml"])
 
-        if remote_bundle != local_built_bundle:
+        if _crc_list(remote_bundle) != _crc_list(local_bundle):
             self.echo("Local bundle differs.")
             return True
 
@@ -957,6 +961,7 @@ class BundleBuildEntity(BuildEntity):
             with charmcraft_yaml.open("w") as fp:
                 yaml.safe_dump(contents, fp)
         self.dst_path = str(CharmcraftCmd(self).pack(_cwd=dst_path))
+        self.channel = to_channel
 
     def reset_dst_path(self):
         """Reset the dst_path in order to facilitate multiple bundle builds by the same entity."""
@@ -970,6 +975,7 @@ class BundleBuildEntity(BuildEntity):
 
         delete_file_or_dir(self.dst_path)  # delete any zip'd bundle file
         self.dst_path = str(self.opts["dst_path"])  # reset the state
+        self.channel = self.build.db["build_args"]["to_channel"]  # reset the channel
         delete_file_or_dir(self.dst_path)  # delete any unzipped bundle directory
 
 
@@ -1116,8 +1122,9 @@ def build(
 @click.option(
     "--to-channel", required=True, help="channels to promote bundle to", default="edge"
 )
+@click.option("--force", is_flag=True)
 def build_bundles(
-    bundle_list, bundle_branch, filter_by_tag, bundle_repo, track, to_channel
+    bundle_list, bundle_branch, filter_by_tag, bundle_repo, track, to_channel, force
 ):
     """Build list of bundles from a specific branch according to filters."""
     build_env = BuildEnv(build_type=BuildType.BUNDLE)
@@ -1127,6 +1134,7 @@ def build_bundles(
         "filter_by_tag": list(filter_by_tag),
         "track": track,
         "to_channel": to_channel,
+        "force": force,
     }
 
     build_env.clean()
@@ -1154,11 +1162,19 @@ def build_bundles(
             if "downstream" in entity.opts:
                 # clone bundle repo override
                 entity.setup()
+
+
             entity.echo(f"Details: {entity}")
             for channel in build_env.to_channels:
                 entity.bundle_build(channel)
-                entity.push()
-                entity.promote(to_channels=[channel])
+
+                # Bundles are built easily, but it's pointless to push the bundle
+                # if the crcs of each file in the bundle zips are the same
+                if build_env.force or entity.has_changed:
+                    entity.echo(f"Pushing built bundle for channel={channel} (forced={build_env.force}).")
+                    entity.push()
+                    entity.promote(to_channels=[channel])
+
                 entity.reset_dst_path()
         finally:
             entity.echo("Stopping")
