@@ -3,6 +3,7 @@
 import os
 import shutil
 from pathlib import Path
+from zipfile import ZipFile
 import yaml
 
 import pytest
@@ -485,13 +486,16 @@ def test_bundle_build_entity_has_changed(bundle_environment, charm_cmd, charms):
     artifacts = bundle_environment.artifacts
     bundle_name, bundle_opts = next(iter(artifacts[0].items()))
     bundle_opts["src_path"] = bundle_environment.default_repo_dir
-    bundle_opts["dst_path"] = K8S_CI_BUNDLE
+    bundle_opts["dst_path"] = K8S_CI_BUNDLE.with_suffix(".bundle")
 
     # Test all charmhub charms comparing .build.manifest to revision
     bundle_entity = charms.BundleBuildEntity(
         bundle_environment, bundle_name, bundle_opts
     )
-    assert bundle_entity.has_changed is True
+    with patch.object(
+        bundle_entity, "download", return_value=MagicMock(autospec=ZipFile)
+    ):
+        assert bundle_entity.has_changed is True
 
 
 #   --------------------------------------------------
@@ -646,6 +650,7 @@ def test_bundle_build_command(
     mock_build_env.bundles_dir = mock_build_env.tmp_dir / "bundles"
     mock_build_env.default_repo_dir = mock_build_env.repos_dir / "bundles-kubernetes"
     mock_build_env.to_channels = ("edge", "0.15/edge")
+    mock_build_env.force = False
 
     result = runner.invoke(
         charms.build_bundles,
@@ -663,6 +668,7 @@ def test_bundle_build_command(
         "filter_by_tag": ["k8s"],
         "track": "latest",
         "to_channel": "edge",
+        "force": False,
     }
     cmd_ok.assert_called_once_with(
         f"git clone --branch main https://github.com/charmed-kubernetes/bundle.git {mock_build_env.default_repo_dir}"
@@ -675,6 +681,8 @@ def test_bundle_build_command(
             [
                 call("Starting"),
                 call(f"Details: {entity}"),
+                call("Pushing built bundle for channel=edge (forced=False)."),
+                call("Pushing built bundle for channel=0.15/edge (forced=False)."),
                 call("Stopping"),
             ],
             any_order=False,
