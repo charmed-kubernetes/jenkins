@@ -104,7 +104,7 @@ This will allow and charm-builds targetting `edge` or `beta` channels to flow to
 
 ### Reset release_x.xx from `default` git branches
 
-Once all repositories are tagged, we need to create release branches from
+We need to create release branches from
 `main`. This will be our snapshot from which we test, fix, and subsequently
 promote to the new release.
 
