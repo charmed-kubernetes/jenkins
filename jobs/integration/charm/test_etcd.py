@@ -17,7 +17,7 @@ async def test_etcd_actions(model, tools):
         await action.wait()
         assert action.status == "completed"
         if output_regex:
-            output = action.data["results"]["output"]
+            output = action.results["output"]
             assert re.search(output_regex, output)
 
     etcd = model.applications["etcd"].units[0]

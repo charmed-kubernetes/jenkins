@@ -234,7 +234,7 @@ async def find_entities(unit, entity_type, name_list, extra_args=""):
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {} --output json get {}"
     cmd = cmd.format(extra_args, entity_type)
     output = await juju_run(unit, cmd)
-    if output.code != "0":
+    if output.code != 0:
         # error resource type not found most likely. This can happen when the
         # api server is restarting. As such, don't assume this means ready.
         return False
@@ -519,10 +519,11 @@ class JujuRunError(AssertionError):
 
 class JujuRunResult:
     def __init__(self, action):
+        results = action.results
         self.status = action.status
-        self.code = int(action.results.get("Code") or action.results.get("return-code"))
-        self.stdout = action.results.get("Stdout") or action.results.get("stdout")
-        self.stderr = action.results.get("Stderr") or action.results.get("stderr")
+        self.code = int(results.get("Code", results.get("result-code")))
+        self.stdout = results.get("Stdout", results.get("stdout"))
+        self.stderr = results.get("Stderr", results.get("stderr"))
         self.output = self.stderr or self.stdout
         self.success = self.status == "completed" and self.code == 0
 

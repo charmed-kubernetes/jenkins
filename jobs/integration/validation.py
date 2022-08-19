@@ -96,7 +96,7 @@ async def api_server_with_arg(model, argument):
         search = "ps -ef | grep {} | grep apiserver".format(argument)
         action = await juju_run(unit, search, check=False)
         assert action.status == "completed"
-        raw_output = action.stdout
+        raw_output = action.stdout or ""
         if len(raw_output.splitlines()) != 1:
             return False
     return True
@@ -112,11 +112,10 @@ async def run_until_success(unit, cmd, timeout_insec=None):
                 "Action " + action.status + ". Command failed on unit " + unit.entity_id
             )
             click.echo("cmd: " + cmd)
-            if "results" in action.data:
-                click.echo("code: " + action.code)
-                click.echo("stdout:\n" + action.stdout.strip())
-                click.echo("stderr:\n" + action.stderr.strip())
-                click.echo("Will retry...")
+            click.echo("code: " + action.code)
+            click.echo("stdout:\n" + action.stdout.strip())
+            click.echo("stderr:\n" + action.stderr.strip())
+            click.echo("Will retry...")
             await asyncio.sleep(5)
 
 
@@ -275,13 +274,12 @@ async def test_snap_versions(model):
         for unit in app.units:
             action = await juju_run(unit, "snap list", check=False)
             assert action.status == "completed"
-            raw_output = action.stdout
             # Example of the `snap list` output format we're expecting:
             # Name        Version  Rev   Developer  Notes
             # conjure-up  2.1.5    352   canonical  classic
             # core        16-2     1689  canonical  -
             # kubectl     1.6.2    27    canonical  classic
-            lines = raw_output.splitlines()[1:]
+            lines = action.stdout.splitlines()[1:]
             snap_versions = dict(line.split()[:2] for line in lines)
             for snap in snaps:
                 snap_version = snap_versions[snap]
@@ -318,11 +316,11 @@ async def test_microbot(model, tools):
     while True:
         try:
             resp = await tools.requests.get(
-                "http://" + action.data["results"]["address"],
+                "http://" + action.results["address"],
                 proxies={"http": None, "https": None},
             )
             if resp.status_code == 200:
-                return
+                break
         except requests.exceptions.ConnectionError:
             click.echo(
                 "Caught connection error attempting to hit xip.io, "
@@ -330,6 +328,8 @@ async def test_microbot(model, tools):
             )
             click.echo(traceback.print_exc())
         await asyncio.sleep(60)
+    action = await unit.run_action("microbot", delete=True)
+    await action.wait()
 
 
 @pytest.mark.clouds(["ec2", "vsphere"])
@@ -455,7 +455,9 @@ async def test_network_policies(model, tools):
 
     # Clean-up namespace from any previous runs.
     cmd = await juju_run(
-        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy"
+        unit,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy",
+        check=False,
     )
     assert cmd.status == "completed"
     click.echo("Waiting for pods to finish terminating...")
@@ -660,9 +662,8 @@ spec:
         # pods might not be up by this point, retry until it works
         with timeout_for_current_task(60):
             while True:
-                output = await juju_run(
-                    control_plane, "curl '{}'".format(url), check=False
-                )
+                cmd = "curl '{}'".format(url)
+                output = await juju_run(control_plane, cmd, check=False)
                 if (
                     output.status == "completed"
                     and output.code == 0
@@ -817,10 +818,13 @@ async def test_extra_args(model, tools):
             while True:
                 action = await juju_run(unit, "pgrep -a " + service, check=False)
                 assert action.status == "completed"
+                pids = []
 
                 if action.code == 0:
-                    raw_output = action.stdout
-                    arg_string = raw_output.partition(" ")[2].partition(" ")[2]
+                    pids = [ps for ps in action.stdout.splitlines() if "snap" in ps]
+
+                if len(pids) == 1:
+                    arg_string = pids[0].split(" ", 2)[-1]
                     args = {arg.strip() for arg in arg_string.split("--")[1:]}
                     results.append(args)
                     break
