@@ -638,7 +638,7 @@ spec:
         (control_plane, "svc", ["nginx4", "nginx6"]),
         timeout_msg="Timeout waiting for nginxdualstack services",
     )
-    nginx4, nginx6 = await find_entities(master, "svc", ["nginx4", "nginx6"])
+    nginx4, nginx6 = await find_entities(control_plane, "svc", ["nginx4", "nginx6"])
     ipv4_port = nginx4["spec"]["ports"][0]["nodePort"]
     ipv6_port = nginx6["spec"]["ports"][0]["nodePort"]
     urls = []
@@ -1496,7 +1496,7 @@ async def test_keystone(model, tools, any_keystone):
     # verify keystone pod is running
     await retry_async_with_timeout(
         verify_ready,
-        (one_master, "po", ["k8s-keystone-auth"], "-n kube-system"),
+        (control_plane_unit, "po", ["k8s-keystone-auth"], "-n kube-system"),
         timeout_msg="Unable to find keystone auth pod before timeout",
     )
 

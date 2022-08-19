@@ -2,7 +2,6 @@ import sh
 import requests
 import yaml
 from .utils import retry_async_with_timeout, juju_run
-from .logger import log
 
 
 def get_pod_yaml():
