@@ -94,9 +94,9 @@ async def api_server_with_arg(model, argument):
     control_plane = model.applications["kubernetes-control-plane"]
     for unit in control_plane.units:
         search = "ps -ef | grep {} | grep apiserver".format(argument)
-        action = await unit.run(search)
+        action = await juju_run(unit, search, check=False)
         assert action.status == "completed"
-        raw_output = action.data["results"].get("Stdout", "")
+        raw_output = action.stdout
         if len(raw_output.splitlines()) != 1:
             return False
     return True
@@ -104,44 +104,32 @@ async def api_server_with_arg(model, argument):
 
 async def run_until_success(unit, cmd, timeout_insec=None):
     while True:
-        action = await unit.run(cmd, timeout=timeout_insec)
-        if (
-            action.status == "completed"
-            and "results" in action.data
-            and action.data["results"]["Code"] == "0"
-        ):
-            return action.data["results"].get("Stdout", "")
+        action = await juju_run(unit, cmd, check=False, timeout=timeout_insec)
+        if action.success:
+            return action.stdout
         else:
             click.echo(
                 "Action " + action.status + ". Command failed on unit " + unit.entity_id
             )
             click.echo("cmd: " + cmd)
             if "results" in action.data:
-                click.echo("code: " + action.data["results"]["Code"])
-                click.echo(
-                    "stdout:\n" + action.data["results"].get("Stdout", "").strip()
-                )
-                click.echo(
-                    "stderr:\n" + action.data["results"].get("Stderr", "").strip()
-                )
+                click.echo("code: " + action.code)
+                click.echo("stdout:\n" + action.stdout.strip())
+                click.echo("stderr:\n" + action.stderr.strip())
                 click.echo("Will retry...")
             await asyncio.sleep(5)
 
 
 async def run_and_check(desc, unit, cmd, timeout=None):
-    result = await unit.run(cmd, timeout=timeout)
-    status = result.status
-    code = result.data.get("results", {}).get("Code")
-    stdout = result.data.get("results", {}).get("Stdout").strip()
-    stderr = result.data.get("results", {}).get("Stderr").strip()
-    assert (status, code) == ("completed", "0"), (
+    result = await juju_run(unit, cmd, timeout=timeout)
+    assert (result.status, result.code) == ("completed", 0), (
         f"Failed to {desc}:\n"
-        f"  status={status}\n"
-        f"  code={code}\n"
-        f"  stdout={stdout}\n"
-        f"  stderr={stderr}"
+        f"  status={result.status}\n"
+        f"  code={result.code}\n"
+        f"  stdout={result.stdout}\n"
+        f"  stderr={result.stderr}"
     )
-    return stdout
+    return result.stdout
 
 
 async def get_last_audit_entry_date(application):
@@ -201,10 +189,10 @@ async def set_config_and_wait(app, config, tools, timeout_secs=None):
         await tools.juju_wait(timeout_secs=timeout_secs)
 
 
-async def reset_audit_config(master_app, tools):
-    config = await master_app.get_config()
+async def reset_audit_config(control_plane_app, tools):
+    config = await control_plane_app.get_config()
     await set_config_and_wait(
-        master_app,
+        control_plane_app,
         {
             "audit-policy": config["audit-policy"]["default"],
             "audit-webhook-config": config["audit-webhook-config"]["default"],
@@ -285,9 +273,9 @@ async def test_snap_versions(model):
             continue
         track = channel.split("/")[0]
         for unit in app.units:
-            action = await unit.run("snap list")
+            action = await juju_run(unit, "snap list", check=False)
             assert action.status == "completed"
-            raw_output = action.data["results"].get("Stdout", "")
+            raw_output = action.stdout
             # Example of the `snap list` output format we're expecting:
             # Name        Version  Rev   Developer  Notes
             # conjure-up  2.1.5    352   canonical  classic
@@ -416,7 +404,7 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
     """Validate that kubelet has anonymous auth disabled"""
 
     async def validate_unit(unit):
-        await unit.run("open-port 10250")
+        await juju_run(unit, "open-port 10250")
         address = unit.public_address
         url = "https://%s:10250/pods/" % address
         for attempt in range(0, 120):  # 2 minutes
@@ -434,22 +422,24 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
                 )
                 await asyncio.sleep(10)
         else:
-            output = await unit.run("systemctl status --no-pager snap.kubelet.daemon")
-            stdout = output.results.get("Stdout", "")
-            stderr = output.results.get("Stderr", "")
-            if "active (running)" not in stdout:
+            output = await juju_run(
+                unit, "systemctl status --no-pager snap.kubelet.daemon", check=False
+            )
+            if "active (running)" not in output.stdout:
                 raise AssertionError(
-                    "kubelet not running on {}: {}".format(unit.name, stdout or stderr)
+                    "kubelet not running on {}: {}".format(
+                        unit.name, output.stdout or output.stderr
+                    )
                 )
             else:
-                await unit.run("which netstat || apt install net-tools")
-                output = await unit.run("netstat -tnlp")
-                stdout = output.results.get("Stdout", "")
-                stderr = output.results.get("Stderr", "")
+                await juju_run(
+                    unit, "which netstat || apt install net-tools", check=False
+                )
+                output = await juju_run(unit, "netstat -tnlp", check=False)
                 raise AssertionError(
                     "Unable to connect to kubelet on {}: {}".format(
                         unit.name,
-                        stdout or stderr,
+                        output.stdout or output.stderr,
                     )
                 )
 
@@ -464,8 +454,8 @@ async def test_network_policies(model, tools):
     unit = model.applications["kubernetes-control-plane"].units[0]
 
     # Clean-up namespace from any previous runs.
-    cmd = await unit.run(
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy"
+    cmd = await juju_run(
+        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy"
     )
     assert cmd.status == "completed"
     click.echo("Waiting for pods to finish terminating...")
@@ -491,13 +481,15 @@ async def test_network_policies(model, tools):
         tools.controller_name,
         tools.connection,
     )
-    cmd = await unit.run(
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/netpolicy-test.yaml"
+    cmd = await juju_run(
+        unit,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/netpolicy-test.yaml",
+        check=False,
     )
-    if not cmd.results["Code"] == "0":
+    if not cmd.code == 0:
         click.echo("Failed to create netpolicy test!")
         click.echo(cmd.results)
-    assert cmd.status == "completed" and cmd.results["Code"] == "0"
+    assert cmd.status == "completed" and cmd.code == 0
     click.echo("Waiting for pods to show up...")
     await retry_async_with_timeout(
         verify_ready,
@@ -511,13 +503,13 @@ async def test_network_policies(model, tools):
         click.echo("Reaching out to nginx.netpolicy with no restrictions")
         query_from_bad = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy"
         query_from_good = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy"
-        cmd_good = await unit.run(query_from_good)
-        cmd_bad = await unit.run(query_from_bad)
+        cmd_good = await juju_run(unit, query_from_good, check=False)
+        cmd_bad = await juju_run(unit, query_from_bad, check=False)
         if (
             cmd_good.status == "completed"
             and cmd_bad.status == "completed"
-            and "index.html" in cmd_good.data["results"].get("Stderr", "")
-            and "index.html" in cmd_bad.data["results"].get("Stderr", "")
+            and "index.html" in cmd_good.stderr
+            and "index.html" in cmd_bad.stderr
         ):
             return True
         return False
@@ -530,8 +522,10 @@ async def test_network_policies(model, tools):
 
     # Apply network policy and retry getting to nginx.
     # This time the policy should block us.
-    cmd = await unit.run(
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/restrict.yaml"
+    cmd = await juju_run(
+        unit,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/restrict.yaml",
+        check=False,
     )
     assert cmd.status == "completed"
     await asyncio.sleep(10)
@@ -546,13 +540,13 @@ async def test_network_policies(model, tools):
             "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxgood -n netpolicy -- "
             "wget --timeout=30  nginx.netpolicy -O foo.html"
         )
-        cmd_good = await unit.run(query_from_good)
-        cmd_bad = await unit.run(query_from_bad)
+        cmd_good = await juju_run(unit, query_from_good, check=False)
+        cmd_bad = await juju_run(unit, query_from_bad, check=False)
         if (
             cmd_good.status == "completed"
             and cmd_bad.status == "completed"
-            and "foo.html" in cmd_good.data["results"].get("Stderr", "")
-            and "timed out" in cmd_bad.data["results"].get("Stderr", "")
+            and "foo.html" in cmd_good.stderr
+            and "timed out" in cmd_bad.stderr
         ):
             return True
         return False
@@ -564,23 +558,23 @@ async def test_network_policies(model, tools):
     )
 
     # Clean-up namespace from next runs.
-    cmd = await unit.run(
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy"
+    cmd = await juju_run(
+        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy"
     )
     assert cmd.status == "completed"
 
 
 async def test_ipv6(model, tools):
-    master_app = model.applications["kubernetes-control-plane"]
-    master_config = await master_app.get_config()
+    control_plane_app = model.applications["kubernetes-control-plane"]
+    master_config = await control_plane_app.get_config()
     service_cidr = master_config["service-cidr"]["value"]
     if all(ipaddress.ip_network(cidr).version != 6 for cidr in service_cidr.split(",")):
         pytest.skip("kubernetes-control-plane not configured for IPv6")
 
-    k8s_version_str = master_app.data["workload-version"]
+    k8s_version_str = control_plane_app.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
 
-    master = master_app.units[0]
+    control_plane = control_plane_app.units[0]
     await kubectl(
         model,
         "create -f - << EOF{}EOF".format(
@@ -641,7 +635,7 @@ spec:
     # wait for completion
     await retry_async_with_timeout(
         verify_ready,
-        (master, "svc", ["nginx4", "nginx6"]),
+        (control_plane, "svc", ["nginx4", "nginx6"]),
         timeout_msg="Timeout waiting for nginxdualstack services",
     )
     nginx4, nginx6 = await find_entities(master, "svc", ["nginx4", "nginx6"])
@@ -650,9 +644,7 @@ spec:
     urls = []
     for worker in model.applications["kubernetes-worker"].units:
         for port in (ipv4_port, ipv6_port):
-            action = await worker.run("open-port {}".format(port))
-            assert action.status == "completed"
-            assert action.results["Code"] == "0"
+            await juju_run(worker, "open-port {}".format(port))
         ipv4_addr = worker.public_address
         ipv6_addr = await get_ipv6_addr(worker)
         assert ipv6_addr is not None, "Unable to find IPv6 address for {}".format(
@@ -668,11 +660,13 @@ spec:
         # pods might not be up by this point, retry until it works
         with timeout_for_current_task(60):
             while True:
-                output = await master.run("curl '{}'".format(url))
+                output = await juju_run(
+                    control_plane, "curl '{}'".format(url), check=False
+                )
                 if (
                     output.status == "completed"
-                    and output.results["Code"] == "0"
-                    and "Kubernetes IPv6 nginx" in output.results["Stdout"]
+                    and output.code == 0
+                    and "Kubernetes IPv6 nginx" in output.stdout
                 ):
                     break
                 await asyncio.sleep(1)
@@ -738,24 +732,32 @@ async def test_gpu_support(model, tools):
 
     # See if the workers have nvidia
     workers = model.applications["kubernetes-worker"]
-    action = await workers.units[0].run("lspci -nnk")
-    nvidia = (
-        True if action.results.get("Stdout", "").lower().count("nvidia") > 0 else False
-    )
+    action = await juju_run(workers.units[0], "lspci -nnk")
+    nvidia = True if action.stdout.lower().count("nvidia") > 0 else False
 
-    master_unit = model.applications["kubernetes-control-plane"].units[0]
+    control_plane_unit = model.applications["kubernetes-control-plane"].units[0]
     if not nvidia:
         # nvidia should not be running
         await retry_async_with_timeout(
             verify_deleted,
-            (master_unit, "ds", ["nvidia-device-plugin-daemonset"], "-n kube-system"),
+            (
+                control_plane_unit,
+                "ds",
+                ["nvidia-device-plugin-daemonset"],
+                "-n kube-system",
+            ),
             timeout_msg="nvidia-device-plugin-daemonset is setup without nvidia hardware",
         )
     else:
         # nvidia should be running
         await retry_async_with_timeout(
             verify_ready,
-            (master_unit, "ds", ["nvidia-device-plugin-daemonset"], "-n kube-system"),
+            (
+                control_plane_unit,
+                "ds",
+                ["nvidia-device-plugin-daemonset"],
+                "-n kube-system",
+            ),
             timeout_msg="nvidia-device-plugin-daemonset not running",
         )
 
@@ -764,38 +766,44 @@ async def test_gpu_support(model, tools):
         here = os.path.dirname(os.path.abspath(__file__))
         await scp_to(
             os.path.join(here, "templates", "nvidia-smi.yaml"),
-            master_unit,
+            control_plane_unit,
             "nvidia-smi.yaml",
             tools.controller_name,
             tools.connection,
         )
-        await master_unit.run(
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete -f /home/ubuntu/nvidia-smi.yaml"
+        await juju_run(
+            control_plane_unit,
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete -f /home/ubuntu/nvidia-smi.yaml",
+            check=False,
         )
         await retry_async_with_timeout(
             verify_deleted,
-            (master_unit, "po", ["nvidia-smi"], "-n default"),
+            (control_plane_unit, "po", ["nvidia-smi"], "-n default"),
             timeout_msg="Cleaning of nvidia-smi pod failed",
         )
         # Run the cuda addition
-        cmd = await master_unit.run(
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/nvidia-smi.yaml"
+        cmd = await juju_run(
+            control_plane_unit,
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/nvidia-smi.yaml",
+            check=False,
         )
-        if not cmd.results["Code"] == "0":
+        if cmd.code != 0:
             click.echo("Failed to create nvidia-smi pod test!")
-            click.echo(cmd.results)
+            click.echo(cmd)
             assert False
 
-        async def cuda_test(master):
-            action = await master.run(
-                "/snap/bin/kubectl --kubeconfig /root/.kube/config logs nvidia-smi"
+        async def cuda_test(control_plane):
+            action = await juju_run(
+                control_plane,
+                "/snap/bin/kubectl --kubeconfig /root/.kube/config logs nvidia-smi",
+                check=False,
             )
-            click.echo(action.results.get("Stdout", ""))
-            return action.results.get("Stdout", "").count("NVIDIA-SMI") > 0
+            click.echo(action.stdout)
+            return action.stdout.count("NVIDIA-SMI") > 0
 
         await retry_async_with_timeout(
             cuda_test,
-            (master_unit,),
+            (control_plane_unit,),
             timeout_msg="Cuda test did not pass",
             timeout_insec=1200,
         )
@@ -807,11 +815,11 @@ async def test_extra_args(model, tools):
 
         for unit in app.units:
             while True:
-                action = await unit.run("pgrep -a " + service)
+                action = await juju_run(unit, "pgrep -a " + service, check=False)
                 assert action.status == "completed"
 
-                if action.data["results"]["Code"] == "0":
-                    raw_output = action.data["results"].get("Stdout", "")
+                if action.code == 0:
+                    raw_output = action.stdout
                     arg_string = raw_output.partition(" ")[2].partition(" ")[2]
                     args = {arg.strip() for arg in arg_string.split("--")[1:]}
                     results.append(args)
@@ -964,13 +972,12 @@ async def test_kubelet_extra_config(model, tools):
 
     # wait for and validate new maxPods value
     click.echo("waiting for nodes to show new pod capacity")
-    master_unit = model.applications["kubernetes-control-plane"].units[0]
+    control_plane_unit = model.applications["kubernetes-control-plane"].units[0]
     while True:
         cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node -l 'juju-application=kubernetes-worker'"
-        action = await master_unit.run(str(cmd))
-        if action.status == "completed" and action.results["Code"] == "0":
-            nodes = yaml.safe_load(action.results.get("Stdout", ""))
-
+        action = await juju_run(control_plane_unit, cmd, check=False)
+        if action.status == "completed" and action.code == 0:
+            nodes = yaml.safe_load(action.stdout)
             all_nodes_updated = all(
                 [node["status"]["capacity"]["pods"] == "111" for node in nodes["items"]]
             )
@@ -983,9 +990,9 @@ async def test_kubelet_extra_config(model, tools):
     click.echo("validating generated config.yaml files")
     for worker_unit in worker_app.units:
         cmd = "cat /root/cdk/kubelet/config.yaml"
-        action = await worker_unit.run(cmd)
-        if action.status == "completed" and action.results["Code"] == "0":
-            config = yaml.safe_load(action.results.get("Stdout", ""))
+        action = await juju_run(worker_unit, cmd, check=False)
+        if action.status == "completed" and action.code == 0:
+            config = yaml.safe_load(action.stdout)
             assert config["evictionHard"]["memory.available"] == "200Mi"
             assert config["authentication"]["webhook"]["enabled"] is False
             assert "anonymous" in config["authentication"]
@@ -1023,11 +1030,11 @@ async def test_service_cidr_expansion(model):
 
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get service kubernetes"
     control_plane = model.applications["kubernetes-control-plane"].units[0]
-    output = await control_plane.run(cmd)
+    output = await juju_run(control_plane, cmd, check=False)
     assert output.status == "completed"
 
     # Check if k8s service ip is changed as per new service cidr
-    raw_output = output.data["results"].get("Stdout", "")
+    raw_output = output.stdout
     assert new_service_ip_str in raw_output
 
 
@@ -1044,21 +1051,21 @@ async def test_sans(model):
     async def get_server_certs():
         results = {}
         for unit in app.units:
-            action = await unit.run(
-                "openssl s_client -connect 127.0.0.1:6443 </dev/null 2>/dev/null | openssl x509 -text"
+            action = await juju_run(
+                unit,
+                "openssl s_client -connect 127.0.0.1:6443 </dev/null 2>/dev/null | openssl x509 -text",
             )
-            assert action.status == "completed"
-            raw_output = action.data["results"].get("Stdout", "")
+            raw_output = action.stdout
             results[unit.name] = raw_output
 
         # if there is a load balancer, ask it as well
         if lb is not None:
             for unit in lb.units:
-                action = await unit.run(
-                    "openssl s_client -connect 127.0.0.1:443 </dev/null 2>/dev/null | openssl x509 -text"
+                action = await juju_run(
+                    unit,
+                    "openssl s_client -connect 127.0.0.1:443 </dev/null 2>/dev/null | openssl x509 -text",
                 )
-                assert action.status == "completed"
-                raw_output = action.data["results"].get("Stdout", "")
+                raw_output = action.stdout
                 results[unit.name] = raw_output
 
         return results
@@ -1358,9 +1365,9 @@ async def any_keystone(model, apps_by_charm, tools):
             await keystone.add_relation("identity-credentials", keystone_creds)
             await tools.juju_wait()
 
-        keystone_master = random.choice(keystone.units)
-        action = await keystone_master.run("leader-get admin_passwd")
-        admin_password = action.results.get("Stdout", "").strip()
+        keystone_main = random.choice(keystone.units)
+        action = await juju_run(keystone_main, "leader-get admin_passwd")
+        admin_password = action.stdout.strip()
 
         # Work around the following bugs which lead to the CA used by Keystone not being passed along
         # and honored from the keystone-credentials relation itself by getting the CA directly from Vault and
@@ -1455,32 +1462,36 @@ async def any_keystone(model, apps_by_charm, tools):
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_keystone(model, tools, any_keystone):
-    masters = model.applications["kubernetes-control-plane"]
+    control_plane = model.applications["kubernetes-control-plane"]
 
     # save off config
     config = await model.applications["kubernetes-control-plane"].get_config()
 
     # verify kubectl config file has keystone in it
-    one_master = random.choice(masters.units)
+    control_plane_unit = random.choice(control_plane.units)
     for i in range(60):
-        action = await one_master.run("cat /home/ubuntu/config")
-        if "client-keystone-auth" in action.results.get("Stdout", ""):
+        action = await juju_run(
+            control_plane_unit, "cat /home/ubuntu/config", check=False
+        )
+        if "client-keystone-auth" in action.stdout:
             break
         click.echo("Unable to find keystone information in kubeconfig, retrying...")
         await asyncio.sleep(10)
 
-    assert "client-keystone-auth" in action.results.get("Stdout", "")
+    assert "client-keystone-auth" in action.stdout
 
     # verify kube-keystone.sh exists
-    one_master = random.choice(masters.units)
-    action = await one_master.run("cat /home/ubuntu/kube-keystone.sh")
-    assert "OS_AUTH_URL" in action.results.get("Stdout", "")
+    control_plane_unit = random.choice(control_plane.units)
+    action = await juju_run(control_plane_unit, "cat /home/ubuntu/kube-keystone.sh")
+    assert "OS_AUTH_URL" in action.stdout
 
     # verify webhook enabled on apiserver
     await wait_for_process(model, "authentication-token-webhook-config-file")
-    one_master = random.choice(masters.units)
-    action = await one_master.run("sudo cat /root/cdk/keystone/webhook.yaml")
-    assert "webhook" in action.results.get("Stdout", "")
+    control_plane_unit = random.choice(control_plane.units)
+    action = await juju_run(
+        control_plane_unit, "sudo cat /root/cdk/keystone/webhook.yaml"
+    )
+    assert "webhook" in action.stdout
 
     # verify keystone pod is running
     await retry_async_with_timeout(
@@ -1490,19 +1501,19 @@ async def test_keystone(model, tools, any_keystone):
     )
 
     skip_tests = False
-    action = await one_master.run(
-        "cat /snap/cdk-addons/current/templates/keystone-rbac.yaml"
+    action = await juju_run(
+        control_plane_unit, "cat /snap/cdk-addons/current/templates/keystone-rbac.yaml"
     )
-    if "kind: Role" in action.results.get("Stdout", ""):
+    if "kind: Role" in action.stdout:
         # we need to skip tests for the old template that incorrectly had a Role instead
         # of a ClusterRole
         skip_tests = True
 
     if skip_tests:
-        await masters.set_config({"enable-keystone-authorization": "true"})
+        await control_plane.set_config({"enable-keystone-authorization": "true"})
     else:
         # verify authorization
-        await masters.set_config(
+        await control_plane.set_config(
             {
                 "enable-keystone-authorization": "true",
                 "authorization-mode": "Node,Webhook,RBAC",
@@ -1511,39 +1522,35 @@ async def test_keystone(model, tools, any_keystone):
     await wait_for_process(model, "authorization-webhook-config-file")
 
     # verify auth fail - bad user
-    one_master = random.choice(masters.units)
-    await one_master.run("/usr/bin/snap install --edge client-keystone-auth")
+    control_plane_unit = random.choice(control_plane.units)
+    await juju_run(
+        control_plane_unit, "/usr/bin/snap install --edge client-keystone-auth"
+    )
 
     cmd = "source /home/ubuntu/kube-keystone.sh && \
         OS_PROJECT_NAME=k8s OS_DOMAIN_NAME=k8s OS_USERNAME=fake \
         OS_PASSWORD=bad /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
-    output = await one_master.run(cmd)
+    output = await juju_run(control_plane_unit, cmd, check=False)
     assert output.status == "completed"
-    if (
-        "invalid user credentials"
-        not in output.data["results"].get("Stderr", "").lower()
-    ):
+    if "invalid user credentials" not in output.stderr.lower():
         click.echo("Failing, auth did not fail as expected")
-        click.echo(pformat(output.data["results"]))
+        click.echo(pformat(output))
         assert False
 
     # verify auth fail - bad password
     cmd = "source /home/ubuntu/kube-keystone.sh && \
         OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
         OS_PASSWORD=badpw /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
-    output = await one_master.run(cmd)
+    output = await juju_run(control_plane_unit, cmd, check=False)
     assert output.status == "completed"
-    if (
-        "invalid user credentials"
-        not in output.data["results"].get("Stderr", "").lower()
-    ):
+    if "invalid user credentials" not in output.stderr.lower():
         click.echo("Failing, auth did not fail as expected")
-        click.echo(pformat(output.data["results"]))
+        click.echo(pformat(output))
         assert False
 
     if not skip_tests:
         # set up read only access to pods only
-        await masters.set_config(
+        await control_plane.set_config(
             {
                 "keystone-policy": """apiVersion: v1
 kind: ConfigMap
@@ -1579,9 +1586,9 @@ data:
             OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
             OS_PASSWORD={any_keystone.admin_password} /snap/bin/kubectl \
             --kubeconfig /home/ubuntu/config get clusterroles"
-        output = await one_master.run(cmd)
+        output = await juju_run(control_plane_unit, cmd, check=False)
         assert output.status == "completed"
-        assert "error" in output.data["results"].get("Stderr", "").lower()
+        assert "error" in output.stderr.lower()
 
         # the config set writes out a file and updates a configmap, which is then picked up by the
         # keystone pod and updated. This all takes time and I don't know of a great way to tell
@@ -1596,40 +1603,33 @@ data:
                 OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
                 OS_PASSWORD={any_keystone.admin_password} /snap/bin/kubectl \
                 --kubeconfig /home/ubuntu/config get po"
-            output = await one_master.run(cmd)
+            output = await juju_run(control_plane_unit, cmd, check=False)
             if (
                 output.status == "completed"
-                and "invalid user credentials"
-                not in output.data["results"].get("Stderr", "").lower()
-                and "error" not in output.data["results"].get("Stderr", "").lower()
+                and "invalid user credentials" not in output.stderr.lower()
+                and "error" not in output.stderr.lower()
             ):
                 break
             click.echo("Unable to verify configmap change, retrying...")
             await asyncio.sleep(10)
 
         assert output.status == "completed"
-        assert (
-            "invalid user credentials"
-            not in output.data["results"].get("Stderr", "").lower()
-        )
-        assert "error" not in output.data["results"].get("Stderr", "").lower()
+        assert "invalid user credentials" not in output.stderr.lower()
+        assert "error" not in output.stderr.lower()
 
         # verify auth failure on pods outside of default namespace
         cmd = f"source /home/ubuntu/kube-keystone.sh && \
             OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
             OS_PASSWORD={any_keystone.admin_password} /snap/bin/kubectl \
             --kubeconfig /home/ubuntu/config get po -n kube-system"
-        output = await one_master.run(cmd)
+        output = await juju_run(control_plane_unit, cmd, check=False)
         assert output.status == "completed"
-        assert (
-            "invalid user credentials"
-            not in output.data["results"].get("Stderr", "").lower()
-        )
-        assert "forbidden" in output.data["results"].get("Stderr", "").lower()
+        assert "invalid user credentials" not in output.stderr.lower()
+        assert "forbidden" in output.stderr.lower()
 
     # verify auth works now that it is off
     original_auth = config["authorization-mode"]["value"]
-    await masters.set_config(
+    await control_plane.set_config(
         {
             "enable-keystone-authorization": "false",
             "authorization-mode": original_auth,
@@ -1639,21 +1639,18 @@ data:
     await tools.juju_wait()
     cmd = "/snap/bin/kubectl --context=juju-context \
         --kubeconfig /home/ubuntu/config get clusterroles"
-    output = await one_master.run(cmd)
+    output = await juju_run(control_plane_unit, cmd, check=False)
     assert output.status == "completed"
-    assert (
-        "invalid user credentials"
-        not in output.data["results"].get("Stderr", "").lower()
-    )
-    assert "error" not in output.data["results"].get("Stderr", "").lower()
-    assert "forbidden" not in output.data["results"].get("Stderr", "").lower()
+    assert "invalid user credentials" not in output.stderr.lower()
+    assert "error" not in output.stderr.lower()
+    assert "forbidden" not in output.stderr.lower()
 
 
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
-    master_app = model.applications["kubernetes-control-plane"]
+    control_plane_app = model.applications["kubernetes-control-plane"]
     etcd_app = model.applications["etcd"]
     vault_app = model.applications["vault"]
 
@@ -1720,14 +1717,20 @@ async def test_encryption_at_rest(model, tools):
         # can hurry that along a bit, however.
         click.echo("Poking etcd to refresh status")
         await asyncio.gather(
-            *(juju_run(unit, "hooks/update-status") for unit in etcd_app.units)
+            *(
+                juju_run(unit, "hooks/update-status", check=False)
+                for unit in etcd_app.units
+            )
         )
 
     # Even once etcd is ready, Vault will remain in non-HA mode until the Vault
     # service is restarted, which will re-seal the vault.
     click.echo("Restarting Vault for HA")
     await asyncio.gather(
-        *(juju_run(unit, "systemctl restart vault") for unit in vault_app.units)
+        *(
+            juju_run(unit, "systemctl restart vault", check=False)
+            for unit in vault_app.units
+        )
     )
     await ensure_vault_up()
 
@@ -1738,7 +1741,10 @@ async def test_encryption_at_rest(model, tools):
         )
     # force unit status to update
     await asyncio.gather(
-        *(juju_run(unit, "hooks/update-status") for unit in vault_app.units)
+        *(
+            juju_run(unit, "hooks/update-status", check=False)
+            for unit in vault_app.units
+        )
     )
     statuses = sorted(unit.workload_status_message for unit in vault_app.units)
     click.echo(statuses)
@@ -1766,7 +1772,7 @@ async def test_encryption_at_rest(model, tools):
 
     for attempt in range(3):
         errored_units = [
-            unit for unit in master_app.units if unit.workload_status == "error"
+            unit for unit in control_plane_app.units if unit.workload_status == "error"
         ]
         if not errored_units:
             break
@@ -1810,15 +1816,15 @@ async def test_encryption_at_rest(model, tools):
 
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_dns_provider(model, k8s_model, tools):
-    master_app = model.applications["kubernetes-control-plane"]
-    master_unit = master_app.units[0]
+    control_plane_app = model.applications["kubernetes-control-plane"]
+    control_plane_unit = control_plane_app.units[0]
 
     async def deploy_validation_pod():
         local_path = "jobs/integration/templates/validate-dns-spec.yaml"
         remote_path = "/tmp/validate-dns-spec.yaml"
         await scp_to(
             local_path,
-            master_unit,
+            control_plane_unit,
             remote_path,
             tools.controller_name,
             tools.connection,
@@ -1886,7 +1892,7 @@ async def test_dns_provider(model, k8s_model, tools):
             return None
 
     # Only run this test against k8s 1.14+
-    master_config = await master_app.get_config()
+    master_config = await control_plane_app.get_config()
     channel = master_config["channel"]["value"]
     if "/" in channel:
         version_string = channel.split("/")[0]
@@ -1902,7 +1908,7 @@ async def test_dns_provider(model, k8s_model, tools):
         await verify_dns_resolution(fresh=True)
 
         log("Switching to kube-dns provider")
-        await master_app.set_config({"dns-provider": "kube-dns"})
+        await control_plane_app.set_config({"dns-provider": "kube-dns"})
         await wait_for_pods_removal("kubernetes.io/name=CoreDNS")
         await wait_for_pods_ready("k8s-app=kube-dns")
 
@@ -1910,7 +1916,7 @@ async def test_dns_provider(model, k8s_model, tools):
         await verify_dns_resolution(fresh=True)
 
         log("Switching to none provider")
-        await master_app.set_config({"dns-provider": "none"})
+        await control_plane_app.set_config({"dns-provider": "none"})
         # The kube-dns pod gets stuck in Terminating when switching to "none"
         # provider. I think this has something to do with the order (or lack
         # thereof) in which cdk-addons removes the resource types, since it doesn't
@@ -1924,7 +1930,7 @@ async def test_dns_provider(model, k8s_model, tools):
         log("Verifying DNS no longer works on fresh pod")
         await verify_no_dns_resolution(fresh=True)
 
-        result = await juju_run(master_unit, "cat metadata.yaml")
+        result = await juju_run(control_plane_unit, "cat metadata.yaml")
         master_meta = yaml.safe_load(result.stdout)
         if "dns-provider" not in master_meta["requires"]:
             log("Skipping CoreDNS charm test for older CK")
@@ -1967,8 +1973,8 @@ async def test_dns_provider(model, k8s_model, tools):
             await verify_dns_resolution(fresh=True)
         finally:
             log("Removing cross-model offer")
-            if any("coredns" in rel.key for rel in master_app.relations):
-                await master_app.destroy_relation("dns-provider", "coredns")
+            if any("coredns" in rel.key for rel in control_plane_app.relations):
+                await control_plane_app.destroy_relation("dns-provider", "coredns")
                 await tools.juju_wait()
             await model.remove_saas("coredns")
             await k8s_model.remove_offer(offer_name, force=True)
@@ -1988,15 +1994,15 @@ async def test_dns_provider(model, k8s_model, tools):
         await verify_no_dns_resolution(fresh=True)
 
         log("Switching back to core-dns from cdk-addons")
-        await master_app.set_config({"dns-provider": "core-dns"})
+        await control_plane_app.set_config({"dns-provider": "core-dns"})
         await tools.juju_wait()
 
         log("Verifying DNS works again")
         await verify_dns_resolution(fresh=True)
     finally:
         # Cleanup
-        if (await master_app.get_config())["dns-provider"] != "core-dns":
-            await master_app.set_config({"dns-provider": "core-dns"})
+        if (await control_plane_app.get_config())["dns-provider"] != "core-dns":
+            await control_plane_app.set_config({"dns-provider": "core-dns"})
             await tools.juju_wait()
         await remove_validation_pod()
 
@@ -2012,9 +2018,8 @@ async def test_sysctl(model, tools):
             cmd = cmd + " " + name
             desired_results.append(str(val))
         for unit in units:
-            action = await unit.run(cmd)
-            assert action.status == "completed"
-            raw_output = action.data["results"].get("Stdout", "")
+            action = await juju_run(unit, cmd)
+            raw_output = action.stdout
             lines = raw_output.splitlines()
             assert len(lines) == len(desired_results)
             if not lines == desired_results:
@@ -2237,9 +2242,9 @@ async def test_nagios(model, tools):
 
     # 2) login to nagios
     cmd = "cat /var/lib/juju/nagios.passwd"
-    output = await nagios.units[0].run(cmd, timeout=10)
+    output = await juju_run(nagios.units[0], cmd, timeout=10)
     assert output.status == "completed"
-    login_passwd = output.results.get("Stdout", "").strip()
+    login_passwd = output.stdout.strip()
 
     pwd_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
     url_base = "http://{}".format(nagios.units[0].public_address)
@@ -2546,9 +2551,7 @@ async def test_sriov_cni(model, tools, addons_model):
         pytest.skip("sriov-cni is not deployed")
 
     for unit in model.applications["kubernetes-worker"].units:
-        action = await unit.run("[ -x /opt/cni/bin/sriov ]")
-        assert action.status == "completed"
-        assert action.data["results"]["Code"] == "0"
+        await juju_run(unit, "[ -x /opt/cni/bin/sriov ]")
 
 
 async def test_sriov_network_device_plugin(model, tools, addons_model):
@@ -2563,9 +2566,9 @@ async def test_sriov_network_device_plugin(model, tools, addons_model):
         resource_prefix + "/" + resource["resourceName"] for resource in resource_list
     ]
 
-    master_unit = model.applications["kubernetes-control-plane"].units[0]
+    control_plane_unit = model.applications["kubernetes-control-plane"].units[0]
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get node -o json"
-    raw_output = await run_until_success(master_unit, cmd)
+    raw_output = await run_until_success(control_plane_unit, cmd)
     data = json.loads(raw_output)
     for node in data["items"]:
         capacity = node["status"]["capacity"]

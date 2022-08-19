@@ -3,6 +3,7 @@ import logging
 import pytest
 import re
 from pathlib import Path
+from ..utils import juju_run
 
 ws_logger = logging.getLogger("websockets.protocol")
 ws_logger.setLevel(logging.INFO)
@@ -21,13 +22,15 @@ async def test_etcd_actions(model, tools):
 
     etcd = model.applications["etcd"].units[0]
     # set db size limit to 16MB so we can fill it quickly
-    await etcd.run(
-        "sed -i 's/^quota-backend-bytes:.*$/quota-backend-bytes: 16777216/' /var/snap/etcd/common/etcd.conf.yml"
+    await juju_run(
+        etcd,
+        "sed -i 's/^quota-backend-bytes:.*$/quota-backend-bytes: 16777216/' /var/snap/etcd/common/etcd.conf.yml",
     )
-    await etcd.run("sudo systemctl restart snap.etcd.etcd.service")
+    await juju_run(etcd, "sudo systemctl restart snap.etcd.etcd.service")
     # fill the db to cause an alarm
-    await etcd.run(
-        "while [ 1 ]; do dd if=/dev/urandom bs=1024 count=1024 | ETCDCTL_API=3 /snap/bin/etcd.etcdctl --endpoints :4001 put key || break; done"
+    await juju_run(
+        etcd,
+        "while [ 1 ]; do dd if=/dev/urandom bs=1024 count=1024 | ETCDCTL_API=3 /snap/bin/etcd.etcdctl --endpoints :4001 put key || break; done",
     )
 
     # confirm alarm is raised
@@ -40,10 +43,11 @@ async def test_etcd_actions(model, tools):
     await assert_action(etcd, "alarm-list", r"^$")
 
     # reset db size to unlimited (default)
-    await etcd.run(
-        "sed -i 's/^quota-backend-bytes:.*$/quota-backend-bytes: 0/' /var/snap/etcd/common/etcd.conf.yml"
+    await juju_run(
+        etcd,
+        "sed -i 's/^quota-backend-bytes:.*$/quota-backend-bytes: 0/' /var/snap/etcd/common/etcd.conf.yml",
     )
-    await etcd.run("sudo systemctl restart snap.etcd.etcd.service")
+    await juju_run(etcd, "sudo systemctl restart snap.etcd.etcd.service")
 
 
 async def test_etcd_scaling(model, tools):
@@ -143,9 +147,11 @@ async def test_leader_status(model, tools):
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
-            status = await unit.run("systemctl is-active snap.etcd.etcd")
-            assert "inactive" not in status.results.get("Stdout", "").strip()
-            assert "active" in status.results.get("Stdout", "").strip()
+            status = await juju_run(
+                unit, "systemctl is-active snap.etcd.etcd", check=False
+            )
+            assert "inactive" not in status.stdout.strip()
+            assert "active" in status.stdout.strip()
 
 
 async def test_config_snapd_refresh(model, tools):
@@ -156,13 +162,13 @@ async def test_config_snapd_refresh(model, tools):
         if is_leader:
             # default timer should be some day of the week followed by a
             # number
-            timer = await unit.run("snap get core refresh.timer")
-            assert len(timer.results.get("Stdout", "").strip()) == len("dayX")
+            timer = await juju_run(unit, "snap get core refresh.timer")
+            assert len(timer.stdout.strip()) == len("dayX")
 
             # verify a new timer value
             await etcd.set_config({"snapd_refresh": "fri5"})
-            timer = await unit.run("snap get core refresh.timer")
-            assert timer.results.get("Stdout", "").strip() == "fri5"
+            timer = await juju_run(unit, "snap get core refresh.timer")
+            assert timer.stdout.strip() == "fri5"
 
 
 async def test_cluster_health(model, tools):
@@ -176,14 +182,13 @@ async def test_cluster_health(model, tools):
 
     etcd = model.applications["etcd"]
     for unit in etcd.units:
-        out = await unit.run("systemctl is-active snap.etcd.etcd")
-        assert out.status == "completed"
-        assert "inactive" not in out.results.get("Stdout", "").strip()
-        assert "active" in out.results.get("Stdout", "").strip()
+        out = await juju_run(unit, "systemctl is-active snap.etcd.etcd")
+        assert "inactive" not in out.stdout.strip()
+        assert "active" in out.stdout.strip()
         cmd = "{} /snap/bin/etcdctl cluster-health".format(certs)
-        health = await unit.run(cmd)
-        assert "unhealthy" not in health.results.get("Stdout", "").strip()
-        assert "unavailable" not in health.results.get("Stdout", "").strip()
+        health = await juju_run(unit, cmd)
+        assert "unhealthy" not in health.stdout.strip()
+        assert "unavailable" not in health.stdout.strip()
 
 
 async def test_leader_knows_all_members(model, tools):
@@ -206,9 +211,9 @@ async def test_leader_knows_all_members(model, tools):
     for unit in etcd.units:
         is_leader = await unit.is_leader_from_status()
         if is_leader:
-            out = await unit.run(cmd)
+            out = await juju_run(unit, cmd)
             # turn the output into a list so we can iterate
-            members = out.results.get("Stdout", "").strip()
+            members = out.stdout.strip()
             members = members.split("\n")
             for item in members:
                 # this is responded when TLS is enabled and we don't have
@@ -236,20 +241,20 @@ async def test_leader_knows_all_members(model, tools):
 #     for unit in etcd.units:
 #         is_leader = await unit.is_leader_from_status()
 #         if is_leader:
-#             await unit.run("{} /snap/bin/etcd.etcdctl set juju rocks".format(certs))
-#             await unit.run(
+#             await juju_run(unit, "{} /snap/bin/etcd.etcdctl set juju rocks".format(certs))
+#             await juju_run(unit,
 #                 "{} /snap/bin/etcd.etcdctl set nested/data works".format(certs)
 #             )
 
-#             juju_key = await unit.run(
+#             juju_key = await juju_run(unit,
 #                 "{} /snap/bin/etcd.etcdctl get juju rocks".format(certs)
 #             )
-#             nested_key = await unit.run(
+#             nested_key = await juju_run(unit,
 #                 "{} /snap/bin/etcd.etcdctl get nested/data works".format(certs)
 #             )
 
-#             assert "rocks" in juju_key.results.get("Stdout", "").strip()
-#             assert "works" in nested_key.results.get("Stdout", "").strip()
+#             assert "rocks" in juju_key.stdout.strip()
+#             assert "works" in nested_key.stdout.strip()
 
 
 # async def validate_running_snap_daemon(etcd):
@@ -258,8 +263,8 @@ async def test_leader_knows_all_members(model, tools):
 #     for unit in etcd.units:
 #         is_leader = await unit.is_leader_from_status()
 #         if is_leader:
-#             daemon_status = await unit.run("systemctl is-active snap.etcd.etcd")
-#             assert "active" in daemon_status.results.get("Stdout", "").strip()
+#             daemon_status = await juju_run(unit, "systemctl is-active snap.etcd.etcd")
+#             assert "active" in daemon_status.stdout.strip()
 
 
 async def load_data(leader):
@@ -276,12 +281,12 @@ async def load_data(leader):
     cmd = "{} ETCDCTL_API=2 /snap/bin/etcd.etcdctl set /etcd2key etcd2value".format(
         certs
     )
-    await leader.run(cmd)
+    await juju_run(leader, cmd)
     cmd = (
         "{} ETCDCTL_API=3 /snap/bin/etcd.etcdctl --endpoints=http://localhost:4001 "
         "put etcd3key etcd3value".format(certs)
     )
-    await leader.run(cmd)
+    await juju_run(leader, cmd)
 
 
 async def is_data_present(leader, version):
@@ -304,8 +309,8 @@ async def is_data_present(leader, version):
             "{} ETCDCTL_API=3 /snap/bin/etcd.etcdctl --endpoints=http://localhost:4001 "
             'get "" --prefix --keys-only'.format(certs)
         )
-        data = await leader.run(cmd)
-        return "etcd3key" in data.results.get("Stdout", "").strip()
+        data = await juju_run(leader, cmd)
+        return "etcd3key" in data.stdout.strip()
     else:
         return False
 
@@ -321,9 +326,9 @@ async def delete_data(leader):
     )
 
     cmd = "{} ETCDCTL_API=2 /snap/bin/etcd.etcdctl rm /etcd2key".format(certs)
-    await leader.run(cmd)
+    await juju_run(leader, cmd)
     cmd = (
         "{} ETCDCTL_API=3 /snap/bin/etcdctl --endpoints=http://localhost:4001 "
         "del etcd3key".format(certs)
     )
-    await leader.run(cmd)
+    await juju_run(leader, cmd)

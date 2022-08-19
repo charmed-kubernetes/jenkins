@@ -1,7 +1,7 @@
 import sh
 import requests
 import yaml
-from .utils import retry_async_with_timeout
+from .utils import retry_async_with_timeout, juju_run
 from .logger import log
 
 
@@ -116,12 +116,8 @@ async def test_clusterip_service_endpoint(model):
         worker = model.applications["kubernetes-worker"]
         nodes_lst = control_plane.units + worker.units
         for unit in nodes_lst:
-            action = await unit.run(cmd)
-            try:
-                assert "Hello, world!\n" in action.results.get("Stdout", "")
-            except AssertionError as e:
-                log(f"connection on {unit} failed")
-                raise e
+            action = await juju_run(unit, cmd)
+            assert "Hello, world!\n" in action.stdout
 
     finally:
         await cleanup()

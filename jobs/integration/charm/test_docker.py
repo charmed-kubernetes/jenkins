@@ -2,19 +2,19 @@
 Test Docker charm specific.
 """
 from ..logger import log
-from ..utils import retry_async_with_timeout
+from ..utils import retry_async_with_timeout, juju_run
 
 
 async def test_docker_opts(model):
     worker_app = model.applications["docker"]
 
     async def verify_default_docker(worker, opt):
-        action = await worker.run("cat /etc/default/docker")
-        return opt in action.results.get("Stdout", "")
+        action = await juju_run(worker, "cat /etc/default/docker")
+        return opt in action.stdout
 
     async def verify_ps_output(worker, opt):
-        action = await worker.run("ps -aux|grep dockerd")
-        return opt in action.results.get("Stdout", "")
+        action = await juju_run(worker, "ps -aux|grep dockerd")
+        return opt in action.stdout
 
     log("validating dockerd options")
 

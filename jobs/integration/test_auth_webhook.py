@@ -2,6 +2,7 @@ import json
 import random
 from .logger import log
 from yaml import safe_load
+from .utils import juju_run
 
 
 def get_curl_cmd(url, token):
@@ -16,52 +17,50 @@ def get_curl_cmd(url, token):
     )
 
 
-async def get_hostname(one_master):
+async def get_hostname(one_control_plane):
     cmd = "hostname -i"
-    output = await one_master.run(cmd, timeout=15)
+    output = await juju_run(one_control_plane, cmd, timeout=15)
     assert output.status == "completed"
-    return output.results.get("Stdout", "").strip()
+    return output.stdout.strip()
 
 
-async def get_valid_token(one_master):
-    output = await one_master.run("cat /home/ubuntu/config")
+async def get_valid_token(one_control_plane):
+    output = await juju_run(one_control_plane, "cat /home/ubuntu/config")
     assert output.status == "completed"
-    kubeconfig = safe_load(output.results.get("Stdout", ""))
+    kubeconfig = safe_load(output.stdout)
     assert "users" in kubeconfig
     return kubeconfig["users"][0]["user"]["token"]
 
 
-async def verify_service(one_master):
+async def verify_service(one_control_plane):
     cmd = "systemctl is-active cdk.master.auth-webhook.service"
-    output = await one_master.run(cmd)
+    output = await juju_run(one_control_plane, cmd)
     assert output.status == "completed"
-    assert output.results.get("Stdout", "").strip() == "active"
+    assert output.stdout.strip() == "active"
 
 
-async def verify_auth_success(one_master, cmd):
-    output = await one_master.run(cmd)
+async def verify_auth_success(one_control_plane, cmd):
+    output = await juju_run(one_control_plane, cmd)
     assert output.status == "completed"
-    assert "authenticated:true" in output.results.get("Stdout", "").replace('"', "")
+    assert "authenticated:true" in output.stdout.replace('"', "")
 
 
-async def verify_auth_failure(one_master, cmd):
-    output = await one_master.run(cmd)
+async def verify_auth_failure(one_control_plane, cmd):
+    output = await juju_run(one_control_plane, cmd)
     assert output.status == "completed"
-    assert "authenticated:false" in output.results.get("Stdout", "").replace('"', "")
+    assert "authenticated:false" in output.stdout.replace('"', "")
 
 
-async def verify_custom_auth(one_master, cmd, endpoint):
-    output = await one_master.run(cmd)
+async def verify_custom_auth(one_control_plane, cmd, endpoint):
+    output = await juju_run(one_control_plane, cmd)
     assert output.status == "completed"
 
     # make sure expected custom log entry is present
-    output = await one_master.run(
-        "grep Forwarding /root/cdk/auth-webhook/auth-webhook.log"
+    output = await juju_run(
+        one_control_plane, "grep Forwarding /root/cdk/auth-webhook/auth-webhook.log"
     )
     assert output.status == "completed"
-    assert (
-        "Forwarding to: {}".format(endpoint) in output.results.get("Stdout", "").strip()
-    )
+    assert "Forwarding to: {}".format(endpoint) in output.stdout.strip()
 
 
 async def test_validate_auth_webhook(model, tools):
