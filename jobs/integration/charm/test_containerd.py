@@ -2,7 +2,7 @@
 Test Containerd charm specific.
 """
 from ..logger import log
-from ..utils import retry_async_with_timeout
+from ..utils import retry_async_with_timeout, juju_run
 
 
 async def test_containerd_no_gpu(model, tools):
@@ -12,8 +12,8 @@ async def test_containerd_no_gpu(model, tools):
     worker_app = model.applications["containerd"]
 
     async def verify_ps_output(worker, opt):
-        action = await worker.run("ps -aux | grep containerd")
-        return opt in action.results.get("Stdout", "")
+        action = await juju_run(worker, "ps -aux | grep containerd")
+        return opt in action.stdout
 
     log("validating containerd no gpu")
 

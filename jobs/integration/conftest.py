@@ -185,8 +185,10 @@ async def model(request, tools):
         for unit in model.units.values():
             if unit.dead:
                 continue
-            await unit.run(f"sudo snap refresh core --{snapd_channel}")
-            await unit.run(f"sudo snap refresh snapd --{snapd_channel}")
+            a = await unit.run(f"sudo snap refresh core --{snapd_channel}")
+            await a.wait()
+            a = await unit.run(f"sudo snap refresh snapd --{snapd_channel}")
+            await a.wait()
         await log_snap_versions(model, prefix="After")
     yield model
     await model.disconnect()

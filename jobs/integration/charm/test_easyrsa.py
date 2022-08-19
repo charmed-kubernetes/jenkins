@@ -3,7 +3,7 @@
 import os
 import json
 from pathlib import Path
-from ..utils import asyncify
+from ..utils import asyncify, juju_run
 from sh import curl, juju
 
 # Locally built charm layer path
@@ -56,12 +56,12 @@ async def get_relation_data(controller, model, tools):
         easyrsa = model.applications["easyrsa"]
         easyrsa = easyrsa.units[0]
 
-        id = await easyrsa.run("relation-ids client")  # magic :(
-        id = id.results.get("Stdout", "").strip()
-        raw_json = await easyrsa.run(
-            "relation-get --format=json -r {} - {}".format(id, easyrsa.name)
+        id = await juju_run(easyrsa, "relation-ids client")  # magic :(
+        id = id.stdout.strip()
+        raw_json = await juju_run(
+            easyrsa, "relation-get --format=json -r {} - {}".format(id, easyrsa.name)
         )
-        relation_data = json.loads(raw_json.results.get("Stdout", ""))
+        relation_data = json.loads(raw_json.stdout)
     return relation_data
 
 

@@ -2,6 +2,7 @@ import asyncio
 import urllib.request
 from .logger import log
 from bs4 import BeautifulSoup as bs
+from .utils import juju_run
 
 
 def find_nagios_criticals(url, opener):
@@ -56,9 +57,8 @@ async def test_nagios(model, tools):
 
     # 2) login to nagios
     cmd = "cat /var/lib/juju/nagios.passwd"
-    output = await nagios.units[0].run(cmd, timeout=10)
-    assert output.status == "completed"
-    login_passwd = output.results.get("Stdout", "").strip()
+    output = await juju_run(nagios.units[0], cmd, timeout=10)
+    login_passwd = output.stdout.strip()
 
     pwd_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
     url_base = "http://{}".format(nagios.units[0].public_address)

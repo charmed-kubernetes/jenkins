@@ -19,7 +19,7 @@ async def test_cis_benchmark(model, tools):
     action = await one_etcd.run_action("cis-benchmark")
     await action.wait()
     assert action.status == "completed"
-    assert "0 checks FAIL" in action.data["results"]["summary"]
+    assert "0 checks FAIL" in action.results["summary"]
 
     # Verify action on k8s-master
     log("verifying k8s-master")
@@ -27,7 +27,7 @@ async def test_cis_benchmark(model, tools):
     action = await one_master.run_action("cis-benchmark")
     await action.wait()
     assert action.status == "completed"
-    assert "0 checks FAIL" in action.data["results"]["summary"]
+    assert "0 checks FAIL" in action.results["summary"]
 
     # Verify action on k8s-worker
     log("verifying k8s-worker")
@@ -36,4 +36,4 @@ async def test_cis_benchmark(model, tools):
     action = await one_worker.run_action("cis-benchmark")
     await action.wait()
     assert action.status == "completed"
-    assert "0 checks FAIL" in action.data["results"]["summary"]
+    assert "0 checks FAIL" in action.results["summary"]
