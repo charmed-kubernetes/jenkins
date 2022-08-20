@@ -521,13 +521,13 @@ class JujuRunResult:
     def __init__(self, action):
         results = action.results
         self.status = action.status
-        code = results.get("Code", results.get("result-code"))
+        code = results.get("Code", results.get("return-code"))
         if code is None:
             log.error(f"Failed to find the return code in {results}")
             self.code = -1
         else:
             self.code = int(code)
-        self.stdout = results.get("Stdout", results.get("stdout")) 
+        self.stdout = results.get("Stdout", results.get("stdout"))
         self.stderr = results.get("Stderr", results.get("stderr"))
         self.output = self.stderr if (self.stderr is not None) else self.stdout
         self.success = self.status == "completed" and self.code == 0
