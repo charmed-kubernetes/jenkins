@@ -1910,13 +1910,14 @@ async def test_dns_provider(model, k8s_model, tools):
         log("Verifying DNS with default provider (auto -> coredns)")
         await verify_dns_resolution(fresh=True)
 
-        log("Switching to kube-dns provider")
-        await control_plane_app.set_config({"dns-provider": "kube-dns"})
-        await wait_for_pods_removal("kubernetes.io/name=CoreDNS")
-        await wait_for_pods_ready("k8s-app=kube-dns")
+        if 0:  #   LP1921436
+            log("Switching to kube-dns provider")
+            await control_plane_app.set_config({"dns-provider": "kube-dns"})
+            await wait_for_pods_removal("kubernetes.io/name=CoreDNS")
+            await wait_for_pods_ready("k8s-app=kube-dns")
 
-        log("Verifying DNS with kube-dns provider")
-        await verify_dns_resolution(fresh=True)
+            log("Verifying DNS with kube-dns provider")
+            await verify_dns_resolution(fresh=True)
 
         log("Switching to none provider")
         await control_plane_app.set_config({"dns-provider": "none"})

@@ -527,9 +527,9 @@ class JujuRunResult:
             self.code = -1
         else:
             self.code = int(code)
-        self.stdout = results.get("Stdout", results.get("stdout"))
-        self.stderr = results.get("Stderr", results.get("stderr"))
-        self.output = self.stderr if (self.stderr is not None) else self.stdout
+        self.stdout = results.get("Stdout", results.get("stdout")) or ""
+        self.stderr = results.get("Stderr", results.get("stderr")) or ""
+        self.output = self.stderr or self.stdout
         self.success = self.status == "completed" and self.code == 0
 
 
