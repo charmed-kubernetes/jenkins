@@ -1,5 +1,4 @@
 import sh
-import requests
 import yaml
 from .utils import retry_async_with_timeout, juju_run
 
@@ -70,7 +69,7 @@ async def cleanup():
     )
 
 
-async def test_nodeport_service_endpoint():
+async def test_nodeport_service_endpoint(tools):
     """Create k8s Deployement and NodePort service, send request to NodePort"""
 
     try:
@@ -86,7 +85,7 @@ async def test_nodeport_service_endpoint():
 
         # Build the url
         set_url = f"http://{ip}:{port}"
-        html = await requests.get(set_url)
+        html = await tools.requests_get(set_url)
 
         assert "Hello, world!\n" in html.content.decode()
 

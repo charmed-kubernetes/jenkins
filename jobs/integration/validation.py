@@ -315,7 +315,7 @@ async def test_microbot(model, tools):
     assert action.status == "completed"
     while True:
         try:
-            resp = await tools.requests.get(
+            resp = await tools.requests_get(
                 "http://" + action.results["address"],
                 proxies={"http": None, "https": None},
             )
@@ -348,11 +348,11 @@ async def test_dashboard(model, log_dir, tools):
             user = config["users"][0]["user"]["username"]
             password = config["users"][0]["user"]["password"]
             auth = tools.requests.auth.HTTPBasicAuth(user, password)
-            resp = await tools.requests.get(url, auth=auth, verify=False)
+            resp = await tools.requests_get(url, auth=auth, verify=False)
         except KeyError:
             token = config["users"][0]["user"]["token"]
             headers = {"Authorization": f"Bearer {token}"}
-            resp = await tools.requests.get(url, headers=headers, verify=False)
+            resp = await tools.requests_get(url, headers=headers, verify=False)
         return resp
 
     # make sure we can hit the api-server
@@ -409,7 +409,7 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
         url = "https://%s:10250/pods/" % address
         for attempt in range(0, 120):  # 2 minutes
             try:
-                response = await tools.requests.get(
+                response = await tools.requests_get(
                     url, verify=False, proxies={"http": None, "https": None}
                 )
                 assert response.status_code == 401  # Unauthorized
@@ -2495,7 +2495,7 @@ async def test_octavia(model, tools):
             timeout_msg="Timed out waiting for new microbot service",
         )
         ingress_address = await get_svc_ingress(model, "microbot", timeout=5 * 60)
-        resp = await tools.requests.get(
+        resp = await tools.requests_get(
             f"http://{ingress_address}",
             proxies={"http": None, "https": None},
         )

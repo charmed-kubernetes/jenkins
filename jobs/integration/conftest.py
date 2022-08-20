@@ -106,7 +106,7 @@ class Tools:
     def __init__(self, request):
         self._request = request
         self.requests = requests
-        self.requests.get = asyncify(requests.get)
+        self.requests_get = asyncify(requests.get)
 
     async def _load(self):
         request = self._request
