@@ -125,7 +125,7 @@ jmespath==0.10.0
     # via
     #   boto3
     #   botocore
-git+https://github.com/addyess/python-libjuju.git@security/https-snapcraft
+git+https://github.com/juju/python-libjuju.git
     # via -r requirements.in
 jujubundlelib==0.5.7
     # via theblues
