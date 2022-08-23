@@ -11,7 +11,6 @@ set -x
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
-
 ###############################################################################
 # FUNCTION OVERRIDES
 ###############################################################################
@@ -22,8 +21,8 @@ function test::execute
                 --full-trace \
                 jobs/integration/validation.py \
                 --is-upgrade \
-                --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
-                --upgrade-charm-channel edge \
+                --upgrade-snap-channel "$SNAP_CHANNEL_UPGRADE_TO" \
+                --upgrade-charm-channel "$CHARM_CHANNEL_UPGRADE_TO" \
                 --cloud "$JUJU_CLOUD" \
                 --model "$JUJU_MODEL" \
                 --controller "$JUJU_CONTROLLER"
@@ -37,14 +36,14 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION_UPGRADE_TO=${5:-1.23/edge}
-export SNAP_VERSION_UPGRADE_TO
+export CHARM_CHANNEL_UPGRADE_TO=latest/edge
+export SNAP_CHANNEL_UPGRADE_TO=latest/edge
 
-SNAP_VERSION=${1:-1.22/stable}
+SNAP_VERSION=${1:-1.23/stable}
 SERIES=${2:-focal}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-stable}
-JUJU_CLOUD=vsphere/Boston
+JUJU_CLOUD=${5:-vsphere/Boston}
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-upgrade
 ARCH=${4:-amd64}

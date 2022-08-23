@@ -17,6 +17,9 @@ ci_charmcraft_launch()
     echo 'retrying charmcraft install in 3s...'
     sleep 3
   done
+  sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add http.proxy http://squid.internal:3128'
+  sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add https.proxy http://squid.internal:3128'
+
 }
 
 ci_charmcraft_pack()
@@ -28,7 +31,7 @@ ci_charmcraft_pack()
   local subdir=${4:-.}
   sudo lxc shell $charmcraft_lxc -- bash -c "rm -rf /root/*"
   sudo lxc shell $charmcraft_lxc -- bash -c "git clone ${repository} -b ${branch} charm"
-  sudo lxc shell $charmcraft_lxc -- bash -c "cd charm/$subdir; cat version || git describe --dirty --always | tee version"
+  sudo lxc shell $charmcraft_lxc -- bash -c "cd charm/$subdir; cat version || git rev-parse --short HEAD | tee version"
   sudo lxc shell $charmcraft_lxc --env CHARMCRAFT_MANAGED_MODE=1 -- bash -c "cd charm; charmcraft pack -v -p $subdir"
 }
 
@@ -50,4 +53,14 @@ ci_charmcraft_copy()
     echo "Pulling ${charmcraft_lxc}${charm} to ${copy_destination}"
     sudo lxc file pull ${charmcraft_lxc}${charm} ${copy_destination}
   done
+}
+
+ci_charmcraft_promote()
+{
+  # Promote an existing charm revision to a channel
+  local charmcraft_lxc=$1
+  local charm=$2
+  local revision=$3
+  local channel=$4
+  sudo lxc shell $charmcraft_lxc --env CHARMCRAFT_AUTH="$CHARMCRAFT_AUTH" -- bash -c "charmcraft release $charm --revision $revision --channel $channel"
 }

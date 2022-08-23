@@ -12,9 +12,9 @@ consistent experience across all code bases. Any external or shared repositories
 into the charmed-kubernetes namespace and have the common branches added.
 
 Branches:
- * `master`: The primary development branch. Merges are made against this branch as they are
+ * `main`: The primary development branch. Merges are made against this branch as they are
    approved.
- * `stable`: Stable is the release branch. Major release have `master` directly merged to
+ * `stable`: Stable is the release branch. Major release have `main` directly merged to
    `stable` while bug-fix releases have specific commits cherry-picked onto `stable` to create a
    release.
 
@@ -125,11 +125,27 @@ This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
 it will only promote the necessary charms that make up charmed-kuberneetes (the
 others are kubeflow related).
 
-### Promote bundles from **candidate** to **stable**
+### Build stable bundles
 
-**Job**: https://jenkins.canonical.com/k8s/job/promote-bundles/
+**Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
-Same as charm promotion.
+bundles shouldn't be promoted because a candidate bundle points to candidate channel charms
+
+Instead BUILD the bundles targetting the stable channels:
+
+Run the build with parameters:
+  * layer_branch = stable
+  * charm_branch = stable
+  * bundle_branch = stable
+  * to_channel = stable (will build both 1.xx/stable and latest/stable)
+  * filter_by_tag = charmed-kubernetes
+
+Repeat the build with parameters:
+  * layer_branch = stable
+  * charm_branch = stable
+  * bundle_branch = stable
+  * to_channel = stable (will build both 1.xx/stable and latest/stable)
+  * filter_by_tag = kubernetes-core
 
 ### Promote cdk-addons
 

@@ -4,36 +4,10 @@
 
 
 - job:
-    name: 'validate-minor-release'
-    description: |
-      Promote, Validate, Release to stable. This job will run through all
-      necessary steps to validate a particular version of k8s and make sure the
-      charms and snaps are published accordingly.
-    node: runner-validate
-    project-type: freestyle
-    parameters:
-      - global-params
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    scm:
-      - k8s-jenkins-jenkaas
-    properties:
-      - build-discarder:
-          num-to-keep: 3
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/release"
-      - run-env:
-          COMMAND: |
-            parallel --timeout 200% --ungroup bash jobs/validate/spec {1} {2} {3} {4} ::: 1.23/stable ::: focal bionic ::: beta ::: arm64 amd64
-            parallel --timeout 200% --ungroup bash jobs/validate/upgrade-spec {1} {2} {3} {4} {5} ::: 1.22/stable 1.21/stable ::: focal bionic ::: beta ::: arm64 amd64 ::: 1.23/stable
-
-- job:
     name: 'validate-charm-bugfix'
     node: runner-validate
     description: |
-      Validates candidate charms with candidate snaps in order to release a
+      Validates candidate charms with stable snaps in order to release a
       bug/hotfix to stable.
     project-type: matrix
     scm:
@@ -54,15 +28,14 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.23/candidate
-            - 1.22/candidate
-            - 1.21/candidate
+            - 1.24/stable
       - axis:
           type: user-defined
           name: series
           values:
             - focal
             - bionic
+            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release"
@@ -94,8 +67,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.22/stable
-            - 1.21/stable
+            - 1.24/stable
+            - 1.23/stable
       - axis:
           type: user-defined
           name: series
@@ -109,7 +82,7 @@
             - amd64
     builders:
       - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
+          JOB_SPEC_DIR: "jobs/release"
       - run-venv:
           COMMAND: |
            bash jobs/release/bugfix-upgrade-spec $snap_version $series

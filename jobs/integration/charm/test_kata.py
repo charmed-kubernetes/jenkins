@@ -12,11 +12,11 @@ async def test_kata(model, tools):
     :return: None
     """
     kata_app = await model.deploy(
-        "cs:~containers/kata", num_units=0, channel="edge"  # Subordinate.
-    )
+        "kata", num_units=0, channel=tools.charm_channel
+    )  # Subordinate.
 
     await kata_app.add_relation(
-        "kata:containerd", "kubernetes-master:container-runtime"
+        "kata:containerd", "kubernetes-control-plane:container-runtime"
     )
 
     await kata_app.add_relation(

@@ -21,9 +21,8 @@ function juju::bootstrap
     fi
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          -d "$JUJU_MODEL" \
-         --bootstrap-series "$SERIES" \
-         --force \
-         --bootstrap-constraints arch="$ARCH" \
+         --force --bootstrap-series "$SERIES" \
+	 --bootstrap-constraints arch="amd64" \
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
          --model-default image-stream=daily \
@@ -52,7 +51,7 @@ function juju::deploy::overlay
     cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
-  kubernetes-master:
+  kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:

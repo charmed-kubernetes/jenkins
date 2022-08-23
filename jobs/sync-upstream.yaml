@@ -256,7 +256,7 @@
 - job:
     name: 'cut-stable-release'
     description: |
-      Resets all layer stable branches from master branches.
+      Resets all layer stable branches from default branches.
     project-type: freestyle
     node: runner-cloud
     scm:
@@ -264,6 +264,8 @@
     properties:
       - build-discarder:
           days-to-keep: 2
+    parameters:
+      - global-params
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -273,11 +275,54 @@
       - run-venv:
           COMMAND: |
             IS_DRY_RUN=""
-            if [ ! -z ${DRY_RUN+x} ]; then
+            if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
             $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py cut-stable-release \
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc \
                --ancillary-list jobs/includes/ancillary-list.inc \
+               --filter-by-tag k8s $IS_DRY_RUN
+
+- job:
+    name: 'rename-branch'
+    description: |
+      Renames all CK branches from one name to another.
+    project-type: freestyle
+    node: runner-cloud
+    scm:
+      - k8s-jenkins-jenkaas
+    properties:
+      - build-discarder:
+          days-to-keep: 2
+    parameters:
+      - global-params
+      - string:
+          name: FROM_BRANCH
+          description: |
+            Name of a branch present in supported layers + charms
+            If the branch doesn't exist in a repo, the entity is skipped
+      - string:
+          name: TO_BRANCH
+          description: |
+            Name of a branch present in supported layers + charms
+            If the branch already exists in a repo, the entity is skipped
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/sync-upstream"
+      - run-venv:
+          COMMAND: |
+            IS_DRY_RUN=""
+            if [[ $DRY_RUN = "true" ]]; then
+              IS_DRY_RUN="--dry-run"
+            fi
+            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py rename-branch \
+               --layer-list jobs/includes/charm-layer-list.inc \
+               --charm-list jobs/includes/charm-support-matrix.inc \
+               --ancillary-list jobs/includes/ancillary-list.inc \
+               --from-name $FROM_BRANCH \
+               --to-name $TO_BRANCH \
                --filter-by-tag k8s $IS_DRY_RUN

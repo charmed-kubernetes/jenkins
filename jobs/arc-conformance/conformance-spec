@@ -1,7 +1,7 @@
 #!/bin/bash
 # shellcheck disable=SC2034,SC1090
 
-set -x
+set -ex
 
 ###############################################################################
 # INITIALIZE
@@ -19,13 +19,18 @@ function juju::bootstrap::before
     # azure-cli
     which az || sudo apt-get install -qyf azure-cli
     rm -rf ${HOME}/.azure/cliextensions/*
-    # NB: can't get to az extension index, so install the bundled extensions
-    az extension add -y --source ./jobs/arc-conformance/connectedk8s-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
-    az extension add -y --source ./jobs/arc-conformance/k8s_configuration-1.0.0-py3-none-any.whl --pip-proxy http://squid.internal:3128
+
+    # can't get to az extension index from jenkins worker, so install the bundled extensions
+    az extension add -y --source ./jobs/arc-conformance/connectedk8s-1.2.8-py2.py3-none-any.whl --pip-proxy http://squid.internal:3128
     az version || exit 1
 
-    # helm
-    which helm || sudo snap install helm --classic
+    # helm needs to be < 3.7.0 for:
+    #  https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/troubleshooting#azure-cli-is-unable-to-download-helm-chart-for-azure-arc-agents
+    if snap list helm 2>/dev/null; then
+        sudo snap refresh helm --channel=3.6/stable
+    else
+        sudo snap install helm --classic --channel=3.6/stable
+    fi
     helm version || exit 1
 
     # sonobuoy
@@ -37,112 +42,148 @@ function juju::bootstrap::before
     ./sonobuoy version || exit 1
 }
 
+function juju::bootstrap
+{
+    # override because azure needs image-stream=released
+    juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
+         -d "$JUJU_MODEL" \
+         --bootstrap-series "$SERIES" \
+         --force \
+         --bootstrap-constraints arch="$ARCH" \
+         --model-default test-mode=true \
+         --model-default resource-tags=owner=k8sci \
+         --model-default image-stream=released \
+         --model-default automatically-retry-hooks=true \
+         --model-default logging-config="<root>=DEBUG"
+
+    ret=$?
+    if (( ret > 0 )); then
+        exit "$ret"
+    fi
+}
+
+function juju::deploy::overlay
+{
+    # override to set allow-privileged for sonobuoy
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  calico:
+    options:
+      cidr: 10.168.0.0/16
+  kubernetes-control-plane:
+    options:
+      channel: $SNAP_VERSION
+      allow-privileged: 'true'
+  kubernetes-worker:
+    options:
+      channel: $SNAP_VERSION
+EOF
+}
+
 function test::execute
 {
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
-    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-master/0:config $HOME/.kube/
+    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader:config $HOME/.kube/
     kubectl version
 
     # prep azure env
-    echo "Logging into azure"
+    CK_SEMVER=$(snap find kube-apiserver | grep -o ${CK_VERSION}.[0-9])
+    helm uninstall azure-arc || true
+    export PATH=${PATH}:$(pwd)
+    git clone https://github.com/Azure/azure-arc-validation
+    pushd azure-arc-validation/testsuite
+    cat <<EOF > ./partner-metadata.md
+- Upstream Kubernetes Version: Charmed Kubernetes ${CK_VERSION}
+- K8s Distribution Version: v${CK_SEMVER}
+- Additional Storage/Network Driver details (if applicable):
+- Private Cloud details (if applicable):
+- Bare-metal Node details (if applicable):
+- OEM/IHV solution details (if applicable):
+EOF
+
     set +x
     source /var/lib/jenkins/.local/share/juju/azure-arc.sh
-    az login --service-principal -u $CLIENT_ID -p $CLIENT_SECRET --tenant $TENANT_ID
+    if [[ "${UPLOAD_RESULTS}" == "false" ]]; then
+      # disable storage account if we don't want to upload results (doesn't impact the test)
+      export AZ_STORAGE_ACCOUNT_SAS='invalid'
+    else
+      # sed treats '&' specially; make sure we escape it if we have any in the key
+      export AZ_STORAGE_ACCOUNT_SAS=$(echo ${AZ_STORAGE_ACCOUNT_SAS} | sed -e "s/&/\\\&/g")
+    fi
+    sed -i \
+      -e "s/^az-storage-account=.*/az-storage-account=${AZ_STORAGE_ACCOUNT}/" \
+      -e "s/^az-storage-account-sas=.*/az-storage-account-sas='${AZ_STORAGE_ACCOUNT_SAS}'/" \
+      -e "s/^offering-name=.*/offering-name=charmed-kubernetes/" \
+      -e "s/^global.SUBSCRIPTION_ID=.*/global.SUBSCRIPTION_ID=${AZ_SUBSCRIPTION_ID}/" \
+      -e "s/^global.TENANT_ID=.*/global.TENANT_ID=${AZ_TENANT_ID}/" \
+      -e "s/^global.RESOURCE_GROUP=.*/global.RESOURCE_GROUP=external-canonical/" \
+      -e "s/^global.CLIENT_ID=.*/global.CLIENT_ID=${AZ_CLIENT_ID}/" \
+      -e "s/^global.CLIENT_SECRET=.*/global.CLIENT_SECRET=${AZ_CLIENT_SECRET}/" \
+      -e "s/^azure-arc-platform.OBJECT_ID=.*/azure-arc-platform.OBJECT_ID='${AZ_OBJECT_ID}'/" \
+      azure-arc-conformance.properties
     set -x
-    RESOURCE_GROUP=`az group list --query "[?location=='${CLUSTER_REGION}']" | grep -o "juju-${JUJU_MODEL}-.*" | sed -e 's/"//g' -e 's/,//g' | head -1`
-
-    # https://github.com/Azure/azure-arc-validation/blob/main/conformance.yaml
-    cat << EOF > ./arc-conformance.yaml
-sonobuoy-config:
-  driver: Job
-  plugin-name: azure-arc-conformance
-  result-format: junit
-spec:
-  image: arck8sconformance.azurecr.io/arck8sconformance:v0.1.0
-  imagePullPolicy: Always
-  name: plugin
-  resources: {}
-  volumeMounts:
-  - mountPath: /tmp/results
-    name: results
-EOF
-    echo "Running sonobuoy"
-    set +x
-    ./sonobuoy run \
-        --plugin ./arc-conformance.yaml \
-        --plugin-env azure-arc-conformance.TENANT_ID=$TENANT_ID \
-        --plugin-env azure-arc-conformance.SUBSCRIPTION_ID=$SUBSCRIPTION_ID \
-        --plugin-env azure-arc-conformance.RESOURCE_GROUP=$RESOURCE_GROUP \
-        --plugin-env azure-arc-conformance.CLUSTER_NAME=$CLUSTER_NAME \
-        --plugin-env azure-arc-conformance.LOCATION=$CLUSTER_REGION \
-        --plugin-env azure-arc-conformance.CLIENT_ID=$CLIENT_ID \
-        --plugin-env azure-arc-conformance.CLIENT_SECRET=$CLIENT_SECRET \
-        --wait 2>&1
+    kubectl apply -k .
+    # give the arc pod 5 minutes to get settled before tailing its logs
+    sleep 300
+    ARC_POD=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n ${ARC_NS})
+    # NB: we always want the logging to succeed so we can watch progress in jenkins;
+    # the tail will disconnect when arc tears down (or we timeout)
+    timeout -s INT 3h bash -c "kubectl logs -n ${ARC_NS} ${ARC_POD} -f || true"
     ret=$?
-    set -x
+    popd
 
     is_pass="True"
     if (( $ret > 0 )); then
         is_pass="False"
     fi
-
-    rm -f ./arc-conformance.yaml
 }
 
 function test::capture
 {
-    RESULT_SRC="plugins/azure-arc-conformance/sonobuoy_results.yaml"
-    RESULT_DST="CharmedKubernetes_${CK_VERSION}_results.yaml"
-    SB_TAR="CharmedKubernetes_${CK_VERSION}.tar.gz"
+    # Arc does 3ish runs; get all of them for our artifacts tarball.
+    # NB: strip leading '/' and trailing carriage return since busybox 'find' cant.
+    ARC_POD=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n ${ARC_NS})
+    for res in $(kubectl exec -it ${ARC_POD} -n ${ARC_NS} -- find / -name conformance-results*.gz | sed -e 's|^/||' -e 's|\r$||')
+    do
+        kubectl cp ${ARC_NS}/${ARC_POD}:${res} ${res} || true
+    done
 
-    ./sonobuoy retrieve
-    mv *_sonobuoy*tar.gz ${SB_TAR}
-    tar -xf ${SB_TAR} ${RESULT_SRC}
-
-    if [ -e ${RESULT_SRC} ]; then
-        cat ${RESULT_SRC}
-        if grep -q 'failed' ${RESULT_SRC}; then
-            echo "Failed conformance; not uploading results to azure storageaccount"
-            is_pass="False"
-        else
-            echo "Passed conformance; uploading results to azure storageaccount"
-            # we need the storage account key before upload
-            set +x
-            source /var/lib/jenkins/.local/share/juju/azure-arc.sh
-            set -x
-            az storage blob upload -c canonical-testresults --account-name canonicalarcsa \
-                --account-key ${STORAGE_ACCOUNT_KEY} -f ${SB_TAR} -n ${SB_TAR}
-            az storage blob upload -c canonical-testresults --account-name canonicalarcsa \
-                --account-key ${STORAGE_ACCOUNT_KEY} -f ${RESULT_SRC} -n ${RESULT_DST}
-            is_pass="True"
-        fi
-    else
-        echo "No conformance results"
-        is_pass="False"
+    if which juju-crashdump; then
+        juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
-    az logout
+    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* conformance-results*.gz || true
+    python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
+
+    echo "@@@ CAPTURE RESULTS @@@"
+    echo "@"
+    echo "@  http://jenkaas.s3-website-us-east-1.amazonaws.com/$JOB_ID/artifacts.tar.gz"
+    echo "@"
+    echo "@@@"
+
+    rm -rf azure-arc-validation
 }
 
 
 ###############################################################################
 # ENV
 ###############################################################################
-SONOBUOY_VERSION=0.20.0
-CLUSTER_NAME=azure-arc-ci
-CLUSTER_REGION=eastus
-SNAP_VERSION=${CK_VERSION}/${CK_CHANNEL}
-# NB: bootstrap azure with bionic until juju-2.9
-SERIES=bionic
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${CK_CHANNEL}
 JUJU_CLOUD=azure/eastus
-JUJU_CONTROLLER=validate-$(identifier::short)
-JUJU_MODEL=validate-ck-arc
+JUJU_CONTROLLER=arc-ck-$(identifier::short)
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${CK_CHANNEL}
+JUJU_MODEL=arc-ck
+
+ARC_NS=azure-arc-kubernetes-conformance
 ARCH=amd64
-JOB_NAME_CUSTOM="validate-ck-arc-conformance-$SERIES-$SNAP_VERSION"
+SERIES=focal
+SNAP_VERSION=${CK_VERSION}/${CK_CHANNEL}
+SONOBUOY_VERSION=0.56.3
+
 JOB_ID=$(identifier)
+JOB_NAME_CUSTOM="arc-ck-$SERIES-$SNAP_VERSION"
 
 # Make sure azure repo is available in this env. Doing this manually because
 # builders cant curl the auto script from:

@@ -28,14 +28,14 @@ class JujuExecutor(ExecutorInterface):
         self._run_cmd(cmd)
 
     def clone_microk8s_repo(self):
-        cmd = "git clone https://github.com/ubuntu/microk8s"
+        cmd = "git clone https://{}".format(configbag.github_repo)
         self._run_cmd(cmd)
 
     def has_tests_for_track(self, track):
         cmd = (
             "git ls-remote --exit-code "
-            "--heads https://github.com/ubuntu/microk8s.git refs/heads/{}".format(
-                track
+            "--heads https://{}.git refs/heads/{}".format(
+                configbag.github_repo, track
             ).split()
         )
         run(cmd, check=True, stdout=PIPE, stderr=STDOUT)
@@ -45,7 +45,7 @@ class JujuExecutor(ExecutorInterface):
         self._run_cmd(cmd)
 
     def set_version_to_build(self, version):
-        cmd = "sed -i '/^set.*/a export KUBE_VERSION={}' microk8s/build-scripts/set-env-variables.sh".format(
+        cmd = "sed -i 's/^KUBE_VERSION=.*/KUBE_VERSION={}/' microk8s/build-scripts/components/kubernetes/version.sh".format(
             version
         )
         self._run_cmd(cmd)

@@ -22,9 +22,8 @@ function juju::bootstrap
 
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
       -d "$JUJU_MODEL" \
-      --bootstrap-series "$SERIES" \
-      --force \
-      --bootstrap-constraints arch="$ARCH" \
+      --force --bootstrap-series "$SERIES" \
+      --bootstrap-constraints arch="amd64" \
       --model-default test-mode=true \
       --model-default resource-tags=owner=k8sci \
       --model-default image-stream=daily \
@@ -50,9 +49,9 @@ function juju::deploy
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.23/edge}
-SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/kubernetes-tigera-secure-ee
+SNAP_VERSION=${1:-1.24/edge}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)

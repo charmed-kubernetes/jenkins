@@ -5,6 +5,10 @@ import semver
 
 def upstream_release(release):
     """Return the latest stable k8s in the release series"""
+
+    if release.endswith("-strict"):
+        release = release.replace("-strict", "")
+
     if release == "latest":
         release_url = "https://dl.k8s.io/release/stable.txt"
     else:
@@ -53,7 +57,7 @@ def get_gh_releases():
 def get_latest_pre_release(track, patch):
     """
     Get the latest release for track and patch
-    :param track: Something line 1.15, 1.16
+    :param track: Something like 1.15, 1.16
     :param patch: alpha, beta, or rc
     :return: None if no pre-release is found of the latest pre-release name
     """
@@ -61,6 +65,9 @@ def get_latest_pre_release(track, patch):
     if not releases:
         print("No releases gathered from GH")
         return None
+
+    if track.endswith("-strict"):
+        track = track.replace("-strict", "")
 
     search_version = "v{}.0-{}".format(track, patch)
     print("Searching on GH releases for a tag starting with:", search_version)

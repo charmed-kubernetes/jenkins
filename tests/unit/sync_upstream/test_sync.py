@@ -29,8 +29,99 @@ def test_sync_default_branch(mock_default_gh, mock_base, sync):
 
 
 @mock.patch("sync.CharmRepoModel.base", new_callable=mock.PropertyMock)
-@mock.patch("sync.default_gh_branch", return_value=None)
-def test_sync_no_default_branch(mock_default_gh, mock_base, sync):
+@mock.patch("cilib.git.default_gh_branch", mock.MagicMock(return_value=None))
+def test_sync_no_default_branch(mock_base, sync):
     """Tests the repo default branch helper which runs when syncing forks."""
-    result = sync.CharmRepoModel.default_gh_branch(mock_base, remote="test-repo")
+    result = sync.CharmRepoModel.default_gh_branch(mock_base, remote="test/repo")
     assert result == "master"
+
+
+@mock.patch("sync.Repository.default_branch", mock.PropertyMock(return_value="main"))
+@mock.patch("sync.Repository.branches", mock.PropertyMock(return_value=["main"]))
+@mock.patch("sync.Repository.copy_branch")
+def test_sync_cut_stable_release(mock_copy_branch, sync):
+    """Tests that cut stable release job creates a new branch from the default branch."""
+    runner = CliRunner()
+    with mock.patch.object(sync, "SNAP_K8S_TRACK_LIST", [("1.2.3", None)]):
+        result = runner.invoke(
+            sync.cut_stable_release,
+            [
+                "--dry-run",
+                "--layer-list=jobs/includes/charm-layer-list.inc",
+                "--charm-list=jobs/includes/charm-support-matrix.inc",
+                "--ancillary-list=jobs/includes/ancillary-list.inc",
+                "--filter-by-tag=calico",
+            ],
+        )
+    assert result.exception is None
+    mock_copy_branch.assert_called_once_with("main", "release_1.2.3")
+
+
+@mock.patch("sync.Repository.default_branch", mock.PropertyMock(return_value="main"))
+@mock.patch("sync.Repository.tags", mock.PropertyMock(return_value=[]))
+@mock.patch("sync.Repository.tag_branch")
+def test_tag_stable_bundle(mock_tag_branch, sync):
+    """Tests that tag stable bundle job creates a tags selected branch with release."""
+    runner = CliRunner()
+    with mock.patch.object(sync, "SNAP_K8S_TRACK_LIST", [("1.2.3", None)]):
+        result = runner.invoke(
+            sync.tag_stable,
+            [
+                "--layer-list=jobs/includes/charm-layer-list.inc",
+                "--charm-list=jobs/includes/charm-support-matrix.inc",
+                "--k8s-version=1.2.3",
+                "--bundle-revision=1234",
+                "--dry-run",
+                "--filter-by-tag=calico",
+            ],
+        )
+    assert result.exception is None
+    mock_tag_branch.assert_called_once_with("release_1.2.3", "ck-1.2.3-1234")
+
+
+@mock.patch("sync.Repository.default_branch", mock.PropertyMock(return_value="main"))
+@mock.patch("sync.Repository.tags", mock.PropertyMock(return_value=["ck-1.2.3-1234"]))
+@mock.patch("sync.Repository.tag_branch")
+def test_tag_stable_bugfix(mock_tag_branch, sync):
+    """Tests that tag stable bundle job creates a tags selected branch with release."""
+    runner = CliRunner()
+    with mock.patch.object(sync, "SNAP_K8S_TRACK_LIST", [("1.2.3", None)]):
+        result = runner.invoke(
+            sync.tag_stable,
+            [
+                "--layer-list=jobs/includes/charm-layer-list.inc",
+                "--charm-list=jobs/includes/charm-support-matrix.inc",
+                "--k8s-version=1.2.3",
+                "--bundle-revision=ck2",
+                "--dry-run",
+                "--bugfix",
+                "--filter-by-tag=calico",
+            ],
+        )
+    assert result.exception is None
+    mock_tag_branch.assert_called_once_with("release_1.2.3", "1.2.3+ck2")
+
+
+@mock.patch(
+    "sync.Repository.branches",
+    mock.PropertyMock(return_value=["main", "release_1.2.3"]),
+)
+@mock.patch("sync.Repository.rename_branch")
+def test_rename_branch(mock_rename_branch, sync):
+    """Tests that tag stable bundle job creates a tags selected branch with release."""
+    runner = CliRunner()
+    with mock.patch.object(sync, "SNAP_K8S_TRACK_LIST", [("1.2.3", None)]):
+        result = runner.invoke(
+            sync.rename_branch,
+            [
+                "--layer-list=jobs/includes/charm-layer-list.inc",
+                "--charm-list=jobs/includes/charm-support-matrix.inc",
+                "--ancillary-list=jobs/includes/ancillary-list.inc",
+                "--from-name=release_1.2.3",
+                "--to-name=release-1.2.3",
+                "--dry-run",
+                "--filter-by-tag=calico",
+            ],
+        )
+    assert result.exception is None
+    mock_rename_branch.assert_called_once_with("release_1.2.3", "release-1.2.3")

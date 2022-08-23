@@ -3,23 +3,27 @@
 
 set -x
 
-# Init
+###############################################################################
+# INITIALIZE
+###############################################################################
 : "${WORKSPACE:=$(pwd)}"
 
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
 function juju::deploy
 {
-    tee overlay.yaml <<EOF> /dev/null
+    tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
-  kubernetes-master:
-    constraints: cores=2 mem=8G root-disk=16G
+  kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:
-    constraints: instance-type=p2.xlarge
+    constraints: 'instance-type=p2.xlarge root-disk=16G'
     options:
       channel: $SNAP_VERSION
 EOF
@@ -30,11 +34,12 @@ EOF
          --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
 }
 
-
-# Setup Environment
-SNAP_VERSION=${1:-1.23/edge}
-SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+###############################################################################
+# ENV
+###############################################################################
+SNAP_VERSION=${1:-1.24/edge}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)
@@ -43,4 +48,7 @@ ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-nvidia-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
+###############################################################################
+# START
+###############################################################################
 ci::run

@@ -9,13 +9,12 @@ import yaml
 import requests
 import click
 from datetime import datetime
-from pathlib import Path
 from py.xml import html
 from tempfile import NamedTemporaryFile
 from juju.model import Model
-from aioify import aioify
 from traceback import format_exc
 from .utils import (
+    asyncify,
     upgrade_charms,
     upgrade_snaps,
     arch,
@@ -77,7 +76,7 @@ def pytest_addoption(parser):
         help="Charm channel to use (stable, candidate, beta, edge)",
     )
 
-    # Set when testing a different snap core channel
+    # Set when testing a different snapd/core channel
     parser.addoption(
         "--snapd-upgrade",
         action="store_true",
@@ -89,7 +88,7 @@ def pytest_addoption(parser):
         action="store",
         required=False,
         default="beta",
-        help="Snap channel to install snapcore from",
+        help="Snap channel to install snapd/core snaps from",
     )
 
     # Set when performing series upgrade tests
@@ -106,7 +105,8 @@ class Tools:
 
     def __init__(self, request):
         self._request = request
-        self.requests = aioify(obj=requests)
+        self.requests = requests
+        self.requests_get = asyncify(requests.get)
 
     async def _load(self):
         request = self._request
@@ -125,20 +125,20 @@ class Tools:
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
         self.charm_channel = request.config.getoption("--charm-channel")
 
-    async def run(self, cmd, *args, input=None):
+    async def run(self, cmd, *args, stdin=None):
         proc = await asyncio.create_subprocess_exec(
             cmd,
             *args,
-            stdin=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.PIPE if stdin else None,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=os.environ.copy(),
         )
 
-        if hasattr(input, "encode"):
-            input = input.encode("utf8")
+        if hasattr(stdin, "encode"):
+            stdin = stdin.encode("utf8")
 
-        stdout, stderr = await proc.communicate(input=input)
+        stdout, stderr = await proc.communicate(input=stdin)
         if proc.returncode != 0:
             raise Exception(
                 f"Problem with run command {cmd} (exit {proc.returncode}):\n"
@@ -181,44 +181,63 @@ async def model(request, tools):
         await upgrade_snaps(model, upgrade_snap_channel, tools)
     if request.config.getoption("--snapd-upgrade"):
         snapd_channel = request.config.getoption("--snapd-channel")
-        await model.deploy("cs:~containers/charmed-kubernetes")
         await log_snap_versions(model, prefix="Before")
-        await tools.juju_wait()
         for unit in model.units.values():
             if unit.dead:
                 continue
-            await unit.run(f"sudo snap refresh core --{snapd_channel}")
-        await tools.juju_wait()
+            a = await unit.run(f"sudo snap refresh core --{snapd_channel}")
+            await a.wait()
+            a = await unit.run(f"sudo snap refresh snapd --{snapd_channel}")
+            await a.wait()
         await log_snap_versions(model, prefix="After")
     yield model
     await model.disconnect()
 
 
 @pytest.fixture(scope="module")
-async def k8s_model(model, tools):
-    master_app = model.applications["kubernetes-master"]
+async def k8s_cloud(model, tools):
+    master_app = model.applications["kubernetes-control-plane"]
     master_unit = master_app.units[0]
     created_k8s_cloud = False
-    created_k8s_model = False
-    k8s_model = None
 
     with NamedTemporaryFile() as f:
         await scp_from(
             master_unit, "config", f.name, tools.controller_name, tools.connection
         )
-        config = Path(f.name).read_text()
+        try:
+            click.echo("Adding k8s cloud")
+            os.environ["KUBECONFIG"] = f.name
+            await tools.run(
+                "juju",
+                "add-k8s",
+                "--skip-storage",
+                "-c",
+                tools.controller_name,
+                tools.k8s_cloud,
+            )
+            del os.environ["KUBECONFIG"]
+            created_k8s_cloud = True
+            yield tools.k8s_cloud
+        finally:
+            if not created_k8s_cloud:
+                return
+            click.echo("Removing k8s cloud")
+            try:
+                await tools.run(
+                    "juju",
+                    "remove-cloud",
+                    "-c",
+                    tools.controller_name,
+                    tools.k8s_cloud,
+                )
+            except Exception:
+                click.echo(format_exc())
+
+
+@pytest.fixture(scope="module")
+async def k8s_model(k8s_cloud, tools):
+    k8s_model = None
     try:
-        click.echo("Adding k8s cloud")
-        await tools.run(
-            "juju",
-            "add-k8s",
-            "--skip-storage",
-            "-c",
-            tools.controller_name,
-            tools.k8s_cloud,
-            input=config,
-        )
-        created_k8s_cloud = True
         click.echo("Adding k8s model")
         await tools.run(
             "juju",
@@ -231,83 +250,40 @@ async def k8s_model(model, tools):
             "test-mode=true",
             "--no-switch",
         )
-        created_k8s_model = True
+
         k8s_model = Model()
         await k8s_model.connect(tools.k8s_connection)
         yield k8s_model
     finally:
+        if not k8s_model:
+            return
         click.echo("Cleaning up k8s model")
         try:
-            if k8s_model:
-                relations = [rel.id for rel in k8s_model.relations]
-                for relation in relations:
-                    click.echo(f"Removing relation {relation} from k8s model")
-                    await tools.run(
-                        "juju",
-                        "remove-relation",
-                        "-c",
-                        tools.controller_name,
-                        "--force",
-                        relation,
-                    )
-                try:
-                    offers = [
-                        offer.offer_name
-                        for offer in (await k8s_model.list_offers()).results
-                    ]
-                except TypeError:
-                    # work around https://github.com/juju/python-libjuju/pull/452
-                    offers = []
-                app_names = list(k8s_model.applications.keys())
-                click.echo("Disconnecting k8s model")
-                await k8s_model.disconnect()
-                for offer in offers:
-                    click.echo(f"Removing offer {offer} from k8s model")
-                    await tools.run(
-                        "juju",
-                        "remove-offer",
-                        "-c",
-                        tools.controller_name,
-                        "--force",
-                        "-y",
-                        offer,
-                    )
-                for app in app_names:
-                    click.echo(f"Removing app {app} from k8s model")
-                    await tools.run(
-                        "juju",
-                        "remove-application",
-                        "-m",
-                        tools.k8s_connection,
-                        "--force",
-                        app,
-                    )
-        except Exception:
-            click.echo(format_exc())
-        try:
-            if created_k8s_model:
-                click.echo("Destroying k8s model")
-                await tools.run(
-                    "juju",
-                    "destroy-model",
-                    "--destroy-storage",
-                    "--force",
-                    "--no-wait",
-                    "-y",
-                    tools.k8s_connection,
-                )
-        except Exception:
-            click.echo(format_exc())
-        try:
-            if created_k8s_cloud:
-                click.echo("Removing k8s cloud")
-                await tools.run(
-                    "juju",
-                    "remove-cloud",
-                    "-c",
-                    tools.controller_name,
-                    tools.k8s_cloud,
-                )
+            for name, relation in k8s_model.state.relations.items():
+                click.echo(f"Removing relation {name} from k8s model")
+                await relation.destroy()
+
+            for name, offer in k8s_model.application_offers.items():
+                click.echo(f"Removing offer {name} from k8s model")
+                await offer.destroy()
+
+            for name, app in k8s_model.applications.items():
+                click.echo(f"Removing app {name} from k8s model")
+                await app.destroy()
+
+            click.echo("Disconnecting k8s model")
+            await k8s_model.disconnect()
+
+            click.echo("Destroying k8s model")
+            await tools.run(
+                "juju",
+                "destroy-model",
+                "--destroy-storage",
+                "--force",
+                "--no-wait",
+                "-y",
+                tools.k8s_connection,
+            )
         except Exception:
             click.echo(format_exc())
 

@@ -4,6 +4,7 @@ import random
 import json
 from pathlib import Path
 from .logger import log
+from .utils import juju_run
 from subprocess import check_output
 from shlex import split
 from configobj import ConfigObj
@@ -58,7 +59,7 @@ def get_test_keys():
     return {"id": key_id, "key": key}
 
 
-async def run_auth(one_master, args):
+async def run_auth(one_control_plane, args):
     creds = get_test_keys()
     cmd = "AWS_ACCESS_KEY_ID={} AWS_SECRET_ACCESS_KEY={} \
            /snap/bin/kubectl --context=aws-iam-authenticator \
@@ -66,20 +67,20 @@ async def run_auth(one_master, args):
            {}".format(
         creds["id"], creds["key"], args
     )
-    output = await one_master.run(cmd, timeout=15)
+    output = await juju_run(one_control_plane, cmd, check=False, timeout=15)
     assert output.status == "completed"
-    return output.data["results"].get("Stderr", "").lower()
+    return output.stderr.lower()
 
 
-async def verify_auth_success(one_master, args):
-    error_text = await run_auth(one_master, args)
+async def verify_auth_success(one_control_plane, args):
+    error_text = await run_auth(one_control_plane, args)
     assert "invalid user credentials" not in error_text
     assert "error" not in error_text
     assert "forbidden" not in error_text
 
 
-async def verify_auth_failure(one_master, args):
-    error_text = await run_auth(one_master, args)
+async def verify_auth_failure(one_control_plane, args):
+    error_text = await run_auth(one_control_plane, args)
     assert (
         "invalid user credentials" in error_text
         or "error" in error_text
@@ -87,23 +88,23 @@ async def verify_auth_failure(one_master, args):
     )
 
 
-async def patch_kubeconfig_and_verify_aws_iam(one_master, arn):
+async def patch_kubeconfig_and_verify_aws_iam(one_control_plane, arn):
     log("patching and validating generated kubectl config file")
     for i in range(6):
-        output = await one_master.run("cat /home/ubuntu/config")
-        if "aws-iam-user" in output.results.get("Stdout", ""):
-            await one_master.run(
-                "cp /home/ubuntu/config " "/home/ubuntu/aws-kubeconfig"
+        output = await juju_run(one_control_plane, "cat /home/ubuntu/config")
+        if "aws-iam-user" in output.stdout:
+            await juju_run(
+                one_control_plane, "cp /home/ubuntu/config /home/ubuntu/aws-kubeconfig"
             )
             cmd = (
                 "sed -i 's;<<insert_arn_here>>;{};'"
                 " /home/ubuntu/aws-kubeconfig".format(arn)
             )
-            await one_master.run(cmd)
+            await juju_run(one_control_plane, cmd)
             break
         log("Unable to find AWS IAM information in kubeconfig, retrying...")
         await asyncio.sleep(10)
-    assert "aws-iam-user" in output.results.get("Stdout", "")
+    assert "aws-iam-user" in output.stdout
 
 
 async def test_validate_aws_iam(model, tools):
@@ -121,7 +122,7 @@ async def test_validate_aws_iam(model, tools):
     # 10) Verify access
 
     log("starting aws-iam test")
-    masters = model.applications["kubernetes-master"]
+    masters = model.applications["kubernetes-control-plane"]
     k8s_version_str = masters.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 15):
@@ -130,8 +131,8 @@ async def test_validate_aws_iam(model, tools):
 
     # 1) deploy
     log("deploying aws-iam")
-    await model.deploy("cs:~containers/aws-iam", channel="edge", num_units=0)
-    await model.add_relation("aws-iam", "kubernetes-master")
+    await model.deploy("aws-iam", channel=tools.charm_channel, num_units=0)
+    await model.add_relation("aws-iam", "kubernetes-control-plane")
     await model.add_relation("aws-iam", "easyrsa")
     log("waiting for cluster to settle...")
     await tools.juju_wait()
@@ -153,13 +154,15 @@ EOF""".format(
     )
     # Note that we patch a single master's kubeconfig to have the arn in it,
     # so we need to use that one master for all commands
-    one_master = random.choice(masters.units)
-    output = await one_master.run(cmd, timeout=15)
+    one_control_plane = random.choice(masters.units)
+    output = await juju_run(one_control_plane, cmd, check=False, timeout=15)
     assert output.status == "completed"
 
     # 3 & 4) grab config and verify aws-iam is inside
     log("verifying kubeconfig")
-    await patch_kubeconfig_and_verify_aws_iam(one_master, os.environ["AWSIAMARN"])
+    await patch_kubeconfig_and_verify_aws_iam(
+        one_control_plane, os.environ["AWSIAMARN"]
+    )
 
     # 5) get aws-iam-authenticator binary
     log("getting aws-iam binary")
@@ -172,15 +175,19 @@ EOF""".format(
 
     auth_bin = "/usr/local/bin/aws-iam-authenticator"
     cmd = "wget -q -nv -O {} {}"
-    output = await one_master.run(cmd.format(auth_bin, latest_release_url), timeout=15)
+    output = await juju_run(
+        one_control_plane, cmd.format(auth_bin, latest_release_url), timeout=15
+    )
     assert output.status == "completed"
 
-    output = await one_master.run("chmod a+x {}".format(auth_bin), timeout=15)
+    output = await juju_run(
+        one_control_plane, "chmod a+x {}".format(auth_bin), timeout=15
+    )
     assert output.status == "completed"
 
     # 6) Auth as a user - note that creds come in the environment as a
     #    jenkins secret
-    await verify_auth_success(one_master, "get po")
+    await verify_auth_success(one_control_plane, "get po")
 
     # 7) turn on RBAC and add a test user
     await masters.set_config({"authorization-mode": "RBAC,Node"})
@@ -188,7 +195,7 @@ EOF""".format(
     await tools.juju_wait()
 
     # 8) verify failure
-    await verify_auth_failure(one_master, "get po")
+    await verify_auth_failure(one_control_plane, "get po")
 
     # 9) grant user access
     cmd = """/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f - << EOF
@@ -221,14 +228,14 @@ roleRef:
   name: pod-reader
   apiGroup: rbac.authorization.k8s.io
 EOF"""
-    output = await one_master.run(cmd, timeout=15)
+    output = await juju_run(one_control_plane, cmd, timeout=15)
     assert output.status == "completed"
 
     # 10) verify success
-    await verify_auth_success(one_master, "get po")
+    await verify_auth_success(one_control_plane, "get po")
 
     # 11) verify overstep failure
-    await verify_auth_failure(one_master, "get po -n kube-system")
+    await verify_auth_failure(one_control_plane, "get po -n kube-system")
 
     # teardown
     await masters.set_config({"authorization-mode": "AlwaysAllow"})

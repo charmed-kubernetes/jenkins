@@ -20,6 +20,9 @@ def is_latest(release):
     if release == "latest":
         return True
 
+    if release.endswith("-strict"):
+        release = release.replace("-strict", "")
+
     latest_release_url = "https://dl.k8s.io/release/stable.txt"
     r = requests.get(latest_release_url)
     if r.status_code == 200:
@@ -36,8 +39,8 @@ def is_latest(release):
 
 def gh_branch_exists(branch):
     """Return true if the branch is already available on the repository"""
-    cmd = "git ls-remote --exit-code --heads https://github.com/ubuntu/microk8s.git refs/heads/{}".format(
-        branch
+    cmd = "git ls-remote --exit-code --heads https://{}.git refs/heads/{}".format(
+        configbag.github_repo, branch
     ).split()
     try:
         check_call(cmd)
@@ -52,17 +55,25 @@ def create_gh_branch(branch, gh_user, gh_token):
     """Create a branch on the repo using the credentials passed"""
     cmd = "rm -rf microk8s".split()
     check_call(cmd)
-    cmd = "git clone https://github.com/ubuntu/microk8s".split()
+    cmd = "git clone https://{}".format(configbag.github_repo).split()
     check_call(cmd)
     os.chdir("microk8s")
     cmd = "git config user.name cdkbot".split()
     check_call(cmd)
     cmd = "git config user.email cdkbot@gmail.com".split()
     check_call(cmd)
+
+    if "strict" in branch:
+        cmd = "git checkout strict"
+        check_call(cmd)
+
     cmd = "git checkout -b {}".format(branch).split()
     check_call(cmd)
-    cmd = "sed -i s/KUBE_TRACK:-/KUBE_TRACK:-{}/g build-scripts/set-env-variables.sh".format(
-        branch
+
+    # The branch would look like 1.24 for classic builds or 1.24-strict for strict
+    kubetrack = branch.replace("-strict", "")
+    cmd = "sed -i s/^KUBE_TRACK=.*/KUBE_TRACK={}/g build-scripts/components/kubernetes/version.sh".format(
+        kubetrack
     ).split()
     check_call(cmd)
     cmd = "sed -i s@UPGRADE_MICROK8S_FROM=latest/edge@UPGRADE_MICROK8S_FROM={}/edge@g .travis.yml".format(
@@ -74,8 +85,8 @@ def create_gh_branch(branch, gh_user, gh_token):
     cmd = "git commit -m".split()
     cmd.append("Creating branch {}".format(branch))
     check_call(cmd)
-    cmd = "git push https://{}:{}@github.com/ubuntu/microk8s.git {}".format(
-        gh_user, gh_token, branch
+    cmd = "git push https://{}:{}@{}.git {}".format(
+        gh_user, gh_token, configbag.github_repo, branch
     ).split()
     check_call(cmd)
 
@@ -87,12 +98,14 @@ class Builder:
 
     def __init__(self, track, build_from_master=False):
         self.track = track
-        self.is_latest = is_latest
         # the latest and the latest stable tracks (1.12 at the time of this writing)
         # build from the master head GH repo
-        self.gh_branch = (
-            "refs/heads/master" if build_from_master else "refs/heads/{}".format(track)
-        )
+        if not build_from_master:
+            self.gh_branch = "refs/heads/{}".format(track)
+        elif "strict" in track:
+            self.gh_branch = "refs/heads/strict"
+        else:
+            self.gh_branch = "refs/heads/master"  # wokeignore:rule=master
         self.snap = None
         self.lp = None
 
@@ -132,6 +145,7 @@ class Builder:
                 "/+processors/amd64",
                 "/+processors/arm64",
                 "/+processors/s390x",
+                "/+processors/ppc64el",
             ],
             auto_build=workingsnap.auto_build,
             auto_build_archive=workingsnap.auto_build_archive,
@@ -174,8 +188,7 @@ class Builder:
             try:
                 # get snap
                 click.echo("Get snap {}".format(snap_name))
-                microk8s = launchpad.snaps.getByName(name=snap_name, owner=snappydev)
-                self.snap = microk8s
+                self.snap = launchpad.snaps.getByName(name=snap_name, owner=snappydev)
             except HTTPError as e:
                 click.echo("Cannot get snap {}. ({})".format(snap_name, e.response))
                 return None

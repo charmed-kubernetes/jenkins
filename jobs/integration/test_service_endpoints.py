@@ -1,8 +1,6 @@
 import sh
-import requests
 import yaml
-from .utils import asyncify, retry_async_with_timeout
-from .logger import log
+from .utils import retry_async_with_timeout, juju_run
 
 
 def get_pod_yaml():
@@ -42,7 +40,7 @@ async def setup_svc(svc_type):
     sh.kubectl.create(
         "deployment",
         "hello-world",
-        image="rocks.canonical.com/cdk/google-samples/node-hello:1.0",
+        image="rocks.canonical.com/cdk/google-samples/hello-app:1.0",
     )
     sh.kubectl.set("env", "deployment/hello-world", "PORT=50000")
 
@@ -71,7 +69,7 @@ async def cleanup():
     )
 
 
-async def test_nodeport_service_endpoint():
+async def test_nodeport_service_endpoint(tools):
     """Create k8s Deployement and NodePort service, send request to NodePort"""
 
     try:
@@ -87,9 +85,9 @@ async def test_nodeport_service_endpoint():
 
         # Build the url
         set_url = f"http://{ip}:{port}"
-        html = await asyncify(requests.get)(set_url)
+        html = await tools.requests_get(set_url)
 
-        assert "Hello Kubernetes!" in html.content.decode()
+        assert "Hello, world!\n" in html.content.decode()
 
     finally:
         await cleanup()
@@ -111,17 +109,13 @@ async def test_clusterip_service_endpoint(model):
         set_url = f"http://{ip}:80"
         cmd = f'curl -vk --noproxy "{ip}" {set_url}'
 
-        # Curl the ClusterIP from each kubernetes master and worker
-        master = model.applications["kubernetes-master"]
+        # Curl the ClusterIP from each control-plane and worker unit
+        control_plane = model.applications["kubernetes-control-plane"]
         worker = model.applications["kubernetes-worker"]
-        nodes_lst = master.units + worker.units
+        nodes_lst = control_plane.units + worker.units
         for unit in nodes_lst:
-            action = await unit.run(cmd)
-            try:
-                assert "Hello Kubernetes!" in action.results.get("Stdout", "")
-            except AssertionError as e:
-                log(f"connection on {unit} failed")
-                raise e
+            action = await juju_run(unit, cmd)
+            assert "Hello, world!\n" in action.stdout
 
     finally:
         await cleanup()

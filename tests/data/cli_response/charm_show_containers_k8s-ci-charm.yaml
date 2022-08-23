@@ -1,7 +1,0 @@
-id:
-  Id: cs:~containers/k8s-ci-charm-845
-  Name: k8s-ci-charm
-  Revision: 845
-  User: containers
-extra-info:
-  commit: 96b4e06d5d35fec30cdf2cc25076dd25c51b893c

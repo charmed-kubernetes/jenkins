@@ -2,14 +2,27 @@ name: Repo Status
 on: [push, pull_request]
 
 jobs:
+  Inclusive-naming-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: woke
+        uses: canonical-web-and-design/inclusive-naming@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
+          fail-on-error: true
+
   build:
     name: Verify
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python:
-          - 3.8
-          - 3.9.7  # Pin to 3.9.7 due to https://github.com/python/typed_ast/issues/169
+          - "3.8"
+          - "3.9"
+          - "3.10"
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python ${{ matrix.python-version }}

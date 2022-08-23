@@ -35,7 +35,7 @@
           COMMAND: |
             #!/bin/bash
             set -eux
-            python jobs/build-charms/charms.py promote \
+            tox -e py38 -- python jobs/build-charms/charms.py promote \
                 --from-channel $FROM_CHANNEL \
                 --to-channel $TO_CHANNEL \
                 --charm-list $CHARM_LIST \
@@ -77,7 +77,7 @@
           COMMAND: |
             #!/bin/bash
             set -eux
-            python jobs/build-charms/charms.py promote \
+            tox -e py38 -- python jobs/build-charms/charms.py promote \
                 --to-channel $TO_CHANNEL \
                 --from-channel $FROM_CHANNEL \
                 --charm-list $BUNDLE_LIST \
@@ -114,31 +114,40 @@
               IS_FORCE="--force"
             fi
 
+            WITH_CHARM_BRANCH=""
+            if [[ -n ${CHARM_BRANCH:-} ]]; then
+              WITH_CHARM_BRANCH="--charm-branch $CHARM_BRANCH"
+            fi 
+
             rm -rf "$WORKSPACE/charms" || true
 
             # Cleanup old charmcraft containers
             ci_lxc_delete "${JOB_NAME}"
             
             # Configure cleanup routine for exit
-            charmcraft_lxc="${JOB_NAME}-${BUILD_NUMBER}"
+            export charmcraft_lxc="${JOB_NAME}-${BUILD_NUMBER}"
             trap 'ci_lxc_delete $charmcraft_lxc' EXIT
             ci_charmcraft_launch $charmcraft_lxc
 
+            set +e
+
+            EXIT_STATUS=0
             tox -e py38 -- python jobs/build-charms/charms.py build \
               --charm-list "$CHARM_LIST" \
-              --charm-branch "$CHARM_BRANCH" \
               --to-channel "$TO_CHANNEL" \
               --resource-spec "$RESOURCE_SPEC" \
               --filter-by-tag "$FILTER_BY_TAG" \
               --layer-index  "$LAYER_INDEX" \
               --layer-list "$LAYER_LIST" \
               --layer-branch "$LAYER_BRANCH" \
-              --store "$CHARM_STORE" \
-              $IS_FORCE
+              $WITH_CHARM_BRANCH \
+              $IS_FORCE || EXIT_STATUS=$?
 
             tox -e py38 -- python jobs/build-charms/charms.py build-bundles \
                 --to-channel "$TO_CHANNEL" \
                 --bundle-list "$BUNDLE_LIST" \
                 --bundle-branch "$BUNDLE_BRANCH" \
-                --store "$CHARM_STORE" \
-                --filter-by-tag "$FILTER_BY_TAG"
+                --filter-by-tag "$FILTER_BY_TAG" || EXIT_STATUS=$?
+            
+            set -e
+            exit $EXIT_STATUS

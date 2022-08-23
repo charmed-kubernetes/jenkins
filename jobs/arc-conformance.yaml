@@ -1,9 +1,9 @@
 # Azure Arc Conformance Project
-# https://github.com/Azure/azure-arc-certification
+# https://github.com/Azure/azure-arc-validation
 #
 
 - job:
-    name: 'arc-conformance'
+    name: 'conformance-arc-ck'
     node: runner-amd64
     description: |
       Azure Arc Conformance testing for Kubernetes.
@@ -13,10 +13,14 @@
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
+    properties:
+      - block-on-infra
+      - build-discarder:
+          num-to-keep: 7
     parameters:
       - string:
           name: CK_VERSION
-          default: '1.21'
+          default: '1.24'
           description: |
             CK version to deploy. This will be used to set the snap track
             and to identify what k8s version is associated with the results.
@@ -26,12 +30,16 @@
           description: |
             CK channel to deploy. This will be used to set the snap and
             charm channels used during deployment.
-    properties:
-      - build-discarder:
-          num-to-keep: 4
+      - bool:
+          name: UPLOAD_RESULTS
+          default: 'false'
+          description: |
+            If checked, upload results to our Microsoft storage account.
     wrappers:
       - default-job-wrapper
       - ci-creds
+    triggers:
+      - timed: "@weekly"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/arc-conformance"

@@ -22,6 +22,10 @@ def get_tracks(all=False):
         "1.22",
         "1.23",
         "1.24",
+        "1.25",
+        "1.26",
+        "1.27",
+        "1.25-strict",
     ]
 
 
@@ -29,3 +33,4 @@ snap_name = "microk8s"
 people_name = "microk8s-dev"
 cachedir = os.getenv("WORKSPACE", default="/var/tmp/") + "/cache"
 creds = os.getenv("LPCREDS")
+github_repo = "github.com/canonical/microk8s"

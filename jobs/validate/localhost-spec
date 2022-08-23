@@ -9,7 +9,9 @@ set -xe
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
-
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
 function juju::deploy
 {
         juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
@@ -18,16 +20,16 @@ function juju::deploy
         --constraints "mem=32G root-disk=100G cores=8" \
         ubuntu
 
-        juju deploy cs:~adam-stokes/localhost-ci-setup --channel edge
+        juju deploy adam-stokes-localhost-ci-setup --channel edge
         juju add-relation ubuntu ci-setup
 }
 
 function juju::deploy::after
 {
-    tee overlay.yaml <<EOF> /dev/null
+    tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
-  kubernetes-master:
+  kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
       enable-metrics: false
@@ -38,8 +40,7 @@ applications:
       channel: $SNAP_VERSION
 EOF
 
-
-    tee setup <<EOF> /dev/null
+    tee setup <<EOF > /dev/null
 #!/bin/bash
 set -eux
 export PATH=/snap/bin:$PATH
@@ -61,7 +62,7 @@ juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
     --channel $JUJU_DEPLOY_CHANNEL \
     --force \
     --overlay overlay.yaml \
-    cs:~containers/charmed-kubernetes 1>&2
+    charmed-kubernetes 1>&2
 
 timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
 
@@ -73,7 +74,6 @@ timeout -s INT 3h tox --workdir .tox -e py38 -- pytest \
     --model $JUJU_MODEL \
     --controller $JUJU_CONTROLLER
 popd
-
 EOF
 
     chmod +x setup
@@ -100,10 +100,12 @@ function ci::cleanup::before
     juju scp -m "$JUJU_CONTROLLER":"$JUJU_MODEL" -- -r ubuntu/0:jenkins/*.html . || true
 }
 
-# Setup Environment
-SNAP_VERSION=${1:-1.23/edge}
-SERIES=${2:-bionic}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
+###############################################################################
+# ENV
+###############################################################################
+SNAP_VERSION=${1:-1.24/edge}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)
@@ -112,4 +114,7 @@ ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-localhost-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
+###############################################################################
+# START
+###############################################################################
 ci::run

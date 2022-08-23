@@ -3,25 +3,31 @@
 
 set -x
 
-# Init
+###############################################################################
+# INITIALIZE
+###############################################################################
 : "${WORKSPACE:=$(pwd)}"
 
 . "$WORKSPACE/ci.bash"
 . "$WORKSPACE/juju.bash"
 
 
-
-# Setup Environment
-
-SNAP_VERSION=${1:-1.23/stable}
+###############################################################################
+# ENV
+###############################################################################
+SNAP_VERSION=${1:-1.24/stable}
 SERIES=${2:-focal}
-JUJU_DEPLOY_BUNDLE=cs:~containers/charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${3:-candidate}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=candidate
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-bugfix
-ARCH=${4:-amd64}
-JOB_NAME_CUSTOM="validate-ck-bugfix-$SERIES-$SNAP_VERSION"
+ARCH=amd64
+JOB_NAME_CUSTOM="validate-charm-bugfix-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
+
+###############################################################################
+# START
+###############################################################################
 ci::run

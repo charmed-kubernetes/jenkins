@@ -13,15 +13,6 @@
         repo: "ppa:longsleep/golang-backports"
       tags:
         - jenkins
-    - name: make sure permissions are correct
-      file:
-        path: /var/lib/jenkins/slaves
-        owner: jenkins
-        group: jenkins
-        recurse: yes
-      ignore_errors: yes
-      tags:
-        - jenkins
     - name: update /etc/environment
       copy:
         src: "fixtures/environment"
@@ -55,7 +46,7 @@
         - jenkins
     - name: install columbo
       shell: |
-        wget https://github.com/battlemidget/columbo-go/releases/download/{{ columbo_version }}/columbo-go_{{ columbo_version }}_linux_{{ machine_arch.stdout }}.tar.gz
+        wget https://github.com/charmed-kubernetes/columbo-go/releases/download/{{ columbo_version }}/columbo-go_{{ columbo_version }}_linux_{{ machine_arch.stdout }}.tar.gz
         tar xvf columbo-go_{{ columbo_version }}_linux_{{ machine_arch.stdout }}.tar.gz
         mv columbo /usr/local/bin
       tags:
@@ -145,7 +136,7 @@
         - jenkins
         - adhoc
     - name: upgrade snapcraft
-      command: "snap refresh snapcraft --channel latest/edge"
+      command: "snap refresh snapcraft --channel 6.x/stable"
       ignore_errors: yes
       tags:
         - jenkins
@@ -251,7 +242,7 @@
         owner: jenkins
         group: jenkins
         mode: 0644
-        force: no
+        force: yes
       tags:
         - jenkins
     - name: create aws dir

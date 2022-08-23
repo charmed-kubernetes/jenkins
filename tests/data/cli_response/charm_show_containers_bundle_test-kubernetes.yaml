@@ -1,8 +1,0 @@
-id:
-  Id: cs:~containers/bundle/canonical-kubernetes-1315
-  Name: test-kubernetes
-  Revision: 1315
-  Series: bundle
-  User: containers
-extra-info:
-  commit: 8576885b14f99ffcdc6d34315f5d9e9f4539fdd6

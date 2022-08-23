@@ -206,7 +206,7 @@ class SnapService(DebugMixin):
         )
         if not ret.ok:
             raise Exception(
-                f"Failed to promote {self.snap_model.name} (rev: {max_track_rev}) to track {_track}"
+                f"Failed to promote {self.snap_model.name} (rev: {max_track_rev}) to track {track}"
             )
 
     @sham

@@ -19,6 +19,7 @@ import click
 SERIES_ORDER = [
     "bionic",
     "focal",
+    "jammy",
 ]
 
 
@@ -110,7 +111,7 @@ async def upgrade_charms(model, channel, tools):
 
 async def upgrade_snaps(model, channel, tools):
     for app_name, blocking in {
-        "kubernetes-master": True,
+        "kubernetes-control-plane": True,
         "kubernetes-worker": True,
         "kubernetes-e2e": False,
     }.items():
@@ -232,13 +233,13 @@ async def verify_deleted(unit, entity_type, name_list, extra_args=""):
 async def find_entities(unit, entity_type, name_list, extra_args=""):
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {} --output json get {}"
     cmd = cmd.format(extra_args, entity_type)
-    output = await unit.run(cmd)
-    if output.results["Code"] != "0":
+    output = await juju_run(unit, cmd)
+    if output.code != 0:
         # error resource type not found most likely. This can happen when the
         # api server is restarting. As such, don't assume this means ready.
         return False
     try:
-        out_list = json.loads(output.results.get("Stdout", ""))
+        out_list = json.loads(output.stdout)
     except json.JSONDecodeError:
         click.echo(traceback.format_exc())
         click.echo("WARNING: Expected json, got non-json output:")
@@ -299,15 +300,13 @@ async def log_snap_versions(model, prefix="before"):
     for unit in model.units.values():
         if unit.dead:
             continue
-        action = await unit.run("snap list")
-        snap_versions = (
-            action.data["results"].get("Stdout", "").strip() or "No snaps found"
-        )
+        action = await juju_run(unit, "snap list")
+        snap_versions = action.stdout.strip() or "No snaps found"
         click.echo(f"{prefix} {unit.name} {snap_versions}")
 
 
 async def validate_storage_class(model, sc_name, test_name):
-    master = model.applications["kubernetes-master"].units[0]
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
     # write a string to a file on the pvc
     pod_definition = """
 apiVersion: v1
@@ -348,13 +347,13 @@ spec:
         pod_definition
     )
     click.echo("{}: {} writing test".format(test_name, sc_name))
-    output = await master.run(cmd)
+    output = await juju_run(control_plane, cmd)
     assert output.status == "completed"
 
     # wait for completion
     await retry_async_with_timeout(
         verify_completed,
-        (master, "po", ["{}-write-test".format(sc_name)]),
+        (control_plane, "po", ["{}-write-test".format(sc_name)]),
         timeout_msg="Unable to create write pod for {} test".format(test_name),
     )
 
@@ -385,45 +384,48 @@ spec:
         pod_definition
     )
     click.echo("{}: {} reading test".format(test_name, sc_name))
-    output = await master.run(cmd)
+    output = await juju_run(control_plane, cmd)
     assert output.status == "completed"
 
     # wait for completion
     await retry_async_with_timeout(
         verify_completed,
-        (master, "po", ["{}-read-test".format(sc_name)]),
+        (control_plane, "po", ["{}-read-test".format(sc_name)]),
         timeout_msg="Unable to create write" " pod for ceph test",
     )
 
-    output = await master.run(
+    output = await juju_run(
+        control_plane,
         "/snap/bin/kubectl --kubeconfig /root/.kube/config logs {}-read-test".format(
             sc_name
-        )
+        ),
     )
     assert output.status == "completed"
-    click.echo("output = {}".format(output.data["results"].get("Stdout", "")))
-    assert "JUJU TEST" in output.data["results"].get("Stdout", "")
+    click.echo("output = {}".format(output.stdout))
+    assert "JUJU TEST" in output.stdout
 
     click.echo("{}: {} cleanup".format(test_name, sc_name))
     pods = "{0}-read-test {0}-write-test".format(sc_name)
     pvcs = "{}-pvc".format(sc_name)
-    output = await master.run(
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {}".format(pods)
+    output = await juju_run(
+        control_plane,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {}".format(pods),
     )
     assert output.status == "completed"
-    output = await master.run(
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {}".format(pvcs)
+    output = await juju_run(
+        control_plane,
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {}".format(pvcs),
     )
     assert output.status == "completed"
 
     await retry_async_with_timeout(
         verify_deleted,
-        (master, "po", pods.split()),
+        (control_plane, "po", pods.split()),
         timeout_msg="Unable to remove {} test pods".format(test_name),
     )
     await retry_async_with_timeout(
         verify_deleted,
-        (master, "pvc", pvcs.split()),
+        (control_plane, "pvc", pvcs.split()),
         timeout_msg="Unable to remove {} test pvcs".format(test_name),
     )
 
@@ -517,25 +519,32 @@ class JujuRunError(AssertionError):
 
 class JujuRunResult:
     def __init__(self, action):
+        results = action.results
         self.status = action.status
-        self.code = int(action.results["Code"])
-        self.stdout = action.results.get("Stdout", "").strip()
-        self.stderr = action.results.get("Stderr", "").strip()
+        code = results.get("Code", results.get("return-code"))
+        if code is None:
+            log.error(f"Failed to find the return code in {results}")
+            self.code = -1
+        else:
+            self.code = int(code)
+        self.stdout = results.get("Stdout", results.get("stdout")) or ""
+        self.stderr = results.get("Stderr", results.get("stderr")) or ""
         self.output = self.stderr or self.stdout
         self.success = self.status == "completed" and self.code == 0
 
 
-async def juju_run(unit, cmd, check=True):
-    result = JujuRunResult(await unit.run(cmd))
+async def juju_run(unit, cmd, check=True, **kwargs) -> JujuRunResult:
+    action = await unit.run(cmd, **kwargs)
+    result = JujuRunResult(await action.wait())
     if check and not result.success:
         raise JujuRunError(unit, cmd, result)
     return result
 
 
 async def kubectl(model, cmd, check=True):
-    master = model.applications["kubernetes-master"].units[0]
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
     return await juju_run(
-        master, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
+        control_plane, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
     )
 
 
@@ -566,8 +575,7 @@ async def vault_status(unit):
 
 async def get_ipv6_addr(unit):
     """Return the first globally scoped IPv6 address found on the given unit, or None."""
-    output = await unit.run("ip -br a show scope global")
-    assert output.status == "completed" and output.results["Code"] == "0"
+    output = await juju_run(unit, "ip -br a show scope global")
     for intf in output.results["Stdout"].splitlines():
         if "UP" not in intf:
             continue

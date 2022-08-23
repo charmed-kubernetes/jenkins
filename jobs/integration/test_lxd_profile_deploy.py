@@ -68,13 +68,17 @@ async def check_charm_profile_deployed(app, charm_name):
     assert False
 
 
-@pytest.mark.parametrize("charm_name", ["kubernetes-master", "kubernetes-worker"])
+@pytest.mark.parametrize(
+    "charm_name", ["kubernetes-control-plane", "kubernetes-worker"]
+)
 async def test_lxd_profiles(model, charm_name):
     app = model.applications[charm_name]
     await check_charm_profile_deployed(app, charm_name)
 
 
-@pytest.mark.parametrize("charm_name", ("kubernetes-worker", "kubernetes-master"))
+@pytest.mark.parametrize(
+    "charm_name", ("kubernetes-worker", "kubernetes-control-plane")
+)
 async def test_lxd_profile_upgrade(model, charm_name, tools):
     app = model.applications[charm_name]
     log("Upgrading charm to edge channel")

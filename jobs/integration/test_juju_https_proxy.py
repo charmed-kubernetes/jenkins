@@ -75,7 +75,7 @@ async def test_http_conf_existing_container_runtime(
         log("Adding container runtime to the model container runtime")
         container_runtime = await model.deploy(container_runtime_name, num_units=0)
         await model.add_relation(
-            container_endpoint, "kubernetes-master:container-runtime"
+            container_endpoint, "kubernetes-control-plane:container-runtime"
         )
         await model.add_relation(
             container_endpoint, "kubernetes-worker:container-runtime"
@@ -100,7 +100,7 @@ async def test_http_conf_existing_container_runtime(
     await tools.juju_wait()
     for worker_unit in model.applications["kubernetes-worker"].units:
         await check_kube_node_conf(worker_unit, runtime, controller, connection_name)
-    for master_unit in model.applications["kubernetes-master"].units:
+    for master_unit in model.applications["kubernetes-control-plane"].units:
         await check_kube_node_conf(master_unit, runtime, controller, connection_name)
 
     await container_runtime.set_config({"http_proxy": ""})
@@ -113,7 +113,7 @@ async def test_http_conf_existing_container_runtime(
         await check_kube_node_conf_missing(
             worker_unit, runtime, controller, connection_name
         )
-    for master_unit in model.applications["kubernetes-master"].units:
+    for master_unit in model.applications["kubernetes-control-plane"].units:
         await check_kube_node_conf_missing(
             master_unit, runtime, controller, connection_name
         )

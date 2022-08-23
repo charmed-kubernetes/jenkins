@@ -2,9 +2,7 @@ from pathlib import Path
 import os
 import sh
 import pytest
-import requests
 import yaml
-from .utils import asyncify
 
 env = os.environ.copy()
 
@@ -33,9 +31,9 @@ def setup_storage_elb_resource(request, cloud):
     # sh.kubectl.create(f=str(bbox_yml))
 
 
-async def test_load_balancer(setup_storage_elb_resource):
+async def test_load_balancer(setup_storage_elb_resource, tools):
     """Performs a deployment of hello-world with newly created LB and attempts
-    to do a requests.get and parse the html to verify the lb ip address is
+    to do a fetch and parse the html to verify the lb ip address is
     functioning appropriately.
     """
     sh.kubectl.run(
@@ -50,5 +48,5 @@ async def test_load_balancer(setup_storage_elb_resource):
     svc = yaml.safe_load(out.stdout.decode("utf8"))
     lb_ip = svc["status"]["loadBalancer"]["ingress"][0]
     set_url = f"{lb_ip}:8080"
-    html = await asyncify(requests.get)(set_url)
+    html = await tools.requests_get(set_url)
     assert "Hello Kubernetes!" in html.content
