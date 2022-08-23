@@ -125,7 +125,9 @@ jmespath==0.10.0
     # via
     #   boto3
     #   botocore
-git+https://github.com/juju/python-libjuju.git
+git+https://github.com/addyess/python-libjuju.git@bug/waited-actions-get-latest-status
+# git+https://github.com/juju/python-libjuju.git
+# juju==3.0.1
     # via -r requirements.in
 jujubundlelib==0.5.7
     # via theblues
