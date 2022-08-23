@@ -43,8 +43,9 @@ certifi==2020.12.5
     # via
     #   kubernetes
     #   requests
-cffi==1.15.1
+cffi==1.14.5
     # via
+    #   bcrypt
     #   cryptography
     #   pynacl
 charset-normalizer==2.0.12
