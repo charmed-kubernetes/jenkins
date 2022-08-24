@@ -112,10 +112,10 @@ async def run_until_success(unit, cmd, timeout_insec=None):
             click.echo(
                 "Action " + action.status + ". Command failed on unit " + unit.entity_id
             )
-            click.echo("cmd: " + cmd)
-            click.echo("code: " + action.code)
-            click.echo("stdout:\n" + action.stdout.strip())
-            click.echo("stderr:\n" + action.stderr.strip())
+            click.echo(f"cmd: {cmd}")
+            click.echo(f"code: {action.code}")
+            click.echo(f"stdout:\n{action.stdout}")
+            click.echo(f"stderr:\n{action.stderr}")
             click.echo("Will retry...")
             await asyncio.sleep(5)
 
@@ -319,7 +319,7 @@ async def test_microbot(model, tools, teardown_microbot):
     unit = model.applications["kubernetes-worker"].units[0]
     action = await juju_run_action(unit, "microbot", replicas=3)
     _times, _sleep = 15, 20
-    for _ in range(_times): # 5 min should be enough time
+    for _ in range(_times):  # 5 min should be enough time
         try:
             resp = await tools.requests_get(
                 "http://" + action.results["address"],
@@ -460,12 +460,11 @@ async def test_network_policies(model, tools):
     unit = model.applications["kubernetes-control-plane"].units[0]
 
     # Clean-up namespace from any previous runs.
-    cmd = await juju_run(
+    await juju_run(
         unit,
         "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy",
         check=False,
     )
-    assert cmd.status == "completed"
     click.echo("Waiting for pods to finish terminating...")
 
     await retry_async_with_timeout(
@@ -2474,7 +2473,7 @@ async def test_octavia(model, tools, teardown_microbot):
     assert "openstack-integrator" in model.applications, "Missing integrator"
     log("Deploying microbot")
     unit = model.applications["kubernetes-worker"].units[0]
-    await juju_run_action(unit,"microbot", replicas=3)
+    await juju_run_action(unit, "microbot", replicas=3)
     log("Replacing microbot service with Octavia LB")
     await kubectl(model, "delete svc microbot")
     await retry_async_with_timeout(

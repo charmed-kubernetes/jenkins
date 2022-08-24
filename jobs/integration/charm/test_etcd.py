@@ -92,7 +92,9 @@ async def test_snapshot_restore(model, tools):
             filenames = {}
             for dataset in ["v3"]:
                 # Take snapshot of data
-                action = await juju_run_action(unit, "snapshot", **{"keys-version": dataset})
+                action = await juju_run_action(
+                    unit, "snapshot", **{"keys-version": dataset}
+                )
                 src = Path(action.results["snapshot"]["path"])
                 dst = Path(action.results["snapshot"]["path"]).name
                 await unit.scp_from(

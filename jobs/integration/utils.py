@@ -538,11 +538,13 @@ class JujuRunResult:
 
     @property
     def stdout(self) -> str:
-        return self.results.get("Stdout", self.results.get("stdout")) or ""
+        stdout = self.results.get("Stdout", self.results.get("stdout")) or ""
+        return stdout.strip()
 
     @property
     def stderr(self) -> str:
-        return self.results.get("Stderr", self.results.get("stderr")) or ""
+        stderr = self.results.get("Stderr", self.results.get("stderr")) or ""
+        return stderr.strip()
 
     @property
     def output(self) -> str:
@@ -551,15 +553,13 @@ class JujuRunResult:
     @property
     def success(self) -> bool:
         return self.status == "completed" and self.code == 0
-    
+
     def __repr__(self) -> str:
         return f"JujuRunResult({self.action})"
 
 
 async def juju_run(unit, cmd, check=True, **kwargs) -> JujuRunResult:
     action = await unit.run(cmd, **kwargs)
-    if hasattr(action, "wait"):
-        action = await action.wait()
     result = JujuRunResult(action)
     if check and not result.success:
         raise JujuRunError(unit, cmd, result)
