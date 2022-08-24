@@ -264,15 +264,28 @@ async def verify_ready(unit, entity_type, name_list, extra_args=""):
         return False
 
     # now verify they are ALL ready, it isn't cool if just one is ready now
-    ready = [
-        n
-        for n in matches
-        if n["kind"] == "DaemonSet"
-        or n["kind"] == "Service"
-        or n["status"]["phase"] == "Running"
-        or n["status"]["phase"] == "Active"
-    ]
+    # separate matches into ready and not ready
+    def separate(result, n):
+        idx = int(
+            n["kind"] == "DaemonSet"
+            or n["kind"] == "Service"
+            or n["status"]["phase"] == "Running"
+            or n["status"]["phase"] == "Active"
+        )
+        # no match, put in the left bucket
+        # yes match, put in the right bucket
+        result[idx].append(n)
+        return result
+
+    not_ready, ready = functools.reduce(separate, matches, ([], []))
     if len(ready) != len(matches):
+        for n in not_ready:
+            kind = n["kind"]
+            name, ns = (
+                n["metadata"]["name"],
+                n["metadata"].get("namespace"),
+            )
+            log.info(f"Not yet ready: {kind}/{ns}/{name}")
         return False
 
     # made it here then all the matches are ready

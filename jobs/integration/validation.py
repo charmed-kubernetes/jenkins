@@ -6,7 +6,6 @@ import ipaddress
 import json
 import os
 import requests
-import traceback
 import yaml
 import re
 import random
@@ -318,24 +317,24 @@ async def test_microbot(model, tools, teardown_microbot):
     """Validate the microbot action"""
     unit = model.applications["kubernetes-worker"].units[0]
     action = await juju_run_action(unit, "microbot", replicas=3)
-    _times, _sleep = 15, 20
+    url = "http://" + action.results["address"]
+    _times, _sleep = 5, 60
     for _ in range(_times):  # 5 min should be enough time
         try:
             resp = await tools.requests_get(
-                "http://" + action.results["address"],
+                url,
                 proxies={"http": None, "https": None},
             )
             if resp.status_code == 200:
                 break
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as e:
             click.echo(
-                "Caught connection error attempting to hit xip.io, "
-                "retrying. Error follows:"
+                f"Caught connection error attempting to hit {url}, "
+                f"retrying. Error follows: {e}"
             )
-            click.echo(traceback.print_exc())
         await asyncio.sleep(_sleep)
     else:
-        assert f"Failed to connect to microbot after {_times*_sleep} sec"
+        pytest.fail(f"Failed to connect to microbot after {_times*_sleep} sec")
 
 
 @pytest.mark.clouds(["ec2", "vsphere"])
@@ -351,6 +350,7 @@ async def test_dashboard(model, log_dir, tools):
     async def query_dashboard(url, config):
         # handle pre 1.19 authentication
         try:
+
             user = config["users"][0]["user"]["username"]
             password = config["users"][0]["user"]["password"]
             auth = tools.requests.auth.HTTPBasicAuth(user, password)
@@ -2410,7 +2410,7 @@ async def test_ceph(model, tools):
 
     # until bug https://bugs.launchpad.net/charm-kubernetes-control-plane/+bug/1824035 fixed
     unit = model.applications["ceph-mon"].units[0]
-    await juju_run_action("create-pool", name="ext4-pool")
+    await juju_run_action(unit, "create-pool", name="ext4-pool")
 
     log("waiting for csi to settle")
     unit = model.applications["kubernetes-control-plane"].units[0]
