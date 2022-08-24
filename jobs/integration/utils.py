@@ -568,7 +568,7 @@ class JujuRunResult:
         return self.status == "completed" and self.code == 0
 
     def __repr__(self) -> str:
-        return f"JujuRunResult({self.action})"
+        return f"JujuRunResult({self._action})"
 
 
 async def juju_run(unit, cmd, check=True, **kwargs) -> JujuRunResult:
