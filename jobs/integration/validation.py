@@ -39,6 +39,7 @@ from .utils import (
     finish_series_upgrade,
     kubectl,
     juju_run,
+    juju_run_action,
     get_ipv6_addr,
     vault,
     vault_status,
@@ -304,16 +305,21 @@ async def test_rbac(model):
     await run_until_success(worker, cmd + " 2>&1 | grep Forbidden")
 
 
+@pytest.fixture
+async def teardown_microbot(model):
+    unit = model.applications["kubernetes-worker"].units[0]
+    await juju_run_action(unit, "microbot", delete=True)
+    yield
+    await juju_run_action(unit, "microbot", delete=True)
+
+
 @pytest.mark.clouds(["ec2", "vsphere"])
-async def test_microbot(model, tools):
+async def test_microbot(model, tools, teardown_microbot):
     """Validate the microbot action"""
     unit = model.applications["kubernetes-worker"].units[0]
-    action = await unit.run_action("microbot", delete=True)
-    await action.wait()
-    action = await unit.run_action("microbot", replicas=3)
-    await action.wait()
-    assert action.status == "completed"
-    while True:
+    action = await juju_run_action(unit, "microbot", replicas=3)
+    _times, _sleep = 15, 20
+    for _ in range(_times): # 5 min should be enough time
         try:
             resp = await tools.requests_get(
                 "http://" + action.results["address"],
@@ -327,9 +333,9 @@ async def test_microbot(model, tools):
                 "retrying. Error follows:"
             )
             click.echo(traceback.print_exc())
-        await asyncio.sleep(60)
-    action = await unit.run_action("microbot", delete=True)
-    await action.wait()
+        await asyncio.sleep(_sleep)
+    else:
+        assert f"Failed to connect to microbot after {_times*_sleep} sec"
 
 
 @pytest.mark.clouds(["ec2", "vsphere"])
@@ -1397,9 +1403,7 @@ async def any_keystone(model, apps_by_charm, tools):
                     ]
                 ):
                     vault_unit = random.choice(vault_app.units)
-                    action = await vault_unit.run_action("get-root-ca")
-                    await action.wait()
-                    assert action.status not in ("pending", "running", "failed")
+                    action = await juju_run_action(vault_unit, "get-root-ca")
                     vault_root_ca = action.results.get("output")
                     if vault_root_ca:
                         vault_root_ca = base64.b64encode(
@@ -1692,10 +1696,7 @@ async def test_encryption_at_rest(model, tools):
     token_info = await vault(leader, "token create -ttl=10m", VAULT_TOKEN=root_token)
     click.echo(token_info)
     charm_token = token_info["auth"]["client_token"]
-    action = await leader.run_action("authorize-charm", token=charm_token)
-    await action.wait()
-    assert action.status not in ("pending", "running", "failed")
-
+    await juju_run_action(leader, "authorize-charm", token=charm_token)
     # At this point, Vault is up but in non-HA mode. If we weren't using the
     # auto-generate-root-ca-cert config, though, it would still be blocking
     # etcd until we ran either the generate-root-ca or upload-signed-csr
@@ -2410,9 +2411,7 @@ async def test_ceph(model, tools):
 
     # until bug https://bugs.launchpad.net/charm-kubernetes-control-plane/+bug/1824035 fixed
     unit = model.applications["ceph-mon"].units[0]
-    action = await unit.run_action("create-pool", name="ext4-pool")
-    await action.wait()
-    assert action.status == "completed"
+    await juju_run_action("create-pool", name="ext4-pool")
 
     log("waiting for csi to settle")
     unit = model.applications["kubernetes-control-plane"].units[0]
@@ -2471,42 +2470,33 @@ async def test_cinder(model, tools):
 
 
 @pytest.mark.clouds(["openstack"])
-async def test_octavia(model, tools):
+async def test_octavia(model, tools, teardown_microbot):
     assert "openstack-integrator" in model.applications, "Missing integrator"
     log("Deploying microbot")
     unit = model.applications["kubernetes-worker"].units[0]
-    action = await unit.run_action("microbot", delete=True)
-    await action.wait()
-    action = await unit.run_action("microbot", replicas=3)
-    await action.wait()
-    assert action.status == "completed"
-    try:
-        log("Replacing microbot service with Octavia LB")
-        await kubectl(model, "delete svc microbot")
-        await retry_async_with_timeout(
-            verify_deleted,
-            (unit, "svc", ["microbot"]),
-            timeout_msg="Timed out waiting for microbot service removal",
-        )
-        await kubectl(
-            model,
-            "expose deployment microbot --type=LoadBalancer --port=80 --target-port=80",
-        )
-        await retry_async_with_timeout(
-            verify_ready,
-            (unit, "pod,svc", ["microbot"]),
-            timeout_msg="Timed out waiting for new microbot service",
-        )
-        ingress_address = await get_svc_ingress(model, "microbot", timeout=5 * 60)
-        resp = await tools.requests_get(
-            f"http://{ingress_address}",
-            proxies={"http": None, "https": None},
-        )
-        assert resp.status_code == 200
-    finally:
-        # cleanup
-        action = await unit.run_action("microbot", delete=True)
-        await action.wait()
+    await juju_run_action(unit,"microbot", replicas=3)
+    log("Replacing microbot service with Octavia LB")
+    await kubectl(model, "delete svc microbot")
+    await retry_async_with_timeout(
+        verify_deleted,
+        (unit, "svc", ["microbot"]),
+        timeout_msg="Timed out waiting for microbot service removal",
+    )
+    await kubectl(
+        model,
+        "expose deployment microbot --type=LoadBalancer --port=80 --target-port=80",
+    )
+    await retry_async_with_timeout(
+        verify_ready,
+        (unit, "pod,svc", ["microbot"]),
+        timeout_msg="Timed out waiting for new microbot service",
+    )
+    ingress_address = await get_svc_ingress(model, "microbot", timeout=5 * 60)
+    resp = await tools.requests_get(
+        f"http://{ingress_address}",
+        proxies={"http": None, "https": None},
+    )
+    assert resp.status_code == 200
 
 
 @pytest.mark.skip("Getting further")

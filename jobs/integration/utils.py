@@ -6,6 +6,7 @@ import os
 import subprocess
 import time
 import traceback
+from typing import Mapping, Any
 
 from contextlib import contextmanager
 from juju.controller import Controller
@@ -147,9 +148,7 @@ async def upgrade_snaps(model, channel, tools):
                     )
 
                 # run upgrade action
-                action = await unit.run_action("upgrade")
-                await action.wait()
-                assert action.status == "completed"
+                await juju_run_action(unit, "upgrade")
 
     await tools.juju_wait()
 
@@ -519,25 +518,60 @@ class JujuRunError(AssertionError):
 
 class JujuRunResult:
     def __init__(self, action):
-        results = action.results
-        self.status = action.status
-        code = results.get("Code", results.get("return-code"))
+        self._action = action
+
+    @property
+    def status(self) -> str:
+        return self._action.status
+
+    @property
+    def results(self) -> Mapping[str, Any]:
+        return self._action.results
+
+    @property
+    def code(self) -> str:
+        code = self.results.get("Code", self.results.get("return-code"))
         if code is None:
-            log.error(f"Failed to find the return code in {results}")
-            self.code = -1
-        else:
-            self.code = int(code)
-        self.stdout = results.get("Stdout", results.get("stdout")) or ""
-        self.stderr = results.get("Stderr", results.get("stderr")) or ""
-        self.output = self.stderr or self.stdout
-        self.success = self.status == "completed" and self.code == 0
+            log.error(f"Failed to find the return code in {self.results}")
+            return -1
+        return int(code)
+
+    @property
+    def stdout(self) -> str:
+        return self.results.get("Stdout", self.results.get("stdout")) or ""
+
+    @property
+    def stderr(self) -> str:
+        return self.results.get("Stderr", self.results.get("stderr")) or ""
+
+    @property
+    def output(self) -> str:
+        return self.stderr or self.stdout
+
+    @property
+    def success(self) -> bool:
+        return self.status == "completed" and self.code == 0
+    
+    def __repr__(self) -> str:
+        return f"JujuRunResult({self.action})"
 
 
 async def juju_run(unit, cmd, check=True, **kwargs) -> JujuRunResult:
     action = await unit.run(cmd, **kwargs)
-    result = JujuRunResult(await action.wait())
+    if hasattr(action, "wait"):
+        action = await action.wait()
+    result = JujuRunResult(action)
     if check and not result.success:
         raise JujuRunError(unit, cmd, result)
+    return result
+
+
+async def juju_run_action(unit, action, _check=True, **kwargs) -> JujuRunResult:
+    action = await unit.run_action(action, **kwargs)
+    action = await action.wait()
+    result = JujuRunResult(action)
+    if _check and not result.success:
+        raise JujuRunError(unit, action, result)
     return result
 
 

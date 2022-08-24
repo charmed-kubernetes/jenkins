@@ -1,4 +1,5 @@
 import random
+from utils import juju_run_action
 from .logger import log
 
 
@@ -16,24 +17,18 @@ async def test_cis_benchmark(model, tools):
     log("verifying etcd")
     etcds = model.applications["etcd"]
     one_etcd = random.choice(etcds.units)
-    action = await one_etcd.run_action("cis-benchmark")
-    await action.wait()
-    assert action.status == "completed"
+    action = await juju_run_action(one_etcd, "cis-benchmark")
     assert "0 checks FAIL" in action.results["summary"]
 
     # Verify action on k8s-master
     log("verifying k8s-master")
     one_master = random.choice(masters.units)
-    action = await one_master.run_action("cis-benchmark")
-    await action.wait()
-    assert action.status == "completed"
+    action = await juju_run_action(one_master, "cis-benchmark")
     assert "0 checks FAIL" in action.results["summary"]
 
     # Verify action on k8s-worker
     log("verifying k8s-worker")
     workers = model.applications["kubernetes-worker"]
     one_worker = random.choice(workers.units)
-    action = await one_worker.run_action("cis-benchmark")
-    await action.wait()
-    assert action.status == "completed"
+    action = await juju_run_action(one_worker, "cis-benchmark")
     assert "0 checks FAIL" in action.results["summary"]

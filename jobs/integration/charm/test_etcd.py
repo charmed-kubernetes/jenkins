@@ -3,7 +3,7 @@ import logging
 import pytest
 import re
 from pathlib import Path
-from ..utils import juju_run
+from ..utils import juju_run, juju_run_action
 
 ws_logger = logging.getLogger("websockets.protocol")
 ws_logger.setLevel(logging.INFO)
@@ -13,9 +13,7 @@ async def test_etcd_actions(model, tools):
     """Test etcd charm actions"""
 
     async def assert_action(unit, action, output_regex=None, **action_params):
-        action = await unit.run_action(action, **action_params)
-        await action.wait()
-        assert action.status == "completed"
+        action = await juju_run_action(unit, action, **action_params)
         if output_regex:
             output = action.results["output"]
             assert re.search(output_regex, output)
@@ -94,9 +92,7 @@ async def test_snapshot_restore(model, tools):
             filenames = {}
             for dataset in ["v3"]:
                 # Take snapshot of data
-                action = await unit.run_action("snapshot", **{"keys-version": dataset})
-                action = await action.wait()
-                assert action.status == "completed"
+                action = await juju_run_action(unit, "snapshot", **{"keys-version": dataset})
                 src = Path(action.results["snapshot"]["path"])
                 dst = Path(action.results["snapshot"]["path"]).name
                 await unit.scp_from(
@@ -119,9 +115,7 @@ async def test_snapshot_restore(model, tools):
                 "etcd",
                 "snapshot='./{}'".format(str(filenames["v2"])),
             )
-            action = await unit.run_action("restore")
-            action = await action.wait()
-            assert action.status == "completed"
+            action = await juju_run_action(unit, "restore")
             for ver in ["v3"]:
                 assert await is_data_present(unit, ver) is True
 
@@ -134,9 +128,7 @@ async def test_snapshot_restore(model, tools):
                 "snapshot='./{}'".format(str(filenames["v3"])),
             )
 
-            action = await unit.run_action("restore")
-            action = await action.wait()
-            await action.status == "completed"
+            action = await juju_run_action(unit, "restore")
             for ver in ["v3"]:
                 assert await is_data_present(unit, ver) is True
 
