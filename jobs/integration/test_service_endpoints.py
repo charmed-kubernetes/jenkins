@@ -51,7 +51,7 @@ async def setup_svc(svc_type):
         type=f"{svc_type}",
         name="hello-world",
         protocol="TCP",
-        port=80,
+        port=31113,
         target_port=50000,
     )
 
@@ -106,7 +106,7 @@ async def test_clusterip_service_endpoint(model):
         ip = pod["items"][0]["spec"]["clusterIP"]
 
         # Build the url
-        set_url = f"http://{ip}:80"
+        set_url = f"http://{ip}:31113"
         cmd = f'curl -vk --noproxy "{ip}" {set_url}'
 
         # Curl the ClusterIP from each control-plane and worker unit
