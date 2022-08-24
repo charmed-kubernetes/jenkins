@@ -2035,6 +2035,7 @@ async def test_sysctl(model, tools):
             lines = raw_output.splitlines()
             assert len(lines) == len(desired_results)
             if not lines == desired_results:
+                click.echo(f"retry...{lines} != {desired_results}")
                 return False
         return True
 
