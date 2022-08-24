@@ -317,6 +317,12 @@ async def test_microbot(model, tools, teardown_microbot):
     """Validate the microbot action"""
     unit = model.applications["kubernetes-worker"].units[0]
     action = await juju_run_action(unit, "microbot", replicas=3)
+    await retry_async_with_timeout(
+        verify_ready,
+        (unit, "po", ["microbot"], "-n default"),
+        timeout_msg="Unable to create microbot pods for test",
+    )
+
     url = "http://" + action.results["address"]
     _times, _sleep = 5, 60
     for _ in range(_times):  # 5 min should be enough time
