@@ -18,11 +18,15 @@ async def is_pod_running():
 
     try:
         phase = pod["items"][0]["status"]["phase"]
+        _ = pod["items"][0]["spec"]["containers"][0]["env"]
     except IndexError:
         # Pod is not created yet
         return False
+    except KeyError:
+        # Updating Pod envvars
+        return False
 
-    if "Running" in phase:
+    if "Running" in phase and len(pod["items"]) == 1:
         return True
     # Pod has not fully come up yet
     return False
@@ -51,7 +55,7 @@ async def setup_svc(svc_type):
         type=f"{svc_type}",
         name="hello-world",
         protocol="TCP",
-        port=31113,
+        port=80,
         target_port=50000,
     )
 
@@ -106,7 +110,7 @@ async def test_clusterip_service_endpoint(model):
         ip = pod["items"][0]["spec"]["clusterIP"]
 
         # Build the url
-        set_url = f"http://{ip}:31113"
+        set_url = f"http://{ip}:80"
         cmd = f'curl -vk --noproxy "{ip}" {set_url}'
 
         # Curl the ClusterIP from each control-plane and worker unit
