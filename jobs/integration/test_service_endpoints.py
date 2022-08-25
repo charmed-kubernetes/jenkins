@@ -2,7 +2,8 @@ import sh
 import yaml
 from .utils import retry_async_with_timeout, juju_run
 
-SVC_PORT = 50000
+APP_PORT = 50000
+SVC_PORT = 80
 
 
 def get_pod_yaml():
@@ -25,7 +26,7 @@ async def is_pod_running():
         # Pod not created correctly
         return False
 
-    if "Running" in phase and str(SVC_PORT) == port:
+    if "Running" in phase and str(APP_PORT) == port:
         return len(pod["items"]) == 1
 
     # Pod has not fully come up yet
@@ -46,7 +47,7 @@ async def setup_svc(svc_type):
         "hello-world",
         image="rocks.canonical.com/cdk/google-samples/hello-app:1.0",
     )
-    sh.kubectl.set("env", "deployment/hello-world", "PORT=50000")
+    sh.kubectl.set("env", "deployment/hello-world", f"PORT={APP_PORT}")
 
     # Create Service
     sh.kubectl.expose(
@@ -55,8 +56,8 @@ async def setup_svc(svc_type):
         type=f"{svc_type}",
         name="hello-world",
         protocol="TCP",
-        port=80,
-        target_port=50000,
+        port=SVC_PORT,
+        target_port=APP_PORT,
     )
 
     # Wait for Pods to stabilize
@@ -110,7 +111,7 @@ async def test_clusterip_service_endpoint(model):
         ip = pod["items"][0]["spec"]["clusterIP"]
 
         # Build the url
-        set_url = f"http://{ip}:80"
+        set_url = f"http://{ip}:{SVC_PORT}"
         cmd = f'curl -vk --noproxy "{ip}" {set_url}'
 
         # Curl the ClusterIP from each control-plane and worker unit
