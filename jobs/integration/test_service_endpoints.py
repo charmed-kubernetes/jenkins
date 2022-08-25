@@ -2,6 +2,8 @@ import sh
 import yaml
 from .utils import retry_async_with_timeout, juju_run
 
+SVC_PORT = 50000
+
 
 def get_pod_yaml():
     out = sh.kubectl.get("po", o="yaml", selector="app=hello-world")
@@ -18,16 +20,14 @@ async def is_pod_running():
 
     try:
         phase = pod["items"][0]["status"]["phase"]
-        _ = pod["items"][0]["spec"]["containers"][0]["env"]
-    except IndexError:
-        # Pod is not created yet
-        return False
-    except KeyError:
-        # Updating Pod envvars
+        port = pod["items"][0]["spec"]["containers"][0]["env"][0]["value"]
+    except (IndexError, KeyError):
+        # Pod not created correctly
         return False
 
-    if "Running" in phase and len(pod["items"]) == 1:
-        return True
+    if "Running" in phase and str(SVC_PORT) == port:
+        return len(pod["items"]) == 1
+
     # Pod has not fully come up yet
     return False
 
