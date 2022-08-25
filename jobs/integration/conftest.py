@@ -20,6 +20,7 @@ from .utils import (
     arch,
     log_snap_versions,
     scp_from,
+    juju_run,
 )
 from .logger import log
 
@@ -185,10 +186,12 @@ async def model(request, tools):
         for unit in model.units.values():
             if unit.dead:
                 continue
-            a = await unit.run(f"sudo snap refresh core --{snapd_channel}")
-            await a.wait()
-            a = await unit.run(f"sudo snap refresh snapd --{snapd_channel}")
-            await a.wait()
+            await juju_run(
+                unit, f"sudo snap refresh core --{snapd_channel}", check=False
+            )
+            await juju_run(
+                unit, f"sudo snap refresh snapd --{snapd_channel}", check=False
+            )
         await log_snap_versions(model, prefix="After")
     yield model
     await model.disconnect()
