@@ -149,7 +149,7 @@
         - "charm --classic --edge"
         - "charmcraft --classic --edge"
         - "go --classic --stable"
-        - "juju --classic --candidate"
+        - "juju --classic --channel=2.9/stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"
