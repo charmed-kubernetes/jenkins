@@ -19,7 +19,14 @@ def default_gh_branch(repo: str, ignore_errors=False, auth=None):
     :param bool ignore_errors: if errors are ignored, returns None
     :param tuple[str, str] auth: username/password used by basic-auth
     """
-    org, repo = repo.split("/")
+    try:
+        org, repo = repo.split("/")
+    except ValueError:
+        # Likely not a github repo since theres no org/repo
+        if not ignore_errors:
+            raise
+        return None
+
     gh_repo = Repository.with_session(org, repo, auth)
     try:
         return gh_repo.default_branch
