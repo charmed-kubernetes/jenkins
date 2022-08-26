@@ -130,7 +130,7 @@
         - jenkins
         - adhoc
     - name: upgrade juju
-      command: "snap refresh juju --channel latest/candidate"
+      command: "snap refresh juju --channel 2.9/stable"
       ignore_errors: yes
       tags:
         - jenkins
