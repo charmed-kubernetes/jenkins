@@ -144,7 +144,7 @@ class Repository:
         """Create git reference."""
         one_and_only_one = any((tag, branch)) and not all((tag, branch))
         assert one_and_only_one, "Either tag or branch should be defined"
-        ref = f"tags/{tag}" if tag else f"heads/{branch}"
+        ref = f"refs/tags/{tag}" if tag else f"refs/heads/{branch}"
         resp = self.session.post(
             self._GITREFS_API.format(**self._render),
             headers={"Accept": "application/vnd.github+json"},
