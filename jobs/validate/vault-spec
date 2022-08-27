@@ -97,7 +97,7 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.24/edge}
+SNAP_VERSION=${1:-1.25/edge}
 SERIES=${2:-focal}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}

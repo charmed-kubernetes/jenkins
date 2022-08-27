@@ -28,6 +28,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/edge
             - 1.24/edge
             - 1.23/edge
             - 1.22/edge
@@ -146,6 +147,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/edge
             - 1.24/edge
             - 1.23/edge
             - 1.22/edge
@@ -323,16 +325,16 @@
           values:
             - runner-validate
       - axis:
-           type: user-defined
-           name: snap_version
-           values:
-             - 1.24/edge
-             - 1.23/edge
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.25/edge
+            - 1.24/edge
       - axis:
-           type: user-defined
-           name: series
-           values:
-             - focal
+          type: user-defined
+          name: series
+          values:
+            - focal
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -364,16 +366,16 @@
           values:
             - runner-validate
       - axis:
-           type: user-defined
-           name: snap_version
-           values:
-             - 1.24/edge
-             - 1.23/edge
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.25/edge
+            - 1.24/edge
       - axis:
-           type: user-defined
-           name: series
-           values:
-             - focal
+          type: user-defined
+          name: series
+          values:
+            - focal
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -410,8 +412,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/edge
             - 1.24/edge
-            - 1.23/edge
       - axis:
           type: user-defined
           name: series
@@ -460,8 +462,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/edge
             - 1.24/edge
-            - 1.23/edge
       - axis:
           type: user-defined
           name: series
@@ -501,8 +503,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/edge
             - 1.24/edge
-            - 1.23/edge
       - axis:
           type: user-defined
           name: series
@@ -542,8 +544,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/edge
             - 1.24/edge
-            - 1.23/edge
       - axis:
           type: user-defined
           name: series
@@ -583,8 +585,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/edge
             - 1.24/edge
-            - 1.23/edge
       - axis:
           type: user-defined
           name: series
@@ -624,8 +626,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/edge
             - 1.24/edge
-            - 1.23/edge
       - axis:
           type: user-defined
           name: series
@@ -665,8 +667,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/edge
             - 1.24/edge
-            - 1.23/edge
       - axis:
           type: user-defined
           name: series
