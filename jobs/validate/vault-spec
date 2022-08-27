@@ -41,27 +41,35 @@ applications:
     options:
       channel: $SNAP_VERSION
   easyrsa: null
+  mysql-innodb-cluster:
+    channel: 8.0/stable
+    charm: mysql-innodb-cluster
+    constraints: cores=2 mem=8G root-disk=64G
+    num_units: 3
+    options:
+      enable-binlogs: true
+      innodb-buffer-pool-size: 256M
+      max-connections: 2000
+      wait-timeout: 3600
   vault:
+    channel: 1.7/stable
     charm: vault
     num_units: 2
     options:
       auto-generate-root-ca-cert: true
       disable-mlock: true
-  percona-cluster:
-    charm: percona-cluster
-    series: bionic
-    num_units: 1
-    options:
-      innodb-buffer-pool-size: 256M
-      max-connections: 1000
+  vault-mysql-router:
+    channel: 8.0/stable
+    charm: mysql-router
 relations:
+  - ["vault:certificates", "etcd:certificates"]
+  - ["vault:certificates", "kubeapi-load-balancer:certificates"]
   - ["vault:certificates", "kubernetes-control-plane:certificates"]
   - ["vault:certificates", "kubernetes-worker:certificates"]
-  - ["vault:certificates", "kubeapi-load-balancer:certificates"]
-  - ["vault:certificates", "etcd:certificates"]
-  - ["vault:shared-db", "percona-cluster:shared-db"]
+  - ["vault-mysql-router:db-router", "mysql-innodb-cluster:db-router"]
+  - ["vault-mysql-router:shared-db", "vault:shared-db"]
   - ["vault:etcd", "etcd:db"]
-  - ["kubernetes-control-plane:vault-kv", "vault:secrets"]
+  - ["vault:secrets", "kubernetes-control-plane:vault-kv"]
 EOF
 }
 
