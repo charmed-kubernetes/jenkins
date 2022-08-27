@@ -65,7 +65,7 @@ class SnapService(DebugMixin):
                     "patches": [],
                     "go_version": enums.K8S_GO_MAP.get(
                         f"{k8s_major_minor.major}.{k8s_major_minor.minor}",
-                        "go/1.17/stable",
+                        "go/1.19/stable",
                     ),
                 }
 
