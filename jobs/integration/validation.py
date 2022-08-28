@@ -2430,11 +2430,20 @@ async def test_ceph(model, tools):
     await validate_storage_class(model, "cephfs", "Ceph")
     # cleanup
     log("removing ceph applications")
+    # LP:1929537 get ceph-fs outta there first
+    # NB: can't use destroy() here because it doesn't support --force.
+    await tools.run(
+      "juju",
+      "remove-application",
+      "-m",
+      tools.model_name,
+      "--force",
+      "ceph-fs",
+    )
     tasks = {
         model.applications["ceph-mon"].destroy(),
         model.applications["ceph-osd"].destroy(),
     }
-    tasks.add(model.applications["ceph-fs"].destroy())
     (done1, _) = await asyncio.wait(tasks)
     for task in done1:
         # read and ignore any exception so that it doesn't get raised
