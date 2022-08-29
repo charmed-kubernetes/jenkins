@@ -8,7 +8,6 @@ black
 boto3
 bs4
 contextvars
-configobj
 drypy
 loguru
 flake8

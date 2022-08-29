@@ -7,7 +7,7 @@ from .logger import log
 from .utils import juju_run
 from subprocess import check_output
 from shlex import split
-from configobj import ConfigObj
+from configparser import ConfigParser
 from cilib.run import capture
 import os
 
@@ -51,11 +51,12 @@ def arn():
 
 
 def get_test_keys():
-    creds = ConfigObj(str(Path("~/.aws/credentials").expanduser()))
-    if "default" not in creds.keys():
+    creds = ConfigParser()
+    creds.read(Path("~/.aws/credentials").expanduser())
+    if "default" not in creds.sections():
         raise Exception("Could not find default aws credentials")
-    key_id = creds.get("default")["aws_access_key_id"]
-    key = creds.get("default")["aws_secret_access_key"]
+    key_id = creds["default"]["aws_access_key_id"]
+    key = creds["default"]["aws_secret_access_key"]
     return {"id": key_id, "key": key}
 
 

@@ -56,8 +56,6 @@ click==8.1.2
     #   mkdocs
 colorama==0.3.9
     # via awscli
-configobj==5.0.6
-    # via -r requirements.in
 contextvars==2.4
     # via -r requirements.in
 cryptography==3.4.7
@@ -320,7 +318,6 @@ sh==1.14.3
 six==1.15.0
     # via
     #   bcrypt
-    #   configobj
     #   fasteners
     #   google-auth
     #   jenkins-job-builder
