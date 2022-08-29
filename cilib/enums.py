@@ -13,10 +13,10 @@ K8S_STABLE_VERSION = "1.24"
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
 # Typically, this is K8S_STABLE_VERSION +1. However, when prepping the next
-# stable release, this will be +2. For example, 1.23 is currently stable and
-# we're working on the 1.24 GA. Set this value to '1.25' sometime between the
-# final RC and GA so we don't get pre-release builds (e.g. 1.24.1-alpha.0) in
-# our 1.24 tracks.
+# stable release, this will be +2. For example, 1.24 is currently stable and
+# we're working on the 1.25 GA. Set this value to '1.26' sometime between the
+# final RC and GA so we don't get pre-release builds (e.g. 1.25.1-alpha.0) in
+# our 1.25 tracks.
 K8S_NEXT_VERSION = "1.26"
 
 # Lowest K8S SEMVER to process, this is usually stable - 3

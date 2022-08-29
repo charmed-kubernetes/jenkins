@@ -16,36 +16,40 @@ set -x
 ###############################################################################
 function juju::deploy::overlay
 {
-    local constraints
-    constraints="arch=$ARCH cores=2 mem=8G root-disk=16G"
-
     cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
   kubernetes-control-plane:
-    constraints: $constraints
+    channel: $JUJU_DEPLOY_CHANNEL
     options:
       channel: $SNAP_VERSION
+      allow-privileged: "true"
   kubernetes-worker:
-    constraints: $constraints
+    channel: $JUJU_DEPLOY_CHANNEL
     options:
       channel: $SNAP_VERSION
+  calico: null
+  kube-ovn:
+    charm: kube-ovn
+    channel: $JUJU_DEPLOY_CHANNEL
+relations:
+  - [kube-ovn:cni, kubernetes-control-plane:cni]
+  - [kube-ovn:cni, kubernetes-worker:cni]
 EOF
 }
 
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.25/edge}
-SERIES=${2:-focal}
+SNAP_VERSION=${SNAP_VERSION}
+SERIES=${SERIES}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${3:-edge}
-JUJU_CLOUD=${5:-vsphere/Boston}
+JUJU_DEPLOY_CHANNEL=edge
+JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)
-JUJU_MODEL=validate-ck
-ARCH=${4:-amd64}
-CUSTOM_CLOUD=$(echo "$JUJU_CLOUD" | cut -f1 -d/)
-JOB_NAME_CUSTOM="validate-ck-$CUSTOM_CLOUD-$ARCH-$SERIES-$SNAP_VERSION"
+JUJU_MODEL=validate-ovn
+ARCH=amd64
+JOB_NAME_CUSTOM="validate-ck-ovn-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
 ###############################################################################
