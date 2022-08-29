@@ -2430,17 +2430,10 @@ async def test_ceph(model, tools):
     await validate_storage_class(model, "cephfs", "Ceph")
     # cleanup
     log("removing ceph applications")
-    # LP:1929537 get ceph-fs outta there first
+    # LP:1929537 get ceph-fs outta there with fire.
     # NB: can't use destroy() here because it doesn't support --force.
-    await tools.run(
-      "juju",
-      "remove-application",
-      "-m",
-      tools.model_name,
-      "--force",
-      "ceph-fs",
-    )
     tasks = {
+        model.applications["ceph-fs"].units[0].machine.destroy(force=True),
         model.applications["ceph-mon"].destroy(),
         model.applications["ceph-osd"].destroy(),
     }
