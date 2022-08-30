@@ -399,6 +399,17 @@
       - coredns
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-coredns.git'
+- gatekeeper-controller-manager:
+    bugs: 'https://launchpad.net/opa-gatekeeper-operator'
+    docs: 'https://charmhub.io/gatekeeper-controller-manager/docs'
+    downstream: charmed-kubernetes/opa-gatekeeper-operators
+    store: 'https://charmhub.io/gatekeeper-controller-manager'
+    subdir: opa-manager-operator
+    summary: Controller charm for Gatekeeper
+    tags:
+      - k8s-operator
+      - gatekeeper-controller-manager
+    upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
 
 # EOL in favor of operator charm: https://charmhub.io/kubernetes-dashboard
 # - k8s-dashboard:
