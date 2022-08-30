@@ -542,8 +542,7 @@ def test_promote_command(mock_build_env, charms):
         charms.promote,
         [
             "--charm-list=test-charm",
-            "--filter-by-tag=tag1",
-            "--filter-by-tag=tag2",
+            "--filter-by-tag=tag1,tag2",
             "--from-channel=latest/edge",
             "--to-channel=latest/beta",
         ],
@@ -582,8 +581,7 @@ def test_build_command(mock_build_env, mock_build_entity, charms):
         [
             "--charm-list=tests/data/ci-testing-charms.inc",
             "--resource-spec=jobs/build-charms/resource-spec.yaml",
-            "--filter-by-tag=tag1",
-            "--filter-by-tag=tag2",
+            "--filter-by-tag=tag1,tag2",
             "--layer-index=https://charmed-kubernetes.github.io/layer-index/",
             "--layer-list=jobs/includes/charm-layer-list.inc",
             "--force",
