@@ -1014,7 +1014,6 @@ def cli():
     "--filter-by-tag",
     required=True,
     help="only build for charms matching a tag, comma separate list",
-    multiple=True,
 )
 @click.option(
     "--track", required=True, help="track to promote charm to", default="latest"
@@ -1047,7 +1046,7 @@ def build(
         "branch": charm_branch,
         "layer_branch": layer_branch,
         "resource_spec": resource_spec,
-        "filter_by_tag": list(filter_by_tag),
+        "filter_by_tag": filter_by_tag.split(","),
         "track": track,
         "to_channel": to_channel,
         "force": force,
@@ -1113,7 +1112,6 @@ def build(
     "--filter-by-tag",
     required=True,
     help="only build for charms matching a tag, comma separate list",
-    multiple=True,
 )
 @click.option(
     "--bundle-repo",
@@ -1136,7 +1134,7 @@ def build_bundles(
     build_env.db["build_args"] = {
         "artifact_list": bundle_list,
         "branch": bundle_branch,
-        "filter_by_tag": list(filter_by_tag),
+        "filter_by_tag": filter_by_tag.split(","),
         "track": track,
         "to_channel": to_channel,
         "force": force,
@@ -1194,7 +1192,6 @@ def build_bundles(
     "--filter-by-tag",
     required=True,
     help="only build for charms matching a tag, comma separate list",
-    multiple=True,
 )
 @click.option(
     "--track", required=True, help="track to promote charm to", default="latest"
@@ -1213,7 +1210,7 @@ def promote(charm_list, filter_by_tag, track, from_channel, to_channel):
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
         "artifact_list": charm_list,
-        "filter_by_tag": list(filter_by_tag),
+        "filter_by_tag": filter_by_tag.split(","),
         "to_channel": to_channel,
         "from_channel": from_channel,
         "track": track,
