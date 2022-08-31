@@ -1,6 +1,8 @@
 import asyncio
+from bdb import Breakpoint
 import json
 import random
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pytest
@@ -36,7 +38,7 @@ class TestOPA:
         await kubectl(self.model, cmd)
 
         # Wait for namespace to go active
-        cmd = "get ns test-ns -o jsonpath='{{.status.phase}}'"
+        cmd = "get ns test-ns -o jsonpath='{.status.phase}'"
         log("Waiting for namespace to become active")
         while result := await kubectl(self.model, cmd):
             if result.output == "Active":
@@ -52,7 +54,7 @@ class TestOPA:
             name = f"test-ns-{random.randint(1, 99999)}"
 
         cmd = f"create ns {name}"
-        log("Creating namespace")
+        log("Creating namespace without any labels")
         await kubectl(self.model, cmd)
 
         # Wait for namespace to go active
@@ -113,10 +115,11 @@ class TestOPA:
             self.tools.controller_name,
             self.tools.connection,
         )
+        log("Delete example policy")
         await kubectl(self.model, f"delete -f {remote_path}")
 
-    @pytest.fixture
-    async def create_storage_pool(self, model, tools):
+    @pytest.fixture(scope="module")
+    async def storage_pool(self, model, k8s_model, tools):
         # This assumes that we are running on vsphere, should it be
         # extended to run on other clouds as well?
         control_plane_app = model.applications["kubernetes-control-plane"]
@@ -145,16 +148,42 @@ class TestOPA:
             yield storage_pool_name
         finally:
             log("Removing storage class")
-            await kubectl(model, f"delete -f {remote_path}")
-            await tools.run(
-                "juju",
-                "remove-storage-pool",
-                "-m",
-                tools.k8s_connection,
-                storage_pool_name,
-            )
+            try:
+                await kubectl(model, f"delete -f {remote_path}")
+            finally:
+                await tools.run(
+                    "juju",
+                    "remove-storage-pool",
+                    "-m",
+                    tools.k8s_connection,
+                    storage_pool_name,
+                )
 
-    async def test_opa_webhook(self):
+    async def _validate_audit_actions(self, unit):
+        log("Running list-violations action")
+        total_violations = 0
+        while total_violations == 0:
+            action = await unit.run_action("list-violations")
+            await action.wait()
+            assert action.status == "completed"
+            assert "constraint-violations" in action.results
+            constraint_violations = json.loads(action.results["constraint-violations"])
+            if constraint_violations:
+                total_violations = constraint_violations[0].get("total-violations")
+            await asyncio.sleep(5)
+
+        log("Running get-violation action")
+        action = await unit.run_action(
+            "get-violation",
+            **{
+                "constraint-template": "K8sRequiredLabels",
+                "constraint": "ns-must-have-gk",
+            },
+        )
+        await action.wait()
+        assert len(json.loads(action.results["violations"])) > 0
+
+    async def test_opa_webhook(self, storage_pool):
         log("Deploying the gatekeeper charm")
         webhook = await self.k8s_model.deploy(
             "gatekeeper-controller-manager",
@@ -162,32 +191,44 @@ class TestOPA:
             trust=True,
         )
 
-        while (
-            status := webhook.units[0].workload_status if webhook.units else None
-        ) != "active":
-            assert status not in ("blocked", "error")
-            await asyncio.sleep(5)
-        unit = webhook.units[0]
-
         try:
+            while (
+                status := webhook.units[0].workload_status if webhook.units else None
+            ) != "active":
+                assert status not in ("blocked", "error")
+                await asyncio.sleep(5)
+            unit = webhook.units[0]
+
             log("Waiting for gatekeeper charm to be ready")
             await wait_for_application_status(
                 self.k8s_model, "gatekeeper-controller-manager", status="active"
             )
 
-            await self.validate_create_ns()
+            try:
+                await self.validate_create_ns()
+            except JujuRunError as e:
+                if e.output.startswith(
+                    "Error from server (InternalError): Internal error occurred"
+                ):
+                    # Try again as it might be transient/intialization related
+                    await asyncio.sleep(5)
+                    await self.validate_create_ns()
+                else:
+                    raise
             log("Creating policy and constraint crds")
             await self.deploy_example_policy()
             log("Test that the policy is enforced")
             await self.validate_create_ns_fail()
             await self.validate_create_ns_with_label()
-            log("Delete the policy")
+            await self.destroy_example_policy()
 
             log("Deploying the audit charm")
             audit = await self.k8s_model.deploy(
                 "gatekeeper-audit",
                 channel=self.tools.charm_channel,
                 trust=True,
+                storage={"audit-volume": {"pool": storage_pool}},
+                config={"audit-interval": 1},
             )
             while (
                 status := audit.units[0].workload_status if audit.units else None
@@ -195,59 +236,45 @@ class TestOPA:
                 assert status not in ("blocked", "error")
                 await asyncio.sleep(5)
 
-            log("Test that the policy is enforced")
-            await self.validate_create_ns_fail()
-            await self.validate_create_ns_with_label()
-            await self.destroy_example_policy()
-            log("Validate that the policy is no longer enforced")
-            await self.validate_create_ns()
+            try:
+                await self.deploy_example_policy()
+                log("Test that the policy is enforced")
+                await self.validate_create_ns_fail()
+                await self.validate_create_ns_with_label()
+                await self.destroy_example_policy()
+                log("Validate that the policy is no longer enforced")
+                await self.validate_create_ns()
+                self._validate_audit_actions(unit)
+            finally:
+                log("Deleting the audit charm")
+                await self.tools.run(
+                    "juju",
+                    "remove-application",
+                    "-m",
+                    self.tools.k8s_connection,
+                    "--force",
+                    "--destroy-storage",
+                    "gatekeeper-audit",
+                )
+                while audit.units:
+                    await asyncio.sleep(5)
 
-            log("Configuring charm to lower audit interval")
-            await self.tools.run(
+            interval = await self.tools.run(
                 "juju",
-                "config",
+                "model-config",
                 "-m",
                 self.tools.k8s_connection,
-                "gatekeeper-audit",
-                "audit-interval=1",
-            )
-            await wait_for_application_status(
-                self.k8s_model, "gatekeeper-audit", status="active"
-            )
-
-            log("Running list-violations action")
-            total_violations = 0
-            while total_violations == 0:
-                action = await unit.run_action("list-violations")
-                await action.wait()
-                assert action.status == "completed"
-                assert "constraint-violations" in action.results
-                constraint_violations = json.loads(
-                    action.results["constraint-violations"]
-                )
-                total_violations = constraint_violations[0].get("total-violations")
-                await asyncio.sleep(5)
-
-            log("Running get-violation action")
-            action = await unit.run_action(
-                "get-violation",
-                **{
-                    "constraint-template": "K8sRequiredLabels",
-                    "constraint": "ns-must-have-gk",
-                },
-            )
-            await action.wait()
-            assert len(json.loads(action.results["violations"])) > 0
-
-            await audit.destroy()
-            interval = await self.tools.run(
-                "juju", "model-config", "update-status-hook-interval"
+                "update-status-hook-interval",
             )
             interval = interval[0].strip()
             try:
                 log("Decrease update status hook interval")
                 await self.tools.run(
-                    "juju", "model-config", "update-status-hook-interval=5s"
+                    "juju",
+                    "model-config",
+                    "-m",
+                    self.tools.k8s_connection,
+                    "update-status-hook-interval=5s",
                 )
                 log("Waiting for status to change to blocked")
                 while (
@@ -268,7 +295,11 @@ class TestOPA:
                     await asyncio.sleep(5)
             finally:
                 await self.tools.run(
-                    "juju", "model-config", f"update-status-hook-interval={interval}"
+                "juju",
+                "model-config",
+                "-m",
+                self.tools.k8s_connection,
+                f"update-status-hook-interval={interval}",
                 )
 
             # Check that the webhook works
@@ -286,17 +317,17 @@ class TestOPA:
                 "remove-application",
                 "-m",
                 self.tools.k8s_connection,
-                "--force",
                 "gatekeeper-controller-manager",
             )
 
-    async def test_opa_audit(self, create_storage_pool):
+    async def test_opa_audit(self, storage_pool):
         log("Deploying the gatekeeper charm")
         audit = await self.k8s_model.deploy(
             "gatekeeper-audit",
             channel=self.tools.charm_channel,
             trust=True,
-            storage={"audit-volume": {"pool": create_storage_pool}},
+            storage={"audit-volume": {"pool": storage_pool}},
+            config={"audit-interval": 1}
         )
         while (
             status := audit.units[0].workload_status if audit.units else None
@@ -310,81 +341,81 @@ class TestOPA:
         await wait_for_application_status(
             self.k8s_model, "gatekeeper-audit", status="active"
         )
-        await self.validate_create_ns()
-        log("Creating policy and constraint crds")
-        await self.deploy_example_policy()
-        log("Configuring charm to lower audit interval")
-        await self.tools.run(
-            "juju",
-            "config",
-            "-m",
-            self.tools.k8s_connection,
-            "gatekeeper-audit",
-            "audit-interval=1",
-        )
-        await wait_for_application_status(
-            self.k8s_model, "gatekeeper-audit", status="active"
-        )
-
-        log("Running list-violations action")
-        total_violations = 0
-        while total_violations == 0:
-            action = await unit.run_action("list-violations")
-            await action.wait()
-            assert action.status == "completed"
-            assert "constraint-violations" in action.results
-            constraint_violations = json.loads(action.results["constraint-violations"])
-            total_violations = constraint_violations[0].get("total-violations")
-            await asyncio.sleep(5)
-
-        log("Running get-violation action")
-        action = await unit.run_action(
-            "get-violation",
-            **{
-                "constraint-template": "K8sRequiredLabels",
-                "constraint": "ns-must-have-gk",
-            },
-        )
-        await action.wait()
-        assert len(json.loads(action.results["violations"])) > 0
-
-        log("Deploying the gatekeeper charm")
-        webhook = await self.k8s_model.deploy(
-            "gatekeeper-controller-manager",
-            channel=self.tools.charm_channel,
-            trust=True,
-        )
-        while (
-            status := webhook.units[0].workload_status if webhook.units else None
-        ) != "active":
-            assert status not in ("blocked", "error")
-            await asyncio.sleep(5)
-        log("Deleting the gatekeeper charm")
-        await webhook.destroy()
-
-        interval = await self.tools.run(
-            "juju", "model-config", "update-status-hook-interval"
-        )
-        interval = interval[0].strip()
         try:
-            log("Decrease update status hook interval")
-            await self.tools.run(
-                "juju", "model-config", "update-status-hook-interval=5s"
+            await self.validate_create_ns()
+            log("Creating policy and constraint crds")
+            await self.deploy_example_policy()
+
+            self._validate_audit_actions(unit)
+
+            log("Deploying the gatekeeper charm")
+            webhook = await self.k8s_model.deploy(
+                "gatekeeper-controller-manager",
+                channel=self.tools.charm_channel,
+                trust=True,
             )
-            log("Waiting for status to change to blocked")
             while (
-                status := audit.units[0].workload_status if audit.units else None
-            ) != "blocked":
-                assert status != "error"
-                await asyncio.sleep(5)
-            log("Reconcile resources")
-            await unit.run_action("reconcile-resources")
-            while (
-                status := audit.units[0].workload_status if audit.units else None
+                status := webhook.units[0].workload_status if webhook.units else None
             ) != "active":
-                assert status != "error"
+                assert status not in ("blocked", "error")
                 await asyncio.sleep(5)
+            await wait_for_application_status(
+                self.k8s_model, "gatekeeper-controller-manager", status="active"
+            )
+
+            log("Test that the policy is enforced")
+            await self.validate_create_ns_fail()
+            await self.validate_create_ns_with_label()
+            log("Deleting the gatekeeper charm")
+            await webhook.destroy()
+
+            interval = await self.tools.run(
+                "juju",
+                "model-config",
+                "-m",
+                self.tools.k8s_connection,
+                "update-status-hook-interval",
+            )
+            interval = interval[0].strip()
+            try:
+                log("Decrease update status hook interval")
+                await self.tools.run(
+                    "juju",
+                    "model-config",
+                    "-m",
+                    self.tools.k8s_connection,
+                    "update-status-hook-interval=5s",
+                )
+                log("Waiting for status to change to blocked")
+                while (
+                    status := audit.units[0].workload_status if audit.units else None
+                ) != "blocked":
+                    assert status != "error"
+                    await asyncio.sleep(5)
+                log("Reconcile resources")
+                await unit.run_action("reconcile-resources")
+                while (
+                    status := audit.units[0].workload_status if audit.units else None
+                ) != "active":
+                    assert status != "error"
+                    await asyncio.sleep(5)
+            finally:
+                await self.tools.run(
+                "juju",
+                "model-config",
+                "-m",
+                self.tools.k8s_connection,
+                f"update-status-hook-interval={interval}",
+                )
         finally:
             await self.tools.run(
-                "juju", "model-config", f"update-status-hook-interval={interval}"
+                "juju",
+                "remove-application",
+                "-m",
+                self.tools.k8s_connection,
+                "--force",
+                "--destroy-storage",
+                "gatekeeper-audit",
             )
+            while audit.units:
+                await asyncio.sleep(5)
