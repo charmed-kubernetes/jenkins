@@ -53,11 +53,12 @@ with 1.xx.0 instead of 1.xx.1-alpha.0. For example:
 
 - https://github.com/charmed-kubernetes/jenkins/pull/991
 
-Additionally, if not done already, CI should be including the 1.xx/edge in the
-version matrix for relevant tests. For example, see the update where we
-adjusted tests for our 1.25 release:
+Additionally, if not done already, CI should include 1.xx in the version matrix
+and config for relevant jobs. For example, see these updates where we adjusted
+tests for our 1.25 release:
 
 - https://github.com/charmed-kubernetes/jenkins/pull/997
+- https://github.com/charmed-kubernetes/jenkins/pull/1005
 
 ### $next++ release
 
