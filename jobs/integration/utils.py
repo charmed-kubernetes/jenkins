@@ -467,6 +467,15 @@ async def wait_for_status(workload_status, units):
         ) from e
 
 
+async def wait_for_application_status(model, app_name, status="active"):
+    while True:
+        apps = await model.get_status()
+        app = apps.applications[app_name]
+        if app.status.status == status:
+            return
+        await asyncio.sleep(5)
+
+
 async def prep_series_upgrade(machine, new_series, tools):
     log.info(f"preparing series upgrade for machine {machine.id}")
     await tools.run(
