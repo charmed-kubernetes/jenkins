@@ -413,10 +413,10 @@
 - gatekeeper-audit:
     bugs: 'https://launchpad.net/opa-gatekeeper-operator'
     docs: 'https://charmhub.io/gatekeeper-audit/docs'
-    downstream: charmed-kubernetes/charm-gatekeeper-audit
+    downstream: charmed-kubernetes/opa-gatekeeper-operators
     store: 'https://charmhub.io/gatekeeper-audit'
     subdir: opa-audit-operator
-    summary: Controller charm for Gatekeeper audit
+    summary: Audit charm for Gatekeeper audit
     tags:
       - k8s-operator
       - gatekeeper-audit
