@@ -410,6 +410,17 @@
       - k8s-operator
       - gatekeeper-controller-manager
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
+- gatekeeper-audit:
+    bugs: 'https://launchpad.net/opa-gatekeeper-operator'
+    docs: 'https://charmhub.io/gatekeeper-audit/docs'
+    downstream: charmed-kubernetes/charm-gatekeeper-audit
+    store: 'https://charmhub.io/gatekeeper-audit'
+    subdir: opa-audit-operator
+    summary: Controller charm for Gatekeeper audit
+    tags:
+      - k8s-operator
+      - gatekeeper-audit
+    upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
 
 # EOL in favor of operator charm: https://charmhub.io/kubernetes-dashboard
 # - k8s-dashboard:
