@@ -1,8 +1,6 @@
 import asyncio
-from bdb import Breakpoint
 import json
 import random
-from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pytest
@@ -295,11 +293,11 @@ class TestOPA:
                     await asyncio.sleep(5)
             finally:
                 await self.tools.run(
-                "juju",
-                "model-config",
-                "-m",
-                self.tools.k8s_connection,
-                f"update-status-hook-interval={interval}",
+                    "juju",
+                    "model-config",
+                    "-m",
+                    self.tools.k8s_connection,
+                    f"update-status-hook-interval={interval}",
                 )
 
             # Check that the webhook works
@@ -327,7 +325,7 @@ class TestOPA:
             channel=self.tools.charm_channel,
             trust=True,
             storage={"audit-volume": {"pool": storage_pool}},
-            config={"audit-interval": 1}
+            config={"audit-interval": 1},
         )
         while (
             status := audit.units[0].workload_status if audit.units else None
@@ -401,11 +399,11 @@ class TestOPA:
                     await asyncio.sleep(5)
             finally:
                 await self.tools.run(
-                "juju",
-                "model-config",
-                "-m",
-                self.tools.k8s_connection,
-                f"update-status-hook-interval={interval}",
+                    "juju",
+                    "model-config",
+                    "-m",
+                    self.tools.k8s_connection,
+                    f"update-status-hook-interval={interval}",
                 )
         finally:
             await self.tools.run(
