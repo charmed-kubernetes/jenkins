@@ -45,7 +45,7 @@ for the 1.25 release:
 - https://github.com/charmed-kubernetes/jenkins/commit/2416d9e98f9f9c6b26b5b94215c43650a9b241e4
 
 > **Note**: Nightly charm and bundle builds will target both
-`latest/edge` and `{$next}/edge` channels.
+`latest/edge` and `$next/edge` channels.
 
 Once upstream has an RC for the upcoming release, our CI should stop
 building pre-prelease snaps. This ensures the 1.xx track will end up
@@ -80,33 +80,19 @@ owned by `Canonical Kubernetes` on [charmhub.io](https://charmhub.io). For examp
 
 ## Preparing the release
 
-### ~~Tag existing stable branches with the current stable bundle~~
-
-**Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
-
-For all charm repos that make up CK, tag the existing stable branches with
-the most recently released stable `charmed-kubernetes` bundle revision.
-
-> **Note**: This step is deprecated.
->
-> Starting with release 1.24, each repo has a unique branch for each
-> CK release. This step was previously necessary to tag the
-> previous stable release before resyncing each branch from `main` -> `stable`.
-> Tagging of the `release_x.xx` branch will now take place at the end of the release.
-
 ### Create release branches for all repos
 
 **Job**: https://jenkins.canonical.com/k8s/job/cut-stable-release/
 
-We need to create `release_x.xx` branches from `main` for all
+We need to create `release_1.xx` branches from `main` for all
 Charmed Kubernetes repositories. This will be our snapshot
 from which we test, fix, and subsequently promote to the new release.
 
 ### Pin snap channel on bundles/charms in the release branches
 
 We need to make sure that the bundle fragments and kubernetes-worker/control-plane/e2e
-are set to `<k8sver>/stable`. This should be done on each of the relevant git
-`release_x.xx` branches. For example, for the 1.25 GA:
+have `1.xx/stable` set as the default snap channel. This should be done on each of
+the relevant git `release_1.xx` branches. For example, for the 1.25 GA:
 
 - https://github.com/charmed-kubernetes/bundle/pull/858
 - https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/24
@@ -121,14 +107,14 @@ do not use our bundles for deployment.
 Once the rebase has occurred we need to bump the same charms and bundle
 fragments in the `main` git branches to the next k8s minor version,
 e.g. `1.26/edge`. You don't have to do this right away; in fact, you
-should wait until you actually have snaps in the `$next/edge` tracks
+should wait until you actually have snaps in the `$next++/edge` channels
 before making this change.
 
 ### Build new CK Charms from release git branches
 
 **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
-This job clones the `release_x.xx` branch for each of our repos. It then builds
+This job clones the `release_1.xx` branch for each of our repos. It then builds
 each charm using those local repos. After the charms are built, they will
 be promoted to the `beta` channel in Charmhub based on the build options
 shown below.
@@ -147,7 +133,7 @@ the same time will use the `candidate` channel for staging.
 K8s snap promotion is handled by the `sync-snaps` job and will happen
 automatically after following the `Prepare CI` section above. If for some
 reason you need to manually build K8s snaps from a specific branch, use the
-above job with a `branch` parameter like `1.25.0`:
+above job with a `branch` parameter like `1.25.0`.
 
 The `branch` parameter gets translated to `v$branch` by
 [snap.py](https://github.com/charmed-kubernetes/jenkins/blob/0b334c52b2c4f816b03ff866c44301724b8b471c/cilib/service/snap.py#L172)
@@ -206,24 +192,13 @@ when this job runs.
 
 ![build bundle options](build-bundle-options.png)
 
-### Submit PR to bump K8S Track Map
-
-If not done already, ensure all channels are listed for this release
-in the track map of our CI `./cilib/enums.py`:
-
-```diff
--     "1.25": ["1.25/beta", "1.25/edge"],
-+     "1.25": ["1.25/stable", "1.25/candidate", "1.25/beta", "1.25/edge"],
-}
-```
-
 ### Tag release branches with the current stable bundle
 
 **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bundle-rev/
 
 For all charm repos that make up CK, tag the existing release branches with
 the most recently released stable `charmed-kubernetes` bundle revision. Use
-the `x.xx/stable` version number from
+the `1.xx/stable` version number from
 [charmhub.io/charmed-kubernetes](https://charmhub.io/charmed-kubernetes),
 not the `latest/stable` version number.
 
@@ -231,13 +206,13 @@ not the `latest/stable` version number.
 
 ![sync stable tag bundle rev options](sync-stable-tag-bundle-rev-options.png)
 
-### Promote snaps from `<x.xx>/stable` to `latest/<risks>`
+### Promote snaps from `1.xx/stable` to `latest/<risks>`
 
 **Job**: https://jenkins.canonical.com/k8s/job/sync-snaps/
 
 This job will automatically promote snaps to `latest`. The only
 prereqs are that charms and bundles have been promoted, and that
-the `K8S_STABLE` enum is set to this release `x.xx`. For example,
+the `K8S_STABLE` enum is set to this release `1.xx`. For example,
 for the 1.24 GA:
 
 - https://github.com/charmed-kubernetes/jenkins/pull/902/files
