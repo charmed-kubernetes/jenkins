@@ -157,7 +157,7 @@ any changes as a result of SolQA testing.
 
 ### CNCF Conformance
 
-**Job**: https://jenkins.canonical.com/k8s/job/conformance/
+**Job**: https://jenkins.canonical.com/k8s/job/conformance-cncf-ck/
 
 ### Document release notes
 
