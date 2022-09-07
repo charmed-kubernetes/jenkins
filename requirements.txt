@@ -269,7 +269,7 @@ python-dateutil==2.8.1
     #   botocore
     #   ghp-import
     #   kubernetes
-python-dotenv==0.20.0
+python-dotenv==0.21.0
     # via -r requirements.in
 python-jenkins==1.7.0
     # via jenkins-job-builder
