@@ -1057,7 +1057,9 @@ def build(
     entities = []
     for charm_map in build_env.artifacts:
         for charm_name, charm_opts in charm_map.items():
-            if not any(match in filter_by_tag for match in charm_opts["tags"]):
+            if not any(
+                match in build_env.filter_by_tag for match in charm_opts["tags"]
+            ):
                 continue
 
             charm_entity = BuildEntity(build_env, charm_name, charm_opts)
@@ -1147,7 +1149,9 @@ def build_bundles(
     entities = []
     for bundle_map in build_env.artifacts:
         for bundle_name, bundle_opts in bundle_map.items():
-            if not any(match in filter_by_tag for match in bundle_opts["tags"]):
+            if not any(
+                match in build_env.filter_by_tag for match in bundle_opts["tags"]
+            ):
                 continue
             if "downstream" in bundle_opts:
                 bundle_opts["sub-repo"] = bundle_name

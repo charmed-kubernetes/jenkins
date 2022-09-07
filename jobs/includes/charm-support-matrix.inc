@@ -284,6 +284,8 @@
       - gcp-k8s-storage
       - integrator
     upstream: 'https://github.com/charmed-kubernetes/gcp-k8s-storage.git'
+    channel-range:
+      min: '1.25'
 - github-runner:
     downstream: charmed-kubernetes/github-runner-operator
     tags:
@@ -311,6 +313,8 @@
       - aws-k8s-storage
       - integrator
     upstream: 'https://github.com/charmed-kubernetes/aws-k8s-storage.git'
+    channel-range:
+      min: '1.25'
 - openstack-integrator:
     bugs: 'https://bugs.launchpad.net/charm-openstack-integrator'
     docs: 'https://charmhub.io/openstack-integrator/docs'
