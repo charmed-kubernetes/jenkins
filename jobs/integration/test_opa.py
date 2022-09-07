@@ -317,7 +317,6 @@ class TestOPA:
                 "gatekeeper-controller-manager",
             )
 
-
     async def test_opa_audit(self, storage_pool):
         log("Deploying the gatekeeper charm")
         audit = await self.k8s_model.deploy(
