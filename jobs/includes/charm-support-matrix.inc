@@ -273,6 +273,17 @@
       - charm-gcp-integrator
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-gcp-integrator.git'
+- gcp-k8s-storage:
+    bugs: 'https://bugs.launchpad.net/charm-gcp-k8s-storage'
+    docs: 'https://charmhub.io/gcp-k8s-storage/docs'
+    downstream: charmed-kubernetes/gcp-k8s-storage
+    store: 'https://charmhub.io/gcp-k8s-storage'
+    summary: Charm which enables out-of-tree GCP storage for Charmed Kubernetes.
+    tags:
+      - k8s
+      - gcp-k8s-storage
+      - integrator
+    upstream: 'https://github.com/charmed-kubernetes/gcp-k8s-storage.git'
 - github-runner:
     downstream: charmed-kubernetes/github-runner-operator
     tags:
@@ -289,6 +300,17 @@
       - charm-aws-integrator
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-aws-integrator.git'
+- aws-k8s-storage:
+    bugs: 'https://bugs.launchpad.net/charm-aws-k8s-storage'
+    docs: 'https://charmhub.io/aws-k8s-storage/docs'
+    downstream: charmed-kubernetes/aws-k8s-storage
+    store: 'https://charmhub.io/aws-k8s-storage'
+    summary: Charm which enables out-of-tree AWS storage for Charmed Kubernetes.
+    tags:
+      - k8s
+      - aws-k8s-storage
+      - integrator
+    upstream: 'https://github.com/charmed-kubernetes/aws-k8s-storage.git'
 - openstack-integrator:
     bugs: 'https://bugs.launchpad.net/charm-openstack-integrator'
     docs: 'https://charmhub.io/openstack-integrator/docs'
