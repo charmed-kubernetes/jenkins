@@ -181,6 +181,13 @@ class TestOPA:
         await action.wait()
         assert len(json.loads(action.results["violations"])) > 0
 
+    async def wait_for_units(self, app, error_status=["blocked", "error"]):
+        while (
+            status := app.units[0].workload_status if app.units else None
+        ) != "active":
+            assert status not in ("blocked", "error")
+            await asyncio.sleep(5)
+
     async def test_opa_webhook(self, storage_pool):
         log("Deploying the gatekeeper charm")
         webhook = await self.k8s_model.deploy(
@@ -190,11 +197,7 @@ class TestOPA:
         )
 
         try:
-            while (
-                status := webhook.units[0].workload_status if webhook.units else None
-            ) != "active":
-                assert status not in ("blocked", "error")
-                await asyncio.sleep(5)
+            await self.wait_for_units(webhook)
             unit = webhook.units[0]
 
             log("Waiting for gatekeeper charm to be ready")
@@ -228,21 +231,17 @@ class TestOPA:
                 storage={"audit-volume": {"pool": storage_pool}},
                 config={"audit-interval": 1},
             )
-            while (
-                status := audit.units[0].workload_status if audit.units else None
-            ) != "active":
-                assert status not in ("blocked", "error")
-                await asyncio.sleep(5)
+            await self.wait_for_units(audit)
 
             try:
                 await self.deploy_example_policy()
                 log("Test that the policy is enforced")
                 await self.validate_create_ns_fail()
                 await self.validate_create_ns_with_label()
+                await self._validate_audit_actions(audit.units[0])
                 await self.destroy_example_policy()
                 log("Validate that the policy is no longer enforced")
                 await self.validate_create_ns()
-                self._validate_audit_actions(unit)
             finally:
                 log("Deleting the audit charm")
                 await self.tools.run(
@@ -318,6 +317,7 @@ class TestOPA:
                 "gatekeeper-controller-manager",
             )
 
+
     async def test_opa_audit(self, storage_pool):
         log("Deploying the gatekeeper charm")
         audit = await self.k8s_model.deploy(
@@ -327,11 +327,7 @@ class TestOPA:
             storage={"audit-volume": {"pool": storage_pool}},
             config={"audit-interval": 1},
         )
-        while (
-            status := audit.units[0].workload_status if audit.units else None
-        ) != "active":
-            assert status not in ("blocked", "error")
-            await asyncio.sleep(5)
+        await self.wait_for_units(audit)
 
         unit = audit.units[0]
 
@@ -344,7 +340,7 @@ class TestOPA:
             log("Creating policy and constraint crds")
             await self.deploy_example_policy()
 
-            self._validate_audit_actions(unit)
+            await self._validate_audit_actions(unit)
 
             log("Deploying the gatekeeper charm")
             webhook = await self.k8s_model.deploy(
@@ -352,11 +348,7 @@ class TestOPA:
                 channel=self.tools.charm_channel,
                 trust=True,
             )
-            while (
-                status := webhook.units[0].workload_status if webhook.units else None
-            ) != "active":
-                assert status not in ("blocked", "error")
-                await asyncio.sleep(5)
+            await self.wait_for_units(webhook)
             await wait_for_application_status(
                 self.k8s_model, "gatekeeper-controller-manager", status="active"
             )
@@ -385,18 +377,10 @@ class TestOPA:
                     "update-status-hook-interval=5s",
                 )
                 log("Waiting for status to change to blocked")
-                while (
-                    status := audit.units[0].workload_status if audit.units else None
-                ) != "blocked":
-                    assert status != "error"
-                    await asyncio.sleep(5)
+                await self.wait_for_units(audit, error_status=["error"])
                 log("Reconcile resources")
                 await unit.run_action("reconcile-resources")
-                while (
-                    status := audit.units[0].workload_status if audit.units else None
-                ) != "active":
-                    assert status != "error"
-                    await asyncio.sleep(5)
+                await self.wait_for_units(audit, error_status=["error"])
             finally:
                 await self.tools.run(
                     "juju",
