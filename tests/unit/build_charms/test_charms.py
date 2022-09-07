@@ -575,6 +575,7 @@ def test_build_command(mock_build_env, mock_build_entity, charms):
             "ignored": dict(tags=["ignore-me"]),
         }
     ]
+    mock_build_env.filter_by_tag = ["tag1", "tag2"]
     entity = mock_build_entity.return_value
     result = runner.invoke(
         charms.build,
@@ -597,7 +598,7 @@ def test_build_command(mock_build_env, mock_build_entity, charms):
         "layer_branch": "main",
         "layer_index": "https://charmed-kubernetes.github.io/layer-index/",
         "resource_spec": "jobs/build-charms/resource-spec.yaml",
-        "filter_by_tag": ["tag1", "tag2"],
+        "filter_by_tag": mock_build_env.filter_by_tag,
         "track": "latest",
         "to_channel": "edge",
         "force": True,
@@ -648,6 +649,7 @@ def test_bundle_build_command(
     mock_build_env.bundles_dir = mock_build_env.tmp_dir / "bundles"
     mock_build_env.default_repo_dir = mock_build_env.repos_dir / "bundles-kubernetes"
     mock_build_env.to_channels = ("edge", "0.15/edge")
+    mock_build_env.filter_by_tag = ["k8s"]
     mock_build_env.force = False
 
     result = runner.invoke(
@@ -663,7 +665,7 @@ def test_bundle_build_command(
     assert mock_build_env.db["build_args"] == {
         "artifact_list": "tests/data/ci-testing-bundles.inc",
         "branch": "main",
-        "filter_by_tag": ["k8s"],
+        "filter_by_tag": mock_build_env.filter_by_tag,
         "track": "latest",
         "to_channel": "edge",
         "force": False,
