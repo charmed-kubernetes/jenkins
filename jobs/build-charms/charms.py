@@ -1057,14 +1057,10 @@ def build(
     entities = []
     for charm_map in build_env.artifacts:
         for charm_name, charm_opts in charm_map.items():
-            if not any(
-                match in build_env.filter_by_tag for match in charm_opts["tags"]
-            ):
-                continue
-
-            charm_entity = BuildEntity(build_env, charm_name, charm_opts)
-            entities.append(charm_entity)
-            click.echo(f"Queued {charm_entity.entity} for building")
+            if any(tag in build_env.filter_by_tag for tag in charm_opts["tags"]):
+                charm_entity = BuildEntity(build_env, charm_name, charm_opts)
+                entities.append(charm_entity)
+                click.echo(f"Queued {charm_entity.entity} for building")
 
     failed_entities = []
 
@@ -1149,19 +1145,16 @@ def build_bundles(
     entities = []
     for bundle_map in build_env.artifacts:
         for bundle_name, bundle_opts in bundle_map.items():
-            if not any(
-                match in build_env.filter_by_tag for match in bundle_opts["tags"]
-            ):
-                continue
-            if "downstream" in bundle_opts:
-                bundle_opts["sub-repo"] = bundle_name
-                bundle_opts["src_path"] = build_env.repos_dir / bundle_name
-            else:
-                bundle_opts["src_path"] = build_env.default_repo_dir
-            bundle_opts["dst_path"] = build_env.bundles_dir / bundle_name
+            if any(tag in build_env.filter_by_tag for tag in bundle_opts["tags"]):
+                if "downstream" in bundle_opts:
+                    bundle_opts["sub-repo"] = bundle_name
+                    bundle_opts["src_path"] = build_env.repos_dir / bundle_name
+                else:
+                    bundle_opts["src_path"] = build_env.default_repo_dir
+                bundle_opts["dst_path"] = build_env.bundles_dir / bundle_name
 
-            build_entity = BundleBuildEntity(build_env, bundle_name, bundle_opts)
-            entities.append(build_entity)
+                build_entity = BundleBuildEntity(build_env, bundle_name, bundle_opts)
+                entities.append(build_entity)
 
     for entity in entities:
         entity.echo("Starting")
