@@ -249,7 +249,7 @@ pyrfc3339==1.1
     # via
     #   juju
     #   macaroonbakery
-pytest==7.1.2
+pytest==7.1.3
     # via
     #   -r requirements.in
     #   pytest-asyncio
