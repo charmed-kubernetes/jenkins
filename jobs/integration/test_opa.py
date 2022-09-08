@@ -77,12 +77,24 @@ class TestOPA:
         try:
             await kubectl(self.model, cmd)
         except JujuRunError as e:
-            assert e.output.startswith(
-                "Error from server (Forbidden): admission webhook "
-                '"validation.gatekeeper.sh" denied the request:'
-            )
+            err = e.output
+            if err.startswith(
+                "Error from server (InternalError): Internal error occurred"
+            ):
+                # Try again as it might be transient/initialization related
+                await asyncio.sleep(7)
+                try:
+                    await kubectl(self.model, cmd)
+                except JujuRunError as e:
+                    err = e.output
+                else:
+                    pytest.fail("Creating the namespace should fail, but it didn't")
         else:
             pytest.fail("Creating the namespace should fail, but it didn't")
+        assert err.startswith(
+            "Error from server (Forbidden): admission webhook "
+            '"validation.gatekeeper.sh" denied the request:'
+        )
 
     async def deploy_example_policy(self):
         remote_policy_path = "/tmp/policy.yaml"
@@ -211,7 +223,7 @@ class TestOPA:
                 if e.output.startswith(
                     "Error from server (InternalError): Internal error occurred"
                 ):
-                    # Try again as it might be transient/intialization related
+                    # Try again as it might be transient/initialization related
                     await asyncio.sleep(5)
                     await self.validate_create_ns()
                 else:
@@ -274,13 +286,7 @@ class TestOPA:
                     "update-status-hook-interval=5s",
                 )
                 log("Waiting for status to change to blocked")
-                while (
-                    status := webhook.units[0].workload_status
-                    if webhook.units
-                    else None
-                ) != "blocked":
-                    assert status != "error"
-                    await asyncio.sleep(5)
+                await self.wait_for_units(webhook, error_status=("error",))
                 log("Reconcile resources")
                 await unit.run_action("reconcile-resources")
                 while (
@@ -376,10 +382,10 @@ class TestOPA:
                     "update-status-hook-interval=5s",
                 )
                 log("Waiting for status to change to blocked")
-                await self.wait_for_units(audit, error_status=["error"])
+                await self.wait_for_units(audit, error_status=("error"))
                 log("Reconcile resources")
                 await unit.run_action("reconcile-resources")
-                await self.wait_for_units(audit, error_status=["error"])
+                await self.wait_for_units(audit, error_status=("error"))
             finally:
                 await self.tools.run(
                     "juju",
