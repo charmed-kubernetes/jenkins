@@ -240,11 +240,11 @@ async def test_status_messages(model):
     """Validate that the status messages are correct."""
     expected_messages = {
         "kubernetes-control-plane": "Kubernetes control-plane running.",
-        "kubernetes-worker": "Kubernetes worker running.",
+        "kubernetes-worker": "Kubernetes worker running",
     }
     for app, message in expected_messages.items():
         for unit in model.applications[app].units:
-            assert unit.workload_status_message == message
+            assert message in unit.workload_status_message
 
 
 async def test_snap_versions(model):
