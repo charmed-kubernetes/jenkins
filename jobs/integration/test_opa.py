@@ -181,11 +181,11 @@ class TestOPA:
         await action.wait()
         assert len(json.loads(action.results["violations"])) > 0
 
-    async def wait_for_units(self, app, error_status=["blocked", "error"]):
+    async def wait_for_units(self, app, error_status=("blocked", "error")):
         while (
             status := app.units[0].workload_status if app.units else None
         ) != "active":
-            assert status not in ("blocked", "error")
+            assert status not in error_status
             await asyncio.sleep(5)
 
     async def test_opa_webhook(self, storage_pool):
