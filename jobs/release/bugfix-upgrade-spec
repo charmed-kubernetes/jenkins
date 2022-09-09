@@ -37,10 +37,10 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION_UPGRADE_TO=1.24/candidate
+SNAP_VERSION_UPGRADE_TO=1.25/candidate
 export SNAP_VERSION_UPGRADE_TO
 
-SNAP_VERSION=${1:-1.24/stable}
+SNAP_VERSION=${1:-1.25/stable}
 SERIES=${2:-focal}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=stable
