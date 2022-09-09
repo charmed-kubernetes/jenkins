@@ -1429,46 +1429,53 @@ async def any_keystone(model, apps_by_charm, tools):
     else:
         # No keystone available, add/setup one
         admin_password = "testpw"
-        series = "bionic"
-        channel = "latest/stable"
+        channel, mysql_channel = "yoga/stable", "8.0/stable"
         keystone = await model.deploy(
             "keystone",
-            series=series,
             channel=channel,
-            config={
-                "admin-password": admin_password,
-                "preferred-api-version": "3",
-                "openstack-origin": "cloud:bionic-rocky",
-            },
+            config={"admin-password": admin_password},
         )
-        await model.deploy(
-            "percona-cluster",
-            series=series,
-            channel=channel,
-            config={"innodb-buffer-pool-size": "256M", "max-connections": "1000"},
+        db_router = await model.deploy(
+            "mysql-router",
+            application_name="keystone-mysql-router",
+            channel=mysql_channel,
+        )
+        db = await model.deploy(
+            "mysql-innodb-cluster",
+            channel=mysql_channel,
+            constraints="cores=2 mem=8G root-disk=64G",
+            num_units=3,
+            config={
+                "enable-binlogs": True,
+                "innodb-buffer-pool-size": "256M",
+                "max-connections": 2000,
+                "wait-timeout": 3600,
+            },
         )
 
         await model.add_relation(keystone_creds, "keystone:identity-credentials")
-        await model.add_relation("keystone:shared-db", "percona-cluster:shared-db")
+        await model.add_relation("keystone:shared-db", f"{db_router.name}:shared-db")
+        await model.add_relation(f"{db.name}:db-router", f"{db_router.name}:db-router")
         await tools.juju_wait()
 
         yield SimpleNamespace(app=keystone, admin_password=admin_password)
 
         # cleanup
-        await model.applications["keystone"].destroy()
+        await model.applications[keystone.name].destroy()
+        await model.applications[db_router.name].destroy()
         await tools.juju_wait()
-        await model.applications["percona-cluster"].destroy()
+        await model.applications[db.name].destroy()
         await tools.juju_wait()
 
         # apparently, juju-wait will consider the model settled before an
         # application has fully gone away (presumably, when all units are gone) but
-        # but having a dying percona-cluster in the model can break the vault test
+        # but having a dying mysql in the model can break the vault test
         try:
             await model.block_until(
-                lambda: "percona-cluster" not in model.applications, timeout=120
+                lambda: db.name not in model.applications, timeout=120
             )
         except asyncio.TimeoutError:
-            pytest.fail("Timed out waiting for percona-cluster to go away")
+            pytest.fail(f"Timed out waiting for {db.name} to go away")
 
 
 @pytest.mark.skip_arch(["aarch64"])
@@ -1477,7 +1484,7 @@ async def test_keystone(model, tools, any_keystone):
     control_plane = model.applications["kubernetes-control-plane"]
 
     # save off config
-    config = await model.applications["kubernetes-control-plane"].get_config()
+    config = await control_plane.get_config()
 
     # verify kubectl config file has keystone in it
     control_plane_unit = random.choice(control_plane.units)
