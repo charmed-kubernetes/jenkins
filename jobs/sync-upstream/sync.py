@@ -1,9 +1,9 @@
 """ sync repo script
 """
-from urllib.error import HTTPError
 import click
 import yaml
 from pathlib import Path
+from requests.exceptions import HTTPError
 from cilib.github_api import Repository
 from cilib import log, enums, lp
 from cilib.enums import SNAP_K8S_TRACK_LIST
@@ -226,7 +226,7 @@ def _tag_stable_forks(
             try:
                 repo.tag_branch(stable_branch, tag)
             except HTTPError:
-                log.exception(f"Problem tagging {layer_name}, skipping..")
+                log.error(f"Problem tagging {layer_name}, skipping..")
                 failed.append(layer_name)
     if failed:
         raise RuntimeError("Couldn't create tag for " + ", ".join(failed))

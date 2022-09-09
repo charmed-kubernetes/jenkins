@@ -24,7 +24,7 @@ class AuthSession(requests.Session):
         self._read_only = read_only
 
         user, passwd = auth or (
-            quote(os.environ.get(_)) for _ in ["CDKBOT_GH_USR", "CDKBOT_GH_PSW"]
+            quote(os.environ.get(_) or "") for _ in ["CDKBOT_GH_USR", "CDKBOT_GH_PSW"]
         )
         if all([user, passwd]):
             self.auth = requests.auth.HTTPBasicAuth(user, passwd)
@@ -104,9 +104,6 @@ class Repository:
     def copy_branch(self, from_name, to_name):
         """Copy git branch."""
         resp = self.get_ref(branch=from_name)
-        if "object" not in resp:
-            LOG.error(f"Can't copy branch {from_name}: {resp}")
-            return
         resp = self.create_ref(branch=to_name, sha=resp["object"]["sha"])
         if not resp.ok:
             LOG.error(f"Copy Branch {resp.status_code}: {resp.text}")
@@ -132,12 +129,14 @@ class Repository:
             LOG.error(f"Tag Reference {resp.status_code}: {resp.text}")
             return
 
-    def get_ref(self, tag=None, branch=None):
+    def get_ref(self, tag=None, branch=None, raise_on_error=True):
         """Get git reference."""
         one_and_only_one = any((tag, branch)) and not all((tag, branch))
         assert one_and_only_one, "Either tag or branch should be defined"
         ref = f"tags/{tag}" if tag else f"heads/{branch}"
         resp = self.session.get(self._GITREF_API.format(**self._render, ref=ref))
+        if raise_on_error:
+            resp.raise_for_status()
         return resp.json()
 
     def create_ref(self, sha, tag=None, branch=None):
