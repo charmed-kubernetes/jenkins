@@ -34,7 +34,9 @@ def upstream_eksd_release(release):
     if release.endswith("-eksd"):
         release = release.replace("-eksd", "")
 
-    release_url = "https://raw.githubusercontent.com/aws/eks-distro/main/release/{}/production/RELEASE".format(release.replace(".", "-"))
+    release_url = "https://raw.githubusercontent.com/aws/eks-distro/main/release/{}/production/RELEASE".format(
+        release.replace(".", "-")
+    )
 
     r = requests.get(release_url)
     if r.status_code == 200:
