@@ -4,6 +4,13 @@ import semver
 
 
 def upstream_release(release):
+    if release.endswith("-eksd"):
+        return upstream_eksd_release(release)
+    else:
+        return upstream_kubernetes_release(release)
+
+
+def upstream_kubernetes_release(release):
     """Return the latest stable k8s in the release series"""
 
     if release.endswith("-strict"):
@@ -17,6 +24,21 @@ def upstream_release(release):
     r = requests.get(release_url)
     if r.status_code == 200:
         return r.content.decode().strip()
+    else:
+        None
+
+
+def upstream_eksd_release(release):
+    """Return the latest stable eks-d in the release series"""
+
+    if release.endswith("-eksd"):
+        release = release.replace("-eksd", "")
+
+    release_url = "https://raw.githubusercontent.com/aws/eks-distro/main/release/{}/production/RELEASE".format(release.replace(".", "-"))
+
+    r = requests.get(release_url)
+    if r.status_code == 200:
+        return "{}.{}".format(release, r.content.decode().strip())
     else:
         None
 
