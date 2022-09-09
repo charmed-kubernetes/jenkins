@@ -8,7 +8,7 @@ JOBS_PATH = Path("jobs")
 # Current supported STABLE K8s MAJOR.MINOR release. This determines what the
 # latest/stable channel is set to. It should be updated whenever a new CK
 # major.minor is GA.
-K8S_STABLE_VERSION = "1.24"
+K8S_STABLE_VERSION = "1.25"
 
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
@@ -20,7 +20,7 @@ K8S_STABLE_VERSION = "1.24"
 K8S_NEXT_VERSION = "1.26"
 
 # Lowest K8S SEMVER to process, this is usually stable - 3
-K8S_STARTING_SEMVER = "1.21.0"
+K8S_STARTING_SEMVER = "1.22.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]

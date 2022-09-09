@@ -28,13 +28,12 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.24/stable
+            - 1.25/stable
       - axis:
           type: user-defined
           name: series
           values:
             - focal
-            - bionic
             - jammy
     builders:
       - set-env:
@@ -67,14 +66,14 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.25/stable
             - 1.24/stable
-            - 1.23/stable
       - axis:
           type: user-defined
           name: series
           values:
             - focal
-            - bionic
+            - jammy
       - axis:
           type: user-defined
           name: arch
