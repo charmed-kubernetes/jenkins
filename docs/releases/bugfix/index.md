@@ -14,18 +14,17 @@ into the charmed-kubernetes namespace and have the common branches added.
 Branches:
  * `main`: The primary development branch. Merges are made against this branch as they are
    approved.
- * `stable`: Stable is the release branch. Major release have `main` directly merged to
-   `stable` while bug-fix releases have specific commits cherry-picked onto `stable` to create a
-   release.
+ * `release_x.xx`: is the release branch. Major release have `main` directly merged to
+   `release_x.xx` while bug-fix releases have specific commits cherry-picked onto 
+   `release_x.xx` to create a release.
 
-Tags are used to mark the bug-fix releases on the `stable` branch.
+Tags are used to mark the bug-fix releases on the `release_x.xx` branch.
 
-Snap repositories follow a similar branching model but due to the availability of channels on
-the snap store there is not a single `stable` branch. Instead each channel has a release branch
-`release/<channel>` which serves the same purpose of release tracking as the `stable` branch on
-charm repositories.
+Snap repositories follow a similar branching model with a slightly different name. 
+Instead each channel has a release branch `release/<channel>` which serves the same purpose
+of release tracking as the `release_x.xx` branch on charm repositories.
 
-### Preparing the stable/release branch
+### Preparing the release branch
 
 All Kubernetes charms, interfaces, and layers are revisioned together via
 [milestones][milestones]. To release a bug-fix milestone all bugs listed for the milestone
@@ -79,9 +78,9 @@ Create a PR against the [docs repo][] with release notes including:
 
 **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bugfix-rev/
 
-This will tag all stable repos with the k8s version and bugfix revision
-associated, for example, the first bugfix release of 1.16 would be
-**1.16+ck1**
+This will tag all repos with the k8s version and bugfix revision
+associated, for example, the first bugfix release of 1.24 would be
+**1.24+ck1** based on the tip of the `release_1.24` branch
 
 #### Charm tag options
 
