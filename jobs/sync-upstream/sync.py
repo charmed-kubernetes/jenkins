@@ -1,9 +1,9 @@
 """ sync repo script
 """
-from urllib.error import HTTPError
 import click
 import yaml
 from pathlib import Path
+from requests.exceptions import HTTPError
 from cilib.github_api import Repository
 from cilib import log, enums, lp
 from cilib.enums import SNAP_K8S_TRACK_LIST
