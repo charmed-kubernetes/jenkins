@@ -226,7 +226,7 @@ def _tag_stable_forks(
             try:
                 repo.tag_branch(stable_branch, tag)
             except HTTPError:
-                log.exception(f"Problem tagging {layer_name}, skipping..")
+                log.error(f"Problem tagging {layer_name}, skipping..")
                 failed.append(layer_name)
     if failed:
         raise RuntimeError("Couldn't create tag for " + ", ".join(failed))
