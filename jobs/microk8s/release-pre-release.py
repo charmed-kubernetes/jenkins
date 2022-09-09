@@ -45,6 +45,10 @@ if __name__ == "__main__":
             click.echo("Skipping latest track")
             continue
 
+        if track.endswith("-eksd"):
+            click.echo("We do not release pre-releases for EKS-D.")
+            continue
+
         click.echo("Looking at track {}".format(track))
         upstream = upstream_release(track)
         if upstream:
