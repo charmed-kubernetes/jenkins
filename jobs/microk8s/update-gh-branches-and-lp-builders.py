@@ -23,6 +23,27 @@ def is_latest(release):
     if release.endswith("-strict"):
         release = release.replace("-strict", "")
 
+    if release.endswith("-eksd"):
+        release = release.replace("-eksd", "")
+        return is_eksd_latest(release)
+    else:
+        return is_kubernetes_latest(release)
+
+
+def is_eksd_latest(release):
+    latest_release_url = "https://raw.githubusercontent.com/aws/eks-distro/main/release/DEFAULT_RELEASE_BRANCH"
+    r = requests.get(latest_release_url)
+    if r.status_code == 200:
+        version = r.content.decode().strip()
+        major_minor = version.replace("-", ".")
+        click.echo("Latest release is {} =?= {}".format(major_minor, release))
+        return major_minor == release
+    else:
+        click.echo("Failed to get latest release info.")
+        return False
+
+
+def is_kubernetes_latest(release):
     latest_release_url = "https://dl.k8s.io/release/stable.txt"
     r = requests.get(latest_release_url)
     if r.status_code == 200:
@@ -71,7 +92,7 @@ def create_gh_branch(branch, gh_user, gh_token):
     check_call(cmd)
 
     # The branch would look like 1.24 for classic builds or 1.24-strict for strict
-    kubetrack = branch.replace("-strict", "")
+    kubetrack = branch.replace("-strict", "").replace("-eksd", "")
     cmd = "sed -i s/^KUBE_TRACK=.*/KUBE_TRACK={}/g build-scripts/components/kubernetes/version.sh".format(
         kubetrack
     ).split()
@@ -141,12 +162,7 @@ class Builder:
             store_name=workingsnap.store_name,
             store_series=workingsnap.store_series,
             store_channels="{}/edge".format(self.track),
-            processors=[
-                "/+processors/amd64",
-                "/+processors/arm64",
-                "/+processors/s390x",
-                "/+processors/ppc64el",
-            ],
+            processors=self._get_processors(),
             auto_build=workingsnap.auto_build,
             auto_build_archive=workingsnap.auto_build_archive,
             auto_build_pocket=workingsnap.auto_build_pocket,
@@ -158,6 +174,20 @@ class Builder:
         click.echo("Updating the LP builder of {}".format(self.gh_branch))
         snap.git_path = self.gh_branch
         snap.lp_save()
+
+    def _get_processors(self):
+        if self.track.endswith("-eksd"):
+            return [
+                "/+processors/amd64",
+                "/+processors/arm64",
+            ]
+        else:
+            return [
+                "/+processors/amd64",
+                "/+processors/arm64",
+                "/+processors/s390x",
+                "/+processors/ppc64el",
+            ]
 
     def _get_lp(self):
         if not self.lp:
