@@ -20,16 +20,17 @@
     parameters:
       - string:
           name: CK_VERSION
-          default: '1.24'
+          default: '1.25'
           description: |
             CK version to deploy. This will be used to set the snap track
             and to identify what k8s version is associated with the results.
       - string:
-          name: CK_CHANNEL
-          default: 'stable'
+          name: CK_RISK
+          default: 'edge'
           description: |
-            CK channel to deploy. This will be used to set the snap and
-            charm channels used during deployment.
+            CK risk to deploy. This will be used to set the snap and
+            charm channels used during deployment. Should be one of:
+            'edge', 'beta', 'candidate', 'stable'.
       - bool:
           name: UPLOAD_RESULTS
           default: 'false'
