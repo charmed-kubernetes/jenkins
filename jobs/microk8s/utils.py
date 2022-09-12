@@ -40,7 +40,11 @@ def upstream_eksd_release(release):
 
     r = requests.get(release_url)
     if r.status_code == 200:
-        return "{}-{}".format(release, r.content.decode().strip())
+        eksd_release_patch = r.content.decode().strip()
+        if eksd_release_patch == "0":
+            return None
+        else:
+            return "{}-{}".format(release, r.content.decode().strip())
     else:
         None
 
