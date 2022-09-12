@@ -40,7 +40,7 @@ def upstream_eksd_release(release):
 
     r = requests.get(release_url)
     if r.status_code == 200:
-        return "{}.{}".format(release, r.content.decode().strip())
+        return "{}-{}".format(release, r.content.decode().strip())
     else:
         None
 
@@ -57,6 +57,10 @@ def compare_releases(a, b):
         a = a[1:]
     if b.startswith("v"):
         b = b[1:]
+
+    # eks releases may have dashes eg 1.23-5
+    a = a.replace("-", ".")
+    b = b.replace("-", ".")
 
     if a == b:
         return 0
