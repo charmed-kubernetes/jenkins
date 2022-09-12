@@ -89,7 +89,7 @@ httplib2==0.19.1
     # via
     #   launchpadlib
     #   lazr-restfulclient
-hunter==3.4.3
+hunter==3.5.0
     # via -r requirements.in
 idna==2.10
     # via requests
@@ -365,8 +365,6 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
-websockets==7.0 ; python_version < "3.9"
-websockets==8.1 ; python_version == "3.9"
 websockets==10.3 ; python_version >= "3.10"
     # via
     #   -r requirements.in
