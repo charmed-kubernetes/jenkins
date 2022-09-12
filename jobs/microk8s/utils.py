@@ -4,6 +4,13 @@ import semver
 
 
 def upstream_release(release):
+    if release.endswith("-eksd"):
+        return upstream_eksd_release(release)
+    else:
+        return upstream_kubernetes_release(release)
+
+
+def upstream_kubernetes_release(release):
     """Return the latest stable k8s in the release series"""
 
     if release.endswith("-strict"):
@@ -21,6 +28,27 @@ def upstream_release(release):
         None
 
 
+def upstream_eksd_release(release):
+    """Return the latest stable eks-d in the release series"""
+
+    if release.endswith("-eksd"):
+        release = release.replace("-eksd", "")
+
+    release_url = "https://raw.githubusercontent.com/aws/eks-distro/main/release/{}/production/RELEASE".format(
+        release.replace(".", "-")
+    )
+
+    r = requests.get(release_url)
+    if r.status_code == 200:
+        eksd_release_patch = r.content.decode().strip()
+        if eksd_release_patch == "0":
+            return None
+        else:
+            return "{}-{}".format(release, r.content.decode().strip())
+    else:
+        None
+
+
 def compare_releases(a, b):
     """Compares two version string.
 
@@ -33,6 +61,10 @@ def compare_releases(a, b):
         a = a[1:]
     if b.startswith("v"):
         b = b[1:]
+
+    # eks releases may have dashes eg 1.23-5
+    a = a.replace("-", ".")
+    b = b.replace("-", ".")
 
     if a == b:
         return 0

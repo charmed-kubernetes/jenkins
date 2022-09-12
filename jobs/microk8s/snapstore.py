@@ -58,7 +58,8 @@ class Microk8sSnap:
                 )
             self.revision = revision_info[0]
             self.version = revision_info[3]
-            version_parts = self.version.split(".")
+            # eksd versions ma look like v1.23-5 so we replace the - with a .
+            version_parts = self.version.replace("-", ".").split(".")
             self.is_prerelease = False
             if not version_parts[2].isdigit():
                 self.is_prerelease = True
