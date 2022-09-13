@@ -85,3 +85,56 @@
       - run-venv:
           COMMAND: |
            bash jobs/release/bugfix-upgrade-spec $snap_version $series
+
+- job:
+    name: 'validate-charm-release-upgrade'
+    node: runner-validate
+    description: |
+      Validates CK upgrades from previous stable charms to latest beta charms
+      Also validates CK upgrades from previous 2 stables snaps to latest beta snaps.
+      
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+    axes:
+      - axis:
+          type: slave  # wokeignore:rule=slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          # this value represents the snap channel after the upgrade
+          type: user-defined
+          name: upgrade_snap
+          values:
+            - 1.25/beta
+      - axis:
+          # each value represents the snap channel before the upgrade
+          type: user-defined
+          name: deploy_snap
+          values:
+            - 1.24/stable
+            - 1.23/stable
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+            - jammy
+      - axis:
+          type: user-defined
+          name: arch
+          values:
+            - amd64
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/release"
+      - run-venv:
+          COMMAND: |
+            bash jobs/release/release-upgrade-spec $upgrade_snap $deploy_snap $series
