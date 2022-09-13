@@ -1,0 +1,57 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+###############################################################################
+# INITIALIZE
+###############################################################################
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function test::execute
+{
+    declare -n is_pass=$1
+    timeout -s INT 3h pytest \
+                --full-trace \
+                jobs/integration/validation.py \
+                --is-upgrade \
+                --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
+                --upgrade-charm-channel beta \
+                --cloud "$JUJU_CLOUD" \
+                --model "$JUJU_MODEL" \
+                --controller "$JUJU_CONTROLLER"
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+###############################################################################
+# ENV
+###############################################################################
+SNAP_VERSION_UPGRADE_TO=${1:-1.25/beta}
+export SNAP_VERSION_UPGRADE_TO
+
+SNAP_VERSION=${2:-1.24/stable}
+SERIES=${3:-focal}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=stable
+JUJU_CLOUD=vsphere/Boston
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-release-upgrade
+ARCH=amd64
+JOB_NAME_CUSTOM="validate-charm-release-upgrade-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
+
+###############################################################################
+# START
+###############################################################################
+ci::run
