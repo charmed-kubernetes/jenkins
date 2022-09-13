@@ -187,7 +187,7 @@ def _rename_branch(
                 log.info(f"Skipping  :: {layer_name:^40} :: {to_name} already exists")
                 continue
 
-            log.info(f"Renaming :: {layer_name:^40} :: from: {from_name} to:{to_name}")
+            log.info(f"Renaming  :: {layer_name:^40} :: from: {from_name} to:{to_name}")
 
             try:
                 repo.rename_branch(from_name, to_name)
