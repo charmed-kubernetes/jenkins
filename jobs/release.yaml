@@ -115,7 +115,7 @@
           values:
             - 1.25/beta
       - axis:
-          # each value represents a the snap channel before the upgrade
+          # each value represents the snap channel before the upgrade
           type: user-defined
           name: deploy_snap
           values:
