@@ -447,6 +447,17 @@
       - k8s-operator
       - gatekeeper-audit
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
+- bird-operator:
+    bugs: 'https://bugs.launchpad.net/charm-bird'
+    docs: 'https://charmhub.io/bird/docs'
+    downstream: charmed-kubernetes/bird-operator
+    store: 'https://charmhub.io/bird'
+    summary: A dynamic IP routing daemon
+    tags:
+      - k8s
+      - bird
+      - cni
+    upstream: 'https://github.com/charmed-kubernetes/bird-operator.git'
 
 # EOL in favor of operator charm: https://charmhub.io/kubernetes-dashboard
 # - k8s-dashboard:
