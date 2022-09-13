@@ -38,7 +38,15 @@ from cilib.service.snap import SnapService
 from cilib.service.deb import DebService, DebCNIService, DebCriToolsService
 from cilib.service.ppa import PPAService
 from cilib.service.charm import CharmService
+from cilib.version import ChannelRange
 from drypy import dryrun
+
+
+def channel_range(entity):
+    range_def = entity.get("channel-range", {})
+    definitions = range_def.get("min"), range_def.get("max")
+    assert all(isinstance(_, (str, type(None))) for _ in definitions)
+    return ChannelRange(*definitions)
 
 
 @click.group()
@@ -81,7 +89,9 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
         for layer_name, params in layer_map.items():
             downstream = params["downstream"]
             if not params.get("needs_stable", True):
-                log.info(f"Skipping {layer_name} :: does not require stable branch")
+                log.info(
+                    f"Skipping  :: {layer_name:^40} :: does not require stable branch"
+                )
                 continue
 
             tags = params.get("tags", None)
@@ -89,18 +99,24 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 if not any(match in filter_by_tag for match in tags):
                     continue
 
+            if not stable_release in channel_range(params):
+                log.info(
+                    f"Skipping  :: {layer_name:^40} :: out of supported channel-range"
+                )
+                continue
+
             repo = Repository.with_session(*downstream.split("/"), read_only=dry_run)
             default_branch = params.get("branch") or repo.default_branch
 
-            log.info(
-                f"Releasing :: {layer_name:^35} :: from: {default_branch} to:{new_branch} "
-            )
-
             if new_branch in repo.branches:
                 log.info(
-                    f"Skipping  :: {layer_name:^35} :: {new_branch} already exists"
+                    f"Skipping  :: {layer_name:^40} :: {new_branch} already exists"
                 )
                 continue
+
+            log.info(
+                f"Releasing :: {layer_name:^40} :: from: {default_branch} to:{new_branch}"
+            )
 
             try:
                 repo.copy_branch(default_branch, new_branch)
@@ -156,21 +172,22 @@ def _rename_branch(
                     continue
 
             if not params.get("supports_rename", True):
-                log.info(f"Skipping {layer_name} :: does not support branch renaming")
+                log.info(
+                    f"Skipping  :: {layer_name:^40} :: does not support branch renaming"
+                )
                 continue
 
             repo = Repository.with_session(*downstream.split("/"), read_only=dry_run)
-            log.info(
-                f"Renaming Branch:: {layer_name:^35} :: from: {from_name} to:{to_name}"
-            )
 
             if from_name not in repo.branches:
-                log.info(f"Skipping  :: {layer_name:^35} :: {from_name} doesn't exist")
+                log.info(f"Skipping  :: {layer_name:^40} :: {from_name} doesn't exist")
                 continue
 
             if to_name in repo.branches:
-                log.info(f"Skipping  :: {layer_name:^35} :: {to_name} already exists")
+                log.info(f"Skipping  :: {layer_name:^40} :: {to_name} already exists")
                 continue
+
+            log.info(f"Renaming  :: {layer_name:^40} :: from: {from_name} to:{to_name}")
 
             try:
                 repo.rename_branch(from_name, to_name)
@@ -207,7 +224,13 @@ def _tag_stable_forks(
                     continue
 
             if not params.get("needs_tagging", True):
-                log.info(f"Skipping {layer_name} :: does not require tagging")
+                log.info(f"Skipping  :: {layer_name:^40} :: does not require tagging")
+                continue
+
+            if not k8s_version in channel_range(params):
+                log.info(
+                    f"Skipping  :: {layer_name:^40} :: out of supported channel-range"
+                )
                 continue
 
             downstream = params["downstream"]
@@ -217,12 +240,11 @@ def _tag_stable_forks(
                 tag = f"ck-{k8s_version}-{bundle_rev}"
             repo = Repository.with_session(*downstream.split("/"), read_only=dry_run)
 
-            log.info(f"Tagging {layer_name} ({tag}) :: {downstream}")
-
             if tag in repo.tags:
-                log.info(f"Skipping  :: {layer_name:^35} :: {tag} already exists")
+                log.info(f"Skipping  :: {layer_name:^40} :: {tag} already exists")
                 continue
 
+            log.info(f"Tagging   :: {layer_name:^40} :: {downstream} ({tag})")
             try:
                 repo.tag_branch(stable_branch, tag)
             except HTTPError:
