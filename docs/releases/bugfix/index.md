@@ -110,11 +110,28 @@ doing a 1.22+ckX release, then you would run:
 * build-release-cdk-addons-amd64-1.21
 * build-release-cdk-addons-amd64-1.20
 
-### Run **validate-charm-bugfix** job
+### Required Testing
+
+#### Run **validate-charm-bugfix** job
 
 **Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix/
 
 This validates the deployment using the charms from candidate channel.
+
+#### Run **validate-charm-bugfix-upgrade** job
+
+**Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix-upgrade/
+
+This validates the deployment using the charms from stable channel, then upgrading 
+the charms to the candidate channel.
+
+#### Examine Results
+
+**Results** http://jenkaas.s3-website-us-east-1.amazonaws.com/
+
+Verify that the tests are passing among all the permutations which the above jobs
+created.  Adjust the tests or charms for any failures, retagging and rebuilding
+from the release-* branches when changes are necessary.
 
 ### Promote charms from **candidate** to **stable**
 
