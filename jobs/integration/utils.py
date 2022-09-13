@@ -100,13 +100,16 @@ def asyncify(f):
 
 
 async def upgrade_charms(model, channel, tools):
-
     for app in model.applications.values():
-        try:
-            await app.upgrade_charm(channel=channel)
-        except JujuError as e:
-            if "already running charm" not in str(e):
-                raise
+        await tools.run(
+            "juju", "upgrade-charm", "-m", model.info.name, app.name, "--channel", channel
+        )
+        # Blocked on https://github.com/juju/python-libjuju/issues/728
+        # try:
+        #    await app.upgrade_charm(channel=channel)
+        # except JujuError as e:
+        #     if "already running charm" not in str(e):
+        #         raise
     await tools.juju_wait()
 
 
