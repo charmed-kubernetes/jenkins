@@ -458,6 +458,8 @@
       - bird
       - cni
     upstream: 'https://github.com/charmed-kubernetes/bird-operator.git'
+    channel-range:
+      min: '999.0'
 
 # EOL in favor of operator charm: https://charmhub.io/kubernetes-dashboard
 # - k8s-dashboard:
