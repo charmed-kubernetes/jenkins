@@ -104,7 +104,7 @@
           num-to-keep: 3
     axes:
       - axis:
-          type: slave
+          type: slave  # wokeignore:rule=slave
           name: node
           values:
             - runner-validate
