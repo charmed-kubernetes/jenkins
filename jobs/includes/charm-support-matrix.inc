@@ -447,7 +447,7 @@
       - k8s-operator
       - gatekeeper-audit
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
-- bird-operator:
+- bird:
     bugs: 'https://bugs.launchpad.net/charm-bird'
     docs: 'https://charmhub.io/bird/docs'
     downstream: charmed-kubernetes/bird-operator
