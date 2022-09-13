@@ -144,6 +144,18 @@ which must correspond to a valid tag in our
 > the appropriate channels:
 > - https://jenkins.canonical.com/k8s/job/build-release-cdk-addons-1.25/
 
+### Run **validate-charm-release-upgrade** job
+
+**Job**: https://jenkins.canonical.com/k8s/job/validate-charm-release-upgrade/
+
+This validates the deployment using the charms from latest/stable channel, 
+then performing an upgrade to latest/beta channel. The tests are parameterized
+to run on multiple series and with multiple snap channels.
+
+Before running this job, confirm that the defined variables in the job are
+* `upgrade_snap` - this CK release's beta snap (1.25/beta)
+* `deploy_snap` - the previous 2 CK releases' stable snaps (1.24/stable, 1.23/stable)
+
 ### Notify Solutions QA
 
 At the end of the first week and assuming all major blockers are resolved, the
