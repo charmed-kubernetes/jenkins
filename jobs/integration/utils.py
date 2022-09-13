@@ -100,9 +100,10 @@ def asyncify(f):
 
 
 async def upgrade_charms(model, channel, tools):
+    model_name = model.info.name
     for app in model.applications.values():
         await tools.run(
-            "juju", "upgrade-charm", "-m", model.info.name, app.name, "--channel", channel
+            "juju", "upgrade-charm", "-m", model_name, app.name, "--channel", channel
         )
         # Blocked on https://github.com/juju/python-libjuju/issues/728
         # try:
