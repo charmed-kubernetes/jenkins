@@ -130,8 +130,6 @@ class TestOPA:
 
     @pytest.fixture(scope="module")
     async def storage_pool(self, model, k8s_model, tools):
-        # This assumes that we are running on vsphere, should it be
-        # extended to run on other clouds as well?
         control_plane_app = model.applications["kubernetes-control-plane"]
         control_plane_unit = control_plane_app.units[0]
         remote_path = "/tmp/storage-class.yaml"
@@ -200,6 +198,7 @@ class TestOPA:
             assert status not in error_status
             await asyncio.sleep(5)
 
+    @pytest.mark.clouds(["vsphere"])
     async def test_opa_webhook(self, storage_pool):
         log("Deploying the gatekeeper charm")
         webhook = await self.k8s_model.deploy(
@@ -323,6 +322,7 @@ class TestOPA:
                 "gatekeeper-controller-manager",
             )
 
+    @pytest.mark.clouds(["vsphere"])
     async def test_opa_audit(self, storage_pool):
         log("Deploying the gatekeeper charm")
         audit = await self.k8s_model.deploy(
