@@ -3,6 +3,7 @@ import functools
 import ipaddress
 import json
 import os
+import random
 import subprocess
 import time
 import traceback
@@ -608,6 +609,30 @@ async def kubectl(model, cmd, check=True):
     return await juju_run(
         control_plane, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
     )
+
+
+async def _kubectl_doc(document, control_plane_unit, tools, model, action):
+    if action not in ["apply", "delete"]:
+        raise ValueError(f"Invalid action {action}")
+
+    remote_path = f"/tmp/{document.name}"
+    await scp_to(
+        document,
+        control_plane_unit,
+        remote_path,
+        tools.controller_name,
+        tools.connection,
+    )
+    cmd = f"{action} -f {remote_path}"
+    return await kubectl(model, cmd)
+
+
+async def kubectl_apply(document, control_plane_unit, tools, model):
+    return await _kubectl_doc(document, control_plane_unit, tools, model, "apply")
+
+
+async def kubectl_delete(document, control_plane_unit, tools, model):
+    return await _kubectl_doc(document, control_plane_unit, tools, model, "delete")
 
 
 async def vault(unit, cmd, **env):
