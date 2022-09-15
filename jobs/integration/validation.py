@@ -1,7 +1,6 @@
 import asyncio
 import base64
 from dataclasses import dataclass
-from functools import partial
 from typing import Callable
 
 import backoff
@@ -2292,7 +2291,7 @@ async def test_nagios(model, nagios):
     properly. This requires:
 
     1) force api server issues
-    2) verify nagios errors show for master and worker
+    2) verify nagios errors show for control-planes and workers
     3) fix api server
     4) break a worker's kubelet
     5) verify nagios errors for worker
