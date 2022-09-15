@@ -2208,7 +2208,7 @@ class NagiosApi:
         classes = {
             "critical": "statusBGCRITICAL",
             "pending": "statusPENDING",
-            "ok": "statusOK"
+            "ok": "statusOK",
         }
         url_data = self.open(self.url)
         soup = bs(url_data.read(), "html.parser")
@@ -2221,8 +2221,7 @@ class NagiosApi:
         while True:
             all_alerts = self.find_alerts(*severities.keys())
             if all(
-                severities[severity](alerts)
-                for severity, alerts in all_alerts.items()
+                severities[severity](alerts) for severity, alerts in all_alerts.items()
             ):
                 return all_alerts
             await asyncio.sleep(5)
@@ -2231,7 +2230,7 @@ class NagiosApi:
 @pytest.fixture()
 async def nagios(model, tools):
     """Deploys nagios into the model
-    
+
     1) Deploy nagios and nrpe
     2) login to nagios
     3) verify nagios has no errors and none pending
@@ -2244,13 +2243,17 @@ async def nagios(model, tools):
 
     # 1) deploy
     log("deploying nagios and nrpe")
-    app = model.applications.get("nagios") 
+    app = model.applications.get("nagios")
     if not app:
         app = await model.deploy("nagios", series="bionic")
         await app.expose()
     if "nrpe" not in model.applications:
         await model.deploy(
-            "nrpe", series=series, config={"swap": "", "swap_activity": ""}, num_units=0, channel="stable"
+            "nrpe",
+            series=series,
+            config={"swap": "", "swap_activity": ""},
+            num_units=0,
+            channel="stable",
         )
     for each in model.applications:
         if each not in ["nrpe"]:
@@ -2283,7 +2286,7 @@ async def nagios(model, tools):
     await tools.juju_wait()
 
 
-@pytest.mark.skip_if_version(lambda v: v < (1,17))
+@pytest.mark.skip_if_version(lambda v: v < (1, 17))
 async def test_nagios(model, nagios):
     """This test verifies the nagios relation is working
     properly. This requires:

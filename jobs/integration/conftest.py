@@ -486,7 +486,6 @@ def skip_if_version(request, k8s_version):
         pytest.skip(f"skipping, k8s version v{'.'.join(k8s_version)}")
 
 
-
 # def pytest_itemcollected(item):
 #     par = item.parent.obj
 #     node = item.obj
