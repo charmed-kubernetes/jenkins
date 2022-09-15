@@ -11,6 +11,7 @@ from typing import Mapping, Any
 from contextlib import contextmanager
 from juju.controller import Controller
 from juju.errors import JujuError
+from juju.utils import block_until_with_coroutine
 from subprocess import check_output, check_call
 from cilib import log
 import click
@@ -468,12 +469,17 @@ async def wait_for_status(workload_status, units):
 
 
 async def wait_for_application_status(model, app_name, status="active"):
-    while True:
+    async def check_app_status():
         apps = await model.get_status()
         app = apps.applications[app_name]
-        if app.status.status == status:
-            return
-        await asyncio.sleep(5)
+        return app.status.status == status
+
+    try:
+        await block_until_with_coroutine(check_app_status, timeout=120)
+    except asyncio.TimeoutError as e:
+        apps = await model.get_status()
+        app = apps.applications[app_name]
+        raise AssertionError(f"Application has unexpected status: {app.status.status}")
 
 
 async def prep_series_upgrade(machine, new_series, tools):
