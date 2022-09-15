@@ -10,7 +10,6 @@ from .logger import log
 from .utils import (
     JujuRunError,
     kubectl,
-    scp_to,
     wait_for_application_status,
     kubectl_apply,
     kubectl_delete,
@@ -291,7 +290,7 @@ class OPATestBase:
 
         try:
             await block_until_with_coroutine(check_app_missing, timeout=120)
-        except asyncio.TimeoutError as e:
+        except asyncio.TimeoutError:
             raise AssertionError(f"Application {app_name} was not removed")
 
 
@@ -299,7 +298,6 @@ class OPATestBase:
 class TestOPAWebhook(OPATestBase):
     async def test_opa_webhook_ready(self, opa_controller_manager):
         await self.wait_for_units(opa_controller_manager)
-        unit = opa_controller_manager.units[0]
 
         log("Waiting for gatekeeper charm to be ready")
         await wait_for_application_status(

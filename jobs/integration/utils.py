@@ -3,7 +3,6 @@ import functools
 import ipaddress
 import json
 import os
-import random
 import subprocess
 import time
 import traceback
@@ -477,7 +476,7 @@ async def wait_for_application_status(model, app_name, status="active"):
 
     try:
         await block_until_with_coroutine(check_app_status, timeout=120)
-    except asyncio.TimeoutError as e:
+    except asyncio.TimeoutError:
         apps = await model.get_status()
         app = apps.applications[app_name]
         raise AssertionError(f"Application has unexpected status: {app.status.status}")
