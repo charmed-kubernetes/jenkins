@@ -50,6 +50,7 @@ def test_build_env_missing_env(charms):
 def test_environment(tmpdir):
     """Creates a fixture defining test environment variables."""
     saved_env, test_env = {}, dict(
+        BUILD_TAG="jenkins-build-charms-1234",
         CHARM_BASE_DIR=str(tmpdir),
         CHARM_BUILD_DIR=f'{tmpdir / "build"}',
         CHARM_LAYERS_DIR=f'{tmpdir / "layers"}',
@@ -78,6 +79,13 @@ def cilib_store(charms):
 
 
 @pytest.fixture(autouse=True)
+def github_repository(charms):
+    """Create a fixture defining mock for github api."""
+    with patch.object(charms, "Repository") as repo:
+        yield repo.with_session.return_value
+
+
+@pytest.fixture(autouse=True)
 def charm_cmd():
     """Create a fixture defining mock for `charm` cli command."""
 
@@ -94,6 +102,7 @@ def charm_cmd():
         )
 
     with patch("sh.charm", create=True) as charm:
+        charm.version.return_value = '{"charm-tools": {"version": "1.2.3"}}'
         cmd = charm.bake.return_value
         cmd.build.side_effect = partial(command_response, "build")
         yield cmd
@@ -279,7 +288,7 @@ def test_build_entity_charm_build(
 
 
 def test_build_entity_push(
-    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
+    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms, github_repository
 ):
     """Test that BuildEntity pushes to appropriate store."""
     artifacts = charm_environment.artifacts
@@ -290,9 +299,14 @@ def test_build_entity_push(
     ).read_bytes()
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
+    charm_entity.commit = MagicMock(return_value="deadbeef")
     charm_entity.push()
     charm_cmd.push.assert_not_called()
     charmcraft_cmd.upload.assert_called_once_with(charm_entity.dst_path)
+    charm_entity.commit.assert_called_once_with()
+    github_repository.tag_commit.assert_called_once_with(
+        "deadbeef", tag='k8s-ci-charm-845', message='Built by job: jenkins-build-charms-1234'
+    )
     assert charm_entity.new_entity == "845"
 
 

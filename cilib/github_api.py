@@ -109,15 +109,12 @@ class Repository:
             LOG.error(f"Copy Branch {resp.status_code}: {resp.text}")
         resp.raise_for_status()
 
-    def tag_branch(self, branch, tag, message="built for the {tag} release"):
-        """Annotate git tag based on branch."""
-        resp = self.get_ref(branch=branch)
-        sha, _type = resp["object"]["sha"], resp["object"]["type"]
-        # create tag object
+    def tag_commit(self, sha, tag, message="Creating new tag: {tag}", _type="commit"):
+        """Annotate git tag based on commit."""
         resp = self.session.post(
             self._GITTAG_API.format(**self._render),
             headers={"Accept": "application/vnd.github+json"},
-            json=dict(tag=tag, message=message.format(tag=tag), object=sha, type=_type),
+            json=dict(tag=tag, message=message.format(tag=tag), object=sha, _type=type),
         )
         if not resp.ok:
             LOG.error(f"Tag Object {resp.status_code}: {resp.text}")
@@ -128,6 +125,13 @@ class Repository:
         if not resp.ok:
             LOG.error(f"Tag Reference {resp.status_code}: {resp.text}")
             return
+
+    def tag_branch(self, branch, tag, message="built for the {tag} release"):
+        """Annotate git tag based on branch."""
+        resp = self.get_ref(branch=branch)
+        sha, _type = resp["object"]["sha"], resp["object"]["type"]
+        # create tag object
+        self.tag_commit(sha, tag, message=message.format(tag=tag), _type=_type)
 
     def get_ref(self, tag=None, branch=None, raise_on_error=True):
         """Get git reference."""

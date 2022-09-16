@@ -22,6 +22,7 @@ import traceback
 from io import BytesIO
 import zipfile
 from pathlib import Path
+from cilib.github_api import Repository
 from sh.contrib import git
 from cilib.git import default_gh_branch
 from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_SERIES_MAP, K8S_CHARM_SUPPORT_ARCHES
@@ -86,19 +87,25 @@ def generate_manifest(reactive_charm, archs):
             "name": "ubuntu",
         }
 
+    def _generate_tools():
+        ret = json.loads(sh.charm.version(format="json"))
+        return {
+            "charmtool-version": ret["charm-tools"]["version"],
+            "charmtool-started-at": datetime.utcnow().isoformat()+"Z",
+        }
+
     manifest = {
         "analysis": {
             "attributes": [
                 {"name": "language", "result": "python"},
                 {"name": "framework", "result": "reactive"},
             ],
-        },
-        "charmcraft-started-at": "2022-07-14T00:00:00.000000Z",
-        "charmcraft-version": "1.7.1",
+        }
     }
 
     metadata = yaml.safe_load(metadata_path.read_bytes())
     manifest["bases"] = [_generate_base(series) for series in metadata["series"]]
+    manifest.update(**_generate_tools())
     with manifest_path.open("w") as fwrite:
         yaml.dump(manifest, fwrite, Dumper=NoAliasDumper)
     return manifest_path
@@ -318,6 +325,7 @@ class BuildEnv:
     def __new__(cls, *args, **kwargs):
         """Initialize class variables used during the build from the CI environment."""
         try:
+            cls.build_tag = os.environ.get("BUILD_TAG")
             cls.base_dir = Path(os.environ.get("CHARM_BASE_DIR"))
             cls.build_dir = Path(os.environ.get("CHARM_BUILD_DIR"))
             cls.layers_dir = Path(os.environ.get("CHARM_LAYERS_DIR"))
@@ -740,6 +748,12 @@ class BuildEntity:
             self.echo("Failed to build, aborting")
             raise BuildException(f"Failed to build {self.name}")
 
+    @property
+    def repository(self) -> Optional[Repository]:
+        """Create object to interact with the base repository."""
+        if self.downstream:
+            return Repository.with_session(*self.downstream.split("/"))
+
     def push(self):
         """Pushes a built charm to Charmhub."""
         if "override-push" in self.opts:
@@ -758,6 +772,13 @@ class BuildEntity:
             f"Pushing {self.type}({self.name}) from {self.dst_path} to {self.entity}"
         )
         self.new_entity = _CharmHub(self).upload(self.dst_path)
+        repo = self.repository
+        if repo:
+            tag = f"{self.name}-{self.new_entity}"
+            message = f"Built by job: {self.build.build_tag}"
+            self.echo(f"Tagging {self.type}({self.name}) with {tag}")
+            repo.tag_commit(self.commit(), tag=tag, message=message)
+
 
     def attach_resources(self):
         """Assemble charm's resources and associate in charmhub."""
