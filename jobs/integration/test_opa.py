@@ -3,7 +3,6 @@ import json
 import random
 from pathlib import Path
 
-from juju.utils import block_until_with_coroutine
 import pytest
 
 from .logger import log
@@ -13,11 +12,13 @@ from .utils import (
     wait_for_application_status,
     kubectl_apply,
     kubectl_delete,
+    juju_run_action,
 )
 
 templates = Path(__file__).parent / "templates"
 
 
+@pytest.mark.clouds(["vsphere"])
 class OPATestBase:
     @pytest.fixture(autouse=True)
     def setup(self, model, k8s_model, tools):
@@ -81,24 +82,16 @@ class OPATestBase:
         cmd = f"create ns {name}"
         # Creating the namespace should raise
         log("Creating namespace without any labels")
-        try:
+        with pytest.raises(JujuRunError, match="Forbidden|InternalError") as exc_info:
             await kubectl(self.model, cmd)
-        except JujuRunError as e:
-            err = e.output
-            if err.startswith(
-                "Error from server (InternalError): Internal error occurred"
-            ):
-                # Try again as it might be transient/initialization related
-                await asyncio.sleep(10)
-                try:
-                    await kubectl(self.model, cmd)
-                except JujuRunError as e:
-                    err = e.output
-                else:
-                    pytest.fail("Creating the namespace should fail, but it didn't")
-        else:
-            pytest.fail("Creating the namespace should fail, but it didn't")
-        assert err.startswith(
+
+        if "InternalError" in str(exc_info.value):
+            await asyncio.sleep(10)
+            # Try again as it might be transient/initialization related
+            with pytest.raises(JujuRunError, match="Forbidden") as exc_info:
+                await kubectl(self.model, cmd)
+
+        assert exc_info.value.output.startswith(
             "Error from server (Forbidden): admission webhook "
             '"validation.gatekeeper.sh" denied the request:'
         )
@@ -173,32 +166,14 @@ class OPATestBase:
 
     @pytest.fixture(scope="class")
     async def update_status_interval(self, tools, k8s_model):
-        interval = await tools.run(
-            "juju",
-            "model-config",
-            "-m",
-            tools.k8s_connection,
-            "update-status-hook-interval",
-        )
-        interval = interval[0].strip()
+        model_config = await k8s_model.get_config()
+        interval = model_config.get("update-status-hook-interval").value
         try:
             log("Decrease update status hook interval")
-            await tools.run(
-                "juju",
-                "model-config",
-                "-m",
-                tools.k8s_connection,
-                "update-status-hook-interval=5s",
-            )
+            await k8s_model.set_config({"update-status-hook-interval": "5s"})
             yield
         finally:
-            await tools.run(
-                "juju",
-                "model-config",
-                "-m",
-                tools.k8s_connection,
-                f"update-status-hook-interval={interval}",
-            )
+            await k8s_model.set_config({"update-status-hook-interval": interval})
 
     @pytest.fixture(scope="class")
     async def opa_controller_manager(self, model, k8s_model, tools):
@@ -212,15 +187,8 @@ class OPATestBase:
             yield webhook
         finally:
             log("Deleting the gatekeeper charm")
-            await tools.run(
-                "juju",
-                "remove-application",
-                "-m",
-                tools.k8s_connection,
-                "--force",
-                "gatekeeper-controller-manager",
-            )
-            await self.wait_for_app_removed("gatekeeper-controller-manager", k8s_model)
+            await k8s_model.remove_application(webhook.name)
+            await tools.juju_wait(m=tools.k8s_connection, timeout_secs=120)
 
     @pytest.fixture(scope="class")
     async def opa_audit(self, model, k8s_model, tools, storage_pool):
@@ -245,14 +213,13 @@ class OPATestBase:
                 "--destroy-storage",
                 "gatekeeper-audit",
             )
-            await self.wait_for_app_removed("gatekeeper-audit", k8s_model)
+            await tools.juju_wait(m=tools.k8s_connection, timeout_secs=120)
 
     async def _validate_audit_actions(self, unit):
         log("Running list-violations action")
         total_violations = 0
         while total_violations == 0:
-            action = await unit.run_action("list-violations")
-            await action.wait()
+            action = await juju_run_action(unit, "list-violations")
             assert action.status == "completed"
             assert "constraint-violations" in action.results
             constraint_violations = json.loads(action.results["constraint-violations"])
@@ -261,14 +228,14 @@ class OPATestBase:
             await asyncio.sleep(5)
 
         log("Running get-violation action")
-        action = await unit.run_action(
+        action = await juju_run_action(
+            unit,
             "get-violation",
             **{
                 "constraint-template": "K8sRequiredLabels",
                 "constraint": "ns-must-have-gk",
             },
         )
-        await action.wait()
         assert len(json.loads(action.results["violations"])) > 0
 
     async def wait_for_units(
@@ -280,24 +247,10 @@ class OPATestBase:
             assert status not in error_status
             await asyncio.sleep(5)
 
-    async def wait_for_app_removed(self, app_name, k8s_model=None):
-        if not k8s_model:
-            k8s_model = self.k8s_model
 
-        async def check_app_missing():
-            apps = await k8s_model.get_status()
-            return app_name not in apps.applications
-
-        try:
-            await block_until_with_coroutine(check_app_missing, timeout=120)
-        except asyncio.TimeoutError:
-            raise AssertionError(f"Application {app_name} was not removed")
-
-
-@pytest.mark.clouds(["vsphere"])
 class TestOPAWebhook(OPATestBase):
     async def test_opa_webhook_ready(self, opa_controller_manager):
-        await self.wait_for_units(opa_controller_manager)
+        await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
 
         log("Waiting for gatekeeper charm to be ready")
         await wait_for_application_status(
@@ -341,7 +294,10 @@ class TestOPAWebhook(OPATestBase):
 
         log("Waiting for audit charm to be ready")
         try:
-            await self.wait_for_units(audit)
+            await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
+            await wait_for_application_status(
+                self.k8s_model, "gatekeeper-audit", status="active"
+            )
 
             await self.deploy_example_policy()
             log("Test that the policy is enforced")
@@ -362,7 +318,7 @@ class TestOPAWebhook(OPATestBase):
                 "--destroy-storage",
                 "gatekeeper-audit",
             )
-            await self.wait_for_app_removed("gatekeeper-audit")
+            await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
 
     async def test_manager_reconcile(
         self, opa_controller_manager, update_status_interval
@@ -371,8 +327,8 @@ class TestOPAWebhook(OPATestBase):
             opa_controller_manager, error_status=("error",), expected_status="blocked"
         )
         log("Reconcile resources")
-        await opa_controller_manager.units[0].run_action("reconcile-resources")
-        await self.wait_for_units(opa_controller_manager, error_status=("error",))
+        await juju_run_action(opa_controller_manager.units[0], "reconcile-resources")
+        await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
 
         # Check that the opa_controller_manager works
         await self.validate_create_ns()
@@ -384,10 +340,9 @@ class TestOPAWebhook(OPATestBase):
         await self.destroy_example_policy()
 
 
-@pytest.mark.clouds(["vsphere"])
 class TestOPAAudit(OPATestBase):
     async def test_opa_audit_ready(self, opa_audit):
-        await self.wait_for_units(opa_audit)
+        await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
 
         log("Waiting for audit charm to be ready")
         await wait_for_application_status(
@@ -402,7 +357,6 @@ class TestOPAAudit(OPATestBase):
         await self.deploy_example_policy()
         await self._validate_audit_actions(opa_audit.units[0])
 
-    @pytest.mark.dependency()
     async def test_manager_deploy(self, opa_audit, update_status_interval):
         log("Deploying the gatekeeper charm")
         webhook = await self.k8s_model.deploy(
@@ -411,7 +365,7 @@ class TestOPAAudit(OPATestBase):
             trust=True,
         )
         try:
-            await self.wait_for_units(webhook)
+            await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
             await wait_for_application_status(
                 self.k8s_model, "gatekeeper-controller-manager", status="active"
             )
@@ -422,17 +376,16 @@ class TestOPAAudit(OPATestBase):
         finally:
             log("Deleting the gatekeeper charm")
             await webhook.destroy()
-            await self.wait_for_app_removed("gatekeeper-controller-manager")
+            await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
 
-    @pytest.mark.dependency(depends=["test_manager_deploy"])
     async def test_audit_reconcile(self, opa_audit, update_status_interval):
         log("Waiting for status to change to blocked")
         await self.wait_for_units(
             opa_audit, error_status=("error",), expected_status="blocked"
         )
         log("Reconcile resources")
-        await opa_audit.units[0].run_action("reconcile-resources")
-        await self.wait_for_units(opa_audit, error_status=("error",))
+        await juju_run_action(opa_audit.units[0], "reconcile-resources")
+        await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
 
         log("Creating policy and constraint crds")
         await self.deploy_example_policy()
