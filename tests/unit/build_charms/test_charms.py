@@ -305,7 +305,9 @@ def test_build_entity_push(
     charmcraft_cmd.upload.assert_called_once_with(charm_entity.dst_path)
     charm_entity.commit.assert_called_once_with()
     github_repository.tag_commit.assert_called_once_with(
-        "deadbeef", tag='k8s-ci-charm-845', message='Built by job: jenkins-build-charms-1234'
+        "deadbeef",
+        tag="k8s-ci-charm-845",
+        message="Built by job: jenkins-build-charms-1234",
     )
     assert charm_entity.new_entity == "845"
 

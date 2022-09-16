@@ -91,7 +91,7 @@ def generate_manifest(reactive_charm, archs):
         ret = json.loads(sh.charm.version(format="json"))
         return {
             "charmtool-version": ret["charm-tools"]["version"],
-            "charmtool-started-at": datetime.utcnow().isoformat()+"Z",
+            "charmtool-started-at": datetime.utcnow().isoformat() + "Z",
         }
 
     manifest = {
@@ -778,7 +778,6 @@ class BuildEntity:
             message = f"Built by job: {self.build.build_tag}"
             self.echo(f"Tagging {self.type}({self.name}) with {tag}")
             repo.tag_commit(self.commit(), tag=tag, message=message)
-
 
     def attach_resources(self):
         """Assemble charm's resources and associate in charmhub."""
