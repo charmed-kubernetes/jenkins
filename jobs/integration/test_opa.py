@@ -144,6 +144,8 @@ class OPATestBase:
         storage_pool_name = "teststorage"
         log("Creating storage pool")
         try:
+            # TODO: When use `k8s_model.create_storage_pool` once we start using
+            # python-libjuju  >= 3.0.0
             await tools.run(
                 "juju",
                 "create-storage-pool",
@@ -156,6 +158,8 @@ class OPATestBase:
             yield storage_pool_name
         finally:
             log("Removing storage pool")
+            # TODO: When use `k8s_model.remove_storage_pool` once we start using
+            # python-libjuju  >= 3.0.0
             await tools.run(
                 "juju",
                 "remove-storage-pool",
@@ -204,6 +208,9 @@ class OPATestBase:
             yield audit
         finally:
             log("Deleting the audit charm")
+            # TODO: Currently `k8s_model.remove_application` does not support removing
+            # storage, this feature will be added in a later python-libjuju version,
+            # once that is done we should replace this with one such call.
             await tools.run(
                 "juju",
                 "remove-application",
@@ -309,6 +316,9 @@ class TestOPAWebhook(OPATestBase):
             await self.validate_create_ns()
         finally:
             log("Deleting the audit charm")
+            # TODO: Currently `k8s_model.remove_application` does not support removing
+            # storage, this feature will be added in a later python-libjuju version,
+            # once that is done we should replace this with one such call.
             await self.tools.run(
                 "juju",
                 "remove-application",
