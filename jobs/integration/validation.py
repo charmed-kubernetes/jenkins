@@ -1,5 +1,7 @@
 import asyncio
 import base64
+from dataclasses import dataclass
+from typing import Callable
 
 import backoff
 import ipaddress
@@ -2196,90 +2198,119 @@ async def test_multus(model, tools, addons_model):
     await cleanup()
 
 
-def find_nagios_criticals(url, opener):
-    url_data = opener.open(url)
-    soup = bs(url_data.read(), "html.parser")
-    return soup.find_all("td", class_="statusBGCRITICAL")
+@dataclass
+class NagiosApi:
+    open: Callable
+    url: str
+
+    def find_alerts(self, *severities):
+        classes = {
+            "critical": "statusBGCRITICAL",
+            "pending": "statusPENDING",
+            "ok": "statusOK",
+        }
+        url_data = self.open(self.url)
+        soup = bs(url_data.read(), "html.parser")
+        return {
+            severity: soup.find_all("td", class_=classes[severity.lower()])
+            for severity in severities
+        }
+
+    async def wait_for_alerts(self, **severities):
+        while True:
+            all_alerts = self.find_alerts(*severities.keys())
+            if all(
+                severities[severity](alerts) for severity, alerts in all_alerts.items()
+            ):
+                return all_alerts
+            await asyncio.sleep(5)
 
 
-async def wait_for_no_errors(url, opener):
-    criticals = ["dummy"]
-    while len(criticals) > 0:
-        criticals = find_nagios_criticals(url, opener)
-        await asyncio.sleep(30)
-
-
-async def test_nagios(model, tools):
-    """This test verifies the nagios relation is working
-    properly. This requires:
+@pytest.fixture()
+async def nagios(model, tools):
+    """Deploys nagios into the model
 
     1) Deploy nagios and nrpe
     2) login to nagios
-    3) verify things settle and no errors
-    4) force api server issues
-    5) verify nagios errors show for master and worker
-    6) fix api server
-    7) break a worker's kubelet
-    8) verify nagios errors for worker
-    9) fix worker
+    3) verify nagios has no errors and none pending
+    ... yield nagios url for tests ...
+    4) Remove nagios and nrpe
     """
-
-    log("starting nagios test")
-    masters = model.applications["kubernetes-control-plane"]
-    k8s_version_str = masters.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     series = os.environ["SERIES"]
-    if series in (
-        "xenial",
-        "jammy",
-    ):
+    if series in ("xenial",):
         pytest.skip(f"skipping unsupported series {series}")
-    if k8s_minor_version < (1, 17):
-        pytest.skip(f"skipping, k8s version v{k8s_version_str}")
 
     # 1) deploy
     log("deploying nagios and nrpe")
-    nagios = await model.deploy("nagios", series="bionic")
-    await model.deploy(
-        "nrpe", series="bionic", config={"swap": "", "swap_activity": ""}, num_units=0
-    )
-    await nagios.expose()
-    await model.add_relation("nrpe", "kubernetes-control-plane")
-    await model.add_relation("nrpe", "kubernetes-worker")
-    await model.add_relation("nrpe", "etcd")
-    await model.add_relation("nrpe", "easyrsa")
-    await model.add_relation("nrpe", "kubeapi-load-balancer")
-    await model.add_relation("nagios", "nrpe")
+    app = model.applications.get("nagios")
+    if not app:
+        app = await model.deploy("nagios", series="bionic")
+        await app.expose()
+    if "nrpe" not in model.applications:
+        await model.deploy(
+            "nrpe",
+            series=series,
+            config={"swap": "", "swap_activity": ""},
+            num_units=0,
+            channel="stable",
+        )
+    for each in model.applications:
+        if each not in ["nrpe"]:
+            await model.add_relation("nrpe", each)
     log("waiting for cluster to settle...")
     await tools.juju_wait()
 
     # 2) login to nagios
     cmd = "cat /var/lib/juju/nagios.passwd"
-    output = await juju_run(nagios.units[0], cmd, timeout=10)
+    output = await juju_run(app.units[0], cmd, timeout=10)
     assert output.status == "completed"
     login_passwd = output.stdout.strip()
 
     pwd_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-    url_base = "http://{}".format(nagios.units[0].public_address)
+    url_base = "http://{}".format(app.units[0].public_address)
     pwd_mgr.add_password(None, url_base, "nagiosadmin", login_passwd)
     handler = urllib.request.HTTPBasicAuthHandler(pwd_mgr)
     opener = urllib.request.build_opener(handler)
-    status_url = "{}/cgi-bin/nagios3/status.cgi?host=all".format(url_base)
+    status_url = "{}/cgi-bin/nagios3/status.cgi?host=all&limit=500".format(url_base)
 
     # 3) wait for nagios to settle
     log("waiting for nagios to settle")
-    await wait_for_no_errors(status_url, opener)
+    nagios_api = NagiosApi(opener.open, status_url)
+    await nagios_api.wait_for_alerts(critical=lambda c: not c, pending=lambda p: not p)
 
-    # 4) break all the things
+    yield nagios_api
+
+    await model.remove_application("nagios")
+    await model.remove_application("nrpe")
+    await tools.juju_wait()
+
+
+@pytest.mark.skip_if_version(lambda v: v < (1, 17))
+async def test_nagios(model, nagios):
+    """This test verifies the nagios relation is working
+    properly. This requires:
+
+    1) force api server issues
+    2) verify nagios errors show for control-planes and workers
+    3) fix api server
+    4) break a worker's kubelet
+    5) verify nagios errors for worker
+    6) fix worker
+    """
+
+    log("starting nagios test")
+    masters = model.applications["kubernetes-control-plane"]
+
+    # 1) break all the things
     log("breaking api server")
     await masters.set_config({"api-extra-args": "broken=true"})
 
-    # 5) make sure nagios is complaining for kubernetes-control-plane
+    # 2) make sure nagios is complaining for kubernetes-control-plane
     #    AND kubernetes-worker
     log("Verifying complaints")
-    criticals = []
     while True:
-        criticals = find_nagios_criticals(status_url, opener)
+        alerts = await nagios.wait_for_alerts(critical=lambda c: len(c) > 0)
+        criticals = alerts["critical"]
 
         if criticals:
             found_master = []
@@ -2300,7 +2331,7 @@ async def test_nagios(model, tools):
     # 6) fix api and wait for settle
     log("Fixing API server")
     await masters.set_config({"api-extra-args": ""})
-    await wait_for_no_errors(status_url, opener)
+    await nagios.wait_for_alerts(critical=lambda c: not c)
 
     # 7) break worker
     log("Breaking workers")
@@ -2309,9 +2340,9 @@ async def test_nagios(model, tools):
 
     # 8) verify nagios is complaining about worker
     log("Verifying complaints")
-    criticals = []
     while True:
-        criticals = find_nagios_criticals(status_url, opener)
+        alerts = await nagios.wait_for_alerts(critical=lambda c: len(c) > 0)
+        criticals = alerts["critical"]
 
         if criticals:
             found_worker = []
@@ -2329,7 +2360,7 @@ async def test_nagios(model, tools):
 
     # 9) Fix worker and wait for complaints to go away
     await workers.set_config({"kubelet-extra-args": ""})
-    await wait_for_no_errors(status_url, opener)
+    await nagios.wait_for_alerts(critical=lambda c: not c)
 
 
 @pytest.mark.skip("Failing and being investigated on possible deprecation")

@@ -463,6 +463,29 @@ def skip_by_cloud(request, cloud):
         pytest.skip("unsupported cloud")
 
 
+@pytest.fixture()
+async def k8s_version(model):
+    masters = model.applications["kubernetes-control-plane"]
+    k8s_version_str = masters.data["workload-version"]
+    try:
+        k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
+    except ValueError:
+        k8s_minor_version = None
+    return k8s_minor_version
+
+
+@pytest.fixture(autouse=True)
+def skip_if_version(request, k8s_version):
+    skip_marker = request.node.get_closest_marker("skip_if_version")
+    if not skip_marker:
+        return
+    if k8s_version is None:
+        pytest.skip("skipping, Couldn't determine k8s version yet.")
+    version_predicate, *_ = skip_marker.args
+    if version_predicate(k8s_version):
+        pytest.skip(f"skipping, k8s version v{'.'.join(k8s_version)}")
+
+
 # def pytest_itemcollected(item):
 #     par = item.parent.obj
 #     node = item.obj
