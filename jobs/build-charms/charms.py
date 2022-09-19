@@ -154,7 +154,7 @@ class CharmCmd(_WrappedCmd):
 
 class CharmcraftCmd(_WrappedCmd):
     def __init__(self, entity):
-        super().__init__(entity, sh.charmcraft.bake(_tee=True, _out=entity.echo))
+        super().__init__(entity, sh.charmcraft.bake(_tee=True, _out=partial(entity.echo, nl=False)))
         self.charmcraft = self._run
 
     def pack(self, *args, **kwargs):
