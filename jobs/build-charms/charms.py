@@ -26,8 +26,9 @@ from sh.contrib import git
 from cilib.git import default_gh_branch
 from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_SERIES_MAP, K8S_CHARM_SUPPORT_ARCHES
 from cilib.service.aws import Store
-from cilib.run import cmd_ok, capture, script
+from cilib.run import cmd_ok, script
 from cilib.version import ChannelRange, Release, RISKS
+from functools import partial
 from datetime import datetime
 from enum import Enum
 from types import SimpleNamespace
@@ -135,13 +136,19 @@ class _WrappedCmd:
 
 class CharmCmd(_WrappedCmd):
     def __init__(self, entity):
-        super().__init__(entity, sh.charm.bake(_tee=True, _out=entity.echo))
+        super().__init__(
+            entity, sh.charm.bake(_tee=True, _out=partial(entity.echo, nl=False))
+        )
         self.charm = self._run
 
     def build(self, *args, **kwargs):
         ret = self.charm.build(*args, **kwargs)
         assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
         ret.ok = True
+        return ret
+
+    def pull_source(self, *args, **kwargs):
+        ret = self.charm("pull-source", *args, **kwargs)
         return ret
 
 
@@ -446,9 +453,9 @@ class BuildEnv:
         """Get if we should force a build."""
         return self.db["build_args"].get("force", None)
 
-    def echo(self, msg):
+    def echo(self, msg, **kwds):
         """Click echo wrapper."""
-        click.echo(f"[BuildEnv] {msg}")
+        click.echo(f"[BuildEnv] {msg}", **kwds)
 
     def save(self):
         """Store build metadata into stateful db."""
@@ -491,10 +498,9 @@ class BuildEnv:
 
     def download(self, layer_name):
         """Pull layer source from the charm store."""
-        out = capture(
-            f"charm pull-source -i {self.layer_index} -b {self.layer_branch} {layer_name}"
+        out = CharmCmd(self).pull_source(
+            "-i", self.layer_index, "-b", self.layer_branch, layer_name
         )
-        self.echo(f"-  {out.stdout.decode()}")
         layer_manifest = {
             "rev": self.REV.search(out.stdout.decode()).group(1),
             "url": layer_name,
@@ -582,9 +588,9 @@ class BuildEntity:
         """Represent build entity as a string."""
         return f"<BuildEntity: {self.name} ({self.full_entity}) (reactive charm: {self.reactive})>"
 
-    def echo(self, msg):
+    def echo(self, msg, **kwds):
         """Click echo wrapper."""
-        click.echo(f"[{self.name}] {msg}")
+        click.echo(f"[{self.name}] {msg}", **kwds)
 
     def _get_full_entity(self):
         """Grab identifying revision for charm's channel."""
@@ -979,7 +985,7 @@ def build(
             if any(tag in build_env.filter_by_tag for tag in charm_opts["tags"]):
                 charm_entity = BuildEntity(build_env, charm_name, charm_opts)
                 entities.append(charm_entity)
-                click.echo(f"Queued {charm_entity.entity} for building")
+                build_env.echo(f"Queued {charm_entity.entity} for building")
 
     failed_entities = []
 
