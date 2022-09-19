@@ -114,7 +114,7 @@ class Repository:
         resp = self.session.post(
             self._GITTAG_API.format(**self._render),
             headers={"Accept": "application/vnd.github+json"},
-            json=dict(tag=tag, message=message.format(tag=tag), object=sha, _type=type),
+            json=dict(tag=tag, message=message.format(tag=tag), object=sha, type=_type),
         )
         if not resp.ok:
             LOG.error(f"Tag Object {resp.status_code}: {resp.text}")
