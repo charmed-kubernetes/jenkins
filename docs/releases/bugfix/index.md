@@ -150,16 +150,16 @@ bundles shouldn't be promoted because a candidate bundle points to candidate cha
 Instead BUILD the bundles targetting the stable channels:
 
 Run the build with parameters:
-  * layer_branch = stable
-  * charm_branch = stable
-  * bundle_branch = stable
+  * layer_branch = release_1.XX
+  * charm_branch = release_1.XX
+  * bundle_branch = release_1.XX
   * to_channel = stable (will build both 1.xx/stable and latest/stable)
   * filter_by_tag = charmed-kubernetes
 
 Repeat the build with parameters:
-  * layer_branch = stable
-  * charm_branch = stable
-  * bundle_branch = stable
+  * layer_branch = release_1.XX
+  * charm_branch = release_1.XX
+  * bundle_branch = release_1.XX
   * to_channel = stable (will build both 1.xx/stable and latest/stable)
   * filter_by_tag = kubernetes-core
 
