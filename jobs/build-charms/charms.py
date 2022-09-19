@@ -772,8 +772,7 @@ class BuildEntity:
             f"Pushing {self.type}({self.name}) from {self.dst_path} to {self.entity}"
         )
         self.new_entity = _CharmHub(self).upload(self.dst_path)
-        repo = self.repository
-        if repo:
+        if repo := self.repository:
             tag = f"{self.name}-{self.new_entity}"
             message = f"Built by job: {self.build.build_tag}"
             self.echo(f"Tagging {self.type}({self.name}) with {tag}")
