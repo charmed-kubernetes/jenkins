@@ -14,18 +14,17 @@ into the charmed-kubernetes namespace and have the common branches added.
 Branches:
  * `main`: The primary development branch. Merges are made against this branch as they are
    approved.
- * `stable`: Stable is the release branch. Major release have `main` directly merged to
-   `stable` while bug-fix releases have specific commits cherry-picked onto `stable` to create a
-   release.
+ * `release_x.xx`: is the release branch. Major release have `main` directly merged to
+   `release_x.xx` while bug-fix releases have specific commits cherry-picked onto 
+   `release_x.xx` to create a release.
 
-Tags are used to mark the bug-fix releases on the `stable` branch.
+Tags are used to mark the bug-fix releases on the `release_x.xx` branch.
 
-Snap repositories follow a similar branching model but due to the availability of channels on
-the snap store there is not a single `stable` branch. Instead each channel has a release branch
-`release/<channel>` which serves the same purpose of release tracking as the `stable` branch on
-charm repositories.
+Snap repositories follow a similar branching model with a slightly different name. 
+Instead each channel has a release branch `release/<channel>` which serves the same purpose
+of release tracking as the `release_x.xx` branch on charm repositories.
 
-### Preparing the stable/release branch
+### Preparing the release branch
 
 All Kubernetes charms, interfaces, and layers are revisioned together via
 [milestones][milestones]. To release a bug-fix milestone all bugs listed for the milestone
@@ -79,9 +78,9 @@ Create a PR against the [docs repo][] with release notes including:
 
 **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bugfix-rev/
 
-This will tag all stable repos with the k8s version and bugfix revision
-associated, for example, the first bugfix release of 1.16 would be
-**1.16+ck1**
+This will tag all repos with the k8s version and bugfix revision
+associated, for example, the first bugfix release of 1.24 would be
+**1.24+ck1** based on the tip of the `release_1.24` branch
 
 #### Charm tag options
 
@@ -111,11 +110,28 @@ doing a 1.22+ckX release, then you would run:
 * build-release-cdk-addons-amd64-1.21
 * build-release-cdk-addons-amd64-1.20
 
-### Run **validate-charm-bugfix** job
+### Required Testing
+
+#### Run **validate-charm-bugfix** job
 
 **Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix/
 
 This validates the deployment using the charms from candidate channel.
+
+#### Run **validate-charm-bugfix-upgrade** job
+
+**Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix-upgrade/
+
+This validates the deployment using the charms from stable channel, then upgrading 
+the charms to the candidate channel.
+
+#### Examine Results
+
+**Results** http://jenkaas.s3-website-us-east-1.amazonaws.com/
+
+Verify that the tests are passing among all the permutations which the above jobs
+created.  Adjust the tests or charms for any failures, retagging and rebuilding
+from the release-* branches when changes are necessary.
 
 ### Promote charms from **candidate** to **stable**
 
@@ -134,16 +150,16 @@ bundles shouldn't be promoted because a candidate bundle points to candidate cha
 Instead BUILD the bundles targetting the stable channels:
 
 Run the build with parameters:
-  * layer_branch = stable
-  * charm_branch = stable
-  * bundle_branch = stable
+  * layer_branch = release_1.XX
+  * charm_branch = release_1.XX
+  * bundle_branch = release_1.XX
   * to_channel = stable (will build both 1.xx/stable and latest/stable)
   * filter_by_tag = charmed-kubernetes
 
 Repeat the build with parameters:
-  * layer_branch = stable
-  * charm_branch = stable
-  * bundle_branch = stable
+  * layer_branch = release_1.XX
+  * charm_branch = release_1.XX
+  * bundle_branch = release_1.XX
   * to_channel = stable (will build both 1.xx/stable and latest/stable)
   * filter_by_tag = kubernetes-core
 
