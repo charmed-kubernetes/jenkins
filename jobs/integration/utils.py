@@ -11,6 +11,7 @@ from typing import Mapping, Any
 from contextlib import contextmanager
 from juju.controller import Controller
 from juju.errors import JujuError
+from juju.utils import block_until_with_coroutine
 from subprocess import check_output, check_call
 from cilib import log
 import click
@@ -471,6 +472,20 @@ async def wait_for_status(workload_status, units):
         ) from e
 
 
+async def wait_for_application_status(model, app_name, status="active"):
+    async def check_app_status():
+        apps = await model.get_status()
+        app = apps.applications[app_name]
+        return app.status.status == status
+
+    try:
+        await block_until_with_coroutine(check_app_status, timeout=120)
+    except asyncio.TimeoutError:
+        apps = await model.get_status()
+        app = apps.applications[app_name]
+        raise AssertionError(f"Application has unexpected status: {app.status.status}")
+
+
 async def prep_series_upgrade(machine, new_series, tools):
     log.info(f"preparing series upgrade for machine {machine.id}")
     await tools.run(
@@ -597,6 +612,30 @@ async def kubectl(model, cmd, check=True):
     return await juju_run(
         control_plane, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
     )
+
+
+async def _kubectl_doc(document, control_plane_unit, tools, model, action):
+    if action not in ["apply", "delete"]:
+        raise ValueError(f"Invalid action {action}")
+
+    remote_path = f"/tmp/{document.name}"
+    await scp_to(
+        document,
+        control_plane_unit,
+        remote_path,
+        tools.controller_name,
+        tools.connection,
+    )
+    cmd = f"{action} -f {remote_path}"
+    return await kubectl(model, cmd)
+
+
+async def kubectl_apply(document, control_plane_unit, tools, model):
+    return await _kubectl_doc(document, control_plane_unit, tools, model, "apply")
+
+
+async def kubectl_delete(document, control_plane_unit, tools, model):
+    return await _kubectl_doc(document, control_plane_unit, tools, model, "delete")
 
 
 async def vault(unit, cmd, **env):
