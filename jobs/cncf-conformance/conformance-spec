@@ -90,9 +90,9 @@ function test::capture
         popd
     fi
 
-    pushd k8s-conformance
+    pushd k8s-conformance && mkdir -p v${CK_VERSION}
     # if we dont have a project dir yet, prime one with known good cdk contents
-    test -d ${PROJECT_DIR} || mkdir -p v${CK_VERSION} && cp -a v1.24/cdk ${PROJECT_DIR}
+    test -d ${PROJECT_DIR} || cp -a v1.25/cdk v${CK_VERSION}
     mv ../plugins/e2e/results/global/* ${PROJECT_DIR}
     sed -i -e "s/version: .*/version: ${CK_VERSION}/" ${PROJECT_DIR}/PRODUCT.yaml
     git add ${PROJECT_DIR}
