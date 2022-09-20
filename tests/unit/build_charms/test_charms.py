@@ -288,7 +288,7 @@ def test_build_entity_charm_build(
 
 
 def test_build_entity_push(
-    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms, github_repository
+    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, charms
 ):
     """Test that BuildEntity pushes to appropriate store."""
     artifacts = charm_environment.artifacts
@@ -299,17 +299,58 @@ def test_build_entity_push(
     ).read_bytes()
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
-    charm_entity.commit = MagicMock(return_value="deadbeef")
+    charm_entity.tag = MagicMock()
     charm_entity.push()
     charm_cmd.push.assert_not_called()
     charmcraft_cmd.upload.assert_called_once_with(charm_entity.dst_path)
-    charm_entity.commit.assert_called_once_with()
-    github_repository.tag_commit.assert_called_once_with(
-        "deadbeef",
-        tag="k8s-ci-charm-845",
-        message="Built by job: jenkins-build-charms-1234",
-    )
+    charm_entity.tag.assert_called_once_with("k8s-ci-charm-845")
     assert charm_entity.new_entity == "845"
+
+
+@pytest.fixture()
+def build_entity_tag(charm_environment, charms):
+    artifacts = charm_environment.artifacts
+    charm_name, charm_opts = next(iter(artifacts[0].items()))
+    charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
+    the_tag = f"{charm_entity.name}-369"
+    the_sha = "0123456789abcdef0123456789abcdef01234567"
+
+    charm_entity.commit = MagicMock(return_value=the_sha)
+    yield the_sha, the_tag, charm_entity
+
+
+def test_build_entity_tag_dne(build_entity_tag, github_repository):
+    the_sha, the_tag, charm_entity = build_entity_tag
+
+    github_repository.get_ref.return_value = {"message": "Not Found"}
+    github_repository.tag_commit.return_value = True
+
+    assert charm_entity.tag(the_tag), "Should return tagged=True"
+    github_repository.get_ref.assert_called_once_with(tag=the_tag, raise_on_error=False)
+    github_repository.create_ref.assert_called_once_with(the_sha, tag=the_tag)
+
+
+def test_build_entity_tag_duplicate(build_entity_tag, github_repository):
+    the_sha, the_tag, charm_entity = build_entity_tag
+
+    charm_entity.commit = MagicMock(return_value=the_sha)
+    github_repository.get_ref.return_value = {"object": dict(sha=the_sha)}
+
+    assert charm_entity.tag(the_tag), "Should return tagged=True"
+    github_repository.get_ref.assert_called_once_with(tag=the_tag, raise_on_error=False)
+    github_repository.tag_commit.assert_not_called()
+
+
+def test_build_entity_tag_conflict(build_entity_tag, charms, github_repository):
+    the_sha, the_tag, charm_entity = build_entity_tag
+
+    charm_entity.commit = MagicMock(return_value=the_sha)
+    github_repository.get_ref.return_value = {
+        "object": dict(sha=the_sha.replace("0", "X"))
+    }
+
+    with pytest.raises(charms.BuildException):
+        charm_entity.tag(the_tag)
 
 
 @patch("charms.os.makedirs", Mock())
@@ -402,9 +443,11 @@ def test_bundle_build_entity_push(
     bundle_entity = charms.BundleBuildEntity(
         bundle_environment, bundle_name, bundle_opts
     )
+    bundle_entity.tag = MagicMock()
     bundle_entity.push()
     charm_cmd.push.assert_not_called()
     charmcraft_cmd.upload.assert_called_once_with(bundle_entity.dst_path)
+    bundle_entity.tag.assert_called_once_with("test-kubernetes-123")
     assert bundle_entity.new_entity == "123"
 
 

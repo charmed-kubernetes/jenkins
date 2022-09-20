@@ -73,15 +73,22 @@ class Repository:
         str_d["repo"] = str_d["repo"].replace(".git", "")
         return str_d
 
+    def _paginate(self, base_url: str, transform):
+        result = []
+        url = base_url.format(**self._render)
+        while url:
+            resp = self.session.get(url)
+            result += [transform(t) for t in resp.json()]
+            url = resp.links.get("next", {}).get("url")
+        return result
+
     @property
     def tags(self):
-        resp = self.session.get(self._TAG_API.format(**self._render))
-        return [t["name"] for t in resp.json()]
+        return self._paginate(self._TAG_API, lambda t: t["name"])
 
     @property
     def branches(self):
-        resp = self.session.get(self._BRANCH_API.format(**self._render))
-        return [t["name"] for t in resp.json()]
+        return self._paginate(self._BRANCH_API, lambda t: t["name"])
 
     @property
     def default_branch(self):
@@ -109,12 +116,12 @@ class Repository:
             LOG.error(f"Copy Branch {resp.status_code}: {resp.text}")
         resp.raise_for_status()
 
-    def tag_branch(self, branch, tag, message="built for the {tag} release"):
+    def tag_branch(self, branch, tag, message="built for the {tag} release") -> bool:
         """Annotate git tag based on branch."""
         resp = self.get_ref(branch=branch)
         sha, _type = resp["object"]["sha"], resp["object"]["type"]
         # create tag object
-        self.tag_commit(sha, tag, message=message.format(tag=tag), _type=_type)
+        return self.tag_commit(sha, tag, message=message.format(tag=tag), _type=_type)
 
     def tag_commit(self, sha, tag, message="Creating new tag: {tag}", _type="commit"):
         """Annotate git tag based on commit."""
@@ -125,13 +132,14 @@ class Repository:
         )
         if not resp.ok:
             LOG.error(f"Tag Object {resp.status_code}: {resp.text}")
-            return
+            return False
 
         # create tag reference
         resp = self.create_ref(tag=tag, sha=sha)
         if not resp.ok:
             LOG.error(f"Tag Reference {resp.status_code}: {resp.text}")
-            return
+            return False
+        return True
 
     def get_ref(self, tag=None, branch=None, raise_on_error=True):
         """Get git reference."""
@@ -144,7 +152,7 @@ class Repository:
         return resp.json()
 
     def create_ref(self, sha, tag=None, branch=None):
-        """Create git reference."""
+        """Create git reference (AKA lightweight tag)."""
         one_and_only_one = any((tag, branch)) and not all((tag, branch))
         assert one_and_only_one, "Either tag or branch should be defined"
         ref = f"refs/tags/{tag}" if tag else f"refs/heads/{branch}"
@@ -154,3 +162,8 @@ class Repository:
             json=dict(ref=ref, sha=sha),
         )
         return resp
+
+
+if __name__ == "__main__":
+    repo = Repository.with_session("charmed-kubernetes", "jenkins")
+    print(repo.tags)

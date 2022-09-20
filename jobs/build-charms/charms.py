@@ -772,11 +772,29 @@ class BuildEntity:
             f"Pushing {self.type}({self.name}) from {self.dst_path} to {self.entity}"
         )
         self.new_entity = _CharmHub(self).upload(self.dst_path)
+        self.tag(f"{self.name}-{self.new_entity}")
+
+    def tag(self, tag: str) -> bool:
+        """Tag current commit in this repo with a lightweigh tag."""
+        tagged = False
+        current_sha = self.commit()
         if repo := self.repository:
-            tag = f"{self.name}-{self.new_entity}"
-            message = f"Built by job: {self.build.build_tag}"
-            self.echo(f"Tagging {self.type}({self.name}) with {tag}")
-            repo.tag_commit(self.commit(), tag=tag, message=message)
+            ref = repo.get_ref(tag=tag, raise_on_error=False)
+            ref_not_found = ref.get("message", "").lower() == "not found"
+            ref_obj_sha = ref.get("object", {}).get("sha", "")
+            assert ref_not_found or ref_obj_sha, f"Unexpected ref-object: ref={ref}"
+            if ref_not_found:
+                self.echo(f"Tagging {self.type}({self.name}) with {tag}")
+                tagged = repo.create_ref(current_sha, tag=tag)
+            elif ref_obj_sha.lower() == current_sha.lower():
+                self.echo(f"Correct Tag {self.type}({self.name}) with {tag} exists")
+                tagged = True
+            else:
+                raise BuildException(
+                    f"Tag {tag} of {self.type}({self.name}) exists on a different commit\n"
+                    f"   current: '{current_sha}' != tag: '{ref_obj_sha}'"
+                )
+        return tagged
 
     def attach_resources(self):
         """Assemble charm's resources and associate in charmhub."""
