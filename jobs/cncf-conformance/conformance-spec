@@ -92,7 +92,7 @@ function test::capture
 
     pushd k8s-conformance
     # if we dont have a project dir yet, prime one with known good cdk contents
-    test -d ${PROJECT_DIR} || cp -a v1.24/cdk ${PROJECT_DIR}
+    test -d ${PROJECT_DIR} || mkdir -p v${CK_VERSION} && cp -a v1.24/cdk ${PROJECT_DIR}
     mv ../plugins/e2e/results/global/* ${PROJECT_DIR}
     sed -i -e "s/version: .*/version: ${CK_VERSION}/" ${PROJECT_DIR}/PRODUCT.yaml
     git add ${PROJECT_DIR}
@@ -116,7 +116,7 @@ JUJU_MODEL=cncf-ck
 ARCH=amd64
 SERIES=focal
 SNAP_VERSION=${CK_VERSION}/${CK_RISK}
-SONOBUOY_VERSION=0.56.3
+SONOBUOY_VERSION=0.56.10
 
 JOB_ID=$(identifier)
 JOB_NAME_CUSTOM="cncf-ck-${SERIES}-${SNAP_VERSION}"
