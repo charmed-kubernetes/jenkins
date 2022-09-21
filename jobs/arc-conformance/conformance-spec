@@ -51,7 +51,7 @@ function juju::bootstrap
          --force \
          --bootstrap-constraints arch="$ARCH" \
          --model-default test-mode=true \
-         --model-default resource-tags=owner=k8sci \
+         --model-default resource-tags="owner=k8sci" \
          --model-default image-stream=released \
          --model-default automatically-retry-hooks=true \
          --model-default logging-config="<root>=DEBUG"
@@ -173,13 +173,13 @@ function test::capture
 JUJU_CLOUD=azure/eastus
 JUJU_CONTROLLER=arc-ck-$(identifier::short)
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=${CK_CHANNEL}
+JUJU_DEPLOY_CHANNEL=${CK_VERSION}/${CK_RISK}
 JUJU_MODEL=arc-ck
 
 ARC_NS=azure-arc-kubernetes-conformance
 ARCH=amd64
 SERIES=focal
-SNAP_VERSION=${CK_VERSION}/${CK_CHANNEL}
+SNAP_VERSION=${CK_VERSION}/${CK_RISK}
 SONOBUOY_VERSION=0.56.3
 
 JOB_ID=$(identifier)

@@ -48,7 +48,7 @@ function test::execute
     export RBAC_ENABLED=$(kubectl api-versions | grep "rbac.authorization.k8s.io/v1" -c)
     kubectl version
     timeout -s INT 3h ./sonobuoy run --mode=certified-conformance --wait \
-      --plugin-env=e2e.E2E_EXTRA_ARGS=--non-blocking-taints=juju.is/kubernetes-control-plane 2>&1
+      --plugin-env=e2e.E2E_EXTRA_ARGS=--non-blocking-taints=node-role.kubernetes.io/control-plane 2>&1
     ret=$?
     is_pass="True"
     if (( $ret > 0 )); then
@@ -74,8 +74,8 @@ function test::capture
 
     # We cant auto-create a PR upstream, but we can setup a branch
     # in our fork to make the manual PR process easier.
-    PR_BRANCH=${K8S_VERSION}-ck
-    PROJECT_DIR=v${K8S_VERSION}/cdk
+    PR_BRANCH=${CK_VERSION}-ck
+    PROJECT_DIR=v${CK_VERSION}/cdk
     git config --global user.email 'cdkbot@juju.solutions'
     git config --global user.name 'cdkbot'
     tar xvf *_sonobuoy*.tar.gz plugins/e2e/results/global/e2e.log plugins/e2e/results/global/junit_01.xml
@@ -90,13 +90,13 @@ function test::capture
         popd
     fi
 
-    pushd k8s-conformance
+    pushd k8s-conformance && mkdir -p v${CK_VERSION}
     # if we dont have a project dir yet, prime one with known good cdk contents
-    test -d ${PROJECT_DIR} || cp -a v1.24/cdk ${PROJECT_DIR}
+    test -d ${PROJECT_DIR} || cp -a v1.25/cdk v${CK_VERSION}
     mv ../plugins/e2e/results/global/* ${PROJECT_DIR}
-    sed -i -e "s/version: .*/version: ${K8S_VERSION}/" ${PROJECT_DIR}/PRODUCT.yaml
+    sed -i -e "s/version: .*/version: ${CK_VERSION}/" ${PROJECT_DIR}/PRODUCT.yaml
     git add ${PROJECT_DIR}
-    git commit -am "Conformance results for v${K8S_VERSION}/cdk"
+    git commit -am "Conformance results for v${CK_VERSION}/cdk"
     git push https://${CDKBOT_GH_USR}:${CDKBOT_GH_PSW}@github.com/charmed-kubernetes/k8s-conformance.git --all
     popd
 
@@ -110,14 +110,13 @@ function test::capture
 JUJU_CLOUD=aws/us-east-1
 JUJU_CONTROLLER=cncf-ck-$(identifier::short)
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=stable
+JUJU_DEPLOY_CHANNEL=${CK_VERSION}/${CK_RISK}
 JUJU_MODEL=cncf-ck
 
 ARCH=amd64
-K8S_VERSION=1.24
 SERIES=focal
-SNAP_VERSION=${K8S_VERSION}/stable
-SONOBUOY_VERSION=0.56.3
+SNAP_VERSION=${CK_VERSION}/${CK_RISK}
+SONOBUOY_VERSION=0.56.10
 
 JOB_ID=$(identifier)
 JOB_NAME_CUSTOM="cncf-ck-${SERIES}-${SNAP_VERSION}"

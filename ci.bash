@@ -33,10 +33,11 @@ function compile::env
     mkdir -p "meta"
 
     job_name_format=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
+    juju_channel_format=$(echo "$JUJU_DEPLOY_CHANNEL" | tr '/' '-')
     snap_version_format=$(echo "$SNAP_VERSION" | tr '/' '-')
 
     touch "meta/name-$job_name_format"
-    touch "meta/channel-$JUJU_DEPLOY_CHANNEL"
+    touch "meta/channel-$juju_channel_format"
     touch "meta/series-$SERIES"
     touch "meta/snap_version-$snap_version_format"
     for i in meta/*; do
