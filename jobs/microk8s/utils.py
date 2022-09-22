@@ -44,7 +44,7 @@ def upstream_eksd_release(release):
         if eksd_release_patch == "0":
             return None
         else:
-            return "{}-{}".format(release, r.content.decode().strip())
+            return "v{}-{}".format(release, r.content.decode().strip())
     else:
         None
 
