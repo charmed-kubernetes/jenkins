@@ -2,7 +2,6 @@ import asyncio
 import functools
 import ipaddress
 import json
-from operator import mod
 import os
 import subprocess
 import time

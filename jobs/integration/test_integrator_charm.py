@@ -2,7 +2,6 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from enum import Enum, auto
-from functools import partial
 from pathlib import Path
 import os
 import sh
