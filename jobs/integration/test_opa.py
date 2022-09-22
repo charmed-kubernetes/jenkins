@@ -25,16 +25,12 @@ class OPATestBase:
         self.model = model
         self.k8s_model = k8s_model
         self.tools = tools
-        control_plane_app = self.model.applications["kubernetes-control-plane"]
-        self.control_plane_unit = control_plane_app.units[0]
 
     async def validate_create_ns_with_label(self):
         # Create the namespace
         log("Creating namespace")
         await kubectl_apply(
             templates / "validate-gatekeeper-policy.yaml",
-            self.control_plane_unit,
-            self.tools,
             self.model,
         )
 
@@ -50,8 +46,6 @@ class OPATestBase:
         cmd = "delete ns test-ns"
         await kubectl_delete(
             templates / "validate-gatekeeper-policy.yaml",
-            self.control_plane_unit,
-            self.tools,
             self.model,
         )
 
@@ -99,14 +93,10 @@ class OPATestBase:
     async def deploy_example_policy(self):
         await kubectl_apply(
             templates / "gatekeeper-policy.yaml",
-            self.control_plane_unit,
-            self.tools,
             self.model,
         )
         await kubectl_apply(
             templates / "gatekeeper-policy-spec.yaml",
-            self.control_plane_unit,
-            self.tools,
             self.model,
         )
 
@@ -114,28 +104,20 @@ class OPATestBase:
         log("Delete example policy")
         await kubectl_delete(
             templates / "gatekeeper-policy.yaml",
-            self.control_plane_unit,
-            self.tools,
             self.model,
         )
 
     @pytest.fixture(scope="class")
-    async def storage_class(self, model, k8s_model, tools):
-        control_plane_app = model.applications["kubernetes-control-plane"]
-        control_plane_unit = control_plane_app.units[0]
+    async def storage_class(self, model, k8s_model):
         try:
             await kubectl_apply(
                 templates / "integrator-charm-data" / "vsphere" / "storage-class.yaml",
-                control_plane_unit,
-                tools,
                 model,
             )
             yield
         finally:
             await kubectl_delete(
                 templates / "integrator-charm-data" / "vsphere" / "storage-class.yaml",
-                control_plane_unit,
-                tools,
                 model,
             )
 

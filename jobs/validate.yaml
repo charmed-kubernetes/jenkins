@@ -381,6 +381,60 @@
             bash jobs/validate/ck-s390-spec $snap_version $series
 
 - job:
+    name: 'validate-ck-integrator'
+    description: |
+      Validates CK edge with cloud integrators or n-1 releases.
+    node: runner-validate
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-infra
+      - build-discarder:
+          num-to-keep: 3
+    triggers:
+        - timed: "@weekly"
+    execution-strategy:
+      sequential: true
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.25/edge
+            - 1.24/edge
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+      - axis:
+          type: user-defined
+          name: channel
+          values:
+            - edge
+      - axis:
+          type: user-defined
+          name: cloud
+          values:
+            - vsphere/Boston
+            - aws/us-east-1
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-venv:
+          COMMAND: |
+            bash jobs/validate/integrator-spec $snap_version $series $channel amd64 $cloud
+
+- job:
     name: 'validate-ck-calico'
     description: |
       Validates CK edge with calico for n-1 releases.
