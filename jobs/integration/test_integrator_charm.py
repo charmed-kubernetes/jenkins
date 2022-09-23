@@ -286,7 +286,12 @@ async def test_load_balancer(tools, model, kubeconfig):
         out = kubectl.get("svc", o="yaml", selector="run=load-balancer-example")
         services = yaml.safe_load(out.stdout.decode("utf8"))
         (svc,) = services["items"]
-        lb_ip = svc["status"]["loadBalancer"]["ingress"][0]["hostname"]
+        lb_ip = None
+        for field in ["ip", "hostname"]:
+            lb_ip = svc["status"]["loadBalancer"]["ingress"][0].get(field)
+            if lb_ip:
+                break
+        assert lb_ip, "Cannot find an active loadbalancer."
         html = retried(tools.requests.get, f"http://{lb_ip}:8080")
         assert "Hello Kubernetes!" in html.content.decode("utf-8")
     finally:
