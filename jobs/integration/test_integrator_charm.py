@@ -64,9 +64,7 @@ CLOUD_MATRIX = dict(
             ("azure-integrator:clients", "kubernetes-control-plane:azure"),
             ("azure-integrator:clients", "kubernetes-worker:azure"),
         ],
-        config={
-            "image-registry": "mcr.microsoft.com"
-        }
+        config={"image-registry": "mcr.microsoft.com"},
     ),
     gce=ProviderSupport(
         "gcp-k8s-storage",
@@ -81,7 +79,7 @@ CLOUD_MATRIX = dict(
         trust=True,
         config={
             "image-registry": "k8s.gcr.io",
-        }
+        },
     ),
     vsphere=ProviderSupport(
         "vsphere-cloud-provider",
@@ -262,7 +260,7 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
         await kubectl_delete(rendered, model)
 
 
-@retry(tries=12, delay=15, logger=logger) # 3min
+@retry(tries=12, delay=15, logger=logger)  # 3min
 def retried(get, url):
     return get(url)
 
@@ -275,7 +273,7 @@ async def test_load_balancer(tools, model, kubeconfig):
     """
     kubectl = sh.kubectl.bake("--kubeconfig", kubeconfig)
     lb_yaml = TEMPLATE_PATH / "lb-test.yaml"
-    logger.info(f"Starting hello-world on port=8080.")
+    logger.info("Starting hello-world on port=8080.")
     await kubectl_apply(lb_yaml, model)
     try:
         wait_for(
@@ -292,5 +290,5 @@ async def test_load_balancer(tools, model, kubeconfig):
         html = retried(tools.requests.get, f"http://{lb_ip}:8080")
         assert "Hello Kubernetes!" in html.content.decode("utf-8")
     finally:
-        logger.info(f"Terminating hello-world on port=8080.")
+        logger.info("Terminating hello-world on port=8080.")
         await kubectl_delete(lb_yaml, model)
