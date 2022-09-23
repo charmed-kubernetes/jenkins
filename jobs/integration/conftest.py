@@ -541,8 +541,8 @@ def pytest_metadata(metadata):
 
 
 @pytest.fixture()
-async def kubeconfig(model, tmp_path):
+async def kubeconfig(tools, model, tmp_path):
     local = Path(tmp_path) / "kubeconfig"
     k8s_cp = model.applications["kubernetes-control-plane"].units[0]
-    await scp_from(k8s_cp, "config", local, None, model.info.uuid)
+    await scp_from(k8s_cp, "config", local, None, tools.connection)
     yield local

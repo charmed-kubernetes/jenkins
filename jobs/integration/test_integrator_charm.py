@@ -30,7 +30,7 @@ class ProviderSupport:
     out_relations: List[Tuple[str, str]]
     in_relations: List[Tuple[str, str]]
     config: Mapping[str, str] = field(default_factory=dict)
-    in_tree_until: str = "999.0"
+    in_tree_until: str = None
     trust: bool = False
 
 
@@ -57,19 +57,20 @@ async def storage_class(tools, model, request, cloud):
     provider = get_provider(cloud)
     out_of_tree = request.param is Tree.OUT_OF_TREE
 
-    worker_app = model.applications["kubernetes-worker"]
-    k8s_version_str = worker_app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    support_version = tuple(int(i) for i in provider.in_tree_until.split(".")[:2])
+    if provider.in_tree_until:
+        worker_app = model.applications["kubernetes-worker"]
+        k8s_version_str = worker_app.data["workload-version"]
+        k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
+        support_version = tuple(int(i) for i in provider.in_tree_until.split(".")[:2])
 
-    if not out_of_tree and k8s_minor_version > support_version:
-        pytest.skip(
-            f"In-Tree storage tests do not work in {cloud} after {provider.in_tree_until}."
-        )
-    elif out_of_tree and k8s_minor_version <= support_version:
-        pytest.skip(
-            f"Out-of-Tree storage not tested on {cloud} <= {provider.in_tree_until}."
-        )
+        if not out_of_tree and k8s_minor_version > support_version:
+            pytest.skip(
+                f"In-Tree storage tests do not work in {cloud} after {provider.in_tree_until}."
+            )
+        elif out_of_tree and k8s_minor_version <= support_version:
+            pytest.skip(
+                f"Out-of-Tree storage not tested on {cloud} <= {provider.in_tree_until}."
+            )
 
     provider_app = provider.application
     provider_deployed = provider_app in model.applications
@@ -135,7 +136,7 @@ async def storage_class(tools, model, request, cloud):
 
 @pytest.fixture(scope="function")
 async def storage_pvc(model, storage_class, tmp_path):
-    """Sets up and tearsdown k8s resources"""
+    """Sets up and tearsdown k8s pvc resources"""
 
     pv_claim_yml = TEMPLATE_PATH / "pv-claim.yaml"
     template = jinja2.Template(pv_claim_yml.read_text())
