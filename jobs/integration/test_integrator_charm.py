@@ -30,100 +30,50 @@ class ProviderSupport:
     out_relations: List[Tuple[str, str]]
     in_relations: List[Tuple[str, str]]
     config: Mapping[str, str] = field(default_factory=dict)
-    in_tree_1_25: bool = True
+    in_tree_until: str = "999.0"
     trust: bool = False
 
 
 TEMPLATE_PATH = Path(__file__).absolute().parent / "templates/integrator-charm-data"
-CLOUD_MATRIX = dict(
-    ec2=ProviderSupport(
-        "aws-k8s-storage",
-        "csi-aws-ebs-default",
-        [
-            (":certificates", "easyrsa"),
-            (":kube-control", "kubernetes-control-plane"),
-            (":aws-integration", "aws-integrator"),
-        ],
-        [],
-        in_tree_1_25=False,
-        trust=True,
-        config={
-            "image-registry": "public.ecr.aws",
-        },
-    ),
-    azure=ProviderSupport(
-        "azure-cloud-provider",
-        "csi-azure-default",
-        [
-            (":certificates", "easyrsa"),
-            (":kube-control", "kubernetes-control-plane"),
-            (":external-cloud-provider", "kubernetes-control-plane"),
-            (":azure-integration", "azure-integrator"),
-        ],
-        [
-            ("azure-integrator:clients", "kubernetes-control-plane:azure"),
-            ("azure-integrator:clients", "kubernetes-worker:azure"),
-        ],
-        config={"image-registry": "mcr.microsoft.com"},
-    ),
-    gce=ProviderSupport(
-        "gcp-k8s-storage",
-        "csi-gce-pd-default",
-        [
-            (":certificates", "easyrsa"),
-            (":kube-control", "kubernetes-control-plane"),
-            (":gcp-integration", "gcp-integrator"),
-        ],
-        [],
-        in_tree_1_25=False,
-        trust=True,
-        config={
-            "image-registry": "k8s.gcr.io",
-        },
-    ),
-    vsphere=ProviderSupport(
-        "vsphere-cloud-provider",
-        "csi-vsphere-default",
-        [
-            (":certificates", "easyrsa"),
-            (":kube-control", "kubernetes-control-plane"),
-            (":external-cloud-provider", "kubernetes-control-plane"),
-            (":vsphere-integration", "vsphere-integrator"),
-        ],
-        [
-            ("vsphere-integrator:clients", "kubernetes-control-plane:vsphere"),
-            ("vsphere-integrator:clients", "kubernetes-worker:vsphere"),
-        ],
-    ),
-)
 
 
-def _prepare_relation(linkage, model, default_app, add=True):
+def _prepare_relation(linkage, model, add=True):
     left, right = linkage
     app, left_relation = left.split(":")
-    app = app or default_app
     left_app = model.applications[app]
     if add:
         return left_app.add_relation(left_relation, right)
     return left_app.remove_relation(left_relation, right)
 
 
+def get_provider(cloud):
+    provider_file = TEMPLATE_PATH / cloud / "out-of-tree.yaml"
+    config = yaml.safe_load(provider_file.read_text())
+    return ProviderSupport(**{k.replace("-", "_"): config[k] for k in config})
+
+
 @pytest.fixture(scope="module", params=[Tree.IN_TREE, Tree.OUT_OF_TREE])
-async def storage_class(tools, model, cloud, request):
-    provider = CLOUD_MATRIX[cloud]
-    provider_app = provider.application
-    provider_deployed = provider_app in model.applications
+async def storage_class(tools, model, request, cloud):
+    provider = get_provider(cloud)
     out_of_tree = request.param is Tree.OUT_OF_TREE
-    expected_apps = set(model.applications)
 
     worker_app = model.applications["kubernetes-worker"]
     k8s_version_str = worker_app.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
+    support_version = tuple(int(i) for i in provider.in_tree_until.split(".")[:2])
 
-    if not out_of_tree and k8s_minor_version > (1, 24) and not provider.in_tree_1_25:
-        pytest.skip(f"In-Tree storage tests do not work in {cloud} starting in 1.25.")
-    elif out_of_tree and k8s_minor_version < (1, 25) and not provider.in_tree_1_25:
-        pytest.skip(f"Out-of-Tree storage tests do not work in {cloud} prior to 1.25.")
+    if not out_of_tree and k8s_minor_version > support_version:
+        pytest.skip(
+            f"In-Tree storage tests do not work in {cloud} after {provider.in_tree_until}."
+        )
+    elif out_of_tree and k8s_minor_version <= support_version:
+        pytest.skip(
+            f"Out-of-Tree storage not tested on {cloud} <= {provider.in_tree_until}."
+        )
+
+    provider_app = provider.application
+    provider_deployed = provider_app in model.applications
+    expected_apps = set(model.applications)
 
     if out_of_tree and not provider_deployed:
         logger.info(f"Adding provider={provider_app} to model.")
@@ -138,13 +88,13 @@ async def storage_class(tools, model, cloud, request):
 
         # remove provider.in_relations
         to_delete = [
-            _prepare_relation(relation, model, provider_app, add=False)
+            _prepare_relation(relation, model, add=False)
             for relation in provider.in_relations
         ]
 
         # add provider.out_relations
         to_add = [
-            _prepare_relation(relation, model, provider_app, add=True)
+            _prepare_relation(relation, model, add=True)
             for relation in provider.out_relations
         ]
         await asyncio.gather(*to_add + to_delete)
@@ -154,13 +104,13 @@ async def storage_class(tools, model, cloud, request):
 
         # remove provider.out_relations
         to_delete = [
-            _prepare_relation(relation, model, provider_app, add=False)
+            _prepare_relation(relation, model, add=False)
             for relation in provider.out_relations
         ]
 
         # add provider.in_relations
         to_add = [
-            _prepare_relation(relation, model, provider_app, add=True)
+            _prepare_relation(relation, model, add=True)
             for relation in provider.in_relations
         ]
         await asyncio.gather(*to_add + to_delete)
@@ -286,10 +236,8 @@ async def test_load_balancer(tools, model, kubeconfig):
         out = kubectl.get("svc", o="yaml", selector="run=load-balancer-example")
         services = yaml.safe_load(out.stdout.decode("utf8"))
         (svc,) = services["items"]
-        lb_ip = None
-        for field in ["ip", "hostname"]:
-            lb_ip = svc["status"]["loadBalancer"]["ingress"][0].get(field)
-            if lb_ip:
+        for key in ["ip", "hostname"]:
+            if lb_ip := svc["status"]["loadBalancer"]["ingress"][0].get(key):
                 break
         assert lb_ip, "Cannot find an active loadbalancer."
         html = retried(tools.requests.get, f"http://{lb_ip}:8080")

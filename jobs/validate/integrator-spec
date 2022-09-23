@@ -73,6 +73,9 @@ EOF
     elif [ "$JUJU_CLOUD" = "azure/centralus" ]; then
       # Deploy azure
       cat <<EOF >> overlay.yaml
+  calico:
+    options:
+      cidr: 172.22.0.0/16
   azure-integrator:
     charm: azure-integrator
     channel: $JUJU_DEPLOY_CHANNEL
