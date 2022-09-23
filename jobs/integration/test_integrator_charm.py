@@ -1,12 +1,12 @@
 import asyncio
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
 import os
 import sh
 import pytest
-from typing import List, Tuple
+from typing import Any, List, Tuple, Mapping
 import yaml
 
 import jinja2
@@ -29,11 +29,14 @@ class ProviderSupport:
     storage_class: str
     out_relations: List[Tuple[str, str]]
     in_relations: List[Tuple[str, str]]
+    config: Mapping[str, str] = field(default_factory=dict)
+    in_tree_1_25: bool = True
+    trust: bool = False
 
 
 TEMPLATE_PATH = Path(__file__).absolute().parent / "templates/integrator-charm-data"
 CLOUD_MATRIX = dict(
-    aws=ProviderSupport(
+    ec2=ProviderSupport(
         "aws-k8s-storage",
         "csi-aws-ebs-default",
         [
@@ -42,6 +45,11 @@ CLOUD_MATRIX = dict(
             (":aws-integration", "aws-integrator"),
         ],
         [],
+        in_tree_1_25=False,
+        trust=True,
+        config={
+            "image-registry": "public.ecr.aws",
+        },
     ),
     azure=ProviderSupport(
         "azure-cloud-provider",
@@ -56,8 +64,11 @@ CLOUD_MATRIX = dict(
             ("azure-integrator:clients", "kubernetes-control-plane:azure"),
             ("azure-integrator:clients", "kubernetes-worker:azure"),
         ],
+        config={
+            "image-registry": "mcr.microsoft.com"
+        }
     ),
-    google=ProviderSupport(
+    gce=ProviderSupport(
         "gcp-k8s-storage",
         "csi-gce-pd-default",
         [
@@ -66,6 +77,11 @@ CLOUD_MATRIX = dict(
             (":gcp-integration", "gcp-integrator"),
         ],
         [],
+        in_tree_1_25=False,
+        trust=True,
+        config={
+            "image-registry": "k8s.gcr.io",
+        }
     ),
     vsphere=ProviderSupport(
         "vsphere-cloud-provider",
@@ -95,17 +111,31 @@ def _prepare_relation(linkage, model, default_app, add=True):
 
 
 @pytest.fixture(scope="module", params=[Tree.IN_TREE, Tree.OUT_OF_TREE])
-async def storage_class(model, cloud, request):
+async def storage_class(tools, model, cloud, request):
     provider = CLOUD_MATRIX[cloud]
     provider_app = provider.application
     provider_deployed = provider_app in model.applications
     out_of_tree = request.param is Tree.OUT_OF_TREE
     expected_apps = set(model.applications)
 
+    worker_app = model.applications["kubernetes-worker"]
+    k8s_version_str = worker_app.data["workload-version"]
+    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
+
+    if not out_of_tree and k8s_minor_version > (1, 24) and not provider.in_tree_1_25:
+        pytest.skip(f"In-Tree storage tests do not work in {cloud} starting in 1.25.")
+    elif out_of_tree and k8s_minor_version < (1, 25) and not provider.in_tree_1_25:
+        pytest.skip(f"Out-of-Tree storage tests do not work in {cloud} prior to 1.25.")
+
     if out_of_tree and not provider_deployed:
         logger.info(f"Adding provider={provider_app} to model.")
         # deploy provider.application
-        await model.deploy(provider_app)
+        await model.deploy(
+            provider_app,
+            channel=tools.charm_channel,
+            trust=provider.trust,
+            config=provider.config,
+        )
         expected_apps.add(provider_app)
 
         # remove provider.in_relations
@@ -172,21 +202,25 @@ async def storage_pvc(model, storage_class, tmp_path):
     await kubectl_delete(rendered, model)
 
 
-@retry(tries=4, delay=15)
-def wait_for(resource: str, matcher: str, **kwargs):
+@retry(tries=4, delay=15, logger=logger)
+def wait_for(resource: str, matcher: Tuple[str, Any], kubeconfig=None, **kwargs):
     def lookup(rsc, keys):
         head, *tail = keys.split(".", 1)
         return lookup(rsc[head], tail[0]) if tail else rsc[head]
 
-    key, final_status = matcher.split("=", 1)
-    out = sh.kubectl.get(resource, **kwargs)
+    key, final_status = matcher
+    kubectl = sh.kubectl
+    if kubeconfig:
+        kubectl = sh.kubectl.bake("--kubeconfig", kubeconfig)
+
+    out = kubectl.get(resource, **kwargs)
     rsc_list = yaml.safe_load(out.stdout.decode("utf-8"))
     status, *_ = [lookup(rsc, key) for rsc in rsc_list["items"]]
     if status != final_status:
         raise Exception(f"Resource {resource}[{key}] is {status} not {final_status}")
 
 
-async def test_storage(request, model, storage_pvc, tmp_path):
+async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
     pv_test_yaml = TEMPLATE_PATH / "pv-test.yaml"
     test_name = request.node.name.replace("[", "-").replace("]", "")
     template = jinja2.Template(pv_test_yaml.read_text())
@@ -199,9 +233,15 @@ async def test_storage(request, model, storage_pvc, tmp_path):
     await kubectl_apply(rendered, model)
     try:
         wait_for(
-            "pod", "status.phase=Running", o="yaml", selector=f"test-name={test_name}"
+            "pod",
+            ("status.phase", "Running"),
+            o="yaml",
+            selector=f"test-name={test_name}",
+            kubeconfig=kubeconfig,
         )
-        pod_exec = sh.kubectl.exec.bake("-it", "task-pv-pod", "--")
+        pod_exec = sh.kubectl.bake(
+            "--kubeconfig", kubeconfig, "exec", "-it", "task-pv-pod", "--"
+        )
 
         # Ensure the PV is mounted
         out = pod_exec("mount")
@@ -222,23 +262,35 @@ async def test_storage(request, model, storage_pvc, tmp_path):
         await kubectl_delete(rendered, model)
 
 
+@retry(tries=12, delay=15, logger=logger) # 3min
+def retried(get, url):
+    return get(url)
+
+
 @pytest.mark.clouds(["ec2", "gce", "azure"])
-async def test_load_balancer(tools):
+async def test_load_balancer(tools, model, kubeconfig):
     """Performs a deployment of hello-world with newly created LB and attempts
     to do a fetch and parse the html to verify the lb ip address is
     functioning appropriately.
     """
-    sh.kubectl.run(
-        "hello-world",
-        replicas=5,
-        labels="run=load-balancer-example",
-        image="rocks.canonical.com/cdk/google-samples/node-hello:1.0",
-        port=8080,
-    )
-    sh.kubectl.expose("deployment", "hello-world", type="LoadBalancer", name="hello")
-    out = sh.kubectl.get("svc", o="yaml", selector="run=load-balancer-example")
-    svc = yaml.safe_load(out.stdout.decode("utf8"))
-    lb_ip = svc["status"]["loadBalancer"]["ingress"][0]
-    set_url = f"{lb_ip}:8080"
-    html = await tools.requests_get(set_url)
-    assert "Hello Kubernetes!" in html.content
+    kubectl = sh.kubectl.bake("--kubeconfig", kubeconfig)
+    lb_yaml = TEMPLATE_PATH / "lb-test.yaml"
+    logger.info(f"Starting hello-world on port=8080.")
+    await kubectl_apply(lb_yaml, model)
+    try:
+        wait_for(
+            "deployment",
+            ("status.availableReplicas", 5),
+            o="yaml",
+            selector="run=load-balancer-example",
+            kubeconfig=kubeconfig,
+        )
+        out = kubectl.get("svc", o="yaml", selector="run=load-balancer-example")
+        services = yaml.safe_load(out.stdout.decode("utf8"))
+        (svc,) = services["items"]
+        lb_ip = svc["status"]["loadBalancer"]["ingress"][0]["hostname"]
+        html = retried(tools.requests.get, f"http://{lb_ip}:8080")
+        assert "Hello Kubernetes!" in html.content.decode("utf-8")
+    finally:
+        logger.info(f"Terminating hello-world on port=8080.")
+        await kubectl_delete(lb_yaml, model)

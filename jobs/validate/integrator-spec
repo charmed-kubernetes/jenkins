@@ -26,6 +26,7 @@ applications:
     constraints: $constraints
     options:
       channel: $SNAP_VERSION
+      allow-privileged: true
   kubernetes-worker:
     constraints: $constraints
     options:
