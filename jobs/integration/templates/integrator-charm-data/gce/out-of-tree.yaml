@@ -6,12 +6,8 @@ out-relations:
   - - gcp-k8s-storage:kube-control
     - kubernetes-control-plane:kube-control
   - - gcp-k8s-storage:gcp-integration
-    - gcp-integrator:clients
-in-relations:
-  - - gcp-integrator:clients
-    - kubernetes-control-plane:gcp
-  - - gcp-integrator:clients
-    - kubernetes-worker:gcp
+    - gcp-integrator:gcp
+in-relations: []
 in-tree-until: '1.24'
 trust: true
 config:

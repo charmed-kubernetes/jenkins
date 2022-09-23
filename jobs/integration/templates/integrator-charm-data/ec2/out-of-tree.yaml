@@ -6,12 +6,8 @@ out-relations:
   - - aws-k8s-storage:kube-control
     - kubernetes-control-plane:kube-control
   - - aws-k8s-storage:aws-integration
-    - aws-integrator:clients
-in-relations:
-  - - aws-integrator:clients:clients
-    - kubernetes-control-plane:aws
-  - - aws-integrator:clients
-    - kubernetes-worker:aws
+    - aws-integrator:aws
+in-relations: []
 in-tree-until: '1.24'
 trust: true
 config:
