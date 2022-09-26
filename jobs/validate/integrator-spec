@@ -1,0 +1,110 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -ex
+
+###############################################################################
+# INITIALIZE
+###############################################################################
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function juju::deploy::overlay
+{
+    local constraints
+    constraints="arch=$ARCH cores=2 mem=8G root-disk=16G"
+
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  kubernetes-control-plane:
+    constraints: $constraints
+    options:
+      channel: $SNAP_VERSION
+      allow-privileged: true
+  kubernetes-worker:
+    constraints: $constraints
+    options:
+      channel: $SNAP_VERSION
+EOF
+
+    if [ "$JUJU_CLOUD" = "vsphere/Boston" ]; then
+      # Deploy vsphere-integrator
+      cat <<EOF >> overlay.yaml
+  vsphere-integrator:
+    charm: vsphere-integrator
+    channel: $JUJU_DEPLOY_CHANNEL
+    options:
+      datastore: vsanDatastore
+      folder: k8s-crew-root
+    trust: true
+relations:
+  - ['vsphere-integrator', 'kubernetes-control-plane']
+  - ['vsphere-integrator', 'kubernetes-worker']
+EOF
+      vxlan_mode=Always
+    elif [ "$JUJU_CLOUD" = "aws/us-east-1" ]; then
+      # Deploy aws
+      cat <<EOF >> overlay.yaml
+  aws-integrator:
+    charm: aws-integrator
+    channel: $JUJU_DEPLOY_CHANNEL
+    trust: true
+relations:
+  - ['aws-integrator', 'kubernetes-control-plane']
+  - ['aws-integrator', 'kubernetes-worker']
+EOF
+    elif [ "$JUJU_CLOUD" = "google/us-east1" ]; then
+      # Deploy google
+      cat <<EOF >> overlay.yaml
+  gcp-integrator:
+    charm: gcp-integrator
+    channel: $JUJU_DEPLOY_CHANNEL
+    trust: true
+relations:
+  - ['gcp-integrator', 'kubernetes-control-plane']
+  - ['gcp-integrator', 'kubernetes-worker']
+EOF
+    elif [ "$JUJU_CLOUD" = "azure/centralus" ]; then
+      # Deploy azure
+      cat <<EOF >> overlay.yaml
+  calico:
+    options:
+      cidr: 172.22.0.0/16
+  azure-integrator:
+    charm: azure-integrator
+    channel: $JUJU_DEPLOY_CHANNEL
+    trust: true
+relations:
+  - ['azure-integrator', 'kubernetes-control-plane']
+  - ['azure-integrator', 'kubernetes-worker']
+EOF
+    else
+      >&2 echo "Unspecified cloud"
+      exit -1
+    fi
+}
+
+###############################################################################
+# ENV
+###############################################################################
+SNAP_VERSION=${1:-1.25/edge}
+SERIES=${2:-focal}
+JUJU_DEPLOY_BUNDLE=kubernetes-core
+JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_CLOUD=${5:-vsphere/Boston}
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-calico
+ARCH=${4:-amd64}
+JOB_NAME_CUSTOM="validate-ck-integrator-$JUJU_CLOUD-$SERIES-$SNAP_VERSION"
+JOB_ID=$(identifier)
+
+###############################################################################
+# START
+###############################################################################
+ci::run

@@ -614,28 +614,29 @@ async def kubectl(model, cmd, check=True):
     )
 
 
-async def _kubectl_doc(document, control_plane_unit, tools, model, action):
+async def _kubectl_doc(document, model, action):
     if action not in ["apply", "delete"]:
         raise ValueError(f"Invalid action {action}")
 
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
     remote_path = f"/tmp/{document.name}"
     await scp_to(
         document,
-        control_plane_unit,
+        control_plane,
         remote_path,
-        tools.controller_name,
-        tools.connection,
+        None,
+        model.info.uuid,
     )
     cmd = f"{action} -f {remote_path}"
     return await kubectl(model, cmd)
 
 
-async def kubectl_apply(document, control_plane_unit, tools, model):
-    return await _kubectl_doc(document, control_plane_unit, tools, model, "apply")
+async def kubectl_apply(document, model):
+    return await _kubectl_doc(document, model, "apply")
 
 
-async def kubectl_delete(document, control_plane_unit, tools, model):
-    return await _kubectl_doc(document, control_plane_unit, tools, model, "delete")
+async def kubectl_delete(document, model):
+    return await _kubectl_doc(document, model, "delete")
 
 
 async def vault(unit, cmd, **env):
