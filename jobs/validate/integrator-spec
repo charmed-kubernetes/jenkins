@@ -26,7 +26,7 @@ applications:
     constraints: $constraints
     options:
       channel: $SNAP_VERSION
-      allow-privileged: true
+      allow-privileged: 'true'
   kubernetes-worker:
     constraints: $constraints
     options:
@@ -99,7 +99,7 @@ JUJU_DEPLOY_BUNDLE=kubernetes-core
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=${5:-vsphere/Boston}
 JUJU_CONTROLLER=validate-$(identifier::short)
-JUJU_MODEL=validate-calico
+JUJU_MODEL=validate-integrator
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-integrator-$JUJU_CLOUD-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
