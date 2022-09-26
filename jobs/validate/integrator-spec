@@ -99,7 +99,7 @@ function test::execute
         --cloud "$JUJU_CLOUD" \
         --model "$JUJU_MODEL" \
         --controller "$JUJU_CONTROLLER" \
-        --charm-channel= "$JUJU_DEPLOY_CHANNEL" \
+        --charm-channel="$JUJU_DEPLOY_CHANNEL"
     ret=$?
     is_pass="True"
     if (( $ret > 0 )); then
