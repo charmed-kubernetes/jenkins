@@ -47,7 +47,6 @@ relations:
   - ['vsphere-integrator', 'kubernetes-control-plane']
   - ['vsphere-integrator', 'kubernetes-worker']
 EOF
-      vxlan_mode=Always
     elif [ "$JUJU_CLOUD" = "aws/us-east-1" ]; then
       # Deploy aws
       cat <<EOF >> overlay.yaml
@@ -88,6 +87,25 @@ EOF
       >&2 echo "Unspecified cloud"
       exit -1
     fi
+}
+
+function test::execute
+{
+    declare -n is_pass=$1
+    timeout -s INT 1h pytest \
+        --html="report.html" \
+        --full-trace \
+        jobs/integration/test_integrator_charm.py \
+        --cloud "$JUJU_CLOUD" \
+        --model "$JUJU_MODEL" \
+        --controller "$JUJU_CONTROLLER" \
+        --charm-channel= "$JUJU_DEPLOY_CHANNEL" \
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+
 }
 
 ###############################################################################
