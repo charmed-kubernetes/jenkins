@@ -42,6 +42,7 @@ EOF
     options:
       datastore: vsanDatastore
       folder: k8s-crew-root
+    num_units: 1
     trust: true
 relations:
   - ['vsphere-integrator', 'kubernetes-control-plane']
@@ -53,6 +54,7 @@ EOF
   aws-integrator:
     charm: aws-integrator
     channel: $JUJU_DEPLOY_CHANNEL
+    num_units: 1
     trust: true
 relations:
   - ['aws-integrator', 'kubernetes-control-plane']
@@ -64,6 +66,7 @@ EOF
   gcp-integrator:
     charm: gcp-integrator
     channel: $JUJU_DEPLOY_CHANNEL
+    num_units: 1
     trust: true
 relations:
   - ['gcp-integrator', 'kubernetes-control-plane']
@@ -78,6 +81,7 @@ EOF
   azure-integrator:
     charm: azure-integrator
     channel: $JUJU_DEPLOY_CHANNEL
+    num_units: 1
     trust: true
 relations:
   - ['azure-integrator', 'kubernetes-control-plane']
