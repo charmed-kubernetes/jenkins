@@ -93,6 +93,21 @@ EOF
     fi
 }
 
+function juju::deploy
+{
+    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
+         --overlay overlay.yaml \
+         --force \
+         --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE" \
+         --trust
+
+    ret=$?
+    if (( ret > 0 )); then
+        exit "$ret"
+    fi
+}
+
+
 function test::execute
 {
     declare -n is_pass=$1
