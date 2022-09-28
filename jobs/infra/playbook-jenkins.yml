@@ -118,7 +118,7 @@
         - jenkins
       ignore_errors: yes
     - name: upgrade charm
-      command: "snap refresh charm --channel latest/edge"
+      command: "snap refresh charm --channel 2.x/stable"
       ignore_errors: yes
       tags:
         - jenkins
