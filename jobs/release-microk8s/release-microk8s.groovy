@@ -9,6 +9,34 @@ def destroy_controller(controller) {
     """
 }
 
+def cleanup_eksd(test_branch) {
+    return """
+        if [[ ${test_branch} == *"eksd"* ]]; then
+            aws iam delete-role --role-name KubernetesAdmin
+            POLICY_ARN=$(aws iam list-policies --query "Policies[?PolicyName == 'mk8s-ec2-policy'] | [0].Arn" | tr -d '"')
+            aws iam detach-role-policy --role-name mk8s-ec2-role --policy-arn $POLICY_ARN
+            aws iam remove-role-from-instance-profile --instance-profile-name mk8s-ec2-iprof --role-name mk8s-ec2-role
+            aws iam delete-role --role-name mk8s-ec2-role
+            aws iam delete-policy --policy-arn $POLICY_ARN
+            aws iam delete-instance-profile --instance-profile-name mk8s-ec2-iprof
+            EFS_ID=$(aws efs describe-file-systems --query "FileSystems[?Name == 'mk8s-efs'] | [0].FileSystemId" --output text)
+            MT_ID=$(aws efs describe-mount-targets --file-system-id $EFS_ID --query "MountTargets | [0].MountTargetId" --output text)
+            aws efs delete-mount-target --mount-target-id $MT_ID
+            until aws efs delete-file-system --file-system-id $EFS_ID
+            do
+                if [[ $(aws efs describe-mount-targets --file-system-id $EFS_ID --query "length(MountTargets)") == *1* ]]
+                then
+                    echo "Waiting 60s for mount target deletion before efs deletion..."
+                    sleep 60
+                else
+                    break
+                fi
+            done
+            aws ec2 delete-security-group --group-name mk8s-efs-sg
+        fi
+    """
+}
+
 pipeline {
     agent {
         label "runner-${params.ARCH}"
@@ -87,15 +115,26 @@ pipeline {
 
                                 if (arch == "arm64") {
                                     instance_type = "a1.2xlarge"
-                                    constraints = "instance-type=${instance_type} root-disk=80G arch=${arch}"
+                                    constraints = "instance-type=${instance_type} root-disk=80G arch=${arch} instance-role=mk8s-ec2-iprof"
                                 } else if (arch == "amd64") {
                                     instance_type = "m5.large"
-                                    constraints = "mem=16G cores=8 root-disk=80G arch=${arch}"
+                                    constraints = "mem=16G cores=8 root-disk=80G arch=${arch} instance-role=mk8s-ec2-iprof"
                                 } else {
                                     error("Aborting build due to unknown arch=${arch}")
                                 }
                                 sh destroy_controller(juju_controller)
+                                sh cleanup_eksd(params.TESTS_BRANCH)
                                 sh """
+                                if [[ ${params.TESTS_BRANCH} == *"eksd"* ]]; then
+                                    POLICY=$(echo -n '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["elasticfilesystem:DescribeAccessPoints","elasticfilesystem:DescribeFileSystems","elasticfilesystem:DescribeMountTargets","ec2:DescribeAvailabilityZones"],"Resource":"*"},{"Effect":"Allow","Action":["elasticfilesystem:CreateAccessPoint"],"Resource":"*","Condition":{"StringLike":{"aws:RequestTag/efs.csi.aws.com/cluster":"true"}}},{"Effect":"Allow","Action":"elasticfilesystem:DeleteAccessPoint","Resource":"*","Condition":{"StringEquals":{"aws:ResourceTag/efs.csi.aws.com/cluster":"true"}}}]}')
+                                    POLICY_ARN=$(aws iam create-policy --policy-name mk8s-ec2-policy --policy-document "$POLICY" --query "Policy.Arn" --output text)
+                                    ROLE_POLICY=$(echo -n '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}')
+                                    aws iam create-role --role-name mk8s-ec2-role --assume-role-policy-document "$ROLE_POLICY" --description "Kubernetes administrator role (for AWS IAM Authenticator for Kubernetes)."
+                                    aws iam attach-role-policy --role-name mk8s-ec2-role --policy-arn $POLICY_ARN
+                                    aws iam create-instance-profile --instance-profile-name mk8s-ec2-iprof
+                                    aws iam add-role-to-instance-profile --instance-profile-name mk8s-ec2-iprof --role-name mk8s-ec2-role
+                                fi
+
                                 juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
                                     -d "${juju_model}" \
                                     --model-default test-mode=true \
@@ -105,6 +144,42 @@ pipeline {
                                 juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu
 
                                 juju-wait -e "${juju_full_model}" -w
+
+                                if [[ ${params.TESTS_BRANCH} == *"eksd"* ]]; then
+                                    INSTANCE_ID=$(juju show-machine 0 --format json | jq '.machines."0"."instance-id"')
+                                    AVAILABILITY_ZONE=$(aws ec2 describe-instances --instance-id $INSTANCE_ID --query "Reservations | [0].Instances | [0].Placement.AvailabilityZone" --output text)
+                                    SUBNET_ID=$(aws ec2 describe-instances --instance-id $INSTANCE_ID --query "Reservations | [0].Instances | [0].SubnetId" --output text)
+
+                                    SG_ID=$(aws ec2 create-security-group --group-name mk8s-efs-sg --description "MicroK8s EFS testing security group" --query "GroupId" --output text)
+                                    aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 2049 --cidr 0.0.0.0/0
+
+                                    export EFS_ID=$(aws efs create-file-system --encrypted --creation-token mk8stestingefs --tags Key=Name,Value=mk8s-efs --availability-zone-name $AVAILABILITY_ZONE --query "FileSystemId" --output text)
+                                    
+                                    max_retries=5
+                                    retry=0
+                                    until aws efs create-mount-target --file-system-id $EFS_ID --subnet-id $SUBNET_ID --security-group $SG_ID
+                                    do
+                                        ((n++))
+                                        (( n >= max_retries )) && break
+                                        echo "Waiting for EFS completion to create mount target..."
+                                        sleep 5
+                                    done
+
+                                    ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+                                    POLICY=$(echo -n '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"arn:aws:iam::'; echo -n "$ACCOUNT_ID"; echo -n ':root"},"Action":"sts:AssumeRole","Condition":{}}]}')
+                                    KUBERNETES_ADMIN_ARN=$(aws iam create-role --role-name KubernetesAdmin --description "Kubernetes administrator role (for AWS IAM Authenticator for Kubernetes)." --assume-role-policy-document "$POLICY" --output text --query 'Role.Arn')
+
+                                    AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
+                                    AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
+
+                                    juju run --unit ubuntu/0 "open-port 2049"
+                                    juju expose ubuntu
+
+                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'export EFS_ID=$EFS_ID'
+                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'export KUBERNETES_ADMIN_ARN=$KUBERNETES_ADMIN_ARN'
+                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID'
+                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY'
+                                fi
 
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true
@@ -133,6 +208,7 @@ pipeline {
                                     )
                                 } finally {
                                     sh destroy_controller(juju_controller)
+                                    sh cleanup_eksd(params.TESTS_BRANCH)
                                 }
                             }
                         }
@@ -150,6 +226,7 @@ pipeline {
                         def stage="${channel}-${arch}"
                         def juju_controller="${job}-${stage}"
                         sh destroy_controller(juju_controller)
+                        sh cleanup_eksd(params.TESTS_BRANCH)
                     }
                 }
             }
