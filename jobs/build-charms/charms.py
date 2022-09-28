@@ -993,6 +993,7 @@ def build(
     """Build a set of charms and publish with their resources."""
     cmd_ok("which charm", echo=lambda m: click.echo(f"charm -> {m}"))
     cmd_ok("which charmcraft", echo=lambda m: click.echo(f"charmcraft -> {m}"))
+    cmd_ok("snap list", echo=lambda m: click.echo(f"snap list -> {m}"))
 
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
