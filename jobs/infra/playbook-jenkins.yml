@@ -146,7 +146,7 @@
       ignore_errors: yes
       loop:
         - "aws-cli --classic"
-        - "charm --classic --edge"
+        - "charm --classic --channel 2.x/stable"
         - "charmcraft --classic --edge"
         - "go --classic --stable"
         - "juju --classic --channel=2.9/stable"
