@@ -1,7 +1,7 @@
 import asyncio
 import base64
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Mapping
 
 import backoff
 import ipaddress
@@ -49,6 +49,7 @@ from .utils import (
 import urllib.request
 from .logger import log
 from bs4 import BeautifulSoup as bs
+from bs4.element import ResultSet as bs_ResultSet
 
 # Quiet the noise
 logging.getLogger("websockets.protocol").setLevel(logging.INFO)
@@ -2206,11 +2207,36 @@ async def test_multus(model, tools, addons_model):
 
 
 @dataclass
+class NagiosAlerts:
+    alerts: Mapping[str, bs_ResultSet]
+    matchers: Mapping[str, Callable[[dict], bool]]
+
+    def __bool__(self):
+        """Successful if there are some alerts and all the matchers are True."""
+        if not self.alerts:
+            return False
+        return all(
+            self.matchers[severity](alerts) for severity, alerts in self.alerts.items()
+        )
+
+    def __getitem__(self, item: str) -> bs_ResultSet:
+        return self.alerts[item]
+
+    def __str__(self) -> str:
+        return ", ".join(
+            f"{severity}/{link.string}"
+            for severity, alerts in self.alerts.items()
+            for alert in alerts
+            for link in alert.find_all("a", recursive=False)
+        )
+
+
+@dataclass
 class NagiosApi:
     open: Callable
     url: str
 
-    def find_alerts(self, *severities):
+    async def find_alerts(self, **severities) -> NagiosAlerts:
         classes = {
             "critical": "statusBGCRITICAL",
             "pending": "statusPENDING",
@@ -2218,19 +2244,44 @@ class NagiosApi:
         }
         url_data = self.open(self.url)
         soup = bs(url_data.read(), "html.parser")
-        return {
+        alerts = {
             severity: soup.find_all("td", class_=classes[severity.lower()])
             for severity in severities
         }
+        return NagiosAlerts(alerts, severities)
 
-    async def wait_for_alerts(self, **severities):
-        while True:
-            all_alerts = self.find_alerts(*severities.keys())
-            if all(
-                severities[severity](alerts) for severity, alerts in all_alerts.items()
-            ):
-                return all_alerts
-            await asyncio.sleep(5)
+    async def critical_alerts_by_app(self, *apps: str):
+        alerts = await self.find_alerts(critical=lambda c: len(c) > 0)
+        criticals = alerts["critical"]
+
+        if criticals:
+            found = {app: [] for app in apps}
+            for c in criticals:
+                for link in c.find_all("a", recursive=False):
+                    for app in apps:
+                        if app in link.string:
+                            found[app].append(link.string)
+            if all(app_crits for app_crits in found.values()):
+                log(f"Found critical errors in {', '.join(apps)}:")
+                for app, app_crits in found.items():
+                    for crit in app_crits:
+                        log(f"{app} - {crit}")
+                return True
+        return False
+
+    async def wait_for_settle(self, stage, **kwds):
+        """Wait for nagios to show no critical and no pending alerts."""
+        timeout_msg = (
+            "Failed to stabalize nagios after " + stage + "\nalerts: \n{}\n---"
+        )
+
+        await retry_async_with_timeout(
+            self.find_alerts,
+            args=tuple(),
+            kwds=dict(critical=lambda c: not c, pending=lambda p: not p),
+            timeout_msg=timeout_msg,
+            **kwds,
+        )
 
 
 @pytest.fixture()
@@ -2254,15 +2305,27 @@ async def nagios(model, tools):
         app = await model.deploy("nagios", series="bionic")
         await app.expose()
     if "nrpe" not in model.applications:
+        excludes = [
+            "/snap/",
+            "/sys/fs/cgroup",
+            "/run/containerd",
+            "/var/lib/docker",
+            "/run/credentials",
+            "/run/systemd/incoming",
+        ]
         await model.deploy(
             "nrpe",
             series=series,
-            config={"swap": "", "swap_activity": ""},
+            config=dict(
+                swap="", swap_activity="", ro_filesystem_excludes=",".join(excludes)
+            ),
             num_units=0,
             channel="stable",
         )
-    for each in model.applications:
-        if each not in ["nrpe"]:
+    for each, related in model.applications.items():
+        if each not in ["nrpe"] and not any(
+            "nrpe:" in str(rel) for rel in related.relations
+        ):
             await model.add_relation("nrpe", each)
     log("waiting for cluster to settle...")
     await tools.juju_wait()
@@ -2283,7 +2346,10 @@ async def nagios(model, tools):
     # 3) wait for nagios to settle
     log("waiting for nagios to settle")
     nagios_api = NagiosApi(opener.open, status_url)
-    await nagios_api.wait_for_alerts(critical=lambda c: not c, pending=lambda p: not p)
+    await nagios_api.wait_for_settle(
+        stage="after deployment",
+        timeout_insec=60 * 15,
+    )
 
     yield nagios_api
 
@@ -2293,7 +2359,7 @@ async def nagios(model, tools):
 
 
 @pytest.mark.skip_if_version(lambda v: v < (1, 17))
-async def test_nagios(model, nagios):
+async def test_nagios(model, nagios: NagiosApi):
     """This test verifies the nagios relation is working
     properly. This requires:
 
@@ -2306,68 +2372,61 @@ async def test_nagios(model, nagios):
     """
 
     log("starting nagios test")
-    masters = model.applications["kubernetes-control-plane"]
+    control_plane = model.applications["kubernetes-control-plane"]
 
-    # 1) break all the things
-    log("breaking api server")
-    await masters.set_config({"api-extra-args": "broken=true"})
+    try:
+        # 1) break all the things
+        log("breaking api server")
+        await control_plane.set_config({"api-extra-args": "broken=true"})
 
-    # 2) make sure nagios is complaining for kubernetes-control-plane
-    #    AND kubernetes-worker
-    log("Verifying complaints")
-    while True:
-        alerts = await nagios.wait_for_alerts(critical=lambda c: len(c) > 0)
-        criticals = alerts["critical"]
+        # 2) make sure nagios is complaining for kubernetes-control-plane
+        #    AND kubernetes-worker
+        log("Verifying complaints")
+        await retry_async_with_timeout(
+            nagios.critical_alerts_by_app,
+            (
+                "kubernetes-control-plane",
+                "kubernetes-worker",
+            ),
+            timeout_insec=10 * 60,
+            timeout_msg="Failed to find critical errors in control-plane and worker after 10m.",
+            retry_interval_insec=30,
+        )
+    finally:
+        # 3) fix api
+        log("Fixing API server")
+        await control_plane.set_config({"api-extra-args": ""})
 
-        if criticals:
-            found_master = []
-            found_worker = []
-            for c in criticals:
-                for link in c.find_all("a", recursive=False):
-                    if "kubernetes-control-plane" in link.string:
-                        found_master.append(link.string)
-                    elif "kubernetes-worker" in link.string:
-                        found_worker.append(link.string)
-            if found_master and found_worker:
-                log("Found critical errors:")
-                for s in found_master + found_worker:
-                    log(" - {}".format(s))
-                break
-        await asyncio.sleep(30)
+    # wait for complaints to go away
+    await nagios.wait_for_settle(
+        stage="restoring API Server",
+        timeout_insec=10 * 60,
+    )
 
-    # 6) fix api and wait for settle
-    log("Fixing API server")
-    await masters.set_config({"api-extra-args": ""})
-    await nagios.wait_for_alerts(critical=lambda c: not c)
+    try:
+        # 4) break worker
+        log("Breaking workers")
+        workers = model.applications["kubernetes-worker"]
+        await workers.set_config({"kubelet-extra-args": "broken=true"})
 
-    # 7) break worker
-    log("Breaking workers")
-    workers = masters = model.applications["kubernetes-worker"]
-    await workers.set_config({"kubelet-extra-args": "broken=true"})
+        # 5) verify nagios is complaining about worker
+        log("Verifying complaints")
+        await retry_async_with_timeout(
+            nagios.critical_alerts_by_app,
+            ("kubernetes-worker",),
+            timeout_insec=10 * 60,
+            timeout_msg="Failed to find critical errors in worker after 10m.",
+            retry_interval_insec=30,
+        )
+    finally:
+        # 9) Fix worker
+        await workers.set_config({"kubelet-extra-args": ""})
 
-    # 8) verify nagios is complaining about worker
-    log("Verifying complaints")
-    while True:
-        alerts = await nagios.wait_for_alerts(critical=lambda c: len(c) > 0)
-        criticals = alerts["critical"]
-
-        if criticals:
-            found_worker = []
-            for c in criticals:
-                for link in c.find_all("a", recursive=False):
-                    if "kubernetes-worker" in link.string:
-                        found_worker.append(link.string)
-                        break
-            if found_worker:
-                log("Found critical errors:")
-                for s in found_worker:
-                    log(" - {}".format(s))
-                break
-        await asyncio.sleep(30)
-
-    # 9) Fix worker and wait for complaints to go away
-    await workers.set_config({"kubelet-extra-args": ""})
-    await nagios.wait_for_alerts(critical=lambda c: not c)
+    # wait for complaints to go away
+    await nagios.wait_for_settle(
+        stage="restoring worker kubelets",
+        timeout_insec=10 * 60,
+    )
 
 
 @pytest.mark.skip("Failing and being investigated on possible deprecation")
