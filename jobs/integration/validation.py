@@ -1466,18 +1466,20 @@ async def any_keystone(model, apps_by_charm, tools):
         await model.applications[keystone.name].destroy()
         await model.applications[db_router.name].destroy()
         await tools.juju_wait()
-        await model.applications[db.name].destroy()
+        db_name = db.name  # grab the db.name before its object dies
+        await model.applications[db_name].destroy()
         await tools.juju_wait()
 
         # apparently, juju-wait will consider the model settled before an
         # application has fully gone away (presumably, when all units are gone) but
         # but having a dying mysql in the model can break the vault test
+
         try:
             await model.block_until(
-                lambda: db.name not in model.applications, timeout=120
+                lambda: db_name not in model.applications, timeout=120
             )
         except asyncio.TimeoutError:
-            pytest.fail(f"Timed out waiting for {db.name} to go away")
+            pytest.fail(f"Timed out waiting for {db_name} to go away")
 
 
 @pytest.mark.skip_arch(["aarch64"])
