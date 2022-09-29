@@ -2319,7 +2319,10 @@ async def nagios(model, tools):
             "nrpe",
             series=series,
             config=dict(
-                swap="", swap_activity="", ro_filesystem_excludes=",".join(excludes)
+                ro_filesystem_excludes=",".join(excludes),
+                space_check="check: disabled",  # don't run the space_check
+                swap="",
+                swap_activity="", 
             ),
             num_units=0,
             channel="stable",
