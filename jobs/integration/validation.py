@@ -2322,7 +2322,7 @@ async def nagios(model, tools):
                 ro_filesystem_excludes=",".join(excludes),
                 space_check="check: disabled",  # don't run the space_check
                 swap="",
-                swap_activity="", 
+                swap_activity="",
             ),
             num_units=0,
             channel="stable",
