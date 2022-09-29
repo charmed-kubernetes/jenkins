@@ -183,13 +183,14 @@ async def scp_to(local_path, unit, remote_path, controller_name, connection_name
 async def retry_async_with_timeout(
     func,
     args,
+    kwds=None,
     timeout_insec=600,
     timeout_msg="Timeout exceeded",
     retry_interval_insec=5,
 ):
     """
-    Retry a function until a timeout is exceeded. Function should
-    return either True or Flase
+    Retry a function until a timeout is exceeded. If retry is
+    desired, the function should return something falsey
     Args:
         func: The function to be retried
         args: Agruments of the function
@@ -199,12 +200,13 @@ async def retry_async_with_timeout(
 
     """
     deadline = time.time() + timeout_insec
+    results = None
     while time.time() < deadline:
-        if await func(*args):
-            break
+        if results := await func(*args, **(kwds or {})):
+            return results
         await asyncio.sleep(retry_interval_insec)
     else:
-        raise asyncio.TimeoutError(timeout_msg)
+        raise asyncio.TimeoutError(timeout_msg.format(results))
 
 
 def arch():
