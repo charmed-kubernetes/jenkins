@@ -18,6 +18,7 @@ def get_tracks(all=False):
     """
     return [
         "latest",
+        "1.21",
         "1.22",
         "1.22-eksd",
         "1.23",
