@@ -70,17 +70,17 @@ then
     aws iam delete-role --role-name mk8s-ec2-role
 fi
 
-if [[ $(aws efs describe-file-systems --query "length(FileSystems[?Name == 'mk8s-efs'])") = *1* ]]
+if [[ $(aws efs describe-file-systems --region us-east-1 --query "length(FileSystems[?Name == 'mk8s-efs'])") = *1* ]]
 then
-    EFS_ID=$(aws efs describe-file-systems --query "FileSystems[?Name == 'mk8s-efs'] | [0].FileSystemId" --output text)
-    if [[ $(aws efs describe-mount-targets --file-system-id $EFS_ID --query "length(MountTargets)") = *1* ]]
+    EFS_ID=$(aws efs describe-file-systems --region us-east-1 --query "FileSystems[?Name == 'mk8s-efs'] | [0].FileSystemId" --output text)
+    if [[ $(aws efs describe-mount-targets --region us-east-1 --file-system-id $EFS_ID --query "length(MountTargets)") = *1* ]]
     then
-        MT_ID=$(aws efs describe-mount-targets --file-system-id $EFS_ID --query "MountTargets | [0].MountTargetId" --output text)
+        MT_ID=$(aws efs describe-mount-targets --region us-east-1 --file-system-id $EFS_ID --query "MountTargets | [0].MountTargetId" --output text)
         aws efs delete-mount-target --mount-target-id $MT_ID
     fi
     until aws efs delete-file-system --file-system-id $EFS_ID
     do
-        if [[ $(aws efs describe-mount-targets --file-system-id $EFS_ID --query "length(MountTargets)") = *1* ]]
+        if [[ $(aws efs describe-mount-targets --region us-east-1 --file-system-id $EFS_ID --query "length(MountTargets)") = *1* ]]
         then
             echo "Waiting 60s for mount target deletion before efs deletion..."
             sleep 60
@@ -90,7 +90,7 @@ then
     done
 fi
 
-if [[ $(aws ec2 describe-security-groups --query "length(SecurityGroups[?GroupName == 'mk8s-efs-sg'])") = *1* ]]
+if [[ $(aws ec2 describe-security-groups --region us-east-1 --query "length(SecurityGroups[?GroupName == 'mk8s-efs-sg'])") = *1* ]]
 then
     aws ec2 delete-security-group --group-name mk8s-efs-sg
 fi
