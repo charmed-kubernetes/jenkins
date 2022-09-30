@@ -59,47 +59,54 @@ class Microk8sSnap:
             self.executor = LocalExecutor()
 
     def _try_list_revisions(self, track, channel, arch):
-            """
-            Call 'snapcraft list-revisions' and try to identify the following return values:
-            Args:
-                track: track we are looking for
-                channel: channel to look for
-                arch: architecture we are looking for
-            Returns:
-                a tuple with the following:
-                - released, True if we have a release, if we do not have a release the rest are set to None 
-                - release_date, date of the release
-                - major_minor_version, only major and minor version identifiers
-                - revision,
-                - version, the version string
-                - is_prerelease, True is this is a pre-release
+        """
+        Call 'snapcraft list-revisions' and try to identify the following return values:
+        Args:
+            track: track we are looking for
+            channel: channel to look for
+            arch: architecture we are looking for
+        Returns:
+            a tuple with the following:
+            - released, True if we have a release, if we do not have a release the rest are set to None
+            - release_date, date of the release
+            - major_minor_version, only major and minor version identifiers
+            - revision,
+            - version, the version string
+            - is_prerelease, True is this is a pre-release
 
-            """
-            channel_patern = "{}/{}*".format(track, channel)
-            revision_info_str = None
-            cmd = "snapcraft list-revisions microk8s --arch {}".format(arch).split()
+        """
+        channel_patern = "{}/{}*".format(track, channel)
+        revision_info_str = None
+        cmd = "snapcraft list-revisions microk8s --arch {}".format(arch).split()
 
-            click.echo("Calling {}".format(cmd))
-            revisions_list = run(cmd, stdout=PIPE, stderr=STDOUT)
-            revisions_list = revisions_list.stdout.decode("utf-8").split("\n")
-            click.echo("Got revisions list with size {}".format(len(revisions_list)))
-            click.echo("Searching for {} in revisions list".format(channel_patern))
-            for revision in revisions_list:
-                if channel_patern in revision:
-                    revision_info_str = revision
-            if revision_info_str:
-                # revision_info_str looks like this:
-                # "180     2018-09-12T15:51:33Z  amd64   v1.11.3    1.11/edge*"
-                revision_info = revision_info_str.split()
-                revision = revision_info[0]
-                version = revision_info[3]
-                is_prerelease, major_minor_version = self._extract_version(version)
-                release_date = parser.parse(revision_info[1])
-                released = True
-                return (released, release_date, major_minor_version, revision, version, is_prerelease)
-            else:
-                released = False
-                return (released, None, None, None, None, None)
+        click.echo("Calling {}".format(cmd))
+        revisions_list = run(cmd, stdout=PIPE, stderr=STDOUT)
+        revisions_list = revisions_list.stdout.decode("utf-8").split("\n")
+        click.echo("Got revisions list with size {}".format(len(revisions_list)))
+        click.echo("Searching for {} in revisions list".format(channel_patern))
+        for revision in revisions_list:
+            if channel_patern in revision:
+                revision_info_str = revision
+        if revision_info_str:
+            # revision_info_str looks like this:
+            # "180     2018-09-12T15:51:33Z  amd64   v1.11.3    1.11/edge*"
+            revision_info = revision_info_str.split()
+            revision = revision_info[0]
+            version = revision_info[3]
+            is_prerelease, major_minor_version = self._extract_version(version)
+            release_date = parser.parse(revision_info[1])
+            released = True
+            return (
+                released,
+                release_date,
+                major_minor_version,
+                revision,
+                version,
+                is_prerelease,
+            )
+        else:
+            released = False
+            return (released, None, None, None, None, None)
 
     def _try_status(self, track, channel, arch):
         """
@@ -110,7 +117,7 @@ class Microk8sSnap:
             arch: architecture we are looking for
         Returns:
             a tuple with the following:
-            - released, True if we have a release, if we do not have a release the rest are set to None 
+            - released, True if we have a release, if we do not have a release the rest are set to None
             - release_date, date of the release
             - major_minor_version, only major and minor version identifiers
             - revision,
@@ -128,7 +135,9 @@ class Microk8sSnap:
             if line.startswith(track + " "):
                 # adding the extra space after the track to differentiate between 1.25 vs 1.25-strict
                 in_track = True
-            if in_track == True and not (line.startswith(" ") or line.startswith(track + " ")):
+            if in_track == True and not (
+                line.startswith(" ") or line.startswith(track + " ")
+            ):
                 in_track = False
             if in_track:
                 # line may look like:
@@ -152,7 +161,14 @@ class Microk8sSnap:
                     released = True
                     # set an old date
                     release_date = parser.parse("2015-10-10T00:00:00Z")
-                    return (released, release_date, major_minor_version, revision, version, is_prerelease)
+                    return (
+                        released,
+                        release_date,
+                        major_minor_version,
+                        revision,
+                        version,
+                        is_prerelease,
+                    )
 
         # we did not find anything
         return (released, None, None, None, None, None)
