@@ -129,7 +129,7 @@ pipeline {
 
                                 juju-wait -e "${juju_full_model}" -w
 
-                                INSTANCE_ID=\$(juju show-machine 0 --format json | jq '.machines."0"."instance-id"')
+                                INSTANCE_ID=\$(juju show-machine 0 --format json | jq '.machines."0"."instance-id"' | tr -d '"')
                                 AVAILABILITY_ZONE=\$(aws ec2 describe-instances --region "${AWS_REGION}" --instance-id \$INSTANCE_ID --query "Reservations | [0].Instances | [0].Placement.AvailabilityZone" --output text)
                                 SUBNET_ID=\$(aws ec2 describe-instances --region "${AWS_REGION}" --instance-id \$INSTANCE_ID --query "Reservations | [0].Instances | [0].SubnetId" --output text)
 
