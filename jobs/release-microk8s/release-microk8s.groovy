@@ -18,6 +18,7 @@ pipeline {
      */
     environment {
         PATH                 = "${utils.cipaths}"
+        AWS_REGION           = "us-east-1"
         JUJU_CLOUD           = "aws/us-east-1"
         K8STEAMCI            = credentials('k8s_team_ci_lp')
         CDKBOT_GH            = credentials('cdkbot_github')
@@ -129,29 +130,29 @@ pipeline {
                                 juju-wait -e "${juju_full_model}" -w
 
                                 INSTANCE_ID=\$(juju show-machine 0 --format json | jq '.machines."0"."instance-id"')
-                                AVAILABILITY_ZONE=\$(aws ec2 describe-instances --instance-id \$INSTANCE_ID --query "Reservations | [0].Instances | [0].Placement.AvailabilityZone" --output text)
-                                SUBNET_ID=\$(aws ec2 describe-instances --instance-id \$INSTANCE_ID --query "Reservations | [0].Instances | [0].SubnetId" --output text)
+                                AVAILABILITY_ZONE=\$(aws ec2 describe-instances --region "${AWS_REGION}" --instance-id \$INSTANCE_ID --query "Reservations | [0].Instances | [0].Placement.AvailabilityZone" --output text)
+                                SUBNET_ID=\$(aws ec2 describe-instances --region "${AWS_REGION}" --instance-id \$INSTANCE_ID --query "Reservations | [0].Instances | [0].SubnetId" --output text)
 
-                                if [[ \$(aws ec2 describe-security-groups --query "length(SecurityGroups[?GroupName == 'mk8s-efs-sg'])") = *0* ]]
+                                if [[ \$(aws ec2 describe-security-groups --region "${AWS_REGION}" --query "length(SecurityGroups[?GroupName == 'mk8s-efs-sg'])") = *0* ]]
                                 then
-                                    SG_ID=\$(aws ec2 create-security-group --group-name mk8s-efs-sg --description "MicroK8s EFS testing security group" --query "GroupId" --output text)
-                                    aws ec2 authorize-security-group-ingress --group-id \$SG_ID --protocol tcp --port 2049 --cidr 0.0.0.0/0
+                                    SG_ID=\$(aws ec2 create-security-group --region "${AWS_REGION}" --group-name mk8s-efs-sg --description "MicroK8s EFS testing security group" --query "GroupId" --output text)
+                                    aws ec2 authorize-security-group-ingress --region "${AWS_REGION}" --group-id \$SG_ID --protocol tcp --port 2049 --cidr 0.0.0.0/0
                                 else
-                                    SG_ID=\$(aws ec2 describe-security-groups --query "SecurityGroups[?GroupName == 'mk8s-efs-sg'] | [0].GroupId" --output text)
+                                    SG_ID=\$(aws ec2 describe-security-groups --region "${AWS_REGION}" --query "SecurityGroups[?GroupName == 'mk8s-efs-sg'] | [0].GroupId" --output text)
                                 fi
 
-                                if [[ \$(aws efs describe-file-systems --query "length(FileSystems[?Name == 'mk8s-efs'])") = *0* ]]
+                                if [[ \$(aws efs describe-file-systems --region "${AWS_REGION}" --query "length(FileSystems[?Name == 'mk8s-efs'])") = *0* ]]
                                 then
-                                    export EFS_ID=\$(aws efs create-file-system --encrypted --creation-token mk8stestingefs --tags Key=Name,Value=mk8s-efs --availability-zone-name \$AVAILABILITY_ZONE --query "FileSystemId" --output text)
+                                    export EFS_ID=\$(aws efs create-file-system --region "${AWS_REGION}" --encrypted --creation-token mk8stestingefs --tags Key=Name,Value=mk8s-efs --availability-zone-name \$AVAILABILITY_ZONE --query "FileSystemId" --output text)
                                 else
-                                    export EFS_ID=\$(aws efs describe-file-systems --query "FileSystems[?Name == 'mk8s-efs'] | [0].FileSystemId" --output text)
+                                    export EFS_ID=\$(aws efs describe-file-systems --region "${AWS_REGION}" --query "FileSystems[?Name == 'mk8s-efs'] | [0].FileSystemId" --output text)
                                 fi
 
-                                if [[ \$(aws efs describe-mount-targets --file-system-id \$EFS_ID --query "length(MountTargets)") = *0* ]]
+                                if [[ \$(aws efs describe-mount-targets --region "${AWS_REGION}" --file-system-id \$EFS_ID --query "length(MountTargets)") = *0* ]]
                                 then
                                     max_retries=5
                                     retry=0
-                                    until aws efs create-mount-target --file-system-id \$EFS_ID --subnet-id \$SUBNET_ID --security-group \$SG_ID
+                                    until aws efs create-mount-target --region "${AWS_REGION}" --file-system-id \$EFS_ID --subnet-id \$SUBNET_ID --security-group \$SG_ID
                                     do
                                         ((n++))
                                         (( n >= max_retries )) && break
@@ -159,13 +160,13 @@ pipeline {
                                         sleep 10
                                     done
                                 else
-                                    if [[ \$(aws efs describe-mount-targets --file-system-id \$EFS_ID --query "MountTargets | [0].AvailabilityZoneName") != *\$AVAILABILITY_ZONE* ]]
+                                    if [[ \$(aws efs describe-mount-targets --region "${AWS_REGION}" --file-system-id \$EFS_ID --query "MountTargets | [0].AvailabilityZoneName") != *\$AVAILABILITY_ZONE* ]]
                                     then
-                                        MT_ID=\$(aws efs describe-mount-targets --file-system-id \$EFS_ID --query "MountTargets | [0].MountTargetId")
-                                        aws efs delete-mount-target --mount-target-id \$MT_ID
+                                        MT_ID=\$(aws efs describe-mount-targets --region "${AWS_REGION}" --file-system-id \$EFS_ID --query "MountTargets | [0].MountTargetId")
+                                        aws efs delete-mount-target --region "${AWS_REGION}" --mount-target-id \$MT_ID
                                         max_retries=5
                                         retry=0
-                                        until aws efs create-mount-target --file-system-id \$EFS_ID --subnet-id \$SUBNET_ID --security-group \$SG_ID
+                                        until aws efs create-mount-target --region "${AWS_REGION}" --file-system-id \$EFS_ID --subnet-id \$SUBNET_ID --security-group \$SG_ID
                                         do
                                             ((n++))
                                             (( n >= max_retries )) && break
