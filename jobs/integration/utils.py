@@ -10,6 +10,7 @@ from typing import Mapping, Any
 
 from contextlib import contextmanager
 from juju.controller import Controller
+from juju.machine import Machine
 from juju.errors import JujuError
 from juju.utils import block_until_with_coroutine
 from subprocess import check_output, check_call
@@ -449,8 +450,10 @@ spec:
     )
 
 
-def _units(machine):
-    return [unit for unit in machine.model.units if unit.machine.id == machine.id]
+def _units(machine: Machine):
+    return [
+        unit for unit in machine.model.units.values() if unit.machine.id == machine.id
+    ]
 
 
 async def wait_for_status(workload_status, units):
