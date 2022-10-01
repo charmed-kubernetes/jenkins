@@ -21,8 +21,33 @@ class Microk8sSnap:
         juju_model=None,
         testflinger_queue=None,
     ):
+        self.track = track
+        self.channel = channel
+
         arch = configbag.get_arch()
-        channel_patern = "{}/{}*".format(track, channel)
+        release_info = self._try_list_revisions(track, channel, arch)
+        if not release_info[0]:
+            # We failed to spot the release information with snapcraft list_revisions
+            # lets try the snapcraft status
+            release_info = self._try_status(track, channel, arch)
+
+        self.released = release_info[0]
+        if release_info[0]:
+            click.echo(f"Release date {release_info[1]} revision {release_info[3]}")
+            self.under_testing_channel = channel
+            if "edge" in self.under_testing_channel:
+                self.under_testing_channel = "{}/under-testing".format(
+                    self.under_testing_channel
+                )
+            self.revision = release_info[3]
+            self.version = release_info[4]
+            self.is_prerelease = release_info[5]
+            self.major_minor_version = release_info[2]
+            self.release_date = release_info[1]
+            self.released = release_info[0]
+        else:
+            click.echo("Not released")
+
         if juju_controller:
             click.echo("Using juju executor")
             self.executor = JujuExecutor(juju_unit, juju_controller, juju_model)
@@ -33,12 +58,28 @@ class Microk8sSnap:
             click.echo("Using local executor")
             self.executor = LocalExecutor()
 
-        self.track = track
-        self.channel = channel
-        revision_info_str = None
+    def _try_list_revisions(self, track, channel, arch):
+        """
+        Call 'snapcraft list-revisions' and try to identify the following return values:
+        Args:
+            track: track we are looking for
+            channel: channel to look for
+            arch: architecture we are looking for
+        Returns:
+            a tuple with the following:
+            - released, True if we have a release, if we do not have a release the rest are set to None
+            - release_date, date of the release
+            - major_minor_version, only major and minor version identifiers
+            - revision,
+            - version, the version string
+            - is_prerelease, True is this is a pre-release
 
+        """
+        channel_patern = "{}/{}*".format(track, channel)
+        revision_info_str = None
         cmd = "snapcraft list-revisions microk8s --arch {}".format(arch).split()
-        click.echo("Callling {}".format(cmd))
+
+        click.echo("Calling {}".format(cmd))
         revisions_list = run(cmd, stdout=PIPE, stderr=STDOUT)
         revisions_list = revisions_list.stdout.decode("utf-8").split("\n")
         click.echo("Got revisions list with size {}".format(len(revisions_list)))
@@ -50,26 +91,104 @@ class Microk8sSnap:
             # revision_info_str looks like this:
             # "180     2018-09-12T15:51:33Z  amd64   v1.11.3    1.11/edge*"
             revision_info = revision_info_str.split()
-
-            self.under_testing_channel = channel
-            if "edge" in self.under_testing_channel:
-                self.under_testing_channel = "{}/under-testing".format(
-                    self.under_testing_channel
-                )
-            self.revision = revision_info[0]
-            self.version = revision_info[3]
-            # eksd versions ma look like v1.23-5 so we replace the - with a .
-            version_parts = self.version.replace("-", ".").split(".")
-            self.is_prerelease = False
-            if not version_parts[2].isdigit():
-                self.is_prerelease = True
-            self.major_minor_version = "{}.{}".format(
-                version_parts[0], version_parts[1]
+            revision = revision_info[0]
+            version = revision_info[3]
+            is_prerelease, major_minor_version = self._extract_version(version)
+            release_date = parser.parse(revision_info[1])
+            released = True
+            return (
+                released,
+                release_date,
+                major_minor_version,
+                revision,
+                version,
+                is_prerelease,
             )
-            self.release_date = parser.parse(revision_info[1])
-            self.released = True
         else:
-            self.released = False
+            released = False
+            return (released, None, None, None, None, None)
+
+    def _try_status(self, track, channel, arch):
+        """
+        Call 'snapcraft status' and try to identify the following return values:
+        Args:
+            track: track we are looking for
+            channel: channel to look for
+            arch: architecture we are looking for
+        Returns:
+            a tuple with the following:
+            - released, True if we have a release, if we do not have a release the rest are set to None
+            - release_date, date of the release
+            - major_minor_version, only major and minor version identifiers
+            - revision,
+            - version, the version string
+            - is_prerelease, True is this is a pre-release
+
+        """
+        cmd = "snapcraft status microk8s --arch {}".format(arch).split()
+        click.echo("Calling {}".format(cmd))
+        releases_list = run(cmd, stdout=PIPE, stderr=STDOUT)
+        releases_list = releases_list.stdout.decode("utf-8").split("\n")
+        in_track = False
+        released = False
+        for line in releases_list:
+            if line.startswith(track + " "):
+                # adding the extra space after the track to differentiate between 1.25 vs 1.25-strict
+                in_track = True
+            if in_track == True and not (
+                line.startswith(" ") or line.startswith(track + " ")
+            ):
+                in_track = False
+            if in_track:
+                # line may look like:
+                # "1.25         amd64   stable              v1.25.2          4055        -           -"
+                # or it may look like:
+                # "                     candidate           v1.25.2          4055        -           -"
+                #
+                # In the first case we are not interested in the version and architecture
+                line_parts = line.split()
+                if line_parts[0] == track:
+                    assert line_parts.pop(0) == track
+                    assert line_parts.pop(0) == arch
+                if line_parts[0] == channel:
+                    click.echo(line_parts)
+                    version = line_parts[1]
+                    revision = line_parts[2]
+                    if version == "-":
+                        # Nothing released on this track/channel
+                        break
+                    is_prerelease, major_minor_version = self._extract_version(version)
+                    released = True
+                    # set an old date
+                    release_date = parser.parse("2015-10-10T00:00:00Z")
+                    return (
+                        released,
+                        release_date,
+                        major_minor_version,
+                        revision,
+                        version,
+                        is_prerelease,
+                    )
+
+        # we did not find anything
+        return (released, None, None, None, None, None)
+
+    def _extract_version(self, version):
+        """
+        Parse the version parts from a string similar to v1.23.3"
+        Args:
+            version: the version string to parse
+        Return:
+            (is_prerelease, major_minor_version) tuple
+        """
+        # eksd versions ma look like v1.23-5 so we replace the - with a .
+        version_parts = version.replace("-", ".").split(".")
+        click.echo(version)
+        is_prerelease = False
+        if not version_parts[2].isdigit():
+            is_prerelease = True
+        major_minor_version = "{}.{}".format(version_parts[0], version_parts[1])
+        return (is_prerelease, major_minor_version)
 
     def release_to(self, channel, release_to_track=None, dry_run="no"):
         """
