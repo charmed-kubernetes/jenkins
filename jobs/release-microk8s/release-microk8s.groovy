@@ -191,7 +191,7 @@ pipeline {
                                 juju run --unit ubuntu/0 "open-port 2049"
                                 juju expose ubuntu
 
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo EFS_ID=\$EFS_ID\ | sudo tee -a /etc/environment"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo EFS_ID=\$EFS_ID | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo KUBERNETES_ADMIN_ARN=\$KUBERNETES_ADMIN_ARN | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY | sudo tee -a /etc/environment"
