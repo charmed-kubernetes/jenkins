@@ -162,7 +162,7 @@ pipeline {
                                 else
                                     if [[ \$(aws efs describe-mount-targets --region "${AWS_REGION}" --file-system-id \$EFS_ID --query "MountTargets | [0].AvailabilityZoneName") != *\$AVAILABILITY_ZONE* ]]
                                     then
-                                        MT_ID=\$(aws efs describe-mount-targets --region "${AWS_REGION}" --file-system-id \$EFS_ID --query "MountTargets | [0].MountTargetId")
+                                        MT_ID=\$(aws efs describe-mount-targets --region "${AWS_REGION}" --file-system-id \$EFS_ID --query "MountTargets | [0].MountTargetId" --output text)
                                         aws efs delete-mount-target --region "${AWS_REGION}" --mount-target-id \$MT_ID
                                         max_retries=5
                                         retry=0
