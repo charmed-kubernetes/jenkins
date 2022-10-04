@@ -191,10 +191,10 @@ pipeline {
                                 juju run --unit ubuntu/0 "open-port 2049"
                                 juju expose ubuntu
 
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "export EFS_ID=\$EFS_ID"
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "export KUBERNETES_ADMIN_ARN=\$KUBERNETES_ADMIN_ARN"
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "export AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID"
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "export AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo EFS_ID=\$EFS_ID\n > /etc/environment"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo KUBERNETES_ADMIN_ARN=\$KUBERNETES_ADMIN_ARN\n > /etc/environment"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID\n > /etc/environment"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY\n > /etc/environment"
 
 
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
