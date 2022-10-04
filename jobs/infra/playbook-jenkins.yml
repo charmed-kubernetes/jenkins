@@ -145,7 +145,6 @@
       command: "snap install {{item}}"
       ignore_errors: yes
       loop:
-        - "aws-cli --classic"
         - "charm --classic --edge"
         - "charmcraft --classic --edge"
         - "go --classic --stable"
@@ -164,11 +163,22 @@
       command: "snap remove {{item}}"
       ignore_errors: yes
       loop:
+        - "aws-cli"
         - "microk8s"
         - "bundletester"
         - "surl"
       tags:
         - jenkins
+    - name: install awscli
+      shell: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install --update
+        # Disable the default pager for cli added in cli v2
+        aws configure set cli_pager ""
+      tags:
+        - jenkins
+        - adhoc
     - name: copy bashrc
       copy:
         src: "fixtures/bashrc"

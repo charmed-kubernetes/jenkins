@@ -143,7 +143,7 @@ pipeline {
 
                                 if [[ \$(aws efs describe-file-systems --region "${AWS_REGION}" --query "length(FileSystems[?Name == 'mk8s-efs'])") = *0* ]]
                                 then
-                                    export EFS_ID=\$(aws efs create-file-system --region "${AWS_REGION}" --encrypted --creation-token mk8stestingefs --tags Key=Name,Value=mk8s-efs --availability-zone-name \$AVAILABILITY_ZONE --query "FileSystemId" --output text)
+                                    export EFS_ID=\$(aws efs create-file-system --region "${AWS_REGION}" --encrypted --creation-token mk8stestingefs --tags Key=Name,Value=mk8s-efs --query "FileSystemId" --output text)
                                 else
                                     export EFS_ID=\$(aws efs describe-file-systems --region "${AWS_REGION}" --query "FileSystems[?Name == 'mk8s-efs'] | [0].FileSystemId" --output text)
                                 fi
