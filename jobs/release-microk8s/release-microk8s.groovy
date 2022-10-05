@@ -178,8 +178,8 @@ pipeline {
 
                                 if [[ \$(aws iam list-roles --query "length(Roles[?RoleName == 'KubernetesAdmin'])") = *0* ]]
                                 then
-                                    ACCOUNT_ID=\$(aws sts get-caller-identity --query 'Account' --output text)
-                                    POLICY=\$(echo -n '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"arn:aws:iam::'; echo -n "\$ACCOUNT_ID"; echo -n ':root"},"Action":"sts:AssumeRole","Condition":{}}]}')
+                                    ACCOUNT_ARN=\$(aws sts get-caller-identity --query 'Arn' --output text)
+                                    POLICY=\$(echo -n '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"arn:aws:iam::'; echo -n "\$ACCOUNT_ID"; echo -n '"},"Action":"sts:AssumeRole","Condition":{}}]}')
                                     KUBERNETES_ADMIN_ARN=\$(aws iam create-role --role-name KubernetesAdmin --description "Kubernetes administrator role (for AWS IAM Authenticator for Kubernetes)." --assume-role-policy-document "\$POLICY" --output text --query 'Role.Arn')
                                 else
                                     KUBERNETES_ADMIN_ARN=\$(aws iam list-roles --query "Roles[?RoleName == 'KubernetesAdmin'] | [0].Arn" --output text)
