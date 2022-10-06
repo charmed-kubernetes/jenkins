@@ -154,8 +154,8 @@ pipeline {
                                     retry=0
                                     until aws efs create-mount-target --region "${AWS_REGION}" --file-system-id \$EFS_ID --subnet-id \$SUBNET_ID --security-group \$SG_ID
                                     do
-                                        ((n++))
-                                        (( n >= max_retries )) && break
+                                        ((retry++))
+                                        (( retry >= max_retries )) && break
                                         echo "Retrying creating mount target for EFS..."
                                         sleep 10
                                     done
@@ -168,8 +168,8 @@ pipeline {
                                         retry=0
                                         until aws efs create-mount-target --region "${AWS_REGION}" --file-system-id \$EFS_ID --subnet-id \$SUBNET_ID --security-group \$SG_ID
                                         do
-                                            ((n++))
-                                            (( n >= max_retries )) && break
+                                            ((retry++))
+                                            (( retry >= max_retries )) && break
                                             echo "Retrying creating mount target for EFS..."
                                             sleep 10
                                         done

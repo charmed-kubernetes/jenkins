@@ -78,8 +78,12 @@ then
         MT_ID=$(aws efs describe-mount-targets --region us-east-1 --file-system-id $EFS_ID --query "MountTargets | [0].MountTargetId" --output text)
         aws efs delete-mount-target --mount-target-id $MT_ID
     fi
+    max_retries=5
+    retry=0
     until aws efs delete-file-system --file-system-id $EFS_ID
     do
+        ((retry++))
+        (( retry >= max_retries )) && break
         if [[ $(aws efs describe-mount-targets --region us-east-1 --file-system-id $EFS_ID --query "length(MountTargets)") = *1* ]]
         then
             echo "Waiting 60s for mount target deletion before efs deletion..."
