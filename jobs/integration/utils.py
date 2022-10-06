@@ -10,6 +10,7 @@ from typing import Mapping, Any
 
 from contextlib import contextmanager
 from juju.controller import Controller
+from juju.machine import Machine
 from juju.errors import JujuError
 from juju.utils import block_until_with_coroutine
 from subprocess import check_output, check_call
@@ -183,13 +184,14 @@ async def scp_to(local_path, unit, remote_path, controller_name, connection_name
 async def retry_async_with_timeout(
     func,
     args,
+    kwds=None,
     timeout_insec=600,
     timeout_msg="Timeout exceeded",
     retry_interval_insec=5,
 ):
     """
-    Retry a function until a timeout is exceeded. Function should
-    return either True or Flase
+    Retry a function until a timeout is exceeded. If retry is
+    desired, the function should return something falsey
     Args:
         func: The function to be retried
         args: Agruments of the function
@@ -199,12 +201,13 @@ async def retry_async_with_timeout(
 
     """
     deadline = time.time() + timeout_insec
+    results = None
     while time.time() < deadline:
-        if await func(*args):
-            break
+        if results := await func(*args, **(kwds or {})):
+            return results
         await asyncio.sleep(retry_interval_insec)
     else:
-        raise asyncio.TimeoutError(timeout_msg)
+        raise asyncio.TimeoutError(timeout_msg.format(results))
 
 
 def arch():
@@ -447,8 +450,10 @@ spec:
     )
 
 
-def _units(machine):
-    return [unit for unit in machine.model.units if unit.machine.id == machine.id]
+def _units(machine: Machine):
+    return [
+        unit for unit in machine.model.units.values() if unit.machine.id == machine.id
+    ]
 
 
 async def wait_for_status(workload_status, units):
@@ -614,28 +619,29 @@ async def kubectl(model, cmd, check=True):
     )
 
 
-async def _kubectl_doc(document, control_plane_unit, tools, model, action):
+async def _kubectl_doc(document, model, action):
     if action not in ["apply", "delete"]:
         raise ValueError(f"Invalid action {action}")
 
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
     remote_path = f"/tmp/{document.name}"
     await scp_to(
         document,
-        control_plane_unit,
+        control_plane,
         remote_path,
-        tools.controller_name,
-        tools.connection,
+        None,
+        model.info.uuid,
     )
     cmd = f"{action} -f {remote_path}"
     return await kubectl(model, cmd)
 
 
-async def kubectl_apply(document, control_plane_unit, tools, model):
-    return await _kubectl_doc(document, control_plane_unit, tools, model, "apply")
+async def kubectl_apply(document, model):
+    return await _kubectl_doc(document, model, "apply")
 
 
-async def kubectl_delete(document, control_plane_unit, tools, model):
-    return await _kubectl_doc(document, control_plane_unit, tools, model, "delete")
+async def kubectl_delete(document, model):
+    return await _kubectl_doc(document, model, "delete")
 
 
 async def vault(unit, cmd, **env):

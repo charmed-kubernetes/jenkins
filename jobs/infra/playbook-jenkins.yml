@@ -118,7 +118,7 @@
         - jenkins
       ignore_errors: yes
     - name: upgrade charm
-      command: "snap refresh charm --channel latest/edge"
+      command: "snap refresh charm --channel 2.x/stable"
       ignore_errors: yes
       tags:
         - jenkins
@@ -145,7 +145,7 @@
       command: "snap install {{item}}"
       ignore_errors: yes
       loop:
-        - "charm --classic --edge"
+        - "charm --classic --channel 2.x/stable"
         - "charmcraft --classic --edge"
         - "go --classic --stable"
         - "juju --classic --channel=2.9/stable"

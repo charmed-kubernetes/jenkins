@@ -5,6 +5,7 @@ import os
 import pytest
 import asyncio
 import uuid
+from pathlib import Path
 import yaml
 import requests
 import click
@@ -537,3 +538,11 @@ def pytest_metadata(metadata):
         metadata[
             "ANALYTICS"
         ] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/columbo.html'>View Report</a>"
+
+
+@pytest.fixture()
+async def kubeconfig(tools, model, tmp_path):
+    local = Path(tmp_path) / "kubeconfig"
+    k8s_cp = model.applications["kubernetes-control-plane"].units[0]
+    await scp_from(k8s_cp, "config", local, None, tools.connection)
+    yield local

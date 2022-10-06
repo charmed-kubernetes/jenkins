@@ -1,0 +1,19 @@
+application: azure-cloud-provider
+storage-class: csi-azure-default
+out-relations:
+  - - azure-cloud-provider:certificates
+    - easyrsa:client
+  - - azure-cloud-provider:kube-control
+    - kubernetes-control-plane:kube-control
+  - - azure-cloud-provider:external-cloud-provider
+    - kubernetes-control-plane:external-cloud-provider
+  - - azure-cloud-provider:azure-integration
+    - azure-integrator:clients
+in-relations:
+  - - azure-integrator:clients
+    - kubernetes-control-plane:azure
+  - - azure-integrator:clients
+    - kubernetes-worker:azure
+in-tree-until: '1.24'
+config:
+  image-registry: "mcr.microsoft.com"

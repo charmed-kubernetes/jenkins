@@ -97,7 +97,6 @@ importlib-metadata==4.12.0
     # via
     #   -r requirements.in
     #   keyring
-    #   mkdocs
 iniconfig==1.1.1
     # via pytest
 invoke==1.7.1
@@ -158,7 +157,7 @@ mccabe==0.6.1
     # via flake8
 mergedeep==1.3.4
     # via mkdocs
-mkdocs==1.3.1
+mkdocs==1.4.0
     # via
     #   -r requirements.in
     #   mkdocs-material
@@ -204,7 +203,7 @@ ppft==1.7.6.5
     # via pathos
 prettytable==3.4.1
     # via -r requirements.in
-protobuf==3.15.6
+protobuf==3.20.2
     # via macaroonbakery
 py==1.10.0
     # via
@@ -258,7 +257,7 @@ pytest-html==3.1.1
     # via -r requirements.in
 pytest-metadata==1.11.0
     # via pytest-html
-pytest-mock==3.8.2
+pytest-mock==3.9.0
     # via -r requirements.in
 python-dateutil==2.8.1
     # via
@@ -324,7 +323,6 @@ six==1.15.0
     #   macaroonbakery
     #   paramiko
     #   ppft
-    #   protobuf
     #   pymacaroons
     #   pynacl
     #   python-dateutil
