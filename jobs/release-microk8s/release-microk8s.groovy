@@ -11,7 +11,7 @@ def destroy_controller(controller) {
 
 pipeline {
     agent {
-        label "runner-amd64-2"
+        label "runner-${params.ARCH}"
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
