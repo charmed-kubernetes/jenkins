@@ -97,7 +97,8 @@
           virtualenv \
           wget \
           zlib1g-dev \
-          tmpreaper
+          tmpreaper \
+          awscli
       tags:
         - jenkins
       ignore_errors: yes
@@ -169,16 +170,6 @@
         - "surl"
       tags:
         - jenkins
-    - name: install awscli
-      shell: |
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip awscliv2.zip
-        sudo ./aws/install --update
-        # Disable the default pager for cli added in cli v2
-        aws configure set cli_pager ""
-      tags:
-        - jenkins
-        - adhoc
     - name: copy bashrc
       copy:
         src: "fixtures/bashrc"
