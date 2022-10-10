@@ -97,7 +97,8 @@
           virtualenv \
           wget \
           zlib1g-dev \
-          tmpreaper
+          tmpreaper \
+          awscli
       tags:
         - jenkins
       ignore_errors: yes
@@ -145,7 +146,6 @@
       command: "snap install {{item}}"
       ignore_errors: yes
       loop:
-        - "aws-cli --classic"
         - "charm --classic --channel 2.x/stable"
         - "charmcraft --classic --edge"
         - "go --classic --stable"
@@ -164,6 +164,7 @@
       command: "snap remove {{item}}"
       ignore_errors: yes
       loop:
+        - "aws-cli"
         - "microk8s"
         - "bundletester"
         - "surl"
