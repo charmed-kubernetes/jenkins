@@ -15,17 +15,20 @@ function juju::bootstrap::after
 
 function juju::bootstrap
 {
-    extra_args=''
+    extra_args='--model-default image-stream=daily'
+    if [ "$JUJU_CLOUD" = "azure/centralus" ]; then
+        # Azure seems to have trouble with the daily image-stream
+        extra_args=''
+    fi
     if [ "$JUJU_CLOUD" = "vsphere/Boston" ]; then
-        extra_args="--model-default datastore=vsanDatastore --model-default primary-network=VLAN_2763 --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions"
+        extra_args="$extra_args --model-default datastore=vsanDatastore --model-default primary-network=VLAN_2763 --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions"
     fi
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          -d "$JUJU_MODEL" \
          --force --bootstrap-series "$SERIES" \
-	 --bootstrap-constraints arch="amd64" \
+         --bootstrap-constraints arch="amd64" \
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
-         --model-default image-stream=daily \
          --model-default automatically-retry-hooks=true \
          --model-default logging-config="<root>=DEBUG" \
          $extra_args
