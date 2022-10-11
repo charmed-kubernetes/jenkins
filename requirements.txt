@@ -99,7 +99,7 @@ importlib-metadata==4.12.0
     #   keyring
 iniconfig==1.1.1
     # via pytest
-invoke==1.7.1
+invoke==1.7.3
     # via -r requirements.in
 iso8601==0.1.14
     # via surl
