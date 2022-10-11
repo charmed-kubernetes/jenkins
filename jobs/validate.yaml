@@ -383,7 +383,7 @@
 - job:
     name: 'validate-ck-integrator'
     description: |
-      Validates CK edge with cloud integrators or n-1 releases.
+      Validates CK edge with cloud integrators on n-1 releases.
     node: runner-validate
     project-type: matrix
     scm:
@@ -397,8 +397,6 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
-    execution-strategy:
-      sequential: true
     axes:
       - axis:
           type: slave
@@ -415,7 +413,7 @@
           type: user-defined
           name: series
           values:
-            - focal
+            - jammy
       - axis:
           type: user-defined
           name: channel
