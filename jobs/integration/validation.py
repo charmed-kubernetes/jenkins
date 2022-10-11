@@ -24,6 +24,7 @@ from pprint import pformat
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
 from .utils import (
+    juju_run_retry,
     timeout_for_current_task,
     retry_async_with_timeout,
     scp_to,
@@ -106,20 +107,8 @@ async def api_server_with_arg(model, argument):
 
 
 async def run_until_success(unit, cmd, timeout_insec=None):
-    while True:
-        action = await juju_run(unit, cmd, check=False, timeout=timeout_insec)
-        if action.success:
-            return action.stdout
-        else:
-            click.echo(
-                "Action " + action.status + ". Command failed on unit " + unit.entity_id
-            )
-            click.echo(f"cmd: {cmd}")
-            click.echo(f"code: {action.code}")
-            click.echo(f"stdout:\n{action.stdout}")
-            click.echo(f"stderr:\n{action.stderr}")
-            click.echo("Will retry...")
-            await asyncio.sleep(5)
+    action = await juju_run_retry(unit, cmd, tries=float("inf"), timeout=timeout_insec)
+    return action.stdout
 
 
 async def run_and_check(desc, unit, cmd, timeout=None):

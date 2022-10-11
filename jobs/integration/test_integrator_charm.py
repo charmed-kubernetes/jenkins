@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
 import os
+import random
 import sh
 import pytest
 from typing import Any, List, Tuple, Mapping
@@ -12,7 +13,7 @@ import yaml
 import jinja2
 from retry import retry
 
-from .utils import kubectl_apply, kubectl_delete
+from .utils import juju_run_retry, kubectl_apply, kubectl_delete
 
 env = os.environ.copy()
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ class Tree(Enum):
 
 
 @dataclass
-class ProviderSupport:
+class OutOfTreeConfig:
     application: str
     storage_class: str
     out_relations: List[Tuple[str, str]]
@@ -32,6 +33,11 @@ class ProviderSupport:
     config: Mapping[str, str] = field(default_factory=dict)
     in_tree_until: str = None
     trust: bool = False
+
+
+@dataclass
+class LoadBalancerConfig:
+    service_endpoint: str
 
 
 TEMPLATE_PATH = Path(__file__).absolute().parent / "templates/integrator-charm-data"
@@ -46,15 +52,21 @@ def _prepare_relation(linkage, model, add=True):
     return left_app.remove_relation(left_relation, right)
 
 
-def get_provider(cloud):
+def out_of_tree_config(cloud):
     provider_file = TEMPLATE_PATH / cloud / "out-of-tree.yaml"
     config = yaml.safe_load(provider_file.read_text())
-    return ProviderSupport(**{k.replace("-", "_"): config[k] for k in config})
+    return OutOfTreeConfig(**{k.replace("-", "_"): config[k] for k in config})
+
+
+def loadbalancer_config(cloud):
+    provider_file = TEMPLATE_PATH / cloud / "load-balancer.yaml"
+    config = yaml.safe_load(provider_file.read_text())
+    return LoadBalancerConfig(**{k.replace("-", "_"): config[k] for k in config})
 
 
 @pytest.fixture(scope="module", params=[Tree.IN_TREE, Tree.OUT_OF_TREE])
 async def storage_class(tools, model, request, cloud):
-    provider = get_provider(cloud)
+    provider = out_of_tree_config(cloud)
     out_of_tree = request.param is Tree.OUT_OF_TREE
 
     if provider.in_tree_until:
@@ -211,20 +223,20 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
         await kubectl_delete(rendered, model)
 
 
-@retry(tries=12, delay=15, logger=logger)  # 3min
-def retried(get, url):
-    return get(url)
-
-
 @pytest.mark.clouds(["ec2", "gce", "azure"])
-async def test_load_balancer(tools, model, kubeconfig):
+async def test_load_balancer(model, cloud, kubeconfig):
     """Performs a deployment of hello-world with newly created LB and attempts
     to do a fetch and parse the html to verify the lb ip address is
     functioning appropriately.
     """
+    lb_config = loadbalancer_config(cloud)
     kubectl = sh.kubectl.bake("--kubeconfig", kubeconfig)
     lb_yaml = TEMPLATE_PATH / "lb-test.yaml"
     logger.info("Starting hello-world on port=8080.")
+
+    control_plane = model.applications["kubernetes-control-plane"]
+    control_plane_unit = random.choice(control_plane.units)
+
     await kubectl_apply(lb_yaml, model)
     try:
         wait_for(
@@ -237,12 +249,14 @@ async def test_load_balancer(tools, model, kubeconfig):
         out = kubectl.get("svc", o="yaml", selector="run=load-balancer-example")
         services = yaml.safe_load(out.stdout.decode("utf8"))
         (svc,) = services["items"]
-        for key in ["ip", "hostname"]:
-            if lb_ip := svc["status"]["loadBalancer"]["ingress"][0].get(key):
-                break
-        assert lb_ip, "Cannot find an active loadbalancer."
-        html = retried(tools.requests.get, f"http://{lb_ip}:8080")
-        assert "Hello Kubernetes!" in html.content.decode("utf-8")
+        lb_endpoint = svc["status"]["loadBalancer"]["ingress"][0].get(
+            lb_config.service_endpoint
+        )
+        assert lb_endpoint, "Cannot find an active loadbalancer."
+        result = await juju_run_retry(
+            control_plane_unit, f"curl -s http://{lb_endpoint}:8080", tries=12, delay=15
+        )
+        assert "Hello Kubernetes!" in result.output
     finally:
         logger.info("Terminating hello-world on port=8080.")
         await kubectl_delete(lb_yaml, model)
