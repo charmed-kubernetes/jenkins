@@ -425,6 +425,8 @@
           values:
             - vsphere/Boston
             - aws/us-east-1
+            - azure/centralus
+            - google/us-east1
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
