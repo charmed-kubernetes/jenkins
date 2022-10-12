@@ -24,9 +24,6 @@ function juju::bootstrap
         extra_args="$extra_args \
             --model-default datastore=vsanDatastore \
             --model-default primary-network=VLAN_2763 \
-            --model-default juju-http-proxy=http://squid.internal:3128 \
-            --model-default juju-https-proxy=http://squid.internal:3128 \
-            --model-default juju-no-proxy=localhost,127.0.0.1,0.0.0.0,ppa.launchpad.net,launchpad.net,10.0.8.0/24,10.246.154.0/24 \
             --model-default force-vm-hardware-version=17 \
             --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions"
     fi
