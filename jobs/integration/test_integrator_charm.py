@@ -167,7 +167,7 @@ async def storage_pvc(model, storage_class, tmp_path):
 KeyMatcher = Tuple[str, Callable[[Any], bool]]
 
 
-@retry(tries=5, delay=15, logger=logger)
+@retry(tries=5, delay=15, backoff=2, logger=logger)
 def wait_for(resource: str, key_matcher: KeyMatcher, kubeconfig=None, **kwargs):
     l_index_re = re.compile(r"^(\w+)\[(\d+)\]$")
 
@@ -233,7 +233,7 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
         events = kubectl.get.event(
             "--field-selector", "involvedObject.name=task-pv-pod"
         )
-        logger.info(f"Pod NGINX events: {events.stdout.decode('utf-8')}")
+        logger.info(f"NGINX POD events:\n{events.stdout.decode('utf-8')}")
         logger.info(f"Terminating NGINX with pvc={storage_pvc}.")
         await kubectl_delete(rendered, model)
 
