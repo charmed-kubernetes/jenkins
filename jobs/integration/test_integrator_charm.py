@@ -167,7 +167,7 @@ async def storage_pvc(model, storage_class, tmp_path):
 KeyMatcher = Tuple[str, Callable[[Any], bool]]
 
 
-@retry(tries=4, delay=15, logger=logger)
+@retry(tries=5, delay=15, logger=logger)
 def wait_for(resource: str, key_matcher: KeyMatcher, kubeconfig=None, **kwargs):
     l_index_re = re.compile(r"^(\w+)\[(\d+)\]$")
 
@@ -204,6 +204,7 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
 
     logger.info(f"Starting NGINX with pvc={storage_pvc}.")
     await kubectl_apply(rendered, model)
+    kubectl = sh.kubectl.bake("--kubeconfig", kubeconfig)
     try:
         wait_for(
             "pod",
@@ -212,9 +213,7 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
             selector=f"test-name={test_name}",
             kubeconfig=kubeconfig,
         )
-        pod_exec = sh.kubectl.bake(
-            "--kubeconfig", kubeconfig, "exec", "-it", "task-pv-pod", "--"
-        )
+        pod_exec = kubectl.bake("exec", "-it", "task-pv-pod", "--")
 
         # Ensure the PV is mounted
         out = pod_exec("mount")
@@ -231,6 +230,10 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
         out = pod_exec("curl", "http://localhost/")
         assert welcome in out.stdout.decode("utf-8")
     finally:
+        events = kubectl.get.event(
+            "--field-selector", "involvedObject.name=task-pv-pod"
+        )
+        logger.info(f"Pod NGINX events: {events.stdout.decode('utf-8')}")
         logger.info(f"Terminating NGINX with pvc={storage_pvc}.")
         await kubectl_delete(rendered, model)
 
