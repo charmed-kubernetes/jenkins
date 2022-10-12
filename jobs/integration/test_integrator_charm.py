@@ -5,9 +5,10 @@ from enum import Enum, auto
 from pathlib import Path
 import os
 import random
+import re
 import sh
 import pytest
-from typing import Any, List, Tuple, Mapping
+from typing import Any, List, Tuple, Mapping, Callable
 import yaml
 
 import jinja2
@@ -163,13 +164,23 @@ async def storage_pvc(model, storage_class, tmp_path):
     await kubectl_delete(rendered, model)
 
 
+KeyMatcher = Tuple[str, Callable[[Any], bool]]
+
+
 @retry(tries=4, delay=15, logger=logger)
-def wait_for(resource: str, matcher: Tuple[str, Any], kubeconfig=None, **kwargs):
+def wait_for(resource: str, key_matcher: KeyMatcher, kubeconfig=None, **kwargs):
+    l_index_re = re.compile(r"^(\w+)\[(\d+)\]$")
+
     def lookup(rsc, keys):
         head, *tail = keys.split(".", 1)
-        return lookup(rsc[head], tail[0]) if tail else rsc[head]
+        key_and_index = l_index_re.findall(head)
+        if not key_and_index:
+            return lookup(rsc[head], tail[0]) if tail else rsc[head]
+        key, index = key_and_index[0]
+        dereference = rsc[key][int(index)]
+        return lookup(dereference, tail[0]) if tail else dereference
 
-    key, final_status = matcher
+    key, matcher = key_matcher
     kubectl = sh.kubectl
     if kubeconfig:
         kubectl = sh.kubectl.bake("--kubeconfig", kubeconfig)
@@ -177,8 +188,9 @@ def wait_for(resource: str, matcher: Tuple[str, Any], kubeconfig=None, **kwargs)
     out = kubectl.get(resource, **kwargs)
     rsc_list = yaml.safe_load(out.stdout.decode("utf-8"))
     status, *_ = [lookup(rsc, key) for rsc in rsc_list["items"]]
-    if status != final_status:
-        raise Exception(f"Resource {resource}[{key}] is {status} not {final_status}")
+    if not matcher(status):
+        raise Exception(f"Resource {resource}[{key}] is {status} and doesn't match")
+    return status
 
 
 async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
@@ -195,7 +207,7 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
     try:
         wait_for(
             "pod",
-            ("status.phase", "Running"),
+            ("status.phase", lambda s: s == "Running"),
             o="yaml",
             selector=f"test-name={test_name}",
             kubeconfig=kubeconfig,
@@ -230,7 +242,6 @@ async def test_load_balancer(model, cloud, kubeconfig):
     functioning appropriately.
     """
     lb_config = loadbalancer_config(cloud)
-    kubectl = sh.kubectl.bake("--kubeconfig", kubeconfig)
     lb_yaml = TEMPLATE_PATH / "lb-test.yaml"
     logger.info("Starting hello-world on port=8080.")
 
@@ -241,16 +252,20 @@ async def test_load_balancer(model, cloud, kubeconfig):
     try:
         wait_for(
             "deployment",
-            ("status.availableReplicas", 5),
+            ("status.availableReplicas", lambda r: r == 5),
             o="yaml",
             selector="run=load-balancer-example",
             kubeconfig=kubeconfig,
         )
-        out = kubectl.get("svc", o="yaml", selector="run=load-balancer-example")
-        services = yaml.safe_load(out.stdout.decode("utf8"))
-        (svc,) = services["items"]
-        lb_endpoint = svc["status"]["loadBalancer"]["ingress"][0].get(
-            lb_config.service_endpoint
+        lb_endpoint = wait_for(
+            "service",
+            (
+                f"status.loadBalancer.ingress[0].{lb_config.service_endpoint}",
+                lambda i: i,  # value just needs to be truthy (should be an ip or hostname)
+            ),
+            o="yaml",
+            selector="run=load-balancer-example",
+            kubeconfig=kubeconfig,
         )
         assert lb_endpoint, "Cannot find an active loadbalancer."
         result = await juju_run_retry(
