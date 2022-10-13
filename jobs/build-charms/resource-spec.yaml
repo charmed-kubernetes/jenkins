@@ -31,7 +31,5 @@
   calico-cni-arm64: '{out_path}/calico-cni-arm64.tar.gz'
   calicoctl-image: '{out_path}/calicoctl-image.tar.gz'
   calico-node-image: '{out_path}/calico-node-image.tar.gz'
-'multus':
-  net-attach-def-manager-image: 'net-attach-def-manager'
 'sriov-cni':
   sriov-cni-image: 'sriov-cni'

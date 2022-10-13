@@ -378,7 +378,6 @@
     upstream: 'https://github.com/charmed-kubernetes/metallb-operator.git'
 - multus:
     bugs: 'https://bugs.launchpad.net/charm-multus'
-    build-resources: 'cd {src_path}/net-attach-def-manager; ./build'
     docs: 'https://charmhub.io/multus/docs'
     downstream: charmed-kubernetes/charm-multus
     store: 'https://charmhub.io/multus'
