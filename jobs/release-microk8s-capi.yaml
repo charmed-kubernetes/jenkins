@@ -1,0 +1,60 @@
+# Builds and releases microk8s capi providers
+
+- job:
+    name: 'release-microk8s-capi'
+    description: |
+      Build and release MicroK8s capi.
+    project-type: freestyle
+    node: runner-amd64
+    wrappers:
+      - ansicolor
+      - timestamps
+      - ci-creds
+      - workspace-cleanup
+      - credentials-binding:
+          - username-password-separated:
+              credential-id: cdkbot_dockerhub
+              username: DOCKERHUB_USR
+              password: DOCKERHUB_PSW
+    parameters:
+      - string:
+          name: RELEASE_TAG
+          description: |
+            Tag used to release the providers.
+      - string:
+          name: BOOTSTRAP_PROVIDER_CHECKOUT
+          default: "main"
+          description: |
+            Git branch/tag to checkout for testing the bootstrap provider.
+      - string:
+          name: CONTROL_PLANE_PROVIDER_CHECKOUT
+          default: "main"
+          description: |
+            Git branch/tag to checkout for testing the control plane provider.
+      - bool:
+          name: RUN_TESTS
+          default: "true"
+          description: |
+            Run the tests before releasing.
+      - bool:
+          name: SKIP_RELEASE
+          default: "false"
+          description: |
+            Skip the release process.
+    properties:
+      - build-discarder:
+          num-to-keep: 3
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "infra.*"
+          block-level: 'NODE'
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+          git clone https://github.com/charmed-kubernetes/jenkins.git -b main jenkins
+          bash -eux jenkins/jobs/microk8s/clusterapi/release.sh
