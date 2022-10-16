@@ -16,6 +16,9 @@
               credential-id: cdkbot_dockerhub
               username: DOCKERHUB_USR
               password: DOCKERHUB_PSW
+          - text:
+              credential-id: aws_b64encoded_credentials_clusterapi
+              variable: AWS_B64ENCODED_CREDENTIALS
     parameters:
       - string:
           name: RELEASE_TAG

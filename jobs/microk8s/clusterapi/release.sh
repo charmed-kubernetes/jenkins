@@ -2,9 +2,13 @@
 
 set -xe
 
+_DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$_DIR" ]]; then _DIR="$PWD"; fi
+
 #################################################################
 ## Description:
 ## - Fetches Git repositories from bootstrap and control plane providers, builds controllers,
+##   spins up a test cluster on AWS and runs a few basic checks, then tears everything down
 ##   and releases.
 ## - Release means pushing Docker images to DockerHub and tags to GitHub repositories.
 ##   There is a GitHub action configured on the repositories to create a release on tag push.
@@ -14,6 +18,7 @@ set -xe
 
 ## Limitations
 ## - Currently does not do any integration testing
+## - Currently does nothing to manage cleaning up stale AWS resources in case of failure
 
 ## Requirements
 ## - docker
@@ -21,6 +26,7 @@ set -xe
 ## - build-essential
 
 ## Credentials
+## - AWS (to run tests)
 ## - Git (to push tags to GitHub repositories)
 ## - DockerHub (to push images)
 
@@ -38,7 +44,7 @@ then
 fi
 
 #################################################################
-echo "Build Docker images and release manifests from the checked out source code"
+echo "Check out source code"
 
 git clone https://github.com/canonical/cluster-api-bootstrap-provider-microk8s bootstrap -b "${BOOTSTRAP_PROVIDER_CHECKOUT}"
 git clone https://github.com/canonical/cluster-api-control-plane-provider-microk8s control-plane -b "${CONTROL_PLANE_PROVIDER_CHECKOUT}"
@@ -47,24 +53,124 @@ git clone https://github.com/canonical/cluster-api-control-plane-provider-microk
 #################################################################
 if [ "${RUN_TESTS}" = true ]
 then
-    echo "Run tests"
-    sudo snap install go --classic --channel=1.18/stable
+    docker login -u ${DOCKERHUB_USR} -p ${DOCKERHUB_PSW}
+
+
+    echo "Setup management cluster"
+    sudo lxc profile create microk8s || true
+    cat "${_DIR}/microk8s.profile" | sudo lxc profile edit microk8s
+
+    sudo snap install kubectl --classic || sudo snap refresh kubectl || true
+
+    # attempt to cleanup from previous runs
+    (
+        sudo lxc exec capi-tests -- microk8s kubectl delete cluster --all --timeout=10s || true
+        sudo lxc rm capi-tests --force || true
+    )
+    sudo lxc launch ubuntu:22.04 -p default -p microk8s capi-tests
+    sleep 10
+    while ! sudo lxc exec capi-tests -- snap install microk8s --channel latest/edge --classic; do
+        sleep 3
+    done
+    sudo lxc exec capi-tests -- microk8s status --wait-ready
+    sudo lxc exec capi-tests -- microk8s enable rbac dns
+    mkdir ~/.kube -p
+    sudo lxc exec capi-tests -- microk8s config > ~/.kube/config
+
+    # download clusterctl and install
+    echo "Install clusterctl"
+    curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.2.4/clusterctl-linux-amd64 -o clusterctl
+    chmod +x clusterctl
+    sudo mv ./clusterctl /usr/local/bin/clusterctl
+    clusterctl version
+
+    # initialize infrastructure provider
+    echo "Initialize AWS infrastructure provider"
+    # requires sourced credentials AWS_B64ENCODED_CREDENTIALS. to refresh credentials, do
+    # export AWS_REGION=us-west-1
+    # export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+    # export AWS_ACCESS_SECRET_KEY="${AWS_ACCESS_SECRET_KEY}"
+    # clusterawsadm bootstrap iam create-cloudformation-stack
+    # export AWS_B64ENCODED_CREDENTIALS=$(clusterawsadm bootstrap credentials encode-as-profile)
+    clusterctl init --infrastructure aws --bootstrap - --control-plane -
+
+    echo "Build Docker images and release manifests from the checked out source code"
     (
         cd bootstrap
-        make fmt
-        make vet
-        # TODO: actually do testing
-        # make lint
-        # make test
+        docker build -t cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev .
+        docker push cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev
+        sed "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev," -i bootstrap-components.yaml
     )
     (
         cd control-plane
-        make fmt
-        make vet
-        # TODO: actually do testing
-        # make lint
-        # make test
+        docker build -t cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev .
+        docker push cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev
+        sed "s,docker.io/cdkbot/capi-control-plane-provider-microk8s:latest,cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev," -i control-plane-components.yaml
     )
+
+    # deploy microk8s providers
+    kubectl apply -f bootstrap/bootstrap-components.yaml -f control-plane/control-plane-components.yaml
+
+    while ! kubectl wait --for=condition=available deploy/capi-microk8s-bootstrap-controller-manager -n capi-microk8s-bootstrap-system; do
+        echo "Waiting for bootstrap controller to come up"
+        sleep 3
+    done
+    while ! kubectl wait --for=condition=available deploy/capi-microk8s-control-plane-controller-manager -n capi-microk8s-control-plane-system; do
+        echo "Waiting for control-plane controller to come up"
+        sleep 3
+    done
+
+    echo "Deploy a test cluster"
+
+    # generate cluster
+    export AWS_REGION=us-east-1
+    export AWS_SSH_KEY_NAME=capi
+    export CONTROL_PLANE_MACHINE_COUNT=3
+    export WORKER_MACHINE_COUNT=3
+    export AWS_CREATE_BASTION=false
+    export AWS_PUBLIC_IP=false
+    export AWS_CONTROL_PLANE_MACHINE_FLAVOR=t3.large
+    export AWS_NODE_MACHINE_FLAVOR=t3.large
+    clusterctl generate cluster test-ci-cluster --from bootstrap/templates/cluster-template-aws.yaml --kubernetes-version 1.25.0 > cluster.yaml
+
+    function cleanup() {
+        set +e
+        kubectl delete cluster test-ci-cluster
+        sudo lxc rm capi-tests --force
+    }
+    trap cleanup EXIT
+
+    # have AWS infrastructure provider logs running
+    kubectl logs -n capa-system deploy/capa-controller-manager -f &
+
+    # deploy cluster
+    kubectl apply -f cluster.yaml
+
+    # get cluster kubeconfig
+    while ! clusterctl get kubeconfig test-ci-cluster > ./kubeconfig; do
+        kubectl get cluster,awscluster
+
+        echo waiting for workload cluster kubeconfig
+        sleep 3
+    done
+
+    # wait for nodes to come up
+    while ! kubectl --kubeconfig=./kubeconfig get node | grep "\<Ready\>" | wc -l | grep 6; do
+        kubectl get cluster,machines,awscluster,awsmachines
+        kubectl --kubeconfig=./kubeconfig get node || true
+
+        echo waiting for 6 nodes to become ready
+        sleep 3
+    done
+
+    # create deploy and wait for pods
+    kubectl --kubeconfig=./kubeconfig create deploy --image cdkbot/microbot:1 --replicas 30 bot
+    while ! kubectl --kubeconfig=./kubeconfig wait deploy/bot --for=jsonpath='{.status.readyReplicas}=30'; do
+        kubectl --kubeconfig=./kubeconfig get node,pod -A || true
+
+        echo waiting for deployment to come up
+        sleep 3
+    done
 fi
 
 #################################################################
