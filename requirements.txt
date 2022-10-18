@@ -132,7 +132,7 @@ kv==0.3
     # via -r requirements.in
 launchpadlib==1.10.16
     # via -r requirements.in
-lazr-restfulclient==0.14.4
+lazr-restfulclient==0.14.5
     # via
     #   -r requirements.in
     #   launchpadlib
