@@ -89,7 +89,7 @@ def generate_manifest(reactive_charm, archs):
         }
 
     def _generate_tools():
-        ret = json.loads(sh.charm.version(format="json"))
+        ret = json.loads(sh.charm.version(format="json").stdout)
         return {
             "charmtool-version": ret["charm-tools"]["version"],
             "charmtool-started-at": datetime.utcnow().isoformat() + "Z",

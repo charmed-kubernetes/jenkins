@@ -102,7 +102,7 @@ def charm_cmd():
         )
 
     with patch("sh.charm", create=True) as charm:
-        charm.version.return_value = '{"charm-tools": {"version": "1.2.3"}}'
+        charm.version.return_value.stdout = '{"charm-tools": {"version": "1.2.3"}}'
         cmd = charm.bake.return_value
         cmd.build.side_effect = partial(command_response, "build")
         yield cmd
