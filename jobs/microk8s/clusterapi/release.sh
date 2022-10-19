@@ -76,14 +76,14 @@ then
     # build and push bootstrap provider images
     (
         cd bootstrap
-        make docker-manifest IMG=cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}
+        make docker-manifest IMG=cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG//v}
         make docker-manifest IMG=cdkbot/capi-bootstrap-provider-microk8s:latest
     )
 
     # build and push control-plane provider images
     (
         cd control-plane
-        make docker-manifest IMG=cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}
+        make docker-manifest IMG=cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG//v}
         make docker-manifest IMG=cdkbot/capi-control-plane-provider-microk8s:latest
     )
 
