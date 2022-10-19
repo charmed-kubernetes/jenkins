@@ -57,4 +57,4 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
           git clone https://github.com/charmed-kubernetes/jenkins.git -b main jenkins
-          bash -eux jenkins/jobs/microk8s/clusterapi/release.sh
+          bash -eux $WORKSPACE/jobs/microk8s/clusterapi/release.sh
