@@ -6,6 +6,8 @@
       Build and release MicroK8s capi.
     project-type: freestyle
     node: runner-amd64
+    scm:
+      - k8s-jenkins-jenkaas
     wrappers:
       - default-job-wrapper
       - ci-creds
