@@ -7,10 +7,8 @@
     project-type: freestyle
     node: runner-amd64
     wrappers:
-      - ansicolor
-      - timestamps
+      - default-job-wrapper
       - ci-creds
-      - workspace-cleanup
       - credentials-binding:
           - username-password-separated:
               credential-id: cdkbot_dockerhub
