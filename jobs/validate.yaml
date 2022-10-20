@@ -407,8 +407,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.25/edge
-            - 1.24/edge
+            - 1.26/edge
+            - 1.25/stable
       - axis:
           type: user-defined
           name: series
