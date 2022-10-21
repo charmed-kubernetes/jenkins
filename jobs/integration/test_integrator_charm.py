@@ -226,7 +226,7 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
 
         # Ensure the PV is readable by the application
         pod_exec("apt", "update")
-        pod_exec("apt", "install", "curl")
+        pod_exec("apt", "install", "-y", "curl")
         out = pod_exec("curl", "http://localhost/")
         assert welcome in out.stdout.decode("utf-8")
     finally:
