@@ -9,6 +9,7 @@ import traceback
 from typing import Mapping, Any
 
 from contextlib import contextmanager
+from juju.unit import Unit
 from juju.controller import Controller
 from juju.machine import Machine
 from juju.errors import JujuError
@@ -601,6 +602,33 @@ async def juju_run(unit, cmd, check=True, **kwargs) -> JujuRunResult:
     if check and not result.success:
         raise JujuRunError(unit, cmd, result)
     return result
+
+
+async def juju_run_retry(
+    unit: Unit, cmd: str, tries: int, delay: int = 5, **kwargs
+) -> JujuRunResult:
+    """Retry the command on a unit until either success or maximum number of tries.
+
+    @param int tries: number of times to execute juju_run before returning a failed action.
+    @param int delay: number of seconds to wait between retries after a failed action.
+    """
+    retries = 0
+    while retries == 0 or retries < tries:
+        retries += 1
+        action = await juju_run(unit, cmd, check=False, **kwargs)
+        if action.success:
+            break
+        else:
+            click.echo(
+                "Action " + action.status + ". Command failed on unit " + unit.entity_id
+            )
+            click.echo(f"cmd: {cmd}")
+            click.echo(f"code: {action.code}")
+            click.echo(f"stdout:\n{action.stdout}")
+            click.echo(f"stderr:\n{action.stderr}")
+            click.echo("Will retry...")
+            await asyncio.sleep(delay)
+    return action
 
 
 async def juju_run_action(unit, action, _check=True, **kwargs) -> JujuRunResult:

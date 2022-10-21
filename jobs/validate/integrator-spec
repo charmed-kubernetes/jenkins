@@ -45,32 +45,36 @@ EOF
     num_units: 1
     trust: true
 relations:
-  - ['vsphere-integrator', 'kubernetes-control-plane']
-  - ['vsphere-integrator', 'kubernetes-worker']
+  - ['vsphere-integrator', 'kubernetes-control-plane:vsphere']
+  - ['vsphere-integrator', 'kubernetes-worker:vsphere']
 EOF
     elif [ "$JUJU_CLOUD" = "aws/us-east-1" ]; then
       # Deploy aws
       cat <<EOF >> overlay.yaml
+  easyrsa:
+    to: null
   aws-integrator:
     charm: aws-integrator
     channel: $JUJU_DEPLOY_CHANNEL
     num_units: 1
     trust: true
 relations:
-  - ['aws-integrator', 'kubernetes-control-plane']
-  - ['aws-integrator', 'kubernetes-worker']
+  - ['aws-integrator', 'kubernetes-control-plane:aws']
+  - ['aws-integrator', 'kubernetes-worker:aws']
 EOF
     elif [ "$JUJU_CLOUD" = "google/us-east1" ]; then
       # Deploy google
       cat <<EOF >> overlay.yaml
+  easyrsa:
+    to: null
   gcp-integrator:
     charm: gcp-integrator
     channel: $JUJU_DEPLOY_CHANNEL
     num_units: 1
     trust: true
 relations:
-  - ['gcp-integrator', 'kubernetes-control-plane']
-  - ['gcp-integrator', 'kubernetes-worker']
+  - ['gcp-integrator', 'kubernetes-control-plane:gcp']
+  - ['gcp-integrator', 'kubernetes-worker:gcp']
 EOF
     elif [ "$JUJU_CLOUD" = "azure/centralus" ]; then
       # Deploy azure
@@ -78,14 +82,16 @@ EOF
   calico:
     options:
       cidr: 172.22.0.0/16
+  easyrsa:
+    to: null
   azure-integrator:
     charm: azure-integrator
     channel: $JUJU_DEPLOY_CHANNEL
     num_units: 1
     trust: true
 relations:
-  - ['azure-integrator', 'kubernetes-control-plane']
-  - ['azure-integrator', 'kubernetes-worker']
+  - ['azure-integrator', 'kubernetes-control-plane:azure']
+  - ['azure-integrator', 'kubernetes-worker:azure']
 EOF
     else
       >&2 echo "Unspecified cloud"

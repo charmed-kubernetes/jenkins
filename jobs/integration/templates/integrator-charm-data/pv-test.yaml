@@ -11,7 +11,7 @@ spec:
         claimName: {{ storage_pvc }}
   containers:
     - name: task-pv-container
-      image: nginx
+      image: rocks.canonical.com:443/cdk/nginx:1.18
       ports:
         - containerPort: 80
           name: "http-server"
