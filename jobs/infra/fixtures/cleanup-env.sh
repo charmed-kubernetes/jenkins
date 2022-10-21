@@ -76,11 +76,11 @@ then
     if [[ $(aws efs describe-mount-targets --region us-east-1 --file-system-id $EFS_ID --query "length(MountTargets)") = *1* ]]
     then
         MT_ID=$(aws efs describe-mount-targets --region us-east-1 --file-system-id $EFS_ID --query "MountTargets | [0].MountTargetId" --output text)
-        aws efs delete-mount-target --mount-target-id $MT_ID
+        aws efs delete-mount-target --region us-east-1 --mount-target-id $MT_ID
     fi
     max_retries=5
     retry=0
-    until aws efs delete-file-system --file-system-id $EFS_ID
+    until aws efs delete-file-system --region us-east-1 --file-system-id $EFS_ID
     do
         ((retry++))
         (( retry >= max_retries )) && break
@@ -96,7 +96,7 @@ fi
 
 if [[ $(aws ec2 describe-security-groups --region us-east-1 --query "length(SecurityGroups[?GroupName == 'mk8s-efs-sg'])") = *1* ]]
 then
-    aws ec2 delete-security-group --group-name mk8s-efs-sg
+    aws ec2 delete-security-group --region us-east-1 --group-name mk8s-efs-sg
 fi
 
 # aws --region us-east-2 ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId' | parallel aws --region us-east-2 ec2 terminate-instances --instance-ids {}
