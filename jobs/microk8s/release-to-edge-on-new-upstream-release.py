@@ -59,7 +59,14 @@ if __name__ == "__main__":
             )
         )
         if upstream != edge_snap.version:
-            if not upstream.startswith("{}.".format(edge_snap.major_minor_version)):
+            print(f"{upstream} starts with {edge_snap.major_minor_version}")
+            # The upstream could be v1.25.4 for normal releases or v1.25-4 for eksd
+            if not upstream.startswith(
+                (
+                    "{}.".format(edge_snap.major_minor_version),
+                    "{}-".format(edge_snap.major_minor_version),
+                )
+            ):
                 # There is a minor version difference.
                 # For example upstream says we are on v1.12.x and the edge snap is on v1.11.y
                 # This should occur only in the "latest" track that follows the latest k8s
@@ -71,7 +78,7 @@ if __name__ == "__main__":
                     )
                     raise Exception("Tracks should not change releases")
 
-            click.echo("Triggering LP builders")
+            click.echo(f"Triggering LP builder for track {track}")
             request = trigger_lp_builders(track)
             if request:
                 click.echo("microk8s is building under: {}".format(request))
