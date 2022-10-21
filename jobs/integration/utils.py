@@ -598,6 +598,7 @@ class JujuRunResult:
 
 async def juju_run(unit, cmd, check=True, **kwargs) -> JujuRunResult:
     action = await unit.run(cmd, **kwargs)
+    action = await action.wait()
     result = JujuRunResult(action)
     if check and not result.success:
         raise JujuRunError(unit, cmd, result)
