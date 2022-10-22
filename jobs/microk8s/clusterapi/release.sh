@@ -2,9 +2,13 @@
 
 set -xe
 
+_DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$_DIR" ]]; then _DIR="$PWD"; fi
+
 #################################################################
 ## Description:
 ## - Fetches Git repositories from bootstrap and control plane providers, builds controllers,
+##   spins up a test cluster on AWS and runs a few basic checks, then tears everything down
 ##   and releases.
 ## - Release means pushing Docker images to DockerHub and tags to GitHub repositories.
 ##   There is a GitHub action configured on the repositories to create a release on tag push.
@@ -14,6 +18,7 @@ set -xe
 
 ## Limitations
 ## - Currently does not do any integration testing
+## - Currently does nothing to manage cleaning up stale AWS resources in case of failure
 
 ## Requirements
 ## - docker
@@ -21,6 +26,7 @@ set -xe
 ## - build-essential
 
 ## Credentials
+## - AWS (to run tests)
 ## - Git (to push tags to GitHub repositories)
 ## - DockerHub (to push images)
 
@@ -38,7 +44,7 @@ then
 fi
 
 #################################################################
-echo "Build Docker images and release manifests from the checked out source code"
+echo "Check out source code"
 
 git clone https://github.com/canonical/cluster-api-bootstrap-provider-microk8s bootstrap -b "${BOOTSTRAP_PROVIDER_CHECKOUT}"
 git clone https://github.com/canonical/cluster-api-control-plane-provider-microk8s control-plane -b "${CONTROL_PLANE_PROVIDER_CHECKOUT}"
@@ -47,24 +53,69 @@ git clone https://github.com/canonical/cluster-api-control-plane-provider-microk
 #################################################################
 if [ "${RUN_TESTS}" = true ]
 then
-    echo "Run tests"
-    sudo snap install go --classic --channel=1.18/stable
+    docker login -u ${DOCKERHUB_USR} -p ${DOCKERHUB_PSW}
+
+
+    echo "Setup management cluster"
+    sudo lxc profile create microk8s || true
+    cat "${_DIR}/microk8s.profile" | sudo lxc profile edit microk8s
+
+    sudo snap install kubectl --classic || sudo snap refresh kubectl
+
+    # attempt to cleanup from previous runs
+    (
+        sudo lxc exec capi-tests -- microk8s kubectl delete cluster --all --timeout=10s || true
+        sudo lxc rm capi-tests --force || true
+    )
+    sudo lxc launch ubuntu:22.04 -p default -p microk8s capi-tests
+    sleep 10
+    while ! sudo lxc exec capi-tests -- snap install microk8s --channel latest/beta --classic; do
+        sleep 3
+    done
+    sudo lxc exec capi-tests -- microk8s status --wait-ready
+    sudo lxc exec capi-tests -- microk8s enable rbac dns
+    mkdir ~/.kube -p
+    sudo lxc exec capi-tests -- microk8s config > ~/.kube/config
+
+    # download clusterctl and install
+    echo "Install clusterctl"
+    curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.2.4/clusterctl-linux-amd64 -o clusterctl
+    chmod +x clusterctl
+    sudo mv ./clusterctl /usr/local/bin/clusterctl
+    clusterctl version
+
+    # initialize infrastructure provider
+    echo "Initialize AWS infrastructure provider"
+    # requires sourced credentials AWS_B64ENCODED_CREDENTIALS. to refresh credentials, do
+    # export AWS_REGION=us-west-1
+    # export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+    # export AWS_ACCESS_SECRET_KEY="${AWS_ACCESS_SECRET_KEY}"
+    # clusterawsadm bootstrap iam create-cloudformation-stack
+    # export AWS_B64ENCODED_CREDENTIALS=$(clusterawsadm bootstrap credentials encode-as-profile)
+    clusterctl init --infrastructure aws --bootstrap - --control-plane -
+
+    echo "Build Docker images and release manifests from the checked out source code"
     (
         cd bootstrap
-        make fmt
-        make vet
-        # TODO: actually do testing
-        # make lint
-        # make test
+        docker build -t cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev .
+        docker push cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev
+        sed "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,docker.io/cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev," -i bootstrap-components.yaml
     )
     (
         cd control-plane
-        make fmt
-        make vet
-        # TODO: actually do testing
-        # make lint
-        # make test
+        docker build -t cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev .
+        docker push cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev
+        sed "s,docker.io/cdkbot/capi-control-plane-provider-microk8s:latest,docker.io/cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev," -i control-plane-components.yaml
     )
+
+    # deploy microk8s providers
+    kubectl apply -f bootstrap/bootstrap-components.yaml -f control-plane/control-plane-components.yaml
+
+    # run integration tests
+    bash ./bootstrap/integration/test.sh
+
+    # cleanup machine
+    sudo lxc rm capi-tests --force || true
 fi
 
 #################################################################
