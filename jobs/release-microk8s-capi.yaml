@@ -17,6 +17,14 @@
               username: DOCKERHUB_USR
               password: DOCKERHUB_PSW
           - text:
+              # AWS_B64ENCODED_CREDENTIALS is produced by clusterawsadm and described in:
+              # https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers
+              # To produce this credential try:
+              # export AWS_REGION=us-west-1
+              # export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+              # export AWS_ACCESS_SECRET_KEY="${AWS_ACCESS_SECRET_KEY}"
+              # clusterawsadm bootstrap iam create-cloudformation-stack
+              # export AWS_B64ENCODED_CREDENTIALS=$(clusterawsadm bootstrap credentials encode-as-profile)
               credential-id: aws_b64encoded_credentials_clusterapi
               variable: AWS_B64ENCODED_CREDENTIALS
     parameters:

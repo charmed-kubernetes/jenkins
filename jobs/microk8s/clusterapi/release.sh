@@ -60,7 +60,7 @@ then
     sudo lxc profile create microk8s || true
     cat "${_DIR}/microk8s.profile" | sudo lxc profile edit microk8s
 
-    sudo snap install kubectl --classic || sudo snap refresh kubectl || true
+    sudo snap install kubectl --classic || sudo snap refresh kubectl
 
     # attempt to cleanup from previous runs
     (
@@ -69,7 +69,7 @@ then
     )
     sudo lxc launch ubuntu:22.04 -p default -p microk8s capi-tests
     sleep 10
-    while ! sudo lxc exec capi-tests -- snap install microk8s --channel latest/edge --classic; do
+    while ! sudo lxc exec capi-tests -- snap install microk8s --channel latest/beta --classic; do
         sleep 3
     done
     sudo lxc exec capi-tests -- microk8s status --wait-ready
@@ -99,13 +99,13 @@ then
         cd bootstrap
         docker build -t cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev .
         docker push cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev
-        sed "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev," -i bootstrap-components.yaml
+        sed "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,docker.io/cdkbot/capi-bootstrap-provider-microk8s:${RELEASE_TAG}-dev," -i bootstrap-components.yaml
     )
     (
         cd control-plane
         docker build -t cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev .
         docker push cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev
-        sed "s,docker.io/cdkbot/capi-control-plane-provider-microk8s:latest,cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev," -i control-plane-components.yaml
+        sed "s,docker.io/cdkbot/capi-control-plane-provider-microk8s:latest,docker.io/cdkbot/capi-control-plane-provider-microk8s:${RELEASE_TAG}-dev," -i control-plane-components.yaml
     )
 
     # deploy microk8s providers
