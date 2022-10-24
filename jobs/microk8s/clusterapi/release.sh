@@ -141,14 +141,14 @@ then
     # create github release for bootstrap provider
     (
         cd bootstrap
-        git tag ${RELEASE_TAG}
-        git push "https://${CDKBOT_GH_USR}:${CDKBOT_GH_PSW}@github.com/canonical/cluster-api-bootstrap-provider-microk8s" "${BOOTSTRAP_PROVIDER_CHECKOUT}" --tags
+        git tag "${RELEASE_TAG}"
+        git push "https://${CDKBOT_GH_USR}:${CDKBOT_GH_PSW}@github.com/canonical/cluster-api-bootstrap-provider-microk8s" --tags "${RELEASE_TAG}"
     )
 
     # create github release for control plane provider
     (
         cd control-plane
-        git tag ${RELEASE_TAG}
-        git push "https://${CDKBOT_GH_USR}:${CDKBOT_GH_PSW}@github.com/canonical/cluster-api-control-plane-provider-microk8s" "${CONTROL_PLANE_PROVIDER_CHECKOUT}" --tags
+        git tag "${RELEASE_TAG}"
+        git push "https://${CDKBOT_GH_USR}:${CDKBOT_GH_PSW}@github.com/canonical/cluster-api-control-plane-provider-microk8s" --tags "${RELEASE_TAG}"
     )
 fi
