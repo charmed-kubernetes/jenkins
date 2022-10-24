@@ -868,7 +868,7 @@ async def test_extra_args(model, tools):
                         await asyncio.sleep(5)
             except asyncio.CancelledError as e:
                 click.echo("Dumping locals:\n" + pformat(locals()))
-                msg=f"While applying new_config to {app_name}, {service} has {args_per_unit}"
+                msg = f"While applying new_config to {app_name}, {service} has {args_per_unit}"
                 raise AssertionError(msg) from e
 
         filtered_original_config = {
@@ -887,7 +887,7 @@ async def test_extra_args(model, tools):
                         await asyncio.sleep(5)
             except asyncio.CancelledError as e:
                 click.echo("Dumping locals:\n" + pformat(locals()))
-                msg=f"While restoring config to {app_name}, {service} has {new_args}"
+                msg = f"While restoring config to {app_name}, {service} has {new_args}"
                 raise AssertionError(msg) from e
 
     master_task = run_extra_args_test(
