@@ -1438,6 +1438,7 @@ async def any_keystone(model, apps_by_charm, tools):
             "mysql-innodb-cluster",
             channel=mysql_channel,
             constraints="cores=2 mem=8G root-disk=64G",
+            num_units=3,
             config={
                 "enable-binlogs": True,
                 "innodb-buffer-pool-size": "256M",
