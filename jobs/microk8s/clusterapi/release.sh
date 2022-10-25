@@ -49,11 +49,30 @@ echo "Check out source code"
 git clone https://github.com/canonical/cluster-api-bootstrap-provider-microk8s bootstrap -b "${BOOTSTRAP_PROVIDER_CHECKOUT}"
 git clone https://github.com/canonical/cluster-api-control-plane-provider-microk8s control-plane -b "${CONTROL_PLANE_PROVIDER_CHECKOUT}"
 
-
 #################################################################
 if [ "${RUN_TESTS}" = true ]
 then
     docker login -u ${DOCKERHUB_USR} -p ${DOCKERHUB_PSW}
+
+    echo "Run unit tests"
+
+    sudo snap install go --channel 1.19 || sudo snap refresh go --channel 1.19
+    (
+        cd bootstrap
+        make vet
+        make lint
+        make test
+        make
+    )
+    (
+        cd control-plane
+        make vet
+        make lint
+        make test
+        make
+    )
+
+    echo "Run integration tests"
 
     echo "Setup management cluster"
     sudo lxc profile create microk8s || true
