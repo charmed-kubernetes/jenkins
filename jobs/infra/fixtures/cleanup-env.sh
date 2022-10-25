@@ -1,6 +1,10 @@
 #!/bin/bash
 set -x
 
+THISDIR="$(dirname "$(realpath "$0")")"
+. "$THISDIR/cleanup-gce.sh"  # import GCE methods
+
+
 function purge::controllers
 {
     if [ "$1" != "jaas" ]; then
@@ -103,24 +107,6 @@ function purge::aws
 
     # aws --region us-east-2 ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId' | parallel aws --region us-east-2 ec2 terminate-instances --instance-ids {}
     # aws --region us-east-2 ec2 describe-security-groups --filters Name=owner-id,Values=018302341396 --query "SecurityGroups[*].{Name:GroupId}" --output json | jq -r '.[].Name' | parallel aws --region us-east-1 ec2 delete-security-group --group-id "{}"
-}
-
-function purge:gce
-{
-    local user="${1:-k8sci}"
-    local project="--project=ubuntu-benchmarking"
-    local fields="--format=table[no-heading](name, zone)"
-    local filter="--filter=metadata.items.filter(key:owner).flatten()~$user"
-    local instances=$(gcloud compute instances list $project $fields $filter)
-    echo -n "Purging GCE instances..."
-    if [ -z "$instances"]; then
-        echo "None"
-    else
-        echo "\n$instances\n----"
-        while read -r host zone; do
-            echo gcloud compute instances delete $host --zone $zone $project --quiet
-        done <<< $instances
-    fi
 }
 
 purge:aws
