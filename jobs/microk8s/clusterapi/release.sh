@@ -55,10 +55,9 @@ if [ "${RUN_TESTS}" = true ]
 then
     docker login -u ${DOCKERHUB_USR} -p ${DOCKERHUB_PSW}
 
-
     echo "Setup management cluster"
     sudo lxc profile create microk8s || true
-    cat "${_DIR}/microk8s.profile" | sudo lxc profile edit microk8s
+    curl "https://raw.githubusercontent.com/canonical/microk8s/strict/tests/lxc/microk8s.profile" | sudo lxc profile edit microk8s
 
     sudo snap install kubectl --classic || sudo snap refresh kubectl
 
