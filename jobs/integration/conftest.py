@@ -200,13 +200,13 @@ async def model(request, tools):
 
 @pytest.fixture(scope="module")
 async def k8s_cloud(model, tools):
-    master_app = model.applications["kubernetes-control-plane"]
-    master_unit = master_app.units[0]
+    kcp_app = model.applications["kubernetes-control-plane"]
+    kcp_unit = kcp_app.units[0]
     created_k8s_cloud = False
 
-    with NamedTemporaryFile() as f:
+    with NamedTemporaryFile(dir=Path.home() / ".local" / "share" / "juju") as f:
         await scp_from(
-            master_unit, "config", f.name, tools.controller_name, tools.connection
+            kcp_unit, "config", f.name, tools.controller_name, tools.connection
         )
         try:
             click.echo("Adding k8s cloud")
