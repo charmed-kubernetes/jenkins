@@ -149,6 +149,7 @@
         - "charm --classic --channel 2.x/stable"
         - "charmcraft --classic --edge"
         - "go --classic --stable"
+        - "google-cloud-cli --classic --channel=latest/stable"
         - "juju --classic --channel=2.9/stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
@@ -263,6 +264,11 @@
         group: jenkins
         mode: 0644
         force: yes
+      tags:
+        - jenkins
+    - name: setup gce creds
+      command: "gcloud auth activate-service-account --key-file data/gce.json"
+      ignore_errors: yes
       tags:
         - jenkins
     - name: create surl dir
