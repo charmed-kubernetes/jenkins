@@ -389,7 +389,6 @@
     upstream: 'https://github.com/charmed-kubernetes/charm-multus.git'
 - sriov-cni:
     bugs: 'https://bugs.launchpad.net/charm-sriov-cni'
-    build-resources: 'cd {src_path}/image; ./build'
     docs: 'https://charmhub.io/sriov-cni/docs'
     downstream: charmed-kubernetes/charm-sriov-cni
     store: 'https://charmhub.io/sriov-cni'
