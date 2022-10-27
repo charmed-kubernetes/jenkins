@@ -142,6 +142,12 @@
       tags:
         - jenkins
         - adhoc
+    - name: upgrade google-cloud-cli
+      command: "snap refresh google-cloud-cli --channel latest/stable"
+      ignore_errors: yes
+      tags:
+        - jenkins
+        - adhoc
     - name: install snap deps
       command: "snap install {{item}}"
       ignore_errors: yes
@@ -149,7 +155,7 @@
         - "charm --classic --channel 2.x/stable"
         - "charmcraft --classic --edge"
         - "go --classic --stable"
-        - "google-cloud-cli --classic --channel=latest/stable"
+        - "google-cloud-cli --classic --channel latest/stable"
         - "juju --classic --channel=2.9/stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
@@ -266,11 +272,6 @@
         force: yes
       tags:
         - jenkins
-    - name: setup gce creds
-      command: "gcloud auth activate-service-account --key-file data/gce.json"
-      ignore_errors: yes
-      tags:
-        - jenkins
     - name: create surl dir
       file:
         path: /var/lib/jenkins/snap/surl/common
@@ -316,6 +317,11 @@
         owner: jenkins
         group: jenkins
         mode: 0644
+      tags:
+        - jenkins
+    - name: setup gce creds
+      command: "gcloud auth activate-service-account --key-file /var/lib/jenkins/.local/share/juju/gce.json"
+      ignore_errors: yes
       tags:
         - jenkins
     - name: copy gpg public key
