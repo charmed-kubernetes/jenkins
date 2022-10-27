@@ -109,8 +109,8 @@ function purge::aws
     # aws --region us-east-2 ec2 describe-security-groups --filters Name=owner-id,Values=018302341396 --query "SecurityGroups[*].{Name:GroupId}" --output json | jq -r '.[].Name' | parallel aws --region us-east-1 ec2 delete-security-group --group-id "{}"
 }
 
-purge:aws
-purge:gce
+purge::aws
+purge::gce
 
 sudo lxc list --format json | jq -r ".[] | .name" | parallel sudo lxc delete --force {}
 for cntr in $(sudo lxc profile list --format json | jq -r ".[] | .name"); do
