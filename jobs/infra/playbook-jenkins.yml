@@ -319,11 +319,6 @@
         mode: 0644
       tags:
         - jenkins
-    - name: setup gce creds
-      command: "gcloud auth activate-service-account --key-file /var/lib/jenkins/.local/share/juju/gce.json"
-      ignore_errors: yes
-      tags:
-        - jenkins
     - name: copy gpg public key
       copy:
         src: "{{ lookup('env', 'K8STEAMCI_GPG_PUB') }}"

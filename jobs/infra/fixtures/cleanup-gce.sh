@@ -63,6 +63,7 @@ function purge::gce::service_account_keys
 function purge::gce
 {
     local user="k8sci"
+    gcloud auth activate-service-account --key-file /var/lib/jenkins/.local/share/juju/gce.json
     local project=$(gcloud projects list "--format=table[no-heading](projectId)")
     gcloud config set project "$project"
     purge::gce::service_accounts
