@@ -20,7 +20,7 @@ function purge::gce::instances
     else
         echo -e "\n$instances\n----"
         while read -r host zone; do
-            echo gcloud compute instances delete $host --zone $zone --quiet
+            gcloud compute instances delete $host --zone $zone --quiet
         done <<< "$instances"
     fi
 }
