@@ -1157,7 +1157,6 @@ async def test_audit_default_config(model, tools):
     await reset_audit_config(app, tools)
 
 
-@pytest.mark.flaky(max_runs=5, min_passes=1)
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_toggle_metrics(model, tools):
     """Turn metrics on/off via the 'enable-metrics' config on kubernetes-control-plane,
@@ -1193,12 +1192,12 @@ async def test_toggle_metrics(model, tools):
     new_value = not old_value
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=240
+        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=600
     )
     await check_svc(app, new_value)
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=240
+        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=600
     )
     await check_svc(app, old_value)
 
