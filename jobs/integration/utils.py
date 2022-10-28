@@ -460,7 +460,7 @@ def _units(machine: Machine):
 async def wait_for_status(workload_status, units):
     if not isinstance(units, (list, tuple)):
         units = [units]
-    log.info(f'waiting for {workload_status} status on {", ".join(units)}')
+    log.info(f'waiting for {workload_status} status on {", ".join(u.name for u in units)}')
     model = units[0].model
     try:
         await model.block_until(
