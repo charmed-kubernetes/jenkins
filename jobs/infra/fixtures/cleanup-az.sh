@@ -7,30 +7,35 @@ fi
 echo "sourced ${BASH_SOURCE:-$0}"
 
 
-function purge::az::instances
+function purge::az::resources
 {
+    # Azure groups each juju-model in a resource-group which contains
+    # everything allocated for that model. When a resource-group is
+    # purged, everything within it is removed
     local user="$1"
-    local query="--query=[].[id,tags.owner]"
+    local query="--query=[].[name,tags.owner]"
     local output="--output=tsv"
-    echo "Fetching Azure instances..."
-    local all_instances=$(az vm list $query $output)
-    instances=()
-    while read -r instance owner; do
+    echo "Fetching Azure resources..."
+    local all_resources=$(az group list $query $output)
+    resources=()
+    while read -r resource owner; do
         if [[ "$owner" == "$user" ]]; then
-            instances+=($instance)
+            resources+=($resource)
         fi
-    done <<< "$all_instances"
-    echo -n "Purging Azure instances..."
-    if [ -z "$instances" ]; then
+    done <<< "$all_resources"
+    echo -n "Purging Azure resources..."
+    if [ -z "$resources" ]; then
         echo "None"
     else
-        echo -e "\n$instances\n----"
-        az vm delete --ids $instances
+        echo -e "\n$resources\n----"
+        for i in "${resources[@]}"; do
+            az group delete --resource-group $i -y
+        done
     fi
 }
 
 function purge::az
 {
     local user="k8sci"
-    purge::az::instances "$user"
+    purge::az::resources "$user"
 }
