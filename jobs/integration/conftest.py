@@ -150,7 +150,7 @@ class Tools:
         return stdout.decode("utf8"), stderr.decode("utf8")
 
     async def juju_wait(self, *args, **kwargs):
-        cmd = ["/snap/bin/juju-wait", "-e", self.connection, "-w"]
+        cmd = ["/snap/bin/juju-wait", "-e", self.connection, "-w", "-v"]
         if args:
             cmd.extend(args)
         if "timeout_secs" in kwargs and kwargs["timeout_secs"]:
