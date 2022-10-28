@@ -6,15 +6,16 @@ import os
 import subprocess
 import time
 import traceback
-from typing import Mapping, Any
-
+from collections.abc import Sequence
 from contextlib import contextmanager
+from subprocess import check_output, check_call
+from typing import Mapping, Any, Union
+
 from juju.unit import Unit
 from juju.controller import Controller
 from juju.machine import Machine
 from juju.errors import JujuError
 from juju.utils import block_until_with_coroutine
-from subprocess import check_output, check_call
 from cilib import log
 import click
 
@@ -457,10 +458,15 @@ def _units(machine: Machine):
     ]
 
 
-async def wait_for_status(workload_status, units):
+async def wait_for_status(workload_status: str, units: Union[Unit, Sequence[Unit]]):
+    """
+    Wait for unit or units to reach a specific workload_state or fail in 120s.
+    """
     if not isinstance(units, (list, tuple)):
         units = [units]
-    log.info(f'waiting for {workload_status} status on {", ".join(u.name for u in units)}')
+    log.info(
+        f'waiting for {workload_status} status on {", ".join(u.name for u in units)}'
+    )
     model = units[0].model
     try:
         await model.block_until(
