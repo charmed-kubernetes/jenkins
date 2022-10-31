@@ -6,10 +6,9 @@ import os
 import subprocess
 import time
 import traceback
-from collections.abc import Sequence
 from contextlib import contextmanager
 from subprocess import check_output, check_call
-from typing import Mapping, Any, Union
+from typing import Mapping, Any, Union, Sequence
 
 from juju.unit import Unit
 from juju.controller import Controller
