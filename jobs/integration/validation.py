@@ -239,7 +239,7 @@ async def test_status_messages(model):
             assert message in unit.workload_status_message
 
 
-async def test_snap_versions(model):
+async def test_snap_versions(model, tools):
     """Validate that the installed snap versions are consistent with channel
     config on the charms.
     """
@@ -263,6 +263,17 @@ async def test_snap_versions(model):
             click.echo(message)
             continue
         track = channel.split("/")[0]
+        if track == "latest":
+            # Use snap info to determine the versions of the latest/{risk}
+            stdout, *_ = await tools.run("snap", "info", *snaps)
+            info = {
+                i["name"]: i["channels"][channel].split(".", 2)[:2]
+                for i in yaml.safe_load_all(stdout)
+            }
+            expected, *_ = info.values()
+            track = ".".join(expected)
+            err = f"not all {channel} snaps are on an the same track={track}"
+            assert all(i == expected for i in info.values()), err
         for unit in app.units:
             action = await juju_run(unit, "snap list", check=False)
             assert action.status == "completed"
@@ -1159,7 +1170,6 @@ async def test_audit_default_config(model, tools):
     await reset_audit_config(app, tools)
 
 
-@pytest.mark.flaky(max_runs=5, min_passes=1)
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_toggle_metrics(model, tools):
     """Turn metrics on/off via the 'enable-metrics' config on kubernetes-control-plane,
@@ -1195,12 +1205,12 @@ async def test_toggle_metrics(model, tools):
     new_value = not old_value
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=240
+        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=600
     )
     await check_svc(app, new_value)
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=240
+        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=600
     )
     await check_svc(app, old_value)
 

@@ -285,7 +285,7 @@
       - integrator
     upstream: 'https://github.com/charmed-kubernetes/gcp-k8s-storage.git'
     channel-range:
-      min: '1.26'
+      min: '1.25'
 - github-runner:
     downstream: charmed-kubernetes/github-runner-operator
     tags:
@@ -314,7 +314,7 @@
       - integrator
     upstream: 'https://github.com/charmed-kubernetes/aws-k8s-storage.git'
     channel-range:
-      min: '1.26'
+      min: '1.25'
 - openstack-integrator:
     bugs: 'https://bugs.launchpad.net/charm-openstack-integrator'
     docs: 'https://charmhub.io/openstack-integrator/docs'
@@ -389,7 +389,6 @@
     upstream: 'https://github.com/charmed-kubernetes/charm-multus.git'
 - sriov-cni:
     bugs: 'https://bugs.launchpad.net/charm-sriov-cni'
-    build-resources: 'cd {src_path}/image; ./build'
     docs: 'https://charmhub.io/sriov-cni/docs'
     downstream: charmed-kubernetes/charm-sriov-cni
     store: 'https://charmhub.io/sriov-cni'
