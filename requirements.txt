@@ -132,7 +132,7 @@ kubernetes==22.6.0
     # via juju
 kv==0.3
     # via -r requirements.in
-launchpadlib==1.10.17
+launchpadlib==1.10.18
     # via -r requirements.in
 lazr-restfulclient==0.14.5
     # via
