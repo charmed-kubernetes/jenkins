@@ -10,7 +10,6 @@ import traceback
 from pathlib import Path
 
 from contextlib import contextmanager
-from subprocess import check_output, check_call
 from typing import Mapping, Any, Union, Sequence
 
 from juju.unit import Unit
