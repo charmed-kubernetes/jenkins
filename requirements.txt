@@ -203,7 +203,7 @@ pox==0.3.1
     # via pathos
 ppft==1.7.6.5
     # via pathos
-prettytable==3.4.1
+prettytable==3.5.0
     # via -r requirements.in
 protobuf==3.20.2
     # via macaroonbakery
