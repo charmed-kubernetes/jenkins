@@ -261,6 +261,7 @@ async def k8s_model(k8s_cloud, tools):
     finally:
         if not k8s_model:
             return
+        await tools.run("juju-crashdump", "-a", "config", "-m", tools.k8s_connection)
         click.echo("Cleaning up k8s model")
         try:
             for name, relation in k8s_model.state.relations.items():
