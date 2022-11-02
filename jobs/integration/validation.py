@@ -359,7 +359,6 @@ async def test_dashboard(model, log_dir, tools):
     async def query_dashboard(url, config):
         # handle pre 1.19 authentication
         try:
-
             user = config["users"][0]["user"]["username"]
             password = config["users"][0]["user"]["password"]
             auth = tools.requests.auth.HTTPBasicAuth(user, password)
@@ -376,16 +375,12 @@ async def test_dashboard(model, log_dir, tools):
     can_access_dashboard = await query_dashboard(url, config)
     assert can_access_dashboard.status_code == 200
 
-    # get k8s version
-    app_config = await model.applications["kubernetes-control-plane"].get_config()
-    channel = app_config["channel"]["value"]
     dash_ns = "kubernetes-dashboard"
-
     # construct the url to the dashboard login form
     url = (
-        "{server}/api/v1/namespaces/{ns}/services/https:kubernetes-dashboard:"
+        f"{url}/api/v1/namespaces/{dash_ns}/services/https:kubernetes-dashboard:"
         "/proxy/#!/login"
-    ).format(server=config["clusters"][0]["cluster"]["server"], ns=dash_ns)
+    )
 
     click.echo("Waiting for dashboard to stabilize...")
 
@@ -397,7 +392,7 @@ async def test_dashboard(model, log_dir, tools):
 
     await retry_async_with_timeout(
         verify_ready,
-        (unit, "po", ["kubernetes-dashboard"], "-n {ns}".format(ns=dash_ns)),
+        (unit, "po", ["kubernetes-dashboard"], f"-n {dash_ns}"),
         timeout_msg="Unable to find kubernetes dashboard before timeout",
     )
 
