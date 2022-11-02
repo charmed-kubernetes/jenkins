@@ -386,7 +386,9 @@ async def test_dashboard(model, log_dir, tools):
         k8s_version = (2, 0)
         if "/" in channel:
             version_string = channel.split("/")[0]
-            k8s_version = tuple(int(q) for q in re.findall("[0-9]+", version_string)[:2])
+            k8s_version = tuple(
+                int(q) for q in re.findall("[0-9]+", version_string)[:2]
+            )
 
         if k8s_version < (1, 16):
             dash_ns = "kube-system"
