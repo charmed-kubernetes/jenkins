@@ -32,6 +32,30 @@ function juju::bootstrap
       --model-default vpc-id=$vpc_id
 }
 
+function juju::deploy::overlay
+{
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  kubernetes-control-plane:
+    channel: $JUJU_DEPLOY_CHANNEL
+    options:
+      channel: $SNAP_VERSION
+  kubernetes-worker:
+    channel: $JUJU_DEPLOY_CHANNEL
+    options:
+      channel: $SNAP_VERSION
+  tigera-secure-ee:
+    charm: tigera-secure-ee
+  calico: null
+relations:
+- [tigera-secure-ee:etcd, etcd:db]
+- [tigera-secure-ee:cni, kubernetes-control-plane:cni]
+- [tigera-secure-ee:cni, kubernetes-worker:cni]
+- [tigera-secure-ee:kube-api-endpoint, kubernetes-control-plane:kube-api-endpoint]
+EOF
+}
+
 function juju::deploy
 {
     juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
@@ -51,7 +75,7 @@ function juju::deploy
 ###############################################################################
 SNAP_VERSION=${1:-1.25/edge}
 SERIES=${2:-focal}
-JUJU_DEPLOY_BUNDLE=kubernetes-tigera-secure-ee
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)
