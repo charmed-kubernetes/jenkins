@@ -359,7 +359,6 @@ async def test_dashboard(model, log_dir, tools):
     async def query_dashboard(url, config):
         # handle pre 1.19 authentication
         try:
-
             user = config["users"][0]["user"]["username"]
             password = config["users"][0]["user"]["password"]
             auth = tools.requests.auth.HTTPBasicAuth(user, password)
@@ -376,25 +375,12 @@ async def test_dashboard(model, log_dir, tools):
     can_access_dashboard = await query_dashboard(url, config)
     assert can_access_dashboard.status_code == 200
 
-    # get k8s version
-    app_config = await model.applications["kubernetes-control-plane"].get_config()
-    channel = app_config["channel"]["value"]
-    # if we do not detect the version from the channel eg edge, stable etc
-    # we should default to the latest dashboard url format
-    k8s_version = (2, 0)
-    if "/" in channel:
-        version_string = channel.split("/")[0]
-        k8s_version = tuple(int(q) for q in re.findall("[0-9]+", version_string)[:2])
-
+    dash_ns = "kubernetes-dashboard"
     # construct the url to the dashboard login form
-    if k8s_version < (1, 16):
-        dash_ns = "kube-system"
-    else:
-        dash_ns = "kubernetes-dashboard"
     url = (
-        "{server}/api/v1/namespaces/{ns}/services/https:kubernetes-dashboard:"
+        f"{url}/api/v1/namespaces/{dash_ns}/services/https:kubernetes-dashboard:"
         "/proxy/#!/login"
-    ).format(server=config["clusters"][0]["cluster"]["server"], ns=dash_ns)
+    )
 
     click.echo("Waiting for dashboard to stabilize...")
 
@@ -406,7 +392,7 @@ async def test_dashboard(model, log_dir, tools):
 
     await retry_async_with_timeout(
         verify_ready,
-        (unit, "po", ["kubernetes-dashboard"], "-n {ns}".format(ns=dash_ns)),
+        (unit, "po", ["kubernetes-dashboard"], f"-n {dash_ns}"),
         timeout_msg="Unable to find kubernetes dashboard before timeout",
     )
 
