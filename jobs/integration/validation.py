@@ -380,18 +380,6 @@ async def test_dashboard(model, log_dir, tools):
     app_config = await model.applications["kubernetes-control-plane"].get_config()
     channel = app_config["channel"]["value"]
     dash_ns = "kubernetes-dashboard"
-    if "latest" not in channel:
-        # if we do not detect the version from the channel eg edge, stable etc
-        # we should default to the latest dashboard url format
-        k8s_version = (2, 0)
-        if "/" in channel:
-            version_string = channel.split("/")[0]
-            k8s_version = tuple(
-                int(q) for q in re.findall("[0-9]+", version_string)[:2]
-            )
-
-        if k8s_version < (1, 16):
-            dash_ns = "kube-system"
 
     # construct the url to the dashboard login form
     url = (
