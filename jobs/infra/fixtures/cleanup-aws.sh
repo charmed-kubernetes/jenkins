@@ -9,9 +9,10 @@ echo "sourced ${BASH_SOURCE:-$0}"
 
 function purge::aws
 {
-    regions=(us-east-1 us-east-2 us-west-1)
+    default_region=us-east-1
 
-    for region in ${regions[@]}; do
+    for region in $(aws --region $default_region ec2 describe-regions | jq -r '.Regions[].RegionName'); do
+        echo "Purging AWS $region"
         aws --region "$region" ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId' | parallel aws --region "$region" ec2 terminate-instances --instance-ids {}
         aws --region "$region" ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner", Value: "k8sci"} ]}))' | jq -r '.InstanceId' | parallel aws --region "$region" ec2 terminate-instances --instance-ids {}
         aws --region "$region" ec2 describe-subnets --query 'Subnets[].SubnetId' --output json | jq -r '.[]' | parallel aws --region "$region" ec2 delete-tags --resources {} --tags Value=owned
