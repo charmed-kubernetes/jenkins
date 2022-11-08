@@ -504,8 +504,6 @@
       - block-on-infra
       - build-discarder:
           num-to-keep: 3
-    triggers:
-        - timed: "@weekly"
     execution-strategy:
       sequential: true
     axes:
