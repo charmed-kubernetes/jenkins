@@ -75,8 +75,6 @@ docutils==0.15.2
     # via awscli
 drypy==1.0.1
     # via -r requirements.in
-exceptiongroup==1.0.0
-    # via pytest
 fasteners==0.16
     # via jenkins-job-builder
 flake8==4.0.1
@@ -339,10 +337,6 @@ tabulate==0.8.7
     # via surl
 theblues==0.5.2
     # via juju
-tomli==2.0.1
-    # via
-    #   black
-    #   pytest
 toposort==1.6
     # via juju
 typing-extensions==3.10.0.2
@@ -368,7 +362,7 @@ websockets==10.3 ; python_version >= "3.10"
     # via
     #   -r requirements.in
     #   juju
-wheel==0.37.1
+wheel==0.38.2
     # via -r requirements.in
 zipp==3.4.1
     # via importlib-metadata
