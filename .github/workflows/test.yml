@@ -30,4 +30,4 @@ jobs:
           python -m pip install --upgrade pip
           pip install pip-tools -r requirements.txt
       - name: Test
-        run: invoke test
+        run: PYTHONPATH=$PYTHONPATH:$(pwd) invoke test
