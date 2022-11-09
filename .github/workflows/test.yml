@@ -2,17 +2,11 @@ name: Repo Status
 on: [push, pull_request]
 
 jobs:
-  Inclusive-naming-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-      - name: woke
-        uses: canonical-web-and-design/inclusive-naming@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-check
-          fail-on-error: true
+  call-inclusive-naming-check:
+    name: Inclusive naming
+    uses: canonical-web-and-design/Inclusive-naming/.github/workflows/woke.yaml@main
+    with:
+      fail-on-error: "true"
 
   build:
     name: Verify
@@ -24,25 +18,16 @@ jobs:
           - "3.9"
           - "3.10"
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - name: Setup Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Cache pip
-        uses: actions/cache@v2
-        with:
-          # This path is specific to Ubuntu
-          path: ~/.cache/pip
-          # Look to see if there is a cache hit for the corresponding requirements file
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+          python-version: ${{ matrix.python }}
+          cache: 'pip'
       - name: Install deps
         run: |
           sudo snap install charmcraft --classic
           python -m pip install --upgrade pip
-          pip install tox pip-tools wheel
+          pip install pip-tools -r requirements.txt
       - name: Test
-        run: tox -e py
+        run: PYTHONPATH=$PYTHONPATH:$(pwd) invoke test
