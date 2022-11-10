@@ -1913,37 +1913,15 @@ async def test_dns_provider(model, k8s_model, tools):
         log("Verifying DNS with default provider (auto -> coredns)")
         await verify_dns_resolution(fresh=True)
 
-        if 0:  # LP1921436
-            log("Switching to kube-dns provider")
-            await control_plane_app.set_config({"dns-provider": "kube-dns"})
-            await wait_for_pods_removal("kubernetes.io/name=CoreDNS")
-            await wait_for_pods_ready("k8s-app=kube-dns")
-
-            log("Verifying DNS with kube-dns provider")
-            await verify_dns_resolution(fresh=True)
-        else:
-            log("Verifying DNS with kube-dns provider is blocked by LP#1921436")
-
         log("Switching to none provider")
         await control_plane_app.set_config({"dns-provider": "none"})
-        # The kube-dns pod gets stuck in Terminating when switching to "none"
-        # provider. I think this has something to do with the order (or lack
-        # thereof) in which cdk-addons removes the resource types, since it doesn't
-        # happen when switching from kube-dns to core-dns. So we force delete them
-        # once all their containers are dead.
-        await wait_for_pods_removal("k8s-app=kube-dns", force=True)
+        await wait_for_pods_removal("kubernetes.io/name=CoreDNS")
 
         log("Verifying DNS no longer works on existing pod")
         await verify_no_dns_resolution(fresh=False)
 
         log("Verifying DNS no longer works on fresh pod")
         await verify_no_dns_resolution(fresh=True)
-
-        result = await juju_run(control_plane_unit, "cat metadata.yaml")
-        master_meta = yaml.safe_load(result.stdout)
-        if "dns-provider" not in master_meta["requires"]:
-            log("Skipping CoreDNS charm test for older CK")
-            return
 
         log("Deploying CoreDNS charm")
         coredns = await k8s_model.deploy(
