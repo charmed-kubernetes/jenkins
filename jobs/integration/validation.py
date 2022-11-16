@@ -863,9 +863,10 @@ async def test_extra_args(model, tools):
                         if all(expected_service_args <= args for args in args_per_unit):
                             break
                         await asyncio.sleep(5)
-            except asyncio.CancelledError:
+            except asyncio.CancelledError as e:
                 click.echo("Dumping locals:\n" + pformat(locals()))
-                raise
+                msg = f"While applying new_config to {app_name}, {service} has {args_per_unit}"
+                raise AssertionError(msg) from e
 
         filtered_original_config = {
             key: original_config[key]["value"] for key in new_config
@@ -881,9 +882,10 @@ async def test_extra_args(model, tools):
                         if new_args == original_service_args:
                             break
                         await asyncio.sleep(5)
-            except asyncio.CancelledError:
+            except asyncio.CancelledError as e:
                 click.echo("Dumping locals:\n" + pformat(locals()))
-                raise
+                msg = f"While restoring config to {app_name}, {service} has {new_args}"
+                raise AssertionError(msg) from e
 
     master_task = run_extra_args_test(
         app_name="kubernetes-control-plane",

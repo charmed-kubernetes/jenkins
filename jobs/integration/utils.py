@@ -3,11 +3,13 @@ import functools
 import ipaddress
 import json
 import os
+import shutil
 import subprocess
 import time
 import traceback
+from pathlib import Path
+
 from contextlib import contextmanager
-from subprocess import check_output, check_call
 from typing import Mapping, Any, Union, Sequence
 
 from juju.unit import Unit
@@ -15,6 +17,8 @@ from juju.controller import Controller
 from juju.machine import Machine
 from juju.errors import JujuError
 from juju.utils import block_until_with_coroutine
+from tempfile import TemporaryDirectory
+from subprocess import check_output, check_call
 from cilib import log
 import click
 
@@ -169,17 +173,27 @@ async def is_localhost(controller_name):
 
 
 async def scp_from(unit, remote_path, local_path, controller_name, connection_name):
-    cmd = "juju scp -m {} {}:{} {}".format(
-        connection_name, unit.name, remote_path, local_path
-    )
-    await asyncify(subprocess.check_call)(cmd.split())
+    """Carefully scp from juju units to the local filesystem through a temporary directory."""
+    local_path = Path(local_path)
+    with TemporaryDirectory(dir=Path.home() / ".local" / "share" / "juju") as tmpdir:
+        temp_path = Path(tmpdir) / local_path.name
+        cmd = "juju scp -m {} {}:{} {}".format(
+            connection_name, unit.name, remote_path, temp_path
+        )
+        await asyncify(subprocess.check_call)(cmd.split())
+        shutil.copy(temp_path, local_path)
 
 
 async def scp_to(local_path, unit, remote_path, controller_name, connection_name):
-    cmd = "juju scp -m {} {} {}:{}".format(
-        connection_name, local_path, unit.name, remote_path
-    )
-    await asyncify(subprocess.check_call)(cmd.split())
+    """Carefully scp from the local filesystem to juju units through a temporary directory."""
+    local_path = Path(local_path)
+    with TemporaryDirectory(dir=Path.home() / ".local" / "share" / "juju") as tmpdir:
+        temp_path = Path(tmpdir) / local_path.name
+        shutil.copy(local_path, temp_path)
+        cmd = "juju scp -m {} {} {}:{}".format(
+            connection_name, temp_path, unit.name, remote_path
+        )
+        await asyncify(subprocess.check_call)(cmd.split())
 
 
 async def retry_async_with_timeout(
@@ -603,6 +617,7 @@ class JujuRunResult:
 
 async def juju_run(unit, cmd, check=True, **kwargs) -> JujuRunResult:
     action = await unit.run(cmd, **kwargs)
+    action = await action.wait()
     result = JujuRunResult(action)
     if check and not result.success:
         raise JujuRunError(unit, cmd, result)

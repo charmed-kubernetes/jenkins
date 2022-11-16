@@ -15,7 +15,7 @@ invoke
 importlib-metadata
 jenkins-job-builder
 jinja2
-juju < 3.0
+juju
 kv
 loguru
 mkdocs-material>=5.3.0
