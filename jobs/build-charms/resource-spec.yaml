@@ -4,6 +4,8 @@
   calico-node-image: '{out_path}/calico-node-image.tar.gz'
   flannel: '{out_path}/flannel-amd64.tar.gz'
   flannel-arm64: '{out_path}/flannel-arm64.tar.gz'
+'containerd':
+  containerd: '{out_path}/containerd-multiarch.tgz'
 'calico':
   calico: '{out_path}/calico-amd64.tar.gz'
   calico-arm64: '{out_path}/calico-arm64.tar.gz'

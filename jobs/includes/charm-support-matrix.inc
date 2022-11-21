@@ -46,6 +46,7 @@
     downstream: charmed-kubernetes/charm-containerd.git
     store: 'https://charmhub.io/containerd'
     summary: Containerd container runtime subordinate
+    build-resources: 'cd {out_path}; bash {src_path}/build-resources.sh'
     tags:
       - k8s
       - containerd
