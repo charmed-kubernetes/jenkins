@@ -185,7 +185,7 @@ class Microk8sSnap:
         version_parts = version.replace("-", ".").split(".")
         click.echo(version)
         is_prerelease = False
-        if not version_parts[2].isdigit():
+        if len(version_parts) > 3 and not version_parts[3].isdigit():
             is_prerelease = True
         major_minor_version = "{}.{}".format(version_parts[0], version_parts[1])
         return (is_prerelease, major_minor_version)
