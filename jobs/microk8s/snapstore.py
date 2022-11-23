@@ -154,7 +154,7 @@ class Microk8sSnap:
                     click.echo(line_parts)
                     version = line_parts[1]
                     revision = line_parts[2]
-                    if version == "-":
+                    if len(version) <= 1 or '.' not in version:
                         # Nothing released on this track/channel
                         break
                     is_prerelease, major_minor_version = self._extract_version(version)
