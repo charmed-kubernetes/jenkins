@@ -2443,73 +2443,77 @@ async def test_ceph(model, tools):
         ceph_charms_channel = "quincy/stable"
     elif series_idx > SERIES_ORDER.index("jammy"):
         pytest.fail("ceph_charm_channel is undefined past jammy")
-    log("deploying ceph mon")
-    await model.deploy(
-        "ceph-mon",
-        num_units=3,
-        series=series,
-        config=ceph_config,
-        channel=ceph_charms_channel,
-    )
-    cs = {
-        "osd-devices": {"size": 8 * 1024, "count": 1},
-        "osd-journals": {"size": 8 * 1024, "count": 1},
-    }
-    log("deploying ceph osd")
-    await model.deploy(
-        "ceph-osd",
-        storage=cs,
-        num_units=3,
-        series=series,
-        config=ceph_config,
-        constraints="root-disk=32G",
-        channel=ceph_charms_channel,
-    )
 
-    log("deploying ceph fs")
-    await model.deploy(
-        "ceph-fs",
-        num_units=1,
-        series=series,
-        config=ceph_config,
-        channel=ceph_charms_channel,
-    )
+    try:
+        log("deploying ceph mon")
+        await model.deploy(
+            "ceph-mon",
+            num_units=3,
+            series=series,
+            config=ceph_config,
+            channel=ceph_charms_channel,
+        )
+        cs = {
+            "osd-devices": {"size": 8 * 1024, "count": 1},
+            "osd-journals": {"size": 8 * 1024, "count": 1},
+        }
+        log("deploying ceph osd")
+        await model.deploy(
+            "ceph-osd",
+            storage=cs,
+            num_units=3,
+            series=series,
+            config=ceph_config,
+            constraints="root-disk=32G",
+            channel=ceph_charms_channel,
+        )
 
-    log("adding relations")
-    await model.add_relation("ceph-mon", "ceph-osd")
-    await model.add_relation("ceph-mon", "ceph-fs")
-    await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
-    log("waiting...")
-    await tools.juju_wait()
+        log("deploying ceph fs")
+        await model.deploy(
+            "ceph-fs",
+            num_units=1,
+            series=series,
+            config=ceph_config,
+            channel=ceph_charms_channel,
+        )
 
-    # until bug https://bugs.launchpad.net/charm-kubernetes-control-plane/+bug/1824035 fixed
-    unit = model.applications["ceph-mon"].units[0]
-    await juju_run_action(unit, "create-pool", name="ext4-pool")
+        log("adding relations")
+        await model.add_relation("ceph-mon", "ceph-osd")
+        await model.add_relation("ceph-mon", "ceph-fs")
+        await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
+        log("waiting...")
+        await tools.juju_wait()
 
-    log("waiting for csi to settle")
-    unit = model.applications["kubernetes-control-plane"].units[0]
-    await retry_async_with_timeout(
-        verify_ready, (unit, "po", ["csi-rbdplugin"]), timeout_msg="CSI pods not ready!"
-    )
-    # create pod that writes to a pv from ceph
-    await validate_storage_class(model, "ceph-xfs", "Ceph")
-    await validate_storage_class(model, "ceph-ext4", "Ceph")
-    await validate_storage_class(model, "cephfs", "Ceph")
-    # cleanup
-    log("removing ceph applications")
-    # LP:1929537 get ceph-fs outta there with fire.
-    # NB: can't use destroy() here because it doesn't support --force.
-    tasks = {
-        model.applications["ceph-fs"].units[0].machine.destroy(force=True),
-        model.applications["ceph-mon"].destroy(),
-        model.applications["ceph-osd"].destroy(),
-    }
-    (done1, _) = await asyncio.wait(tasks)
-    for task in done1:
-        # read and ignore any exception so that it doesn't get raised
-        # when the task is GC'd
-        task.exception()
-    await tools.juju_wait()
+        # until bug https://bugs.launchpad.net/charm-kubernetes-control-plane/+bug/1824035 fixed
+        unit = model.applications["ceph-mon"].units[0]
+        await juju_run_action(unit, "create-pool", name="ext4-pool")
+
+        log("waiting for csi to settle")
+        unit = model.applications["kubernetes-control-plane"].units[0]
+        await retry_async_with_timeout(
+            verify_ready, (unit, "po", ["csi-rbdplugin"]), timeout_msg="CSI pods not ready!"
+        )
+        # create pod that writes to a pv from ceph
+        await validate_storage_class(model, "ceph-xfs", "Ceph")
+        await validate_storage_class(model, "ceph-ext4", "Ceph")
+        await validate_storage_class(model, "cephfs", "Ceph")
+    finally:
+        # cleanup
+        log("removing ceph applications")
+        # LP:1929537 get ceph-fs outta there with fire.
+        # NB: can't use destroy() here because it doesn't support --force.
+        tasks = {
+            model.applications["ceph-fs"].units[0].machine.destroy(force=True),
+            model.applications["ceph-mon"].destroy(),
+            model.applications["ceph-osd"].destroy(),
+        }
+        (done1, _) = await asyncio.wait(tasks)
+        for task in done1:
+            # read and ignore any exception so that it doesn't get raised
+            # when the task is GC'd
+            task.exception()
+        await tools.juju_wait()
+        await model.applications["ceph-fs"].destroy()
 
 
 async def test_series_upgrade(model, tools):
