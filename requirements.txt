@@ -75,6 +75,8 @@ docutils==0.15.2
     # via awscli
 drypy==1.0.1
     # via -r requirements.in
+exceptiongroup==1.0.4
+    # via pytest
 fasteners==0.16
     # via jenkins-job-builder
 flake8==4.0.1
@@ -337,6 +339,10 @@ tabulate==0.8.7
     # via surl
 theblues==0.5.2
     # via juju
+tomli==2.0.1
+    # via
+    #   black
+    #   pytest
 toposort==1.6
     # via juju
 typing-extensions==3.10.0.2
