@@ -28,9 +28,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
             - 1.24/edge
-            - 1.23/edge
       - axis:
           type: user-defined
           name: series
@@ -93,9 +93,9 @@
           type: user-defined
           name: series
           values:
+            - jammy
             - focal
             - bionic
-            - jammy
       - axis:
           type: user-defined
           name: channel
@@ -145,9 +145,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
             - 1.24/edge
-            - 1.23/edge
       - axis:
           type: user-defined
           name: series
@@ -211,7 +211,7 @@
           type: user-defined
           name: series
           values:
-            - focal
+            - jammy
       - axis:
           type: user-defined
           name: channel
@@ -256,7 +256,7 @@
            default: 1.25/stable
       - string:
            name: SERIES
-           default: focal
+           default: jammy
     triggers:
         - timed: "@daily"
     builders:
@@ -287,7 +287,7 @@
            default: 1.25/stable
       - string:
            name: SERIES
-           default: focal
+           default: jammy
     triggers:
         - timed: "@weekly"
     builders:
@@ -325,13 +325,13 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
           values:
-            - focal
+            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -366,13 +366,13 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
           values:
-            - focal
+            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -463,8 +463,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
@@ -511,8 +511,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
@@ -552,13 +552,13 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
           values:
-            - focal
+            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -593,13 +593,13 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
           values:
-            - focal
+            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -634,13 +634,13 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
           values:
-            - focal
+            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -675,13 +675,13 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
           values:
-            - focal
+            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -707,7 +707,7 @@
     parameters:
       - string:
            name: SNAP_VERSION
-           default: 1.25/edge
+           default: 1.26/edge
       - string:
            name: SERIES
            default: jammy
@@ -747,13 +747,13 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
           values:
-            - focal
+            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
