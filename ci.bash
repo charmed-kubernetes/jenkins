@@ -194,11 +194,6 @@ function ci::run
         juju::deploy
         juju::wait
 
-        kv::set "deploy_result" "True"
-        kv::set "deploy_endtime" "$(timestamp)"
-        touch "meta/deployresult-True"
-        python bin/s3 cp "meta/deployresult-True" "meta/deployresult-True"
-
         juju::deploy::after
 
         test::execute result

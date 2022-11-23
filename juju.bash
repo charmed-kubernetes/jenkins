@@ -86,7 +86,19 @@ function juju::wait
     timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
 
     ret=$?
+
+    is_pass="True"
     if (( ret > 0 )); then
+        is_pass="False"
+    fi
+
+    kv::set "deploy_result" "${is_pass}"
+    kv::set "deploy_endtime" "$(timestamp)"
+    touch "meta/deployresult-${is_pass}"
+    python bin/s3 cp "meta/deployresult-${is_pass}" "meta/deployresult-${is_pass}"
+
+    if (( ret > 0 )); then
+        test::report "False"
         exit "$ret"
     fi
 }
