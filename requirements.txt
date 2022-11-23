@@ -362,7 +362,7 @@ websockets==10.3 ; python_version >= "3.10"
     # via
     #   -r requirements.in
     #   juju
-wheel==0.38.3
+wheel==0.38.4
     # via -r requirements.in
 zipp==3.4.1
     # via importlib-metadata
