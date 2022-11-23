@@ -154,7 +154,10 @@ class Microk8sSnap:
                     click.echo(line_parts)
                     version = line_parts[1]
                     revision = line_parts[2]
-                    if version == "-":
+                    # In case of a channel that we do not have released anything yet,
+                    # eg in a pre-stable release, we have: the line_parts to be:
+                    # ['beta', '↑', '↑']. We detect this case below.
+                    if len(version) <= 1 or "." not in version:
                         # Nothing released on this track/channel
                         break
                     is_prerelease, major_minor_version = self._extract_version(version)
