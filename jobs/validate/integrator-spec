@@ -136,8 +136,8 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.25/edge}
-SERIES=${2:-focal}
+SNAP_VERSION=${1:-1.26/edge}
+SERIES=${2:-jammy}
 JUJU_DEPLOY_BUNDLE=kubernetes-core
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=${5:-vsphere/Boston}
