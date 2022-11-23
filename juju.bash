@@ -87,6 +87,13 @@ function juju::wait
 
     ret=$?
     if (( ret > 0 )); then
+        kv::set "deploy_result" "False"
+        kv::set "deploy_endtime" "$(timestamp)"
+        touch "meta/deployresult-False"
+        python bin/s3 cp "meta/deployresult-False" "meta/deployresult-False"
+
+        test::report "False"
+
         exit "$ret"
     fi
 }
