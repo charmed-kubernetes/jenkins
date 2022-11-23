@@ -429,7 +429,6 @@ spec:
             (control_plane, "po", ["{}-read-test".format(sc_name)]),
             timeout_msg=f"Unable to create write pod {sc_name} for ceph test",
         )
-    finally:
         output = await juju_run(
             control_plane,
             "/snap/bin/kubectl --kubeconfig /root/.kube/config logs {}-read-test".format(
@@ -439,7 +438,7 @@ spec:
         assert output.status == "completed"
         click.echo("output = {}".format(output.stdout))
         assert "JUJU TEST" in output.stdout
-
+    finally:
         click.echo("{}: {} cleanup".format(test_name, sc_name))
         pods = "{0}-read-test {0}-write-test".format(sc_name)
         pvcs = "{}-pvc".format(sc_name)
