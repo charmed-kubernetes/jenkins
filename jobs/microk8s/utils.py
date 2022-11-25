@@ -62,9 +62,12 @@ def compare_releases(a, b):
     if b.startswith("v"):
         b = b[1:]
 
-    # eks releases may have dashes eg 1.23-5
-    a = a.replace("-", ".")
-    b = b.replace("-", ".")
+    # eks releases may have dashes eg 1.23-5 so we need to "normalize" this
+    # but the pre-stable released eg 1.24.0-alpha.0 are fine.
+    if not any(id in a for id in ["alpha", "beta", "rc"]):
+        a = a.replace("-", ".")
+    if not any(id in a for id in ["alpha", "beta", "rc"]):
+        b = b.replace("-", ".")
 
     if a == b:
         return 0
