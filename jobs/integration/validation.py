@@ -2503,7 +2503,8 @@ async def test_ceph(model, tools):
         # cleanup
         log("removing ceph applications")
         ceph_apps ={"ceph-fs", "ceph-mon", "ceph-osd"}
-        for app in ceph_apps:
+        for app in ceph_apps & set(model.applications):
+            # remove any applications currently deployed into the model
             await model.remove_application(app, destroy_storage=True, force=True)
         # block until no ceph_apps are in the current model
         await model.block_until(lambda: not(ceph_apps & set(model.applications)))
