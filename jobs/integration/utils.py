@@ -341,22 +341,17 @@ async def log_snap_versions(model, prefix="before"):
 
 
 async def validate_storage_class(model, sc_name, test_name):
-    control_plane_app = model.applications["kubernetes-control-plane"]
-    k8s_version_str = control_plane_app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    control_plane = control_plane_app.units[0]
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
     # write a string to a file on the pvc
-    as_beta = "beta." if k8s_minor_version < (1, 25) else ""
     pod_definition = f"""
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {sc_name}-pvc
-  annotations:
-    volume.{as_beta}kubernetes.io/storage-class: {sc_name}
 spec:
   accessModes:
   - ReadWriteOnce
+  storageClassName: {sc_name}
   resources:
     requests:
       storage: 1Gi
