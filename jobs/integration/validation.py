@@ -2498,10 +2498,10 @@ async def test_ceph(model, tools):
     finally:
         # cleanup
         log("removing ceph applications")
-        
+
         # LP:1929537 get ceph-fs outta there with fire.
         ceph_apps = {
-            "ceph-fs": dict(force=True), 
+            "ceph-fs": dict(force=True),
             "ceph-mon": dict(),
             "ceph-osd": dict(destroy_storage=True),
         }
