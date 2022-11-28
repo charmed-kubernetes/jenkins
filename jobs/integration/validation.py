@@ -2502,20 +2502,11 @@ async def test_ceph(model, tools):
     finally:
         # cleanup
         log("removing ceph applications")
-        # LP:1929537 get ceph-fs outta there with fire.
-        # NB: can't use destroy() here because it doesn't support --force.
-        tasks = {
-            model.applications["ceph-fs"].units[0].machine.destroy(force=True),
-            model.applications["ceph-mon"].destroy(),
-            model.applications["ceph-osd"].destroy(),
-        }
-        (done1, _) = await asyncio.wait(tasks)
-        for task in done1:
-            # read and ignore any exception so that it doesn't get raised
-            # when the task is GC'd
-            task.exception()
-        await tools.juju_wait()
-        await model.applications["ceph-fs"].destroy()
+        ceph_apps ={"ceph-fs", "ceph-mon", "ceph-osd"}
+        for app in ceph_apps:
+            await model.remove_application(app, destroy_storage=True, force=True)
+        # block until no ceph_apps are in the current model
+        await model.block_until(lambda: not(ceph_apps & set(model.applications)))
 
 
 async def test_series_upgrade(model, tools):
