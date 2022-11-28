@@ -2481,12 +2481,8 @@ async def test_ceph(model, tools):
         await model.add_relation("ceph-mon", "ceph-osd")
         await model.add_relation("ceph-mon", "ceph-fs")
         await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
-        log("waiting...")
+        log("waiting for charm deployment...")
         await tools.juju_wait()
-
-        # until bug https://bugs.launchpad.net/charm-kubernetes-control-plane/+bug/1824035 fixed
-        unit = model.applications["ceph-mon"].units[0]
-        await juju_run_action(unit, "create-pool", name="ext4-pool")
 
         log("waiting for csi to settle")
         unit = model.applications["kubernetes-control-plane"].units[0]
@@ -2502,12 +2498,20 @@ async def test_ceph(model, tools):
     finally:
         # cleanup
         log("removing ceph applications")
-        ceph_apps ={"ceph-fs", "ceph-mon", "ceph-osd"}
-        for app in ceph_apps & set(model.applications):
+        
+        # LP:1929537 get ceph-fs outta there with fire.
+        ceph_apps = {
+            "ceph-fs": dict(force=True), 
+            "ceph-mon": dict(),
+            "ceph-osd": dict(destroy_storage=True),
+        }
+        for app in set(ceph_apps) & set(model.applications):
             # remove any applications currently deployed into the model
-            await model.remove_application(app, destroy_storage=True, force=True)
+            await model.remove_application(app, **ceph_apps[app])
+
+        log("waiting for charm removal...")
         # block until no ceph_apps are in the current model
-        await model.block_until(lambda: not(ceph_apps & set(model.applications)))
+        await model.block_until(lambda: not (set(ceph_apps) & set(model.applications)))
 
 
 async def test_series_upgrade(model, tools):

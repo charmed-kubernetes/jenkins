@@ -341,15 +341,19 @@ async def log_snap_versions(model, prefix="before"):
 
 
 async def validate_storage_class(model, sc_name, test_name):
-    control_plane = model.applications["kubernetes-control-plane"].units[0]
+    control_plane_app = model.applications["kubernetes-control-plane"]
+    k8s_version_str = control_plane_app.data["workload-version"]
+    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
+    control_plane = control_plane_app.units[0]
     # write a string to a file on the pvc
-    pod_definition = """
+    as_beta = "beta." if k8s_minor_version < (1, 25) else ""
+    pod_definition = f"""
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {0}-pvc
+  name: {sc_name}-pvc
   annotations:
-   volume.beta.kubernetes.io/storage-class: {0}
+    volume.{as_beta}kubernetes.io/storage-class: {sc_name}
 spec:
   accessModes:
   - ReadWriteOnce
@@ -360,24 +364,22 @@ spec:
 kind: Pod
 apiVersion: v1
 metadata:
-  name: {0}-write-test
+  name: {sc_name}-write-test
 spec:
   volumes:
   - name: shared-data
     persistentVolumeClaim:
-      claimName: {0}-pvc
+      claimName: {sc_name}-pvc
       readOnly: false
   containers:
-    - name: {0}-write-test
+    - name: {sc_name}-write-test
       image: rocks.canonical.com/cdk/ubuntu:focal
       command: ["/bin/bash", "-c", "echo 'JUJU TEST' > /data/juju"]
       volumeMounts:
       - name: shared-data
         mountPath: /data
   restartPolicy: Never
-""".format(
-        sc_name
-    )
+"""
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
         pod_definition
     )
@@ -393,28 +395,26 @@ spec:
     )
 
     # read that string from pvc
-    pod_definition = """
+    pod_definition = f"""
 kind: Pod
 apiVersion: v1
 metadata:
-  name: {0}-read-test
+  name: {sc_name}-read-test
 spec:
   volumes:
   - name: shared-data
     persistentVolumeClaim:
-      claimName: {0}-pvc
+      claimName: {sc_name}-pvc
       readOnly: false
   containers:
-    - name: {0}-read-test
+    - name: {sc_name}-read-test
       image: rocks.canonical.com/cdk/ubuntu:focal
       command: ["/bin/bash", "-c", "cat /data/juju"]
       volumeMounts:
       - name: shared-data
         mountPath: /data
   restartPolicy: Never
-""".format(
-        sc_name
-    )
+"""
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
         pod_definition
     )
