@@ -378,15 +378,15 @@ spec:
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
         pod_definition
     )
-    click.echo("{}: {} writing test".format(test_name, sc_name))
+    click.echo(f"{test_name}: {sc_name} writing test")
     output = await juju_run(control_plane, cmd)
     assert output.status == "completed"
 
     # wait for completion
     await retry_async_with_timeout(
         verify_completed,
-        (control_plane, "po", ["{}-write-test".format(sc_name)]),
-        timeout_msg="Unable to create write pod for {} test".format(test_name),
+        (control_plane, "po", [f"{sc_name}-write-test"]),
+        timeout_msg=f"Unable to create write pod for {test_name} test",
     )
 
     # read that string from pvc
@@ -413,7 +413,7 @@ spec:
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
         pod_definition
     )
-    click.echo("{}: {} reading test".format(test_name, sc_name))
+    click.echo(f"{test_name}: {sc_name} reading test")
     output = await juju_run(control_plane, cmd)
     assert output.status == "completed"
 
@@ -421,45 +421,39 @@ spec:
     try:
         await retry_async_with_timeout(
             verify_completed,
-            (control_plane, "po", ["{}-read-test".format(sc_name)]),
+            (control_plane, "po", [f"{sc_name}-read-test"]),
             timeout_msg=f"Unable to create write pod {sc_name} for ceph test",
         )
         output = await juju_run(
             control_plane,
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config logs {}-read-test".format(
-                sc_name
-            ),
+            f"/snap/bin/kubectl --kubeconfig /root/.kube/config logs {sc_name}-read-test",
         )
         assert output.status == "completed"
-        click.echo("output = {}".format(output.stdout))
+        click.echo(f"output = {output.stdout}")
         assert "JUJU TEST" in output.stdout
     finally:
-        click.echo("{}: {} cleanup".format(test_name, sc_name))
+        click.echo(f"{test_name}: {sc_name} cleanup")
         pods = "{0}-read-test {0}-write-test".format(sc_name)
-        pvcs = "{}-pvc".format(sc_name)
+        pvcs = f"{sc_name}-pvc"
         pod_deleted = await juju_run(
             control_plane,
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {}".format(
-                pods
-            ),
+            f"/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {pods}",
         )
         pvc_deleted = await juju_run(
             control_plane,
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {}".format(
-                pvcs
-            ),
+            f"/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {pvcs}",
         )
         assert all(_.status == "completed" for _ in (pod_deleted, pvc_deleted))
 
         await retry_async_with_timeout(
             verify_deleted,
             (control_plane, "po", pods.split()),
-            timeout_msg="Unable to remove {} test pods".format(test_name),
+            timeout_msg=f"Unable to remove {test_name} test pods",
         )
         await retry_async_with_timeout(
             verify_deleted,
             (control_plane, "pvc", pvcs.split()),
-            timeout_msg="Unable to remove {} test pvcs".format(test_name),
+            timeout_msg=f"Unable to remove {test_name} test pvcs",
         )
 
 
