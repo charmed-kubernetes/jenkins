@@ -342,8 +342,9 @@ async def log_snap_versions(model, prefix="before"):
 
 async def validate_storage_class(model, sc_name, test_name):
     control_plane = model.applications["kubernetes-control-plane"].units[0]
-    # write a string to a file on the pvc
-    pod_definition = f"""
+    try:
+        # write a string to a file on the pvc
+        pod_definition = f"""
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -375,22 +376,22 @@ spec:
         mountPath: /data
   restartPolicy: Never
 """
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
-        pod_definition
-    )
-    click.echo(f"{test_name}: {sc_name} writing test")
-    output = await juju_run(control_plane, cmd)
-    assert output.status == "completed"
+        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
+            pod_definition
+        )
+        click.echo(f"{test_name}: {sc_name} writing test")
+        output = await juju_run(control_plane, cmd)
+        assert output.status == "completed"
 
-    # wait for completion
-    await retry_async_with_timeout(
-        verify_completed,
-        (control_plane, "po", [f"{sc_name}-write-test"]),
-        timeout_msg=f"Unable to create write pod for {test_name} test",
-    )
+        # wait for completion
+        await retry_async_with_timeout(
+            verify_completed,
+            (control_plane, "po", [f"{sc_name}-write-test"]),
+            timeout_msg=f"Unable to create write pod for {test_name} test",
+        )
 
-    # read that string from pvc
-    pod_definition = f"""
+        # read that string from pvc
+        pod_definition = f"""
 kind: Pod
 apiVersion: v1
 metadata:
@@ -410,19 +411,18 @@ spec:
         mountPath: /data
   restartPolicy: Never
 """
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
-        pod_definition
-    )
-    click.echo(f"{test_name}: {sc_name} reading test")
-    output = await juju_run(control_plane, cmd)
-    assert output.status == "completed"
+        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
+            pod_definition
+        )
+        click.echo(f"{test_name}: {sc_name} reading test")
+        output = await juju_run(control_plane, cmd)
+        assert output.status == "completed"
 
-    # wait for completion
-    try:
+        # wait for completion
         await retry_async_with_timeout(
             verify_completed,
             (control_plane, "po", [f"{sc_name}-read-test"]),
-            timeout_msg=f"Unable to create write pod {sc_name} for ceph test",
+            timeout_msg=f"Unable to create read pod {sc_name} for ceph test",
         )
         output = await juju_run(
             control_plane,
