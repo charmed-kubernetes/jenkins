@@ -141,7 +141,10 @@ then
     clusterctl generate cluster test-ci-cluster --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
     export CLUSTER_MANIFEST_FILE=$PWD/cluster.yaml
 
-    bash ./bootstrap/integration/test.sh
+    (
+        cd bootstrap
+        make e2e
+    )
 
     # cleanup machine
     sudo lxc rm capi-tests --force || true
