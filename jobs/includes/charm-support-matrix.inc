@@ -453,7 +453,6 @@
     summary: A dynamic IP routing daemon
     tags:
       - k8s
-      - bird
       - cni
     upstream: 'https://github.com/charmed-kubernetes/bird-operator.git'
     channel-range:
