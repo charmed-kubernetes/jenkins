@@ -27,6 +27,7 @@ applications:
       channel: $SNAP_VERSION
 EOF
 
+    juju model-config -m "$JUJU_CONTROLLER:$JUJU_MODEL" default-series="$SERIES"
     juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
          --overlay overlay.yaml \
          --force \
