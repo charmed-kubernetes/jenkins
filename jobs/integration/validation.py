@@ -2488,7 +2488,7 @@ async def test_ceph(model, tools):
         unit = model.applications["kubernetes-control-plane"].units[0]
         await retry_async_with_timeout(
             verify_ready,
-            (unit, "po", ["csi-rbdplugin"]),
+            (unit, "po", ["csi-rbdplugin", "csi-cephfsplugin"]),
             timeout_msg="CSI pods not ready!",
         )
         # create pod that writes to a pv from ceph
