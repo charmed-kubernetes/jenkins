@@ -4,6 +4,7 @@
 import os
 import pytest
 import asyncio
+import inspect
 import uuid
 from pathlib import Path
 import yaml
@@ -317,7 +318,7 @@ async def proxy_app(model):
 
 
 @pytest.fixture(autouse=True)
-def skip_by_app(request, model):
+def skip_if_apps(request, model):
     """Skip tests if application predicate is True."""
     skip_marker = request.node.get_closest_marker("skip_if_apps")
     if not skip_marker:
@@ -325,7 +326,8 @@ def skip_by_app(request, model):
     predicate = skip_marker.args[0]
     apps = model.applications
     if predicate(apps):
-        pytest.skip(f"skipped, because of deployed apps: {apps}")
+        method = inspect.getsource(predicate).strip()
+        pytest.skip(f"skipped, because '{method}' was True")
 
 
 def _charm_name(app):
