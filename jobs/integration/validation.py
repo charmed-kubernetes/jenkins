@@ -9,7 +9,6 @@ import json
 import os
 import requests
 import yaml
-import re
 import random
 import pytest
 import logging
@@ -1944,7 +1943,9 @@ async def test_dns_provider(model, k8s_model, tools):
             await tools.juju_wait()
 
             log("Waiting CoreDNS pod to be ready")
-            wait_for_pods_ready("app.kubernetes.io/name=coredns", ns=tools.k8s_model_name)
+            wait_for_pods_ready(
+                "app.kubernetes.io/name=coredns", ns=tools.k8s_model_name
+            )
 
             log("Verifying that stale pod doesn't pick up new DNS provider")
             await verify_no_dns_resolution(fresh=False)
@@ -1968,7 +1969,9 @@ async def test_dns_provider(model, k8s_model, tools):
                 "--force",
                 "coredns",
             )
-            await wait_for_pods_removal("app.kubernetes.io/name=coredns", ns=tools.k8s_model_name)
+            await wait_for_pods_removal(
+                "app.kubernetes.io/name=coredns", ns=tools.k8s_model_name
+            )
 
         log("Verifying that DNS is no longer working")
         await verify_no_dns_resolution(fresh=True)
