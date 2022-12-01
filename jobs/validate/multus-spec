@@ -35,7 +35,7 @@ EOF
     juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" -n 3 ceph-mon --channel="$CEPH_CHANNEL"
     juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" -n 3 ceph-osd --channel="$CEPH_CHANNEL" \
          --constraints="root-disk=32G" \
-         --storage osd-devices=32G,2 \
+         --storage osd-devices=8G,1 \
          --storage osd-journals=8G,1
     juju relate -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-osd ceph-mon
     juju relate -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:client kubernetes-control-plane
