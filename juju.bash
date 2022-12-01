@@ -25,7 +25,8 @@ function juju::bootstrap
             --model-default datastore=vsanDatastore \
             --model-default primary-network=VLAN_2763 \
             --model-default force-vm-hardware-version=17 \
-            --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions"
+            --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions \
+            --bootstrap-image=juju-ci-root/templates/$SERIES-test-template"
     fi
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          -d "$JUJU_MODEL" \
