@@ -1899,25 +1899,13 @@ async def test_dns_provider(model, k8s_model, tools):
             # work around https://github.com/juju/python-libjuju/pull/452
             return None
 
-    # Only run this test against k8s 1.14+
-    master_config = await control_plane_app.get_config()
-    channel = master_config["channel"]["value"]
-    if "/" in channel:
-        version_string = channel.split("/")[0]
-        k8s_version = tuple(int(q) for q in re.findall("[0-9]+", version_string)[:2])
-        if k8s_version < (1, 14):
-            click.echo(
-                "Skipping validate_dns_provider for k8s version " + version_string
-            )
-            return
-
     try:
         log("Verifying DNS with default provider (auto -> coredns)")
         await verify_dns_resolution(fresh=True)
 
         log("Switching to none provider")
         await control_plane_app.set_config({"dns-provider": "none"})
-        await wait_for_pods_removal("kubernetes.io/name=CoreDNS")
+        await wait_for_pods_removal("app.kubernetes.io/name=coredns")
 
         log("Verifying DNS no longer works on existing pod")
         await verify_no_dns_resolution(fresh=False)
@@ -1955,6 +1943,9 @@ async def test_dns_provider(model, k8s_model, tools):
             await k8s_model.wait_for_idle(status="active")
             await tools.juju_wait()
 
+            log("Waiting CoreDNS pod to be ready")
+            wait_for_pods_ready("app.kubernetes.io/name=coredns", ns=tools.k8s_model_name)
+
             log("Verifying that stale pod doesn't pick up new DNS provider")
             await verify_no_dns_resolution(fresh=False)
 
@@ -1977,7 +1968,7 @@ async def test_dns_provider(model, k8s_model, tools):
                 "--force",
                 "coredns",
             )
-            await wait_for_pods_removal("juju-app=coredns", ns=tools.k8s_model_name)
+            await wait_for_pods_removal("app.kubernetes.io/name=coredns", ns=tools.k8s_model_name)
 
         log("Verifying that DNS is no longer working")
         await verify_no_dns_resolution(fresh=True)
@@ -1985,6 +1976,9 @@ async def test_dns_provider(model, k8s_model, tools):
         log("Switching back to core-dns from cdk-addons")
         await control_plane_app.set_config({"dns-provider": "core-dns"})
         await tools.juju_wait()
+
+        log("Waiting CoreDNS pod to be ready")
+        wait_for_pods_ready("app.kubernetes.io/name=coredns")
 
         log("Verifying DNS works again")
         await verify_dns_resolution(fresh=True)
