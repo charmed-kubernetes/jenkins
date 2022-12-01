@@ -327,7 +327,7 @@ def skip_if_apps(request, model):
     apps = model.applications
     if predicate(apps):
         method = inspect.getsource(predicate).strip()
-        pytest.skip(f"skipped, because '{method}' was True")
+        pytest.skip(f"'{method}' was True")
 
 
 def _charm_name(app):
