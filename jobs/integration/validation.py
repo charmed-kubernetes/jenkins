@@ -448,7 +448,12 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
     await asyncio.gather(*(validate_unit(unit) for unit in units))
 
 
-@pytest.mark.skip_apps(["canal", "calico", "tigera-secure-ee"])
+@pytest.mark.skip_if_apps(
+    # skip this test if none of these CNIs is deployed
+    lambda model_apps: not any(
+        a in model_apps for a in ["canal", "calico", "tigera-secure-ee"]
+    )
+)
 async def test_network_policies(model, tools):
     """Apply network policy and use two busyboxes to validate it."""
     here = os.path.dirname(os.path.abspath(__file__))
@@ -2426,6 +2431,10 @@ async def test_nfs(model, tools):
     await tools.juju_wait()
 
 
+@pytest.mark.skip_if_apps(
+    # skip this test if ceph-mon and ceph-osd are already installed
+    lambda model_apps: all(app in model_apps for app in ["ceph-mon", "ceph-osd"])
+)
 async def test_ceph(model, tools):
     # setup
     series = os.environ["SERIES"]

@@ -318,12 +318,14 @@ async def proxy_app(model):
 
 @pytest.fixture(autouse=True)
 def skip_by_app(request, model):
-    """Skip tests if missing certain applications"""
-    if request.node.get_closest_marker("skip_apps"):
-        apps = request.node.get_closest_marker("skip_apps").args[0]
-        is_available = any(app in model.applications for app in apps)
-        if not is_available:
-            pytest.skip("skipped, no matching applications found: {}".format(apps))
+    """Skip tests if application predicate is True."""
+    skip_marker = request.node.get_closest_marker("skip_if_apps")
+    if not skip_marker:
+        return
+    predicate = skip_marker.args[0]
+    apps = model.applications
+    if predicate(apps):
+        pytest.skip(f"skipped, because of deployed apps: {apps}")
 
 
 def _charm_name(app):
