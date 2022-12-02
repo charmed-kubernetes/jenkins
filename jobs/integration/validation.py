@@ -1938,7 +1938,9 @@ async def test_dns_provider(model, k8s_model, tools):
         # See LP#1998607
         worker_arch = os.environ.get("ARCH", "amd64")
         with NamedTemporaryFile("w") as f:
-            f.write('{"ImageName": "rocks.canonical.com:443/cdk/coredns/coredns:1.6.7"}')
+            f.write(
+                '{"ImageName": "rocks.canonical.com:443/cdk/coredns/coredns:1.6.7"}'
+            )
             f.flush()
             await tools.run(
                 "juju",
@@ -1950,7 +1952,7 @@ async def test_dns_provider(model, k8s_model, tools):
                 "coredns",
                 "--trust",
                 "--resource",
-                f"coredns-image={f.name}"
+                f"coredns-image={f.name}",
             )
             await k8s_model.block_until(lambda: "coredns" in k8s_model.applications)
             coredns = k8s_model.applications["coredns"]
