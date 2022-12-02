@@ -1421,22 +1421,26 @@ async def any_keystone(model, apps_by_charm, tools):
         await masters.set_config({"keystone-ssl-ca": keystone_ssl_ca})
     else:
         # No keystone available, add/setup one
+        series = os.environ["SERIES"]
         admin_password = "testpw"
         channel, mysql_channel = "yoga/stable", "8.0/stable"
         keystone = await model.deploy(
             "keystone",
             channel=channel,
+            series=series,
             config={"admin-password": admin_password},
         )
         db_router = await model.deploy(
             "mysql-router",
             application_name="keystone-mysql-router",
+            series=series,
             channel=mysql_channel,
         )
         db = await model.deploy(
             "mysql-innodb-cluster",
             channel=mysql_channel,
             constraints="cores=2 mem=8G root-disk=64G",
+            series=series,
             num_units=3,
             config={
                 "enable-binlogs": True,
@@ -1929,11 +1933,27 @@ async def test_dns_provider(model, k8s_model, tools):
         await verify_no_dns_resolution(fresh=True)
 
         log("Deploying CoreDNS charm")
-        coredns = await k8s_model.deploy(
-            "coredns",
-            channel=tools.charm_channel,
-            trust=True,
-        )
+
+        # Apply a few workarounds for deploying a multiarch coredns image
+        # See LP#1998607
+        worker_arch = os.environ.get("ARCH", "amd64")
+        with NamedTemporaryFile("w") as f:
+            f.write('{"ImageName": "rocks.canonical.com:443/cdk/coredns/coredns:1.6.7"}')
+            f.flush()
+            await tools.run(
+                "juju",
+                "deploy",
+                "-m",
+                f"{tools.controller_name}:{tools.k8s_model_name}",
+                f"--constraints=arch={worker_arch}",
+                f"--channel={tools.charm_channel}",
+                "coredns",
+                "--trust",
+                "--resource",
+                f"coredns-image={f.name}"
+            )
+            await k8s_model.block_until(lambda: "coredns" in k8s_model.applications)
+            coredns = k8s_model.applications["coredns"]
 
         log("Waiting for CoreDNS charm to be ready")
         while (
