@@ -85,7 +85,7 @@ then
         sudo lxc exec capi-tests -- microk8s kubectl delete cluster --all --timeout=10s || true
         sudo lxc rm capi-tests --force || true
     )
-    sudo lxc launch ubuntu:22.04 -p default -p microk8s capi-tests
+    sudo lxc launch ubuntu:20.04 -p default -p microk8s capi-tests
     sleep 10
     while ! sudo lxc exec capi-tests -- snap install microk8s --channel latest/beta --classic; do
         sleep 3
