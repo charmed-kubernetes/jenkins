@@ -265,8 +265,8 @@ async def k8s_model(k8s_cloud, tools):
         await tools.run("juju-crashdump", "-a", "config", "-m", tools.k8s_connection)
         click.echo("Cleaning up k8s model")
         try:
-            for name, relation in k8s_model.state.relations.items():
-                click.echo(f"Removing relation {name} from k8s model")
+            for relation in k8s_model.relations:
+                click.echo(f"Removing relation {relation.name} from k8s model")
                 await relation.destroy()
 
             for name, offer in k8s_model.application_offers.items():
