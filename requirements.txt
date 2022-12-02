@@ -130,7 +130,7 @@ keyring==23.0.1
     # via launchpadlib
 kubernetes==22.6.0
     # via juju
-kv==0.4
+kv==0.3
     # via -r requirements.in
 launchpadlib==1.10.18
     # via -r requirements.in
