@@ -22,6 +22,7 @@ applications:
   kubernetes-control-plane:
     options:
       channel: $SNAP_VERSION
+      allow-privileged: true
   kubernetes-worker:
     constraints: 'instance-type=c4.xlarge root-disk=16G'
     options:
@@ -51,15 +52,16 @@ function juju::deploy::after
     juju add-k8s k8s --controller "$JUJU_CONTROLLER"
     juju add-model -c "$JUJU_CONTROLLER" addons k8s --config test-mode=true
     juju deploy -m "$JUJU_CONTROLLER:addons" \
+          --series=${SERIES} \
           --channel "$JUJU_DEPLOY_CHANNEL" sriov-cni
     juju deploy -m "$JUJU_CONTROLLER:addons" \
+          --series=${SERIES} \
           --channel "$JUJU_DEPLOY_CHANNEL" sriov-network-device-plugin
     juju config -m "$JUJU_CONTROLLER:addons" sriov-network-device-plugin resource-list="
-    - resourceName: sriov
-      selectors:
-        drivers:
-        - ixgbevf
-    "
+- resourceName: sriov
+  selectors:
+    drivers:
+    - ixgbevf"
     timeout 45m juju-wait -e "$JUJU_CONTROLLER:addons" -w
 }
 
