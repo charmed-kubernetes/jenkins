@@ -94,6 +94,7 @@ function juju::deploy
          --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
 
     (
+      set -e
       if [[ "$ROUTING_MODE" = bgp* ]]; then
         python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
         python $WORKSPACE/jobs/integration/tigera_aws.py assign-ipv6-addrs
