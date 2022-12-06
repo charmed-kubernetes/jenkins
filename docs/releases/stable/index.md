@@ -122,6 +122,8 @@ shown below.
 > **Note**: The `beta` channel is required as any bugfix release happening at
 the same time will use the `candidate` channel for staging.
 
+> **Note**: add `k8s-operator` to the `FILTER_BY_TAG` argument
+
 #### Charm build options
 
 ![charm build options](build-charms-options.png)
@@ -184,8 +186,9 @@ any changes as a result of SolQA testing.
 **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
 
 This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
-it will only promote the necessary charms that make up charmed-kubernetes (the
-others are kubeflow related).
+it would only promote the machine charms that make up charmed-kubernetes.
+Ensure that `k8s-operator` is added to the `tags` to include kubernetes
+operator charms.
 
 #### Promote charm Options
 
