@@ -1924,6 +1924,7 @@ async def test_dns_provider(model, k8s_model, tools):
         # Apply a few workarounds for deploying a multiarch coredns image
         # See LP#1998607
         worker_arch = os.environ.get("ARCH", "amd64")
+        series = os.environ["SERIES"]
         with NamedTemporaryFile("w") as f:
             f.write(
                 '{"ImageName": "rocks.canonical.com:443/cdk/coredns/coredns:1.6.7"}'
@@ -1936,6 +1937,7 @@ async def test_dns_provider(model, k8s_model, tools):
                 f"{tools.controller_name}:{tools.k8s_model_name}",
                 f"--constraints=arch={worker_arch}",
                 f"--channel={tools.charm_channel}",
+                f"--series={series}",
                 "coredns",
                 "--trust",
                 "--resource",
