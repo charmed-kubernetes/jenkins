@@ -33,7 +33,7 @@ from functools import partial
 from datetime import datetime
 from enum import Enum
 from types import SimpleNamespace
-from typing import List, Mapping, Optional
+from typing import List, Mapping, Optional, Set
 
 from pathos.threading import ThreadPool
 from pprint import pformat
@@ -414,9 +414,9 @@ class BuildEnv:
         return self.db["build_args"].get("layer_branch", None)
 
     @property
-    def filter_by_tag(self):
-        """Filter by tag."""
-        return self.db["build_args"].get("filter_by_tag", None)
+    def filter_by_tag(self) -> Set[str]:
+        """Filter tags defined by the build job."""
+        return set(self.db["build_args"].get("filter_by_tag", []))
 
     @property
     def resource_spec(self):
@@ -489,7 +489,7 @@ class BuildEnv:
         failed_entities = []
         for charm_map in self.artifacts:
             for charm_name, charm_opts in charm_map.items():
-                if not any(match in self.filter_by_tag for match in charm_opts["tags"]):
+                if not any(tag in self.filter_by_tag for tag in charm_opts["tags"]):
                     continue
                 ch_channels = self.apply_channel_bounds(charm_name, to_channels)
                 try:
