@@ -2661,7 +2661,7 @@ async def test_sriov_network_device_plugin(model, tools, addons_model):
 
     app = addons_model.applications["sriov-network-device-plugin"]
     config = await app.get_config()
-    resource_list = yaml.load(config["resource-list"]["value"])
+    resource_list = yaml.safe_load(config["resource-list"]["value"])
     resource_prefix = config["resource-prefix"]["value"]
     resource_names = [
         resource_prefix + "/" + resource["resourceName"] for resource in resource_list
