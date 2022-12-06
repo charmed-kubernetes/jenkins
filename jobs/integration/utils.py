@@ -265,7 +265,7 @@ async def find_entities(unit, entity_type, name_list, extra_args=""):
     except json.JSONDecodeError:
         click.echo(traceback.format_exc())
         click.echo("WARNING: Expected json, got non-json output:")
-        click.echo(output.results.get("Stdout", ""))
+        click.echo(output.results.stdout)
         return False
     matches = []
     for name in name_list:
@@ -712,7 +712,7 @@ async def vault_status(unit):
 async def get_ipv6_addr(unit):
     """Return the first globally scoped IPv6 address found on the given unit, or None."""
     output = await juju_run(unit, "ip -br a show scope global")
-    for intf in output.results["Stdout"].splitlines():
+    for intf in output.results.stdout.splitlines():
         if "UP" not in intf:
             continue
         for addr in intf.split("  ")[-1].split():
