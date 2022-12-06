@@ -133,7 +133,9 @@ async def storage_class(tools, model, request, cloud):
         await model.applications[provider_app].remove()
 
     logger.info(f"Waiting for stable apps=[{', '.join(expected_apps)}].")
-    await model.wait_for_idle(apps=expected_apps, wait_for_active=True, timeout=15 * 60)
+    await model.wait_for_idle(
+        apps=list(expected_apps), wait_for_active=True, timeout=15 * 60
+    )
     if not out_of_tree:
         logger.info("Installing Storage Class from template.")
         storage_yml = TEMPLATE_PATH / cloud / "storage-class.yaml"
