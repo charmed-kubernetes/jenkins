@@ -40,6 +40,11 @@ function juju::bootstrap
     if [ "$ROUTING_MODE" = "bgp-router" ]; then
       echo "Deploying bgp router"
       python3 $WORKSPACE/jobs/integration/tigera_aws.py deploy-bgp-router
+
+      ret=$?
+      if (( ret > 0 )); then
+          juju::deploy-failure $ret
+      fi
     fi
 }
 
@@ -88,13 +93,19 @@ function juju::deploy
          --force \
          --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
 
-    if [[ "$ROUTING_MODE" = bgp* ]]; then
-      python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
-      python $WORKSPACE/jobs/integration/tigera_aws.py assign-ipv6-addrs
-    fi
+    (
+      if [[ "$ROUTING_MODE" = bgp* ]]; then
+        python $WORKSPACE/jobs/integration/tigera_aws.py disable-source-dest-check
+        python $WORKSPACE/jobs/integration/tigera_aws.py assign-ipv6-addrs
+      fi
 
-    if [ "$ROUTING_MODE" = "bgp-router" ]; then
-      python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
+      if [ "$ROUTING_MODE" = "bgp-router" ]; then
+        python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
+      fi
+    )
+    ret=$?
+    if (( ret > 0 )); then
+        juju:Ldeploy-failure $ret
     fi
 }
 
