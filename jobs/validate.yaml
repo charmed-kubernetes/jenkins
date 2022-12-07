@@ -314,7 +314,7 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: "@weekly"
     axes:
       - axis:
           type: slave
