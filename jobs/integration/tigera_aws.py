@@ -458,7 +458,7 @@ def deploy_bgp_router():
         " ".join(router_ips),
         vpc_cidr,
     )
-    juju("model-config", 'cloudinit-userdata="{postruncmd: [\\"%s\\"]}"' % cmd)
+    juju("model-config", 'cloudinit-userdata={postruncmd: ["%s"]}' % cmd)
 
 
 @def_command("configure-bgp")

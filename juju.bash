@@ -77,7 +77,7 @@ function juju::deploy
 
     ret=$?
     if (( ret > 0 )); then
-        exit "$ret"
+        juju::deploy-failure $ret
     fi
 }
 
@@ -87,20 +87,8 @@ function juju::wait
     timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
 
     ret=$?
-
-    is_pass="True"
     if (( ret > 0 )); then
-        is_pass="False"
-    fi
-
-    kv::set "deploy_result" "${is_pass}"
-    kv::set "deploy_endtime" "$(timestamp)"
-    touch "meta/deployresult-${is_pass}"
-    python bin/s3 cp "meta/deployresult-${is_pass}" "meta/deployresult-${is_pass}"
-
-    if (( ret > 0 )); then
-        test::report "False"
-        exit "$ret"
+        juju::deploy-failure $ret
     fi
 }
 
@@ -116,4 +104,18 @@ units = list(unit.keys())
 print(unit[units[0]]['public-address'])
 "
     juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" "$1" --format yaml | env python3 -c "$py_script"
+}
+
+function juju::deploy-failure
+{
+    # report deployment failure
+    local ret=$1
+    local is_pass="False"
+    kv::set "deploy_result" "${is_pass}"
+    kv::set "deploy_endtime" "$(timestamp)"
+    touch "meta/deployresult-${is_pass}"
+    python bin/s3 cp "meta/deployresult-${is_pass}" "meta/deployresult-${is_pass}"
+
+    test::report ${is_pass}
+    exit "$ret"
 }
