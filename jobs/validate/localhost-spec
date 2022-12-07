@@ -26,11 +26,7 @@ function juju::deploy
         juju relate ubuntu ci-setup
     )
 
-    ret=$?
-    if (( ret > 0 )); then
-        juju::deploy-failure $ret
-    fi
-
+    juju::deploy-report $?
 }
 
 function juju::deploy::after

@@ -43,7 +43,8 @@ function juju::bootstrap
 
       ret=$?
       if (( ret > 0 )); then
-          juju::deploy-failure $ret
+          # Fail Deploy Early
+          juju::deploy-report $ret
       fi
     fi
 }
@@ -104,10 +105,7 @@ function juju::deploy
         python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
       fi
     )
-    ret=$?
-    if (( ret > 0 )); then
-        juju::deploy-failure $ret
-    fi
+    juju::deploy-report $?
 }
 
 ###############################################################################
