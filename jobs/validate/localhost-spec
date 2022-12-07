@@ -1,7 +1,7 @@
 #!/bin/bash
 # shellcheck disable=SC2034,SC1090
 
-set -xe
+set -x
 
 # Init
 : "${WORKSPACE:=$(pwd)}"
@@ -14,14 +14,23 @@ set -xe
 ###############################################################################
 function juju::deploy
 {
+    (
+        set -e
         juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
         --series "$SERIES" \
         --force \
         --constraints "mem=32G root-disk=100G cores=8" \
         ubuntu
 
-        juju deploy adam-stokes-localhost-ci-setup --channel edge
-        juju add-relation ubuntu ci-setup
+        juju deploy charmed-kubernetes-localhost-ci-setup ci-setup --channel edge
+        juju relate ubuntu ci-setup
+    )
+
+    ret=$?
+    if (( ret > 0 )); then
+        juju::deploy-failure $ret
+    fi
+
 }
 
 function juju::deploy::after
@@ -38,6 +47,9 @@ applications:
     options:
       ingress: false
       channel: $SNAP_VERSION
+  calico:
+    options:
+      ignore-loose-rpf: true
 EOF
 
     tee setup <<EOF > /dev/null
@@ -52,27 +64,27 @@ export SERIES=$SERIES
 export SNAP_VERSION=$SNAP_VERSION
 
 juju bootstrap localhost/localhost \
-    $JUJU_CONTROLLER \
-    -d $JUJU_MODEL \
-    --bootstrap-series $SERIES \
+    \$JUJU_CONTROLLER \
+    -d \$JUJU_MODEL \
+    --bootstrap-series \$SERIES \
     --force \
     --model-default image-stream=daily
 
-juju deploy -m "$JUJU_CONTROLLER":"$JUJU_MODEL" \
-    --channel $JUJU_DEPLOY_CHANNEL \
+juju deploy -m "\$JUJU_CONTROLLER":"\$JUJU_MODEL" \
+    --channel \$JUJU_DEPLOY_CHANNEL \
     --force \
     --overlay overlay.yaml \
     charmed-kubernetes 1>&2
 
-timeout 45m juju-wait -e $JUJU_CONTROLLER:$JUJU_MODEL -w
+timeout 45m juju-wait -e \$JUJU_CONTROLLER:\$JUJU_MODEL -w
 
 pushd jenkins
-timeout -s INT 3h tox --workdir .tox -e py38 -- pytest \
+timeout -s INT 3h tox --workdir .tox -e py3 -- pytest \
     --full-trace \
     jobs/integration/validation.py \
     --cloud localhost \
-    --model $JUJU_MODEL \
-    --controller $JUJU_CONTROLLER
+    --model \$JUJU_MODEL \
+    --controller \$JUJU_CONTROLLER
 popd
 EOF
 
