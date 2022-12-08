@@ -342,7 +342,7 @@ theblues==0.5.2
 tomli==2.0.1
     # via
     #   black
-    #   pytes
+    #   pytest
 toposort==1.6
     # via juju
 typing-extensions==3.10.0.2
