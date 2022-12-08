@@ -18,6 +18,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@daily"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -37,11 +39,6 @@
           values:
             - focal
             - jammy
-      - axis:
-          type: user-defined
-          name: channel
-          values:
-            - edge
       - axis:
           type: user-defined
           name: arch
@@ -76,6 +73,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    parameters:
+      - charms-stable
     axes:
       - axis:
           type: slave
@@ -96,11 +95,6 @@
             - jammy
             - focal
             - bionic
-      - axis:
-          type: user-defined
-          name: channel
-          values:
-            - stable
       - axis:
           type: user-defined
           name: arch
@@ -135,6 +129,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -154,11 +150,6 @@
           values:
             - focal
             - jammy
-      - axis:
-          type: user-defined
-          name: channel
-          values:
-            - edge
       - axis:
           type: user-defined
           name: arch
@@ -195,6 +186,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    parameters:
+      - charms-stable
     axes:
       - axis:
           type: slave
@@ -212,11 +205,6 @@
           name: series
           values:
             - jammy
-      - axis:
-          type: user-defined
-          name: channel
-          values:
-            - stable
       - axis:
           type: user-defined
           name: arch
@@ -251,12 +239,13 @@
       - build-discarder:
           num-to-keep: 3
     parameters:
+      - charms-stable
       - string:
-           name: SNAP_VERSION
-           default: 1.25/stable
+          name: snap_version
+          default: 1.25/stable
       - string:
-           name: SERIES
-           default: jammy
+          name: series
+          default: jammy
     triggers:
         - timed: "@daily"
     builders:
@@ -264,7 +253,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/snapd-upgrade-spec
+            bash jobs/validate/snapd-upgrade-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-series-upgrade'
@@ -282,12 +271,13 @@
       - build-discarder:
           num-to-keep: 3
     parameters:
+      - charms-edge
       - string:
-           name: SNAP_VERSION
-           default: 1.25/stable
+          name: snap_version
+          default: 1.25/stable
       - string:
-           name: SERIES
-           default: jammy
+          name: series
+          default: jammy
     triggers:
         - timed: "@weekly"
     builders:
@@ -295,7 +285,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/series-upgrade-spec
+            bash jobs/validate/series-upgrade-spec $snap_version $series $channel
 
 # ADDONS ---------------------------------------------------------------------------- #
 - job:
@@ -315,6 +305,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -337,7 +329,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/localhost-spec $snap_version $series
+            bash jobs/validate/localhost-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-s390x'
@@ -356,6 +348,8 @@
           num-to-keep: 3
     triggers:
         - timed: "0 0 */2 * *"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -378,7 +372,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/ck-s390-spec $snap_version $series
+            bash jobs/validate/ck-s390-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-integrator'
@@ -397,6 +391,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -414,11 +410,6 @@
           name: series
           values:
             - jammy
-      - axis:
-          type: user-defined
-          name: channel
-          values:
-            - edge
       - axis:
           type: user-defined
           name: cloud
@@ -453,6 +444,8 @@
         - timed: "@weekly"
     execution-strategy:
       sequential: true
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -470,11 +463,6 @@
           name: series
           values:
             - focal
-      - axis:
-          type: user-defined
-          name: channel
-          values:
-            - edge
       - axis:
           type: user-defined
           name: routing_mode
@@ -506,6 +494,8 @@
           num-to-keep: 3
     execution-strategy:
       sequential: true
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: user-defined
@@ -523,7 +513,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/tigera-ee-spec $snap_version $series
+            bash jobs/validate/tigera-ee-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-vault'
@@ -542,6 +532,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -564,7 +556,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/vault-spec $snap_version $series
+            bash jobs/validate/vault-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-nvidia'
@@ -583,6 +575,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@monthly"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -605,7 +599,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/nvidia-spec $snap_version $series
+            bash jobs/validate/nvidia-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-aws-iam'
@@ -624,6 +618,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@monthly"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -646,7 +642,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/aws-iam-spec $snap_version $series
+            bash jobs/validate/aws-iam-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-multus'
@@ -665,6 +661,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -687,7 +685,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/multus-spec $snap_version $series
+            bash jobs/validate/multus-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-ovn'
@@ -705,11 +703,12 @@
       - build-discarder:
           num-to-keep: 3
     parameters:
+      - charms-edge
       - string:
-           name: SNAP_VERSION
+           name: snap_version
            default: 1.26/edge
       - string:
-           name: SERIES
+           name: series
            default: jammy
     triggers:
         - timed: "@weekly"
@@ -718,7 +717,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/ovn-spec
+            bash jobs/validate/ovn-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-sriov'
@@ -737,6 +736,8 @@
           num-to-keep: 3
     triggers:
         - timed: "@weekly"
+    parameters:
+      - charms-edge
     axes:
       - axis:
           type: slave
@@ -759,4 +760,4 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/sriov-spec $snap_version $series
+            bash jobs/validate/sriov-spec $snap_version $series $channel

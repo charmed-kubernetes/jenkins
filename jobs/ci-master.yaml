@@ -66,6 +66,22 @@
           default: false
 
 - parameter:
+    name: charms-stable
+    parameters:
+      - string:
+          name: channel
+          default: 1.25/stable
+          description: channel for charmed-kubernetes bundle to deploy
+
+- parameter:
+    name: charms-edge
+    parameters:
+      - string:
+          name: channel
+          default: 1.26/edge
+          description: channel for charmed-kubernetes bundle to deploy
+
+- parameter:
     name: test-params
     parameters:
       - string:
