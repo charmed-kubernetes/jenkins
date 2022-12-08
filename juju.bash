@@ -83,10 +83,7 @@ function juju::wait
     echo "Waiting for deployment to settle..."
     timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
 
-    ret=$?
-    if (( ret > 0 )); then
-        juju::deploy-failure $ret
-    fi
+    juju::deploy-report $?
 }
 
 function juju::unitAddress
