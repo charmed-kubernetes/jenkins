@@ -1828,7 +1828,7 @@ async def test_encryption_at_rest(model, tools):
     assert b64_value not in result.output
 
 
-@pytest.mark.clouds(["ec2", "vsphere"])
+@pytest.mark.clouds(["ec2", "vsphere", "gce"])
 async def test_dns_provider(model, k8s_model, tools):
     control_plane_app = model.applications["kubernetes-control-plane"]
     control_plane_unit = control_plane_app.units[0]
@@ -1947,11 +1947,7 @@ async def test_dns_provider(model, k8s_model, tools):
             coredns = k8s_model.applications["coredns"]
 
         log("Waiting for CoreDNS charm to be ready")
-        while (
-            status := coredns.units[0].workload_status if coredns.units else None
-        ) != "active":
-            assert status not in ("blocked", "error")
-            await asyncio.sleep(5)
+        await k8s_model.wait_for_idle(raise_on_error=False, status="active")
 
         log("Creating cross-model offer")
         offer_name = f"{tools.k8s_model_name_full}.coredns"
@@ -1987,15 +1983,7 @@ async def test_dns_provider(model, k8s_model, tools):
             await model.remove_saas("coredns")
             await k8s_model.remove_offer(offer_name, force=True)
             log("Removing CoreDNS charm")
-            # NB: can't use libjuju here because it doesn't support --force.
-            await tools.run(
-                "juju",
-                "remove-application",
-                "-m",
-                tools.k8s_connection,
-                "--force",
-                "coredns",
-            )
+            await coredns.destroy(force=True)
             await wait_for_pods_removal(
                 "app.kubernetes.io/name=coredns", ns=tools.k8s_model_name
             )
