@@ -122,7 +122,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/charm-kubeapi-load-balancer.git'
 - kube-state-metrics:
-    bugs: 'https://bugs.launchpad.net/charmed-kubernetes'
+    bugs: 'https://bugs.launchpad.net/kube-state-metrics-operator'
     docs: 'https://charmhub.io/kube-state-metrics/docs'
     downstream: charmed-kubernetes/kube-state-metrics-operator.git
     store: 'https://charmhub.io/kube-state-metrics'
@@ -133,7 +133,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/kube-state-metrics-operator.git'
 - kubernetes-autoscaler:
-    bugs: 'https://bugs.launchpad.net/charmed-kubernetes'
+    bugs: 'https://bugs.launchpad.net/charm-kubernetes-autoscaler'
     docs: 'https://charmhub.io/kubernetes-autoscaler/docs'
     downstream: charmed-kubernetes/charm-kubernetes-autoscaler.git
     store: 'https://charmhub.io/kubernetes-autoscaler'
@@ -424,7 +424,7 @@
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-coredns.git'
 - gatekeeper-controller-manager:
-    bugs: 'https://launchpad.net/opa-gatekeeper-operator'
+    bugs: 'https://bugs.launchpad.net/opa-gatekeeper-operator'
     docs: 'https://charmhub.io/gatekeeper-controller-manager/docs'
     downstream: charmed-kubernetes/opa-gatekeeper-operators
     store: 'https://charmhub.io/gatekeeper-controller-manager'
@@ -435,7 +435,7 @@
       - gatekeeper-controller-manager
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
 - gatekeeper-audit:
-    bugs: 'https://launchpad.net/opa-gatekeeper-operator'
+    bugs: 'https://bugs.launchpad.net/opa-gatekeeper-operator'
     docs: 'https://charmhub.io/gatekeeper-audit/docs'
     downstream: charmed-kubernetes/opa-gatekeeper-operators
     store: 'https://charmhub.io/gatekeeper-audit'
