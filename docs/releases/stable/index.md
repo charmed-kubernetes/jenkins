@@ -35,14 +35,31 @@ to the respective release branches.
 
 ## Prepare CI
 
+### $next++ release
+
+It may feel early, but part of releasing the next stable version requires
+preparing for the release that will follow. This requires opening tracks and
+building relevant snaps and charms that will be used in the new `edge` channel.
+
+For example, we requested 1.27 snap tracks while preparing for the 1.26 release:
+
+- https://forum.snapcraft.io/t/kubernetes-1-27-snap-tracks/32937
+
+Charm track requests are made by contacting
+[~snapstore](https://chat.canonical.com/canonical/channels/snapstore)
+and asking for new tracks to be opened for every neccessary
+[charm](https://charmhub.io/charm) and [bundle](https://charmhub.io/bundle)
+owned by `Canonical Kubernetes` on [charmhub.io](https://charmhub.io). For example:
+
+- https://chat.canonical.com/canonical/pl/fbmk7ochxfgdifyehomeds44qy
+
 ### $next release
 
 If not done already, add the upcoming release to the CI enumerations
 as well as our custom snap jobs. For example, see the additions made
-for the 1.25 release:
+for the 1.26 release:
 
-- https://github.com/charmed-kubernetes/jenkins/pull/974
-- https://github.com/charmed-kubernetes/jenkins/commit/2416d9e98f9f9c6b26b5b94215c43650a9b241e4
+- https://github.com/charmed-kubernetes/jenkins/pull/1141
 
 > **Note**: Nightly charm and bundle builds will target both
 `latest/edge` and `$next/edge` channels.
@@ -55,28 +72,10 @@ with 1.xx.0 instead of 1.xx.1-alpha.0. For example:
 
 Additionally, if not done already, CI should include 1.xx in the version matrix
 and config for relevant jobs. For example, see these updates where we adjusted
-tests for our 1.25 release:
+tests for our 1.26 release:
 
-- https://github.com/charmed-kubernetes/jenkins/pull/997
-- https://github.com/charmed-kubernetes/jenkins/pull/1005
-
-### $next++ release
-
-It may feel early, but part of releasing the next stable version requires
-preparing for the release that will follow. This requires opening tracks and
-building relevant snaps and charms that will be used in the new `edge` channel.
-
-For example, we requested 1.26 snap tracks while preparing for the 1.25 release:
-
-- https://forum.snapcraft.io/t/kubernetes-1-26-snap-tracks/31491
-
-Charm track requests are made by contacting
-[~snapstore](https://chat.canonical.com/canonical/channels/snapstore)
-and asking for new tracks to be opened for every neccessary
-[charm](https://charmhub.io/charm) and [bundle](https://charmhub.io/bundle)
-owned by `Canonical Kubernetes` on [charmhub.io](https://charmhub.io). For example:
-
-- https://chat.canonical.com/canonical/pl/mbyp1gkfrtryube18pti7dsray
+- https://github.com/charmed-kubernetes/jenkins/pull/1110
+- https://github.com/charmed-kubernetes/jenkins/pull/1107
 
 ## Preparing the release
 
@@ -92,21 +91,24 @@ from which we test, fix, and subsequently promote to the new release.
 
 We need to make sure that the bundle fragments and kubernetes-worker/control-plane/e2e
 have `1.xx/stable` set as the default snap channel. This should be done on each of
-the relevant git `release_1.xx` branches. For example, for the 1.25 GA:
+the relevant git `release_1.xx` branches. For example, for the 1.26 GA:
 
-- https://github.com/charmed-kubernetes/bundle/pull/858
-- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/24
-- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/pull/243
-- https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/129
+- https://github.com/charmed-kubernetes/bundle/pull/867
+- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/26
+- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/pull/262
+- https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/133
 
-> **Note**: Changes to the above charms are required as some of our customers
+> **Note**: Changes to the above repos are required as some of our customers
 do not use our bundles for deployment.
+
+> **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
+from the bundle repo like we always do!
 
 ### Bump snap channel to next minor release
 
-Once the rebase has occurred we need to bump the same charms and bundle
+Once the rebase has occurred we should bump the same charms and bundle
 fragments in the `main` git branches to the next k8s minor version,
-e.g. `1.26/edge`. You don't have to do this right away; in fact, you
+e.g. `1.27/edge`. You don't have to do this right away; in fact, you
 should wait until you actually have snaps in the `$next++/edge` channels
 before making this change.
 
@@ -144,7 +146,7 @@ which must correspond to a valid tag in our
 
 > **Note**: Currently, the **CDK-ADDONS** snap needs to be manually built for
 > the appropriate channels:
-> - https://jenkins.canonical.com/k8s/job/build-release-cdk-addons-1.25/
+> - https://jenkins.canonical.com/k8s/job/build-release-cdk-addons-1.26/
 
 ### Run **validate-charm-release-upgrade** job
 
