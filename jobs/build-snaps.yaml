@@ -92,14 +92,14 @@
 - project:
     name: build-release-snaps
     arch: 'amd64'
-    version: ['1.23', '1.24', '1.25', '1.26']
+    version: ['1.24', '1.25', '1.26', '1.27']
     jobs:
       - 'build-release-cdk-addons-{version}'
 
 - project:
     name: build-release-eks-snaps
     arch: ['amd64', 'arm64']
-    version: '1.23.7'
+    version: '1.24.7'
     jobs:
       - 'build-release-eks-snaps-{arch}'
 
