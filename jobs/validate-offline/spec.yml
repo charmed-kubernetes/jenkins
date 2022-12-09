@@ -1,7 +1,7 @@
 plan:
   - &BASE_JOB
     env:
-      - SNAP_VERSION=1.25/edge
+      - SNAP_VERSION=1.26/edge
       - JUJU_DEPLOY_BUNDLE=charmed-kubernetes
       - JUJU_DEPLOY_CHANNEL=edge
       - JUJU_CLOUD=aws/us-east-1

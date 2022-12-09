@@ -49,26 +49,12 @@ K8S_GO_MAP = {
     "1.25": "go/1.19/stable",
     "1.24": "go/1.18/stable",
     "1.23": "go/1.17/stable",
-    "1.22": "go/1.16/stable",
-    "1.21": "go/1.16/stable",
-    "1.20": "go/1.15/stable",
-    "1.19": "go/1.15/stable",
-    "1.18": "go/1.13/stable",
-    "1.17": "go/1.13/stable",
-    "1.16": "go/1.13/stable",
 }
 
 # Snap k8s version <-> track mapping
 # Allows us to be specific in which tracks should get what major.minor and dictate
 # when a release should be put into the latest track.
 SNAP_K8S_TRACK_LIST = [
-    ("1.16", ["1.16/stable", "1.16/candidate", "1.16/beta", "1.16/edge"]),
-    ("1.17", ["1.17/stable", "1.17/candidate", "1.17/beta", "1.17/edge"]),
-    ("1.18", ["1.18/stable", "1.18/candidate", "1.18/beta", "1.18/edge"]),
-    ("1.19", ["1.19/stable", "1.19/candidate", "1.19/beta", "1.19/edge"]),
-    ("1.20", ["1.20/stable", "1.20/candidate", "1.20/beta", "1.20/edge"]),
-    ("1.21", ["1.21/stable", "1.21/candidate", "1.21/beta", "1.21/edge"]),
-    ("1.22", ["1.22/stable", "1.22/candidate", "1.22/beta", "1.22/edge"]),
     ("1.23", ["1.23/stable", "1.23/candidate", "1.23/beta", "1.23/edge"]),
     ("1.24", ["1.24/stable", "1.24/candidate", "1.24/beta", "1.24/edge"]),
     ("1.25", ["1.25/stable", "1.25/candidate", "1.25/beta", "1.25/edge"]),
@@ -79,17 +65,11 @@ SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
 # Deb k8s version <-> ppa mapping
 DEB_K8S_TRACK_MAP = {
-    "1.16": "ppa:k8s-maintainers/1.16",
-    "1.17": "ppa:k8s-maintainers/1.17",
-    "1.18": "ppa:k8s-maintainers/1.18",
-    "1.19": "ppa:k8s-maintainers/1.19",
-    "1.20": "ppa:k8s-maintainers/1.20",
-    "1.21": "ppa:k8s-maintainers/1.21",
-    "1.22": "ppa:k8s-maintainers/1.22",
     "1.23": "ppa:k8s-maintainers/1.23",
     "1.24": "ppa:k8s-maintainers/1.24",
     "1.25": "ppa:k8s-maintainers/1.25",
     "1.26": "ppa:k8s-maintainers/1.26",
+    "1.27": "ppa:k8s-maintainers/1.27",
 }
 
 
