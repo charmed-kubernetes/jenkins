@@ -108,13 +108,14 @@ def asyncify(f):
 
 async def upgrade_charms(model, channel, tools):
     model_name = model.info.name
-    for app in model.applications.values():
+    for app_name, app in model.applications.items():
+        log.info(f"Upgrading {app_name} from {app.charm_url} to --channel={channel}")
         await tools.run(
             "juju", "upgrade-charm", "-m", model_name, app.name, "--channel", channel
         )
         # Blocked on https://github.com/juju/python-libjuju/issues/728
         # try:
-        #    await app.upgrade_charm(channel=channel)
+        #    await app.refresh(channel=channel)
         # except JujuError as e:
         #     if "already running charm" not in str(e):
         #         raise
@@ -134,9 +135,11 @@ async def upgrade_snaps(model, channel, tools):
 
         config = await app.get_config()
         # If there is no change in the snaps skipping the upgrade
-        if channel == config["channel"]["value"]:
+        current_channel = config["channel"]["value"]
+        if channel == current_channel:
             continue
 
+        log.info(f"Upgrading {app_name} snaps from {current_channel} to {channel}")
         await app.set_config({"channel": channel})
 
         if blocking:
@@ -144,6 +147,11 @@ async def upgrade_snaps(model, channel, tools):
                 # wait for blocked status
                 deadline = time.time() + 180
                 while time.time() < deadline:
+                    message = "{} [{}] {}: {}".format(unit.name,
+                                                      unit.agent_status,
+                                                      unit.workload_status,
+                                                      unit.workload_status_message)
+                    log.info(message)
                     if (
                         unit.workload_status == "blocked"
                         and unit.workload_status_message
@@ -157,8 +165,8 @@ async def upgrade_snaps(model, channel, tools):
                             unit.name, unit.workload_status, unit.agent_status
                         )
                     )
-
                 # run upgrade action
+                log.info(f"{unit.name} starting upgrade action")
                 await juju_run_action(unit, "upgrade")
 
     await tools.juju_wait()
