@@ -8,19 +8,19 @@ JOBS_PATH = Path("jobs")
 # Current supported STABLE K8s MAJOR.MINOR release. This determines what the
 # latest/stable channel is set to. It should be updated whenever a new CK
 # major.minor is GA.
-K8S_STABLE_VERSION = "1.25"
+K8S_STABLE_VERSION = "1.26"
 
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
 # Typically, this is K8S_STABLE_VERSION +1. However, when prepping the next
-# stable release, this will be +2. For example, 1.24 is currently stable and
-# we're working on the 1.25 GA. Set this value to '1.26' sometime between the
-# final RC and GA so we don't get pre-release builds (e.g. 1.25.1-alpha.0) in
-# our 1.25 tracks.
-K8S_NEXT_VERSION = "1.26"
+# stable release, this will be +2. For example, 1.25 is currently stable and
+# we're working on the 1.26 GA. Set this value to '1.27' sometime between the
+# final RC and GA so we don't get pre-release builds (e.g. 1.26.1-alpha.0) in
+# our 1.26 tracks.
+K8S_NEXT_VERSION = "1.27"
 
 # Lowest K8S SEMVER to process, this is usually stable - 3
-K8S_STARTING_SEMVER = "1.22.0"
+K8S_STARTING_SEMVER = "1.23.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -44,6 +44,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
+    "1.27": "go/1.19/stable",
     "1.26": "go/1.19/stable",
     "1.25": "go/1.19/stable",
     "1.24": "go/1.18/stable",
@@ -58,8 +59,8 @@ K8S_GO_MAP = {
 }
 
 # Snap k8s version <-> track mapping
-# Allows us to be specific in which tracks should get what major.minor and dictate when a release
-# should be put into the latest track.
+# Allows us to be specific in which tracks should get what major.minor and dictate
+# when a release should be put into the latest track.
 SNAP_K8S_TRACK_LIST = [
     ("1.16", ["1.16/stable", "1.16/candidate", "1.16/beta", "1.16/edge"]),
     ("1.17", ["1.17/stable", "1.17/candidate", "1.17/beta", "1.17/edge"]),
@@ -71,7 +72,8 @@ SNAP_K8S_TRACK_LIST = [
     ("1.23", ["1.23/stable", "1.23/candidate", "1.23/beta", "1.23/edge"]),
     ("1.24", ["1.24/stable", "1.24/candidate", "1.24/beta", "1.24/edge"]),
     ("1.25", ["1.25/stable", "1.25/candidate", "1.25/beta", "1.25/edge"]),
-    ("1.26", ["1.26/edge"]),
+    ("1.26", ["1.26/stable", "1.26/candidate", "1.26/beta", "1.26/edge"]),
+    ("1.27", ["1.27/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
@@ -87,6 +89,7 @@ DEB_K8S_TRACK_MAP = {
     "1.23": "ppa:k8s-maintainers/1.23",
     "1.24": "ppa:k8s-maintainers/1.24",
     "1.25": "ppa:k8s-maintainers/1.25",
+    "1.26": "ppa:k8s-maintainers/1.26",
 }
 
 
