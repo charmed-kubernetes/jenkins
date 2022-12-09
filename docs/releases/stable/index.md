@@ -137,7 +137,7 @@ the same time will use the `candidate` channel for staging.
 K8s snap promotion is handled by the `sync-snaps` job and will happen
 automatically after following the `Prepare CI` section above. If for some
 reason you need to manually build K8s snaps from a specific branch, use the
-above job with a `branch` parameter like `1.25.0`.
+above job with a `branch` parameter like `1.26.0`.
 
 The `branch` parameter gets translated to `v$branch` by
 [snap.py](https://github.com/charmed-kubernetes/jenkins/blob/0b334c52b2c4f816b03ff866c44301724b8b471c/cilib/service/snap.py#L172)
@@ -157,8 +157,8 @@ then performing an upgrade to latest/beta channel. The tests are parameterized
 to run on multiple series and with multiple snap channels.
 
 Before running this job, confirm that the defined variables in the job are
-* `upgrade_snap` - this CK release's beta snap (1.25/beta)
-* `deploy_snap` - the previous 2 CK releases' stable snaps (1.24/stable, 1.23/stable)
+* `upgrade_snap` - this CK release's beta snap (1.26/beta)
+* `deploy_snap` - the previous 2 CK releases' stable snaps (1.25/stable, 1.24/stable)
 
 ### Notify Solutions QA
 
