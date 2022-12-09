@@ -147,10 +147,12 @@ async def upgrade_snaps(model, channel, tools):
                 # wait for blocked status
                 deadline = time.time() + 180
                 while time.time() < deadline:
-                    message = "{} [{}] {}: {}".format(unit.name,
-                                                      unit.agent_status,
-                                                      unit.workload_status,
-                                                      unit.workload_status_message)
+                    message = "{} [{}] {}: {}".format(
+                        unit.name,
+                        unit.agent_status,
+                        unit.workload_status,
+                        unit.workload_status_message,
+                    )
                     log.info(message)
                     if (
                         unit.workload_status == "blocked"
