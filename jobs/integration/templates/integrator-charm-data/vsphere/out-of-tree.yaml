@@ -14,3 +14,4 @@ in-relations:
     - kubernetes-control-plane:vsphere
   - - vsphere-integrator:clients
     - kubernetes-worker:vsphere
+in-tree-until: '1.25'
