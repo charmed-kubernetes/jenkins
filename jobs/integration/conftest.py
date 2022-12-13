@@ -178,9 +178,9 @@ async def model(request, tools):
                 "Must have both snap and charm upgrade "
                 "channels set to perform upgrade prior to validation test."
             )
-        print("Upgrading charms")
+        click.echo("Upgrading charms")
         await upgrade_charms(model, upgrade_charm_channel, tools)
-        print("Upgrading snaps")
+        click.echo("Upgrading snaps")
         await upgrade_snaps(model, upgrade_snap_channel, tools)
     if request.config.getoption("--snapd-upgrade"):
         snapd_channel = request.config.getoption("--snapd-channel")
