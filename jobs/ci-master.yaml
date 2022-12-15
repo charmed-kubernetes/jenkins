@@ -70,7 +70,7 @@
     parameters:
       - string:
           name: channel
-          default: 1.25/stable
+          default: 1.26/stable
           description: channel for charmed-kubernetes bundle to deploy
 
 - parameter:
@@ -78,7 +78,7 @@
     parameters:
       - string:
           name: channel
-          default: 1.26/edge
+          default: 1.27/edge
           description: channel for charmed-kubernetes bundle to deploy
 
 - parameter:
