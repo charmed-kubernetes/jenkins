@@ -8,11 +8,6 @@
     arm64: "{{ lookup('env', 'NEADER') }}"
     columbo_version: 0.0.4
   tasks:
-    - name: add golang ppa
-      apt_repository:
-        repo: "ppa:longsleep/golang-backports"
-      tags:
-        - jenkins
     - name: update /etc/environment
       copy:
         src: "fixtures/environment"
@@ -58,6 +53,7 @@
         apt-get install -qyf \
           build-essential \
           fakeroot \
+          cargo \
           curl \
           dh-systemd \
           debhelper \
@@ -105,14 +101,15 @@
     - name: remove unused debs
       shell: |
         sudo apt-get remove -qyf \
+          golang \
           python-pip \
           juju \
+          juju-wait \
           lxd \
           lxd-client \
           lxcfs \
           lxc-common \
           liblxc1 \
-          juju-wait \
           libsodium-dev \
           snapcraft
       tags:

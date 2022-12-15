@@ -19,7 +19,7 @@
     parameters:
       - string:
           name: CK_VERSION
-          default: '1.25'
+          default: '1.26'
           description: |
             CK version to deploy. This will be used to set the snap track
             and to identify what k8s version is associated with the results.
@@ -38,6 +38,6 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/cncf-conformance"
-      - run-tox:
+      - run-venv:
           COMMAND: |
-           tox -e py38 -- bash jobs/cncf-conformance/conformance-spec
+            bash jobs/cncf-conformance/conformance-spec
