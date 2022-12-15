@@ -130,4 +130,4 @@
           JOB_SPEC_DIR: "jobs/release"
       - run-venv:
           COMMAND: |
-            bash jobs/release/release-upgrade-spec $upgrade_snap $deploy_snap $series
+            bash jobs/release/release-upgrade-spec $snap_version $deploy_snap $series
