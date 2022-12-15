@@ -94,7 +94,6 @@
           values:
             - jammy
             - focal
-            - bionic
       - axis:
           type: user-defined
           name: arch
