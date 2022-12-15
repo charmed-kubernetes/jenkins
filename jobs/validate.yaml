@@ -30,9 +30,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
@@ -85,9 +85,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/stable
             - 1.25/stable
             - 1.24/stable
-            - 1.23/stable
       - axis:
           type: user-defined
           name: series
@@ -141,9 +141,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
             - 1.25/edge
-            - 1.24/edge
       - axis:
           type: user-defined
           name: series
@@ -240,9 +240,7 @@
           num-to-keep: 3
     parameters:
       - charms-stable
-      - string:
-          name: snap_version
-          default: 1.25/stable
+      - snap-stable
       - string:
           name: series
           default: jammy
@@ -272,9 +270,7 @@
           num-to-keep: 3
     parameters:
       - charms-edge
-      - string:
-          name: snap_version
-          default: 1.25/stable
+      - snap-stable
       - string:
           name: series
           default: jammy
@@ -317,8 +313,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - axis:
           type: user-defined
           name: series
@@ -360,8 +356,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - axis:
           type: user-defined
           name: series
@@ -403,8 +399,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
-            - 1.25/stable
       - axis:
           type: user-defined
           name: series
@@ -456,8 +452,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - axis:
           type: user-defined
           name: series
@@ -501,8 +497,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - axis:
           type: user-defined
           name: series
@@ -544,8 +540,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - axis:
           type: user-defined
           name: series
@@ -587,8 +583,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - axis:
           type: user-defined
           name: series
@@ -630,8 +626,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - axis:
           type: user-defined
           name: series
@@ -673,8 +669,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - axis:
           type: user-defined
           name: series
@@ -704,9 +700,7 @@
           num-to-keep: 3
     parameters:
       - charms-edge
-      - string:
-           name: snap_version
-           default: 1.26/edge
+      - snap-edge
       - string:
            name: series
            default: jammy
@@ -748,6 +742,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/edge
             - 1.26/edge
             - 1.25/edge
       - axis:

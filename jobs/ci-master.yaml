@@ -82,6 +82,30 @@
           description: channel for charmed-kubernetes bundle to deploy
 
 - parameter:
+    name: snap-stable
+    parameters:
+      - string:
+          name: snap_version
+          default: 1.26/stable
+          description: channel for charmed-kubernetes snap used in deployment
+
+- parameter:
+    name: snap-beta
+    parameters:
+      - string:
+          name: snap_version
+          default: 1.27/stable
+          description: channel for charmed-kubernetes snap used in deployment
+
+- parameter:
+    name: snap-edge
+    parameters:
+      - string:
+          name: snap_version
+          default: 1.27/edge
+          description: channel for charmed-kubernetes snap used in deployment
+
+- parameter:
     name: test-params
     parameters:
       - string:
