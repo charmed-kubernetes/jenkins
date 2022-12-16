@@ -2450,16 +2450,13 @@ async def test_nfs(model, tools):
     await tools.juju_wait()
 
 
-@pytest.mark.skip_if_apps(
-    # skip this test if ceph-mon and ceph-osd are already installed
-    lambda apps: all(a in apps for a in ["ceph-mon", "ceph-osd"])
-)
-async def test_ceph(model, tools):
+@pytest.fixture(scope="function")
+async def ceph_apps(model, tools):
     # setup
     series = os.environ["SERIES"]
     series_idx = SERIES_ORDER.index(series)
     ceph_config = {}
-    ceph_charms_channel = "latest/stable"
+    ceph_charms_channel = "quincy/stable"
     if series == "bionic":
         log("adding cloud:train to k8s-control-plane")
         await model.applications["kubernetes-control-plane"].set_config(
@@ -2467,62 +2464,49 @@ async def test_ceph(model, tools):
         )
         await tools.juju_wait()
         ceph_config["source"] = "cloud:{}-train".format(series)
-    elif series == "jammy":
-        ceph_charms_channel = "quincy/stable"
     elif series_idx > SERIES_ORDER.index("jammy"):
         pytest.fail("ceph_charm_channel is undefined past jammy")
 
+    log("deploying ceph mon")
+    ceph_mon = await model.deploy(
+        "ceph-mon",
+        num_units=3,
+        series=series,
+        config=ceph_config,
+        channel=ceph_charms_channel,
+    )
+    cs = {
+        "osd-devices": {"size": 8 * 1024, "count": 1},
+        "osd-journals": {"size": 8 * 1024, "count": 1},
+    }
+    log("deploying ceph osd")
+    ceph_osd = await model.deploy(
+        "ceph-osd",
+        storage=cs,
+        num_units=3,
+        series=series,
+        config=ceph_config,
+        constraints="root-disk=32G",
+        channel=ceph_charms_channel,
+    )
+
+    log("deploying ceph fs")
+    ceph_fs = await model.deploy(
+        "ceph-fs",
+        num_units=1,
+        series=series,
+        config=ceph_config,
+        channel=ceph_charms_channel,
+    )
+
+    log("adding relations")
+    await model.add_relation("ceph-mon", "ceph-osd")
+    await model.add_relation("ceph-mon", "ceph-fs")
+    await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
+    log("waiting for charm deployment...")
     try:
-        log("deploying ceph mon")
-        await model.deploy(
-            "ceph-mon",
-            num_units=3,
-            series=series,
-            config=ceph_config,
-            channel=ceph_charms_channel,
-        )
-        cs = {
-            "osd-devices": {"size": 8 * 1024, "count": 1},
-            "osd-journals": {"size": 8 * 1024, "count": 1},
-        }
-        log("deploying ceph osd")
-        await model.deploy(
-            "ceph-osd",
-            storage=cs,
-            num_units=3,
-            series=series,
-            config=ceph_config,
-            constraints="root-disk=32G",
-            channel=ceph_charms_channel,
-        )
-
-        log("deploying ceph fs")
-        await model.deploy(
-            "ceph-fs",
-            num_units=1,
-            series=series,
-            config=ceph_config,
-            channel=ceph_charms_channel,
-        )
-
-        log("adding relations")
-        await model.add_relation("ceph-mon", "ceph-osd")
-        await model.add_relation("ceph-mon", "ceph-fs")
-        await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
-        log("waiting for charm deployment...")
-        await tools.juju_wait()
-
-        log("waiting for csi to settle")
-        unit = model.applications["kubernetes-control-plane"].units[0]
-        await retry_async_with_timeout(
-            verify_ready,
-            (unit, "po", ["csi-rbdplugin", "csi-cephfsplugin"]),
-            timeout_msg="CSI pods not ready!",
-        )
-        # create pod that writes to a pv from ceph
-        await validate_storage_class(model, "ceph-xfs", "Ceph")
-        await validate_storage_class(model, "ceph-ext4", "Ceph")
-        await validate_storage_class(model, "cephfs", "Ceph")
+        await model.wait_for_idle(status="active", timeout=20 * 60)
+        yield dict(mon=ceph_mon, osd=ceph_osd, fs=ceph_fs)
     finally:
         # cleanup
         log("removing ceph applications")
@@ -2533,13 +2517,43 @@ async def test_ceph(model, tools):
             "ceph-mon": dict(),
             "ceph-osd": dict(destroy_storage=True),
         }
+
+        async def burn_units(app, status="error"):
+            """Remove any units from the model if they currently match `status`."""
+            matched_units = [
+                unit.name
+                for unit in model.applications[app].units
+                if unit.agent_status == status
+            ]
+            await model.destroy_units(*matched_units)
+
         for app in set(ceph_apps) & set(model.applications):
             # remove any applications currently deployed into the model
+            await burn_units(app)
             await model.remove_application(app, **ceph_apps[app])
 
         log("waiting for charm removal...")
         # block until no ceph_apps are in the current model
         await model.block_until(lambda: not (set(ceph_apps) & set(model.applications)))
+
+
+@pytest.mark.skip_if_apps(
+    # skip this test if ceph-mon and ceph-osd are already installed
+    lambda apps: all(a in apps for a in ["ceph-mon", "ceph-osd"])
+)
+@pytest.mark.usefixtures("ceph_apps")
+async def test_ceph(model, tools):
+    log("waiting for csi to settle")
+    unit = model.applications["kubernetes-control-plane"].units[0]
+    await retry_async_with_timeout(
+        verify_ready,
+        (unit, "po", ["csi-rbdplugin", "csi-cephfsplugin"]),
+        timeout_msg="CSI pods not ready!",
+    )
+    # create pod that writes to a pv from ceph
+    await validate_storage_class(model, "ceph-xfs", "Ceph")
+    await validate_storage_class(model, "ceph-ext4", "Ceph")
+    await validate_storage_class(model, "cephfs", "Ceph")
 
 
 async def test_series_upgrade(model, tools):
