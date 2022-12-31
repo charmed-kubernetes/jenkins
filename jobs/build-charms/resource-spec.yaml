@@ -26,6 +26,10 @@
   cni-s390x: '{out_path}/cni-s390x.tgz'
 'kube-ovn':
   kubectl-ko: '{src_path}/plugins/kubectl-ko'
+'metallb-controller':
+  metallb-controller-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
+'metallb-speaker':
+  metallb-speaker-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
 'tigera-secure-ee':
   calico-cni: '{out_path}/calico-cni-amd64.tar.gz'
   calico-cni-arm64: '{out_path}/calico-cni-arm64.tar.gz'
