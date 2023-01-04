@@ -2225,7 +2225,7 @@ class NagiosApi:
 
     async def refresh(self, host):
         reschedule_command = dict(
-            cmd_typ=7 if service else 17,
+            cmd_typ=17,
             cmd_mod=2,
             host=host,
             start_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -2233,8 +2233,7 @@ class NagiosApi:
             btnSubmit="Commit",
         )
         data = urllib.parse.urlencode(reschedule_command).encode()
-        r = urllib.request.Request(self.cmd_url, data=data)
-        url_data = self.open(r)
+        self.open(urllib.request.Request(self.cmd_url, data=data))
 
     async def find_alerts(self, hosts=None, **severities) -> NagiosAlerts:
         classes = {
@@ -2396,7 +2395,7 @@ async def test_nagios(model, nagios: NagiosApi):
         # 2) make sure nagios is complaining for kubernetes-control-plane
         #    AND kubernetes-worker
         log("Verifying complaints")
-        complaints = await retry_async_with_timeout(
+        await retry_async_with_timeout(
             nagios.critical_alerts_by_app,
             ("kubernetes-control-plane", "kubernetes-worker"),
             kwds=dict(hosts=hosts_from_apps),
@@ -2422,7 +2421,7 @@ async def test_nagios(model, nagios: NagiosApi):
 
         # 5) verify nagios is complaining about worker
         log("Verifying complaints")
-        complaints = await retry_async_with_timeout(
+        await retry_async_with_timeout(
             nagios.critical_alerts_by_app,
             ("kubernetes-worker",),
             kwds=dict(hosts=hosts_from_apps),
