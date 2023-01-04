@@ -2214,13 +2214,35 @@ class NagiosAlerts:
 class NagiosApi:
     open: Callable
     url: str
+    cmd_url: str
 
-    async def find_alerts(self, **severities) -> NagiosAlerts:
+    @property
+    def hosts(self):
+        url_data = self.open(self.url)
+        soup = bs(url_data.read(), "html.parser")
+        host_links = soup.find_all(lambda tag: tag.name == "a" and "title" in tag.attrs)
+        return [h.string for h in host_links]
+
+    async def refresh(self, host):
+        reschedule_command = dict(
+            cmd_typ=17,
+            cmd_mod=2,
+            host=host,
+            start_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            force_check="on",
+            btnSubmit="Commit",
+        )
+        data = urllib.parse.urlencode(reschedule_command).encode()
+        self.open(urllib.request.Request(self.cmd_url, data=data))
+
+    async def find_alerts(self, hosts=None, **severities) -> NagiosAlerts:
         classes = {
             "critical": "statusBGCRITICAL",
             "pending": "statusPENDING",
             "ok": "statusOK",
         }
+        for host in hosts or []:
+            await self.refresh(host)
         url_data = self.open(self.url)
         soup = bs(url_data.read(), "html.parser")
         alerts = {
@@ -2229,8 +2251,8 @@ class NagiosApi:
         }
         return NagiosAlerts(alerts, severities)
 
-    async def critical_alerts_by_app(self, *apps: str):
-        alerts = await self.find_alerts(critical=lambda c: len(c) > 0)
+    async def critical_alerts_by_app(self, *apps: str, hosts=None):
+        alerts = await self.find_alerts(hosts=hosts, critical=lambda c: len(c) > 0)
         criticals = alerts["critical"]
 
         if criticals:
@@ -2239,25 +2261,26 @@ class NagiosApi:
                 for link in c.find_all("a", recursive=False):
                     for app in apps:
                         if app in link.string:
-                            found[app].append(link.string)
+                            qs = urllib.parse.parse_qs(link.attrs["href"])
+                            data = qs["host"][0], qs["service"][0]
+                            found[app].append(data)
             if all(app_crits for app_crits in found.values()):
                 log(f"Found critical errors in {', '.join(apps)}:")
                 for app, app_crits in found.items():
-                    for crit in app_crits:
-                        log(f"{app} - {crit}")
-                return True
+                    for crit_host, crit_service in app_crits:
+                        log(f"{app} - {crit_service}")
+                return found
         return False
 
-    async def wait_for_settle(self, stage, **kwds):
+    async def wait_for_settle(self, stage, hosts=None, **kwds):
         """Wait for nagios to show no critical and no pending alerts."""
         timeout_msg = (
             "Failed to stabalize nagios after " + stage + "\nalerts: \n{}\n---"
         )
-
         await retry_async_with_timeout(
             self.find_alerts,
             args=tuple(),
-            kwds=dict(critical=lambda c: not c, pending=lambda p: not p),
+            kwds=dict(hosts=hosts, critical=lambda c: not c, pending=lambda p: not p),
             timeout_msg=timeout_msg,
             **kwds,
         )
@@ -2279,11 +2302,12 @@ async def nagios(model, tools):
 
     # 1) deploy
     log("deploying nagios and nrpe")
-    app = model.applications.get("nagios")
-    if not app:
-        app = await model.deploy("nagios", series="bionic")
-        await app.expose()
-    if "nrpe" not in model.applications:
+    nagios, nrpe = map(model.applications.get, ("nagios", "nrpe"))
+    deployed = dict(nagios=bool(nagios), nrpe=bool(nrpe))
+    if not deployed["nagios"]:
+        nagios = await model.deploy("nagios", series="bionic")
+        await nagios.expose()
+    if not deployed["nrpe"]:
         excludes = [
             "/snap/",
             "/sys/fs/cgroup",
@@ -2292,7 +2316,7 @@ async def nagios(model, tools):
             "/run/credentials",
             "/run/systemd/incoming",
         ]
-        await model.deploy(
+        nrpe = await model.deploy(
             "nrpe",
             series=series,
             config=dict(
@@ -2314,20 +2338,21 @@ async def nagios(model, tools):
 
     # 2) login to nagios
     cmd = "cat /var/lib/juju/nagios.passwd"
-    output = await juju_run(app.units[0], cmd, timeout=10)
+    output = await juju_run(nagios.units[0], cmd, timeout=10)
     assert output.status == "completed"
     login_passwd = output.stdout.strip()
 
     pwd_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-    url_base = "http://{}".format(app.units[0].public_address)
+    url_base = "http://{}".format(nagios.units[0].public_address)
     pwd_mgr.add_password(None, url_base, "nagiosadmin", login_passwd)
     handler = urllib.request.HTTPBasicAuthHandler(pwd_mgr)
     opener = urllib.request.build_opener(handler)
-    status_url = "{}/cgi-bin/nagios3/status.cgi?host=all&limit=500".format(url_base)
+    status_url = f"{url_base}/cgi-bin/nagios3/status.cgi?host=all&limit=500"
+    cmd_url = f"{url_base}/cgi-bin/nagios3/cmd.cgi"
 
     # 3) wait for nagios to settle
     log("waiting for nagios to settle")
-    nagios_api = NagiosApi(opener.open, status_url)
+    nagios_api = NagiosApi(opener.open, status_url, cmd_url)
     await nagios_api.wait_for_settle(
         stage="after deployment",
         timeout_insec=60 * 15,
@@ -2335,8 +2360,10 @@ async def nagios(model, tools):
 
     yield nagios_api
 
-    await model.remove_application("nagios")
-    await model.remove_application("nrpe")
+    if not deployed["nagios"]:
+        await model.remove_application("nagios")
+    if not deployed["nrpe"]:
+        await model.remove_application("nrpe")
     await tools.juju_wait()
 
 
@@ -2355,6 +2382,10 @@ async def test_nagios(model, nagios: NagiosApi):
 
     log("starting nagios test")
     control_plane = model.applications["kubernetes-control-plane"]
+    apps_with_alerts = ("kubernetes-control-plane", "kubernetes-worker")
+    hosts_from_apps = set(
+        h for h in nagios.hosts if any(app in h for app in apps_with_alerts)
+    )
 
     try:
         # 1) break all the things
@@ -2366,10 +2397,8 @@ async def test_nagios(model, nagios: NagiosApi):
         log("Verifying complaints")
         await retry_async_with_timeout(
             nagios.critical_alerts_by_app,
-            (
-                "kubernetes-control-plane",
-                "kubernetes-worker",
-            ),
+            ("kubernetes-control-plane", "kubernetes-worker"),
+            kwds=dict(hosts=hosts_from_apps),
             timeout_insec=10 * 60,
             timeout_msg="Failed to find critical errors in control-plane and worker after 10m.",
             retry_interval_insec=30,
@@ -2381,8 +2410,7 @@ async def test_nagios(model, nagios: NagiosApi):
 
     # wait for complaints to go away
     await nagios.wait_for_settle(
-        stage="restoring API Server",
-        timeout_insec=10 * 60,
+        stage="restoring API Server", timeout_insec=10 * 60, hosts=hosts_from_apps
     )
 
     try:
@@ -2396,6 +2424,7 @@ async def test_nagios(model, nagios: NagiosApi):
         await retry_async_with_timeout(
             nagios.critical_alerts_by_app,
             ("kubernetes-worker",),
+            kwds=dict(hosts=hosts_from_apps),
             timeout_insec=10 * 60,
             timeout_msg="Failed to find critical errors in worker after 10m.",
             retry_interval_insec=30,
@@ -2406,8 +2435,7 @@ async def test_nagios(model, nagios: NagiosApi):
 
     # wait for complaints to go away
     await nagios.wait_for_settle(
-        stage="restoring worker kubelets",
-        timeout_insec=10 * 60,
+        stage="restoring worker kubelets", timeout_insec=10 * 60, hosts=hosts_from_apps
     )
 
 
