@@ -79,6 +79,7 @@ pipeline {
                                 def juju_model="${job}-${stage}-model"
                                 def juju_full_model="${juju_controller}:${juju_model}"
                                 def instance_type = ""
+                                def eksd_instance_type = ""
                                 def constraints = ""
                                 def job_name = [
                                     beta: "release-to-beta.py",
@@ -88,10 +89,12 @@ pipeline {
 
                                 if (arch == "arm64") {
                                     instance_type = "a1.2xlarge"
-                                    constraints = "instance-type=${instance_type} root-disk=80G arch=${arch} instance-role=mk8s-ec2-iprof"
+                                    constraints = "instance-type=${instance_type} root-disk=80G arch=${arch}"
+                                    eksd_instance_type = "m6g.large"
                                 } else if (arch == "amd64") {
                                     instance_type = "m5.large"
-                                    constraints = "mem=16G cores=8 root-disk=80G arch=${arch} instance-role=mk8s-ec2-iprof"
+                                    constraints = "mem=16G cores=8 root-disk=80G arch=${arch}"
+                                    eksd_instance_type = "m4.large"
                                 } else {
                                     error("Aborting build due to unknown arch=${arch}")
                                 }
@@ -110,6 +113,7 @@ pipeline {
                                 AWS_ACCESS_KEY_ID=\$(aws configure get aws_access_key_id)
                                 AWS_SECRET_ACCESS_KEY=\$(aws configure get aws_secret_access_key)
 
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo INSTANCE_TYPE=${eksd_instance_type} | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_REGION=\$AWS_REGION | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY | sudo tee -a /etc/environment"
