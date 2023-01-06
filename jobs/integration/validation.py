@@ -2300,7 +2300,7 @@ async def nagios(model, tools):
     if series in ("xenial",):
         pytest.skip(f"skipping unsupported series {series}")
 
-    # 1) deploy
+    # 1a) deploy npre and nagios
     log("deploying nagios and nrpe")
     nagios, nrpe = map(model.applications.get, ("nagios", "nrpe"))
     deployed = dict(nagios=bool(nagios), nrpe=bool(nrpe))
@@ -2329,8 +2329,10 @@ async def nagios(model, tools):
             num_units=0,
             channel="stable",
         )
+    # 1b) relate apps to nrpe (and ignore ceph-mon and ceph-osd)
+    unmonitored_apps = ["nrpe", "ceph-mon", "ceph-osd"]
     for each, related in model.applications.items():
-        if each not in ["nrpe"] and not any(
+        if each not in unmonitored_apps and not any(
             "nrpe:" in str(rel) for rel in related.relations
         ):
             await model.add_relation("nrpe", each)
@@ -2689,6 +2691,11 @@ async def test_sriov_network_device_plugin(model, tools, addons_model):
     raw_output = await run_until_success(control_plane_unit, cmd)
     data = json.loads(raw_output)
     for node in data["items"]:
+        if "node-role.kubernetes.io/control-plane" in node["metadata"]["labels"]:
+            # ignore control-plane nodes
+            continue
+        node_name = node["metadata"]["name"]
         capacity = node["status"]["capacity"]
         for resource_name in resource_names:
-            assert resource_name in capacity
+            fail_msg = f"{resource_name} isn't in node ({node_name}) capacity\n{json.dumps(capacity, indent=2)}"
+            assert resource_name in capacity, fail_msg

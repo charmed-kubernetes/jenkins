@@ -14,55 +14,74 @@ set -x
 ###############################################################################
 # FUNCTION OVERRIDES
 ###############################################################################
-function juju::deploy
+function juju::deploy::overlay
 {
+   local constraints
+   constraints="arch=$ARCH instance-type=c4.xlarge root-disk=16G"
+
    tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
   kubernetes-control-plane:
+    constraints: $constraints
     options:
       channel: $SNAP_VERSION
       allow-privileged: "true"
   kubernetes-worker:
-    constraints: 'instance-type=c4.xlarge root-disk=16G'
+    constraints: $constraints
     options:
       channel: $SNAP_VERSION
+  ceph-mon:
+    charm: ceph-mon
+    channel: $CEPH_CHANNEL
+    num_units: 3
+  ceph-osd:
+    charm: ceph-osd
+    channel: $CEPH_CHANNEL
+    constraints: "root-disk=32G"
+    num_units: 3
+    storage:
+      osd-devices: 8G,1
+      osd-journals: 8G,1
+relations:
+  - [ceph-osd:mon, ceph-mon:osd]
+  - [ceph-mon:client, kubernetes-control-plane:ceph-client]
 EOF
-
-    juju model-config -m "$JUJU_CONTROLLER:$JUJU_MODEL" default-series="$SERIES"
-    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
-         --overlay overlay.yaml \
-         --force \
-         --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
-    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" -n 3 ceph-mon --channel="$CEPH_CHANNEL"
-    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" -n 3 ceph-osd --channel="$CEPH_CHANNEL" \
-         --constraints="root-disk=32G" \
-         --storage osd-devices=8G,1 \
-         --storage osd-journals=8G,1
-    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-osd ceph-mon
-    juju add-relation -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:client kubernetes-control-plane
 }
 
 function juju::deploy::after
 {
     python $WORKSPACE/jobs/integration/sriov_aws.py
+
     juju scp -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
           kubernetes-control-plane/0:config "kubeconfig"
     export KUBECONFIG="kubeconfig"
     juju add-k8s k8s --controller "$JUJU_CONTROLLER"
     juju add-model -c "$JUJU_CONTROLLER" addons k8s --config test-mode=true
-    juju deploy -m "$JUJU_CONTROLLER:addons" \
-          --series=${SERIES} \
-          --channel "$JUJU_DEPLOY_CHANNEL" sriov-cni
-    juju deploy -m "$JUJU_CONTROLLER:addons" \
-          --series=${SERIES} \
-          --channel "$JUJU_DEPLOY_CHANNEL" sriov-network-device-plugin
-    juju config -m "$JUJU_CONTROLLER:addons" sriov-network-device-plugin resource-list="
-- resourceName: sriov
-  selectors:
-    drivers:
-    - ixgbevf"
-    timeout 45m juju-wait -e "$JUJU_CONTROLLER:addons" -w
+
+    tee k8s-bundle.yaml <<EOF > /dev/null
+series: $SERIES
+applications:
+  sriov-cni:
+    charm: sriov-cni
+    channel: $JUJU_DEPLOY_CHANNEL
+    num_units: 1
+    trust: true
+  sriov-network-device-plugin:
+    charm: sriov-network-device-plugin
+    channel: $JUJU_DEPLOY_CHANNEL
+    num_units: 1
+    trust: true
+    options:
+      resource-list: |-
+        - resourceName: sriov
+          selectors:
+            drivers:
+            - ixgbevf
+EOF
+
+    juju deploy -m "${JUJU_CONTROLLER}:addons" ./k8s-bundle.yaml --trust
+    timeout 45m juju-wait -e "${JUJU_CONTROLLER}:addons" -w
 }
 
 function test::execute
