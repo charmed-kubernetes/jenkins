@@ -2111,7 +2111,11 @@ async def test_multus(model, tools, addons_model):
 
     await cleanup()
 
-    await containerd_app.set_config({"no_proxy": "localhost,127.0.0.1,::1,10.246.154.0/24,10.152.183.0/24,192.168.0.0/16"})
+    await containerd_app.set_config(
+        {
+            "no_proxy": "localhost,127.0.0.1,::1,10.246.154.0/24,10.152.183.0/24,192.168.0.0/16"
+        }
+    )
     await model.wait_for_idle(apps=["containerd"], timeout=5 * 60)
 
     # Create NetworkAttachmentDefinition for KubeOVN
@@ -2195,8 +2199,12 @@ async def test_multus(model, tools, addons_model):
                     active_networks[interface] = line.split()[1]
         expected_interfaces = ["eth0", "net1"]
         for ifc in expected_interfaces:
-            assert ifc in active_networks, f"Interface {ifc} is missing from ip addr output:\n{output}"
-            assert active_networks[ifc].startswith("10.166.0."), f"Interface {ifc} is on the wrong subnet\n{output}"
+            assert (
+                ifc in active_networks
+            ), f"Interface {ifc} is missing from ip addr output:\n{output}"
+            assert active_networks[ifc].startswith(
+                "10.166.0."
+            ), f"Interface {ifc} is on the wrong subnet\n{output}"
     finally:
         await cleanup()
 
