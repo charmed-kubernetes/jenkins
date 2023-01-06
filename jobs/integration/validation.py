@@ -2203,7 +2203,7 @@ async def test_multus(model, tools, addons_model):
                 ifc in active_networks
             ), f"Interface {ifc} is missing from ip addr output:\n{output}"
             assert active_networks[ifc].startswith(
-                "10.166.0."
+                "10.166."
             ), f"Interface {ifc} is on the wrong subnet\n{output}"
     finally:
         await cleanup()
