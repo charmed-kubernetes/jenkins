@@ -2321,6 +2321,7 @@ async def nagios(model, tools):
             series=series,
             config=dict(
                 ro_filesystem_excludes=",".join(excludes),
+                nagios_hostname_type="unit",  # always use unit names for hostnames in nagios
                 space_check="check: disabled",  # don't run the space_check
                 swap="",
                 swap_activity="",
