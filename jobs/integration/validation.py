@@ -2670,8 +2670,14 @@ async def test_sriov_cni(model, tools, addons_model):
     if "sriov-cni" not in addons_model.applications:
         pytest.skip("sriov-cni is not deployed")
 
-    for unit in model.applications["kubernetes-worker"].units:
-        await juju_run(unit, "[ -x /opt/cni/bin/sriov ]")
+    apps = ["kubernetes-worker", "kubernetes-control-plane"]
+    units = (u for app in apps for u in model.applications[app].units)
+    failures = []
+    for unit in units:
+        run = await juju_run(unit, "[ -x /opt/cni/bin/sriov ]", check=False)
+        if not run.success:
+            failures.append(f"sriov binary was missing on {unit.name}")
+    assert not failures, "\n".join(failures)
 
 
 async def test_sriov_network_device_plugin(model, tools, addons_model):
@@ -2690,12 +2696,13 @@ async def test_sriov_network_device_plugin(model, tools, addons_model):
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get node -o json"
     raw_output = await run_until_success(control_plane_unit, cmd)
     data = json.loads(raw_output)
+    failures = []
     for node in data["items"]:
-        if "node-role.kubernetes.io/control-plane" in node["metadata"]["labels"]:
-            # ignore control-plane nodes
-            continue
         node_name = node["metadata"]["name"]
         capacity = node["status"]["capacity"]
         for resource_name in resource_names:
-            fail_msg = f"{resource_name} isn't in node ({node_name}) capacity\n{json.dumps(capacity, indent=2)}"
-            assert resource_name in capacity, fail_msg
+            if resource_name not in capacity:
+                failures.append(
+                    f"'{resource_name}' isn't in node's capacity ({node_name})\n{json.dumps(capacity, indent=2)}"
+                )
+    assert not failures, "\n".join(failures)
