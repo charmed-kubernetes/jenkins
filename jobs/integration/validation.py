@@ -2090,33 +2090,38 @@ async def test_multus(model, tools, addons_model):
     async def cleanup():
         await run_until_success(
             unit,
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete pod multus-test --ignore-not-found",
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete pod multus-test --ignore-not-found;"
+            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete subnet attachnet --ignore-not-found;",
         )
-        await multus_app.set_config({"network-attachment-definitions": ""})
+        await multus_app.reset_config(["network-attachment-definitions"])
+
+    async def apply_def(content):
+        remote_path = "/tmp/content.yaml"
+        with NamedTemporaryFile("w") as f:
+            yaml.dump(content, f)
+            await scp_to(
+                f.name, unit, remote_path, tools.controller_name, tools.connection
+            )
+        await run_until_success(
+            unit,
+            f"/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f {remote_path}; rm {remote_path}",
+        )
 
     await cleanup()
 
-    # Create NetworkAttachmentDefinition for Flannel
+    # Create NetworkAttachmentDefinition for KubeOVN
     net_attach_def = {
         "apiVersion": "k8s.cni.cncf.io/v1",
         "kind": "NetworkAttachmentDefinition",
-        "metadata": {"name": "flannel", "namespace": "default"},
+        "metadata": {"name": "attachnet", "namespace": "default"},
         "spec": {
             "config": json.dumps(
-                {
-                    "cniVersion": "0.3.1",
-                    "plugins": [
-                        {
-                            "type": "flannel",
-                            "delegate": {"hairpinMode": True, "isDefaultGateway": True},
-                        },
-                        {
-                            "type": "portmap",
-                            "capabilities": {"portMappings": True},
-                            "snat": True,
-                        },
-                    ],
-                }
+                dict(
+                    cniVersion="0.3.0",
+                    type="kube-ovn",
+                    server_socket="/run/openvswitch/kube-ovn-daemon.sock",
+                    provider="attachnet.default.ovn",
+                )
             )
         },
     }
@@ -2124,65 +2129,75 @@ async def test_multus(model, tools, addons_model):
         {"network-attachment-definitions": yaml.safe_dump(net_attach_def)}
     )
 
-    # Create pod with 2 extra flannel interfaces
+    # Create new subnet in OVN
+    attachnet_def = dict(
+        apiVersion="kubeovn.io/v1",
+        kind="Subnet",
+        metadata=dict(name="attachnet"),
+        spec=dict(
+            protocol="IPv4",
+            cidrBlock="10.166.0.0/16",
+            default=False,
+            excludeIps=["10.166.0.1"],
+            gateway="10.166.0.1",
+            gatewayType="distributed",
+            natOutgoing=True,
+            namespaces=["default"],
+        ),
+    )
+
+    # Create pod with 1 extra attachnet interface
     pod_definition = {
         "apiVersion": "v1",
         "kind": "Pod",
         "metadata": {
             "name": "multus-test",
-            "annotations": {"k8s.v1.cni.cncf.io/networks": "flannel, flannel"},
+            "annotations": {"k8s.v1.cni.cncf.io/networks": "default/attachnet"},
         },
         "spec": {
             "containers": [
                 {
-                    "name": "ubuntu",
-                    "image": "rocks.canonical.com/cdk/ubuntu:focal",
-                    "command": ["sleep", "3600"],
+                    "name": "alpine",
+                    "image": "rocks.canonical.com/alpine:latest",
+                    "command": [
+                        "/bin/ash",
+                        "-c",
+                        "trap : TERM INT; sleep 3600 & wait",
+                    ],
                 }
             ]
         },
     }
-    remote_path = "/tmp/pod.yaml"
-    with NamedTemporaryFile("w") as f:
-        yaml.dump(pod_definition, f)
-        await scp_to(f.name, unit, remote_path, tools.controller_name, tools.connection)
-    await run_until_success(
-        unit,
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path,
-    )
+    await apply_def(attachnet_def)
+    await apply_def(pod_definition)
 
     # Verify pod has the expected interfaces
-    await run_until_success(
-        unit,
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt update",
-    )
-    await run_until_success(
-        unit,
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- apt install -y iproute2",
-    )
     output = await run_until_success(
         unit,
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- ip addr",
+        "/snap/bin/kubectl --kubeconfig /root/.kube/config exec multus-test -- ip a",
     )
     # behold, ugly output parsing :(
-    lines = output.splitlines()
-    active_interfaces = set()
-    while lines:
-        line = lines.pop(0)
-        interface = line.split()[1].rstrip(":").split("@")[0]
-        while lines and lines[0].startswith(" "):
+    try:
+        lines = output.splitlines()
+        active_networks = dict()
+        while lines:
             line = lines.pop(0)
-            if line.split()[0] == "inet":
-                # interface has an address, we'll call that good enough
-                active_interfaces.add(interface)
-    expected_interfaces = ["eth0", "net1", "net2"]
-    for interface in expected_interfaces:
-        if interface not in active_interfaces:
-            pytest.fail(
-                "Interface %s is missing from ip addr output:\n%s" % (interface, output)
-            )
-
-    await cleanup()
+            interface = line.split()[1].rstrip(":").split("@")[0]
+            while lines and lines[0].startswith(" "):
+                line = lines.pop(0).strip()
+                if line.startswith("inet "):
+                    # interface has an address, we'll call that good enough
+                    active_networks[interface] = line.split()[1]
+        expected_interfaces = ["eth0", "net1"]
+        for ifc in expected_interfaces:
+            assert (
+                ifc in active_networks
+            ), f"Interface {ifc} is missing from ip addr output:\n{output}"
+            assert active_networks[ifc].startswith(
+                "10.166."
+            ), f"Interface {ifc} is on the wrong subnet\n{output}"
+    finally:
+        await cleanup()
 
 
 @dataclass
