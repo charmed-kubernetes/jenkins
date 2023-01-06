@@ -640,10 +640,10 @@
             bash jobs/validate/aws-iam-spec $snap_version $series $channel
 
 - job:
-    name: 'validate-ck-multus'
+    name: 'validate-ck-ovn-multus'
     node: runner-validate
     description: |
-      Validates CK edge with Multus for n-1 releases.
+      Validates CK edge with OVN and Multus for n-1 releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -680,37 +680,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-venv:
           COMMAND: |
-            bash jobs/validate/multus-spec $snap_version $series $channel
-
-- job:
-    name: 'validate-ck-ovn'
-    node: runner-validate
-    description: |
-      Validates CK edge with the kube-ovn edge charm for the latest release.
-    project-type: freestyle
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    properties:
-      - block-on-infra
-      - build-discarder:
-          num-to-keep: 3
-    parameters:
-      - charms-edge
-      - snap-edge
-      - string:
-           name: series
-           default: jammy
-    triggers:
-        - timed: "@weekly"
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
-          COMMAND: |
-            bash jobs/validate/ovn-spec $snap_version $series $channel
+            bash jobs/validate/ovn-multus-spec $snap_version $series $channel
 
 - job:
     name: 'validate-ck-sriov'

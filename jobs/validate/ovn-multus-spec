@@ -14,31 +14,47 @@ set -x
 ###############################################################################
 # FUNCTION OVERRIDES
 ###############################################################################
-function juju::deploy
+function juju::deploy::overlay
 {
-   tee overlay.yaml <<EOF > /dev/null
+    local constraints
+    constraints="arch=$ARCH cores=2 mem=8G root-disk=16G"
+
+    tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
   kubernetes-control-plane:
+    constraints: $constraints
+    channel: $JUJU_DEPLOY_CHANNEL
     options:
       channel: $SNAP_VERSION
+      allow-privileged: "true"
   kubernetes-worker:
+    constraints: $constraints
+    channel: $JUJU_DEPLOY_CHANNEL
     options:
       channel: $SNAP_VERSION
+  calico: null
+  kube-ovn:
+    charm: kube-ovn
+    channel: $JUJU_DEPLOY_CHANNEL
+  ceph-mon:
+    charm: ceph-mon
+    channel: $CEPH_CHANNEL
+    num_units: 3
+  ceph-osd:
+    charm: ceph-osd
+    channel: $CEPH_CHANNEL
+    constraints: "root-disk=32G"
+    num_units: 3
+    storage:
+      osd-devices: 8G,1
+      osd-journals: 8G,1
+relations:
+  - [kube-ovn:cni, kubernetes-control-plane:cni]
+  - [kube-ovn:cni, kubernetes-worker:cni]
+  - [ceph-osd, ceph-mon]
+  - [ceph-mon:client, kubernetes-control-plane]
 EOF
-
-    juju model-config -m "$JUJU_CONTROLLER:$JUJU_MODEL" default-series="$SERIES"
-    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
-         --overlay overlay.yaml \
-         --force \
-         --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
-    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" -n 3 ceph-mon --channel="$CEPH_CHANNEL"
-    juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" -n 3 ceph-osd --channel="$CEPH_CHANNEL" \
-         --constraints="root-disk=32G" \
-         --storage osd-devices=8G,1 \
-         --storage osd-journals=8G,1
-    juju relate -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-osd ceph-mon
-    juju relate -m "$JUJU_CONTROLLER:$JUJU_MODEL" ceph-mon:client kubernetes-control-plane
 }
 
 function juju::deploy::after
@@ -48,9 +64,9 @@ function juju::deploy::after
     export KUBECONFIG="kubeconfig"
     juju add-k8s k8s --controller "$JUJU_CONTROLLER"
     juju add-model -c "$JUJU_CONTROLLER" addons k8s --config test-mode=true
-    juju deploy -m "$JUJU_CONTROLLER:addons" \
-          --channel "$JUJU_DEPLOY_CHANNEL" multus
-    timeout 45m juju-wait -e "$JUJU_CONTROLLER:addons" -w
+    juju deploy -m "${JUJU_CONTROLLER}:addons" \
+          --channel "$JUJU_DEPLOY_CHANNEL" multus --trust
+    timeout 45m juju-wait -e "${JUJU_CONTROLLER}:addons" -w
 }
 
 function test::execute
@@ -80,16 +96,16 @@ function ci::cleanup::before
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION=${1:-1.26/edge}
+SNAP_VERSION=${1:-1.26/stable}
 SERIES=${2:-jammy}
 CEPH_CHANNEL=${5:-quincy/stable}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)
-JUJU_MODEL=validate-multus
+JUJU_MODEL=validate-ovn-multus
 ARCH=${4:-amd64}
-JOB_NAME_CUSTOM="validate-ck-multus-$SERIES-$SNAP_VERSION"
+JOB_NAME_CUSTOM="validate-ck-ovn-multus-$SERIES-$ARCH-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
 ###############################################################################
