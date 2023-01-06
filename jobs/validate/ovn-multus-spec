@@ -55,8 +55,8 @@ applications:
 relations:
   - [kube-ovn:cni, kubernetes-control-plane:cni]
   - [kube-ovn:cni, kubernetes-worker:cni]
-  - [ceph-osd, ceph-mon]
-  - [ceph-mon:client, kubernetes-control-plane]
+  - [ceph-osd:mon, ceph-mon:osd]
+  - [ceph-mon:client, kubernetes-control-plane:ceph-client]
 EOF
 }
 
