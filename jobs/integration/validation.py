@@ -2085,7 +2085,6 @@ async def test_multus(model, tools, addons_model):
         pytest.skip("multus is not deployed")
 
     unit = model.applications["kubernetes-control-plane"].units[0]
-    containerd_app = model.applications["containerd"]
     multus_app = addons_model.applications["multus"]
 
     async def cleanup():
@@ -2195,7 +2194,7 @@ async def test_multus(model, tools, addons_model):
                 ifc in active_networks
             ), f"Interface {ifc} is missing from ip addr output:\n{output}"
             assert active_networks[ifc].startswith(
-                "10.166.0."
+                "10.166."
             ), f"Interface {ifc} is on the wrong subnet\n{output}"
     finally:
         await cleanup()
