@@ -2095,7 +2095,6 @@ async def test_multus(model, tools, addons_model):
             "/snap/bin/kubectl --kubeconfig /root/.kube/config delete subnet attachnet --ignore-not-found;",
         )
         await multus_app.reset_config(["network-attachment-definitions"])
-        await containerd_app.reset_config(["no_proxy"])
 
     async def apply_def(content):
         remote_path = "/tmp/content.yaml"
@@ -2110,13 +2109,6 @@ async def test_multus(model, tools, addons_model):
         )
 
     await cleanup()
-
-    await containerd_app.set_config(
-        {
-            "no_proxy": "localhost,127.0.0.1,::1,10.246.154.0/24,10.152.183.0/24,192.168.0.0/16"
-        }
-    )
-    await model.wait_for_idle(apps=["containerd"], timeout=5 * 60)
 
     # Create NetworkAttachmentDefinition for KubeOVN
     net_attach_def = {

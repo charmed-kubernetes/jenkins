@@ -34,6 +34,9 @@ applications:
     options:
       channel: $SNAP_VERSION
   calico: null
+  containerd:
+    options:
+      no_proxy: "localhost,127.0.0.1,::1,10.246.154.0/24,10.152.183.0/24,192.168.0.0/16"
   kube-ovn:
     charm: kube-ovn
     channel: $JUJU_DEPLOY_CHANNEL
