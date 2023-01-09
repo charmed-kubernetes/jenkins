@@ -7,7 +7,7 @@ def destroy_controller(controller) {
         timeout 4m juju kill-controller -y "${controller}" || true
     fi
 
-    if [[ \$(aws cloudformation describe-stacks --query "length(Stacks[?StackName == '${controller}'])") = *1* ]]
+    if [[ \$(aws --region us-east-1 cloudformation describe-stacks --query "length(Stacks[?StackName == '${controller}'])") = *1* ]]
     then
         aws cloudformation delete-stack --stack-name ${controller} --region us-east-1 || true
     fi
