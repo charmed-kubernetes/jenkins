@@ -6,6 +6,11 @@ def destroy_controller(controller) {
     if ! timeout 4m juju destroy-controller -y --destroy-all-models --destroy-storage "${controller}"; then
         timeout 4m juju kill-controller -y "${controller}" || true
     fi
+
+    if [[ $(aws cloudformation describe-stacks --query "length(Stacks[?StackName == '${controller}'])") = *1* ]]
+    then
+        aws cloudformation delete-stack --stack-name ${controller} --region us-east-1 || true
+    fi
     """
 }
 
@@ -114,6 +119,7 @@ pipeline {
                                 AWS_SECRET_ACCESS_KEY=\$(aws configure get aws_secret_access_key)
 
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo INSTANCE_TYPE=${eksd_instance_type} | sudo tee -a /etc/environment"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo STACK_NAME=${juju_controller} | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_REGION=\$AWS_REGION | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY | sudo tee -a /etc/environment"
