@@ -95,10 +95,10 @@ async def test_validate_auth_webhook(model, tools):
         ep = "https://localhost:6000/v1beta1"
         await masters.set_config({"authn-webhook-endpoint": ep})
         log("waiting for cluster to settle...")
-        await tools.juju_wait()
+        tools.juju_wait()
         await verify_custom_auth(one_master, bad_curl, ep)
     finally:
         # Reset config
         await masters.set_config({"authn-webhook-endpoint": ""})
         log("waiting for cluster to settle...")
-        await tools.juju_wait()
+        tools.juju_wait()

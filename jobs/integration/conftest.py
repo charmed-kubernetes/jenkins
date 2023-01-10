@@ -1,19 +1,22 @@
 # This is a special file imported by pytest for any test file.
 # Fixtures and stuff go here.
 
+import asyncio
+import click
+import inspect
 import os
 import pytest
-import asyncio
-import inspect
-import uuid
-from pathlib import Path
-import yaml
 import requests
-import click
+import sh
+import uuid
+import yaml
+
 from datetime import datetime
+from functools import partial
+from juju.model import Model
+from pathlib import Path
 from py.xml import html
 from tempfile import NamedTemporaryFile
-from juju.model import Model
 from traceback import format_exc
 from .utils import (
     asyncify,
@@ -24,19 +27,16 @@ from .utils import (
     scp_from,
     juju_run,
 )
+
 from .logger import log
 
 
 def pytest_addoption(parser):
-
     parser.addoption(
         "--controller", action="store", required=True, help="Juju controller to use"
     )
-
     parser.addoption("--model", action="store", required=True, help="Juju model to use")
-
     parser.addoption("--series", action="store", default="bionic", help="Base series")
-
     parser.addoption(
         "--cloud", action="store", default="aws/us-east-2", help="Juju cloud to use"
     )
@@ -150,13 +150,24 @@ class Tools:
             )
         return stdout.decode("utf8"), stderr.decode("utf8")
 
-    async def juju_wait(self, *args, **kwargs):
-        cmd = ["/snap/bin/juju-wait", "-e", self.connection, "-w", "-v"]
-        if args:
-            cmd.extend(args)
-        if "timeout_secs" in kwargs and kwargs["timeout_secs"]:
-            cmd.extend(["-t", str(kwargs["timeout_secs"])])
-        return await self.run(*cmd)
+    def juju_wait(self, *args, **kwargs):
+        """Run juju-wait command with provided arguments.
+
+        method is defined as async -- but it isn't necessary
+        as the latest implementation uses `sh` and doesn't
+        support async/await.
+
+        if kwarg contains `m`: juju-wait is executed on a different model
+        see juju-wait --help for other supported arguments
+        """
+
+        command = sh.Command("/snap/bin/juju-wait")
+        if "m" not in kwargs:
+            kwargs["m"] = self.connection
+        debug = partial(click.echo, nl=False)
+        result = command("-w", "-v", *args, **kwargs, _out=debug, _tee=True)
+        stdout, stderr = result.stdout.decode("utf-8"), result.stderr.decode("utf-8")
+        return stdout, stderr
 
 
 @pytest.fixture(scope="module")

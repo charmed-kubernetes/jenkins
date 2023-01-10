@@ -18,7 +18,7 @@ async def test_containerd_no_gpu(model, tools):
     log("validating containerd no gpu")
 
     await worker_app.set_config({"gpu_driver": "none"})
-    await tools.juju_wait()
+    tools.juju_wait()
 
     for worker in worker_app.units:
         log("verifying worker " + worker.entity_id)

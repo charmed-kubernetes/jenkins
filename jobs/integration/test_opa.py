@@ -174,7 +174,7 @@ class OPATestBase:
         finally:
             log("Deleting the gatekeeper charm")
             await k8s_model.remove_application(webhook.name)
-            await tools.juju_wait(m=tools.k8s_connection, timeout_secs=120)
+            tools.juju_wait(m=tools.k8s_connection, timeout_secs=120)
 
     @pytest.fixture(scope="class")
     async def opa_audit(self, model, k8s_model, tools, storage_pool):
@@ -202,7 +202,7 @@ class OPATestBase:
                 "--destroy-storage",
                 "gatekeeper-audit",
             )
-            await tools.juju_wait(m=tools.k8s_connection, timeout_secs=120)
+            tools.juju_wait(m=tools.k8s_connection, timeout_secs=120)
 
     async def _validate_audit_actions(self, unit):
         log("Running list-violations action")

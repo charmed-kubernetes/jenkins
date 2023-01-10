@@ -81,7 +81,7 @@ async def test_http_conf_existing_container_runtime(
             container_endpoint, "kubernetes-worker:container-runtime"
         )
 
-    await tools.juju_wait()
+    tools.juju_wait()
 
     proxy = proxy_app.units[0]
 
@@ -97,7 +97,7 @@ async def test_http_conf_existing_container_runtime(
     await container_runtime.set_config({"https_proxy": "blah"})
     time.sleep(20)
 
-    await tools.juju_wait()
+    tools.juju_wait()
     for worker_unit in model.applications["kubernetes-worker"].units:
         await check_kube_node_conf(worker_unit, runtime, controller, connection_name)
     for master_unit in model.applications["kubernetes-control-plane"].units:
@@ -107,7 +107,7 @@ async def test_http_conf_existing_container_runtime(
     await container_runtime.set_config({"https_proxy": ""})
 
     time.sleep(20)
-    await tools.juju_wait()
+    tools.juju_wait()
 
     for worker_unit in model.applications["kubernetes-worker"].units:
         await check_kube_node_conf_missing(
