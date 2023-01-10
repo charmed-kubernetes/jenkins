@@ -153,10 +153,6 @@ class Tools:
     def juju_wait(self, *args, **kwargs):
         """Run juju-wait command with provided arguments.
 
-        method is defined as async -- but it isn't necessary
-        as the latest implementation uses `sh` and doesn't
-        support async/await.
-
         if kwarg contains `m`: juju-wait is executed on a different model
         see juju-wait --help for other supported arguments
         """
