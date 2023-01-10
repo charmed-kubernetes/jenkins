@@ -41,8 +41,9 @@ def juju_json(cmd, *args):
 
 def main():
     status = juju_json("status")
-    units = status["applications"]["kubernetes-worker"]["units"].values()
-    machine_ids = [unit["machine"] for unit in units]
+    units = list(status["applications"]["kubernetes-control-plane"]["units"].values())
+    units += list(status["applications"]["kubernetes-worker"]["units"].values())
+    machine_ids = list(unit["machine"] for unit in units)
     instance_ids = [
         status["machines"][machine_id]["instance-id"] for machine_id in machine_ids
     ]

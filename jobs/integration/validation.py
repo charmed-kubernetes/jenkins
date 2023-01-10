@@ -2315,7 +2315,7 @@ async def nagios(model, tools):
     if series in ("xenial",):
         pytest.skip(f"skipping unsupported series {series}")
 
-    # 1) deploy
+    # 1a) deploy npre and nagios
     log("deploying nagios and nrpe")
     nagios, nrpe = map(model.applications.get, ("nagios", "nrpe"))
     deployed = dict(nagios=bool(nagios), nrpe=bool(nrpe))
@@ -2344,8 +2344,10 @@ async def nagios(model, tools):
             num_units=0,
             channel="stable",
         )
+    # 1b) relate apps to nrpe (and ignore ceph-mon and ceph-osd)
+    unmonitored_apps = ["nrpe", "ceph-mon", "ceph-osd"]
     for each, related in model.applications.items():
-        if each not in ["nrpe"] and not any(
+        if each not in unmonitored_apps and not any(
             "nrpe:" in str(rel) for rel in related.relations
         ):
             await model.add_relation("nrpe", each)
@@ -2683,8 +2685,14 @@ async def test_sriov_cni(model, tools, addons_model):
     if "sriov-cni" not in addons_model.applications:
         pytest.skip("sriov-cni is not deployed")
 
-    for unit in model.applications["kubernetes-worker"].units:
-        await juju_run(unit, "[ -x /opt/cni/bin/sriov ]")
+    apps = ["kubernetes-worker", "kubernetes-control-plane"]
+    units = (u for app in apps for u in model.applications[app].units)
+    failures = []
+    for unit in units:
+        run = await juju_run(unit, "[ -x /opt/cni/bin/sriov ]", check=False)
+        if not run.success:
+            failures.append(f"sriov binary was missing on {unit.name}")
+    assert not failures, "\n".join(failures)
 
 
 async def test_sriov_network_device_plugin(model, tools, addons_model):
@@ -2703,7 +2711,13 @@ async def test_sriov_network_device_plugin(model, tools, addons_model):
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get node -o json"
     raw_output = await run_until_success(control_plane_unit, cmd)
     data = json.loads(raw_output)
+    failures = []
     for node in data["items"]:
+        node_name = node["metadata"]["name"]
         capacity = node["status"]["capacity"]
         for resource_name in resource_names:
-            assert resource_name in capacity
+            if resource_name not in capacity:
+                failures.append(
+                    f"'{resource_name}' isn't in node's capacity ({node_name})\n{json.dumps(capacity, indent=2)}"
+                )
+    assert not failures, "\n".join(failures)
