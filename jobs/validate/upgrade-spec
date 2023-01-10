@@ -36,9 +36,6 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-export CHARM_CHANNEL_UPGRADE_TO=latest/edge
-export SNAP_CHANNEL_UPGRADE_TO=latest/edge
-
 SNAP_VERSION=${1:-1.25/stable}
 SERIES=${2:-jammy}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
@@ -49,6 +46,15 @@ JUJU_MODEL=validate-upgrade
 ARCH=${4:-amd64}
 JOB_NAME_CUSTOM="validate-ck-upgrade-$ARCH-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
+
+# this job deploys with
+#   charm-channel at {K8S_STABLE_VERSION}/stable
+#   snap-channel  at {K8S_STABLE_VERSION - 1}/stable or {K8S_STABLE_VERSION - 2}/stable
+# then upgrades charm-channel to latest/edge
+# and  upgrades snap-channel  to {K8S_STABLE_VERSION}/stable
+
+export CHARM_CHANNEL_UPGRADE_TO=latest/edge
+export SNAP_CHANNEL_UPGRADE_TO=${JUJU_DEPLOY_CHANNEL}
 
 ###############################################################################
 # START

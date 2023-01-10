@@ -161,7 +161,7 @@ class Tools:
         if "m" not in kwargs:
             kwargs["m"] = self.connection
         debug = partial(click.echo, nl=False)
-        result = command("-w", "-v", *args, **kwargs, _out=debug, _tee=True)
+        result = command("-w", "-v", *args, **kwargs, _err=debug, _tee="err")
         stdout, stderr = result.stdout.decode("utf-8"), result.stderr.decode("utf-8")
         return stdout, stderr
 
