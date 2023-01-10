@@ -162,8 +162,7 @@ class Tools:
             kwargs["m"] = self.connection
         debug = partial(click.echo, nl=False)
         result = command("-w", "-v", *args, **kwargs, _err=debug, _tee="err")
-        stdout, stderr = result.stdout.decode("utf-8"), result.stderr.decode("utf-8")
-        return stdout, stderr
+        return result.stdout.decode("utf-8"), result.stderr.decode("utf-8")
 
 
 @pytest.fixture(scope="module")
