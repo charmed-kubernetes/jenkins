@@ -101,7 +101,7 @@ class SnapService(DebugMixin):
             max_stable_rev = self.snap_model.latest_revision(
                 track=f"latest/stable", arch=arch
             )
-            if max_stable_rev < max_track_rev:
+            if max_stable_rev != max_track_rev:
                 self.log(
                     f"Track revisions do not match {max_track_rev} != {max_stable_rev}, syncing stable snaps to latest track"
                 )
