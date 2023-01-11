@@ -141,7 +141,7 @@ then
     export CLUSTER_NAME="test-ci-cluster"
     clusterctl generate cluster ${CLUSTER_NAME} --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
     export CLUSTER_MANIFEST_FILE=$PWD/cluster.yaml
-    export CAPI_UPGRADE_VERSION=1.26.0
+    export CAPI_UPGRADE_VERSION=v1.26.0
     export CAPI_UPGRADE_MD_NAME=${CLUSTER_NAME}-md-0
     export CAPI_UPGRADE_MD_TYPE=machinedeployments.cluster.x-k8s.io
     export CAPI_UPGRADE_CP_NAME=${CLUSTER_NAME}-control-plane
