@@ -1927,7 +1927,7 @@ async def test_dns_provider(model, k8s_model, tools):
         series = os.environ["SERIES"]
         with NamedTemporaryFile("w") as f:
             f.write(
-                '{"ImageName": "rocks.canonical.com:443/cdk/coredns/coredns:1.6.7"}'
+                '{"ImageName": "rocks.canonical.com:443/cdk/coredns/coredns:1.10.0"}'
             )
             f.flush()
             await tools.run(
