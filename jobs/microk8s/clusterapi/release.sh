@@ -130,7 +130,7 @@ then
     kubectl apply -f bootstrap/bootstrap-components.yaml -f control-plane/control-plane-components.yaml
 
     # run integration tests
-    export AWS_REGION=eu-west-1
+    export AWS_REGION=us-east-1
     export AWS_SSH_KEY_NAME=capi
     export CONTROL_PLANE_MACHINE_COUNT=3
     export WORKER_MACHINE_COUNT=3
