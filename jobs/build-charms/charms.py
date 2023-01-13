@@ -136,17 +136,31 @@ def _next_match(seq, predicate=lambda _: _, default=None):
 
 
 class _WrappedCmd:
-    def __init__(self, entity, runner):
+    def __init__(self, entity, command: str):
+        """Create an object which tees output from the command also to the log."""
         self._echo = entity.echo
-        self._run = runner
+        self._command = getattr(sh, command).bake(
+            _tee=True, _out=partial(entity.echo, nl=False)
+        )
+        setattr(self, command, self._command)
+
+    def __getattr__(self, name):
+        """Maps sub through to the baked sh command."""
+        return getattr(self._command, name)
+
+
+class DockerCmd(_WrappedCmd):
+    """Creates a sh command for docker where the output is tee'd."""
+
+    def __init__(self, entity):
+        super().__init__(entity, "docker")
 
 
 class CharmCmd(_WrappedCmd):
+    """Creates a sh command for charm where the output is tee'd."""
+
     def __init__(self, entity):
-        super().__init__(
-            entity, sh.charm.bake(_tee=True, _out=partial(entity.echo, nl=False))
-        )
-        self.charm = self._run
+        super().__init__(entity, "charm")
 
     def build(self, *args, **kwargs):
         ret = self.charm.build(*args, **kwargs)
@@ -155,16 +169,14 @@ class CharmCmd(_WrappedCmd):
         return ret
 
     def pull_source(self, *args, **kwargs):
-        ret = self.charm("pull-source", *args, **kwargs)
-        return ret
+        return self.charm("pull-source", *args, **kwargs)
 
 
 class CharmcraftCmd(_WrappedCmd):
+    """Creates a sh command for charmcraft where the output is tee'd."""
+
     def __init__(self, entity):
-        super().__init__(
-            entity, sh.charmcraft.bake(_tee=True, _out=partial(entity.echo, nl=False))
-        )
-        self.charmcraft = self._run
+        super().__init__(entity, "charmcraft")
 
     def pack(self, *args, **kwargs):
         try:
@@ -838,8 +850,11 @@ class BuildEntity:
                 if upstream_source:
                     # Pull any `upstream-image` annotated resources.
                     self.echo(f"Pulling {upstream_source}...")
-                    sh.docker.pull(upstream_source)
-                    resource_fmt = upstream_source
+                    docker = DockerCmd(self)
+                    # Pulls only the amd64 image locally
+                    docker.pull(upstream_source)
+                    # Use the local image-id from `docker images <upstream-source> -q`
+                    resource_fmt = docker.images(upstream_source, "-q")
                 resource_spec[name] = ("image", resource_fmt)
             elif details["type"] == "file":
                 resource_spec[name] = (
