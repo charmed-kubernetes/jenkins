@@ -164,16 +164,22 @@ class Tools:
 
         async def _read_stream(stream, callback):
             while True:
-                line = await stream.readline()
+                line = await stream.read()
                 if line:
                     callback(line)
                 else:
                     break
 
+        async def _feed_stream(input):
+            if input:
+                # replicates what proc.communicate() does with stdin
+                await proc._feed_stdin(input)
+
         await asyncio.wait(
             [
                 _read_stream(proc.stdout, lambda l: tee(l, stdout, 1)),
                 _read_stream(proc.stderr, lambda l: tee(l, stderr, 2)),
+                _feed_stream(input=stdin)
             ]
         )
 
