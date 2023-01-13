@@ -854,7 +854,7 @@ class BuildEntity:
                     # Pulls only the amd64 image locally
                     docker.pull(upstream_source)
                     # Use the local image-id from `docker images <upstream-source> -q`
-                    resource_fmt = docker.images(upstream_source, "-q")
+                    resource_fmt = docker.images(upstream_source, "-q").strip()
                 resource_spec[name] = ("image", resource_fmt)
             elif details["type"] == "file":
                 resource_spec[name] = (
