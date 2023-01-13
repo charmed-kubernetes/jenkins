@@ -179,7 +179,7 @@ class Tools:
             [
                 _read_stream(proc.stdout, lambda l: tee(l, stdout, 1)),
                 _read_stream(proc.stderr, lambda l: tee(l, stderr, 2)),
-                _feed_stream(input=stdin)
+                _feed_stream(input=stdin),
             ]
         )
 
