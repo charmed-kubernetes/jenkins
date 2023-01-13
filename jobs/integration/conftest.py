@@ -13,7 +13,6 @@ import uuid
 import yaml
 
 from datetime import datetime
-from functools import partial
 from juju.model import Model
 from pathlib import Path
 from py.xml import html
@@ -158,9 +157,9 @@ class Tools:
 
         def tee(line: bytes, sink: bytearray, fd: int):
             sink += line
-            write |= _tee == "out" and fd == 1
+            write = _tee == "out" and fd == 1
             write |= _tee == "err" and fd == 2
-            if write or _tee == True:
+            if write or _tee is True:
                 os.write(fd, line)
 
         async def _read_stream(stream, callback):
