@@ -129,7 +129,19 @@ class Tools:
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
         self.charm_channel = request.config.getoption("--charm-channel")
 
-    async def run(self, cmd, *args, stdin=None, _tee=False):
+    async def run(self, cmd: str, *args: str, stdin=None, _tee=False):
+        """
+        asynchronously run a command as a subprocess
+
+        @param str cmd: path to command on filesystem
+        @param str *args: arguments to the command
+        @param Optional[bytes] stdin: data to pass over stdin
+        @param _tee:
+            False -- neither stdout nor stderr is tee'd
+            True  -- stdout and stderr are both tee'd
+            "out" -- stdout is tee'd to test stdout
+            "err" -- stderr is tee'd to test stderr
+        """
         proc = await asyncio.create_subprocess_exec(
             cmd,
             *args,
@@ -144,11 +156,11 @@ class Tools:
 
         stdout, stderr = bytearray(), bytearray()
 
-        def tee(line:bytes, sink:bytearray, fd: int):
+        def tee(line: bytes, sink: bytearray, fd: int):
             sink += line
-            if _tee == "err" and fd==2:
-                os.write(fd, line)
-            if _tee in (True, "out") and fd==1:
+            write |= _tee == "out" and fd == 1
+            write |= _tee == "err" and fd == 2
+            if write or _tee == True:
                 os.write(fd, line)
 
         async def _read_stream(stream, callback):
@@ -162,7 +174,7 @@ class Tools:
         await asyncio.wait(
             [
                 _read_stream(proc.stdout, lambda l: tee(l, stdout, 1)),
-                _read_stream(proc.stderr, lambda l: tee(l, stderr, 2))
+                _read_stream(proc.stderr, lambda l: tee(l, stderr, 2)),
             ]
         )
 
@@ -170,8 +182,8 @@ class Tools:
         if return_code != 0:
             raise Exception(
                 f"Problem with run command {cmd} (exit {return_code}):\n"
-                f"stdout:\n{stdout.decode()}\n"
-                f"stderr:\n{stderr.decode()}\n"
+                f"stdout:\n{str(stdout, 'utf8')}\n"
+                f"stderr:\n{str(stderr, 'utf8')}\n"
             )
         return str(stdout, "utf8"), str(stderr, "utf8")
 
@@ -184,7 +196,7 @@ class Tools:
         """
         if "m" not in kwargs:
             kwargs["m"] = self.connection
-        kwargs.update(dict(w=True, v=True)) # workload + verbose
+        kwargs.update(dict(w=True, v=True))  # workload + verbose
         juju_wait = sh.Command("/snap/bin/juju-wait")
         command = shlex.split(str(juju_wait.bake(**kwargs)))
         return await self.run(*command, _tee="err")
