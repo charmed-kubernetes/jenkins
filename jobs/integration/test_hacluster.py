@@ -130,7 +130,7 @@ async def test_validate_hacluster(model, tools):
         await model.deploy("hacluster", num_units=0, series="bionic")
         await model.add_relation("hacluster:ha", "{}:ha".format(name))
         log("waiting for cluster to settle...")
-        tools.juju_wait()
+        await tools.juju_wait()
 
     # virtual ip can change, verify that
     for ip in get_test_ips():
@@ -139,6 +139,6 @@ async def test_validate_hacluster(model, tools):
         await app.set_config(cfg)
 
         log("waiting for cluster to settle...")
-        tools.juju_wait()
+        await tools.juju_wait()
 
         await do_verification(model, app, ip)

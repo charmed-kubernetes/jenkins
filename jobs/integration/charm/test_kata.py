@@ -25,7 +25,7 @@ async def test_kata(model, tools):
 
     await kata_app.add_relation("kata:untrusted", "containerd:untrusted")
 
-    tools.juju_wait()
+    await tools.juju_wait()
 
     # To test this further, we'd need to deploy the kata charm
     # to an i3.metal instance.  These are very expensive, so not
@@ -34,4 +34,4 @@ async def test_kata(model, tools):
     # finishes.
 
     await kata_app.remove()
-    tools.juju_wait()
+    await tools.juju_wait()

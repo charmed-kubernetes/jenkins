@@ -136,7 +136,7 @@ async def test_validate_aws_iam(model, tools):
     await model.add_relation("aws-iam", "kubernetes-control-plane")
     await model.add_relation("aws-iam", "easyrsa")
     log("waiting for cluster to settle...")
-    tools.juju_wait()
+    await tools.juju_wait()
 
     # 2) deploy CRD for test
     log("deploying crd")
@@ -193,7 +193,7 @@ EOF""".format(
     # 7) turn on RBAC and add a test user
     await masters.set_config({"authorization-mode": "RBAC,Node"})
     log("waiting for cluster to settle...")
-    tools.juju_wait()
+    await tools.juju_wait()
 
     # 8) verify failure
     await verify_auth_failure(one_control_plane, "get po")

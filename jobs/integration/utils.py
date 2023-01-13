@@ -119,7 +119,7 @@ async def upgrade_charms(model, channel, tools):
         # except JujuError as e:
         #     if "already running charm" not in str(e):
         #         raise
-    tools.juju_wait()
+    await tools.juju_wait()
 
 
 async def upgrade_snaps(model, channel, tools):
@@ -171,7 +171,7 @@ async def upgrade_snaps(model, channel, tools):
                 log.info(f"{unit.name} starting upgrade action")
                 await juju_run_action(unit, "upgrade")
 
-    tools.juju_wait()
+    await tools.juju_wait()
 
 
 async def is_localhost(controller_name):

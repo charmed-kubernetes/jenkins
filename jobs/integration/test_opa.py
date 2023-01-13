@@ -174,7 +174,7 @@ class OPATestBase:
         finally:
             log("Deleting the gatekeeper charm")
             await k8s_model.remove_application(webhook.name)
-            tools.juju_wait(m=tools.k8s_connection, timeout_secs=120)
+            await tools.juju_wait(m=tools.k8s_connection, max_wait=120)
 
     @pytest.fixture(scope="class")
     async def opa_audit(self, model, k8s_model, tools, storage_pool):
@@ -202,7 +202,7 @@ class OPATestBase:
                 "--destroy-storage",
                 "gatekeeper-audit",
             )
-            tools.juju_wait(m=tools.k8s_connection, timeout_secs=120)
+            await tools.juju_wait(m=tools.k8s_connection, max_wait=120)
 
     async def _validate_audit_actions(self, unit):
         log("Running list-violations action")
@@ -239,7 +239,7 @@ class OPATestBase:
 
 class TestOPAWebhook(OPATestBase):
     async def test_opa_webhook_ready(self, opa_controller_manager):
-        await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
+        await self.tools.juju_wait(m=self.tools.k8s_connection, max_wait=120)
 
         log("Waiting for gatekeeper charm to be ready")
         await wait_for_application_status(
@@ -283,7 +283,7 @@ class TestOPAWebhook(OPATestBase):
 
         log("Waiting for audit charm to be ready")
         try:
-            await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
+            await self.tools.juju_wait(m=self.tools.k8s_connection, max_wait=120)
             await wait_for_application_status(
                 self.k8s_model, "gatekeeper-audit", status="active"
             )
@@ -310,7 +310,7 @@ class TestOPAWebhook(OPATestBase):
                 "--destroy-storage",
                 "gatekeeper-audit",
             )
-            await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
+            await self.tools.juju_wait(m=self.tools.k8s_connection, max_wait=120)
 
     async def test_manager_reconcile(
         self, opa_controller_manager, update_status_interval
@@ -320,7 +320,7 @@ class TestOPAWebhook(OPATestBase):
         )
         log("Reconcile resources")
         await juju_run_action(opa_controller_manager.units[0], "reconcile-resources")
-        await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
+        await self.tools.juju_wait(m=self.tools.k8s_connection, max_wait=120)
 
         # Check that the opa_controller_manager works
         await self.validate_create_ns()
@@ -334,7 +334,7 @@ class TestOPAWebhook(OPATestBase):
 
 class TestOPAAudit(OPATestBase):
     async def test_opa_audit_ready(self, opa_audit):
-        await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
+        await self.tools.juju_wait(m=self.tools.k8s_connection, max_wait=120)
 
         log("Waiting for audit charm to be ready")
         await wait_for_application_status(
@@ -357,7 +357,7 @@ class TestOPAAudit(OPATestBase):
             trust=True,
         )
         try:
-            await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
+            await self.tools.juju_wait(m=self.tools.k8s_connection, max_wait=120)
             await wait_for_application_status(
                 self.k8s_model, "gatekeeper-controller-manager", status="active"
             )
@@ -368,7 +368,7 @@ class TestOPAAudit(OPATestBase):
         finally:
             log("Deleting the gatekeeper charm")
             await webhook.destroy()
-            await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
+            await self.tools.juju_wait(m=self.tools.k8s_connection, max_wait=120)
 
     async def test_audit_reconcile(self, opa_audit, update_status_interval):
         log("Waiting for status to change to blocked")
@@ -377,7 +377,7 @@ class TestOPAAudit(OPATestBase):
         )
         log("Reconcile resources")
         await juju_run_action(opa_audit.units[0], "reconcile-resources")
-        await self.tools.juju_wait(m=self.tools.k8s_connection, timeout_secs=120)
+        await self.tools.juju_wait(m=self.tools.k8s_connection, max_wait=120)
 
         log("Creating policy and constraint crds")
         await self.deploy_example_policy()

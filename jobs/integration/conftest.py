@@ -8,6 +8,7 @@ import os
 import pytest
 import requests
 import sh
+import shlex
 import uuid
 import yaml
 
@@ -128,7 +129,7 @@ class Tools:
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
         self.charm_channel = request.config.getoption("--charm-channel")
 
-    async def run(self, cmd, *args, stdin=None):
+    async def run(self, cmd, *args, stdin=None, _tee=False):
         proc = await asyncio.create_subprocess_exec(
             cmd,
             *args,
@@ -141,28 +142,52 @@ class Tools:
         if hasattr(stdin, "encode"):
             stdin = stdin.encode("utf8")
 
-        stdout, stderr = await proc.communicate(input=stdin)
-        if proc.returncode != 0:
+        stdout, stderr = bytearray(), bytearray()
+
+        def tee(line:bytes, sink:bytearray, fd: int):
+            sink += line
+            if _tee == "err" and fd==2:
+                os.write(fd, line)
+            if _tee in (True, "out") and fd==1:
+                os.write(fd, line)
+
+        async def _read_stream(stream, callback):
+            while True:
+                line = await stream.readline()
+                if line:
+                    callback(line)
+                else:
+                    break
+
+        await asyncio.wait(
+            [
+                _read_stream(proc.stdout, lambda l: tee(l, stdout, 1)),
+                _read_stream(proc.stderr, lambda l: tee(l, stderr, 2))
+            ]
+        )
+
+        return_code = await proc.wait()
+        if return_code != 0:
             raise Exception(
-                f"Problem with run command {cmd} (exit {proc.returncode}):\n"
+                f"Problem with run command {cmd} (exit {return_code}):\n"
                 f"stdout:\n{stdout.decode()}\n"
                 f"stderr:\n{stderr.decode()}\n"
             )
-        return stdout.decode("utf8"), stderr.decode("utf8")
+        return str(stdout, "utf8"), str(stderr, "utf8")
 
-    def juju_wait(self, *args, **kwargs):
+    async def juju_wait(self, **kwargs):
         """Run juju-wait command with provided arguments.
 
-        if kwarg contains `m`: juju-wait is executed on a different model
+        if kwargs contains `m`: juju-wait is executed on a different model
+        if kwargs contains `max_wait`: a timeout value is set
         see juju-wait --help for other supported arguments
         """
-
-        command = sh.Command("/snap/bin/juju-wait")
         if "m" not in kwargs:
             kwargs["m"] = self.connection
-        debug = partial(click.echo, nl=False)
-        result = command("-w", "-v", *args, **kwargs, _err=debug, _tee="err")
-        return result.stdout.decode("utf-8"), result.stderr.decode("utf-8")
+        kwargs.update(dict(w=True, v=True)) # workload + verbose
+        juju_wait = sh.Command("/snap/bin/juju-wait")
+        command = shlex.split(str(juju_wait.bake(**kwargs)))
+        return await self.run(*command, _tee="err")
 
 
 @pytest.fixture(scope="module")

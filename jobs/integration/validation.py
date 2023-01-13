@@ -167,7 +167,7 @@ async def assert_hook_occurs_on_all_units(app, hook):
         await asyncio.sleep(5)
 
 
-async def set_config_and_wait(app, config, tools, timeout_secs=None):
+async def set_config_and_wait(app, config, tools, max_wait=False):
     current_config = await app.get_config()
 
     if all(config[key] == current_config[key]["value"] for key in config):
@@ -176,7 +176,7 @@ async def set_config_and_wait(app, config, tools, timeout_secs=None):
 
     async with assert_hook_occurs_on_all_units(app, "config-changed"):
         await app.set_config(config)
-        tools.juju_wait(max_wait=timeout_secs)
+        await tools.juju_wait(max_wait=max_wait)
 
 
 async def reset_audit_config(control_plane_app, tools):
@@ -223,7 +223,7 @@ async def test_auth_file_propagation(model, tools):
 
     # Cleanup (remove the line we added)
     await run_until_success(leader, "sed -i '$d' /root/cdk/basic_auth.csv")
-    tools.juju_wait()
+    await tools.juju_wait()
 
 
 @pytest.mark.flaky(max_runs=5, min_passes=1)
@@ -690,12 +690,12 @@ async def test_worker_master_removal(model, tools):
     if original_worker_count < 2:
         await workers.add_unit(1)
         await disable_source_dest_check(tools.model_name)
-    tools.juju_wait()
+    await tools.juju_wait()
 
     # Remove a worker to see how the masters handle it
     unit_count = len(workers.units)
     await workers.units[0].remove()
-    tools.juju_wait()
+    await tools.juju_wait()
 
     while len(workers.units) == unit_count:
         await asyncio.sleep(15)
@@ -708,7 +708,7 @@ async def test_worker_master_removal(model, tools):
     for master in masters.units:
         if await master.is_leader_from_status():
             await master.remove()
-    tools.juju_wait()
+    await tools.juju_wait()
 
     while len(masters.units) == unit_count:
         await asyncio.sleep(15)
@@ -725,7 +725,7 @@ async def test_worker_master_removal(model, tools):
         await masters.add_unit(1)
     await disable_source_dest_check(tools.model_name)
     click.echo("Waiting for new master and worker.")
-    tools.juju_wait()
+    await tools.juju_wait()
 
 
 @pytest.mark.on_model("validate-nvidia")
@@ -855,7 +855,7 @@ async def test_extra_args(model, tools):
             original_args[service] = await get_filtered_service_args(app, service)
 
         await app.set_config(new_config)
-        tools.juju_wait()
+        await tools.juju_wait()
 
         with timeout_for_current_task(600):
             try:
@@ -874,7 +874,7 @@ async def test_extra_args(model, tools):
             key: original_config[key]["value"] for key in new_config
         }
         await app.set_config(filtered_original_config)
-        tools.juju_wait()
+        await tools.juju_wait()
 
         with timeout_for_current_task(600):
             try:
@@ -1193,12 +1193,12 @@ async def test_toggle_metrics(model, tools):
     new_value = not old_value
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=600
+        app, {"enable-metrics": str(new_value)}, tools, max_wait=600
     )
     await check_svc(app, new_value)
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=600
+        app, {"enable-metrics": str(old_value)}, tools, max_wait=600
     )
     await check_svc(app, old_value)
 
@@ -1369,7 +1369,7 @@ async def any_keystone(model, apps_by_charm, tools):
         credentials_rel = list(_find_relation(keystone_creds))
         if not credentials_rel:
             await keystone.add_relation("identity-credentials", keystone_creds)
-            tools.juju_wait()
+            await tools.juju_wait()
 
         keystone_main = random.choice(keystone.units)
         action = await juju_run(keystone_main, "leader-get admin_passwd")
@@ -1415,7 +1415,7 @@ async def any_keystone(model, apps_by_charm, tools):
 
         if not credentials_rel:
             await keystone.destroy_relation("identity-credentials", keystone_creds)
-            tools.juju_wait()
+            await tools.juju_wait()
 
         await masters.set_config({"keystone-ssl-ca": keystone_ssl_ca})
     else:
@@ -1452,17 +1452,17 @@ async def any_keystone(model, apps_by_charm, tools):
         await model.add_relation(keystone_creds, "keystone:identity-credentials")
         await model.add_relation("keystone:shared-db", f"{db_router.name}:shared-db")
         await model.add_relation(f"{db.name}:db-router", f"{db_router.name}:db-router")
-        tools.juju_wait()
+        await tools.juju_wait()
 
         yield SimpleNamespace(app=keystone, admin_password=admin_password)
 
         # cleanup
         await model.applications[keystone.name].destroy()
         await model.applications[db_router.name].destroy()
-        tools.juju_wait()
+        await tools.juju_wait()
         db_name = db.name  # grab the db.name before its object dies
         await model.applications[db_name].destroy()
-        tools.juju_wait()
+        await tools.juju_wait()
 
         # apparently, juju-wait will consider the model settled before an
         # application has fully gone away (presumably, when all units are gone) but
@@ -1596,7 +1596,7 @@ data:
     ]"""
             }
         )
-        tools.juju_wait()
+        await tools.juju_wait()
 
         # verify auth failure on something not a pod
         cmd = f"source /home/ubuntu/kube-keystone.sh && \
@@ -1653,7 +1653,7 @@ data:
         }
     )
     await wait_for_not_process(model, "authorization-webhook-config-file")
-    tools.juju_wait()
+    await tools.juju_wait()
     cmd = "/snap/bin/kubectl --context=juju-context \
         --kubeconfig /home/ubuntu/config get clusterroles"
     output = await juju_run(control_plane_unit, cmd, check=False)
@@ -1963,7 +1963,7 @@ async def test_dns_provider(model, k8s_model, tools):
             log("Adding cross-model relation to CK")
             await model.add_relation("kubernetes-control-plane", "coredns")
             await k8s_model.wait_for_idle(status="active")
-            tools.juju_wait()
+            await tools.juju_wait()
 
             log("Waiting CoreDNS pod to be ready")
             wait_for_pods_ready(
@@ -1979,7 +1979,7 @@ async def test_dns_provider(model, k8s_model, tools):
             log("Removing cross-model offer")
             if any("coredns" in rel.key for rel in control_plane_app.relations):
                 await control_plane_app.destroy_relation("dns-provider", "coredns")
-                tools.juju_wait()
+                await tools.juju_wait()
             await model.remove_saas("coredns")
             await k8s_model.remove_offer(offer_name, force=True)
             log("Removing CoreDNS charm")
@@ -1993,7 +1993,7 @@ async def test_dns_provider(model, k8s_model, tools):
 
         log("Switching back to core-dns from cdk-addons")
         await control_plane_app.set_config({"dns-provider": "core-dns"})
-        tools.juju_wait()
+        await tools.juju_wait()
 
         log("Waiting CoreDNS pod to be ready")
         wait_for_pods_ready("app.kubernetes.io/name=coredns")
@@ -2004,7 +2004,7 @@ async def test_dns_provider(model, k8s_model, tools):
         # Cleanup
         if (await control_plane_app.get_config())["dns-provider"] != "core-dns":
             await control_plane_app.set_config({"dns-provider": "core-dns"})
-            tools.juju_wait()
+            await tools.juju_wait()
         await remove_validation_pod()
 
 
@@ -2335,7 +2335,7 @@ async def nagios(model, tools):
         ):
             await model.add_relation("nrpe", each)
     log("waiting for cluster to settle...")
-    tools.juju_wait()
+    await tools.juju_wait()
 
     # 2) login to nagios
     cmd = "cat /var/lib/juju/nagios.passwd"
@@ -2365,7 +2365,7 @@ async def nagios(model, tools):
         await model.remove_application("nagios")
     if not deployed["nrpe"]:
         await model.remove_application("nrpe")
-    tools.juju_wait()
+    await tools.juju_wait()
 
 
 @pytest.mark.skip_if_version(lambda v: v < (1, 17))
@@ -2449,7 +2449,7 @@ async def test_nfs(model, tools):
     log("adding relations")
     await model.add_relation("nfs", "kubernetes-worker")
     log("waiting...")
-    tools.juju_wait()
+    await tools.juju_wait()
 
     log("waiting for nfs pod to settle")
     unit = model.applications["kubernetes-control-plane"].units[0]
@@ -2464,7 +2464,7 @@ async def test_nfs(model, tools):
 
     # cleanup
     await model.applications["nfs"].destroy()
-    tools.juju_wait()
+    await tools.juju_wait()
 
 
 @pytest.mark.skip_if_apps(
@@ -2482,7 +2482,7 @@ async def test_ceph(model, tools):
         await model.applications["kubernetes-control-plane"].set_config(
             {"install_sources": "[cloud:{}-train]".format(series)}
         )
-        tools.juju_wait()
+        await tools.juju_wait()
         ceph_config["source"] = "cloud:{}-train".format(series)
     elif series == "jammy":
         ceph_charms_channel = "quincy/stable"
@@ -2527,7 +2527,7 @@ async def test_ceph(model, tools):
         await model.add_relation("ceph-mon", "ceph-fs")
         await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
         log("waiting for charm deployment...")
-        tools.juju_wait()
+        await tools.juju_wait()
 
         log("waiting for csi to settle")
         unit = model.applications["kubernetes-control-plane"].units[0]
@@ -2633,7 +2633,7 @@ async def test_containerd_to_docker(model, tools):
     containerd_app = model.applications["containerd"]
 
     await containerd_app.remove()
-    tools.juju_wait(x="kubernetes-worker")
+    await tools.juju_wait(x="kubernetes-worker")
     # Block until containerd's removed, ignore `blocked` worker.
 
     docker_app = await model.deploy(
@@ -2644,13 +2644,13 @@ async def test_containerd_to_docker(model, tools):
 
     await docker_app.add_relation("docker", "kubernetes-worker")
 
-    tools.juju_wait()
+    await tools.juju_wait()
     # If we settle, it's safe to
     # assume Docker is now running
     # workloads.
 
     await docker_app.remove()
-    tools.juju_wait(x="kubernetes-worker")
+    await tools.juju_wait(x="kubernetes-worker")
     # Block until docker's removed, ignore `blocked` worker.
 
     containerd_app = await model.deploy(
@@ -2661,7 +2661,7 @@ async def test_containerd_to_docker(model, tools):
 
     await containerd_app.add_relation("containerd", "kubernetes-worker")
 
-    tools.juju_wait()
+    await tools.juju_wait()
 
 
 async def test_sriov_cni(model, tools, addons_model):

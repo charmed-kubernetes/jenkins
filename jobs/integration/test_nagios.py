@@ -53,7 +53,7 @@ async def test_nagios(model, tools):
     await model.add_relation("nrpe", "kubeapi-load-balancer")
     await model.add_relation("nagios", "nrpe")
     log("waiting for cluster to settle...")
-    tools.juju_wait()
+    await tools.juju_wait()
 
     # 2) login to nagios
     cmd = "cat /var/lib/juju/nagios.passwd"

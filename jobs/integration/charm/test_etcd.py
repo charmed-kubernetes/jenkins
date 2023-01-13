@@ -65,12 +65,12 @@ async def test_etcd_scaling(model, tools):
             await etcd.destroy_unit(unit.name)
             await e.wait()
             break
-    tools.juju_wait()
+    await tools.juju_wait()
     await test_cluster_health(model, tools)
 
     # Scale up
     await etcd.add_units(count=1)
-    tools.juju_wait()
+    await tools.juju_wait()
     await test_cluster_health(model, tools)
 
 

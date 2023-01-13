@@ -33,7 +33,7 @@ async def deploy_easyrsa(controller, model, tools):
         "--resource",
         "easyrsa={}".format(resource_path),
     )
-    tools.juju_wait()
+    await tools.juju_wait()
 
 
 async def deploy_test_app(controller, model, tools):
@@ -43,7 +43,7 @@ async def deploy_test_app(controller, model, tools):
     await asyncify(juju)(
         "relate", "-m", "{}:{}".format(controller, model), test_app, "easyrsa"
     )
-    tools.juju_wait()
+    await tools.juju_wait()
 
 
 async def get_relation_data(controller, model, tools):

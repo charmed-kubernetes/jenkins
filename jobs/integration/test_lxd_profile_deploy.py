@@ -85,5 +85,5 @@ async def test_lxd_profile_upgrade(model, charm_name, tools):
     await app.upgrade_charm(channel="edge")
     time.sleep(10)
     log("Upgraded charm.")
-    tools.juju_wait()
+    await tools.juju_wait()
     await check_charm_profile_deployed(app, charm_name)
