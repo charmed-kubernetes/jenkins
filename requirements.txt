@@ -62,7 +62,6 @@ cryptography==3.4.7
     # via
     #   ansible-base
     #   paramiko
-    #   secretstorage
 decorator==4.4.2
     # via retry
 dill==0.3.5.1
@@ -96,19 +95,13 @@ idna==2.10
 immutables==0.15
     # via contextvars
 importlib-metadata==4.12.0
-    # via
-    #   -r requirements.in
-    #   keyring
+    # via -r requirements.in
 iniconfig==1.1.1
     # via pytest
 invoke==1.7.3
     # via -r requirements.in
 iso8601==0.1.14
     # via surl
-jeepney==0.6.0
-    # via
-    #   keyring
-    #   secretstorage
 jenkins-job-builder==4.1.0
     # via -r requirements.in
 jinja2==3.1.2
@@ -126,13 +119,11 @@ juju==3.0.4
     # via -r requirements.in
 jujubundlelib==0.5.7
     # via theblues
-keyring==23.0.1
-    # via launchpadlib
 kubernetes==22.6.0
     # via juju
 kv==0.4.1
     # via -r requirements.in
-launchpadlib==1.10.18
+launchpadlib==1.11.0
     # via -r requirements.in
 lazr-restfulclient==0.14.5
     # via
@@ -307,8 +298,6 @@ s3transfer==0.3.6
     # via
     #   awscli
     #   boto3
-secretstorage==3.3.1
-    # via keyring
 semver==2.13.0
     # via -r requirements.in
 sh==1.14.3
