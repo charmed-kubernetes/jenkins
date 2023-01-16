@@ -332,7 +332,7 @@
           set +o allexport
 
           python3.8 -m venv venv
-          venv/bin/python -m pip install tox wheel
+          venv/bin/python -m pip install tox==4.2.8 wheel
 
           set +u
           source venv/bin/activate
