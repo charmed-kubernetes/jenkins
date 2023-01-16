@@ -138,8 +138,14 @@ then
     export AWS_PUBLIC_IP=false
     export AWS_CONTROL_PLANE_MACHINE_FLAVOR=t3.large
     export AWS_NODE_MACHINE_FLAVOR=t3.large
-    clusterctl generate cluster test-ci-cluster --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
+    export CLUSTER_NAME="test-ci-cluster"
+    clusterctl generate cluster ${CLUSTER_NAME} --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
     export CLUSTER_MANIFEST_FILE=$PWD/cluster.yaml
+    export CAPI_UPGRADE_VERSION=v1.26.0
+    export CAPI_UPGRADE_MD_NAME=${CLUSTER_NAME}-md-0
+    export CAPI_UPGRADE_MD_TYPE=machinedeployments.cluster.x-k8s.io
+    export CAPI_UPGRADE_CP_NAME=${CLUSTER_NAME}-control-plane
+    export CAPI_UPGRADE_CP_TYPE=microk8scontrolplanes.controlplane.cluster.x-k8s.io
 
     (
         cd bootstrap
