@@ -326,12 +326,12 @@ tabulate==0.8.7
     # via surl
 theblues==0.5.2
     # via juju
-toposort==1.6
-    # via juju
 tomli==2.0.1
     # via
     #   black
     #   pytest
+toposort==1.6
+    # via juju
 typing-extensions==3.10.0.2
     # via typing-inspect
 typing-inspect==0.6.0
