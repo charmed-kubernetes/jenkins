@@ -1,19 +1,22 @@
 # This is a special file imported by pytest for any test file.
 # Fixtures and stuff go here.
 
+import asyncio
+import click
+import inspect
 import os
 import pytest
-import asyncio
-import inspect
-import uuid
-from pathlib import Path
-import yaml
 import requests
-import click
+import sh
+import shlex
+import uuid
+import yaml
+
 from datetime import datetime
+from juju.model import Model
+from pathlib import Path
 from py.xml import html
 from tempfile import NamedTemporaryFile
-from juju.model import Model
 from traceback import format_exc
 from .utils import (
     asyncify,
@@ -24,19 +27,16 @@ from .utils import (
     scp_from,
     juju_run,
 )
+
 from .logger import log
 
 
 def pytest_addoption(parser):
-
     parser.addoption(
         "--controller", action="store", required=True, help="Juju controller to use"
     )
-
     parser.addoption("--model", action="store", required=True, help="Juju model to use")
-
     parser.addoption("--series", action="store", default="bionic", help="Base series")
-
     parser.addoption(
         "--cloud", action="store", default="aws/us-east-2", help="Juju cloud to use"
     )
@@ -128,7 +128,19 @@ class Tools:
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
         self.charm_channel = request.config.getoption("--charm-channel")
 
-    async def run(self, cmd, *args, stdin=None):
+    async def run(self, cmd: str, *args: str, stdin=None, _tee=False):
+        """
+        asynchronously run a command as a subprocess
+
+        @param str cmd: path to command on filesystem
+        @param str *args: arguments to the command
+        @param Optional[bytes] stdin: data to pass over stdin
+        @param _tee:
+            False -- neither stdout nor stderr is tee'd
+            True  -- stdout and stderr are both tee'd
+            "out" -- stdout is tee'd to test stdout
+            "err" -- stderr is tee'd to test stderr
+        """
         proc = await asyncio.create_subprocess_exec(
             cmd,
             *args,
@@ -141,22 +153,58 @@ class Tools:
         if hasattr(stdin, "encode"):
             stdin = stdin.encode("utf8")
 
-        stdout, stderr = await proc.communicate(input=stdin)
-        if proc.returncode != 0:
-            raise Exception(
-                f"Problem with run command {cmd} (exit {proc.returncode}):\n"
-                f"stdout:\n{stdout.decode()}\n"
-                f"stderr:\n{stderr.decode()}\n"
-            )
-        return stdout.decode("utf8"), stderr.decode("utf8")
+        stdout, stderr = bytearray(), bytearray()
 
-    async def juju_wait(self, *args, **kwargs):
-        cmd = ["/snap/bin/juju-wait", "-e", self.connection, "-w", "-v"]
-        if args:
-            cmd.extend(args)
-        if "timeout_secs" in kwargs and kwargs["timeout_secs"]:
-            cmd.extend(["-t", str(kwargs["timeout_secs"])])
-        return await self.run(*cmd)
+        def tee(line: bytes, sink: bytearray, fd: int):
+            sink += line
+            write = _tee == "out" and fd == 1
+            write |= _tee == "err" and fd == 2
+            if write or _tee is True:
+                os.write(fd, line)
+
+        async def _read_stream(stream, callback):
+            while True:
+                line = await stream.read(1024)
+                if line:
+                    callback(line)
+                else:
+                    break
+
+        async def _feed_stream(input):
+            if input:
+                # replicates what proc.communicate() does with stdin
+                await proc._feed_stdin(input)
+
+        await asyncio.wait(
+            [
+                _read_stream(proc.stdout, lambda l: tee(l, stdout, 1)),
+                _read_stream(proc.stderr, lambda l: tee(l, stderr, 2)),
+                _feed_stream(input=stdin),
+            ]
+        )
+
+        return_code = await proc.wait()
+        if return_code != 0:
+            raise Exception(
+                f"Problem with run command {cmd} (exit {return_code}):\n"
+                f"stdout:\n{str(stdout, 'utf8')}\n"
+                f"stderr:\n{str(stderr, 'utf8')}\n"
+            )
+        return str(stdout, "utf8"), str(stderr, "utf8")
+
+    async def juju_wait(self, **kwargs):
+        """Run juju-wait command with provided arguments.
+
+        if kwargs contains `m`: juju-wait is executed on a different model
+        if kwargs contains `max_wait`: a timeout value is set
+        see juju-wait --help for other supported arguments
+        """
+        if "m" not in kwargs:
+            kwargs["m"] = self.connection
+        kwargs.update(dict(w=True, v=True))  # workload + verbose
+        juju_wait = sh.Command("/snap/bin/juju-wait")
+        command = shlex.split(str(juju_wait.bake(**kwargs)))
+        return await self.run(*command, _tee="err")
 
 
 @pytest.fixture(scope="module")

@@ -167,7 +167,7 @@ async def assert_hook_occurs_on_all_units(app, hook):
         await asyncio.sleep(5)
 
 
-async def set_config_and_wait(app, config, tools, timeout_secs=None):
+async def set_config_and_wait(app, config, tools, max_wait=False):
     current_config = await app.get_config()
 
     if all(config[key] == current_config[key]["value"] for key in config):
@@ -176,7 +176,7 @@ async def set_config_and_wait(app, config, tools, timeout_secs=None):
 
     async with assert_hook_occurs_on_all_units(app, "config-changed"):
         await app.set_config(config)
-        await tools.juju_wait(timeout_secs=timeout_secs)
+        await tools.juju_wait(max_wait=max_wait)
 
 
 async def reset_audit_config(control_plane_app, tools):
@@ -1193,12 +1193,12 @@ async def test_toggle_metrics(model, tools):
     new_value = not old_value
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(new_value)}, tools, timeout_secs=600
+        app, {"enable-metrics": str(new_value)}, tools, max_wait=600
     )
     await check_svc(app, new_value)
 
     await set_config_and_wait(
-        app, {"enable-metrics": str(old_value)}, tools, timeout_secs=600
+        app, {"enable-metrics": str(old_value)}, tools, max_wait=600
     )
     await check_svc(app, old_value)
 
@@ -2650,7 +2650,7 @@ async def test_containerd_to_docker(model, tools):
     containerd_app = model.applications["containerd"]
 
     await containerd_app.remove()
-    await tools.juju_wait("-x", "kubernetes-worker")
+    await tools.juju_wait(x="kubernetes-worker")
     # Block until containerd's removed, ignore `blocked` worker.
 
     docker_app = await model.deploy(
@@ -2667,7 +2667,7 @@ async def test_containerd_to_docker(model, tools):
     # workloads.
 
     await docker_app.remove()
-    await tools.juju_wait("-x", "kubernetes-worker")
+    await tools.juju_wait(x="kubernetes-worker")
     # Block until docker's removed, ignore `blocked` worker.
 
     containerd_app = await model.deploy(
