@@ -164,7 +164,7 @@ class Tools:
 
         async def _read_stream(stream, callback):
             while True:
-                line = await stream.read()
+                line = await stream.read(1024)
                 if line:
                     callback(line)
                 else:
