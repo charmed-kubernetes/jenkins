@@ -292,7 +292,7 @@
 
           sudo rm -rf /usr/local/bin/aws
           python3.8 -m venv venv
-          venv/bin/python -m pip install tox==4.2.8 wheel
+          venv/bin/python -m pip install tox wheel
 
           set +u
           source venv/bin/activate
@@ -332,7 +332,7 @@
           set +o allexport
 
           python3.8 -m venv venv
-          venv/bin/python -m pip install tox==4.2.8 wheel
+          venv/bin/python -m pip install tox wheel
 
           set +u
           source venv/bin/activate
