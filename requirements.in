@@ -12,7 +12,6 @@ drypy
 loguru
 flake8
 invoke
-importlib-metadata
 jenkins-job-builder
 jinja2
 juju

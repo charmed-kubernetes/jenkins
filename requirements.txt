@@ -94,8 +94,6 @@ idna==2.10
     # via requests
 immutables==0.15
     # via contextvars
-importlib-metadata==4.12.0
-    # via -r requirements.in
 iniconfig==1.1.1
     # via pytest
 invoke==2.0.0
@@ -359,8 +357,6 @@ websockets==10.3 ; python_version >= "3.10"
     #   juju
 wheel==0.38.4
     # via -r requirements.in
-zipp==3.4.1
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
