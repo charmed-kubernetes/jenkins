@@ -47,8 +47,8 @@ K8S_GO_MAP = {
     "1.27": "go/1.19/stable",
     "1.26": "go/1.19/stable",
     "1.25": "go/1.19/stable",
-    "1.24": "go/1.18/stable",
-    "1.23": "go/1.17/stable",
+    "1.24": "go/1.19/stable",
+    "1.23": "go/1.19/stable",
 }
 
 # Snap k8s version <-> track mapping
