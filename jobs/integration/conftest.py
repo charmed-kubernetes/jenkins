@@ -201,6 +201,13 @@ class Tools:
         """
         if "m" not in kwargs:
             kwargs["m"] = self.connection
+
+        # max_wait and retry_errors are special
+        # kwargs that shouldn't be hyphenated when calling `juju-wait`
+        # swap the long form arg for its shortened version
+        for arg, short in [("max_wait", "t"), ("retry_errors", "r")]:
+            if arg in kwargs:
+                kwargs[short] = kwargs.pop(arg)
         kwargs.update(dict(w=True, v=True))  # workload + verbose
         juju_wait = sh.Command("/snap/bin/juju-wait")
         command = shlex.split(str(juju_wait.bake(**kwargs)))
