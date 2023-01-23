@@ -200,6 +200,8 @@
       - k8s
       - kubevirt
     upstream: 'https://github.com/charmed-kubernetes/charm-kube-virt.git'
+    channel-range:
+      min: '1.27'
 - tigera-secure-ee:
     bugs: 'https://bugs.launchpad.net/charm-tigera-secure-ee'
     build-resources: 'cd {out_path}; bash {src_path}/build-resources.sh'
