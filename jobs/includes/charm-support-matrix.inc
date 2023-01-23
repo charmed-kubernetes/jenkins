@@ -190,6 +190,18 @@
       - kubernetes-worker
       - core
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-worker.git'
+- kubevirt:
+    bugs: 'https://bugs.launchpad.net/charm-kubevirt'
+    docs: 'https://charmhub.io/kubevirt/docs'
+    downstream: charmed-kubernetes/charm-kube-virt.git
+    store: 'https://charmhub.io/kubevirt'
+    summary: Deploys KubeVirt into a Charmed-Kubernetes cluster
+    tags:
+      - k8s
+      - kubevirt
+    upstream: 'https://github.com/charmed-kubernetes/charm-kube-virt.git'
+    channel-range:
+      min: '1.27'
 - tigera-secure-ee:
     bugs: 'https://bugs.launchpad.net/charm-tigera-secure-ee'
     build-resources: 'cd {out_path}; bash {src_path}/build-resources.sh'
