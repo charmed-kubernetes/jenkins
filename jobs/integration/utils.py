@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import time
 import traceback
-import yaml
 from pathlib import Path
 
 from contextlib import contextmanager
@@ -521,14 +520,18 @@ async def wait_for_application_status(model, app_name, status="active"):
         raise AssertionError(f"Application has unexpected status: {app.status.status}")
 
 
-async def refresh_openstack_charms(machine, new_series, tools):
-    """The openstack charms (ceph, hacluster, mysql) have to switch to a newer channel
-    before they can do a series upgrade.
-    """
-    get_series = lambda charm_info, channel: {
-        p["series"] for p in charm_info["channel-map"][channel]["platforms"]
-    }
+def _supported_series(charmhub_info, channel):
+    return {p["series"] for p in charmhub_info["channel-map"][channel]["platforms"]}
 
+
+async def refresh_openstack_charms(machine, new_series, tools):
+    """Upgrade openstack charms to a channel that supports new_series
+
+    The openstack charms (ceph, hacluster, mysql) have to switch to a newer channel
+    before they can do a series upgrade. I.e. hacluster should be deployed on channel
+    2.0.3/stable when running focal. Before upgrading to jammy, you need to switch to
+    2.4/stable.
+    """
     for unit in _units(machine):
         app = unit.machine.model.applications[unit.application]
         charm_name = "-".join(app.data["charm-url"].split("/")[-1].split("-")[:-1])
@@ -539,14 +542,14 @@ async def refresh_openstack_charms(machine, new_series, tools):
         app_info = await app._facade().GetCharmURLOrigin(application=app.name)
         app_info = app_info.charm_origin
         current_channel = "/".join((app_info["track"] or "latest", app_info["risk"]))
-        if new_series in get_series(charm_info, current_channel):
+        if new_series in _supported_series(charm_info, current_channel):
             continue
 
         for channel, channel_info in charm_info["channel-map"].items():
             if (
                 app_info["risk"] == channel_info["risk"]
-                and new_series in get_series(charm_info, channel)
-                and app_info["series"] in get_series(charm_info, channel)
+                and new_series in _supported_series(charm_info, channel)
+                and app_info["series"] in _supported_series(charm_info, channel)
             ):
                 new_channel = channel
                 break

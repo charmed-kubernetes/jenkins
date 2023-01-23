@@ -2587,10 +2587,13 @@ async def test_series_upgrade(model, tools):
             new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
             skipped = False
         except IndexError:
-            log(f"no supported series to upgrade machine {machine} to")
+            log(f"no supported series to upgrade machine {machine.tag} to")
             continue
         except ValueError:
-            log(f"unrecognized series to upgrade machine {machine} from: {old_series}")
+            log(
+                f"unrecognized series to upgrade machine {machine.tag} from: "
+                f"{old_series}"
+            )
             continue
         await refresh_openstack_charms(machine, new_series, tools)
         await prep_series_upgrade(machine, new_series, tools)
