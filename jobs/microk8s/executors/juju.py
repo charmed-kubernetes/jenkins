@@ -24,7 +24,7 @@ class JujuExecutor(ExecutorInterface):
         self.model = model
 
     def remove_microk8s_directory(self):
-        cmd = "rm -rf microk8s"
+        cmd = "sudo rm -rf microk8s"
         self._run_cmd(cmd)
 
     def clone_microk8s_repo(self):

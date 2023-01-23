@@ -91,6 +91,25 @@ pipeline {
                                     stable: "release-to-stable.py",
                                     "pre-release": "release-pre-release.py",
                                 ]
+                                def check_job_name = [
+                                    beta: "release-needed-to-beta.py",
+                                    stable: "release-needed-to-stable.py",
+                                ]
+
+                                if (channel == "stable" || channel == "beta" ){
+                                    try {
+                                        sh """
+                                        . .tox/py38/bin/activate
+                                        DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
+                                            TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS}\
+                                            PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0\
+                                            JUJU_CONTROLLER=${juju_controller} JUJU_MODEL=${juju_model}\
+                                            timeout 6h python jobs/microk8s/${check_job_name[channel]}
+                                        """
+                                    } catch (err) {
+                                        return 0
+                                    }
+                                }
 
                                 if (arch == "arm64") {
                                     instance_type = "a1.2xlarge"
@@ -115,6 +134,7 @@ pipeline {
 
                                 juju-wait -e "${juju_full_model}" -w
 
+                                set +x
                                 AWS_ACCESS_KEY_ID=\$(aws configure get aws_access_key_id)
                                 AWS_SECRET_ACCESS_KEY=\$(aws configure get aws_secret_access_key)
 
@@ -123,6 +143,7 @@ pipeline {
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_REGION=\$AWS_REGION | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY | sudo tee -a /etc/environment"
+                                set -x
 
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true
