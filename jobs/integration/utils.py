@@ -3,10 +3,12 @@ import functools
 import ipaddress
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import time
 import traceback
+import yaml
 from pathlib import Path
 
 from contextlib import contextmanager
@@ -473,6 +475,12 @@ def _units(machine: Machine):
     ]
 
 
+def _primary_unit(machine: Machine):
+    for unit in _units(machine):
+        if not unit.subordinate:
+            return unit
+
+
 async def wait_for_status(workload_status: str, units: Union[Unit, Sequence[Unit]]):
     """
     Wait for unit or units to reach a specific workload_state or fail in 120s.
@@ -513,6 +521,45 @@ async def wait_for_application_status(model, app_name, status="active"):
         raise AssertionError(f"Application has unexpected status: {app.status.status}")
 
 
+async def refresh_openstack_charms(machine, new_series, tools):
+    """The openstack charms (ceph, hacluster, mysql) have to switch to a newer channel
+    before they can do a series upgrade.
+    """
+    get_series = lambda charm_info, channel: {
+        p["series"] for p in charm_info["channel-map"][channel]["platforms"]
+    }
+
+    for unit in _units(machine):
+        app = unit.machine.model.applications[unit.application]
+        charm_name = "-".join(app.data["charm-url"].split("/")[-1].split("-")[:-1])
+        charm_info = await unit.machine.model.charmhub.info(charm_name)
+        if charm_info["publisher"] != "OpenStack Charmers":
+            continue
+
+        app_info = await app._facade().GetCharmURLOrigin(application=app.name)
+        app_info = app_info.charm_origin
+        current_channel = "/".join((app_info["track"] or "latest", app_info["risk"]))
+        if new_series in get_series(charm_info, current_channel):
+            continue
+
+        for channel, channel_info in charm_info["channel-map"].items():
+            if (
+                app_info["risk"] == channel_info["risk"]
+                and new_series in get_series(charm_info, channel)
+                and app_info["series"] in get_series(charm_info, channel)
+            ):
+                new_channel = channel
+                break
+        else:
+            raise ValueError(
+                f"{app.name} on channel {current_channel} does not support {new_series}"
+                " and no channel is found to upgrade to."
+            )
+
+        log.info(f"Upgrading {app.name} to {new_channel} to suport {new_series}")
+        await app.refresh(channel=new_channel)
+
+
 async def prep_series_upgrade(machine, new_series, tools):
     log.info(f"preparing series upgrade for machine {machine.id}")
     await tools.run(
@@ -525,7 +572,16 @@ async def prep_series_upgrade(machine, new_series, tools):
         "prepare",
         new_series,
     )
-    await wait_for_status("blocked", _units(machine))
+    try:
+        await wait_for_status("blocked", _units(machine))
+    except AssertionError:
+        for unit in _units(machine):
+            # not all subordinates will go into "blocked", so also accept active idle
+            if unit.workload_status == "blocked" or (
+                unit.workload_status == "active" and unit.agent_status == "idle"
+            ):
+                continue
+            raise
 
 
 async def do_series_upgrade(machine):
@@ -548,7 +604,7 @@ async def do_series_upgrade(machine):
         pass
 
 
-async def finish_series_upgrade(machine, tools):
+async def finish_series_upgrade(machine, tools, new_series):
     log.info(f"completing series upgrade for machine {machine.id}")
     await tools.run(
         "juju",
@@ -559,7 +615,11 @@ async def finish_series_upgrade(machine, tools):
         machine.id,
         "complete",
     )
+    if _primary_unit(machine).application == "vault" and tools.vault_unseal_command:
+        tools.run(shlex.split(tools.vault_unseal_command))
     await wait_for_status("active", _units(machine))
+    series = await machine.ssh("lsb_release -cs")
+    assert series.strip() == new_series
 
 
 class JujuRunError(AssertionError):

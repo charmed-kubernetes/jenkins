@@ -102,6 +102,14 @@ def pytest_addoption(parser):
         help="This test should perform a series upgrade",
     )
 
+    parser.addoption(
+        "--vault-unseal-command",
+        action="store",
+        required=False,
+        default="",
+        help="Command to run to unseal vault after a series upgrade",
+    )
+
 
 class Tools:
     """Utility class for accessing juju related tools"""
@@ -127,6 +135,7 @@ class Tools:
         self.k8s_connection = f"{self.controller_name}:{self.k8s_model_name_full}"
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
         self.charm_channel = request.config.getoption("--charm-channel")
+        self.vault_unseal_command = request.config.getoption("--vault-unseal-command")
 
     async def run(self, cmd: str, *args: str, stdin=None, _tee=False):
         """
