@@ -133,34 +133,63 @@ Verify that the tests are passing among all the permutations which the above job
 created.  Adjust the tests or charms for any failures, retagging and rebuilding
 from the release-* branches when changes are necessary.
 
-### Promote charms from **candidate** to **stable**
+### Promote charms from **release/candidate** to **stable**
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
 
-This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
-it will only promote the necessary charms that make up charmed-kuberneetes (the
-others are kubeflow related).
+This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s,k8s-operator` so
+it will only promote the necessary charms that make up charmed-kuberneetes.
+
+**Note about `to_channel`**
+
+If this is a bugfix for the current latest/stable release 
+
+`ex) 1.26 is the latest release, and this is a bug fix for 1.26`
+* set the `to_channel` = `stable`
+* the charms will be released to both `latest/stable` and `1.26/stable`
+
+If this is a bugfix for a prior release 
+
+`ex) 1.27 is the latest release, but this release is a bug fix for 1.26+ckN`
+* set the `to_channel` = `1.26/stable`
+* the charms will be released to only `1.26/stable`
 
 ### Build stable bundles
 
 **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
-bundles shouldn't be promoted because a candidate bundle points to candidate channel charms
+bundles shouldn't be promoted because a candidate bundle points to candidate channel charms.  Instead rebuild the bundles targetting
+the correct `to_channel`.  It's also entirely possible this does
+not result in a new bundle at all, if the source of the bundles
+themselves haven't changed through the course of the `ckN` release.
 
-Instead BUILD the bundles targetting the stable channels:
+**Note about `to_channel`**
+
+If this is a bugfix for the current latest/stable release 
+
+`ex) 1.26 is the latest release, and this is a bug fix for 1.26`
+* set the `to_channel` = `stable`
+* the bundles will be released to both `latest/stable` and `1.26/stable`
+
+If this is a bugfix for a prior release 
+
+`ex) 1.27 is the latest release, but this release is a bug fix for 1.26+ckN`
+* set the `to_channel` = `1.26/stable`
+* the bundles will be released to only `1.26/stable`
+
 
 Run the build with parameters:
   * layer_branch = release_1.XX
   * charm_branch = release_1.XX
   * bundle_branch = release_1.XX
-  * to_channel = stable (will build both 1.xx/stable and latest/stable)
+  * to_channel = `see-note-above`
   * filter_by_tag = charmed-kubernetes
 
 Repeat the build with parameters:
   * layer_branch = release_1.XX
   * charm_branch = release_1.XX
   * bundle_branch = release_1.XX
-  * to_channel = stable (will build both 1.xx/stable and latest/stable)
+  * to_channel = `see-note-above`
   * filter_by_tag = kubernetes-core
 
 ### Promote cdk-addons

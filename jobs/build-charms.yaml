@@ -11,7 +11,7 @@
     parameters:
       - string:
           name: FILTER_BY_TAG
-          default: 'k8s'
+          default: 'k8s,k8s-operator'
       - string:
           name: FROM_CHANNEL
           default: 'edge'
