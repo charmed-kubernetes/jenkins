@@ -91,24 +91,17 @@ pipeline {
                                     stable: "release-to-stable.py",
                                     "pre-release": "release-pre-release.py",
                                 ]
-                                def check_job_name = [
-                                    beta: "release-needed-to-beta.py",
-                                    stable: "release-needed-to-stable.py",
-                                ]
 
-                                if (channel == "stable" || channel == "beta" ){
-                                    try {
-                                        sh """
-                                        . .tox/py38/bin/activate
-                                        DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
-                                            TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS}\
-                                            PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0\
-                                            JUJU_CONTROLLER=${juju_controller} JUJU_MODEL=${juju_model}\
-                                            timeout 6h python jobs/microk8s/${check_job_name[channel]}
-                                        """
-                                    } catch (err) {
-                                        return 0
-                                    }
+                                try {
+                                    sh """
+                                    . .tox/py38/bin/activate
+                                    ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
+                                        TRACKS=${params.TRACKS}\
+                                        CHANNEL=${channel}\
+                                        timeout 6h python jobs/microk8s/release-needed.py
+                                    """
+                                } catch (err) {
+                                    return 0
                                 }
 
                                 if (arch == "arm64") {

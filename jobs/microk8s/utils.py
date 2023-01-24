@@ -119,3 +119,31 @@ def get_latest_pre_release(track, patch):
         return max_release
     else:
         return None
+
+
+def get_source_track_channel(track, channel, upstream):
+    """
+    Based on the input track and channel get the source channel and track
+    we would need to release from
+    :param track: Something like 1.15, 1.16
+    :param channel: beta, candidate or stable
+    :param upstream: upstream version string for the input track (needed for the latest track)
+    :return: source track and channel
+    """
+    if channel == "beta" or channel == "candidate":
+        source_track = track
+        source_channel = "edge"
+        return source_track, source_channel
+
+    assert channel == "stable"
+
+    if track == "latest":
+        ersion = upstream[1:]
+        ersion_list = ersion.split(".")
+        source_track = "{}.{}".format(ersion_list[0], ersion_list[1])
+        source_channel = "stable"
+    else:
+        source_track = track
+        source_channel = "candidate"
+
+    return source_track, source_channel
