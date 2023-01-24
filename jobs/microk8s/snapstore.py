@@ -214,7 +214,9 @@ class Microk8sSnap:
         cmd = "snapcraft release microk8s {} {}".format(self.revision, target)
         if dry_run == "no":
             try:
-                click.echo("Release revision {} to {}".format(self.revision, release_to_track))
+                click.echo(
+                    "Release revision {} to {}".format(self.revision, release_to_track)
+                )
                 run(cmd.split(), check=True, stdout=PIPE, stderr=STDOUT)
             except CalledProcessError as e:
                 click.echo("Release failed: {}".format(e.stdout))

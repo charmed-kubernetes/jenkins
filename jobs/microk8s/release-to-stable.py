@@ -70,8 +70,14 @@ if __name__ == "__main__":
             click.echo("No stable upstream release yet.")
             continue
 
-        source_track, source_channel =  get_source_track_channel(track, "stable", upstream)
-        click.echo("Track {}/{} the {}/{}".format(track, "stable", source_track, source_channel))
+        source_track, source_channel = get_source_track_channel(
+            track, "stable", upstream
+        )
+        click.echo(
+            "Track {}/{} the {}/{}".format(
+                track, "stable", source_track, source_channel
+            )
+        )
 
         candidate_snap = Microk8sSnap(
             source_track, source_channel, juju_unit, juju_controller, juju_model

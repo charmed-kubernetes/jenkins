@@ -36,7 +36,11 @@ if __name__ == "__main__":
     click.echo("Check if we are to release to {}.".format(channel))
 
     if channel not in ["stable", "candidate", "beta"]:
-        click.echo("Cannot pre-check for release channel {}. Going forward with the release.".format(channel))
+        click.echo(
+            "Cannot pre-check for release channel {}. Going forward with the release.".format(
+                channel
+            )
+        )
         exit(0)
 
     if always_release == "yes":
@@ -49,14 +53,21 @@ if __name__ == "__main__":
             click.echo("No upstream release yet.")
             continue
 
-
-        source_track, source_channel =  get_source_track_channel(track, channel, upstream)
-        click.echo("Track {}/{} the {}/{}".format(track, channel, source_track, source_channel))
+        source_track, source_channel = get_source_track_channel(
+            track, channel, upstream
+        )
+        click.echo(
+            "Track {}/{} the {}/{}".format(track, channel, source_track, source_channel)
+        )
         source_snap = Microk8sSnap(source_track, source_channel)
 
         if not source_snap.released:
             # Nothing to release
-            click.echo("Nothing on {}/{}. Nothing to release.".format(source_track, source_channel))
+            click.echo(
+                "Nothing on {}/{}. Nothing to release.".format(
+                    source_track, source_channel
+                )
+            )
             break
 
         if (
@@ -81,16 +92,16 @@ if __name__ == "__main__":
                         channel,
                         source_track,
                         source_channel,
-                        target_snap.version
+                        target_snap.version,
                     )
                 )
                 continue
-        
+
         # We need to do a release
         click.echo(
             "We need to try to release to {} on track {}.".format(channel, track)
         )
         exit(0)
-    
+
     # We went through all tracks and we did not find anything to release
     exit(1)
