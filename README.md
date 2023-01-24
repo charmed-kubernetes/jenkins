@@ -43,6 +43,8 @@ custom options:
   --snapd-upgrade       run tests with upgraded snapd
   --snapd-channel=SNAPD_CHANNEL
                         Snap channel to install snapcore from
+  --vault-unseal-command=VAULT_UNSEAL_COMMAND
+                        Command to run to unseal vault after a series upgrade
 ```
 
 This tells us what the commandline is to run this test and what parameters we

@@ -35,6 +35,7 @@ from .utils import (
     is_localhost,
     validate_storage_class,
     SERIES_ORDER,
+    refresh_openstack_charms,
     prep_series_upgrade,
     do_series_upgrade,
     finish_series_upgrade,
@@ -2579,19 +2580,27 @@ async def test_ceph(model, tools):
 async def test_series_upgrade(model, tools):
     if not tools.is_series_upgrade:
         pytest.skip("No series upgrade argument found")
-    worker = model.applications["kubernetes-worker"].units[0]
-    old_series = worker.machine.series
-    try:
-        new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
-    except IndexError:
-        pytest.skip("no supported series to upgrade to")
-    except ValueError:
-        pytest.skip("unrecognized series to upgrade from: {old_series}")
+    skipped = True
     for machine in model.machines.values():
+        old_series = machine.series
+        try:
+            new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
+            skipped = False
+        except IndexError:
+            log(f"no supported series to upgrade machine {machine.tag} to")
+            continue
+        except ValueError:
+            log(
+                f"unrecognized series to upgrade machine {machine.tag} from: "
+                f"{old_series}"
+            )
+            continue
+        await refresh_openstack_charms(machine, new_series, tools)
         await prep_series_upgrade(machine, new_series, tools)
         await do_series_upgrade(machine)
-        await finish_series_upgrade(machine, tools)
-        assert machine.series == new_series
+        await finish_series_upgrade(machine, tools, new_series)
+    if skipped:
+        pytest.skip("no supported series to upgrade to")
     expected_messages = {
         "kubernetes-control-plane": "Kubernetes control-plane running.",
         "kubernetes-worker": "Kubernetes worker running.",
