@@ -2600,7 +2600,7 @@ async def test_series_upgrade(model, tools):
         await do_series_upgrade(machine)
         await finish_series_upgrade(machine, tools, new_series)
     if skipped:
-        pytest.skip(f"no supported series to upgrade to")
+        pytest.skip("no supported series to upgrade to")
     expected_messages = {
         "kubernetes-control-plane": "Kubernetes control-plane running.",
         "kubernetes-worker": "Kubernetes worker running.",
