@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
-# This script checks if there is a potential release of the beta channel to stable.
+# This script checks if there is a potential release to channel $CHANNEL.
 # It is meant to be called from Jenkins but you can call it from your host yourself, eg
-# ALWAYS_RELEASE=yes python3 ./release-needed-to-stable.py
+# CHANNEL=beta python3 ./release-needed.py
 #
 # Returns:
 #  - 0: if a release is needed
