@@ -12,7 +12,7 @@ import click
 from datetime import datetime, timezone
 from snapstore import Microk8sSnap
 from configbag import get_tracks
-from utils import upstream_release
+from utils import upstream_release, get_source_track_channel
 
 
 # Set this to 'no' if you are sure you want to release
@@ -70,24 +70,14 @@ if __name__ == "__main__":
             click.echo("No stable upstream release yet.")
             continue
 
-        if track == "latest":
-            ersion = upstream[1:]
-            ersion_list = ersion.split(".")
-            source_track = "{}.{}".format(ersion_list[0], ersion_list[1])
-            source_channel = "stable"
-            click.echo(
-                "latest/stable is populated from the {}/{}".format(
-                    source_track, source_channel
-                )
+        source_track, source_channel = get_source_track_channel(
+            track, "stable", upstream
+        )
+        click.echo(
+            "Track {}/{} the {}/{}".format(
+                track, "stable", source_track, source_channel
             )
-        else:
-            source_track = track
-            source_channel = "candidate"
-            click.echo(
-                "{}/stable is populated from the {}/{}".format(
-                    track, source_track, source_channel
-                )
-            )
+        )
 
         candidate_snap = Microk8sSnap(
             source_track, source_channel, juju_unit, juju_controller, juju_model

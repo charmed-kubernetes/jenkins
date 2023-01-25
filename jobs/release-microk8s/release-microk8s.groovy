@@ -92,6 +92,18 @@ pipeline {
                                     "pre-release": "release-pre-release.py",
                                 ]
 
+                                try {
+                                    sh """
+                                    . .tox/py38/bin/activate
+                                    ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
+                                        TRACKS=${params.TRACKS}\
+                                        CHANNEL=${channel}\
+                                        timeout 6h python jobs/microk8s/release-needed.py
+                                    """
+                                } catch (err) {
+                                    return 0
+                                }
+
                                 if (arch == "arm64") {
                                     instance_type = "a1.2xlarge"
                                     constraints = "instance-type=${instance_type} root-disk=80G arch=${arch}"
@@ -115,6 +127,7 @@ pipeline {
 
                                 juju-wait -e "${juju_full_model}" -w
 
+                                set +x
                                 AWS_ACCESS_KEY_ID=\$(aws configure get aws_access_key_id)
                                 AWS_SECRET_ACCESS_KEY=\$(aws configure get aws_secret_access_key)
 
@@ -123,6 +136,7 @@ pipeline {
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_REGION=\$AWS_REGION | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID | sudo tee -a /etc/environment"
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY | sudo tee -a /etc/environment"
+                                set -x
 
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true
