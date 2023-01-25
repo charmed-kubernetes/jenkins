@@ -110,7 +110,11 @@ pipeline {
                                     eksd_instance_type = "m6g.large"
                                 } else if (arch == "amd64") {
                                     instance_type = "m5.large"
-                                    constraints = "mem=16G cores=8 root-disk=80G arch=${arch}"
+                                    if ("${channel}" == "stable") {
+                                        constraints = "instance-type=g3s.xlarge root-disk=80G arch=${arch}"
+                                    } else {
+                                        constraints = "mem=16G cores=8 root-disk=80G arch=${arch}"
+                                    }
                                     eksd_instance_type = "m4.large"
                                 } else {
                                     error("Aborting build due to unknown arch=${arch}")
