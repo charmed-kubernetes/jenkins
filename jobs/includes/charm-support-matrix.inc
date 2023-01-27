@@ -40,6 +40,21 @@
     upstream: 'https://github.com/charmed-kubernetes/ceph-csi-operator.git'
     channel-range:
       min: '1.25'
+- cilium:
+    bugs: 'https://bugs.launchpad.net/charm-cilium'
+    build-resources: 'cd {out_path}; bash {src_path}/fetch-resources.sh'
+    docs: 'https://charmhub.io/cilium/docs'
+    downstream: charmed-kubernetes/charm-cilium.git
+    store: 'https://charmhub.io/cilium'
+    summary: eBPF-based Networking, Observability, Security
+    architectures: [amd64, arm64]
+    tags:
+      - k8s
+      - cilium
+      - cni
+    upstream: 'https://github.com/charmed-kubernetes/charm-cilium.git'
+    channel-range:
+      min: '1.26'
 - containerd:
     bugs: 'https://bugs.launchpad.net/charm-containerd'
     docs: 'https://charmhub.io/containerd/docs'

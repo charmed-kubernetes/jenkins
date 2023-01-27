@@ -8,6 +8,9 @@
   calico: '{out_path}/calico-amd64.tar.gz'
   calico-arm64: '{out_path}/calico-arm64.tar.gz'
   calico-node-image: '{out_path}/calico-node-image.tar.gz'
+'cilium':
+  cilium: '{out_path}/cilium.tar.gz'
+  hubble: '{out_path}/hubble.tar.gz'
 'coredns':
   coredns-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
 'flannel':
