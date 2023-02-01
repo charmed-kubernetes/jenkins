@@ -13,10 +13,10 @@ Running the tests locally can be accomplished easily with tox. The tests expect
 certain environment variables to be set. These can be found by looking at the
 help output from `pytest` under the **custom options** section.
 
-> **Note**: Required minimum Python version is 3.6.
+> **Note**: Required minimum Python version is 3.8.
 
 ```
-> tox -e py3 --workdir .tox -- pytest jobs/integration/validation.py --help
+> tox -e py --workdir .tox -- pytest jobs/integration/validation.py --help
 
 custom options:
   --no-flaky-report     Suppress the report at the end of the run detailing
@@ -43,6 +43,8 @@ custom options:
   --snapd-upgrade       run tests with upgraded snapd
   --snapd-channel=SNAPD_CHANNEL
                         Snap channel to install snapcore from
+  --vault-unseal-command=VAULT_UNSEAL_COMMAND
+                        Command to run to unseal vault after a series upgrade
 ```
 
 This tells us what the commandline is to run this test and what parameters we
