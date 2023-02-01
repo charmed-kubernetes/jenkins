@@ -26,7 +26,7 @@ bcrypt==3.2.0
     # via paramiko
 beautifulsoup4==4.9.3
     # via bs4
-black==22.12.0
+black==23.1.0
     # via -r requirements.in
 boto3==1.17.41
     # via -r requirements.in
@@ -70,8 +70,6 @@ docutils==0.15.2
     # via awscli
 drypy==1.0.1
     # via -r requirements.in
-exceptiongroup==1.0.4
-    # via pytest
 fasteners==0.16
     # via jenkins-job-builder
 flake8==6.0.0
@@ -162,9 +160,10 @@ oauthlib==3.1.0
     # via
     #   lazr-restfulclient
     #   requests-oauthlib
-packaging==20.9
+packaging==23.0
     # via
     #   ansible-base
+    #   black
     #   mkdocs
     #   pytest
 paramiko==2.10.1
@@ -216,9 +215,7 @@ pynacl==1.2.0
     #   paramiko
     #   pymacaroons
 pyparsing==2.4.7
-    # via
-    #   httplib2
-    #   packaging
+    # via httplib2
 pyrfc3339==1.1
     # via
     #   juju
@@ -313,10 +310,6 @@ tabulate==0.8.7
     # via surl
 theblues==0.5.2
     # via juju
-tomli==2.0.1
-    # via
-    #   black
-    #   pytest
 toposort==1.6
     # via juju
 typing-extensions==3.10.0.2
@@ -336,8 +329,6 @@ wcwidth==0.2.5
     # via prettytable
 websocket-client==1.2.3
     # via kubernetes
-websockets==7.0 ; python_version < "3.9"
-websockets==8.1 ; python_version == "3.9"
 websockets==10.3 ; python_version >= "3.10"
     # via
     #   -r requirements.in
