@@ -22,7 +22,7 @@ def test_sync_default_branch(mock_default_gh, mock_base, sync):
         ],
         any_order=False,
     )
-    for (name, args, kwargs) in mock_base().mock_calls:
+    for name, args, kwargs in mock_base().mock_calls:
         assert name in ["clone", "remote_add", "fetch", "checkout", "merge", "push"]
         if ref := kwargs.get("ref"):
             assert ref == "test-main"

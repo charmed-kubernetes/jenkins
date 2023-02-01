@@ -14,7 +14,6 @@ import os
 
 @pytest.fixture(scope="module")
 def arn():
-
     log("Adding AWS IAM Role KubernetesAdmin")
 
     policy = {
