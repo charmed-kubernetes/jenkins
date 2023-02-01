@@ -217,7 +217,6 @@ def _tag_stable_forks(
     failed = []
     for layer_map in layer_list + charm_list:
         for layer_name, params in layer_map.items():
-
             tags = params.get("tags", None)
             if tags:
                 if not any(match in filter_by_tag for match in tags):

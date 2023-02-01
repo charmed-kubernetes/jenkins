@@ -64,7 +64,6 @@ if __name__ == "__main__":
     click.echo("Check candidate maturity and release microk8s to stable.")
     click.echo("Dry run is set to '{}'.".format(dry_run))
     for track in tracks_requested:
-
         upstream = upstream_release(track)
         if not upstream:
             click.echo("No stable upstream release yet.")
