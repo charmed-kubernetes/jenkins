@@ -64,10 +64,6 @@ cryptography==3.4.7
     #   paramiko
 decorator==4.4.2
     # via retry
-dill==0.3.5.1
-    # via
-    #   multiprocess
-    #   pathos
 distro==1.5.0
     # via lazr-restfulclient
 docutils==0.15.2
@@ -158,8 +154,6 @@ mkdocs-material-extensions==1.0.3
     # via mkdocs-material
 multi-key-dict==2.0.3
     # via python-jenkins
-multiprocess==0.70.13
-    # via pathos
 mypy-extensions==0.4.3
     # via
     #   black
@@ -175,8 +169,6 @@ packaging==20.9
     #   pytest
 paramiko==2.10.1
     # via juju
-pathos==0.2.9
-    # via -r requirements.in
 pathspec==0.9.0
     # via black
 pbr==5.5.1
@@ -188,10 +180,6 @@ platformdirs==2.5.1
     # via black
 pluggy==0.13.1
     # via pytest
-pox==0.3.1
-    # via pathos
-ppft==1.7.6.5
-    # via pathos
 prettytable==3.6.0
     # via -r requirements.in
 protobuf==3.20.2
@@ -311,7 +299,6 @@ six==1.15.0
     #   lazr-restfulclient
     #   macaroonbakery
     #   paramiko
-    #   ppft
     #   pymacaroons
     #   pynacl
     #   python-dateutil

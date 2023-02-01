@@ -34,7 +34,6 @@ semver
 sh
 surl
 retry
-pathos
 prettytable
 wheel
 # The following websocket requirements are environment marked because of juju
