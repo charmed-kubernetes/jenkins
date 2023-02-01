@@ -186,8 +186,8 @@ class Tools:
 
         await asyncio.wait(
             [
-                _read_stream(proc.stdout, lambda l: tee(l, stdout, 1)),
-                _read_stream(proc.stderr, lambda l: tee(l, stderr, 2)),
+                _read_stream(proc.stdout, lambda _l: tee(_l, stdout, 1)),
+                _read_stream(proc.stderr, lambda _l: tee(_l, stderr, 2)),
                 _feed_stream(input=stdin),
             ]
         )
