@@ -3,7 +3,7 @@
 """
 
 from datetime import datetime, timedelta
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from boto3.dynamodb.conditions import Key, Attr
 import boto3
 import click
@@ -13,7 +13,7 @@ import uuid
 import requests
 import dill
 import os
-from pathos.threading import ThreadPool
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from pprint import pformat, pprint
 from cilib import log, run, html
@@ -51,31 +51,19 @@ class Storage:
 
     @property
     def reports(self):
-        """ Return mapping of report files
-        """
-        _report_map = {}
+        """ Return mapping of report files."""
+        _report_map = defaultdict(list)
         for item in self.objects:
             key_p = Path(item["Key"])
-            if key_p.parent in _report_map:
-                _report_map[key_p.parent].append(
-                    (
-                        key_p.name,
-                        int(item["Size"]),
-                        datetime.strptime(
-                            item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z"
-                        ),
-                    )
+            _report_map[key_p.parent].append(
+                (
+                    key_p.name,
+                    int(item["Size"]),
+                    datetime.strptime(
+                        item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z"
+                    ),
                 )
-            else:
-                _report_map[key_p.parent] = [
-                    (
-                        key_p.name,
-                        int(item["Size"]),
-                        datetime.strptime(
-                            item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z"
-                        ),
-                    )
-                ]
+            )
         return _report_map
 
 
