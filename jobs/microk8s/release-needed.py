@@ -47,7 +47,6 @@ if __name__ == "__main__":
         exit(0)
 
     for track in tracks_requested:
-
         upstream = upstream_release(track)
         if not upstream:
             click.echo("No upstream release yet.")
