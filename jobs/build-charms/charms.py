@@ -35,7 +35,7 @@ from enum import Enum
 from types import SimpleNamespace
 from typing import List, Mapping, Optional, Set
 
-from pathos.threading import ThreadPool
+from multiprocessing.pool import ThreadPool
 from pprint import pformat
 import click
 import shutil
@@ -531,19 +531,15 @@ class BuildEnv:
 
     def pull_layers(self):
         """Clone all downstream layers to be processed locally when doing charm builds."""
-        layers_to_pull = []
-        for layer_map in self.layers:
-            layer_name = list(layer_map.keys())[0]
-
-            if layer_name == "layer:index":
-                continue
-
-            layers_to_pull.append(layer_name)
-
+        layers_to_pull = [
+            layer_name
+            for layer in self.layers
+            if (layer_name := next(iter(layer))) != "layer:index"
+        ]
         pool = ThreadPool()
         results = pool.map(self.download, layers_to_pull)
 
-        self.db["pull_layer_manifest"] = [result for result in results]
+        self.db["pull_layer_manifest"] = list(results)
 
 
 class BuildEntity:
