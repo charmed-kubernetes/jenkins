@@ -60,6 +60,7 @@ function juju::deploy::after
     juju add-model -c "$JUJU_CONTROLLER" addons k8s --config test-mode=true
 
     tee k8s-bundle.yaml <<EOF > /dev/null
+bundle: kubernetes
 series: $SERIES
 applications:
   sriov-cni:
