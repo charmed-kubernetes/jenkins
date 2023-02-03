@@ -725,3 +725,45 @@
       - run-venv:
           COMMAND: |
             bash jobs/validate/sriov-spec $snap_version $series $channel
+
+- job:
+    name: 'validate-ck-cilium'
+    node: runner-validate
+    description: |
+      Validates CK edge with Cilium for n-1 releases.
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-infra
+      - build-discarder:
+          num-to-keep: 3
+    triggers:
+        - timed: "@weekly"
+    parameters:
+      - charms-edge
+    axes:
+      - axis:
+          type: slave
+          name: node
+          values:
+            - runner-validate
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.27/edge
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - jammy
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-venv:
+          COMMAND: |
+            bash jobs/validate/cilium-spec $snap_version $series $channel

@@ -1,0 +1,83 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+###############################################################################
+# INITIALIZE
+###############################################################################
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function juju::deploy::overlay
+{
+    local constraints
+    constraints="arch=$ARCH cores=2 mem=8G root-disk=16G"
+
+    tee overlay.yaml <<EOF > /dev/null
+series: $SERIES
+applications:
+  kubernetes-control-plane:
+    constraints: $constraints
+    channel: $JUJU_DEPLOY_CHANNEL
+    options:
+      channel: $SNAP_VERSION
+      allow-privileged: "true"
+  kubernetes-worker:
+    constraints: $constraints
+    channel: $JUJU_DEPLOY_CHANNEL
+    options:
+      channel: $SNAP_VERSION
+  calico: null
+  containerd:
+    options:
+      no_proxy: "localhost,127.0.0.1,::1,10.246.154.0/24,10.152.183.0/24,192.168.0.0/16"
+  cilium:
+    charm: cilium
+    channel: $JUJU_DEPLOY_CHANNEL
+relations:
+  - [cilium:cni, kubernetes-control-plane:cni]
+  - [cilium:cni, kubernetes-worker:cni]
+EOF
+}
+
+function test::execute
+{
+    declare -n is_pass=$1
+    timeout -s INT 2h pytest \
+        --html="report.html" \
+        --full-trace \
+        jobs/integration/validation.py \
+        --cloud "$JUJU_CLOUD" \
+        --model "$JUJU_MODEL" \
+        --controller "$JUJU_CONTROLLER"
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+###############################################################################
+# ENV
+###############################################################################
+SNAP_VERSION=${1:-1.26/stable}
+SERIES=${2:-jammy}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_CLOUD=vsphere/Boston
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-cilium
+ARCH=${4:-amd64}
+JOB_NAME_CUSTOM="validate-ck-cilium-$SERIES-$ARCH-$SNAP_VERSION"
+JOB_ID=$(identifier)
+
+###############################################################################
+# START
+###############################################################################
+ci::run
