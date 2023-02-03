@@ -756,7 +756,6 @@
           name: snap_version
           values:
             - 1.27/edge
-            - 1.26/edge
       - axis:
           type: user-defined
           name: series
