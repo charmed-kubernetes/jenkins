@@ -163,11 +163,11 @@ pipeline {
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr content fetch \${i} --all-platforms >/dev/null
                             fi
                         fi
 
@@ -250,11 +250,11 @@ pipeline {
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image pull \${i} --all-platforms >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr content fetch \${i} --all-platforms >/dev/null
                             fi
                         fi
 
