@@ -65,7 +65,7 @@ class SnapService(DebugMixin):
                     "patches": [],
                     "go_version": enums.K8S_GO_MAP[
                         f"{k8s_major_minor.major}.{k8s_major_minor.minor}"
-                    ]
+                    ],
                 }
 
                 # Starting with 1.19 and beyond, build snaps with a base snap of core18 or
