@@ -199,6 +199,7 @@
           values:
             - 1.26/stable
             - 1.25/stable
+            - 1.24/stable
       - axis:
           type: user-defined
           name: series
