@@ -63,10 +63,9 @@ class SnapService(DebugMixin):
                 snapcraft_yml_context = {
                     "snap_version": branch.lstrip("v"),
                     "patches": [],
-                    "go_version": enums.K8S_GO_MAP.get(
-                        f"{k8s_major_minor.major}.{k8s_major_minor.minor}",
-                        "go/1.19/stable",
-                    ),
+                    "go_version": enums.K8S_GO_MAP[
+                        f"{k8s_major_minor.major}.{k8s_major_minor.minor}"
+                    ],
                 }
 
                 # Starting with 1.19 and beyond, build snaps with a base snap of core18 or
