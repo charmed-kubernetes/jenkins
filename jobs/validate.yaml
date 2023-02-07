@@ -197,6 +197,7 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.26/stable
             - 1.25/stable
             - 1.24/stable
       - axis:
