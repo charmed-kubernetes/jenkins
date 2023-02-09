@@ -3,7 +3,6 @@ import logging
 import pytest
 import random
 import re
-import sh
 import string
 from pathlib import Path
 from typing import Optional
