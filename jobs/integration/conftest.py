@@ -609,9 +609,14 @@ def pytest_metadata(metadata):
         ] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/columbo.html'>View Report</a>"
 
 
-@pytest.fixture()
-async def kubeconfig(tools, model, tmp_path):
-    local = Path(tmp_path) / "kubeconfig"
+@pytest.fixture(scope="module")
+async def kubeconfig(tools, model, tmp_path_factory):
+    local = tmp_path_factory.getbasetemp() / "kubeconfig"
     k8s_cp = model.applications["kubernetes-control-plane"].units[0]
     await scp_from(k8s_cp, "config", local, None, tools.connection)
     yield local
+
+
+@pytest.fixture(scope="module")
+async def kubectl(kubeconfig):
+    yield sh.kubectl.bake(kubeconfig=kubeconfig)

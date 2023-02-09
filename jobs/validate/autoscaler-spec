@@ -1,0 +1,128 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+###############################################################################
+# INITIALIZE
+###############################################################################
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+function juju::deploy::overlay
+{
+    tee overlay.yaml <<EOF > /dev/null
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  kubernetes-control-plane:
+    options:
+      channel: $SNAP_VERSION
+  kubernetes-worker:
+    num_units: 1
+    options:
+      channel: $SNAP_VERSION
+EOF
+}
+
+function juju::deploy::after
+{
+    juju scp -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
+          kubernetes-control-plane/0:config "kubeconfig"
+    export KUBECONFIG="kubeconfig"
+    juju add-k8s k8s -c "$JUJU_CONTROLLER" --skip-storage
+    juju add-model -c "$JUJU_CONTROLLER" addons k8s --config test-mode=true
+    API_ENDPOINTS=$(
+        juju show-controller $JUJU_CONTROLLER --format json |
+        jq -rc '.[].details["api-endpoints"] |
+        join(",")'
+    )
+    CA_CERT=$(
+        juju show-controller $JUJU_CONTROLLER --format json |
+        jq -rc '.[].details["ca-cert"]' |
+        base64 -w0
+    )
+    USER=$(
+        juju show-controller $JUJU_CONTROLLER --format json |
+        jq -rc '.[].account.user'
+    )
+    PASSWORD=$(
+        juju show-controller $JUJU_CONTROLLER --show-password --format json |
+        jq -rc '.[].account.password'
+    )
+    MODEL_UUID=$(
+        juju models -c $JUJU_CONTROLLER --format json |
+        jq -cr '.models[]|select(.name=="admin/'$JUJU_MODEL'")|.["model-uuid"]'
+    )
+
+    tee k8s_overlay.yaml <<EOF > /dev/null
+bundle: kubernetes
+series: $SERIES
+applications:
+  kubernetes-autoscaler:
+    charm: kubernetes-autoscaler
+    constraints: tags=node.juju-application=kubernetes-control-plane
+    channel: $JUJU_DEPLOY_CHANNEL
+    scale: 1
+    trust: true
+    options:
+      juju_api_endpoints: $API_ENDPOINTS
+      juju_ca_cert: $CA_CERT
+      juju_default_model_uuid: $MODEL_UUID
+      juju_username: $USER
+      juju_password: $PASSWORD
+      juju_scale: '- {min: 1, max: 3, application: kubernetes-worker}'
+      autoscaler_extra_args: '{v: 5, scale-down-delay-after-add: 3m0s, scale-down-unneeded-time: 3m0s}'
+EOF
+
+    juju deploy -m "${JUJU_CONTROLLER}:addons" ./k8s_overlay.yaml --trust
+    timeout 45m juju-wait -e "${JUJU_CONTROLLER}:addons" -w
+}
+
+function test::execute
+{
+    declare -n is_pass=$1
+    timeout -s INT 2h pytest \
+        --html="report.html" \
+        --full-trace \
+        jobs/integration/validation.py \
+        --cloud "$JUJU_CLOUD" \
+        --model "$JUJU_MODEL" \
+        --controller "$JUJU_CONTROLLER" \
+        --addons-model addons
+    ret=$?
+    is_pass="True"
+    if (( $ret > 0 )); then
+        is_pass="False"
+    fi
+}
+
+function ci::cleanup::before
+{
+    juju destroy-model -y --destroy-storage "$JUJU_CONTROLLER:addons" || true
+}
+
+
+###############################################################################
+# ENV
+###############################################################################
+SNAP_VERSION=${1:-1.26/stable}
+SERIES=${2:-jammy}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_CLOUD=vsphere/Boston
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-autoscaler
+ARCH=${4:-amd64}
+JOB_NAME_CUSTOM="validate-ck-validate-autoscaler-$SERIES-$ARCH-$SNAP_VERSION"
+JOB_ID=$(identifier)
+
+###############################################################################
+# START
+###############################################################################
+ci::run
