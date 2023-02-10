@@ -131,7 +131,7 @@ async def test_validate_aws_iam(model, tools):
     # properly. This requires:
     # 1) Deploy aws-iam and relate
     # 2) Deploy CRD
-    # 3) Grab new kubeconfig from master.
+    # 3) Grab new kubeconfig from control-plane.
     # 4) Plug in test ARN to config
     # 5) Download aws-iam-authenticator binary
     # 6) Verify authentication via aws user
@@ -141,15 +141,15 @@ async def test_validate_aws_iam(model, tools):
     # 10) Verify access
 
     log("starting aws-iam test")
-    masters = model.applications["kubernetes-control-plane"]
-    k8s_version_str = masters.data["workload-version"]
+    controllers = model.applications["kubernetes-control-plane"]
+    k8s_version_str = controllers.data["workload-version"]
     k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     if k8s_minor_version < (1, 15):
         log("skipping, k8s version v" + k8s_version_str)
         return
 
     # 1) deploy
-    await masters.set_config({"authorization-mode": "AlwaysAllow"})
+    await controllers.set_config({"authorization-mode": "AlwaysAllow"})
     async with aws_iam_charm(model, tools):
         # 2) deploy CRD for test
         log("deploying crd")
@@ -166,9 +166,9 @@ spec:
 EOF""".format(
             os.environ["AWSIAMARN"]
         )
-        # Note that we patch a single master's kubeconfig to have the arn in it,
-        # so we need to use that one master for all commands
-        one_control_plane = random.choice(masters.units)
+        # Note that we patch a single controllers's kubeconfig to have the arn in it,
+        # so we need to use that one controllers for all commands
+        one_control_plane = random.choice(controllers.units)
         output = await juju_run(one_control_plane, cmd, check=False, timeout=15)
         assert output.status == "completed"
 
@@ -204,7 +204,7 @@ EOF""".format(
         await verify_auth_success(one_control_plane, "get po")
 
         # 7) turn on RBAC and add a test user
-        await masters.set_config({"authorization-mode": "RBAC,Node"})
+        await controllers.set_config({"authorization-mode": "RBAC,Node"})
         log("waiting for cluster to settle...")
         await tools.juju_wait()
 
