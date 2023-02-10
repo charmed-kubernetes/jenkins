@@ -209,7 +209,7 @@ class Tools:
         return_code = await proc.wait()
         if return_code != 0:
             raise Exception(
-                f"Problem with run command {' ',join((cmd, *args))} (exit {return_code}):\n"
+                f"Problem with run command {' '.join((cmd, *args))} (exit {return_code}):\n"
                 f"stdout:\n{str(stdout, 'utf8')}\n"
                 f"stderr:\n{str(stderr, 'utf8')}\n"
             )
