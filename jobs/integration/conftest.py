@@ -122,6 +122,9 @@ class Tools:
     async def _load(self):
         request = self._request
         whoami, _ = await self.run("juju", "whoami", "--format=yaml")
+        stdout, _ = await self.run("juju", "--version")
+        ver_str = stdout.splitlines()[-1].split("-")[0]
+        self.juju_version = tuple(map(int, ver_str.split(".")))
         self.juju_user = yaml.safe_load(whoami)["user"]
         self.controller_name = request.config.getoption("--controller")
         self.model_name = request.config.getoption("--model")
@@ -136,6 +139,17 @@ class Tools:
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
         self.charm_channel = request.config.getoption("--charm-channel")
         self.vault_unseal_command = request.config.getoption("--vault-unseal-command")
+
+    def juju_base(self, series):
+        """Retrieve juju 3.1 base from series."""
+        if self.juju_version < (3, 1):
+            return f"--series={series}"
+        mapping = {
+            "bionic": "ubuntu@18.04",
+            "focal": "ubuntu@20.04",
+            "jammy": "ubuntu@22.04",
+        }
+        return f"--series={mapping[series]}"
 
     async def run(self, cmd: str, *args: str, stdin=None, _tee=False):
         """
@@ -195,7 +209,7 @@ class Tools:
         return_code = await proc.wait()
         if return_code != 0:
             raise Exception(
-                f"Problem with run command {cmd} (exit {return_code}):\n"
+                f"Problem with run command {' ',join((cmd, *args))} (exit {return_code}):\n"
                 f"stdout:\n{str(stdout, 'utf8')}\n"
                 f"stderr:\n{str(stderr, 'utf8')}\n"
             )
