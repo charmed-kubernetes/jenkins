@@ -90,7 +90,7 @@ function test::execute
     timeout -s INT 2h pytest \
         --html="report.html" \
         --full-trace \
-        jobs/integration/validation.py \
+        jobs/integration/test_autoscaler.py \
         --cloud "$JUJU_CLOUD" \
         --model "$JUJU_MODEL" \
         --controller "$JUJU_CONTROLLER" \
