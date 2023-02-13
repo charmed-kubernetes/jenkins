@@ -149,7 +149,7 @@ class Tools:
             "focal": "ubuntu@20.04",
             "jammy": "ubuntu@22.04",
         }
-        return f"--series={mapping[series]}"
+        return f"--base={mapping[series]}"
 
     async def run(self, cmd: str, *args: str, stdin=None, _tee=False):
         """
