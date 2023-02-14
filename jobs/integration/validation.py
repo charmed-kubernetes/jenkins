@@ -19,6 +19,7 @@ from base64 import b64encode
 
 # from cilib import log
 from datetime import datetime
+from pathlib import Path
 from pprint import pformat
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
@@ -1907,6 +1908,8 @@ async def test_dns_provider(model, k8s_model, tools):
             return None
 
     try:
+        await control_plane_app.set_config({"dns-provider": "auto"})
+        await model.wait_for_idle(raise_on_error=False, status="active")
         log("Verifying DNS with default provider (auto -> coredns)")
         await verify_dns_resolution(fresh=True)
 
@@ -1926,7 +1929,7 @@ async def test_dns_provider(model, k8s_model, tools):
         # See LP#1998607
         worker_arch = os.environ.get("ARCH", "amd64")
         series = os.environ["SERIES"]
-        with NamedTemporaryFile("w") as f:
+        with NamedTemporaryFile("w", dir=Path.cwd()) as f:
             f.write(
                 '{"ImageName": "rocks.canonical.com:443/cdk/coredns/coredns:1.10.0"}'
             )
@@ -1938,7 +1941,7 @@ async def test_dns_provider(model, k8s_model, tools):
                 f"{tools.controller_name}:{tools.k8s_model_name}",
                 f"--constraints=arch={worker_arch}",
                 f"--channel={tools.charm_channel}",
-                f"--series={series}",
+                tools.juju_base(series),
                 "coredns",
                 "--trust",
                 "--resource",
