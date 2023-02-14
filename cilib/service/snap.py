@@ -68,9 +68,9 @@ class SnapService(DebugMixin):
                     ],
                 }
 
-                # Starting with 1.19 and beyond, build snaps with a base snap of core18 or
-                # whatever the fresh catch of the day is
-                if semver.compare(str(k8s_major_minor), "1.19.0") >= 0:
+                if semver.compare(str(k8s_major_minor), "1.27.0") >= 0:
+                    snapcraft_yml_context["base"] = "core20"
+                elif semver.compare(str(k8s_major_minor), "1.19.0") >= 0:
                     snapcraft_yml_context["base"] = "core18"
 
                 self.log(f"Writing template vars {snapcraft_yml_context}")
