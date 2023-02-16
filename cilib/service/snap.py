@@ -68,7 +68,7 @@ class SnapService(DebugMixin):
                     ],
                 }
 
-                if semver.compare(str(k8s_major_minor), "1.27.0") >= 0:
+                if semver.compare(str(k8s_major_minor), "1.27.0-alpha.0") >= 0:
                     snapcraft_yml_context["base"] = "core20"
                 elif semver.compare(str(k8s_major_minor), "1.19.0") >= 0:
                     snapcraft_yml_context["base"] = "core18"
