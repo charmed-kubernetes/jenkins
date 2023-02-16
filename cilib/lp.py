@@ -95,6 +95,7 @@ class Client:
             snap = self.snaps.new(
                 name=lp_snap_name,
                 owner=lp_owner,
+                distro_series=self.distro_series(),
                 git_repository=self.snap_git_repo(lp_owner, lp_snap_project_name),
                 git_path=branch,
                 store_upload=True,
