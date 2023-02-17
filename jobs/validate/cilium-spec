@@ -63,6 +63,13 @@ function test::execute
     fi
 }
 
+function ci::cleanup::before
+{
+    echo "Pod Describe:"
+    juju ssh -m "$JUJU_CONTROLLER:$JUJU_MODEL" kubernetes-control-plane/leader -- \
+	    kubectl describe po -A
+}
+
 ###############################################################################
 # ENV
 ###############################################################################
