@@ -183,28 +183,46 @@ async def is_localhost(controller_name):
     return cloud == "localhost"
 
 
-async def scp_from(unit, remote_path, local_path, controller_name, connection_name):
+async def scp_from(
+    unit, remote_path, local_path, controller_name, connection_name, proxy=False
+):
     """Carefully scp from juju units to the local filesystem through a temporary directory."""
     local_path = Path(local_path)
     with TemporaryDirectory(dir=Path.home() / ".local" / "share" / "juju") as tmpdir:
         temp_path = Path(tmpdir) / local_path.name
-        cmd = "juju scp -m {} {}:{} {}".format(
-            connection_name, unit.name, remote_path, temp_path
-        )
-        await asyncify(subprocess.check_call)(cmd.split())
+        proxy_args = ["--proxy"] if proxy else []
+        cmd = [
+            "juju",
+            "scp",
+            "-m",
+            connection_name,
+            *proxy_args,
+            "{}:{}".format(unit.name, remote_path),
+            temp_path,
+        ]
+        await asyncify(subprocess.check_call)(cmd)
         shutil.copy(temp_path, local_path)
 
 
-async def scp_to(local_path, unit, remote_path, controller_name, connection_name):
+async def scp_to(
+    local_path, unit, remote_path, controller_name, connection_name, proxy=False
+):
     """Carefully scp from the local filesystem to juju units through a temporary directory."""
     local_path = Path(local_path)
     with TemporaryDirectory(dir=Path.home() / ".local" / "share" / "juju") as tmpdir:
         temp_path = Path(tmpdir) / local_path.name
         shutil.copy(local_path, temp_path)
-        cmd = "juju scp -m {} {} {}:{}".format(
-            connection_name, temp_path, unit.name, remote_path
-        )
-        await asyncify(subprocess.check_call)(cmd.split())
+        proxy_args = ["--proxy"] if proxy else []
+        cmd = [
+            "juju",
+            "scp",
+            "-m",
+            connection_name,
+            *proxy_args,
+            temp_path,
+            "{}:{}".format(unit.name, remote_path),
+        ]
+        await asyncify(subprocess.check_call)(cmd)
 
 
 async def retry_async_with_timeout(
