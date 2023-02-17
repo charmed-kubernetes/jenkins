@@ -123,7 +123,7 @@ class SnapService(DebugMixin):
                     )
                 )
 
-                # Sanity check; there is a period of time where K8S_NEXT_VERSION
+                # S-a-n-i-t-y check; there is a period of time where K8S_NEXT_VERSION
                 # is stable (1.xx.0) *and* has a pre-release branch (1.xx.1-alpha.1).
                 # If our latest branch version is not a pre-release, bail out.
                 # Otherwise, we'd publish 1.xx.1-alpha.1 to our 1.xx/stable channel.
