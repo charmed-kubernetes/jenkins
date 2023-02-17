@@ -116,9 +116,7 @@ class SnapService(DebugMixin):
         supported_versions = list(enums.SNAP_K8S_TRACK_MAP.keys())
         for _version in supported_versions:
             if _version == enums.K8S_NEXT_VERSION:
-                self.log(
-                    "Next development version triggered, will query pre-releases."
-                )
+                self.log("Next development version triggered, will query pre-releases.")
                 latest_branch_version = (
                     self.snap_model.base.latest_branch_from_major_minor(
                         _version, exclude_pre=False
