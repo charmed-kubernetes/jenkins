@@ -115,20 +115,37 @@ class SnapService(DebugMixin):
         """Keeps snap builds current with latest releases"""
         supported_versions = list(enums.SNAP_K8S_TRACK_MAP.keys())
         for _version in supported_versions:
+            if _version == enums.K8S_NEXT_VERSION:
+                self.log("Next development version triggered, will query pre-releases.")
+                latest_branch_version = (
+                    self.snap_model.base.latest_branch_from_major_minor(
+                        _version, exclude_pre=False
+                    )
+                )
+
+                # S-a-n-i-t-y check; there is a period of time where K8S_NEXT_VERSION
+                # is stable (1.xx.0) *and* has a pre-release branch (1.xx.1-alpha.1).
+                # If our latest branch version is not a pre-release, bail out.
+                # Otherwise, we'd publish 1.xx.1-alpha.1 to our 1.xx/stable channel.
+                if not semver.VersionInfo.parse(latest_branch_version).prerelease:
+                    self.log(
+                        f"Found a stable branch ({str(latest_branch_version)}) "
+                        "while looking for pre-releases, skipping."
+                    )
+                    continue
+            else:
+                # We don't want pre-releases when syncing our stable versions
+                latest_branch_version = (
+                    self.snap_model.base.latest_branch_from_major_minor(
+                        _version, exclude_pre=True
+                    )
+                )
+
             for arch in enums.K8S_SUPPORT_ARCHES:
                 self.log(f"> Checking snaps in version {_version} for arch {arch}")
 
                 # Set the current version in the snap model
                 self.snap_model.version = _version
-
-                exclude_pre = True
-                if _version == enums.K8S_NEXT_VERSION:
-                    self.log(
-                        f"Next development version triggered, will query pre-releases."
-                    )
-                    # Only pull in pre-releases if building for the next development version
-                    exclude_pre = False
-
                 max_rev = self.snap_model.latest_revision(
                     track=f"{_version}/edge",
                     arch=arch,
@@ -144,35 +161,18 @@ class SnapService(DebugMixin):
                 else:
                     latest_snap_version = semver.VersionInfo.parse("0.0.0")
                     self.log(f"No revision or snap version found, assuming new version")
-                latest_branch_version = (
-                    self.snap_model.base.latest_branch_from_major_minor(
-                        _version, exclude_pre
-                    )
-                )
-                self.log(f"Latest branch version {latest_branch_version}")
-
-                # Skip building development version if a stable version actually
-                # exists, for example, if 1.21 is in development but there
-                # exists a 1.21.1-rc.0 AND 1.21.0 we do not want to build
-                # 1.21.1-rc.0 as anything with stable releases are considered
-                # usable by end users.
-                if (
-                    _version == enums.K8S_NEXT_VERSION
-                    and not semver.VersionInfo.parse(latest_branch_version).prerelease
-                ):
-                    self.log(
-                        f"This version has a non prerelease {str(latest_branch_version)} in our next development build, skipping."
-                    )
-                    continue
 
                 if (
                     semver.compare(str(latest_branch_version), str(latest_snap_version))
                     > 0
                 ):
                     self.log(
-                        f"Found new branch {str(latest_branch_version)} > {str(latest_snap_version)}, building new snap"
+                        f"Latest branch {str(latest_branch_version)} > {str(latest_snap_version)}, building new snap"
                     )
                     self._create_recipe(_version, f"v{str(latest_branch_version)}")
+                    # Our recipes include all the arches we care about; now that we've
+                    # requested a new one, we can stop checking the remaining arches.
+                    break
                 else:
                     self.log(
                         f"> Versions match {str(latest_branch_version)} == {str(latest_snap_version)}, not building a new snap"
