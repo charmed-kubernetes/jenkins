@@ -218,8 +218,10 @@ async def test_auth_file_propagation(model, tools):
         "md5sum /root/cdk/serviceaccount.key",
     )
 
+    # fail the test if we're waiting more than 10 minutes
+    max_wait = 10 * 60
+
     # Check that md5sum on non-leader matches
-    max_wait = 120
     follower_md5 = await run_until_success(
         follower,
         'md5sum /root/cdk/serviceaccount.key | grep "{}"'.format(leader_md5),
