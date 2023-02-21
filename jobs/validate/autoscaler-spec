@@ -17,7 +17,6 @@ set -x
 function juju::deploy::overlay
 {
     tee overlay.yaml <<EOF > /dev/null
-    cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
   kubernetes-control-plane:
