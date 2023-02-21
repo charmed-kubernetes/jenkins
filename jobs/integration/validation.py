@@ -196,14 +196,14 @@ async def reset_audit_config(control_plane_app, tools):
 
 # START TESTS
 async def test_auth_file_propagation(model, tools):
-    """Validate that changes to /root/cdk/basic_auth.csv on the leader master
-    unit are propagated to the other master units.
+    """Validate that changes to /root/cdk/serviceaccount.key on the leader
+    control-plane unit are propagated to the other control-plane units.
 
     """
     # Get a leader and non-leader unit to test with
     masters = model.applications["kubernetes-control-plane"]
     if len(masters.units) < 2:
-        pytest.skip("Auth file propagation test requires multiple masters")
+        pytest.skip("Test requires multiple control-plane units")
 
     for master in masters.units:
         if await master.is_leader_from_status():
@@ -211,21 +211,29 @@ async def test_auth_file_propagation(model, tools):
         else:
             follower = master
 
-    # Change basic_auth.csv on the leader, and get its md5sum
+    # Change serviceaccount.key on the leader, and get its md5sum
     leader_md5 = await run_until_success(
         leader,
-        "echo test,test,test >> /root/cdk/basic_auth.csv && "
-        "md5sum /root/cdk/basic_auth.csv",
+        "echo '#EXTRA' >> /root/cdk/serviceaccount.key && "
+        "md5sum /root/cdk/serviceaccount.key",
     )
+
+    # fail the test if we're waiting more than 10 minutes
+    max_wait = 10 * 60
 
     # Check that md5sum on non-leader matches
-    await run_until_success(
-        follower, 'md5sum /root/cdk/basic_auth.csv | grep "{}"'.format(leader_md5)
+    follower_md5 = await run_until_success(
+        follower,
+        'md5sum /root/cdk/serviceaccount.key | grep "{}"'.format(leader_md5),
+        timeout_insec=max_wait,
     )
 
-    # Cleanup (remove the line we added)
-    await run_until_success(leader, "sed -i '$d' /root/cdk/basic_auth.csv")
-    await tools.juju_wait()
+    try:
+        assert follower_md5 == leader_md5, "Units didn't match"
+    finally:
+        # Cleanup (remove the line we added)
+        await run_until_success(leader, "sed -i '$d' /root/cdk/serviceaccount.key")
+        await tools.juju_wait(max_wait=max_wait)
 
 
 @pytest.mark.flaky(max_runs=5, min_passes=1)
