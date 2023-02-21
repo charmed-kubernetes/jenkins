@@ -98,7 +98,11 @@ async def test_snapshot_restore(model, tools):
                 src = Path(action.results["snapshot"]["path"])
                 dst = Path(action.results["snapshot"]["path"]).name
                 await unit.scp_from(
-                    str(src), str(dst), tools.controller_name, tools.connection
+                    str(src),
+                    str(dst),
+                    tools.controller_name,
+                    tools.connection,
+                    proxy=tools.juju_ssh_proxy,
                 )
                 filenames[dataset] = str(dst)
                 out = ls("-l", "result*")

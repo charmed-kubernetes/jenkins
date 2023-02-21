@@ -353,7 +353,14 @@ async def test_dashboard(model, log_dir, tools):
     """Validate that the dashboard is operational"""
     unit = model.applications["kubernetes-control-plane"].units[0]
     with NamedTemporaryFile() as f:
-        await scp_from(unit, "config", f.name, tools.controller_name, tools.connection)
+        await scp_from(
+            unit,
+            "config",
+            f.name,
+            tools.controller_name,
+            tools.connection,
+            proxy=tools.juju_ssh_proxy,
+        )
         with open(f.name, "r") as stream:
             config = yaml.safe_load(stream)
 
@@ -479,6 +486,7 @@ async def test_network_policies(model, tools):
         "netpolicy-test.yaml",
         tools.controller_name,
         tools.connection,
+        proxy=tools.juju_ssh_proxy,
     )
     await scp_to(
         os.path.join(here, "templates", "restrict.yaml"),
@@ -486,6 +494,7 @@ async def test_network_policies(model, tools):
         "restrict.yaml",
         tools.controller_name,
         tools.connection,
+        proxy=tools.juju_ssh_proxy,
     )
     cmd = await juju_run(
         unit,
@@ -775,6 +784,7 @@ async def test_gpu_support(model, tools):
             "nvidia-smi.yaml",
             tools.controller_name,
             tools.connection,
+            proxy=tools.juju_ssh_proxy,
         )
         await juju_run(
             control_plane_unit,
@@ -1259,7 +1269,14 @@ async def test_audit_custom_policy(model, tools):
     with NamedTemporaryFile("w") as f:
         json.dump(namespace_definition, f)
         f.flush()
-        await scp_to(f.name, unit, path, tools.controller_name, tools.connection)
+        await scp_to(
+            f.name,
+            unit,
+            path,
+            tools.controller_name,
+            tools.connection,
+            proxy=tools.juju_ssh_proxy,
+        )
     await run_until_success(
         unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f " + path
     )
@@ -1296,7 +1313,14 @@ async def test_audit_webhook(model, tools):
     # Deploy an nginx target for webhook
     local_path = os.path.dirname(__file__) + "/templates/test-audit-webhook.yaml"
     remote_path = "/tmp/test-audit-webhook.yaml"
-    await scp_to(local_path, unit, remote_path, tools.controller_name, tools.connection)
+    await scp_to(
+        local_path,
+        unit,
+        remote_path,
+        tools.controller_name,
+        tools.connection,
+        proxy=tools.juju_ssh_proxy,
+    )
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path
     await run_until_success(unit, cmd)
 
@@ -1844,6 +1868,7 @@ async def test_dns_provider(model, k8s_model, tools):
             remote_path,
             tools.controller_name,
             tools.connection,
+            proxy=tools.juju_ssh_proxy,
         )
         log("Deploying DNS pod")
         await kubectl(model, f"apply -f {remote_path}")
@@ -2104,7 +2129,12 @@ async def test_multus(model, tools, addons_model):
         with NamedTemporaryFile("w") as f:
             yaml.dump(content, f)
             await scp_to(
-                f.name, unit, remote_path, tools.controller_name, tools.connection
+                f.name,
+                unit,
+                remote_path,
+                tools.controller_name,
+                tools.connection,
+                proxy=tools.juju_ssh_proxy,
             )
         await run_until_success(
             unit,

@@ -110,6 +110,13 @@ def pytest_addoption(parser):
         help="Command to run to unseal vault after a series upgrade",
     )
 
+    parser.addoption(
+        "--juju-ssh-proxy",
+        action="store_true",
+        default=False,
+        help="Proxy Juju SSH and SCP commands through the Juju controller",
+    )
+
 
 class Tools:
     """Utility class for accessing juju related tools"""
@@ -139,6 +146,7 @@ class Tools:
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
         self.charm_channel = request.config.getoption("--charm-channel")
         self.vault_unseal_command = request.config.getoption("--vault-unseal-command")
+        self.juju_ssh_proxy = request.config.getoption("--juju-ssh-proxy")
 
     def juju_base(self, series):
         """Retrieve juju 3.1 base from series."""
@@ -285,7 +293,12 @@ async def k8s_cloud(model, tools):
 
     with NamedTemporaryFile(dir=Path.home() / ".local" / "share" / "juju") as f:
         await scp_from(
-            kcp_unit, "config", f.name, tools.controller_name, tools.connection
+            kcp_unit,
+            "config",
+            f.name,
+            tools.controller_name,
+            tools.connection,
+            proxy=tools.juju_ssh_proxy,
         )
         try:
             click.echo("Adding k8s cloud")
@@ -627,7 +640,9 @@ def pytest_metadata(metadata):
 async def kubeconfig(tools, model, tmp_path_factory):
     local = tmp_path_factory.getbasetemp() / "kubeconfig"
     k8s_cp = model.applications["kubernetes-control-plane"].units[0]
-    await scp_from(k8s_cp, "config", local, None, tools.connection)
+    await scp_from(
+        k8s_cp, "config", local, None, tools.connection, proxy=tools.juju_ssh_proxy
+    )
     yield local
 
 
