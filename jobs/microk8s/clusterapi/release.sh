@@ -142,22 +142,19 @@ then
 
     # Create a cluster
     export CLUSTER_NAME="test-ci-cluster"
-    clusterctl generate cluster ${CLUSTER_NAME} --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
-    export CLUSTER_MANIFEST_FILE=$PWD/cluster.yaml
     export CAPI_UPGRADE_VERSION=v1.26.0
     export CAPI_UPGRADE_MD_NAME=${CLUSTER_NAME}-md-0
     export CAPI_UPGRADE_MD_TYPE=machinedeployments.cluster.x-k8s.io
     export CAPI_UPGRADE_CP_NAME=${CLUSTER_NAME}-control-plane
     export CAPI_UPGRADE_CP_TYPE=microk8scontrolplanes.controlplane.cluster.x-k8s.io
+    clusterctl generate cluster ${CLUSTER_NAME} --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
+    export CLUSTER_MANIFEST_FILE=$PWD/cluster.yaml
 
     # Create a new cluster for in-place upgrades
     CONTROL_PLANE_MACHINE_COUNT=1
     WORKER_MACHINE_COUNT=1
-    CLUSTER_NAME="test-ci-cluster-inplace"
-    CAPI_UPGRADE_MD_NAME=${CLUSTER_NAME}-md-0
-    CAPI_UPGRADE_CP_NAME=${CLUSTER_NAME}-control-plane
     clusterctl generate cluster ${CLUSTER_NAME} --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster-inplace.yaml
-    CLUSTER_INPLACE_MANIFEST_FILE=$PWD/cluster-inplace.yaml
+    export CLUSTER_INPLACE_MANIFEST_FILE=$PWD/cluster-inplace.yaml
 
     (
         cd bootstrap
