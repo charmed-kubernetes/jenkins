@@ -105,11 +105,9 @@ pipeline {
                                 }
 
                                 if (arch == "arm64") {
-                                    instance_type = "a1.2xlarge"
-                                    constraints = "instance-type=${instance_type} root-disk=80G arch=${arch}"
+                                    constraints = "mem=16G cores=8 root-disk=80G arch=${arch}"
                                     eksd_instance_type = "m6g.large"
                                 } else if (arch == "amd64") {
-                                    instance_type = "m5.large"
                                     if ("${channel}" == "stable") {
                                         constraints = "instance-type=g3s.xlarge root-disk=80G arch=${arch}"
                                     } else {
@@ -125,7 +123,7 @@ pipeline {
                                     -d "${juju_model}" \
                                     --model-default test-mode=true \
                                     --model-default resource-tags="owner=k8sci job=${job} stage=${stage}" \
-                                    --bootstrap-constraints "instance-type=${instance_type}"
+                                    --bootstrap-constraints "mem=8G cores=2"
 
                                 juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu
 
