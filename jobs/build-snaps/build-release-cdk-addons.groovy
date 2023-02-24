@@ -132,7 +132,8 @@ pipeline {
 
                         echo "Build cdk-addons (\${arch}) snap."
                         sudo lxc shell ${lxc_name} -- bash -c \
-                            "cd /cdk-addons/build; SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft --target-arch=\${arch}"
+                            "cd /cdk-addons/build; \
+                            snapcraft --destructive-mode --enable-experimental-target-arch --target-arch=\${arch}"
                         sudo lxc shell ${lxc_name} -- bash -c "mv /cdk-addons/build/*.snap /"
                     done
                     cd -

@@ -108,7 +108,7 @@ pipeline {
                         # is functionally equivalent to the alias. Single quote
                         # it because we need literal vars passed to 'bash -c'.
                         sudo lxc shell ${lxc_name} -- bash -c \
-                            'set -a; add-arg() { \$SNAPCRAFT_PART_BUILD/shared/add-arg-to-configure-hook \$@; }; set +a; '"cd /\${EKS_SNAP};"' SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft'
+                            'set -a; add-arg() { \$SNAPCRAFT_PART_BUILD/shared/add-arg-to-configure-hook \$@; }; set +a; '"cd /\${EKS_SNAP};"' snapcraft --destructive-mode'
                     done
                 """
             }
