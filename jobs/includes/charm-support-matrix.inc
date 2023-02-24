@@ -54,7 +54,7 @@
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-cilium.git'
     channel-range:
-      min: '1.26'
+      min: '1.27'
 - containerd:
     bugs: 'https://bugs.launchpad.net/charm-containerd'
     docs: 'https://charmhub.io/containerd/docs'
