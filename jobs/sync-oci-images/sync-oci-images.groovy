@@ -31,8 +31,30 @@ pipeline {
     stages {
         stage('Setup User') {
             steps {
-                sh "git config --global user.email 'cdkbot@juju.solutions'"
-                sh "git config --global user.name 'cdkbot'"
+                /* override sh for this step:
+
+                 Needed because cilib.sh has some non POSIX bits.
+                 */
+                sh """#!/usr/bin/env bash
+                    . \${WORKSPACE}/cilib.sh
+
+                    # Check rate limit; fail fast if we can't pull at least 25 images
+                    STATUS=\$(ci_docker_status ${env.DOCKERHUB_CREDS_USR} ${env.DOCKERHUB_CREDS_PSW})
+
+                    # The line we care about should look like this:
+                    #   ratelimit-remaining: 191;w=21600
+                    LIMIT=\$(echo \${STATUS} | grep -i remaining | grep -o '[0-9]*' | head -n1)
+                    if [[ -n \${LIMIT} && \${LIMIT} -le 250 ]]; then
+                        echo Docker Hub rate limit is too low
+                        exit 1
+                    else
+                        # couldn't get a valid limit, but maybe we'll squeak by with anon pulls
+                        echo Unknown Docker Hub rate limit...YOLO!
+                    fi
+
+                    git config --global user.email "cdkbot@juju.solutions"
+                    git config --global user.name "cdkbot"
+                """
             }
         }
         stage('Ensure valid K8s version'){
@@ -146,9 +168,6 @@ pipeline {
                     # All CK CI images live under ./cdk in our registry
                     TAG_PREFIX=${env.REGISTRY_URL}/cdk
 
-                    # Login to increase rate limit for dockerhub
-                    which docker && docker login -u ${env.DOCKERHUB_CREDS_USR} -p ${env.DOCKERHUB_CREDS_PSW}
-
                     for i in \${CI_IMAGES}
                     do
                         # Skip images that we already host
@@ -163,11 +182,11 @@ pipeline {
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch \${i} --all-platforms >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch -u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW} \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr content fetch \${i} --all-platforms >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr content fetch -u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW} \${i} --all-platforms >/dev/null
                             fi
                         fi
 
@@ -206,9 +225,6 @@ pipeline {
                             sudo lxc exec ${lxc_name} -- ctr image rm \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         fi
                     done
-
-                    # Make sure this worker doesn't stay logged in to dockerhub
-                    which docker && docker logout
                 """
             }
         }
@@ -233,9 +249,6 @@ pipeline {
                     # All CK images are staged under ./staging/cdk in our registry
                     TAG_PREFIX=${env.REGISTRY_URL}/staging/cdk
 
-                    # Login to increase rate limit for dockerhub
-                    which docker && docker login -u ${env.DOCKERHUB_CREDS_USR} -p ${env.DOCKERHUB_CREDS_PSW}
-
                     for i in \${ALL_IMAGES}
                     do
                         # Skip images that we already host
@@ -250,11 +263,11 @@ pipeline {
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch \${i} --all-platforms >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch -u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW} \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr content fetch \${i} --all-platforms >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr content fetch -u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW} \${i} --all-platforms >/dev/null
                             fi
                         fi
 
@@ -293,28 +306,25 @@ pipeline {
                             sudo lxc exec ${lxc_name} -- ctr image rm \${i} \${TAG_PREFIX}/\${RAW_IMAGE}
                         fi
                     done
-
-                    # Make sure this worker doesn't stay logged in to dockerhub
-                    which docker && docker logout
                 """
             }
         }
     }
     post {
         always {
-            sh "echo Disk usage before cleanup"
-            sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
-
             /* override sh since cilib.sh has some non POSIX bits. */
             sh """#!/usr/bin/env bash
                 . \${WORKSPACE}/cilib.sh
 
                 ci_lxc_delete ${lxc_name}
                 sudo rm -rf cdk-addons/build
-            """
 
-            sh "echo Disk usage after cleanup"
-            sh "df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'"
+                echo Disk usage after cleanup
+                df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm'
+
+                echo Docker status
+                ci_docker_status ${env.DOCKERHUB_CREDS_USR} ${env.DOCKERHUB_CREDS_PSW}
+            """
         }
     }
 }
