@@ -43,7 +43,7 @@ pipeline {
 
                     # The line we care about should look like this:
                     #   ratelimit-remaining: 191;w=21600
-                    LIMIT=\$(echo \${STATUS} | grep -i remaining | grep -o '[0-9]*' | head -n1)
+                    LIMIT=\$(echo "\${STATUS}" | grep -i remaining | grep -o '[0-9]*' | head -n1)
                     if [[ -n \${LIMIT} && \${LIMIT} -le 250 ]]; then
                         echo Docker Hub rate limit is too low
                         exit 1

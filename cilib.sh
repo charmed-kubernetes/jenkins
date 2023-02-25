@@ -69,6 +69,8 @@ scriptPath() {
 ci_docker_status()
 {
     # Get details of an authenticated dockerhub request
+
+    set +x
     local user=$1
     local pass=$2
     local token=$(curl --user "${user}:${pass}" \
@@ -76,6 +78,7 @@ ci_docker_status()
         jq -r .token)
     curl --head -H "Authorization: Bearer ${token}" \
         https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest 2>&1
+    set -x
 }
 
 ci_lxc_launch()
