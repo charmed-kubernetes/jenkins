@@ -176,17 +176,25 @@ pipeline {
                             continue
                         fi
 
+                        # Authn dockerhub images
+                        if echo \${i} | grep -qi -e 'docker.io'
+                        then
+                            PULL_CREDS="-u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW}"
+                        else
+                            PULL_CREDS=
+                        fi
+
                         # Pull upstream image
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch -u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW} \${i} --all-platforms >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch \${PULL_CREDS} \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr content fetch -u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW} \${i} --all-platforms >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr content fetch \${PULL_CREDS} \${i} --all-platforms >/dev/null
                             fi
                         fi
 
@@ -257,17 +265,25 @@ pipeline {
                             continue
                         fi
 
+                        # Authn dockerhub images
+                        if echo \${i} | grep -qi -e 'docker.io'
+                        then
+                            PULL_CREDS="-u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW}"
+                        else
+                            PULL_CREDS=
+                        fi
+
                         # Pull upstream image
                         if ${params.dry_run}
                         then
                             echo "Dry run; would have pulled: \${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch -u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW} \${i} --all-platforms >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch \${PULL_CREDS} \${i} --all-platforms >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr content fetch -u ${env.DOCKERHUB_CREDS_USR}:${env.DOCKERHUB_CREDS_PSW} \${i} --all-platforms >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr content fetch \${PULL_CREDS} \${i} --all-platforms >/dev/null
                             fi
                         fi
 
