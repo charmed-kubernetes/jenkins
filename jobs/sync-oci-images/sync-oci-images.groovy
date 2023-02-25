@@ -38,18 +38,18 @@ pipeline {
                 sh """#!/usr/bin/env bash
                     . \${WORKSPACE}/cilib.sh
 
-                    # Check rate limit; fail fast if we can't pull at least 25 images
+                    # Check rate limit; fail fast if we can't pull at least 50 images
                     STATUS=\$(ci_docker_status ${env.DOCKERHUB_CREDS_USR} ${env.DOCKERHUB_CREDS_PSW})
 
                     # The line we care about should look like this:
                     #   ratelimit-remaining: 191;w=21600
                     LIMIT=\$(echo "\${STATUS}" | grep -i remaining | grep -o '[0-9]*' | head -n1)
-                    if [[ -n \${LIMIT} && \${LIMIT} -le 250 ]]; then
+                    if [[ -n \${LIMIT} && \${LIMIT} -le 50 ]]; then
                         echo Docker Hub rate limit is too low
                         exit 1
                     else
-                        # couldn't get a valid limit, but maybe we'll squeak by with anon pulls
-                        echo Unknown Docker Hub rate limit...YOLO!
+                        # Either we didn't get a good limit, or it's seems big enough
+                        echo Go for it!
                     fi
 
                     git config --global user.email "cdkbot@juju.solutions"
