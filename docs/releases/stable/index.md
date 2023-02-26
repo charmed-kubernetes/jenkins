@@ -1,20 +1,20 @@
 # Creating a stable release
-Outlines the processes for publishing a new Charmed Kubernetes release.
+Outlines the process for publishing a new Charmed Kubernetes release.
 
 ## Stable Release Process
 
-### How to read this document
+### Repository layout
 
-Each step in the release process contains information pertaining to the
-description of the jobs and what is required if needing to run the jobs
-locally.
+All charm repositories used by Charmed Kuberentes use a common branch scheme to provide a
+consistent experience across all code bases. Any external or shared repositories are forked
+into the `charmed-kubernetes` github organization and have the following branches:
 
-Each step should contain the following:
+* `main`: The primary development branch. Merges are made against this branch as they are
+  approved.
+* `release_x.xx`: The release branch. Major releases have `main` directly merged to
+  `release_x.xx`. Bugfix releases have specific commits cherry-picked to `release_x.xx`.
 
-- Job name as seen in jenkins (where applicable)
-- Description
-- Any additional notes/caveats
-- Example jenkins screenshots if necessary on the options that should be used.
+Tags are used to mark releases on the `release_x.xx` branch.
 
 ### Feature Freeze
 
