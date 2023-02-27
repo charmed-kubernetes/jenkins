@@ -1,86 +1,75 @@
 # Creating a bugfix release
-Performs a Kubernetes bugfix release, which includes validation across the base
-deployment as well as variations including calico, tigera, vault, nvidia, and
-ceph.
+Outlines the process for publishing a Charmed Kubernetes bugfix release.
 
 ## Bugfix Release Process
 
 ### Repository layout
 
-All charm repositories used by charmed-kuberentes use a common branch scheme to provide a
+All charm repositories used by Charmed Kuberentes have a common branch scheme to provide a
 consistent experience across all code bases. Any external or shared repositories are forked
-into the charmed-kubernetes namespace and have the common branches added.
+into the `charmed-kubernetes` github organization and have the following branches:
 
-Branches:
- * `main`: The primary development branch. Merges are made against this branch as they are
-   approved.
- * `release_x.xx`: is the release branch. Major release have `main` directly merged to
-   `release_x.xx` while bug-fix releases have specific commits cherry-picked onto 
-   `release_x.xx` to create a release.
+* `main`: The primary development branch. Merges are made against this branch as they are
+  approved.
+* `release_x.xx`: The release branch. Major releases have `main` directly merged to
+  `release_x.xx`. Bugfix releases have specific commits cherry-picked to `release_x.xx`.
 
-Tags are used to mark the bug-fix releases on the `release_x.xx` branch.
+Tags are used to mark releases on the `release_x.xx` branch.
 
-Snap repositories follow a similar branching model with a slightly different name. 
-Instead each channel has a release branch `release/<channel>` which serves the same purpose
-of release tracking as the `release_x.xx` branch on charm repositories.
+### Preparing the release milestone
 
-### Preparing the release branch
+All Charmed Kubernetes charms, interfaces, and layers are revisioned together via
+[milestones][milestones]. To complete a bugfix release, all bugs listed for the
+milestone will need to have their pull requests cherry-picked onto the appropriate
+release branch.
 
-All Kubernetes charms, interfaces, and layers are revisioned together via
-[milestones][milestones]. To release a bug-fix milestone all bugs listed for the milestone
-will need to have their pull requests cherry-picked onto the stable branch (or onto the
-release branch in the case of snaps). 
+#### Reconcile bugs
 
-#### Easier PR tracking via LP Tags
+Determine which bugs will be included in this release and set their launchpad
+milestone accordingly.
 
-To make this process easier to track, you can use tags and an advanced search in LP.
+#### Setup the next milestone
 
-Start by bugging Tim until he runs a magic script to add the "backport-needed" tag to all bugs
-listed in the milestone. Next setup the following bookmarklet in your browser:
+Any milestone bugs that will not make it into this release should be moved to either
+the next major (e.g. 1.26) or the next bugfix (e.g. 1.25+ck2) milestone.
 
+If the next milestone does not exist, create it with the `create-milestone.py` script
+found in the [cdk-scripts repo][cdk-scripts]. This will create a new milestone for
+every launchpad project in the Charmed Kubernetes group. For example:
 ```
-javascript:var milestone = prompt("Milestone (e.g., 1.19+ck1)"); document.getElementsByName('field.milestone:list').forEach(input => { if(input.id.includes(milestone)) input.checked = true })
+./create-milestone.py 1.25+ck2
 ```
-
-Use the bookmarklet on the [advanced search][advanced-search] page for charmed-kubernetes
-bugs and you can easily select the milestone you are working on. Add the "backport-needed"
-tag to the search results and you will have a list of bugs included in the milestone. As you
-work through the cherry-picks needed for each bug, removing the "backport-needed" tag will
-remove it from the search.
 
 ### Performing the cherry-pick
 
-For each bug, review the comments and cherry-pick all pull requests onto the stable or
-release branch in the source repository. Some bugs will require doing this for multiple
-source repositories be sure to get all pull requests listed in the bug. As you complete all
-cherry-picks for a given bug remove the "backport-needed" tag. You can push to the stable
-branch as you complete each cherry-pick, release won't happen automatically even if you do
-not complete the process in a single sitting.
+For each milestone bug, review the comments and cherry-pick all pull requests onto the
+appropriate `release_x.xx` branch. Some bugs will require doing this for multiple repos,
+so be sure to get all pull requests listed in the bug.
 
-If there are trivial merge conflicts you can fix them and continue. If there is a merge
-conflict which is not trivial you can create a PR and ask another team member to review.
+After you complete all cherry-picks for a given bug, remove the "backport-needed" tag.
+You can push to `release_x.xx` as you complete each cherry-pick; the release won't
+happen automatically even if you do not complete this process in a single sitting.
 
-When all bugs in the milestone are done you are ready to proceed. The release process will
-automatically detect changes in interfaces and layers, if a bug fixes a layer or interface
-you do not need to try and find which charms are affected by the change.
+If there are trivial merge conflicts, fix them and continue. If there are non-trivial
+merge conflicts, create a PR and ask another team member to review.
+
+When all bugs in the milestone are done, you are ready to proceed.
 
 ### Document release notes
 
-Create a PR against the [docs repo][] with release notes including:
+Create a PR against the [docs repo][docs-repo] with release notes including:
 
-- Bugfixes
-- Enhancements
-- Known Limitations/Issues
+* Bugfixes
+* Enhancements
+* Known Limitations/Issues
 
-[docs repo]: https://github.com/charmed-kubernetes/kubernetes-docs
-
-### Tag existing stable branches with bugfix release tag
+### Tag release branches with bugfix revision
 
 **Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bugfix-rev/
 
-This will tag all repos with the k8s version and bugfix revision
-associated, for example, the first bugfix release of 1.24 would be
-**1.24+ck1** based on the tip of the `release_1.24` branch
+This will tag all `release_x.xx` branches with the k8s version and bugfix revision.
+For example, the first bugfix release for 1.25 will tag the `release_1.25` branch
+with **1.25+ck1**.
 
 #### Charm tag options
 
@@ -90,7 +79,8 @@ associated, for example, the first bugfix release of 1.24 would be
 
 **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
-This will build and promote the stable charms to candidate channel for testing.
+This will build charms from the `release_x.xx` branch and promote them to the
+candidate channel for testing.
 
 #### Charm build options
 
@@ -98,125 +88,131 @@ This will build and promote the stable charms to candidate channel for testing.
 
 ### Verify Commit SHAs of charms/layers/interfaces
 
+> NOTE: (kwm) i do not think we do this anymore since the migration to charmhub.
+
 Verify the charm manifests for the build charms matches the commit SHAs of
-the stable branches of what was built in the previous build-charms job.
+the stable branches of what was built in the previous build-charms job:
+
+https://github.com/Cynerva/cdk-release-checkers
 
 ### Build cdk-addons
 
 Run build jobs for n, n-1, and n-2 versions of cdk-addons. For example, if
-doing a 1.22+ckX release, then you would run:
+doing a 1.25+ckX release, run:
 
-* build-release-cdk-addons-amd64-1.22
-* build-release-cdk-addons-amd64-1.21
-* build-release-cdk-addons-amd64-1.20
+* build-release-cdk-addons-amd64-1.25
+* build-release-cdk-addons-amd64-1.24
+* build-release-cdk-addons-amd64-1.23
 
 ### Required Testing
 
-#### Run **validate-charm-bugfix** job
+#### Run **validate-charm-bugfix**
 
 **Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix/
 
-This validates the deployment using the charms from candidate channel.
+This validates the deployment using the charms from the candidate channel.
 
-#### Run **validate-charm-bugfix-upgrade** job
+#### Run **validate-charm-bugfix-upgrade**
 
 **Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix-upgrade/
 
-This validates the deployment using the charms from stable channel, then upgrading 
-the charms to the candidate channel.
+This deploys `charmed-kubernetes` from the stable channel, upgrades the charms to
+the candidate channel, then validates the deployment.
 
-#### Examine Results
+#### Examine results
 
-**Results** http://jenkaas.s3-website-us-east-1.amazonaws.com/
+**Results**: http://jenkaas.s3-website-us-east-1.amazonaws.com/
 
-Verify that the tests are passing among all the permutations which the above jobs
-created.  Adjust the tests or charms for any failures, retagging and rebuilding
-from the release-* branches when changes are necessary.
+Verify that the `validate-charm-bugfix-*` tests are passing. If failures occur:
 
-### Promote charms from **release/candidate** to **stable**
+* fix the broken test or charm in `main`
+* cherry-pick charm fixes to the `release_x.xx` branch
+* re-tag, re-build, and re-test per the above steps
+
+### Promote charms from candidate to stable
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
 
-This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s,k8s-operator` so
-it will only promote the necessary charms that make up charmed-kuberneetes.
+This job takes a tag, from_channel, and to_channel. The tag defaults to
+`k8s,k8s-operator` to promote all charms that make up Charmed Kubernetes.
 
 **Note about `to_channel`**
 
-If this is a bugfix for the current latest/stable release 
+If this is a bugfix for the current latest/stable release:
 
-`ex) 1.26 is the latest release, and this is a bug fix for 1.26`
+`ex) 1.25 is the current release, and this is a bugfix for 1.25`
+* set the `from_channel` = `candidate`
 * set the `to_channel` = `stable`
-* the charms will be released to both `latest/stable` and `1.26/stable`
+* the charms will be released to both `latest/stable` and `1.25/stable`
 
-If this is a bugfix for a prior release 
+If this is a bugfix for a previous major release:
 
-`ex) 1.27 is the latest release, but this release is a bug fix for 1.26+ckN`
-* set the `to_channel` = `1.26/stable`
-* the charms will be released to only `1.26/stable`
+`ex) 1.25 is the current release, but this is a bugfix for 1.24`
+* set the `from_channel` = `1.24/candidate`
+* set the `to_channel` = `1.24/stable`
+* the charms will be released to only `1.24/stable`
 
 ### Build stable bundles
 
 **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
-bundles shouldn't be promoted because a candidate bundle points to candidate channel charms.  Instead rebuild the bundles targetting
-the correct `to_channel`.  It's also entirely possible this does
-not result in a new bundle at all, if the source of the bundles
-themselves haven't changed through the course of the `ckN` release.
+Bundles should not be promoted because a candidate bundle points to candidate charms.
+Instead, rebuild the bundles targetting the correct `to_channel`. It's possible this
+does not result in a new bundle if the `bundle.yaml` hasn't changed since the
+previous release.
 
 **Note about `to_channel`**
 
-If this is a bugfix for the current latest/stable release 
+If this is a bugfix for the current latest/stable release:
 
-`ex) 1.26 is the latest release, and this is a bug fix for 1.26`
+`ex) 1.25 is the latest release, and this is a bugfix for 1.25`
 * set the `to_channel` = `stable`
-* the bundles will be released to both `latest/stable` and `1.26/stable`
+* the bundles will be released to both `latest/stable` and `1.25/stable`
 
-If this is a bugfix for a prior release 
+If this is a bugfix for a previous major release:
 
-`ex) 1.27 is the latest release, but this release is a bug fix for 1.26+ckN`
-* set the `to_channel` = `1.26/stable`
-* the bundles will be released to only `1.26/stable`
+`ex) 1.25 is the latest release, but this is a bugfix for 1.24`
+* set the `to_channel` = `1.24/stable`
+* the bundles will be released to only `1.24/stable`
 
-
-Run the build with parameters:
-  * layer_branch = release_1.XX
-  * charm_branch = release_1.XX
-  * bundle_branch = release_1.XX
+Run the job for the `charmed-kubernetes` bundle with the following:
+  * layer_branch = release_x.xx
+  * charm_branch = release_x.xx
+  * bundle_branch = release_x.xx
   * to_channel = `see-note-above`
   * filter_by_tag = charmed-kubernetes
 
-Repeat the build with parameters:
-  * layer_branch = release_1.XX
-  * charm_branch = release_1.XX
-  * bundle_branch = release_1.XX
+Run the job again for the `kubernetes-core` bundle:
+  * layer_branch = release_x.xx
+  * charm_branch = release_x.xx
+  * bundle_branch = release_x.xx
   * to_channel = `see-note-above`
   * filter_by_tag = kubernetes-core
 
 ### Promote cdk-addons
 
 Promote **cdk-addons** snaps from candidate to stable for n, n-1, and n-2
-tracks. For example, if doing a 1.22+ckX release, then you would promote:
+tracks. For example, if doing a 1.25+ckX release, then you would promote:
 
-* 1.22/candidate -> 1.22/stable
-* 1.21/candidate -> 1.21/stable
-* 1.20/candidate -> 1.20/stable
+* 1.25/candidate -> 1.25/stable
+* 1.24/candidate -> 1.24/stable
+* 1.23/candidate -> 1.23/stable
 
 This could be done using the following one-liner:
-
 ```
-for track in 1.22 1.21 1.20; do for rev in `snapcraft revisions cdk-addons | grep "$track/candidate\*" | cut -d ' ' -f 1`; do snapcraft release cdk-addons "$rev" "$track/stable"; done; done
+for track in 1.23 1.24 1.25; do for rev in `snapcraft revisions cdk-addons | grep "$track/candidate\*" | cut -d ' ' -f 1`; do snapcraft release cdk-addons "$rev" "$track/stable"; done; done
 ```
 
 ### Close the milestone
 
-From the [cdk-scripts repo](https://github.com/canonical/cdk-scripts), run the
-close-milestone.py script. For example:
-
+Run the `close-milestone.py` script found in the [cdk-scripts repo][cdk-scripts].
+For example:
 ```
-./close-milestone.py 1.22+ck1
+./close-milestone.py 1.25+ck1
 ```
 
-### Send announcement to k8s-crew with any relevant information.
+### Send announcement to k8s-crew with any relevant information
 
+[cdk-scripts]: https://github.com/canonical/cdk-scripts
+[docs-repo]: https://github.com/charmed-kubernetes/kubernetes-docs
 [milestones]: https://launchpad.net/charmed-kubernetes/+milestones
-[advanced-search]: https://bugs.launchpad.net/charmed-kubernetes/+bugs?advanced=1
