@@ -50,7 +50,7 @@
           description: only report what would be pushed to github / snapstore / image registry
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 10
     triggers:
         - timed: "@daily"
 
@@ -87,7 +87,7 @@
           description: only report what would be done
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 10
 
 - project:
     name: build-release-snaps

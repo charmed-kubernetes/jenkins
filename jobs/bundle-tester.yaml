@@ -11,7 +11,7 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     builders:

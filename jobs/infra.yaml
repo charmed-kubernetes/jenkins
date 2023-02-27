@@ -22,7 +22,7 @@
     properties:
       - block-on-build-release
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
