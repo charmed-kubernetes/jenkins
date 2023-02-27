@@ -66,6 +66,21 @@ scriptPath() {
     env python3 -c "import os,sys; print(os.path.dirname(os.path.abspath(\"$0\")))"
 }
 
+ci_docker_status()
+{
+    # Get details of an authenticated dockerhub request
+
+    set +x
+    local user=$1
+    local pass=$2
+    local token=$(curl --user "${user}:${pass}" \
+        "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | \
+        jq -r .token)
+    curl --head -H "Authorization: Bearer ${token}" \
+        https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest 2>&1
+    set -x
+}
+
 ci_lxc_launch()
 {
     # Launch local LXD container to publish to charmcraft
