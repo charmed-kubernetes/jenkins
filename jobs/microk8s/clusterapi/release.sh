@@ -141,8 +141,8 @@ then
 
     # Optional varibles
     export UPGRADE_STRATEGY=InPlaceUpgrade
-    export SNAP_RISKLEVEL="stable"
-    export SNAP_CONFINEMENT="classic"
+    export SNAP_RISKLEVEL="edge"
+    export SNAP_CONFINEMENT="strict"
 
     # Create a cluster
     export CLUSTER_NAME="test-ci-cluster"
