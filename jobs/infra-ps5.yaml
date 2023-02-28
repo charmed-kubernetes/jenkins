@@ -59,11 +59,18 @@
 - job:
     name: 'infra-maintain-ps5-amd64-12'
     description: |
-      Temp job on ps5-12 to test CI against juju 3.0.
+      Temp job for testing juju3. This is just like the other infra jobs,
+      but exposes the ability to change the juju snap on the ps5-12 node.
     node: runner-ps5-amd64-12
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
+    parameters:
+      - string:
+          name: JUJU_CHANNEL
+          default: '3.0/candidate'
+          description: |
+            Which juju snap channel to install on this node
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -104,4 +111,7 @@
               bash jobs/infra/fixtures/cleanup-env.sh
 
               venv/bin/pip install ansible
-              venv/bin/ansible-playbook jobs/infra/playbook-jenkins-juju3.yml --limit localhost --tags 'jenkins' -i jobs/infra/hosts
+              venv/bin/ansible-playbook jobs/infra/playbook-jenkins.yml --limit localhost --tags 'jenkins' -i jobs/infra/hosts
+
+              echo Overriding juju snap version
+              sudo snap refresh juju --channel $JUJU_CHANNEL
