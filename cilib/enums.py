@@ -19,8 +19,8 @@ K8S_STABLE_VERSION = "1.26"
 # our 1.26 tracks.
 K8S_NEXT_VERSION = "1.27"
 
-# Lowest K8S SEMVER to process, this is usually stable - 3
-K8S_STARTING_SEMVER = "1.16.0"
+# Lowest K8S SEMVER to process, this is usually stable - 4
+K8S_STARTING_SEMVER = "1.22.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
