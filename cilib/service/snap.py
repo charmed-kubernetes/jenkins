@@ -14,6 +14,7 @@ for surl:
 import os
 import tempfile
 import semver
+from functools import cached_property
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
@@ -29,7 +30,7 @@ class SnapService(DebugMixin):
         self.name = self.snap_model.name
         self.upstream_model = upstream_model
 
-    @property
+    @cached_property
     def missing_branches(self):
         """Returns any missing branches in our snap git repos that are defined upstream"""
         upstream_tags = self.upstream_model.tags_from_semver_point(
