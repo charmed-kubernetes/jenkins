@@ -68,7 +68,7 @@
     parameters:
       - string:
           name: JUJU_CHANNEL
-          default: '3.0/candidate'
+          default: '3.1/stable'
           description: |
             Which juju snap channel to install on this node
     wrappers:
