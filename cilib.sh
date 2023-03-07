@@ -7,42 +7,6 @@ if [[ $0 == $BASH_SOURCE ]]; then
 fi
 echo "sourced ${BASH_SOURCE:-$0}"
 
-teardown_env()
-{
-    juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"
-}
-
-bootstrap_env()
-{
-    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-         -d $JUJU_MODEL \
-         --bootstrap-series $SERIES \
-         --force \
-         --bootstrap-constraints arch=$ARCH \
-         --model-default test-mode=true \
-         --model-default resource-tags=owner=k8sci \
-         --model-default image-stream=daily
-}
-
-deploy_env()
-{
-    tee overlay.yaml <<EOF > /dev/null
-series: $SERIES
-applications:
-  kubernetes-control-plane:
-    options:
-      channel: $SNAP_VERSION
-  kubernetes-worker:
-    options:
-      channel: $SNAP_VERSION
-EOF
-
-    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
-          --overlay overlay.yaml \
-          --force \
-          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
-}
-
 
 unitAddress()
 {
@@ -111,6 +75,7 @@ ci_lxc_push()
     sudo lxc file push ${source} ${lxc_container}/${dest}
 }
 
+
 ci_lxc_delete()
 {
     # Stop and delete containers matching a prefix
@@ -124,14 +89,12 @@ ci_lxc_delete()
 
 ci_lxc_exec()
 {
-    local lxc_container=$1
-    sudo lxc exec ${lxc_container} ${@:2}
+    sudo lxc exec ${@}
 }
 
 ci_lxc_exec_user()
 {
-    local lxc_container=$1
-    ci_lxc_exec ${lxc_container} --user=1000 --group=1000 ${@:2}
+    ci_lxc_exec --user=1000 --group=1000 ${@}
 }
 
 ci_lxc_apt_install()

@@ -2,6 +2,14 @@
 #
 # Juju helpers
 
+verlte() {
+    [  "$1" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+}
+
+verlt() {
+    [ "$1" = "$2" ] && return 1 || verlte $1 $2
+}
+
 function juju::bootstrap::before
 {
     echo "> skipping before tasks"
@@ -12,6 +20,11 @@ function juju::bootstrap::after
     echo "> skipping after tasks"
 }
 
+function juju::version_2
+{
+    local juju_version=$(juju --version | cut -f1 -d-)
+    return verlt $juju_version 3.0.0
+}
 
 function juju::bootstrap
 {
@@ -28,8 +41,14 @@ function juju::bootstrap
             --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions \
             --bootstrap-image=juju-ci-root/templates/$SERIES-test-template"
     fi
+    if juju::version_2; then
+        add_model=("-d ${JUJU_MODEL}")
+    else
+        add_model=("--add-model ${JUJU_MODEL}")
+    fi
+
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
-         -d "$JUJU_MODEL" \
+         ${add_model[@]} \
          --force --bootstrap-series "$SERIES" \
          --bootstrap-constraints arch="amd64" \
          --model-default test-mode=true \

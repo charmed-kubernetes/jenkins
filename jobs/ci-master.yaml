@@ -54,6 +54,30 @@
           description: force run regardless of condition
 
 - parameter:
+    name: lxc-runner-params
+    description: |-
+       Job parameters used to init the lxc container used in the job.
+       ci_lxc_init_runner will take each parameter and ensure 
+       these packages are installed within the container.
+    parameters:
+      - string:
+          name: LXC_APT_LIST
+          description: |-
+            semicolon-separated list of apt packages to install into the container
+          default: pip;python3-venv;libffi-dev
+      - string:
+          name: LXC_SNAP_LIST
+          description: |-
+            semicolon-separated list of snaps to install into the container
+            if the snap requires multiple arguments
+          default: kubectl;juju-wait;juju-crashdump
+      - string:
+          name: LXC_PUSH_LIST
+          description: |-
+            semicolon-separated list of bin paths to push into the container
+          default: /usr/local/bin/columbo
+
+- parameter:
     name: snap-params
     parameters:
       - string:
@@ -277,8 +301,43 @@
 
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 
-          env > $WORKSPACE/.env
+          declare -px > $WORKSPACE/.env
 
+- builder:
+    name: run-lxc
+    description: |-
+        Executes the jenkins run within a lxc container on the runner.
+    builders:
+      - shell: |-
+          #!/usr/bin/env bash
+          LXC_APT_LIST=$LXC_APT_LIST{EX_LXC_APT_LIST}
+          LXC_SNAP_LIST=$LXC_SNAP_LIST{EX_LXC_SNAP_LIST}
+          LXC_PUSH_LIST=$LXC_PUSH_LIST{EX_LXC_PUSH_LIST}
+          . $WORKSPACE/lxc_runner.sh
+
+          ci_lxc_init_runner _lxc
+          _job_sh=$(basename $(mktemp -p $WORKSPACE --suffix=.sh))
+
+          # push job script into workspace and run
+          cat << 'EOF' > $WORKSPACE/$_job_sh
+
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          python3 -m venv venv
+          venv/bin/python -m pip install pip-tools wheel
+          venv/bin/pip-sync requirements.txt
+
+          set +u
+          source venv/bin/activate
+          set -u
+
+          {COMMAND}
+          EOF
+          ci_lxc_job_run $_lxc -- bash $LXC_WORKSPACE/$_job_sh
 
 - builder:
     name: run-env

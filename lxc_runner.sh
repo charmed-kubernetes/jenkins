@@ -2,9 +2,6 @@
 set -eux
 . ${WORKSPACE}/cilib.sh
 
-# init a container runner on the build host
-LXC_RUNNER_NAME=${BUILD_TAG}
-
 # Map hosts paths into the container
 LXC_HOME=/home/ubuntu
 LXC_WORKSPACE=$LXC_HOME/workspace
@@ -15,51 +12,69 @@ LXC_SSH=$LXC_HOME/.ssh
 
 ci_lxc_init_runner()
 {
+    # pass return variable to accept container name
+    # Usage:
+    # ci_lxc_init_runner name_of_container
+    local  __resultvar=$1 
+
+    # init a container runner on the build host
+    local lxc_container=${JOB_NAME%%/*}-$(openssl rand -hex 20)-${BUILD_NUMBER}
+    local lxc_apt_list=${LXC_APT_LIST:-}
+    local lxc_snap_list=${LXC_SNAP_LIST:-}
+    local lxc_push_list=${LXC_PUSH_LIST:-}
+
     # prepare env file for runner
-    echo 'function runner(){ echo ignored; }' > .env
-    env >> .env
-    echo "HOME=${LXC_HOME}" >> .env
-    echo "HUDSON_HOME=${LXC_HOME}" >> .env
-    echo "JENKINS_HOME=${LXC_HOME}" >> .env
-    echo "PWD=${LXC_WORKSPACE}" >> .env
-    echo "WORKSPACE=${LXC_WORKSPACE}" >> .env
-    echo "WORKSPACE_TMP=${LXC_WORKSPACE}@tmp" >> .env
-    echo "PYTHONPATH=${LXC_WORKSPACE}:\"${PYTHONPATH:-}\"" >> .env
+    declare -px > .env
+    echo "declare -x HOME=${LXC_HOME}" >> ${WORKSPACE}/.env
+    echo "declare -x HUDSON_HOME=${LXC_HOME}" >> ${WORKSPACE}/.env
+    echo "declare -x JENKINS_HOME=${LXC_HOME}" >> ${WORKSPACE}/.env
+    echo "declare -x PWD=${LXC_WORKSPACE}" >> ${WORKSPACE}/.env
+    echo "declare -x TMPDIR=${LXC_WORKSPACE}/tmp" >> ${WORKSPACE}/.env
+    echo "declare -x WORKSPACE=${LXC_WORKSPACE}" >> ${WORKSPACE}/.env
+    echo "declare -x WORKSPACE_TMP=${LXC_WORKSPACE}@tmp" >> ${WORKSPACE}/.env
+    echo "declare -x PYTHONPATH=${LXC_WORKSPACE}:\"${PYTHONPATH:-}\"" >> ${WORKSPACE}/.env
 
     # ensure the container is torn down at the end of the job
-    trap "ci_lxc_delete ${LXC_RUNNER_NAME}" EXIT
+    trap "ci_lxc_delete ${lxc_container}" EXIT
 
     # Start fresh container
-    ci_lxc_delete ${LXC_RUNNER_NAME} || true
-    ci_lxc_launch ubuntu:22.04 ${LXC_RUNNER_NAME}
+    ci_lxc_delete ${lxc_container} || true
+    ci_lxc_launch ubuntu:22.04 ${lxc_container}
 
     # Mount the mapped paths
-    ci_lxc_mount ${LXC_RUNNER_NAME} workspace ${WORKSPACE} ${LXC_WORKSPACE}
-    ci_lxc_mount ${LXC_RUNNER_NAME} juju $HOME/.local/share/juju ${LXC_JUJU}
-    ci_lxc_mount ${LXC_RUNNER_NAME} aws $HOME/.aws ${LXC_AWS}
-    ci_lxc_mount ${LXC_RUNNER_NAME} ssh $HOME/.ssh ${LXC_SSH}
+    ci_lxc_mount ${lxc_container} workspace ${WORKSPACE} ${LXC_WORKSPACE}
+    ci_lxc_mount ${lxc_container} juju $HOME/.local/share/juju ${LXC_JUJU}
+    ci_lxc_mount ${lxc_container} aws $HOME/.aws ${LXC_AWS}
+    ci_lxc_mount ${lxc_container} ssh $HOME/.ssh ${LXC_SSH}
 
     # Install runtime dependencies in the container
-    ci_lxc_apt_install ${LXC_RUNNER_NAME} pip python3-venv libffi-dev
-    ci_lxc_juju_snaps ${LXC_RUNNER_NAME}
-}
+    # Install debs, replacing semicolons with spaces
+    ci_lxc_apt_install ${lxc_container} ${lxc_apt_list//\;/ }
 
+    # Install snaps
+    _IFS=${IFS}
+    IFS=';'
+    for snap_args in ${lxc_snap_list}; do
+        # snap_args could contain arguments separated by spaces
+        # `juju --channel=2.9/stable` which requires splitting
+        # on spaces to extract
+        IFS=' ' read -a args <<< "$snap_args"; 
+        ci_lxc_snap_install ${lxc_container} ${args[@]} --classic < /dev/null
+    done
 
-ci_lxc_juju_snaps()
-{
-    # Install the host's juju snaps into the lxc runner
-    local lxc_container=$1
-    while read -r name _ _ track _ ; do
-        ci_lxc_snap_install ${lxc_container} ${name} --channel=${track} --classic < /dev/null
-    done < <(snap list | grep juju)
+    # push file paths from the host
+    for push_path in ${lxc_push_list}; do
+        ci_lxc_push ${lxc_container} ${push_path} ${push_path}
+    done
+    IFS=${_IFS}
+
+    eval $__resultvar="'$lxc_container'"
 }
 
 
 ci_lxc_job_run()
 {
     # Run the job script inside the lxc runner
-    local lxc_container=${BUILD_TAG}
     local lxc_workspace=/home/ubuntu/workspace
-
-    ci_lxc_exec_user ${lxc_container} --cwd=${lxc_workspace} --env WORKSPACE=${lxc_workspace} $@
+    ci_lxc_exec_user --cwd=${lxc_workspace} --env WORKSPACE=${lxc_workspace} $@
 }

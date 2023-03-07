@@ -1,0 +1,72 @@
+- job:
+    name: 'test-lxc'
+    node: runner-cloud
+    description: |
+      Test Job for running experimentation
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    properties:
+      - block-on-infra
+      - build-discarder:
+          num-to-keep: 3
+    # triggers:
+    #     - timed: "@daily"
+    parameters:
+      - charms-edge
+      - lxc-runner-params
+      - string:
+          name: LXC_APT_LIST
+          description: |-
+            semicolon-separated list of apt packages to install into the container
+          default: pip;python3-venv;libffi-dev
+    axes:
+      - axis:
+          type: slave  # wokeignore:rule=slave
+          name: node
+          values:
+            - runner-cloud
+      - axis:
+          type: user-defined
+          name: juju_channel
+          description: |-
+            specify the juju channel to use
+          values:
+            - 2.9/stable
+            - 3.1/stable
+      - axis:
+          type: user-defined
+          name: snap_version
+          values:
+            - 1.27/edge
+            - 1.26/edge
+            - 1.25/edge
+      - axis:
+          type: user-defined
+          name: series
+          values:
+            - focal
+            - jammy
+      - axis:
+          type: user-defined
+          name: arch
+          values:
+            - amd64
+      - axis:
+          type: user-defined
+          name: cloud
+          values:
+            - vsphere/Boston
+
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/validate"
+      - run-lxc:
+          EX_LXC_APT_LIST: ""
+          EX_LXC_SNAP_LIST: '";juju --channel=$juju_channel"'
+          EX_LXC_PUSH_LIST: ""
+          COMMAND: |
+            bash jobs/validate/spec $snap_version $series $channel $arch $cloud
