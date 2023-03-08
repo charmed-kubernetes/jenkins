@@ -19,10 +19,11 @@
       - charms-edge
       - lxc-runner-params
       - string:
-          name: LXC_APT_LIST
+          name: LXC_SNAP_LIST
           description: |-
-            semicolon-separated list of apt packages to install into the container
-          default: pip;python3-venv;libffi-dev
+            comma-separated list of snaps to install into the container
+            if the snap requires multiple arguments
+          default: kubectl,juju-wait,juju-crashdump,juju --channel=$juju_channel
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -65,8 +66,5 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
-          EX_LXC_APT_LIST: ""
-          EX_LXC_SNAP_LIST: '";juju --channel=$juju_channel"'
-          EX_LXC_PUSH_LIST: ""
           COMMAND: |
             bash jobs/validate/spec $snap_version $series $channel $arch $cloud

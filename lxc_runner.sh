@@ -49,11 +49,11 @@ ci_lxc_init_runner()
 
     # Install runtime dependencies in the container
     # Install debs, replacing semicolons with spaces
-    ci_lxc_apt_install ${lxc_container} ${lxc_apt_list//\;/ }
+    ci_lxc_apt_install ${lxc_container} ${lxc_apt_list//,/ }
 
-    # Install snaps
-    _IFS=${IFS}
-    IFS=';'
+    # Install snaps and push paths
+    _IFS=${IFS} # restore IFS
+    IFS=','
     for snap_args in ${lxc_snap_list}; do
         # snap_args could contain arguments separated by spaces
         # `juju --channel=2.9/stable` which requires splitting
@@ -66,7 +66,7 @@ ci_lxc_init_runner()
     for push_path in ${lxc_push_list}; do
         ci_lxc_push ${lxc_container} ${push_path} ${push_path}
     done
-    IFS=${_IFS}
+    IFS=${_IFS} # restore IFS
 
     eval $__resultvar="'$lxc_container'"
 }

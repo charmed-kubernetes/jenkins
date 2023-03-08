@@ -59,6 +59,7 @@ ci_lxc_launch()
 
 ci_lxc_mount()
 {
+    # create a directory path within the container and mount a local directory into it
     local lxc_container=$1
     local name=$2
     local source=$3
@@ -69,6 +70,7 @@ ci_lxc_mount()
 
 ci_lxc_push()
 {
+    # copy a file from the host into the container
     local lxc_container=$1
     local source=$2
     local dest=$3
@@ -87,18 +89,13 @@ ci_lxc_delete()
     set -e
 }
 
-ci_lxc_exec()
-{
-    sudo lxc exec ${@}
-}
+ci_lxc_exec(){ sudo lxc exec ${@}; }  # exec in a lxc container
 
-ci_lxc_exec_user()
-{
-    ci_lxc_exec --user=1000 --group=1000 ${@}
-}
+ci_lxc_exec_user(){ ci_lxc_exec --user=1000 --group=1000 ${@}; } # exec as ubuntu in a lxc container
 
 ci_lxc_apt_install()
 {
+    # install debs with apt in a container
     local lxc_container=$1
     ci_lxc_exec ${lxc_container} -- apt update
     ci_lxc_exec ${lxc_container} -- apt install -y ${@:2}
@@ -106,6 +103,7 @@ ci_lxc_apt_install()
 
 ci_lxc_snap_install()
 {
+    # install a single snap in a container
     local lxc_container=$1
     ci_lxc_exec ${lxc_container} -- snap install ${@:2}
 }
