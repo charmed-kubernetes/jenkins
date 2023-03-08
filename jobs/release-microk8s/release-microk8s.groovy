@@ -120,7 +120,7 @@ pipeline {
                                 sh destroy_controller(juju_controller)
                                 sh """#!/bin/bash -x
                                 juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
-                                    -d "${juju_model}" \
+                                    --add-model "${juju_model}" \
                                     --model-default test-mode=true \
                                     --model-default resource-tags="owner=k8sci job=${job} stage=${stage}" \
                                     --bootstrap-constraints "mem=8G cores=2"

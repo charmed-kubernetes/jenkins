@@ -21,7 +21,7 @@ function juju::bootstrap
     vpc_id=vpc-03f2c7351e64c6e0f
 
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
-      -d "$JUJU_MODEL" \
+      --add-model "$JUJU_MODEL" \
       --force --bootstrap-series "$SERIES" \
       --bootstrap-constraints arch="amd64" \
       --model-default test-mode=true \

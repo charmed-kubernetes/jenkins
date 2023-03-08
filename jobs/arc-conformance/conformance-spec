@@ -46,7 +46,7 @@ function juju::bootstrap
 {
     # override because azure needs image-stream=released
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
-         -d "$JUJU_MODEL" \
+         --add-model "$JUJU_MODEL" \
          --bootstrap-series "$SERIES" \
          --force \
          --bootstrap-constraints arch="$ARCH" \

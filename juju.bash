@@ -64,7 +64,7 @@ function juju::bootstrap
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          ${add_model[@]} \
          --force --bootstrap-series "$SERIES" \
-         --bootstrap-constraints arch="amd64" \
+         --bootstrap-constraints arch="${ARCH:-amd64}" \
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
          --model-default automatically-retry-hooks=true \
