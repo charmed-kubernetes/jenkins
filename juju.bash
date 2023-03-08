@@ -2,6 +2,10 @@
 #
 # Juju helpers
 
+vergte() {
+    [  "$2" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+}
+
 verlte() {
     [  "$1" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
 }
@@ -20,10 +24,20 @@ function juju::bootstrap::after
     echo "> skipping after tasks"
 }
 
-function juju::version_2
+function juju::version
 {
     local juju_version=$(juju --version | cut -f1 -d-)
-    return verlt $juju_version 3.0.0
+    echo "$juju_version"
+}
+
+function juju::version_2
+{
+    verlt $(juju::version) 3.0.0
+}
+
+function juju::version_3
+{
+    vergte $(juju::version) 3.0.0
 }
 
 function juju::bootstrap
