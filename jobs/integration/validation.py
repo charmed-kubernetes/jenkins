@@ -2596,12 +2596,13 @@ async def ceph_apps(model, tools):
 
         async def burn_units(app, status="error"):
             """Remove any units from the model if they currently match `status`."""
-            matched_units = [
-                unit.name
-                for unit in model.applications[app].units
-                if unit.agent_status == status
-            ]
-            await model.destroy_units(*matched_units)
+            await asyncio.gather(
+                *(
+                    model.destroy_unit(unit.name)
+                    for unit in model.applications[app].units
+                    if unit.agent_status == status
+                )
+            )
 
         for app in set(ceph_apps) & set(model.applications):
             # remove any applications currently deployed into the model

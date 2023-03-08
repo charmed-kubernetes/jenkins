@@ -64,7 +64,7 @@
           name: LXC_APT_LIST
           description: |-
             semicolon-separated list of apt packages to install into the container
-          default: pip;python3-venv;libffi-dev
+          default: pip;python3-venv;python3-dev;libffi-dev
       - string:
           name: LXC_SNAP_LIST
           description: |-
