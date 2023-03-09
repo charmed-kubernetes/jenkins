@@ -59,7 +59,7 @@ ci_lxc_init_runner()
         # `juju --channel=2.9/stable` which requires splitting
         # on spaces to extract
         IFS=' ' read -a args <<< "$snap_args"; 
-        ci_lxc_snap_install ${lxc_container} ${args[@]} --classic < /dev/null
+        ci_lxc_snap_install_retry ${lxc_container} ${args[@]} --classic < /dev/null
     done
 
     # push file paths from the host

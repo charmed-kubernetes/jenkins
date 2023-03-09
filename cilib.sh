@@ -107,3 +107,13 @@ ci_lxc_snap_install()
     local lxc_container=$1
     ci_lxc_exec ${lxc_container} -- snap install ${@:2}
 }
+
+ci_lxc_snap_install_retry()
+{
+    local next_wait=5
+    until [ ${next_wait} -eq 10 ] || ci_lxc_snap_install $@; do
+        echo "Retrying lxc snap-install in ${next_wait}s..."
+        sleep $(( next_wait++ ))
+    done
+    [ ${next_wait} -lt 10 ]
+}
