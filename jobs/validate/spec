@@ -46,7 +46,7 @@ JUJU_MODEL=validate-ck
 ARCH=${4:-amd64}
 JUJU_VERSION=$(juju --version | cut -f1 -d-)
 CUSTOM_CLOUD=$(echo "$JUJU_CLOUD" | cut -f1 -d/)
-JOB_NAME_CUSTOM="validate-ck-$JUJU_VERSION-$CUSTOM_CLOUD-$ARCH-$SERIES-$SNAP_VERSION"
+JOB_NAME_CUSTOM="validate-ck-$CUSTOM_CLOUD-$ARCH-$SERIES-$JUJU_VERSION-$SNAP_VERSION"
 JOB_ID=$(identifier)
 
 ###############################################################################
