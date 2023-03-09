@@ -485,6 +485,18 @@
     upstream: 'https://github.com/charmed-kubernetes/bird-operator.git'
     channel-range:
       min: '999.0'
+- kubernetes-dashboard:
+    bugs: 'https://github.com/jnsgruk/kubernetes-dashboard-operator/issues'
+    docs: 'https://charmhub.io/kubernetes-dashboard/docs'
+    downstream: charmed-kubernetes/kubernetes-dashboard-operator
+    store: 'https://charmhub.io/kubernetes-dashboard'
+    summary: A web-based Kubernetes user interface
+    tags:
+      - kubernetes-dashboard
+      - docs-extra
+    upstream: 'https://github.com/jnsgruk/kubernetes-dashboard-operator'
+    channel-range:
+      min: '999.0'
 
 # EOL in favor of operator charm: https://charmhub.io/kubernetes-dashboard
 # - k8s-dashboard:
