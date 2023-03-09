@@ -34,9 +34,9 @@
       Deploys Container Storage Interface (CSI) plugin that
       enables Charmed Kubernetes to use ceph as a storage backend.
     tags:
-      - k8s
+      - k8s-operator
       - ceph-csi
-      - csi
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/ceph-csi-operator.git'
     channel-range:
       min: '1.25'
@@ -110,7 +110,8 @@
     tags:
       - k8s
       - kata
-      - core
+      - cri
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kata.git'
 - kube-ovn:
     bugs: 'https://bugs.launchpad.net/charm-kube-ovn'
@@ -214,6 +215,7 @@
     tags:
       - k8s
       - kubevirt
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kube-virt.git'
     channel-range:
       min: '1.27'
@@ -237,9 +239,8 @@
     subdir: src
     summary: Failover and monitoring daemon for LVS clusters
     tags:
-      - general
-      - keepalived
       - k8s
+      - keepalived
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-keepalived.git'
 - docker-registry:
@@ -249,9 +250,8 @@
     store: 'https://charmhub.io/docker-registry'
     summary: Registry for docker images
     tags:
-      - general
-      - docker-registry
       - k8s
+      - docker-registry
       - docs-extra
     upstream: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
 - aws-iam:
@@ -446,9 +446,9 @@
     store: 'https://charmhub.io/coredns'
     summary: The CoreDNS domain name service provider
     tags:
-      - k8s
+      - k8s-operator
       - coredns
-      - cni
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-coredns.git'
 - gatekeeper-controller-manager:
     bugs: 'https://bugs.launchpad.net/opa-gatekeeper-operator'
@@ -460,6 +460,7 @@
     tags:
       - k8s-operator
       - gatekeeper-controller-manager
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
 - gatekeeper-audit:
     bugs: 'https://bugs.launchpad.net/opa-gatekeeper-operator'
@@ -471,6 +472,7 @@
     tags:
       - k8s-operator
       - gatekeeper-audit
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
 - bird:
     bugs: 'https://bugs.launchpad.net/charm-bird'
@@ -480,7 +482,6 @@
     summary: A dynamic IP routing daemon
     tags:
       - bird
-      - cni
     upstream: 'https://github.com/charmed-kubernetes/bird-operator.git'
     channel-range:
       min: '999.0'
