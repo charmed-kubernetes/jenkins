@@ -54,7 +54,7 @@
             Skip the release process.
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
       - build-blocker:
           use-build-blocker: true
           blocking-jobs:

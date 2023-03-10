@@ -17,7 +17,7 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     parameters:
       - snap-stable
     axes:
@@ -52,7 +52,7 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     axes:
       - axis:
           type: slave
@@ -98,7 +98,7 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     parameters:
       - snap-beta # this value represents the snap channel after the upgrade
     axes:

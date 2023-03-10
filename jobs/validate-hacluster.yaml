@@ -31,7 +31,7 @@
         - timed: "@monthly"
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 10
 
 - project:
     name: validate-hacluster

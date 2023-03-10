@@ -41,7 +41,7 @@
       - ci-creds
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     parameters:
       - global-params
     triggers:
@@ -105,7 +105,7 @@
         - timed: "H */12 * * *"
     properties:
       - build-discarder:
-          num-to-keep: 1
+          num-to-keep: 10
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
@@ -135,7 +135,7 @@
         - timed: "@daily"
     properties:
       - build-discarder:
-          num-to-keep: 1
+          num-to-keep: 10
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
@@ -159,7 +159,7 @@
       - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     parameters:
       - global-params
     wrappers:

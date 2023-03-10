@@ -15,7 +15,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: 'H {hour} * * {dow}'
     parameters:
@@ -106,7 +106,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     parameters:
@@ -163,7 +163,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     parameters:
@@ -218,7 +218,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     parameters:
       - charms-stable
       - snap-stable
@@ -248,7 +248,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     parameters:
       - charms-edge
       - snap-stable
@@ -279,7 +279,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     parameters:
@@ -322,7 +322,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "0 0 */2 * *"
     parameters:
@@ -365,7 +365,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     parameters:
@@ -416,7 +416,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     execution-strategy:
@@ -468,7 +468,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     execution-strategy:
       sequential: true
     parameters:
@@ -506,7 +506,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     parameters:
@@ -549,7 +549,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@monthly"
     parameters:
@@ -592,7 +592,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@monthly"
     parameters:
@@ -635,7 +635,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     parameters:
@@ -678,7 +678,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     parameters:
@@ -722,7 +722,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     parameters:
@@ -765,7 +765,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     triggers:
         - timed: "@weekly"
     parameters:

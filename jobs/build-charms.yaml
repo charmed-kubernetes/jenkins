@@ -23,7 +23,7 @@
           default: "jobs/includes/charm-support-matrix.inc"
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -65,7 +65,7 @@
           default: "jobs/includes/charm-bundles-list.inc"
     properties:
       - build-discarder:
-          num-to-keep: 3
+          num-to-keep: 10
     wrappers:
       - default-job-wrapper
       - ci-creds

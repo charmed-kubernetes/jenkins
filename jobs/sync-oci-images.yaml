@@ -32,6 +32,6 @@
           description: only report what would be pushed to github / rocks.
     properties:
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 10
     triggers:
         - timed: "@daily"

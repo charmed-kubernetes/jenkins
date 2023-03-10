@@ -16,7 +16,7 @@
     properties:
       - block-on-infra
       - build-discarder:
-          num-to-keep: 7
+          num-to-keep: 10
     parameters:
       - string:
           name: CK_VERSION
