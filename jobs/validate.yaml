@@ -1,11 +1,11 @@
 # Validates a deployed CK
 
 # BASE ------------------------------------------------------------------------------ #
-- job:
-    name: 'validate-ck'
+- job-template:
+    name: 'validate-ck-{charm-channel}-{series}'
     node: runner-cloud
     description: |
-      Validates CK edge for n-2 releases.
+      Validates CK {charm-channel} for n-2 releases.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -17,9 +17,9 @@
       - build-discarder:
           num-to-keep: 3
     triggers:
-        - timed: "@daily"
+        - timed: 'H {hour} * * {dow}'
     parameters:
-      - charms-edge
+      - 'charms-{charm-channel}'
       - lxc-runner-params
       - string:
           name: LXC_SNAP_LIST
@@ -45,15 +45,14 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.27/edge
-            - 1.26/edge
-            - 1.25/edge
+            - '1.27/{charm-channel}'
+            - '1.26/{charm-channel}'
+            - '1.25/{charm-channel}'
       - axis:
           type: user-defined
           name: series
           values:
-            - focal
-            - jammy
+            - '{series}'
       - axis:
           type: user-defined
           name: arch
@@ -71,75 +70,22 @@
           COMMAND: |
             bash jobs/validate/spec $snap_version $series $channel $arch $cloud
 
-- job:
-    name: 'validate-ck-stable'
-    node: runner-cloud
-    description: |
-      Validates last 3 CK stable releases on supported LTSs.
-    project-type: matrix
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
-    properties:
-      - block-on-infra
-      - build-discarder:
-          num-to-keep: 3
-    triggers:
-        - timed: "@weekly"
-    parameters:
-      - charms-stable
-      - lxc-runner-params
-      - string:
-          name: LXC_SNAP_LIST
-          description: |-
-            comma-separated list of snaps to install into the container
-            if the snap requires multiple arguments
-          default: kubectl,juju-wait,juju-crashdump,juju --channel=$juju_channel
-    axes:
-      - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - runner-cloud
-      - axis:
-          type: user-defined
-          name: juju_channel
-          description: |-
-            specify the juju channel to use
-          values:
-            - 2.9/stable
-            - 3.1/stable
-      - axis:
-          type: user-defined
-          name: snap_version
-          values:
-            - 1.26/stable
-            - 1.25/stable
-            - 1.24/stable
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
-            - focal
-      - axis:
-          type: user-defined
-          name: arch
-          values:
-            - amd64
-      - axis:
-          type: user-defined
-          name: cloud
-          values:
-            - vsphere/Boston
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/validate"
-      - run-lxc:
-          COMMAND: |
-            bash jobs/validate/spec $snap_version $series $channel $arch $cloud
+- project:
+    name: validate-ck
+    series:
+      - jammy:
+          hour: '0' # Midnight
+          dow: '1,3,5'  # MWF
+      - focal:
+          hour: '12' # Noon
+          dow: '2,4,6'  # TuThSa
+    charm-channel:
+      - edge
+      - stable:
+          dow: '0'      # Sunday
+    jobs:
+      - 'validate-ck-{charm-channel}-{series}'
+
 
 - job:
     name: 'validate-ck-cloud'
