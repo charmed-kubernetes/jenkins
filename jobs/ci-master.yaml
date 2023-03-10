@@ -218,7 +218,7 @@
           description: Channel to publish charm from (only used in promote jobs)
       - string:
           name: FILTER_BY_TAG
-          default: 'k8s'
+          default: 'k8s,k8s-operator'
           description: |
             Filter the builds by tag (ie. k8s). A tag can also be the name of a
             charm you want to individually build.
