@@ -292,7 +292,7 @@ s3transfer==0.3.6
     #   boto3
 semver==2.13.0
     # via -r requirements.in
-sh==1.14.3
+sh==2.0.2
     # via -r requirements.in
 six==1.15.0
     # via
