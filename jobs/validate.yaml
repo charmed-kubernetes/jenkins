@@ -44,10 +44,7 @@
       - axis:
           type: user-defined
           name: snap_version
-          values:
-            - '1.27/{charm-channel}'
-            - '1.26/{charm-channel}'
-            - '1.25/{charm-channel}'
+          values: '{obj:snap_versions}'
       - axis:
           type: user-defined
           name: series
@@ -80,8 +77,16 @@
           hour: '12' # Noon
           dow: '2,4,6'  # TuThSa
     charm-channel:
-      - edge
+      - edge:
+          snap_versions: !!python/list 
+            - 1.27/edge
+            - 1.26/edge
+            - 1.25/edge
       - stable:
+          snap_versions: !!python/list 
+            - 1.26/stable
+            - 1.25/stable
+            - 1.24/stable
           dow: '0'      # Sunday
     jobs:
       - 'validate-ck-{charm-channel}-{series}'
