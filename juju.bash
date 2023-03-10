@@ -26,8 +26,9 @@ function juju::bootstrap::after
 
 function juju::version
 {
-    local juju_version=$(juju --version | cut -f1 -d-)
-    echo "$juju_version"
+    # yields the short sem version of juju
+    # "3.1.0-genericlinux-amd64" becomes "3.1"
+    juju --version|cut -f-2 -d.
 }
 
 function juju::version_2
