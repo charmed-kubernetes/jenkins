@@ -54,6 +54,30 @@
           description: force run regardless of condition
 
 - parameter:
+    name: lxc-runner-params
+    description: |-
+       Job parameters used to init the lxc container used in the job.
+       ci_lxc_init_runner will take each parameter and ensure
+       these packages are installed within the container.
+    parameters:
+      - string:
+          name: LXC_APT_LIST
+          description: |-
+            comma-separated list of apt packages to install into the container
+          default: pip,python3-venv,python3-dev,libffi-dev
+      - string:
+          name: LXC_SNAP_LIST
+          description: |-
+            comma-separated list of snaps to install into the container
+            if the snap requires multiple arguments
+          default: kubectl,juju-wait,juju-crashdump
+      - string:
+          name: LXC_PUSH_LIST
+          description: |-
+            comma-separated list of bin paths to push into the container
+          default: /usr/local/bin/columbo
+
+- parameter:
     name: snap-params
     parameters:
       - string:
@@ -218,7 +242,7 @@
           description: Channel to publish charm from (only used in promote jobs)
       - string:
           name: FILTER_BY_TAG
-          default: 'k8s'
+          default: 'k8s,k8s-operator'
           description: |
             Filter the builds by tag (ie. k8s). A tag can also be the name of a
             charm you want to individually build.
@@ -277,8 +301,40 @@
 
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 
-          env > $WORKSPACE/.env
+          declare -px > $WORKSPACE/.env
 
+- builder:
+    name: run-lxc
+    description: |-
+        Executes the jenkins run within a lxc container on the runner.
+    builders:
+      - shell: |-
+          #!/usr/bin/env bash
+          . $WORKSPACE/lxc_runner.sh
+
+          ci_lxc_init_runner _lxc
+          _job_sh=$(basename $(mktemp -p $WORKSPACE --suffix=.sh))
+
+          # push job script into workspace and run
+          cat << 'EOF' > $WORKSPACE/$_job_sh
+
+          #!/bin/bash
+          set -eux
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          python3 -m venv venv
+          venv/bin/python -m pip install pip-tools wheel
+          venv/bin/pip-sync requirements.txt
+
+          set +u
+          source venv/bin/activate
+          set -u
+
+          {COMMAND}
+          EOF
+          ci_lxc_job_run $_lxc -- bash $LXC_WORKSPACE/$_job_sh
 
 - builder:
     name: run-env

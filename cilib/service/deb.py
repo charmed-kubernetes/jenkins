@@ -8,6 +8,7 @@ import os
 import tempfile
 import semver
 import textwrap
+from functools import cached_property
 from jinja2 import Template
 from pathlib import Path
 from pymacaroons import Macaroon
@@ -26,7 +27,7 @@ class DebService(DebugMixin):
         self.ppas = PPACollection(ppas)
         self.sign_key = sign_key
 
-    @property
+    @cached_property
     def missing_branches(self):
         """Returns any missing branches in our deb git repos that are defined upstream"""
         upstream_tags = self.upstream_model.tags_from_semver_point(
@@ -198,7 +199,7 @@ class DebService(DebugMixin):
 class DebCNIService(DebService):
     """This is a separate service for container networking as it does not follow the normal kubernetes versioning scheme"""
 
-    @property
+    @cached_property
     def missing_branches(self):
         """Returns any missing branches in our deb git repos that are defined upstream"""
         upstream_tags = self.upstream_model.tags_from_semver_point("0.8.7")
@@ -239,7 +240,7 @@ class DebCNIService(DebService):
 class DebCriToolsService(DebService):
     """This is a separate service for cri-tools as it does not follow the normal kubernetes versioning scheme"""
 
-    @property
+    @cached_property
     def missing_branches(self):
         """Returns any missing branches in our deb git repos that are defined upstream"""
         upstream_tags = self.upstream_model.tags_from_semver_point("1.19.0")
