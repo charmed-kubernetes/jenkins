@@ -61,7 +61,7 @@ colorama==0.4.3
     #   mkdocs-material
 contextvars==2.4
     # via -r requirements.in
-cryptography==3.4.7
+cryptography==39.0.1
     # via
     #   ansible-base
     #   paramiko
