@@ -2,6 +2,18 @@
 #
 # Juju helpers
 
+vergte() {
+    [  "$2" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+}
+
+verlte() {
+    [  "$1" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+}
+
+verlt() {
+    [ "$1" = "$2" ] && return 1 || verlte $1 $2
+}
+
 function juju::bootstrap::before
 {
     echo "> skipping before tasks"
@@ -12,6 +24,22 @@ function juju::bootstrap::after
     echo "> skipping after tasks"
 }
 
+function juju::version
+{
+    # yields the short sem version of juju
+    # "3.1.0-genericlinux-amd64" becomes "3.1"
+    juju --version|cut -f-2 -d.
+}
+
+function juju::version_2
+{
+    verlt $(juju::version) 3.0.0
+}
+
+function juju::version_3
+{
+    vergte $(juju::version) 3.0.0
+}
 
 function juju::bootstrap
 {
@@ -28,10 +56,16 @@ function juju::bootstrap
             --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions \
             --bootstrap-image=juju-ci-root/templates/$SERIES-test-template"
     fi
+    if juju::version_2; then
+        add_model=("-d ${JUJU_MODEL}")
+    else
+        add_model=("--add-model ${JUJU_MODEL}")
+    fi
+
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
-         -d "$JUJU_MODEL" \
+         ${add_model[@]} \
          --force --bootstrap-series "$SERIES" \
-         --bootstrap-constraints arch="amd64" \
+         --bootstrap-constraints arch="${ARCH:-amd64}" \
          --model-default test-mode=true \
          --model-default resource-tags=owner=k8sci \
          --model-default automatically-retry-hooks=true \

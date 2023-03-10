@@ -18,7 +18,7 @@ set -x
 # function juju::bootstrap
 # {
 #     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
-#          -d "$JUJU_MODEL" \
+#          --add-model "$JUJU_MODEL" \
 #          --force --bootstrap-series "$SERIES" \
 #          --bootstrap-constraints arch="amd64" \
 #          --model-default test-mode=true \

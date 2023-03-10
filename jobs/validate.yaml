@@ -20,12 +20,27 @@
         - timed: "@daily"
     parameters:
       - charms-edge
+      - lxc-runner-params
+      - string:
+          name: LXC_SNAP_LIST
+          description: |-
+            comma-separated list of snaps to install into the container
+            if the snap requires multiple arguments
+          default: kubectl,juju-wait,juju-crashdump,juju --channel=$juju_channel
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
           name: node
           values:
             - runner-cloud
+      - axis:
+          type: user-defined
+          name: juju_channel
+          description: |-
+            specify the juju channel to use
+          values:
+            - 2.9/stable
+            - 3.1/stable
       - axis:
           type: user-defined
           name: snap_version
@@ -52,7 +67,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/spec $snap_version $series $channel $arch $cloud
 
@@ -75,12 +90,27 @@
         - timed: "@weekly"
     parameters:
       - charms-stable
+      - lxc-runner-params
+      - string:
+          name: LXC_SNAP_LIST
+          description: |-
+            comma-separated list of snaps to install into the container
+            if the snap requires multiple arguments
+          default: kubectl,juju-wait,juju-crashdump,juju --channel=$juju_channel
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
           name: node
           values:
             - runner-cloud
+      - axis:
+          type: user-defined
+          name: juju_channel
+          description: |-
+            specify the juju channel to use
+          values:
+            - 2.9/stable
+            - 3.1/stable
       - axis:
           type: user-defined
           name: snap_version
@@ -107,7 +137,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/spec $snap_version $series $channel $arch $cloud
 

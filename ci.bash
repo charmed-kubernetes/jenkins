@@ -51,6 +51,7 @@ function compile::env
     kv::set "arch" "$ARCH"
     kv::set "snap_version" "$SNAP_VERSION"
     kv::set "channel" "$JUJU_DEPLOY_CHANNEL"
+    kv::set "juju_channel" "$(juju::version)"
 }
 
 function identifier
@@ -126,6 +127,14 @@ function kv::get
 # Returns str: True or False
 function test::execute
 {
+    if juju::version_2; then
+        # Pin python libjuju to function with juju 2.9
+        echo "juju 2.9 environment detected"
+        echo "Pinning back python libjuju before starting tests"
+        pip freeze | xargs pip uninstall -y
+        pip install -r "requirements-2.9.txt"
+    fi
+
     declare -n is_pass=$1
     timeout -s INT 3h pytest \
         --html="report.html" \

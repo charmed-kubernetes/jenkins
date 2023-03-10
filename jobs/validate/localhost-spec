@@ -61,7 +61,7 @@ export SNAP_VERSION=$SNAP_VERSION
 
 juju bootstrap localhost/localhost \
     \$JUJU_CONTROLLER \
-    -d \$JUJU_MODEL \
+    --add-model \$JUJU_MODEL \
     --bootstrap-series \$SERIES \
     --force \
     --model-default image-stream=daily

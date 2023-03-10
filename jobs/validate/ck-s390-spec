@@ -52,7 +52,7 @@ export LANG=C.UTF-8
 
 juju bootstrap localhost/localhost \
     $JUJU_CONTROLLER \
-    -d $JUJU_MODEL \
+    --add-model $JUJU_MODEL \
     --bootstrap-series $SERIES \
     --force \
     --config juju-http-proxy=http://squid.internal:3128 \

@@ -7,42 +7,6 @@ if [[ $0 == $BASH_SOURCE ]]; then
 fi
 echo "sourced ${BASH_SOURCE:-$0}"
 
-teardown_env()
-{
-    juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"
-}
-
-bootstrap_env()
-{
-    juju bootstrap $JUJU_CLOUD $JUJU_CONTROLLER \
-         -d $JUJU_MODEL \
-         --bootstrap-series $SERIES \
-         --force \
-         --bootstrap-constraints arch=$ARCH \
-         --model-default test-mode=true \
-         --model-default resource-tags=owner=k8sci \
-         --model-default image-stream=daily
-}
-
-deploy_env()
-{
-    tee overlay.yaml <<EOF > /dev/null
-series: $SERIES
-applications:
-  kubernetes-control-plane:
-    options:
-      channel: $SNAP_VERSION
-  kubernetes-worker:
-    options:
-      channel: $SNAP_VERSION
-EOF
-
-    juju deploy -m $JUJU_CONTROLLER:$JUJU_MODEL \
-          --overlay overlay.yaml \
-          --force \
-          --channel $JUJU_DEPLOY_CHANNEL $JUJU_DEPLOY_BUNDLE
-}
-
 
 unitAddress()
 {
@@ -86,10 +50,33 @@ ci_lxc_launch()
     # Launch local LXD container to publish to charmcraft
     local lxc_image=$1
     local lxc_container=$2
-    sudo lxc launch ${lxc_image} ${lxc_container}
+    sudo lxc launch ${lxc_image} ${lxc_container} ${@:3}
     sleep 10
-    sudo lxc shell ${lxc_container} -- bash -c "apt-get update && apt-get install build-essential -y"
+    printf "uid $(id -u) 1000\ngid $(id -g) 1000" | sudo lxc config set ${lxc_container} raw.idmap -
+    sudo lxc restart ${lxc_container}
+    ci_lxc_apt_install ${lxc_container} build-essential
 }
+
+ci_lxc_mount()
+{
+    # create a directory path within the container and mount a local directory into it
+    local lxc_container=$1
+    local name=$2
+    local source=$3
+    local dest=$4
+    sudo lxc exec ${lxc_container} -- mkdir -p ${dest}
+    sudo lxc config device add ${lxc_container} ${name} disk source=${source} path=${dest}
+}
+
+ci_lxc_push()
+{
+    # copy a file from the host into the container
+    local lxc_container=$1
+    local source=$2
+    local dest=$3
+    sudo lxc file push ${source} ${lxc_container}/${dest}
+}
+
 
 ci_lxc_delete()
 {
@@ -100,4 +87,33 @@ ci_lxc_delete()
     set +e
     sudo lxc delete --force "${existing_containers}"
     set -e
+}
+
+ci_lxc_exec(){ sudo lxc exec ${@}; }  # exec in a lxc container
+
+ci_lxc_exec_user(){ ci_lxc_exec --user=1000 --group=1000 ${@}; } # exec as ubuntu in a lxc container
+
+ci_lxc_apt_install()
+{
+    # install debs with apt in a container
+    local lxc_container=$1
+    ci_lxc_exec ${lxc_container} -- apt update
+    ci_lxc_exec ${lxc_container} -- apt install -y ${@:2}
+}
+
+ci_lxc_snap_install()
+{
+    # install a single snap in a container
+    local lxc_container=$1
+    ci_lxc_exec ${lxc_container} -- snap install ${@:2}
+}
+
+ci_lxc_snap_install_retry()
+{
+    local next_wait=5
+    until [ ${next_wait} -eq 10 ] || ci_lxc_snap_install $@; do
+        echo "Retrying lxc snap-install in ${next_wait}s..."
+        sleep $(( next_wait++ ))
+    done
+    [ ${next_wait} -lt 10 ]
 }
