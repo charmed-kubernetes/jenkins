@@ -18,7 +18,7 @@ ci_lxc_init_runner()
     local  __resultvar=$1 
 
     # init a container runner on the build host
-    local lxc_container=${JOB_NAME%%/*}-$(openssl rand -hex 20)-${BUILD_NUMBER}
+    local lxc_container=${JOB_NAME%%/*}-$(openssl rand -hex 10)-${BUILD_NUMBER}
     local lxc_apt_list=${LXC_APT_LIST:-}
     local lxc_snap_list=${LXC_SNAP_LIST:-}
     local lxc_push_list=${LXC_PUSH_LIST:-}
