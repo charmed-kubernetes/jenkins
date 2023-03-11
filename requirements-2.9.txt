@@ -114,7 +114,7 @@ jmespath==0.10.0
     # via
     #   boto3
     #   botocore
-juju==3.0.4
+juju==3.1.0.1
     # via -r requirements.in
 jujubundlelib==0.5.7
     # via theblues
