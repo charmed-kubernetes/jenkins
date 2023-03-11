@@ -50,11 +50,11 @@ ci_lxc_launch()
     # Launch local LXD container to publish to charmcraft
     local lxc_image=$1
     local lxc_container=$2
-    sudo lxc launch ${lxc_image} ${lxc_container} ${@:3}
-    sleep 10
+    sudo lxc init ${lxc_image} ${lxc_container} ${@:3}
     printf "uid $(id -u) 1000\ngid $(id -g) 1000" | sudo lxc config set ${lxc_container} raw.idmap -
-    sudo lxc restart ${lxc_container}
-    ci_lxc_apt_install ${lxc_container} build-essential
+    sudo lxc start ${lxc_container}
+    sleep 10
+    ci_lxc_apt_install ${lxc_container} build-essential snapd
 }
 
 ci_lxc_mount()
@@ -97,7 +97,7 @@ ci_lxc_apt_install()
 {
     # install debs with apt in a container
     local lxc_container=$1
-    ci_lxc_exec ${lxc_container} -- apt update
+    ci_lxc_exec ${lxc_container} -- apt update -y
     ci_lxc_exec ${lxc_container} -- apt install -y ${@:2}
 }
 
