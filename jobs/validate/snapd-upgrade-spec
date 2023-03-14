@@ -16,8 +16,17 @@ set -x
 ###############################################################################
 function test::execute
 {
+    if juju::version_2; then
+        # Pin python libjuju to function with juju 2.9
+        echo "juju 2.9 environment detected"
+        echo "Pinning back python libjuju before starting tests"
+        pip freeze | xargs pip uninstall -y
+        pip install -r "requirements-2.9.txt"
+    fi
+
     declare -n is_pass=$1
     timeout -s INT 3h pytest \
+                --html="report.html" \
                 --full-trace \
                 jobs/integration/validation.py \
                 --cloud "$JUJU_CLOUD" \
