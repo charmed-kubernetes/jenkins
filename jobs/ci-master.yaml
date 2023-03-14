@@ -70,12 +70,30 @@
           description: |-
             comma-separated list of snaps to install into the container
             if the snap requires multiple arguments
-          default: kubectl,juju-wait,juju-crashdump
+          default: kubectl,juju-wait,juju-crashdump,juju --channel=$juju_channel
       - string:
           name: LXC_PUSH_LIST
           description: |-
             comma-separated list of bin paths to push into the container
           default: /usr/local/bin/columbo
+
+- parameter:
+    name: juju-lts
+    parameters:
+      - string:
+          name: juju_channel
+          description: |-
+            specify the juju channel to use
+          default: 2.9/stable
+
+- parameter:
+    name: series-stable
+    parameters:
+      - string:
+          name: series
+          default: jammy
+          description: |-
+            Set default series to use in test deployment
 
 - parameter:
     name: snap-params

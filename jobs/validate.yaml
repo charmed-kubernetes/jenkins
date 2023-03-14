@@ -21,12 +21,6 @@
     parameters:
       - 'charms-{charm-channel}'
       - lxc-runner-params
-      - string:
-          name: LXC_SNAP_LIST
-          description: |-
-            comma-separated list of snaps to install into the container
-            if the snap requires multiple arguments
-          default: kubectl,juju-wait,juju-crashdump,juju --channel=$juju_channel
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -111,6 +105,8 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -144,7 +140,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/spec $snap_version $series $channel $arch $cloud
 
@@ -168,6 +164,9 @@
         - timed: "@weekly"
     parameters:
       - charms-stable
+      - lxc-runner-params
+      - series-stable
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -183,11 +182,6 @@
             - 1.24/stable
       - axis:
           type: user-defined
-          name: series
-          values:
-            - jammy
-      - axis:
-          type: user-defined
           name: arch
           values:
             - amd64
@@ -200,7 +194,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/upgrade-spec $snap_version $series $channel $arch $cloud
 
@@ -222,15 +216,15 @@
     parameters:
       - charms-stable
       - snap-stable
-      - string:
-          name: series
-          default: jammy
+      - lxc-runner-params
+      - series-stable
+      - juju-lts
     triggers:
         - timed: "@daily"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/snapd-upgrade-spec $snap_version $series $channel
 
@@ -250,17 +244,17 @@
       - build-discarder:
           num-to-keep: 10
     parameters:
+      - series-stable
       - charms-edge
       - snap-stable
-      - string:
-          name: series
-          default: jammy
+      - lxc-runner-params
+      - juju-lts
     triggers:
         - timed: "@weekly"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/series-upgrade-spec $snap_version $series $channel
 
@@ -284,6 +278,9 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -296,15 +293,10 @@
           values:
             - 1.27/edge
             - 1.26/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/localhost-spec $snap_version $series $channel
 
@@ -327,6 +319,9 @@
         - timed: "0 0 */2 * *"
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -339,15 +334,10 @@
           values:
             - 1.27/edge
             - 1.26/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/ck-s390-spec $snap_version $series $channel
 
@@ -370,6 +360,9 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -384,11 +377,6 @@
             - 1.26/edge
       - axis:
           type: user-defined
-          name: series
-          values:
-            - jammy
-      - axis:
-          type: user-defined
           name: cloud
           values:
             - vsphere/Boston
@@ -398,7 +386,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/integrator-spec $snap_version $series $channel amd64 $cloud
 
@@ -423,6 +411,9 @@
       sequential: true
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -437,11 +428,6 @@
             - 1.26/edge
       - axis:
           type: user-defined
-          name: series
-          values:
-            - focal
-      - axis:
-          type: user-defined
           name: routing_mode
           values:
             - bgp-simple
@@ -450,7 +436,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/calico-spec $snap_version $series $channel amd64 $routing_mode
 
@@ -473,6 +459,9 @@
       sequential: true
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: user-defined
@@ -480,15 +469,10 @@
           values:
             - 1.27/edge
             - 1.26/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - focal
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/tigera-ee-spec $snap_version $series $channel
 
@@ -511,6 +495,9 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -523,15 +510,10 @@
           values:
             - 1.27/edge
             - 1.26/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/vault-spec $snap_version $series $channel
 
@@ -554,6 +536,9 @@
         - timed: "@monthly"
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -566,15 +551,10 @@
           values:
             - 1.27/edge
             - 1.26/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/nvidia-spec $snap_version $series $channel
 
@@ -597,6 +577,9 @@
         - timed: "@monthly"
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -609,15 +592,10 @@
           values:
             - 1.27/edge
             - 1.26/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/aws-iam-spec $snap_version $series $channel
 
@@ -640,6 +618,9 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -652,15 +633,10 @@
           values:
             - 1.27/edge
             - 1.26/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/ovn-multus-spec $snap_version $series $channel
 
@@ -683,6 +659,9 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -696,15 +675,10 @@
             - 1.27/edge
             - 1.26/edge
             - 1.25/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/sriov-spec $snap_version $series $channel
 
@@ -727,26 +701,20 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - snap-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
           name: node
           values:
             - runner-validate
-      - axis:
-          type: user-defined
-          name: snap_version
-          values:
-            - 1.27/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/cilium-spec $snap_version $series $channel
 
@@ -770,25 +738,19 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - snap-edge
+      - series-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
           name: node
           values:
             - runner-validate
-      - axis:
-          type: user-defined
-          name: snap_version
-          values:
-            - 1.27/edge
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/validate/autoscaler-spec $snap_version $series $channel
