@@ -413,7 +413,12 @@
       - charms-edge
       - series-stable
       - lxc-runner-params
-      - juju-lts
+      - string:
+          name: juju_channel
+          description: |-
+            specify the juju channel to use
+          default: 3.1/stable
+
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -461,7 +466,11 @@
       - charms-edge
       - series-stable
       - lxc-runner-params
-      - juju-lts
+      - string:
+          name: juju_channel
+          description: |-
+            specify the juju channel to use
+          default: 3.1/stable
     axes:
       - axis:
           type: user-defined

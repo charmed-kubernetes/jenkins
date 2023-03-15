@@ -12,37 +12,6 @@ set -x
 . "$WORKSPACE/juju.bash"
 
 ###############################################################################
-# FUNCTION OVERRIDES
-###############################################################################
-function test::execute
-{
-    if juju::version_2; then
-        # Pin python libjuju to function with juju 2.9
-        echo "juju 2.9 environment detected"
-        echo "Pinning back python libjuju before starting tests"
-        pip freeze | xargs pip uninstall -y
-        pip install -r "requirements-2.9.txt"
-    fi
-
-    declare -n is_pass=$1
-    timeout -s INT 3h pytest \
-                --html="report.html" \
-                --full-trace \
-                jobs/integration/validation.py \
-                --cloud "$JUJU_CLOUD" \
-                --model "$JUJU_MODEL" \
-                --controller "$JUJU_CONTROLLER" \
-                --snapd-upgrade \
-                --snapd-channel "$TEST_UPGRADE_SNAPD_CHANNEL"
-
-    ret=$?
-    is_pass="True"
-    if (( $ret > 0 )); then
-        is_pass="False"
-    fi
-}
-
-###############################################################################
 # ENV
 ###############################################################################
 SNAP_VERSION=${1:-1.25/stable}
