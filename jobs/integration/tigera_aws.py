@@ -432,8 +432,26 @@ def deploy_bgp_router():
     juju_wait(timeout=15 * 60)
 
     log("Enabling secondary network interfaces")
-    for i in range(1, len(subnets)):
-        interface = "ens%d" % (i + 5)
+    expected_nics = {f"ens{i+5}" for i in range(1, len(subnets))}
+    max_retries, current_nics = set(), 10
+    while not expected_nics.issubset(current_nics) and max_retries:
+        current_nics = {
+            line.split("  ", 1)[0]
+            for line in juju(
+                "ssh", "router/0", "ip", "-br", "link", "show"
+            ).splitlines()
+        }
+        max_retries -= 1
+
+    if not expected_nics.issubset(current_nics):
+        log(
+            "Failed to find all nics\n"
+            f"  expected: {', '.join(expected_nics)}\n"
+            f"  current : {', '.join(current_nics)}"
+        )
+        raise TimeoutError()
+
+    for interface in expected_nics:
         # Setting IF_METRIC=101 lowers the priority of the routes for this network
         # interface. We need the primary network's default route to be higher
         # priority so that the public/elastic IP, which is bound to the primary
