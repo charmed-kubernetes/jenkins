@@ -133,7 +133,8 @@ function test::execute
     if [ -n "$TEST_UPGRADE_SNAPD_CHANNEL" ]; then
         # Azure seems to have trouble with the daily image-stream
         extra_args="${extra_args} \
-            --snapd-upgrade ${TEST_UPGRADE_SNAPD_CHANNEL}"
+            --snapd-upgrade \
+            --snapd-channel ${TEST_UPGRADE_SNAPD_CHANNEL}"
     fi
 
     declare -n is_pass=$1
