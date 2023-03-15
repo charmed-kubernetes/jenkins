@@ -98,6 +98,12 @@ def juju(cmd, *args, json=True):
     return sh(cmd)
 
 
+def juju_wait(*args, **kwargs):
+    model = os.environ["JUJU_MODEL"]
+    controller = os.environ["JUJU_CONTROLLER"]
+    return sh("juju-wait", "-m", f"{controller}:{model}", *args, **kwargs)
+
+
 def juju_json(cmd, *args):
     args = ["--format", "json"] + list(args)
     output = juju(cmd, *args)
@@ -422,7 +428,7 @@ def deploy_bgp_router():
         )
 
     log("Waiting for router to come up")
-    juju("run", "--unit", "router/0", "echo", "ready")
+    juju_wait(timeout=15 * 60)
 
     log("Enabling secondary network interfaces")
     for i in range(1, len(subnets)):
