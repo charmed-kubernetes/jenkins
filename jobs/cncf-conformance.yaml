@@ -17,6 +17,8 @@
       - build-discarder:
           num-to-keep: 10
     parameters:
+      - lxc-runner-params
+      - juju-lts
       - string:
           name: CK_VERSION
           default: '1.26'
@@ -38,6 +40,6 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/cncf-conformance"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/cncf-conformance/conformance-spec
