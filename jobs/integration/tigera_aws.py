@@ -101,7 +101,8 @@ def juju(cmd, *args, json=True):
 def juju_wait(*args, **kwargs):
     model = os.environ["JUJU_MODEL"]
     controller = os.environ["JUJU_CONTROLLER"]
-    return sh("juju-wait", "-m", f"{controller}:{model}", *args, **kwargs)
+    cmd = ["juju-wait", "-m", f"{controller}:{model}"] + list(args)
+    return sh(cmd, **kwargs)
 
 
 def juju_json(cmd, *args):
