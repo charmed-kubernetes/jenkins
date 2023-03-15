@@ -7,6 +7,7 @@ LXC_HOME=/home/ubuntu
 LXC_WORKSPACE=$LXC_HOME/workspace
 LXC_JUJU=$LXC_HOME/.local/share/juju
 LXC_AWS=$LXC_HOME/.aws
+LXC_AZURE=$LXC_HOME/.azure
 LXC_SSH=$LXC_HOME/.ssh
 
 
@@ -45,6 +46,7 @@ ci_lxc_init_runner()
     ci_lxc_mount ${lxc_container} workspace ${WORKSPACE} ${LXC_WORKSPACE}
     ci_lxc_mount ${lxc_container} juju $HOME/.local/share/juju ${LXC_JUJU}
     ci_lxc_mount ${lxc_container} aws $HOME/.aws ${LXC_AWS}
+    ci_lxc_mount ${lxc_container} azure $HOME/.azure ${LXC_AZURE}
     ci_lxc_mount ${lxc_container} ssh $HOME/.ssh ${LXC_SSH}
 
     # Install runtime dependencies in the container
