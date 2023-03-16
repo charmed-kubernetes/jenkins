@@ -45,9 +45,9 @@ ci_lxc_init_runner()
     # Mount the mapped paths
     ci_lxc_mount ${lxc_container} workspace ${WORKSPACE} ${LXC_WORKSPACE}
     ci_lxc_mount ${lxc_container} juju $HOME/.local/share/juju ${LXC_JUJU}
-    ci_lxc_mount ${lxc_container} aws $HOME/.aws ${LXC_AWS}
-    ci_lxc_mount ${lxc_container} azure $HOME/.azure ${LXC_AZURE}
-    ci_lxc_mount ${lxc_container} ssh $HOME/.ssh ${LXC_SSH}
+    [ -d "$HOME/.aws" ] && ci_lxc_mount ${lxc_container} aws $HOME/.aws ${LXC_AWS}
+    [ -d "$HOME/.azure" ] && ci_lxc_mount ${lxc_container} azure $HOME/.azure ${LXC_AZURE}
+    [ -d "$HOME/.ssh" ] && ci_lxc_mount ${lxc_container} ssh $HOME/.ssh ${LXC_SSH}
 
     # Install runtime dependencies in the container
     # Install debs, replacing semicolons with spaces
