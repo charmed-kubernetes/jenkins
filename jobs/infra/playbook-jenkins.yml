@@ -58,7 +58,6 @@
           dh-systemd \
           debhelper \
           default-jre \
-          docker.io \
           expect-dev \
           file \
           flake8 \
@@ -101,6 +100,7 @@
     - name: remove unused debs
       shell: |
         sudo apt-get remove -qyf \
+          docker.io \
           golang \
           python-pip \
           juju \
@@ -151,6 +151,7 @@
       loop:
         - "charm --classic --channel 2.x/stable"
         - "charmcraft --classic --edge"
+        - "docker --channel=latest/stable"
         - "go --classic --stable"
         - "google-cloud-cli --classic --channel latest/stable"
         - "juju --classic --channel=2.9/stable"
@@ -388,7 +389,7 @@
     - name: set docker daemon config
       copy:
         src: "fixtures/docker.daemon.json"
-        dest: /etc/docker/daemon.json
+        dest: /var/snap/docker/current/etc/docker/daemon.json
         force: yes
         owner: root
         group: root
@@ -397,7 +398,7 @@
         - jenkins
     - name: restart docker service
       service:
-        name: docker
+        name: snap.docker.dockerd
         state: restarted
       tags:
         - adhoc
