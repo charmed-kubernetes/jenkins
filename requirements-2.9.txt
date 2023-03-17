@@ -182,7 +182,7 @@ pbr==5.5.1
     #   jenkins-job-builder
     #   python-jenkins
     #   stevedore
-platformdirs==2.5.1
+platformdirs==3.1.1
     # via black
 pluggy==0.13.1
     # via pytest
