@@ -5,24 +5,25 @@ set -eux
 # Map hosts paths into the container
 LXC_HOME=/home/ubuntu
 LXC_WORKSPACE=$LXC_HOME/workspace
-LXC_JUJU=$LXC_HOME/.local/share/juju
-LXC_AWS=$LXC_HOME/.aws
-LXC_AZURE=$LXC_HOME/.azure
-LXC_SSH=$LXC_HOME/.ssh
 
 
 ci_lxc_init_runner()
 {
     # pass return variable to accept container name
+    # automatically cleans up the container at the end
+    # of the bash script unless "notrap" is passed
+
     # Usage:
-    # ci_lxc_init_runner name_of_container
-    local  __resultvar=$1 
+    # ci_lxc_init_runner name_of_container [notrap]
+    local  __resultvar=$1
+    local  __trap=${2:-trap}
 
     # init a container runner on the build host
     local lxc_container=${JOB_NAME%%/*}-$(openssl rand -hex 10)-${BUILD_NUMBER}
     local lxc_apt_list=${LXC_APT_LIST:-}
     local lxc_snap_list=${LXC_SNAP_LIST:-}
     local lxc_push_list=${LXC_PUSH_LIST:-}
+    local lxc_mount_list=${LXC_MOUNT_LIST:-}
 
     # prepare env file for runner
     declare -px > .env
@@ -36,26 +37,30 @@ ci_lxc_init_runner()
     echo "declare -x PYTHONPATH=${LXC_WORKSPACE}:\"${PYTHONPATH:-}\"" >> ${WORKSPACE}/.env
 
     # ensure the container is torn down at the end of the job
-    trap "ci_lxc_delete ${lxc_container}" EXIT
+    if [ "${__trap}" != "notrap" ]; then
+       trap "ci_lxc_delete ${lxc_container}" EXIT
+    fi
 
     # Start fresh container
     ci_lxc_delete ${lxc_container} || true
     ci_lxc_launch ubuntu:22.04 ${lxc_container}
 
-    # Mount the mapped paths
-    ci_lxc_mount ${lxc_container} workspace ${WORKSPACE} ${LXC_WORKSPACE}
-    ci_lxc_mount ${lxc_container} juju $HOME/.local/share/juju ${LXC_JUJU}
-    [ -d "$HOME/.aws" ] && ci_lxc_mount ${lxc_container} aws $HOME/.aws ${LXC_AWS}
-    [ -d "$HOME/.azure" ] && ci_lxc_mount ${lxc_container} azure $HOME/.azure ${LXC_AZURE}
-    [ -d "$HOME/.ssh" ] && ci_lxc_mount ${lxc_container} ssh $HOME/.ssh ${LXC_SSH}
-
     # Install runtime dependencies in the container
     # Install debs, replacing semicolons with spaces
     ci_lxc_apt_install ${lxc_container} ${lxc_apt_list//,/ }
 
-    # Install snaps and push paths
+    # Install snaps and push paths and mount paths
     _IFS=${IFS} # restore IFS
     IFS=','
+
+    # Mount the mapped paths
+    ci_lxc_mount ${lxc_container} workspace ${WORKSPACE} ${LXC_WORKSPACE}
+    for mount_path in ${lxc_mount_list}; do
+        if [ -d "${HOME}/${mount_path}" ]; then
+            ci_lxc_mount ${lxc_container} "home${mount_path}" ${HOME}/${mount_path} ${LXC_HOME}/${mount_path}
+        fi
+    done
+
     for snap_args in ${lxc_snap_list}; do
         # snap_args could contain arguments separated by spaces
         # `juju --channel=2.9/stable` which requires splitting

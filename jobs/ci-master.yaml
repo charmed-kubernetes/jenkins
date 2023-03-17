@@ -76,6 +76,11 @@
           description: |-
             comma-separated list of bin paths to push into the container
           default: /usr/local/bin/columbo
+      - string:
+          name: LXC_MOUNT_LIST
+          description: |-
+            comma-separated list of paths to mount in the container from $HOME to $LXC_HOME
+          default: .local,.ssh,.aws,.azure
 
 - parameter:
     name: juju-lts
