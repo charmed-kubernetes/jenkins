@@ -14,43 +14,6 @@ def destroy_controller(controller) {
     """
 }
 
-def setup_lxc() {
-    return """#!/usr/bin/env bash
-    . \$WORKSPACE/lxc_runner.sh
-    ci_lxc_init_runner _lxc notrap 1>&2
-    echo \${_lxc}
-    """
-}
-
-def delete_lxc(container_name) {
-    return """#!/usr/bin/env bash
-    . \${WORKSPACE}/cilib.sh
-
-    ci_lxc_delete ${container_name}
-    """
-}
-
-def run_lxc(container_name, command) {
-    return """#!/usr/bin/env bash
-    . \$WORKSPACE/lxc_runner.sh
-
-    _job_sh=\$(basename \$(mktemp -p \$WORKSPACE --suffix=.sh))
-
-    # push job script into workspace and run
-    cat << 'EOF' > \$WORKSPACE/\$_job_sh
-
-    #!/bin/bash
-    set -eux
-    set -o allexport
-    [[ -f \$WORKSPACE/.env ]] && source \$WORKSPACE/.env
-    set +o allexport
-
-    ${command}
-    EOF
-    ci_lxc_job_run ${container_name} -- bash \$LXC_WORKSPACE/\$_job_sh
-    """
-}
-
 pipeline {
     agent {
         label "runner-${params.ARCH}"
@@ -79,10 +42,6 @@ pipeline {
         K8STEAMCI_GPG_PRIVATE= credentials('deb-gpg-private')
         K8STEAMCI_GPG_KEY    = credentials('deb-gpg-key')
         NOTIFY_EMAIL         = credentials('microk8s_notify_email')
-        LXC_APT_LIST         = "awscli,pip,python3-venv,python3-dev,libffi-dev"
-        LXC_SNAP_LIST        = "juju --channel=3.1,juju-wait,juju-crashdump,snapcraft"
-        LXC_PUSH_LIST        = "${SNAPCRAFTCREDS}"
-        LXC_MOUNT_LIST       = ".local,.ssh,.aws,.config"
 
     }
     options {
@@ -101,11 +60,6 @@ pipeline {
                 }
             }
         }
-        stage("Setup LXC") {
-            steps {
-                lxc_name = sh (script: setup_lxc, returnStdout: true).trim()
-            }
-        }
         stage("Snapcraft login") {
             steps {
                 sh "snapcraft login --with ${SNAPCRAFTCREDS}"
@@ -113,9 +67,9 @@ pipeline {
         }
         stage("Setup tox environment") {
             steps {
-                sh run_lxc(lxc_name, """
+                sh """
                 tox -e py38 -- python -c 'print("Tox Environment Ready")'
-                """)
+                """
             }
         }
         stage("Run Release Steps") {
@@ -163,48 +117,47 @@ pipeline {
                                 } else {
                                     error("Aborting build due to unknown arch=${arch}")
                                 }
-                                sh run_lxc(lxc_name, destroy_controller(juju_controller))
-                                sh run_lxc(lxc_name, """
-                                    juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
-                                    --add-model "${juju_model}" \
+                                sh destroy_controller(juju_controller)
+                                sh """#!/bin/bash -x
+                                juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
+                                    -d "${juju_model}" \
                                     --model-default test-mode=true \
                                     --model-default resource-tags="owner=k8sci job=${job} stage=${stage}" \
                                     --bootstrap-constraints "mem=8G cores=2"
 
-                                    juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu
-                                    juju-wait -e "${juju_full_model}" -w
+                                juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu
 
-                                    set +x
-                                    AWS_ACCESS_KEY_ID=\$(aws configure get aws_access_key_id)
-                                    AWS_SECRET_ACCESS_KEY=\$(aws configure get aws_secret_access_key)
+                                juju-wait -e "${juju_full_model}" -w
 
-                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo INSTANCE_TYPE=${eksd_instance_type} | sudo tee -a /etc/environment"
-                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo STACK_NAME=${juju_controller} | sudo tee -a /etc/environment"
-                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_REGION=\$AWS_REGION | sudo tee -a /etc/environment"
-                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID | sudo tee -a /etc/environment"
-                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY | sudo tee -a /etc/environment"
-                                    set -x
+                                set +x
+                                AWS_ACCESS_KEY_ID=\$(aws configure get aws_access_key_id)
+                                AWS_SECRET_ACCESS_KEY=\$(aws configure get aws_secret_access_key)
 
-                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
-                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true
-                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd init --auto'
-                                    """
-                                )
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo INSTANCE_TYPE=${eksd_instance_type} | sudo tee -a /etc/environment"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo STACK_NAME=${juju_controller} | sudo tee -a /etc/environment"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_REGION=\$AWS_REGION | sudo tee -a /etc/environment"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID | sudo tee -a /etc/environment"
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo echo AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY | sudo tee -a /etc/environment"
+                                set -x
+
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true
+                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd init --auto'
+                                """
                                 if (channel == "pre-release"){
-                                    sh run_lxc(lxc_name, """
-                                        juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
-                                    """)
+                                    sh """
+                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
+                                    """
                                 }
-
                                 try {
-                                    sh run_lxc(lxc_name, """
+                                    sh """
                                     . .tox/py38/bin/activate
                                     DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
                                         TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS}\
                                         PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0\
                                         JUJU_CONTROLLER=${juju_controller} JUJU_MODEL=${juju_model}\
                                         timeout 6h python jobs/microk8s/${job_name[channel]}
-                                    """)
+                                    """
                                 } catch (err) {
                                     unstable("${job_name[channel]} completed with errors.")
                                     emailext(
@@ -213,7 +166,7 @@ pipeline {
                                              body: "Please go to ${BUILD_URL} and verify the build"
                                     )
                                 } finally {
-                                    sh run_lxc(lxc_name, destroy_controller(juju_controller))
+                                    sh destroy_controller(juju_controller)
                                 }
                             }
                         }
@@ -230,10 +183,9 @@ pipeline {
                         def job="release-microk8s"
                         def stage="${channel}-${arch}"
                         def juju_controller="${job}-${stage}"
-                        sh run_lxc(lxc_name, destroy_controller(juju_controller))
+                        sh destroy_controller(juju_controller)
                     }
                 }
-                sh delete_lxc(lxc_name)
             }
         }
     }
