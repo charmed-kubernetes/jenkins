@@ -39,10 +39,9 @@ class Creds:
 
     @classmethod
     def from_juju(cls) -> "Creds":
-        juju_cred = Path(
-            os.environ["HOME"], ".local", "share", "juju", "credentials.yaml"
-        )
-        juju_cloud = Path(os.environ["HOME"], ".local", "share", "juju", "clouds.yaml")
+        juju_path = Path(os.environ["HOME"], ".local", "share", "juju")
+        juju_cred = juju_path / "credentials.yaml"
+        juju_cloud = juju_path / "clouds.yaml"
         if not juju_cred.exists():
             raise InvalidCreds(f"{juju_cred} not found")
         if not juju_cloud.exists():
@@ -72,6 +71,10 @@ class Creds:
 
 
 class VsphereActions:
+    def __init__(self, client, dry_run=True):
+        self.client = client.vcenter
+        self.dry_run = dry_run
+
     def locate_folder(self, path: str):
         """Find one vsphere folder at a specified path"""
         prior = None
@@ -129,13 +132,9 @@ class VsphereActions:
             else:
                 log.info(f"DRYRUN: Would delete '{vm.name}'")
 
-    def __init__(self, client, dry_run=True):
-        self.client = client.vcenter
-        self.dry_run = dry_run
-
-    def cleanup(self, folder):
+    def cleanup(self, path):
         # locate a single folder matching the path in vmfolder
-        parent = self.locate_folder(folder)
+        parent = self.locate_folder(path)
         # find all subfolders within this parent path
         subfolders = self.subfolders(parent)
         for folder in subfolders:
@@ -151,6 +150,20 @@ class VsphereActions:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="If enabled, only log what would be shutdown and deleted.",
+    )
+    parser.add_argument(
+        "--vmfolder",
+        dest="vmfolder",
+        help="override the vmfolder to delete",
+        default=None,
+    )
+    args = parser.parse_args()
     # gather creds from juju config files
     creds = Creds.from_juju()
     # Connect to a vCenter Server and clean up
@@ -160,8 +173,5 @@ if __name__ == "__main__":
         password=creds.password,
         session=session,
     )
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--dry-run", dest="dry_run", action="store_true")
-    args = parser.parse_args()
-    VsphereActions(_client, **args.__dict__).cleanup(creds.vmfolder)
+    vsphere = VsphereActions(_client, dry_run=args.dry_run)
+    vsphere.cleanup(args.vmfolder or creds.vmfolder)
