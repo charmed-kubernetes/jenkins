@@ -127,12 +127,14 @@ function kv::get
 # Returns str: True or False
 function test::execute
 {
-    if juju::version_2; then
-        # Pin python libjuju to function with juju 2.9
-        echo "juju 2.9 environment detected"
-        echo "Pinning back python libjuju before starting tests"
-        pip freeze | xargs pip uninstall -y
-        pip install -r "requirements-2.9.txt"
+    juju::pip::2.9
+
+    extra_args=''
+    if [ -n "$TEST_UPGRADE_SNAPD_CHANNEL" ]; then
+        # Azure seems to have trouble with the daily image-stream
+        extra_args="${extra_args} \
+            --snapd-upgrade \
+            --snapd-channel ${TEST_UPGRADE_SNAPD_CHANNEL}"
     fi
 
     declare -n is_pass=$1
@@ -142,7 +144,9 @@ function test::execute
         jobs/integration/validation.py \
         --cloud "$JUJU_CLOUD" \
         --model "$JUJU_MODEL" \
-        --controller "$JUJU_CONTROLLER"
+        --controller "$JUJU_CONTROLLER" \
+        ${extra_args}
+    
     ret=$?
     is_pass="True"
     if (( ret > 0 )); then

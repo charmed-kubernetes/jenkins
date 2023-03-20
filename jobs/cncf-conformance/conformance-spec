@@ -44,7 +44,7 @@ function test::execute
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
-    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader:config $HOME/.kube/
+    juju ssh -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader -- cat config > $HOME/.kube/
     export RBAC_ENABLED=$(kubectl api-versions | grep "rbac.authorization.k8s.io/v1" -c)
     kubectl version
     timeout -s INT 3h ./sonobuoy run --mode=certified-conformance --wait \

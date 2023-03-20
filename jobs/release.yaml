@@ -20,6 +20,8 @@
           num-to-keep: 10
     parameters:
       - snap-stable
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave
@@ -35,7 +37,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/release/bugfix-spec $snap_version $series
 
@@ -53,6 +55,9 @@
     properties:
       - build-discarder:
           num-to-keep: 10
+    parameters:
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave
@@ -79,7 +84,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
            bash jobs/release/bugfix-upgrade-spec $snap_version $series
 
@@ -101,6 +106,8 @@
           num-to-keep: 10
     parameters:
       - snap-beta # this value represents the snap channel after the upgrade
+      - lxc-runner-params
+      - juju-lts
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -128,6 +135,6 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release"
-      - run-venv:
+      - run-lxc:
           COMMAND: |
             bash jobs/release/release-upgrade-spec $snap_version $deploy_snap $series

@@ -807,7 +807,10 @@ async def get_ipv6_addr(unit):
         if "UP" not in intf:
             continue
         for addr in intf.split("  ")[-1].split():
-            addr = ipaddress.ip_interface(addr).ip
+            try:
+                addr = ipaddress.ip_interface(addr).ip
+            except ValueError:
+                continue
             if addr.version == 6:
                 return str(addr)
     return None

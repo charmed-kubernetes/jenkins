@@ -16,6 +16,8 @@ set -x
 ###############################################################################
 function test::execute
 {
+    juju::pip::2.9
+
     declare -n is_pass=$1
     timeout -s INT 3h pytest \
                 --full-trace \

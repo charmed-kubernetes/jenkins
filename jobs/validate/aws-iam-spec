@@ -16,8 +16,9 @@ set -x
 ###############################################################################
 function test::execute
 {
-    declare -n is_pass=$1
+    juju::pip::2.9
 
+    declare -n is_pass=$1
     timeout -s INT 2h pytest \
                 --full-trace \
                 jobs/integration/test_aws_iam.py \

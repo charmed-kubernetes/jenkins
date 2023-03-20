@@ -41,6 +41,17 @@ function juju::version_3
     vergte $(juju::version) 3.0.0
 }
 
+function juju::pip::2.9
+{
+    # Pin python libjuju to operate with juju 2.9
+    if juju::version_2; then
+        echo "juju 2.9 environment detected"
+        echo "Pinning back python libjuju before starting tests"
+        pip freeze | xargs pip uninstall -y
+        pip install -r "requirements-2.9.txt"
+    fi
+}
+
 function juju::bootstrap
 {
     extra_args='--model-default image-stream=daily'

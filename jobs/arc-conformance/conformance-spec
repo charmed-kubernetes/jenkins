@@ -86,7 +86,7 @@ function test::execute
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
-    juju scp -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader:config $HOME/.kube/
+    juju ssh -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader -- cat config > $HOME/.kube/
     kubectl version
 
     # prep azure env
@@ -105,7 +105,7 @@ function test::execute
 EOF
 
     set +x
-    source /var/lib/jenkins/.local/share/juju/azure-arc.sh
+    source $HOME/.local/share/juju/azure-arc.sh
     if [[ "${UPLOAD_RESULTS}" == "false" ]]; then
       # disable storage account if we don't want to upload results (doesn't impact the test)
       export AZ_STORAGE_ACCOUNT_SAS='invalid'

@@ -116,6 +116,8 @@ function juju::deploy
 
 function test::execute
 {
+    juju::pip::2.9
+
     declare -n is_pass=$1
     timeout -s INT 1h pytest \
         --html="report.html" \
