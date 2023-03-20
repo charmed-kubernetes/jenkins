@@ -5,6 +5,7 @@ THISDIR="$(dirname "$(realpath "$0")")"
 . "$THISDIR/cleanup-aws.sh"  # import AWS methods
 . "$THISDIR/cleanup-gce.sh"  # import GCE methods
 . "$THISDIR/cleanup-az.sh"   # import Azure methods
+. "$THISDIR/cleanup-vsphere.sh"   # import VSphere methods
 
 
 function purge::controllers
@@ -40,6 +41,7 @@ tmpreaper -t 5h /tmp
 purge::aws
 purge::gce
 purge::az
+purge::vsphere
 
 sudo lxc list --format json | jq -r ".[] | .name" | parallel sudo lxc delete --force {}
 for cntr in $(sudo lxc profile list --format json | jq -r ".[] | .name"); do
