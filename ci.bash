@@ -168,11 +168,11 @@ function test::capture
 {
     if which juju-crashdump; then
         juju-crashdump \
-            -s                   # small crashdump by skipping /var/lib/juju \
-            -a debug-layer       # included debug-layer addon \
-            -a config            # included config addon \
-            -j snap.kube*        # included logs from all kube* daemons \
-            -j snap.cdk-addons*  # included logs from cdk-addons*  \
+            -s \                   # small crashdump by skipping /var/lib/juju
+            -a debug-layer \       # included debug-layer addon
+            -a config \            # included config addon
+            -j snap.kube* \        # included logs from all kube* daemons
+            -j snap.cdk-addons* \  # included logs from cdk-addons*
             -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
     tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* || true
