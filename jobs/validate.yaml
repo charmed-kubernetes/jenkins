@@ -751,6 +751,14 @@
       - series-stable
       - lxc-runner-params
       - juju-lts
+      - string:
+          name: LXC_SNAP_LIST
+          description: |-
+            Override to include jq installation
+
+            comma-separated list of snaps to install into the container
+            if the snap requires multiple arguments
+          default: kubectl,jq,juju-wait,juju-crashdump,juju --channel=$juju_channel
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
