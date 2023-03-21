@@ -81,7 +81,7 @@ EOF
     
     # Untaint scheduling for control-plane nodes so that the autoscaler can be scheduled to it
     for node in $(kubectl get nodes | grep control-plane | cut -d' ' -f1); do
-        kubectl taint node $NODE node-role.kubernetes.io/control-plane=:NoSchedule-
+        kubectl taint node $node node-role.kubernetes.io/control-plane=:NoSchedule-
     done
 
     juju deploy -m "${JUJU_CONTROLLER}:addons" ./k8s_overlay.yaml --trust
@@ -90,7 +90,7 @@ EOF
 
     # Retaint control-plane nodes
     for node in $(kubectl get nodes | grep control-plane | cut -d' ' -f1); do
-        kubectl taint node $NODE node-role.kubernetes.io/control-plane=:NoSchedule
+        kubectl taint node $node node-role.kubernetes.io/control-plane=:NoSchedule
     done
 }
 
