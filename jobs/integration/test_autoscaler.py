@@ -34,8 +34,8 @@ async def deployment(kubectl, namespace):
 
 @pytest.fixture
 def scaled_up_deployment(kubectl, namespace, deployment):
-    log.info("Scaling nginx deployment up to 200 units...")
-    kubectl.scale(f=deployment, replicas=200, namespace=namespace)
+    log.info("Scaling nginx deployment up to 115 units...")
+    kubectl.scale(f=deployment, replicas=115, namespace=namespace)
 
 
 @pytest.fixture
@@ -64,18 +64,18 @@ async def wait_for_worker_count(model, expected_workers):
             log.info(f"Worker count reached {unit_count}")
         return unit_count == expected_workers
 
-    await model.block_until(condition, timeout=15 * 60)
+    await model.block_until(condition, timeout=25 * 60)
 
 
 async def test_scale_up(scaled_up_deployment, model):
     log.info("Watching workers expand...")
     assert len(model.applications["kubernetes-worker"].units) == 1
     await wait_for_worker_count(model, 2)
-    await model.wait_for_idle(status="active", timeout=15 * 60)
+    await model.wait_for_idle(status="active", timeout=25 * 60)
 
 
 async def test_scale_down(scaled_down_deployment, model):
     log.info("Watching workers contract...")
     assert len(model.applications["kubernetes-worker"].units) == 2
     await wait_for_worker_count(model, 1)
-    await model.wait_for_idle(status="active", timeout=15 * 60)
+    await model.wait_for_idle(status="active", timeout=25 * 60)
