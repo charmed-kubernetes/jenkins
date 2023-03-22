@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-certifi==2020.6.20
+certifi==2022.12.7
     # via requests
 cffi==1.14.5
     # via cryptography
@@ -15,11 +15,11 @@ click==7.1.2
 cryptography==3.4.6
     # via secretstorage
 distro==1.5.0
-    # via lazr.restfulclient
+    # via lazr-restfulclient
 httplib2==0.19.0
     # via
     #   launchpadlib
-    #   lazr.restfulclient
+    #   lazr-restfulclient
 idna==2.10
     # via requests
 jeepney==0.6.0
@@ -30,16 +30,16 @@ keyring==21.2.1
     # via launchpadlib
 launchpadlib==1.10.13
     # via -r requirements.in
-lazr.restfulclient==0.14.3
+lazr-restfulclient==0.14.3
     # via
     #   -r requirements.in
     #   launchpadlib
-lazr.uri==1.0.5
+lazr-uri==1.0.5
     # via
     #   launchpadlib
     #   wadllib
 oauthlib==3.1.0
-    # via lazr.restfulclient
+    # via lazr-restfulclient
 pbr==5.4.5
     # via testresources
 pycparser==2.20
@@ -59,7 +59,7 @@ sh==1.13.1
 six==1.15.0
     # via
     #   launchpadlib
-    #   lazr.restfulclient
+    #   lazr-restfulclient
     #   python-dateutil
 testresources==2.0.1
     # via launchpadlib
@@ -70,7 +70,7 @@ urllib3==1.25.9
 wadllib==1.3.4
     # via
     #   launchpadlib
-    #   lazr.restfulclient
+    #   lazr-restfulclient
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
