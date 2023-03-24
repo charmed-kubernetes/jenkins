@@ -1,17 +1,19 @@
-application: vsphere-cloud-provider
 storage-class: csi-vsphere-default
-out-relations:
-  - - vsphere-cloud-provider:certificates
-    - easyrsa:client
-  - - vsphere-cloud-provider:kube-control
-    - kubernetes-control-plane:kube-control
-  - - vsphere-cloud-provider:external-cloud-provider
-    - kubernetes-control-plane:external-cloud-provider
-  - - vsphere-cloud-provider:vsphere-integration
-    - vsphere-integrator:clients
-in-relations:
-  - - vsphere-integrator:clients
-    - kubernetes-control-plane:vsphere
-  - - vsphere-integrator:clients
-    - kubernetes-worker:vsphere
-in-tree-until: '1.25'
+storage: &storage
+  application: vsphere-cloud-provider
+  out-relations:
+    - - vsphere-cloud-provider:certificates
+      - easyrsa:client
+    - - vsphere-cloud-provider:kube-control
+      - kubernetes-control-plane:kube-control
+    - - vsphere-cloud-provider:external-cloud-provider
+      - kubernetes-control-plane:external-cloud-provider
+    - - vsphere-cloud-provider:vsphere-integration
+      - vsphere-integrator:clients
+  in-relations:
+    - - vsphere-integrator:clients
+      - kubernetes-control-plane:vsphere
+    - - vsphere-integrator:clients
+      - kubernetes-worker:vsphere
+  in-tree-until: '1.25'
+cloud-controller: *storage
