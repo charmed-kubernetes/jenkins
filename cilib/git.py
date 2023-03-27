@@ -3,12 +3,17 @@
 
 import logging
 import sh
+import re
 from subprocess import run
 from .github_api import Repository
 import requests
 import requests.auth
 
 log = logging.getLogger(__name__)
+
+
+def _natural_sort_key(s, _nsre=re.compile("([0-9]+)")):
+    return [int(text) if text.isdigit() else text for text in _nsre.split(s)]
 
 
 def default_gh_branch(repo: str, ignore_errors=False, auth=None):
@@ -89,23 +94,17 @@ def remote_add(origin, url, **subprocess_kwargs):
 
 def remote_tags(url, **subprocess_kwargs):
     """Returns a list of remote tags"""
-    _tags = sh.sed(
-        sh.sort(sh.git("ls-remote", "-t", "--refs", url), "-t", "/", "-k", 3, "-V"),
-        "-E",
-        "s/^[[:xdigit:]]+[[:space:]]+refs\\/tags\\/(.+)/\\1/g",
-    ).stdout.decode()
-    return _tags.split("\n")[:-1]
+    refs = sh.git("ls-remote", "-t", "--refs", url)
+    tags = [line.split("/")[2] for line in refs.splitlines()]
+    return sorted(tags, key=_natural_sort_key)
 
 
 def remote_branches(url, **subprocess_kwargs):
     """Returns a list of remote branches"""
-    _tags = sh.sed(
-        sh.sort(sh.git("ls-remote", "-h", "--refs", url), "-t", "/", "-k", 3, "-V"),
-        "-E",
-        "s/^[[:xdigit:]]+[[:space:]]+refs\\/heads\\/(.+)/\\1/g",
-    ).stdout.decode()
-    _tags = _tags.split("\n")[:-1]
-    return [tag for tag in _tags if tag != "master"]
+    refs = sh.git("ls-remote", "-h", "--refs", url)
+    tags = [line.split("/")[2] for line in refs.splitlines()]
+    branches = ["main", "master"]  # wokeignore:rule=master
+    return sorted(filter(lambda t: t not in branches, tags), key=_natural_sort_key)
 
 
 def branch_exists(repo, branch, **subprocess_kwargs):
