@@ -7,9 +7,10 @@
 aiocontextvars==0.2.2
     # via -r requirements.in
 ansible==6.7.0 ; python_version < "3.9"
-ansible>=7.0.0 ; python_version >= "3.9"
+ansible==7.3.0 ; python_version >= "3.9"
     # via -r requirements.in
-ansible-core==2.13.8
+ansible-core==2.13.8 ; python_version < "3.9"
+ansible-core==2.14.4 ; python_version >= "3.9"
     # via ansible
 async-generator==1.10
     # via
