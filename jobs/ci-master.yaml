@@ -297,7 +297,7 @@
 
           rm -rf $WORKSPACE/.env || true
 
-          export GIT_SSH_COMMAND='"ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"'
+          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"
           export CHARM_BASE_DIR="$WORKSPACE/.cache/charmbuild/$BUILD_TAG"
           export CHARM_BUILD_DIR="$CHARM_BASE_DIR/${{CHARM_BUILD_DIR:-build/charms}}"
           export CHARM_LAYERS_DIR="$CHARM_BASE_DIR/${{CHARM_LAYERS_DIR:-build/layers}}"
@@ -317,7 +317,7 @@
           mkdir -p "$CHARM_INTERFACES_DIR"
 
           export PATH=/snap/bin:$HOME/bin/:$PATH
-          export NODE_LABELS='"$NODE_LABELS"'
+          export NODE_LABELS="$NODE_LABELS"
           export TMPDIR="$WORKSPACE/tmp"
           export PATH=venv/bin:$PATH
           export PYTHONPATH=$WORKSPACE:"${{PYTHONPATH:-}}"
