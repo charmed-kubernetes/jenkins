@@ -138,7 +138,7 @@ async def _resolve_provider(model, provider, tools, version, expected_apps):
     if version > in_tree_version:
         method = _add_provider
         expected_apps.add(provider.application)
-    else:  
+    else:
         method = _remove_provider
         expected_apps.discard(provider.application)
     provider.channel = tools.charm_channel
@@ -161,7 +161,7 @@ async def provider_charms(tools: Tools, model, cloud, kubernetes_version):
         for _ in (out_of_tree.storage, out_of_tree.cloud_controller)
     ]
     await asyncio.gather(*adjust_model)
-    
+
     logger.info(f"Waiting for stable apps=[{', '.join(expected_apps)}].")
     await model.wait_for_idle(
         apps=list(expected_apps), wait_for_active=True, timeout=15 * 60
@@ -171,7 +171,9 @@ async def provider_charms(tools: Tools, model, cloud, kubernetes_version):
 @pytest.fixture(scope="module")
 async def storage_class(provider_charms, model, cloud, kubernetes_version):
     out_of_tree = out_of_tree_config(cloud)
-    support_version = tuple(int(i) for i in out_of_tree.storage.in_tree_until.split(".")[:2])
+    support_version = tuple(
+        int(i) for i in out_of_tree.storage.in_tree_until.split(".")[:2]
+    )
 
     if kubernetes_version <= support_version:
         logger.info("Installing Storage Class from template.")
