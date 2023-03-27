@@ -1,4 +1,5 @@
-ansible
+ansible<7.0.0; python_version<"3.9"
+ansible>=7.0.0; python_version>="3.9"
 async-generator
 asyncio-extras
 aiocontextvars
