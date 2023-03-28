@@ -59,19 +59,24 @@ class SnapService(DebugMixin):
                 snapcraft_fn = src_path / "snapcraft.yaml"
                 snapcraft_fn_tpl = src_path / "snapcraft.yaml.in"
 
-                k8s_major_minor = semver.VersionInfo.parse(branch.lstrip("v"))
+                k8s_version = semver.VersionInfo.parse(branch.lstrip("v"))
+                k8s_major_minor = f"{k8s_version.major}.{k8s_version.minor}"
+
+                if k8s_major_minor not in enums.K8S_GO_MAP:
+                    self.log(
+                        f"Skipping {k8s_version} because {k8s_major_minor} isn't in K8S_GO_MAP"
+                    )
+                    continue
 
                 snapcraft_yml_context = {
                     "snap_version": branch.lstrip("v"),
                     "patches": [],
-                    "go_version": enums.K8S_GO_MAP[
-                        f"{k8s_major_minor.major}.{k8s_major_minor.minor}"
-                    ],
+                    "go_version": enums.K8S_GO_MAP[k8s_major_minor],
                 }
 
-                if semver.compare(str(k8s_major_minor), "1.27.0-alpha.0") >= 0:
+                if k8s_version.compare("1.27.0-alpha.0") >= 0:
                     snapcraft_yml_context["base"] = "core20"
-                elif semver.compare(str(k8s_major_minor), "1.19.0") >= 0:
+                elif k8s_version.compare("1.19.0") >= 0:
                     snapcraft_yml_context["base"] = "core18"
 
                 self.log(f"Writing template vars {snapcraft_yml_context}")
