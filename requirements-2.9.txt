@@ -7,7 +7,7 @@
 #
 aiocontextvars==0.2.2
     # via -r requirements.in
-ansible==3.2.0
+ansible==7.4.0
     # via -r requirements.in
 ansible-base==2.10.7
     # via ansible
