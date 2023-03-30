@@ -150,7 +150,7 @@ pipeline {
                     JUJUD_VER=\$(snap list juju | grep juju | awk '{print \$2}')
 
                     # Prime our image list with the jujud-op image
-                    CI_IMAGES="docker.io/jujusolutions/jujud-operator:\$JUJUD_VER"
+                    CI_IMAGES="docker.io/jujusolutions/jujud-operator:3.1.1"
 
                     # Key from the bundle_image_file used to identify images for CI
                     CI_KEY=ci-static:
