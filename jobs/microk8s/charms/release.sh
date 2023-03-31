@@ -73,7 +73,7 @@ if [[ "$SKIP_TESTS" != 'true' ]]; then
 
   python3 -m venv venv
   . venv/bin/activate
-  pip install tox
+  pip install 'tox<4'
 
   # workaround unneeded missing dependency charmcraft
   ln -s /usr/bin/false charmcraft
