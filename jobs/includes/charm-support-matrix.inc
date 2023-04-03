@@ -497,6 +497,49 @@
     upstream: 'https://github.com/jnsgruk/kubernetes-dashboard-operator'
     channel-range:
       min: '999.0'
+- volcano-admission:
+    bugs: 'https://bugs.launchpad.net/charm-volcano'
+    docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
+    downstream: charmed-kubernetes/charm-volcano
+    store: 'https://charmhub.io/volcano-admission'
+    summary: Volcano is a batch system built on Kubernetes.
+    tags:
+      - k8s-operator
+      - volcano
+      - volcano-admission
+    upstream: 'https://github.com/charmed-kubernetes/charm-volcano'
+    subdir: charms/volcano-admission
+    channel-range:
+      min: '1.27'
+- volcano-controllers:
+    bugs: 'https://bugs.launchpad.net/charm-volcano'
+    docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
+    downstream: charmed-kubernetes/charm-volcano
+    store: 'https://charmhub.io/volcano-controllers'
+    summary: Volcano is a batch system built on Kubernetes.
+    tags:
+      - k8s-operator
+      - volcano
+      - volcano-controllers
+    upstream: 'https://github.com/charmed-kubernetes/charm-volcano'
+    subdir: charms/volcano-controllers
+    channel-range:
+      min: '1.27'
+- volcano-scheduler:
+    bugs: 'https://bugs.launchpad.net/charm-volcano'
+    docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
+    downstream: charmed-kubernetes/charm-volcano
+    store: 'https://charmhub.io/volcano-scheduler'
+    summary: Volcano is a batch system built on Kubernetes.
+    tags:
+      - k8s-operator
+      - volcano
+      - volcano-scheduler
+    upstream: 'https://github.com/charmed-kubernetes/charm-volcano'
+    subdir: charms/volcano-scheduler
+    channel-range:
+      min: '1.27'
+
 
 # EOL in favor of operator charm: https://charmhub.io/kubernetes-dashboard
 # - k8s-dashboard:
