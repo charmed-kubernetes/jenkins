@@ -14,6 +14,8 @@ import yaml
 import jinja2
 from retry import retry
 
+from jobs.integration.conftest import Tools
+
 from .utils import juju_run_retry, kubectl_apply, kubectl_delete
 
 env = os.environ.copy()
@@ -26,14 +28,28 @@ class Tree(Enum):
 
 
 @dataclass
-class OutOfTreeConfig:
+class Provider:
     application: str
-    storage_class: str
     out_relations: List[Tuple[str, str]]
     in_relations: List[Tuple[str, str]]
     config: Mapping[str, str] = field(default_factory=dict)
+    channel: str = "edge"
     in_tree_until: str = None
     trust: bool = False
+
+
+@dataclass
+class OutOfTreeConfig:
+    storage_class: str
+    storage: Provider
+    cloud_controller: Provider
+
+    @classmethod
+    def from_dict(cls, kw):
+        ccm, stor = kw.pop("cloud_controller"), kw.pop("storage")
+        ccm = Provider(**{k.replace("-", "_"): ccm[k] for k in ccm})
+        stor = Provider(**{k.replace("-", "_"): stor[k] for k in stor})
+        return cls(storage=stor, cloud_controller=ccm, **kw)
 
 
 @dataclass
@@ -56,7 +72,7 @@ def _prepare_relation(linkage, model, add=True):
 def out_of_tree_config(cloud):
     provider_file = TEMPLATE_PATH / cloud / "out-of-tree.yaml"
     config = yaml.safe_load(provider_file.read_text())
-    return OutOfTreeConfig(**{k.replace("-", "_"): config[k] for k in config})
+    return OutOfTreeConfig.from_dict({k.replace("-", "_"): config[k] for k in config})
 
 
 def loadbalancer_config(cloud):
@@ -65,40 +81,19 @@ def loadbalancer_config(cloud):
     return LoadBalancerConfig(**{k.replace("-", "_"): config[k] for k in config})
 
 
-@pytest.fixture(scope="module", params=[Tree.IN_TREE, Tree.OUT_OF_TREE])
-async def storage_class(tools, model, request, cloud):
-    provider = out_of_tree_config(cloud)
-    out_of_tree = request.param is Tree.OUT_OF_TREE
-
-    if provider.in_tree_until:
-        worker_app = model.applications["kubernetes-worker"]
-        k8s_version_str = worker_app.data["workload-version"]
-        k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-        support_version = tuple(int(i) for i in provider.in_tree_until.split(".")[:2])
-
-        if not out_of_tree and k8s_minor_version > support_version:
-            pytest.skip(
-                f"In-Tree storage tests do not work in {cloud} after {provider.in_tree_until}."
-            )
-        elif out_of_tree and k8s_minor_version <= support_version:
-            pytest.skip(
-                f"Out-of-Tree storage not tested on {cloud} <= {provider.in_tree_until}."
-            )
-
+async def _add_provider(model, provider: Provider):
     provider_app = provider.application
     provider_deployed = provider_app in model.applications
-    expected_apps = set(model.applications)
 
-    if out_of_tree and not provider_deployed:
+    if not provider_deployed:
         logger.info(f"Adding provider={provider_app} to model.")
         # deploy provider.application
         await model.deploy(
             provider_app,
-            channel=tools.charm_channel,
+            channel=provider.channel,
             trust=provider.trust,
             config=provider.config,
         )
-        expected_apps.add(provider_app)
 
         # remove provider.in_relations
         to_delete = [
@@ -112,9 +107,14 @@ async def storage_class(tools, model, request, cloud):
             for relation in provider.out_relations
         ]
         await asyncio.gather(*to_add + to_delete)
-    elif not out_of_tree and provider_deployed:
+
+
+async def _remove_provider(model, provider: Provider):
+    provider_app = provider.application
+    provider_deployed = provider_app in model.applications
+
+    if provider_deployed:
         logger.info(f"Removing Provider={provider_app} from model.")
-        expected_apps.remove(provider_app)
 
         # remove provider.out_relations
         to_delete = [
@@ -132,21 +132,59 @@ async def storage_class(tools, model, request, cloud):
         # remove provider.application
         await model.applications[provider_app].remove()
 
+
+async def _resolve_provider(model, provider, tools, version, expected_apps):
+    in_tree_version = tuple(int(i) for i in provider.in_tree_until.split(".")[:2])
+    if version > in_tree_version:
+        method = _add_provider
+        expected_apps.add(provider.application)
+    else:
+        method = _remove_provider
+        expected_apps.discard(provider.application)
+    provider.channel = tools.charm_channel
+    await method(model, provider)
+
+
+@pytest.fixture(scope="module")
+async def kubernetes_version(model):
+    worker_app = model.applications["kubernetes-worker"]
+    k8s_version_str = worker_app.data["workload-version"]
+    return tuple(int(i) for i in k8s_version_str.split(".")[:2])
+
+
+@pytest.fixture(scope="module")
+async def provider_charms(tools: Tools, model, cloud, kubernetes_version):
+    out_of_tree = out_of_tree_config(cloud)
+    expected_apps = set(model.applications)
+    adjust_model = [
+        _resolve_provider(model, _, tools, kubernetes_version, expected_apps)
+        for _ in (out_of_tree.storage, out_of_tree.cloud_controller)
+    ]
+    await asyncio.gather(*adjust_model)
+
     logger.info(f"Waiting for stable apps=[{', '.join(expected_apps)}].")
     await model.wait_for_idle(
         apps=list(expected_apps), wait_for_active=True, timeout=15 * 60
     )
-    if not out_of_tree:
+
+
+@pytest.fixture(scope="module")
+async def storage_class(provider_charms, model, cloud, kubernetes_version):
+    out_of_tree = out_of_tree_config(cloud)
+    support_version = tuple(
+        int(i) for i in out_of_tree.storage.in_tree_until.split(".")[:2]
+    )
+
+    if kubernetes_version <= support_version:
         logger.info("Installing Storage Class from template.")
         storage_yml = TEMPLATE_PATH / cloud / "storage-class.yaml"
         await kubectl_apply(storage_yml, model)
         yield yaml.safe_load(storage_yml.read_text())["metadata"]["name"]
         logger.info("Removing Storage Class from template.")
         await kubectl_delete(storage_yml, model)
-
     else:
-        logger.info(f"Using provider storage class {provider.storage_class}.")
-        yield provider.storage_class
+        logger.info(f"Using cloud storage class {out_of_tree.storage_class}.")
+        yield out_of_tree.storage_class
 
 
 @pytest.fixture(scope="function")
@@ -241,6 +279,7 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
 
 
 @pytest.mark.clouds(["ec2", "gce", "azure"])
+@pytest.mark.usefixtures("provider_charms")
 async def test_load_balancer(model, cloud, kubeconfig):
     """Performs a deployment of hello-world with newly created LB and attempts
     to do a fetch and parse the html to verify the lb ip address is

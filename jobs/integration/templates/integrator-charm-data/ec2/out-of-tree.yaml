@@ -1,14 +1,21 @@
-application: aws-k8s-storage
 storage-class: csi-aws-ebs-default
-out-relations:
-  - - aws-k8s-storage:certificates
-    - easyrsa:client
-  - - aws-k8s-storage:kube-control
-    - kubernetes-control-plane:kube-control
-  - - aws-k8s-storage:aws-integration
-    - aws-integrator:aws
-in-relations: []
-in-tree-until: '1.24'
-trust: true
-config:
-  image-registry: public.ecr.aws
+storage:
+  application: aws-k8s-storage
+  out-relations:
+    - [aws-k8s-storage:certificates, easyrsa:client]
+    - [aws-k8s-storage:kube-control, kubernetes-control-plane:kube-control]
+    - [aws-k8s-storage:aws-integration, aws-integrator:aws]
+  in-relations: []
+  in-tree-until: '1.24'
+  trust: true
+  config:
+    image-registry: public.ecr.aws
+cloud-controller:
+  application: aws-cloud-provider
+  out-relations:
+    - [aws-cloud-provider:certificates, easyrsa:client]
+    - [aws-cloud-provider:kube-control, kubernetes-control-plane:kube-control]
+    - [aws-cloud-provider:aws-integration, aws-integrator:aws]
+    - [aws-cloud-provider:external-cloud-provider, kubernetes-control-plane:external-cloud-provider]
+  in-relations: []
+  in-tree-until: '1.26'
