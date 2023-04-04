@@ -345,14 +345,14 @@
 - aws-cloud-provider:
     bugs: 'https://bugs.launchpad.net/charm-aws-cloud-provider'
     docs: 'https://charmhub.io/aws-cloud-provider/docs'
-    downstream: charmed-kubernetes/aws-cloud-provider
+    downstream: charmed-kubernetes/charm-aws-cloud-provider
     store: 'https://charmhub.io/aws-cloud-provider'
     summary: Charm which enables out-of-tree AWS cloud-provider for Charmed Kubernetes.
     tags:
       - k8s
       - aws-cloud-provider
       - integrator
-    upstream: 'https://github.com/charmed-kubernetes/aws-cloud-provider.git'
+    upstream: 'https://github.com/charmed-kubernetes/charm-aws-cloud-provider.git'
     channel-range:
       min: '1.27'
 - openstack-integrator:
