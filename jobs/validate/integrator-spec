@@ -127,6 +127,17 @@ function juju::deploy
     fi
 }
 
+function juju::wait
+{
+    # overriding since we're waiting for the deployment
+    # to be active/idle except for the kubernetes-control-plane
+    # which could be waiting/idle on pending kube-system pods
+    # until the additional cloud-provider charms are installed.
+    echo "Waiting for deployment to settle..."
+    timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w -x kubernetes-control-plane
+
+    juju::deploy-report $?
+}
 
 function test::execute
 {

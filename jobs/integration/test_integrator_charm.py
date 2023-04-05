@@ -8,7 +8,7 @@ import random
 import re
 import sh
 import pytest
-from typing import Any, List, Tuple, Mapping, Callable
+from typing import Any, Callable, List, Mapping, Tuple
 import yaml
 
 import jinja2
@@ -30,8 +30,8 @@ class Tree(Enum):
 @dataclass
 class Provider:
     application: str
-    out_relations: List[Tuple[str, str]]
-    in_relations: List[Tuple[str, str]]
+    out_relations: List[Tuple[str, str]] = field(default_factory=lambda: [])
+    in_relations: List[Tuple[str, str]] = field(default_factory=lambda: [])
     config: Mapping[str, str] = field(default_factory=dict)
     channel: str = "edge"
     in_tree_until: str = None
@@ -83,9 +83,8 @@ def loadbalancer_config(cloud):
 
 async def _add_provider(model, provider: Provider):
     provider_app = provider.application
-    provider_deployed = provider_app in model.applications
 
-    if not provider_deployed:
+    if provider_app and provider_app not in model.applications:
         logger.info(f"Adding provider={provider_app} to model.")
         # deploy provider.application
         await model.deploy(
@@ -95,40 +94,38 @@ async def _add_provider(model, provider: Provider):
             config=provider.config,
         )
 
-        # remove provider.in_relations
-        to_delete = [
-            _prepare_relation(relation, model, add=False)
-            for relation in provider.in_relations
-        ]
+    # remove provider.in_relations
+    to_delete = [
+        _prepare_relation(relation, model, add=False)
+        for relation in provider.in_relations
+    ]
 
-        # add provider.out_relations
-        to_add = [
-            _prepare_relation(relation, model, add=True)
-            for relation in provider.out_relations
-        ]
-        await asyncio.gather(*to_add + to_delete)
+    # add provider.out_relations
+    to_add = [
+        _prepare_relation(relation, model, add=True)
+        for relation in provider.out_relations
+    ]
+    await asyncio.gather(*to_add + to_delete)
 
 
 async def _remove_provider(model, provider: Provider):
     provider_app = provider.application
-    provider_deployed = provider_app in model.applications
 
-    if provider_deployed:
+    # remove provider.out_relations
+    to_delete = [
+        _prepare_relation(relation, model, add=False)
+        for relation in provider.out_relations
+    ]
+
+    # add provider.in_relations
+    to_add = [
+        _prepare_relation(relation, model, add=True)
+        for relation in provider.in_relations
+    ]
+    await asyncio.gather(*to_add + to_delete)
+
+    if provider_app and provider_app in model.applications:
         logger.info(f"Removing Provider={provider_app} from model.")
-
-        # remove provider.out_relations
-        to_delete = [
-            _prepare_relation(relation, model, add=False)
-            for relation in provider.out_relations
-        ]
-
-        # add provider.in_relations
-        to_add = [
-            _prepare_relation(relation, model, add=True)
-            for relation in provider.in_relations
-        ]
-        await asyncio.gather(*to_add + to_delete)
-
         # remove provider.application
         await model.applications[provider_app].remove()
 
@@ -137,10 +134,12 @@ async def _resolve_provider(model, provider, tools, version, expected_apps):
     in_tree_version = tuple(int(i) for i in provider.in_tree_until.split(".")[:2])
     if version > in_tree_version:
         method = _add_provider
-        expected_apps.add(provider.application)
+        if provider.application:
+            expected_apps.add(provider.application)
     else:
         method = _remove_provider
-        expected_apps.discard(provider.application)
+        if provider.application:
+            expected_apps.discard(provider.application)
     provider.channel = tools.charm_channel
     await method(model, provider)
 
@@ -153,14 +152,13 @@ async def kubernetes_version(model):
 
 
 @pytest.fixture(scope="module")
-async def provider_charms(tools: Tools, model, cloud, kubernetes_version):
+async def cloud_providers(tools: Tools, model, cloud, kubernetes_version):
     out_of_tree = out_of_tree_config(cloud)
     expected_apps = set(model.applications)
-    adjust_model = [
-        _resolve_provider(model, _, tools, kubernetes_version, expected_apps)
-        for _ in (out_of_tree.storage, out_of_tree.cloud_controller)
-    ]
-    await asyncio.gather(*adjust_model)
+    for provider in (out_of_tree.storage, out_of_tree.cloud_controller):
+        await _resolve_provider(
+            model, provider, tools, kubernetes_version, expected_apps
+        )
 
     logger.info(f"Waiting for stable apps=[{', '.join(expected_apps)}].")
     await model.wait_for_idle(
@@ -169,7 +167,7 @@ async def provider_charms(tools: Tools, model, cloud, kubernetes_version):
 
 
 @pytest.fixture(scope="module")
-async def storage_class(provider_charms, model, cloud, kubernetes_version):
+async def storage_class(cloud_providers, model, cloud, kubernetes_version):
     out_of_tree = out_of_tree_config(cloud)
     support_version = tuple(
         int(i) for i in out_of_tree.storage.in_tree_until.split(".")[:2]
@@ -279,7 +277,7 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
 
 
 @pytest.mark.clouds(["ec2", "gce", "azure"])
-@pytest.mark.usefixtures("provider_charms")
+@pytest.mark.usefixtures("cloud_providers")
 async def test_load_balancer(model, cloud, kubeconfig):
     """Performs a deployment of hello-world with newly created LB and attempts
     to do a fetch and parse the html to verify the lb ip address is
