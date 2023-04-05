@@ -433,7 +433,7 @@ def deploy_bgp_router():
 
     log("Enabling secondary network interfaces")
     expected_nics = {f"ens{i+5}" for i in range(1, len(subnets))}
-    max_retries, current_nics = set(), 10
+    max_retries, current_nics = 10, set()
     while not expected_nics.issubset(current_nics) and max_retries:
         current_nics = {
             line.split("  ", 1)[0]
