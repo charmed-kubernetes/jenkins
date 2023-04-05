@@ -14,6 +14,20 @@ set -x
 ###############################################################################
 # FUNCTION OVERRIDES
 ###############################################################################
+function juju::bootstrap::before
+{
+    if [ "$JUJU_CLOUD" = "google/us-east1" ] && [ "${HOME}" != "/var/lib/jenkins" ]; then
+      # google credentials are stored in a file in ${HOME}/.local/share/juju/gce.json
+      # those creds have been mounted in the running container from the jenkins host
+      # ensure the in-container path is properly named in the credentials.yaml
+      echo "> Updating gce credentials..."
+      sed -i "s#/var/lib/jenkins/#${HOME}/#g" ${HOME}/.local/share/juju/credentials.yaml
+    else
+      echo "> skipping before tasks"
+    fi
+}
+
+
 function juju::deploy::overlay
 {
     local constraints
@@ -63,11 +77,6 @@ relations:
   - ['aws-integrator', 'kubernetes-worker:aws']
 EOF
     elif [ "$JUJU_CLOUD" = "google/us-east1" ]; then
-      # google credentials are stored in a file in ${HOME}/.local/share/juju/gce.json
-      # those creds have been mounted in the running container from the jenkins host
-      # ensure the in-container path is properly named in the credentials.yaml
-      sed -i "s#/var/lib/jenkins/#${HOME}/#g" ${HOME}/.local/share/juju/credentials.yaml
-
       # Deploy google
       cat <<EOF >> overlay.yaml
   easyrsa:
