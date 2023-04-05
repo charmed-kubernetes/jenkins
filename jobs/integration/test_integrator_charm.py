@@ -62,11 +62,19 @@ TEMPLATE_PATH = Path(__file__).absolute().parent / "templates/integrator-charm-d
 
 def _prepare_relation(linkage, model, add=True):
     left, right = linkage
-    app, left_relation = left.split(":")
-    left_app = model.applications[app]
-    if add:
-        return left_app.add_relation(left_relation, right)
-    return left_app.remove_relation(left_relation, right)
+    left_app, left_relation = left.split(":")
+    app = model.applications[left_app]
+    right_endpoints = [
+        endpoint
+        for rel in app.relations if left in str(rel)
+        for endpoint in rel.endpoints if left not in str(endpoint)
+    ]
+    exists = any(right in str(_) for _ in right_endpoints)
+    if add and not exists:
+        return app.relate(left_relation, right)
+    elif not add and exists:
+        return app.destroy_relation(left_relation, right)
+    return asyncio.sleep(0)
 
 
 def out_of_tree_config(cloud):
