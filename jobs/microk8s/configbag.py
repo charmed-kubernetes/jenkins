@@ -25,6 +25,7 @@ def get_tracks(all=False):
         "1.24",
         "1.24-eksd",
         "1.25",
+        "1.25-eksd",
         "1.25-strict",
         "1.26",
         "1.26-strict",
