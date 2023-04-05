@@ -66,8 +66,10 @@ def _prepare_relation(linkage, model, add=True):
     app = model.applications[left_app]
     right_endpoints = [
         endpoint
-        for rel in app.relations if left in str(rel)
-        for endpoint in rel.endpoints if left not in str(endpoint)
+        for rel in app.relations
+        if left in str(rel)
+        for endpoint in rel.endpoints
+        if left not in str(endpoint)
     ]
     exists = any(right in str(_) for _ in right_endpoints)
     if add and not exists:
