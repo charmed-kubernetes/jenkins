@@ -42,3 +42,9 @@
   calico-cni-arm64: '{out_path}/calico-cni-arm64.tar.gz'
   calicoctl-image: '{out_path}/calicoctl-image.tar.gz'
   calico-node-image: '{out_path}/calico-node-image.tar.gz'
+'volcano-admission':
+  volcano-admission-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
+'volcano-controllers':
+  volcano-controller-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
+'volcano-scheduler':
+  volcano-scheduler-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
