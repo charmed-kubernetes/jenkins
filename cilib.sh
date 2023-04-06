@@ -54,7 +54,7 @@ ci_lxc_launch()
     printf "uid $(id -u) 1000\ngid $(id -g) 1000" | sudo lxc config set ${lxc_container} raw.idmap -
     sudo lxc start ${lxc_container}
     sleep 10
-    ci_lxc_apt_install ${lxc_container} build-essential snapd
+    ci_lxc_apt_install_retry ${lxc_container} build-essential snapd
 }
 
 ci_lxc_mount()
@@ -106,6 +106,16 @@ ci_lxc_snap_install()
     # install a single snap in a container
     local lxc_container=$1
     ci_lxc_exec ${lxc_container} -- snap install ${@:2}
+}
+
+ci_lxc_apt_install_retry()
+{
+    local next_wait=5
+    until [ ${next_wait} -eq 10 ] || ci_lxc_apt_install $@; do
+        echo "Retrying lxc apt-install in ${next_wait}s..."
+        sleep $(( next_wait++ ))
+    done
+    [ ${next_wait} -lt 10 ]
 }
 
 ci_lxc_snap_install_retry()

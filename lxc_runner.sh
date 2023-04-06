@@ -47,7 +47,7 @@ ci_lxc_init_runner()
 
     # Install runtime dependencies in the container
     # Install debs, replacing semicolons with spaces
-    ci_lxc_apt_install ${lxc_container} ${lxc_apt_list//,/ }
+    ci_lxc_apt_install_retry ${lxc_container} ${lxc_apt_list//,/ }
 
     # Install snaps and push paths and mount paths
     _IFS=${IFS} # restore IFS
