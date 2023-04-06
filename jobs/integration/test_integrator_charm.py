@@ -2,6 +2,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from enum import Enum, auto
+from juju.errors import JujuError
 from pathlib import Path
 import os
 import random
@@ -63,6 +64,16 @@ TEMPLATE_PATH = Path(__file__).absolute().parent / "templates/integrator-charm-d
 def _prepare_relation(linkage, model, add=True):
     left, right = linkage
     left_app, left_relation = left.split(":")
+    right_app, *_ = right.split(":")
+    for app in (left_app, right_app):
+        if app not in model.applications:
+            if add:
+                raise JujuError(f"{app} cannot be related -- not deployed")
+            else:
+                logger.info(f"{app} doesn't exist, already unrelated")
+                return asyncio.sleep(0)
+
+    # removing a relation when the application isn't deployed isn't necessary
     app = model.applications[left_app]
     right_endpoints = [
         endpoint
