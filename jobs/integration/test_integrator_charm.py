@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from colorama import Fore
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from juju.errors import JujuError
@@ -272,7 +273,15 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
             selector=f"test-name={test_name}",
             kubeconfig=kubeconfig,
         )
-        pod_exec = kubectl.bake("exec", "-it", "task-pv-pod", "--")
+        pod_exec = kubectl.bake(
+            "exec",
+            "-it",
+            "task-pv-pod",
+            "--",
+            _tee=True,
+            _out=lambda _: logger.info(Fore.CYAN + _.strip() + Fore.RESET),
+            _err=lambda _: logger.warning(Fore.YELLOW + _.strip() + Fore.RESET),
+        )
 
         # Ensure the PV is mounted
         out = pod_exec("mount")
@@ -284,8 +293,6 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
         pod_exec("bash", "-c", write_index_html)
 
         # Ensure the PV is readable by the application
-        pod_exec("apt", "update")
-        pod_exec("apt", "install", "-y", "curl")
         out = pod_exec("curl", "http://localhost/")
         assert welcome in out.stdout.decode("utf-8")
     finally:
