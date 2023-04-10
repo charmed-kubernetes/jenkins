@@ -199,6 +199,9 @@
       - string:
           name: BUNDLE_REV
           description: bundle revision to tag stable branches with
+      - string:
+          name: FILTER_BY_TAG
+          default: 'k8s,k8s-operator'
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
@@ -213,7 +216,7 @@
                      --charm-list jobs/includes/charm-support-matrix.inc \
                      --bundle-revision $BUNDLE_REV \
                      --k8s-version $K8S_VERSION \
-                     --filter-by-tag k8s
+                     --filter-by-tag $FILTER_BY_TAG
 
 - job:
     name: 'sync-stable-tag-bugfix-rev'
@@ -236,6 +239,9 @@
       - string:
           name: BUGFIX_REV
           description: bugfix revision to tag stable branches with, (ie ck1)
+      - string:
+          name: FILTER_BY_TAG
+          default: 'k8s,k8s-operator'
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
@@ -250,7 +256,7 @@
               --charm-list jobs/includes/charm-support-matrix.inc \
               --bundle-revision $BUGFIX_REV \
               --k8s-version $K8S_VERSION \
-              --filter-by-tag k8s \
+              --filter-by-tag $FILTER_BY_TAG \
               --bugfix
 
 - job:
@@ -263,9 +269,12 @@
       - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
-          days-to-keep: 2
+          num-to-keep: 10
     parameters:
       - global-params
+      - string:
+          name: FILTER_BY_TAG
+          default: 'k8s,k8s-operator'
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -282,7 +291,7 @@
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc \
                --ancillary-list jobs/includes/ancillary-list.inc \
-               --filter-by-tag k8s $IS_DRY_RUN
+               --filter-by-tag $FILTER_BY_TAG $IS_DRY_RUN
 
 - job:
     name: 'rename-branch'
@@ -307,6 +316,9 @@
           description: |
             Name of a branch present in supported layers + charms
             If the branch already exists in a repo, the entity is skipped
+      - string:
+          name: FILTER_BY_TAG
+          default: 'k8s,k8s-operator'
     wrappers:
       - default-job-wrapper
       - ci-creds
@@ -325,4 +337,4 @@
                --ancillary-list jobs/includes/ancillary-list.inc \
                --from-name $FROM_BRANCH \
                --to-name $TO_BRANCH \
-               --filter-by-tag k8s $IS_DRY_RUN
+               --filter-by-tag $FILTER_BY_TAG $IS_DRY_RUN

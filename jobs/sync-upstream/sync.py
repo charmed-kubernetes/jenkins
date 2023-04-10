@@ -62,9 +62,7 @@ def cli():
     required=True,
     help="Path to additional repos that need to be rebased.",
 )
-@click.option(
-    "--filter-by-tag", required=False, help="only build for tags", multiple=True
-)
+@click.option("--filter-by-tag", required=False, help="only build for tags")
 @click.option("--dry-run", is_flag=True)
 def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
     return _cut_stable_release(
@@ -81,6 +79,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     ancillary_list = yaml.safe_load(Path(ancillary_list).read_text(encoding="utf8"))
+    filter_by_tag = filter_by_tag.split(",")
     stable_release, _ = SNAP_K8S_TRACK_LIST[-1]
     new_branch = f"release_{stable_release}"
 
@@ -99,7 +98,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
                 if not any(match in filter_by_tag for match in tags):
                     continue
 
-            if not stable_release in channel_range(params):
+            if stable_release not in channel_range(params):
                 log.info(
                     f"Skipping  :: {layer_name:^40} :: out of supported channel-range"
                 )
@@ -133,11 +132,9 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
 @click.option(
     "--ancillary-list",
     required=True,
-    help="Path to additionally repos that need to be rebased.",
+    help="Path to additional repos that need to be rebased.",
 )
-@click.option(
-    "--filter-by-tag", required=False, help="only build for tags", multiple=True
-)
+@click.option("--filter-by-tag", required=False, help="only build for tags")
 @click.option("--dry-run", is_flag=True)
 @click.option("--from-name", required=True, help="Name of the original branch")
 @click.option("--to-name", required=True, help="Name of the new branch")
@@ -161,6 +158,7 @@ def _rename_branch(
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
     ancillary_list = yaml.safe_load(Path(ancillary_list).read_text(encoding="utf8"))
+    filter_by_tag = filter_by_tag.split(",")
     failed = []
     for layer_map in layer_list + charm_list + ancillary_list:
         for layer_name, params in layer_map.items():
@@ -212,6 +210,7 @@ def _tag_stable_forks(
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+    filter_by_tag = filter_by_tag.split(",")
     stable_branch = f"release_{k8s_version}"
 
     failed = []
@@ -226,7 +225,7 @@ def _tag_stable_forks(
                 log.info(f"Skipping  :: {layer_name:^40} :: does not require tagging")
                 continue
 
-            if not k8s_version in channel_range(params):
+            if k8s_version not in channel_range(params):
                 log.info(
                     f"Skipping  :: {layer_name:^40} :: out of supported channel-range"
                 )
@@ -262,9 +261,7 @@ def _tag_stable_forks(
 @click.option(
     "--bundle-revision", required=True, help="Bundle revision to tag stable against"
 )
-@click.option(
-    "--filter-by-tag", required=False, help="only build for tags", multiple=True
-)
+@click.option("--filter-by-tag", required=False, help="only build for tags")
 @click.option("--bugfix", is_flag=True)
 @click.option("--dry-run", is_flag=True)
 def tag_stable(
