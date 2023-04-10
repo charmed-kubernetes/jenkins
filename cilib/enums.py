@@ -13,13 +13,13 @@ K8S_STABLE_VERSION = "1.26"
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
 # Typically, this is K8S_STABLE_VERSION +1. However, when prepping the next
-# stable release, this will be +2. For example, 1.25 is currently stable and
-# we're working on the 1.26 GA. Set this value to '1.27' sometime between the
-# final RC and GA so we don't get pre-release builds (e.g. 1.26.1-alpha.0) in
-# our 1.26 tracks.
-K8S_NEXT_VERSION = "1.27"
+# stable release, this will be +2. For example, 1.26 is currently stable and
+# we're working on the 1.27 GA. Set this value to '1.28' sometime between the
+# final RC and GA so we don't get pre-release builds (e.g. 1.27.1-alpha.0) in
+# our 1.27 tracks.
+K8S_NEXT_VERSION = "1.28"
 
-# Lowest K8S SEMVER to process, this is usually stable - 4
+# Lowest K8S SEMVER to process, this is usually K8S_STABLE_VERSION - 4
 K8S_STARTING_SEMVER = "1.22.0"
 
 # Supported arches
@@ -73,7 +73,7 @@ SNAP_K8S_TRACK_LIST = [
     ("1.24", ["1.24/stable", "1.24/candidate", "1.24/beta", "1.24/edge"]),
     ("1.25", ["1.25/stable", "1.25/candidate", "1.25/beta", "1.25/edge"]),
     ("1.26", ["1.26/stable", "1.26/candidate", "1.26/beta", "1.26/edge"]),
-    ("1.27", ["1.27/edge"]),
+    ("1.27", ["1.27/stable", "1.27/candidate", "1.27/beta", "1.27/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
