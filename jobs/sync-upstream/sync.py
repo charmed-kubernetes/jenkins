@@ -62,9 +62,7 @@ def cli():
     required=True,
     help="Path to additional repos that need to be rebased.",
 )
-@click.option(
-    "--filter-by-tag", required=False, help="only build for tags"
-)
+@click.option("--filter-by-tag", required=False, help="only build for tags")
 @click.option("--dry-run", is_flag=True)
 def cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, dry_run):
     return _cut_stable_release(
@@ -136,9 +134,7 @@ def _cut_stable_release(layer_list, charm_list, ancillary_list, filter_by_tag, d
     required=True,
     help="Path to additional repos that need to be rebased.",
 )
-@click.option(
-    "--filter-by-tag", required=False, help="only build for tags"
-)
+@click.option("--filter-by-tag", required=False, help="only build for tags")
 @click.option("--dry-run", is_flag=True)
 @click.option("--from-name", required=True, help="Name of the original branch")
 @click.option("--to-name", required=True, help="Name of the new branch")
@@ -265,9 +261,7 @@ def _tag_stable_forks(
 @click.option(
     "--bundle-revision", required=True, help="Bundle revision to tag stable against"
 )
-@click.option(
-    "--filter-by-tag", required=False, help="only build for tags"
-)
+@click.option("--filter-by-tag", required=False, help="only build for tags")
 @click.option("--bugfix", is_flag=True)
 @click.option("--dry-run", is_flag=True)
 def tag_stable(
