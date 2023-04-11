@@ -9,10 +9,19 @@
 - kubernetes-core:
     fragments: 'k8s/core cni/calico cri/containerd'
     namespace: containers/bundle
-    tags: 
+    tags:
         - k8s
         - kubernetes-core
         - bundle
+
+- volcano:
+    downstream: charmed-kubernetes/charm-volcano.git
+    subdir: bundle
+    fragments: ''
+    tags: 
+        - k8s-operator
+        - bundle
+        - volcano
 
 ##########################################################################
 # Removed since it's built by github CI actions
