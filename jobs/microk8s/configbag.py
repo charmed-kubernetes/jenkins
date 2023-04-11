@@ -30,6 +30,7 @@ def get_tracks(all=False):
         "1.26",
         "1.26-strict",
         "1.27",
+        "1.27-strict",
     ]
 
 
