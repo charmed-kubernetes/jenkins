@@ -35,7 +35,7 @@ docker image prune -a --filter until=24h --force
 docker container prune --filter until=24h --force
 rm -rf /var/lib/jenkins/venvs
 rm -rf /var/lib/jenkins/.tox
-tmpreaper -t 5h /tmp
+tmpreaper 5h /tmp
 
 purge::aws
 purge::gce
