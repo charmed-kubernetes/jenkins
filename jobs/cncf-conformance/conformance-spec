@@ -47,6 +47,7 @@ function test::execute
     juju ssh -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader -- cat config > $HOME/.kube/
     export RBAC_ENABLED=$(kubectl api-versions | grep "rbac.authorization.k8s.io/v1" -c)
     kubectl version
+
     timeout -s INT 3h ./sonobuoy run --mode=certified-conformance --wait \
       --plugin-env=e2e.E2E_EXTRA_ARGS=--non-blocking-taints=node-role.kubernetes.io/control-plane 2>&1
     ret=$?
@@ -92,7 +93,7 @@ function test::capture
 
     pushd k8s-conformance && mkdir -p v${CK_VERSION}
     # if we dont have a project dir yet, prime one with known good cdk contents
-    test -d ${PROJECT_DIR} || cp -a v1.25/cdk v${CK_VERSION}
+    test -d ${PROJECT_DIR} || cp -a v1.26/cdk v${CK_VERSION}
     mv ../plugins/e2e/results/global/* ${PROJECT_DIR}
     sed -i -e "s/version: .*/version: ${CK_VERSION}/" ${PROJECT_DIR}/PRODUCT.yaml
     git add ${PROJECT_DIR}
@@ -114,9 +115,9 @@ JUJU_DEPLOY_CHANNEL=${CK_VERSION}/${CK_RISK}
 JUJU_MODEL=cncf-ck
 
 ARCH=amd64
-SERIES=focal
+SERIES=jammy
 SNAP_VERSION=${CK_VERSION}/${CK_RISK}
-SONOBUOY_VERSION=0.56.10
+SONOBUOY_VERSION=0.56.15
 
 JOB_ID=$(identifier)
 JOB_NAME_CUSTOM="cncf-ck-${SERIES}-${SNAP_VERSION}"
