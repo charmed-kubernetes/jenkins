@@ -499,15 +499,16 @@
     channel-range:
       min: '999.0'
 - kubernetes-dashboard:
-    bugs: 'https://github.com/jnsgruk/kubernetes-dashboard-operator/issues'
+    bugs: 'https://bugs.launchpad.net/kubernetes-dashboard-operator'
     docs: 'https://charmhub.io/kubernetes-dashboard/docs'
     downstream: charmed-kubernetes/kubernetes-dashboard-operator
     store: 'https://charmhub.io/kubernetes-dashboard'
     summary: A web-based Kubernetes user interface
     tags:
+      - k8s-operator
       - kubernetes-dashboard
       - docs-extra
-    upstream: 'https://github.com/jnsgruk/kubernetes-dashboard-operator'
+    upstream: 'https://github.com/charmed-kubernetes/kubernetes-dashboard-operator'
     channel-range:
       min: '999.0'
 - volcano-admission:
