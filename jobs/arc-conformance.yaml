@@ -22,7 +22,7 @@
       - juju-lts
       - string:
           name: CK_VERSION
-          default: '1.26'
+          default: '1.27'
           description: |
             CK version to deploy. This will be used to set the snap track
             and to identify what k8s version is associated with the results.
@@ -30,8 +30,8 @@
           name: CK_RISK
           default: 'edge'
           description: |
-            CK risk to deploy. This will be used to set the snap and
-            charm channels used during deployment. Should be one of:
+            CK risk to deploy. 'CK_VERSION/CK_RISK' will be set as the snap
+            and charm channels used during deployment. Should be one of:
             'edge', 'beta', 'candidate', 'stable'.
       - bool:
           name: UPLOAD_RESULTS
