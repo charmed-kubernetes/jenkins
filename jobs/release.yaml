@@ -92,9 +92,8 @@
     name: 'validate-charm-release-upgrade'
     node: runner-validate
     description: |
-      Validates CK upgrades from previous stable charms to latest beta charms
-      Also validates CK upgrades from previous 2 stables snaps to latest beta snaps.
-      
+      Validates CK upgrades from latest/stable charms to latest/beta charms.
+      Also validates CK upgrades from previous 2 stable snaps to $snap_version.
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -105,7 +104,7 @@
       - build-discarder:
           num-to-keep: 10
     parameters:
-      - snap-beta # this value represents the snap channel after the upgrade
+      - snap-beta  # this value represents the snap channel after the upgrade
       - lxc-runner-params
       - juju-lts
     axes:
