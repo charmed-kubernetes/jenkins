@@ -521,6 +521,7 @@
       - k8s-operator
       - volcano
       - volcano-admission
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-volcano'
     subdir: charms/volcano-admission
     channel-range:
@@ -535,6 +536,7 @@
       - k8s-operator
       - volcano
       - volcano-controllers
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-volcano'
     subdir: charms/volcano-controllers
     channel-range:
@@ -549,6 +551,7 @@
       - k8s-operator
       - volcano
       - volcano-scheduler
+      - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-volcano'
     subdir: charms/volcano-scheduler
     channel-range:
