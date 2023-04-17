@@ -2,6 +2,7 @@ import asyncio
 import base64
 from dataclasses import dataclass
 from typing import Callable, Mapping
+from juju.model import Model
 
 import backoff
 import ipaddress
@@ -2527,7 +2528,7 @@ async def test_nfs(model, tools):
 
 
 @pytest.fixture(scope="function")
-async def ceph_apps(model, tools):
+async def ceph_apps(model: Model, tools):
     # setup
     series = os.environ["SERIES"]
     series_idx = SERIES_ORDER.index(series)

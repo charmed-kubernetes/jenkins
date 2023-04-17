@@ -413,11 +413,18 @@ spec:
         assert output.status == "completed"
 
         # wait for completion
-        await retry_async_with_timeout(
-            verify_completed,
-            (control_plane, "po", [f"{sc_name}-write-test"]),
-            timeout_msg=f"Unable to create write pod for {test_name} test",
-        )
+        try:
+            await retry_async_with_timeout(
+                verify_completed,
+                (control_plane, "po", [f"{sc_name}-write-test"]),
+                timeout_msg=f"Unable to create write pod for {test_name} test",
+            )
+        except Exception as e:
+            cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config describe po {sc_name}-write-test"
+            click.echo(f"{test_name}: {sc_name} writing test")
+            output = await juju_run(control_plane, cmd)
+            raise e
+
 
         # read that string from pvc
         pod_definition = f"""
@@ -448,11 +455,18 @@ spec:
         assert output.status == "completed"
 
         # wait for completion
-        await retry_async_with_timeout(
-            verify_completed,
-            (control_plane, "po", [f"{sc_name}-read-test"]),
-            timeout_msg=f"Unable to create read pod {sc_name} for ceph test",
-        )
+        try:
+            await retry_async_with_timeout(
+                verify_completed,
+                (control_plane, "po", [f"{sc_name}-read-test"]),
+                timeout_msg=f"Unable to create read pod {sc_name} for ceph test",
+            )
+        except Exception as e:
+            cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config describe po {sc_name}-write-test"
+            click.echo(f"{test_name}: {sc_name} writing test")
+            output = await juju_run(control_plane, cmd)
+            raise e
+
         output = await juju_run(
             control_plane,
             f"/snap/bin/kubectl --kubeconfig /root/.kube/config logs {sc_name}-read-test",
