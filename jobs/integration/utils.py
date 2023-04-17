@@ -423,6 +423,8 @@ spec:
             cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config describe po {sc_name}-write-test"
             click.echo(f"{test_name}: {sc_name} writing test")
             output = await juju_run(control_plane, cmd)
+            log.error(f"Pod Describe: {output.status}={output.output}")
+            
             raise e
 
 
@@ -465,6 +467,7 @@ spec:
             cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config describe po {sc_name}-write-test"
             click.echo(f"{test_name}: {sc_name} writing test")
             output = await juju_run(control_plane, cmd)
+            log.error(f"Pod Describe: {output.status}={output.output}")
             raise e
 
         output = await juju_run(
@@ -572,7 +575,7 @@ async def refresh_openstack_charms(machine, new_series, tools):
             continue
 
         app_info = await app._facade().GetCharmURLOrigin(application=app.name)
-        app_info = app_info.charm_origin
+        app_info = app_info.charm_origie
         current_channel = "/".join((app_info["track"] or "latest", app_info["risk"]))
         if new_series in _supported_series(charm_info, current_channel):
             continue
