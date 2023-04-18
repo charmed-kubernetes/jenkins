@@ -420,11 +420,7 @@ spec:
                 timeout_msg=f"Unable to create write pod for {test_name} test",
             )
         except Exception as e:
-            cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config describe po {sc_name}-write-test"
-            click.echo(f"{test_name}: {sc_name} writing test")
-            output = await juju_run(control_plane, cmd)
-            log.error(f"Pod Describe: {output.status}={output.output}")
-            
+            await _debug_ceph_storage(control_plane=control_plane, test_name=test_name, sc_name=sc_name)
             raise e
 
 
@@ -464,10 +460,7 @@ spec:
                 timeout_msg=f"Unable to create read pod {sc_name} for ceph test",
             )
         except Exception as e:
-            cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config describe po {sc_name}-write-test"
-            click.echo(f"{test_name}: {sc_name} writing test")
-            output = await juju_run(control_plane, cmd)
-            log.error(f"Pod Describe: {output.status}={output.output}")
+            await _debug_ceph_storage(control_plane=control_plane, test_name=test_name, sc_name=sc_name)
             raise e
 
         output = await juju_run(
@@ -501,6 +494,26 @@ spec:
             (control_plane, "pvc", pvcs.split()),
             timeout_msg=f"Unable to remove {test_name} test pvcs",
         )
+
+async def _debug_ceph_storage(control_plane, test_name, sc_name):
+    # Check nodes
+    cmd = "/snap/bin/kubectl describe nodes"
+    output = await juju_run(control_plane, cmd)
+    log.error(f"Node status: {output.output}")
+
+    # Check PVC
+    cmd = "/snap/bin/kubectl describe pvc"
+    output = await juju_run(control_plane, cmd)
+    log.error(f"PVC status: {output.output}")
+
+    # Check SC
+    cmd = "/snap/bin/kubectl describe sc -A"
+    output = await juju_run(control_plane, cmd)
+    log.error(f"Storage class status: {output.output}")
+
+    cmd = f"/snap/bin/kubectl describe pod {sc_name}-write-test"
+    output = await juju_run(control_plane, cmd)
+    log.error(f"Pod Describe: {output.output}")
 
 
 def _units(machine: Machine):
