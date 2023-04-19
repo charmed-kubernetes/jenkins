@@ -496,22 +496,23 @@ spec:
         )
 
 async def _debug_ceph_storage(control_plane, test_name, sc_name):
+    log.error("Gathering debug logs from Cluster")
     # Check nodes
-    cmd = "/snap/bin/kubectl describe nodes"
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config describe nodes"
     output = await juju_run(control_plane, cmd)
     log.error(f"Node status: {output.output}")
 
     # Check PVC
-    cmd = "/snap/bin/kubectl describe pvc"
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config describe pvc"
     output = await juju_run(control_plane, cmd)
     log.error(f"PVC status: {output.output}")
 
     # Check SC
-    cmd = "/snap/bin/kubectl describe sc -A"
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config describe sc -A"
     output = await juju_run(control_plane, cmd)
     log.error(f"Storage class status: {output.output}")
 
-    cmd = f"/snap/bin/kubectl describe pod {sc_name}-write-test"
+    cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config describe pod {sc_name}-write-test"
     output = await juju_run(control_plane, cmd)
     log.error(f"Pod Describe: {output.output}")
 
@@ -648,6 +649,7 @@ async def do_series_upgrade(machine):
     """
     )
     log.info(f"rebooting machine {machine.id}")
+
     try:
         await machine.ssh("sudo reboot && exit")
     except JujuError:
