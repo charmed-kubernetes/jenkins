@@ -1098,7 +1098,6 @@ async def test_sans(model):
 
         return results
 
-
     async def all_certs_removed():
         certs = await get_server_certs()
         passing = True
