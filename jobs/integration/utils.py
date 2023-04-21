@@ -371,6 +371,7 @@ async def log_snap_versions(model, prefix="before"):
 
 async def validate_storage_class(model, sc_name, test_name):
     control_plane = model.applications["kubernetes-control-plane"].units[0]
+
     try:
         # write a string to a file on the pvc
         pod_definition = f"""
@@ -408,22 +409,17 @@ spec:
         cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
             pod_definition
         )
-        click.echo(f"{test_name}: {sc_name} writing test")
+
+        log.info(f"{test_name}: {sc_name} writing test")
         output = await juju_run(control_plane, cmd)
         assert output.status == "completed"
 
         # wait for completion
-        try:
-            await retry_async_with_timeout(
-                verify_completed,
-                (control_plane, "po", [f"{sc_name}-write-test"]),
-                timeout_msg=f"Unable to create write pod for {test_name} test",
-            )
-        except Exception as e:
-            await _debug_ceph_storage(control_plane=control_plane, test_name=test_name, sc_name=sc_name)
-            raise e
-
-
+        await retry_async_with_timeout(
+            verify_completed,
+            (control_plane, "po", [f"{sc_name}-write-test"]),
+            timeout_msg=f"Unable to create write pod for {test_name} test",
+        )
         # read that string from pvc
         pod_definition = f"""
 kind: Pod
@@ -448,30 +444,33 @@ spec:
         cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
             pod_definition
         )
-        click.echo(f"{test_name}: {sc_name} reading test")
+        log.info(f"{test_name}: {sc_name} reading test")
         output = await juju_run(control_plane, cmd)
         assert output.status == "completed"
 
         # wait for completion
-        try:
-            await retry_async_with_timeout(
-                verify_completed,
-                (control_plane, "po", [f"{sc_name}-read-test"]),
-                timeout_msg=f"Unable to create read pod {sc_name} for ceph test",
-            )
-        except Exception as e:
-            await _debug_ceph_storage(control_plane=control_plane, test_name=test_name, sc_name=sc_name)
-            raise e
+        await retry_async_with_timeout(
+            verify_completed,
+            (control_plane, "po", [f"{sc_name}-read-test"]),
+            timeout_msg=f"Unable to create read pod {sc_name} for ceph test",
+        )
 
         output = await juju_run(
             control_plane,
             f"/snap/bin/kubectl --kubeconfig /root/.kube/config logs {sc_name}-read-test",
         )
         assert output.status == "completed"
-        click.echo(f"output = {output.stdout}")
-        assert "JUJU TEST" in output.stdout
+        log.info(f"output = {output.stdout}")
+        assert "Hello, Storage!" in output.stdout
+
+    except asyncio.TimeoutError:
+        await _debug_ceph_storage(
+            control_plane=control_plane,
+            pods=[f"{sc_name}-write-test", f"{sc_name}-read-test"],
+        )
+
     finally:
-        click.echo(f"{test_name}: {sc_name} cleanup")
+        log.info(f"{test_name}: {sc_name} cleanup")
         pods = "{0}-read-test {0}-write-test".format(sc_name)
         pvcs = f"{sc_name}-pvc"
         pod_deleted = await juju_run(
@@ -495,39 +494,38 @@ spec:
             timeout_msg=f"Unable to remove {test_name} test pvcs",
         )
 
-async def _debug_ceph_storage(control_plane, test_name, sc_name):
-    log.error("Gathering debug logs from Cluster")
-    # Check nodes
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config describe nodes"
-    output = await juju_run(control_plane, cmd)
-    log.error(f"Node status: {output.output}")
 
-    # Check PVC
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config describe pvc"
-    output = await juju_run(control_plane, cmd)
-    log.error(f"PVC status: {output.output}")
+async def _debug_ceph_storage(control_plane, pods):
+    log.error("Gathering Ceph logs from Cluster")
 
-    # Check SC
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config describe sc -A"
-    output = await juju_run(control_plane, cmd)
-    log.error(f"Storage class status: {output.output}")
+    base_command = "/snap/bin/kubectl --kubeconfig /root/.kube/config"
+    resources = [
+        ("Nodes status", f"{base_command} describe nodes"),
+        ("PVCs status", f"{base_command} describe pvc"),
+        ("Storage Classes status", f"{base_command} describe sc -A"),
+        *(
+            (f"Pod {pod_name} status", f"{base_command} describe pod {pod_name}")
+            for pod_name in pods
+        ),
+    ]
 
-    cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config describe pod {sc_name}-write-test"
-    output = await juju_run(control_plane, cmd)
-    log.error(f"Pod Describe: {output.output}")
+    for msg, cmd in resources:
+        output = await juju_run(control_plane, cmd)
+        log.error(f"{msg}: {output.output}")
 
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get pods -l app=csi-rbdplugin-provisioner -o jsonpath='{.items[*].metadata.name}'"
+    cmd = (
+        base_command
+        + " get pods -l app=csi-rbdplugin-provisioner -o jsonpath='{.items[*].metadata.name}'"
+    )
     output = await juju_run(control_plane, cmd)
     rbd_prov_pods = output.output.split(" ")
-    log.error("DEBUG Logs from RBD Provisioner")
+    log.error("RBD Provisioner status: ")
     for pod in rbd_prov_pods:
-        cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config logs {pod} --all-containers > logs.txt"
+        cmd = f"{base_command} logs {pod} > logs.txt"
         output = await juju_run(control_plane, cmd)
         cmd = "cat logs.txt"
         output = await juju_run(control_plane, cmd)
-        log.error(f"{pod} LOGS: {output.output}")
-
-
+        log.error(output.output)
 
 
 def _units(machine: Machine):
@@ -602,7 +600,7 @@ async def refresh_openstack_charms(machine, new_series, tools):
             continue
 
         app_info = await app._facade().GetCharmURLOrigin(application=app.name)
-        app_info = app_info.charm_origie
+        app_info = app_info.charm_origin
         current_channel = "/".join((app_info["track"] or "latest", app_info["risk"]))
         if new_series in _supported_series(charm_info, current_channel):
             continue
