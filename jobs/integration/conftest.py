@@ -207,11 +207,11 @@ class Tools:
                 await proc._feed_stdin(input)
 
         await asyncio.wait(
-            [
+            map(asyncio.create_task, [
                 _read_stream(proc.stdout, lambda _l: tee(_l, stdout, 1)),
                 _read_stream(proc.stderr, lambda _l: tee(_l, stderr, 2)),
                 _feed_stream(input=stdin),
-            ]
+            ])
         )
 
         return_code = await proc.wait()
