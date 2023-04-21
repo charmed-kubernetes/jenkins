@@ -48,7 +48,6 @@ function test::execute
         cat config | tee $HOME/.kube/config >/dev/null
     if ! kubectl version; then
         echo ERROR: Cluster is unreachable
-        cat $HOME/.kube/config
         exit 1
     fi
     export RBAC_ENABLED=$(kubectl api-versions | grep "rbac.authorization.k8s.io/v1" -c)
