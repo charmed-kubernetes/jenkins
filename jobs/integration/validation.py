@@ -17,7 +17,6 @@ from asyncio_extras import async_contextmanager
 from async_generator import yield_
 from base64 import b64encode
 
-# from cilib import log
 from datetime import datetime
 from pathlib import Path
 from pprint import pformat
@@ -49,7 +48,6 @@ from .utils import (
     get_svc_ingress,
 )
 import urllib.request
-from .logger import log
 from bs4 import BeautifulSoup as bs
 from bs4.element import ResultSet as bs_ResultSet
 
@@ -57,6 +55,8 @@ from bs4.element import ResultSet as bs_ResultSet
 logging.getLogger("websockets.protocol").setLevel(logging.INFO)
 # bump up juju debug
 logging.getLogger("juju").setLevel(logging.INFO)
+# validation logging
+log = logging.getLogger(__name__)
 
 
 class MicrobotError(Exception):
@@ -432,7 +432,7 @@ async def test_kubelet_anonymous_auth_disabled(model, tools):
                 assert response.status_code == 401  # Unauthorized
                 break
             except requests.exceptions.ConnectionError:
-                log(
+                log.info(
                     "Failed to connect to kubelet on {}; retrying in 10s".format(
                         unit.name
                     )
@@ -1101,24 +1101,24 @@ async def test_sans(model):
     async def all_certs_removed():
         certs = await get_server_certs()
         passing = True
-        log("Checking for example domain removed from certs...")
+        log.info("Checking for example domain removed from certs...")
         for unit_name, cert in certs.items():
             if example_domain in cert:
                 passing = False
-                log(f"Example domain still in cert for {unit_name}")
+                log.info(f"Example domain still in cert for {unit_name}")
         return passing
 
     async def all_certs_in_place():
         certs = await get_server_certs()
         passing = True
-        log("Checking for example domain added to certs...")
+        log.info("Checking for example domain added to certs...")
         for unit_name, cert in certs.items():
             if example_domain not in cert:
                 passing = False
                 if not cert:
-                    log(f"Cert empty for {unit_name}")
+                    log.info(f"Cert empty for {unit_name}")
                 else:
-                    log(f"Example domain not in cert for {unit_name}")
+                    log.info(f"Example domain not in cert for {unit_name}")
         return passing
 
     # add san to extra san list
@@ -1878,7 +1878,7 @@ async def test_dns_provider(model, k8s_model, tools):
             tools.connection,
             proxy=tools.juju_ssh_proxy,
         )
-        log("Deploying DNS pod")
+        log.info("Deploying DNS pod")
         await kubectl(model, f"apply -f {remote_path}")
         # wait for pod to be ready (having installed required packages), or failed
         cmd = "logs validate-dns | grep 'validate-dns: \\(Ready\\|Failed\\)'"
@@ -1886,11 +1886,11 @@ async def test_dns_provider(model, k8s_model, tools):
             await asyncio.sleep(5)
 
     async def remove_validation_pod():
-        log("Removing DNS pod")
+        log.info("Removing DNS pod")
         await kubectl(model, "delete pod validate-dns --ignore-not-found")
 
     async def wait_for_pods_ready(label, ns="kube-system"):
-        log(f"Waiting for pods with label {label} to be ready")
+        log.info(f"Waiting for pods with label {label} to be ready")
         cmd = f"get pod -n {ns} -l {label} -o jsonpath='{{.items[*].status.containerStatuses[*].started}}'"
         while result := await kubectl(model, cmd):
             if result.stdout and "false" not in result.stdout:
@@ -1898,13 +1898,13 @@ async def test_dns_provider(model, k8s_model, tools):
             await asyncio.sleep(5)
 
     async def wait_for_pods_removal(label, ns="kube-system", force=False):
-        log(f"Waiting for pods with label {label} to be removed")
+        log.info(f"Waiting for pods with label {label} to be removed")
         cmd = f"get pod -n {ns} -l {label} -o jsonpath='{{.items[*].status.containerStatuses[*].started}}'"
         while result := await kubectl(model, cmd):
             if result.stdout == "":
                 break
             if force and ("true" not in result.stdout):
-                log("All pods stuck in terminating, forcibly deleting them")
+                log.info("All pods stuck in terminating, forcibly deleting them")
                 await kubectl(
                     model, f"delete -n {ns} pod -l {label} --grace-period=0 --force"
                 )
@@ -1917,8 +1917,9 @@ async def test_dns_provider(model, k8s_model, tools):
             await deploy_validation_pod()
         names = ["www.ubuntu.com", "kubernetes.default.svc.cluster.local"]
         for name in names:
-            log(f"Checking domain {name}")
-            await kubectl(model, f"exec validate-dns -- host {name}")
+            log.info(f"Checking domain {name}")
+            response = await kubectl(model, f"exec validate-dns -- host {name}")
+            log.debug(response)
 
     async def verify_no_dns_resolution(*, fresh):
         try:
@@ -1942,21 +1943,25 @@ async def test_dns_provider(model, k8s_model, tools):
 
     try:
         await control_plane_app.set_config({"dns-provider": "auto"})
-        await model.wait_for_idle(raise_on_error=False, status="active")
-        log("Verifying DNS with default provider (auto -> coredns)")
+        await model.wait_for_idle(status="active")
+        log.info("---")
+        log.info("☆ Verifying DNS with default provider (auto -> coredns)")
         await verify_dns_resolution(fresh=True)
 
-        log("Switching to none provider")
         await control_plane_app.set_config({"dns-provider": "none"})
+        await model.wait_for_idle(status="active")
+        log.info("---")
+        log.info("☆ Verify no DNS with no provider (coredns -> none)")
         await wait_for_pods_removal("app.kubernetes.io/name=coredns")
 
-        log("Verifying DNS no longer works on existing pod")
+        log.info("DNS shouldn't work on existing pod")
         await verify_no_dns_resolution(fresh=False)
 
-        log("Verifying DNS no longer works on fresh pod")
+        log.info("DNS shouldn't work on a fresh pod")
         await verify_no_dns_resolution(fresh=True)
 
-        log("Deploying CoreDNS charm")
+        log.info("---")
+        log.info("☆ Verifying DNS with CoreDNS charm")
 
         # Apply a few workarounds for deploying a multiarch coredns image
         # See LP#1998607
@@ -1983,65 +1988,71 @@ async def test_dns_provider(model, k8s_model, tools):
             await k8s_model.block_until(lambda: "coredns" in k8s_model.applications)
             coredns = k8s_model.applications["coredns"]
 
-        log("Waiting for CoreDNS charm to be ready")
+        log.info("Waiting for CoreDNS charm to be ready")
         await k8s_model.wait_for_idle(raise_on_error=False, status="active")
 
-        log("Creating cross-model offer")
+        log.info("Creating cross-model offer")
         offer_name = f"{tools.k8s_model_name_full}.coredns"
         await k8s_model.create_offer("coredns:dns-provider")
         try:
-            log("Waiting for cross-model offer to be ready")
+            log.info("Waiting for cross-model offer to be ready")
             while not await get_offer():
                 await asyncio.sleep(1)
 
-            log("Consuming cross-model offer")
+            log.info("Consuming cross-model offer")
             await model.consume(offer_name, controller_name=tools.controller_name)
 
-            log("Adding cross-model relation to CK")
+            log.info("Adding cross-model relation to CK")
             await model.add_relation("kubernetes-control-plane", "coredns")
             await k8s_model.wait_for_idle(status="active")
-            await tools.juju_wait()
+            await model.wait_for_idle(status="active")
 
-            log("Waiting CoreDNS pod to be ready")
+            log.info("Waiting CoreDNS pod to be ready")
             wait_for_pods_ready(
                 "app.kubernetes.io/name=coredns", ns=tools.k8s_model_name
             )
 
-            log("Verifying that stale pod doesn't pick up new DNS provider")
+            log.info("Verifying that stale pod doesn't pick up new DNS provider")
             await verify_no_dns_resolution(fresh=False)
 
-            log("Verifying DNS works on fresh pod")
+            log.info("Verifying DNS works on fresh pod")
             await verify_dns_resolution(fresh=True)
         finally:
-            log("Removing cross-model offer")
+            log.info("Removing cross-model offer")
             if any("coredns" in rel.key for rel in control_plane_app.relations):
                 await control_plane_app.destroy_relation("dns-provider", "coredns")
-                await tools.juju_wait()
+                await model.wait_for_idle(status="active")
             await model.remove_saas("coredns")
             await k8s_model.remove_offer(offer_name, force=True)
-            log("Removing CoreDNS charm")
+            log.info("Removing CoreDNS charm")
             await coredns.destroy(force=True)
             await wait_for_pods_removal(
                 "app.kubernetes.io/name=coredns", ns=tools.k8s_model_name
             )
 
-        log("Verifying that DNS is no longer working")
+        log.info("---")
+        log.info("☆ Verifying no DNS with no provider (removel of CoreDNS charm)")
+        log.info("DNS shouldn't work on existing pod")
+        await verify_no_dns_resolution(fresh=False)
+
+        log.info("DNS shouldn't work on a fresh pod")
         await verify_no_dns_resolution(fresh=True)
 
-        log("Switching back to core-dns from cdk-addons")
         await control_plane_app.set_config({"dns-provider": "core-dns"})
-        await tools.juju_wait()
+        await model.wait_for_idle(status="active")
+        log.info("---")
+        log.info("☆ Verifying DNS with core-dns from cdk-addons (none -> coredns)")
 
-        log("Waiting CoreDNS pod to be ready")
+        log.info("Waiting for CoreDNS pod to be ready")
         wait_for_pods_ready("app.kubernetes.io/name=coredns")
 
-        log("Verifying DNS works again")
+        log.info("Verifying DNS works again")
         await verify_dns_resolution(fresh=True)
     finally:
         # Cleanup
         if (await control_plane_app.get_config())["dns-provider"] != "core-dns":
             await control_plane_app.set_config({"dns-provider": "core-dns"})
-            await tools.juju_wait()
+            await model.wait_for_idle(status="active")
         await remove_validation_pod()
 
 
@@ -2322,10 +2333,10 @@ class NagiosApi:
                             data = qs["host"][0], qs["service"][0]
                             found[app].append(data)
             if all(app_crits for app_crits in found.values()):
-                log(f"Found critical errors in {', '.join(apps)}:")
+                log.info(f"Found critical errors in {', '.join(apps)}:")
                 for app, app_crits in found.items():
                     for crit_host, crit_service in app_crits:
-                        log(f"{app} - {crit_service}")
+                        log.info(f"{app} - {crit_service}")
                 return found
         return False
 
@@ -2358,7 +2369,7 @@ async def nagios(model, tools):
         pytest.skip(f"skipping unsupported series {series}")
 
     # 1a) deploy npre and nagios
-    log("deploying nagios and nrpe")
+    log.info("deploying nagios and nrpe")
     nagios, nrpe = map(model.applications.get, ("nagios", "nrpe"))
     deployed = dict(nagios=bool(nagios), nrpe=bool(nrpe))
     if not deployed["nagios"]:
@@ -2393,7 +2404,7 @@ async def nagios(model, tools):
             "nrpe:" in str(rel) for rel in related.relations
         ):
             await model.add_relation("nrpe", each)
-    log("waiting for cluster to settle...")
+    log.info("waiting for cluster to settle...")
     await tools.juju_wait()
 
     # 2) login to nagios
@@ -2411,7 +2422,7 @@ async def nagios(model, tools):
     cmd_url = f"{url_base}/cgi-bin/nagios3/cmd.cgi"
 
     # 3) wait for nagios to settle
-    log("waiting for nagios to settle")
+    log.info("waiting for nagios to settle")
     nagios_api = NagiosApi(opener.open, status_url, cmd_url)
     await nagios_api.wait_for_settle(
         stage="after deployment",
@@ -2440,7 +2451,7 @@ async def test_nagios(model, nagios: NagiosApi):
     6) fix worker
     """
 
-    log("starting nagios test")
+    log.info("starting nagios test")
     control_plane = model.applications["kubernetes-control-plane"]
     apps_with_alerts = ("kubernetes-control-plane", "kubernetes-worker")
     hosts_from_apps = set(
@@ -2449,12 +2460,12 @@ async def test_nagios(model, nagios: NagiosApi):
 
     try:
         # 1) break all the things
-        log("breaking api server")
+        log.info("breaking api server")
         await control_plane.set_config({"api-extra-args": "broken=true"})
 
         # 2) make sure nagios is complaining for kubernetes-control-plane
         #    AND kubernetes-worker
-        log("Verifying complaints")
+        log.info("Verifying complaints")
         await retry_async_with_timeout(
             nagios.critical_alerts_by_app,
             ("kubernetes-control-plane", "kubernetes-worker"),
@@ -2465,7 +2476,7 @@ async def test_nagios(model, nagios: NagiosApi):
         )
     finally:
         # 3) fix api
-        log("Fixing API server")
+        log.info("Fixing API server")
         await control_plane.set_config({"api-extra-args": ""})
 
     # wait for complaints to go away
@@ -2475,12 +2486,12 @@ async def test_nagios(model, nagios: NagiosApi):
 
     try:
         # 4) break worker
-        log("Breaking workers")
+        log.info("Breaking workers")
         workers = model.applications["kubernetes-worker"]
         await workers.set_config({"kubelet-extra-args": "broken=true"})
 
         # 5) verify nagios is complaining about worker
-        log("Verifying complaints")
+        log.info("Verifying complaints")
         await retry_async_with_timeout(
             nagios.critical_alerts_by_app,
             ("kubernetes-worker",),
@@ -2502,15 +2513,15 @@ async def test_nagios(model, nagios: NagiosApi):
 @pytest.mark.skip("Failing and being investigated on possible deprecation")
 async def test_nfs(model, tools):
     # setup
-    log("deploying nfs")
+    log.info("deploying nfs")
     await model.deploy("nfs")
 
-    log("adding relations")
+    log.info("adding relations")
     await model.add_relation("nfs", "kubernetes-worker")
-    log("waiting...")
+    log.info("waiting...")
     await tools.juju_wait()
 
-    log("waiting for nfs pod to settle")
+    log.info("waiting for nfs pod to settle")
     unit = model.applications["kubernetes-control-plane"].units[0]
     await retry_async_with_timeout(
         verify_ready,
@@ -2534,7 +2545,7 @@ async def ceph_apps(model, tools):
     ceph_config = {}
     ceph_charms_channel = "quincy/stable"
     if series == "bionic":
-        log("adding cloud:train to k8s-control-plane")
+        log.info("adding cloud:train to k8s-control-plane")
         await model.applications["kubernetes-control-plane"].set_config(
             {"install_sources": "[cloud:{}-train]".format(series)}
         )
@@ -2543,7 +2554,7 @@ async def ceph_apps(model, tools):
     elif series_idx > SERIES_ORDER.index("jammy"):
         pytest.fail("ceph_charm_channel is undefined past jammy")
 
-    log("deploying ceph mon")
+    log.info("deploying ceph mon")
     ceph_mon = await model.deploy(
         "ceph-mon",
         num_units=3,
@@ -2555,7 +2566,7 @@ async def ceph_apps(model, tools):
         "osd-devices": {"size": 8 * 1024, "count": 1},
         "osd-journals": {"size": 8 * 1024, "count": 1},
     }
-    log("deploying ceph osd")
+    log.info("deploying ceph osd")
     ceph_osd = await model.deploy(
         "ceph-osd",
         storage=cs,
@@ -2566,7 +2577,7 @@ async def ceph_apps(model, tools):
         channel=ceph_charms_channel,
     )
 
-    log("deploying ceph fs")
+    log.info("deploying ceph fs")
     ceph_fs = await model.deploy(
         "ceph-fs",
         num_units=1,
@@ -2575,17 +2586,17 @@ async def ceph_apps(model, tools):
         channel=ceph_charms_channel,
     )
 
-    log("adding relations")
+    log.info("adding relations")
     await model.add_relation("ceph-mon", "ceph-osd")
     await model.add_relation("ceph-mon", "ceph-fs")
     await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
-    log("waiting for charm deployment...")
+    log.info("waiting for charm deployment...")
     try:
         await model.wait_for_idle(status="active", timeout=20 * 60)
         yield dict(mon=ceph_mon, osd=ceph_osd, fs=ceph_fs)
     finally:
         # cleanup
-        log("removing ceph applications")
+        log.info("removing ceph applications")
 
         # LP:1929537 get ceph-fs outta there with fire.
         ceph_apps = {
@@ -2609,7 +2620,7 @@ async def ceph_apps(model, tools):
             await burn_units(app)
             await model.remove_application(app, **ceph_apps[app])
 
-        log("waiting for charm removal...")
+        log.info("waiting for charm removal...")
         # block until no ceph_apps are in the current model
         await model.block_until(lambda: not (set(ceph_apps) & set(model.applications)))
 
@@ -2620,7 +2631,7 @@ async def ceph_apps(model, tools):
 )
 @pytest.mark.usefixtures("ceph_apps")
 async def test_ceph(model, tools):
-    log("waiting for csi to settle")
+    log.info("waiting for csi to settle")
     unit = model.applications["kubernetes-control-plane"].units[0]
     await retry_async_with_timeout(
         verify_ready,
@@ -2643,10 +2654,10 @@ async def test_series_upgrade(model, tools):
             new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
             skipped = False
         except IndexError:
-            log(f"no supported series to upgrade machine {machine.tag} to")
+            log.info(f"no supported series to upgrade machine {machine.tag} to")
             continue
         except ValueError:
-            log(
+            log.info(
                 f"unrecognized series to upgrade machine {machine.tag} from: "
                 f"{old_series}"
             )
@@ -2676,10 +2687,10 @@ async def test_cinder(model, tools):
 @pytest.mark.clouds(["openstack"])
 async def test_octavia(model, tools, teardown_microbot):
     assert "openstack-integrator" in model.applications, "Missing integrator"
-    log("Deploying microbot")
+    log.info("Deploying microbot")
     unit = model.applications["kubernetes-worker"].units[0]
     await juju_run_action(unit, "microbot", replicas=3)
-    log("Replacing microbot service with Octavia LB")
+    log.info("Replacing microbot service with Octavia LB")
     await kubectl(model, "delete svc microbot")
     await retry_async_with_timeout(
         verify_deleted,
