@@ -1,20 +1,20 @@
 # Creating a stable release
-Outlines the process for publishing a new Charmed Kubernetes release.
+This document outlines the process for publishing a Charmed Kubernetes stable release.
 
-## Stable Release Process
+## Background
 
 ### Repository layout
 
-All charm repositories used by Charmed Kuberentes use a common branch scheme to provide a
+All charm repositories used by Charmed Kuberentes have a common branch scheme to provide a
 consistent experience across all code bases. Any external or shared repositories are forked
 into the `charmed-kubernetes` github organization and have the following branches:
 
 * `main`: The primary development branch. Merges are made against this branch as they are
   approved.
-* `release_x.xx`: The release branch. Major releases have `main` directly merged to
-  `release_x.xx`. Bugfix releases have specific commits cherry-picked to `release_x.xx`.
+* `release_1.xx`: The release branch. Major releases have `main` directly merged to
+  `release_1.xx`. Bugfix releases have specific commits cherry-picked to `release_1.xx`.
 
-Tags are used to mark releases on the `release_x.xx` branch.
+Tags are used to mark releases on the `release_1.xx` branch.
 
 ### Feature Freeze
 
@@ -25,57 +25,50 @@ will take place for the first week of this freeze.
 The remaining tasks will still be completed at the time of feature freeze giving
 Solutions QA a solid base to test from.
 
-#### Conflict resolution
+### Conflict resolution
 
-At the time of the feature freeze, the release branches are git reset to match
-the default branches at that point, per the documentation below. During the
-feature freeze and Solutions QA period, fixes which need to be applied to
-address CI or QA failures, and only those specific fixes, are cherry-picked in
-to the respective release branches.
+At the time of the feature freeze, new `release_1.xx` branches are created to match
+our default repo branches per the documentation below. During the feature freeze and
+Solutions QA period, fixes which need to be applied to address CI or QA failures
+(and only those specific fixes) are cherry-picked to the respective release branches.
 
 ## Prepare CI
 
-### $next++ release
+### $stable++ release
 
 It may feel early, but part of releasing the next stable version requires
 preparing for the release that will follow. This requires opening tracks and
 building relevant snaps and charms that will be used in the new `edge` channel.
 
-For example, we requested 1.27 snap tracks while preparing for the 1.26 release:
+For example, we requested 1.28 snap tracks while preparing for the 1.27 release:
 
-- https://forum.snapcraft.io/t/kubernetes-1-27-snap-tracks/32937
+- https://forum.snapcraft.io/t/kubernetes-1-28-snap-tracks/34655
 
-Charm track requests are made by contacting
-[~snapstore](https://chat.canonical.com/canonical/channels/snapstore)
+Bundle/charm track requests are made by emailing
+`snap-store-admins@lists.canonical.com` (cc: k8s-crew)
 and asking for new tracks to be opened for every neccessary
-[charm](https://charmhub.io/charm) and [bundle](https://charmhub.io/bundle)
-owned by `Canonical Kubernetes` on [charmhub.io](https://charmhub.io). For example:
+[charm](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-support-matrix.inc)
+and
+[bundle](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-bundles-list.inc)
+owned by `Canonical Kubernetes`. For example:
 
-- https://chat.canonical.com/canonical/pl/fbmk7ochxfgdifyehomeds44qy
+- https://lists.canonical.com/mailman3/hyperkitty/list/k8s-crew@lists.canonical.com/thread/IX2VTCQRT3MLIJN2RNJZAJK2Z3KHCYXV/
 
-### $next release
-
-If not done already, add the upcoming release to the CI enumerations
-as well as our custom snap jobs. For example, see the additions made
-for the 1.26 release:
-
-- https://github.com/charmed-kubernetes/jenkins/pull/1141
-
-> **Note**: Nightly charm and bundle builds will target both
-`latest/edge` and `$next/edge` channels.
+### $stable release
 
 Once upstream has an RC for the upcoming release, our CI should stop
 building pre-prelease snaps. This ensures the 1.xx track will end up
-with 1.xx.0 instead of 1.xx.1-alpha.0. For example:
+with 1.xx.0 instead of 1.xx.1-alpha.0. For example, we merged the following
+between 1.27 RC and GA:
 
-- https://github.com/charmed-kubernetes/jenkins/pull/991
+- https://github.com/charmed-kubernetes/jenkins/pull/1264
 
 Additionally, if not done already, CI should include 1.xx in the version matrix
 and config for relevant jobs. For example, see these updates where we adjusted
-tests for our 1.26 release:
+tests for our 1.27 release:
 
-- https://github.com/charmed-kubernetes/jenkins/pull/1110
-- https://github.com/charmed-kubernetes/jenkins/pull/1107
+- https://github.com/charmed-kubernetes/jenkins/pull/1139
+- https://github.com/charmed-kubernetes/jenkins/pull/1270
 
 ## Preparing the release
 
@@ -87,44 +80,30 @@ We need to create `release_1.xx` branches from `main` for all
 Charmed Kubernetes repositories. This will be our snapshot
 from which we test, fix, and subsequently promote to the new release.
 
-### Pin snap channel on bundles/charms in the release branches
+> **BUG:2016189**: This job is tightly coupled to the order of our
+SNAP_K8S_TRACK_LIST. The last key in the list is used in the`release_1.xx`
+name.
 
-We need to make sure that the bundle fragments and kubernetes-worker/control-plane/e2e
+### Pin snap channel for charms in the release branches
+
+We need to make sure that the `kubernetes-<control-plane|e2e|worker>` charms
 have `1.xx/stable` set as the default snap channel. This should be done on each of
-the relevant git `release_1.xx` branches. For example, for the 1.26 GA:
+the relevant git `release_1.xx` branches. For example, for the 1.27 GA:
 
-- https://github.com/charmed-kubernetes/bundle/pull/867
-- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/26
-- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/pull/262
-- https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/133
+- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/28
+- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/pull/283
+- https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/141
 
 > **Note**: Changes to the above repos are required as some of our customers
 do not use our bundles for deployment.
-
-> **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
-from the bundle repo like we always do!
-
-### Bump snap channel to next minor release
-
-Once the rebase has occurred we should bump the same charms and bundle
-fragments in the `main` git branches to the next k8s minor version,
-e.g. `1.27/edge`. You don't have to do this right away; in fact, you
-should wait until you actually have snaps in the `$next++/edge` channels
-before making this change.
 
 ### Build new CK Charms from release git branches
 
 **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
 This job clones the `release_1.xx` branch for each of our repos. It then builds
-each charm using those local repos. After the charms are built, they will
-be promoted to the `beta` channel in Charmhub based on the build options
-shown below.
-
-> **Note**: The `beta` channel is required as any bugfix release happening at
-the same time will use the `candidate` channel for staging.
-
-> **Note**: add `k8s-operator` to the `FILTER_BY_TAG` argument
+each charm/bundle using those local repos. After building, they will be
+published to the `1.xx/beta` channel in Charmhub based on the job options.
 
 #### Charm build options
 
@@ -137,7 +116,7 @@ the same time will use the `candidate` channel for staging.
 K8s snap promotion is handled by the `sync-snaps` job and will happen
 automatically after following the `Prepare CI` section above. If for some
 reason you need to manually build K8s snaps from a specific branch, use the
-above job with a `branch` parameter like `1.26.0`.
+above job with a `branch` parameter like `1.27.0`.
 
 The `branch` parameter gets translated to `v$branch` by
 [snap.py](https://github.com/charmed-kubernetes/jenkins/blob/0b334c52b2c4f816b03ff866c44301724b8b471c/cilib/service/snap.py#L172)
@@ -146,34 +125,45 @@ which must correspond to a valid tag in our
 
 > **Note**: Currently, the **CDK-ADDONS** snap needs to be manually built for
 > the appropriate channels:
-> - https://jenkins.canonical.com/k8s/job/build-release-cdk-addons-1.26/
+> - https://jenkins.canonical.com/k8s/job/build-release-cdk-addons-1.27/
 
 ### Run **validate-charm-release-upgrade** job
 
 **Job**: https://jenkins.canonical.com/k8s/job/validate-charm-release-upgrade/
 
-This validates the deployment using the charms from latest/stable channel, 
-then performing an upgrade to latest/beta channel. The tests are parameterized
-to run on multiple series and with multiple snap channels.
+This validates the deployment using charms from the `latest/stable` channel,
+then performing an upgrade to `latest/beta`. The tests are parameterized to
+run on multiple series and with multiple snap channels.
 
-Before running this job, confirm that the defined variables in the job are
-* `upgrade_snap` - this CK release's beta snap (1.26/beta)
-* `deploy_snap` - the previous 2 CK releases' stable snaps (1.25/stable, 1.24/stable)
+Before running this job, confirm that the defined variables in the job are:
+
+* `snap_version` - this release beta snap (e.g. 1.27/beta)
+* `deploy_snap` - n-1 and n-2 stable snaps (e.g. 1.26/stable, 1.25/stable)
 
 ### Notify Solutions QA
 
 At the end of the first week and assuming all major blockers are resolved, the
-release is passed over to Solutions QA (SolQA) for a final sign-off. This is done
-by tagging the current Jenkins commit with the release version and informing SolQA
-of that tag. SolQA will then have the remaining week to test and file bugs as they
-happen so engineering can work towards getting them resolved prior to GA.
+release is passed over to Solutions QA (SQA) for sign-off. This is done by
+[publishing a CI release](https://github.com/charmed-kubernetes/jenkins/releases/new)
+with a new `1.xx` tag and informing SQA of that tag. They will then have the
+remaining week to test and file bugs so engineering can work towards getting
+them resolved prior to GA.
 
 Please note the [Conflict Resolution Section](#conflict-resolution) for making
-any changes as a result of SolQA testing.
+any changes as a result of SQA testing.
 
 ### CNCF Conformance
 
 **Job**: https://jenkins.canonical.com/k8s/job/conformance-cncf-ck/
+
+Confirm passing results, then create a PR against the upstream `k8s-conformance`
+repo. For example, we used the following branch for CK 1.26:
+
+- https://github.com/charmed-kubernetes/k8s-conformance/tree/1.26-ck
+
+And opened this upstream PR:
+
+- https://github.com/cncf/k8s-conformance/pull/2473
 
 ### Document release notes
 
@@ -183,24 +173,54 @@ any changes as a result of SolQA testing.
 
 ## Performing the release
 
-### Promote charms from **beta** to **stable**
+### Promote charms from `1.xx/beta` to appropriate channels
 
 **Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
 
-This job takes a tag, from_channel, and to_channel. The tag defaults to `k8s` so
-it would only promote the machine charms that make up charmed-kubernetes.
-Ensure that `k8s-operator` is added to the `tags` to include kubernetes
-operator charms.
+This job takes a tag list, `from_channel`, and `to_channel`. A tag value of
+`k8s` would only promote the charms that make up core `charmed-kubernetes`.
+Ensure that `k8s-operator` is added to the tag list to include kubernetes
+operator charms. You typically run this job multiple times to get charms into
+all of the appropriate channels, for example:
+
+- `1.27/beta` -> `1.27/stable`
+- `1.27/beta` -> `latest/beta`
+- `1.27/beta` -> `latest/stable`
 
 #### Promote charm Options
 
 ![promote charm options](promote-charms.png)
 
+### Promote snaps from `1.xx/<risk>` to `latest/<risk>`
+
+**Job**: https://jenkins.canonical.com/k8s/job/sync-snaps/
+
+This job will automatically promote snaps to `latest`. The only prereqs are
+that charms have been promoted and that the `K8S_STABLE_VERSION` enum is set
+to this release `1.xx`. For example, for the 1.27 GA:
+
+- https://github.com/charmed-kubernetes/jenkins/pull/1271
+
+> **Note**: Nightly charm and bundle builds will publish to both `latest/edge`
+and `K8S_STABLE_VERSION/edge` channels.
+
+### Pin snap channel for bundles in the release branches
+
+We need to make sure that the bundle fragments have `1.xx/stable` set as the
+default snap channel on the `release_1.xx` branch. For example, for the 1.27 GA:
+
+- https://github.com/charmed-kubernetes/bundle/pull/879
+
+> **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
+like we've done so many times before!
+
 ### Build bundles to **stable**
 
-Bundles cannot be promoted because they reference specific charm channels at
-build time. Therefore, it's required to build bundles which reference the
-stable charm channels.
+**Job**: https://jenkins.canonical.com/k8s/job/build-charms/
+
+Bundles cannot be promoted because they reference specific channels at build
+time. Therefore, it's required to build bundles which reference the stable
+charm channels.
 
 > **Note**: The `bundle` filter shown below ensures only bundles are built
 when this job runs.
@@ -223,18 +243,43 @@ not the `latest/stable` version number.
 
 ![sync stable tag bundle rev options](sync-stable-tag-bundle-rev-options.png)
 
-### Promote snaps from `1.xx/stable` to `latest/<risks>`
-
-**Job**: https://jenkins.canonical.com/k8s/job/sync-snaps/
-
-This job will automatically promote snaps to `latest`. The only
-prereqs are that charms and bundles have been promoted, and that
-the `K8S_STABLE` enum is set to this release `1.xx`. For example,
-for the 1.24 GA:
-
-- https://github.com/charmed-kubernetes/jenkins/pull/902/files
-
 ### Send announcement
 
 Email announcement to k8s-crew with any relevant information.
 
+## Post Release
+
+When $stable++ tracks are open, add them to our CI enumerations as well as our
+custom snap jobs. For example, see the additions made during our 1.27 GA to
+support the future 1.28 release:
+
+- https://github.com/charmed-kubernetes/jenkins/pull/1271
+
+### Set cdk-addons envars
+
+Update cdk-addons `release-1.xx` Makefile:
+
+- https://github.com/charmed-kubernetes/cdk-addons/commit/55d42859ede457345f899b7e88ea9db904028bf3
+
+Update cdk-addons `main` Makefile
+- https://github.com/charmed-kubernetes/cdk-addons/commit/ee169e9d742f31e525c6209df8460194c2aea38d
+
+### Bump snap channel to the $stable++ release
+
+Bump the `kubernetes-<control-plane|e2e|worker>` charms and bundle
+fragments in the `main` git branches to the future $stable++ release,
+e.g. `1.28/edge`. You don't have to do this right away; in fact, you
+should wait until you actually have snaps in the `$stable++/edge` channels
+before making this change.
+
+### Adjust LP milestones
+
+Run the `[close|open]-milestone.py` scripts found in the
+[cdk-scripts repo](https://github.com/canonical/cdk-scripts) repository.
+For example:
+```
+./close-milestone.py 1.27
+./open-milestone.py 1.27+ck1
+```
+
+# Fin
