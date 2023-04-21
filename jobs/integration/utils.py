@@ -391,18 +391,18 @@ apiVersion: v1
 metadata:
   name: {sc_name}-write-test
 spec:
+  containers:
+    - name: {sc_name}-writer
+      image: rocks.canonical.com/cdk/busybox:1.36
+      command: ["/bin/sh"]
+      args: ["-c", "echo 'Hello, Storage!' > /mnt/data/hello.txt"]
+      volumeMounts:
+      - name: shared-data
+        mountPath: /mnt/data
   volumes:
   - name: shared-data
     persistentVolumeClaim:
       claimName: {sc_name}-pvc
-      readOnly: false
-  containers:
-    - name: {sc_name}-write-test
-      image: rocks.canonical.com/cdk/ubuntu:focal
-      command: ["/bin/bash", "-c", "echo 'JUJU TEST' > /data/juju"]
-      volumeMounts:
-      - name: shared-data
-        mountPath: /data
   restartPolicy: Never
 """
         cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
@@ -431,18 +431,18 @@ apiVersion: v1
 metadata:
   name: {sc_name}-read-test
 spec:
+  containers:
+    - name: {sc_name}-reader
+      image: rocks.canonical.com/cdk/busybox:1.36
+      command: ["/bin/cat"]
+      args: ["/mnt/data/hello.txt"]
+      volumeMounts:
+      - name: shared-data
+        mountPath: /mnt/data
   volumes:
   - name: shared-data
     persistentVolumeClaim:
       claimName: {sc_name}-pvc
-      readOnly: false
-  containers:
-    - name: {sc_name}-read-test
-      image: rocks.canonical.com/cdk/ubuntu:focal
-      command: ["/bin/bash", "-c", "cat /data/juju"]
-      volumeMounts:
-      - name: shared-data
-        mountPath: /data
   restartPolicy: Never
 """
         cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
@@ -515,6 +515,17 @@ async def _debug_ceph_storage(control_plane, test_name, sc_name):
     cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config describe pod {sc_name}-write-test"
     output = await juju_run(control_plane, cmd)
     log.error(f"Pod Describe: {output.output}")
+
+    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get pods -l app=csi-rbdplugin-provisioner -o jsonpath='{.items[*].metadata.name}'"
+    output = await juju_run(control_plane, cmd)
+    rbd_prov_pods = output.output.split(" ")
+    log.error("DEBUG Logs from RBD Provisioner")
+    for pod in rbd_prov_pods:
+        cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config logs {pod}"
+        output = await juju_run(control_plane, cmd)
+        log.error(f"{pod} LOGS: {output.output}")
+
+
 
 
 def _units(machine: Machine):
