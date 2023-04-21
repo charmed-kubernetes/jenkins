@@ -521,7 +521,7 @@ async def _debug_ceph_storage(control_plane, test_name, sc_name):
     rbd_prov_pods = output.output.split(" ")
     log.error("DEBUG Logs from RBD Provisioner")
     for pod in rbd_prov_pods:
-        cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config logs {pod}"
+        cmd = f"/snap/bin/kubectl --kubeconfig /root/.kube/config logs {pod} | cat"
         output = await juju_run(control_plane, cmd)
         log.error(f"{pod} LOGS: {output.output}")
 
