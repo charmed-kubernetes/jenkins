@@ -510,7 +510,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/kubernetes-dashboard-operator'
     channel-range:
-      min: '999.0'
+      min: '1.28'
 - volcano-admission:
     bugs: 'https://bugs.launchpad.net/charm-volcano'
     docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
