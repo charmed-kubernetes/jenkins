@@ -1,7 +1,7 @@
 # Creating a bugfix release
-Outlines the process for publishing a Charmed Kubernetes bugfix release.
+This document outlines the process for publishing a Charmed Kubernetes bugfix release.
 
-## Bugfix Release Process
+## Background
 
 ### Repository layout
 
@@ -201,6 +201,11 @@ tracks. For example, if doing a 1.25+ckX release, then you would promote:
 This could be done using the following one-liner:
 ```
 for track in 1.23 1.24 1.25; do for rev in `snapcraft revisions cdk-addons | grep "$track/candidate\*" | cut -d ' ' -f 1`; do snapcraft release cdk-addons "$rev" "$track/stable"; done; done
+```
+
+Also promote the n/candidate revision to latest/stable, for example:
+```
+for rev in `snapcraft revisions cdk-addons | grep "1.25/candidate\*" | cut -d ' ' -f 1`; do snapcraft release cdk-addons "$rev" "latest/stable"; done;
 ```
 
 ### Close the milestone
