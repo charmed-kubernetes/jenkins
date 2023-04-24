@@ -1,4 +1,5 @@
 import asyncio
+import pytest
 import urllib.request
 from .logger import log
 from bs4 import BeautifulSoup as bs

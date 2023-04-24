@@ -1,6 +1,7 @@
 import asyncio
 import random
 import os
+import pytest
 from .logger import log
 from .utils import juju_run
 

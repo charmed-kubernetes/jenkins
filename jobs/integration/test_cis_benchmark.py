@@ -1,4 +1,5 @@
 import random
+import pytest
 from utils import juju_run_action
 from .logger import log
 
