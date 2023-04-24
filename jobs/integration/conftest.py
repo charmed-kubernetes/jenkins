@@ -564,13 +564,23 @@ def skip_by_cloud(request, cloud):
 
 
 @pytest.fixture()
-async def k8s_version(model):
+async def k8s_version(model, kubectl):
     masters = model.applications["kubernetes-control-plane"]
     k8s_version_str = masters.data["workload-version"]
     try:
         k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
     except ValueError:
         k8s_minor_version = None
+
+    if k8s_minor_version is None:
+        try:
+            yaml_ver = kubectl("version", output="yaml")
+            versions = yaml.safe_load(yaml_ver.stdout.decode())
+            server = versions["serverVersion"]
+            k8s_minor_version = int(server["major"]), int(server["minor"])
+        except (sh.ErrorReturnCode, yaml.YAMLError, KeyError, ValueError):
+            log
+
     return k8s_minor_version
 
 

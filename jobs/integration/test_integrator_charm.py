@@ -171,9 +171,7 @@ async def cloud_providers(tools: Tools, model, cloud, k8s_version):
     out_of_tree = out_of_tree_config(cloud)
     expected_apps = set(model.applications)
     for provider in (out_of_tree.storage, out_of_tree.cloud_controller):
-        await _resolve_provider(
-            model, provider, tools, k8s_version, expected_apps
-        )
+        await _resolve_provider(model, provider, tools, k8s_version, expected_apps)
 
     logger.info(f"Waiting for stable apps=[{', '.join(expected_apps)}].")
     await model.wait_for_idle(
