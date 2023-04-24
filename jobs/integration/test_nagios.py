@@ -18,6 +18,7 @@ async def wait_for_no_errors(url, opener):
         await asyncio.sleep(30)
 
 
+@pytest.mark.skip_if_version(lambda v: v < (1, 17))
 async def test_nagios(model, tools):
     # This test verifies the nagios relation is working
     # properly. This requires:
@@ -33,11 +34,6 @@ async def test_nagios(model, tools):
 
     log("starting nagios test")
     masters = model.applications["kubernetes-control-plane"]
-    k8s_version_str = masters.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 17):
-        log("skipping, k8s version v" + k8s_version_str)
-        return
 
     # 1) deploy
     log("deploying nagios and nrpe")

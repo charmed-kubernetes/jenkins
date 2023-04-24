@@ -126,6 +126,7 @@ async def aws_iam_charm(model, tools):
             await model.applications["aws-iam"].destroy()
 
 
+@pytest.mark.skip_if_version(lambda v: v < (1, 15))
 async def test_validate_aws_iam(model, tools):
     # This test verifies the aws-iam charm is working
     # properly. This requires:
@@ -142,11 +143,6 @@ async def test_validate_aws_iam(model, tools):
 
     log("starting aws-iam test")
     controllers = model.applications["kubernetes-control-plane"]
-    k8s_version_str = controllers.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 15):
-        log("skipping, k8s version v" + k8s_version_str)
-        return
 
     # 1) deploy
     await controllers.set_config({"authorization-mode": "AlwaysAllow"})

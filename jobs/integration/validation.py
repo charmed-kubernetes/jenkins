@@ -587,15 +587,12 @@ async def test_network_policies(model, tools):
     assert cmd.status == "completed"
 
 
-async def test_ipv6(model, tools):
+async def test_ipv6(model, tools, k8s_version):
     control_plane_app = model.applications["kubernetes-control-plane"]
     master_config = await control_plane_app.get_config()
     service_cidr = master_config["service-cidr"]["value"]
     if all(ipaddress.ip_network(cidr).version != 6 for cidr in service_cidr.split(",")):
         pytest.skip("kubernetes-control-plane not configured for IPv6")
-
-    k8s_version_str = control_plane_app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
 
     control_plane = control_plane_app.units[0]
     await kubectl(
@@ -630,7 +627,7 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  {"ipFamily: IPv6" if k8s_minor_version < (1, 20) else "ipFamilies: [IPv6]"}
+  {"ipFamily: IPv6" if k8s_version < (1, 20) else "ipFamilies: [IPv6]"}
   ports:
   - port: 80
     protocol: TCP
@@ -645,7 +642,7 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  {"ipFamily: IPv4" if k8s_minor_version < (1, 20) else "ipFamilies: [IPv4]"}
+  {"ipFamily: IPv4" if k8s_version < (1, 20) else "ipFamilies: [IPv4]"}
   ports:
   - port: 80
     protocol: TCP
@@ -971,14 +968,9 @@ async def test_extra_args(model, tools):
     await asyncio.gather(master_task, worker_task)
 
 
+@pytest.mark.skip_if_version(lambda v: v < (1, 10))
 async def test_kubelet_extra_config(model, tools):
     worker_app = model.applications["kubernetes-worker"]
-    k8s_version_str = worker_app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 10):
-        click.echo("skipping, k8s version v" + k8s_version_str)
-        return
-
     config = await worker_app.get_config()
     old_extra_config = config["kubelet-extra-config"]["value"]
 
@@ -1179,6 +1171,7 @@ async def test_audit_default_config(model, tools):
 
 
 @pytest.mark.clouds(["ec2", "vsphere"])
+@pytest.mark.skip_if_version(lambda v: v < (1, 16))
 async def test_toggle_metrics(model, tools):
     """Turn metrics on/off via the 'enable-metrics' config on kubernetes-control-plane,
     and check that workload status returns to 'active', and that the metrics-server
@@ -1201,13 +1194,6 @@ async def test_toggle_metrics(model, tools):
             )
 
     app = model.applications["kubernetes-control-plane"]
-
-    k8s_version_str = app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 16):
-        click.echo("skipping, k8s version v" + k8s_version_str)
-        return
-
     config = await app.get_config()
     old_value = config["enable-metrics"]["value"]
     new_value = not old_value
@@ -1380,6 +1366,7 @@ async def test_audit_webhook(model, tools):
 
 
 @pytest.fixture()
+@pytest.mark.skip_if_version(lambda v: v < (1, 12))
 async def any_keystone(model, apps_by_charm, tools):
     def _find_relation(*specs):
         for rel in model.relations:
@@ -1388,12 +1375,6 @@ async def any_keystone(model, apps_by_charm, tools):
 
     keystone_apps = apps_by_charm("keystone")
     masters = model.applications["kubernetes-control-plane"]
-    k8s_version_str = masters.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 12):
-        pytest.skip(f"skipping, k8s version v{k8s_version_str} isn't supported")
-        return
-
     keystone_creds = "kubernetes-control-plane:keystone-credentials"
     if len(keystone_apps) > 1:
         pytest.fail(f"More than one keystone app available {','.join(keystone_apps)}")

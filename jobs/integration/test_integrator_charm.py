@@ -167,19 +167,12 @@ async def _resolve_provider(model, provider, tools, version, expected_apps):
 
 
 @pytest.fixture(scope="module")
-async def kubernetes_version(model):
-    worker_app = model.applications["kubernetes-worker"]
-    k8s_version_str = worker_app.data["workload-version"]
-    return tuple(int(i) for i in k8s_version_str.split(".")[:2])
-
-
-@pytest.fixture(scope="module")
-async def cloud_providers(tools: Tools, model, cloud, kubernetes_version):
+async def cloud_providers(tools: Tools, model, cloud, k8s_version):
     out_of_tree = out_of_tree_config(cloud)
     expected_apps = set(model.applications)
     for provider in (out_of_tree.storage, out_of_tree.cloud_controller):
         await _resolve_provider(
-            model, provider, tools, kubernetes_version, expected_apps
+            model, provider, tools, k8s_version, expected_apps
         )
 
     logger.info(f"Waiting for stable apps=[{', '.join(expected_apps)}].")
@@ -189,13 +182,13 @@ async def cloud_providers(tools: Tools, model, cloud, kubernetes_version):
 
 
 @pytest.fixture(scope="module")
-async def storage_class(cloud_providers, model, cloud, kubernetes_version):
+async def storage_class(cloud_providers, model, cloud, k8s_version):
     out_of_tree = out_of_tree_config(cloud)
     support_version = tuple(
         int(i) for i in out_of_tree.storage.in_tree_until.split(".")[:2]
     )
 
-    if kubernetes_version <= support_version:
+    if k8s_version <= support_version:
         logger.info("Installing Storage Class from template.")
         storage_yml = TEMPLATE_PATH / cloud / "storage-class.yaml"
         await kubectl_apply(storage_yml, model)

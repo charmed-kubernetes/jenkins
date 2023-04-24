@@ -105,16 +105,10 @@ async def test_validate_existing_hacluster(model, tools):
         await do_verification(model, app, ip)
 
 
+@pytest.mark.skip_if_version(lambda v: v < (1, 14))
 async def test_validate_hacluster(model, tools):
     name = get_master_name(model)
     app = model.applications[name]
-
-    masters = model.applications["kubernetes-control-plane"]
-    k8s_version_str = masters.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 14):
-        log("skipping, k8s version v" + k8s_version_str)
-        # return
 
     num_units = len(app.units)
     if num_units < 3:

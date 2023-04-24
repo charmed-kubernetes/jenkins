@@ -63,16 +63,11 @@ async def verify_custom_auth(one_control_plane, cmd, endpoint):
     assert "Forwarding to: {}".format(endpoint) in output.stdout.strip()
 
 
+@pytest.mark.skip_if_version(lambda v: v < (1, 17))
 async def test_validate_auth_webhook(model, tools):
     # This test verifies the auth-webhook service is working
     log("starting auth-webhook test")
     masters = model.applications["kubernetes-control-plane"]
-    k8s_version_str = masters.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 17):
-        log("skipping, k8s version v" + k8s_version_str)
-        return
-
     one_master = random.choice(masters.units)
     hostname = await get_hostname(one_master)
     await verify_service(one_master)
