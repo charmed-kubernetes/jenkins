@@ -75,7 +75,7 @@ SNAP_K8S_TRACK_LIST = [
     ("1.25", ["1.25/stable", "1.25/candidate", "1.25/beta", "1.25/edge"]),
     ("1.26", ["1.26/stable", "1.26/candidate", "1.26/beta", "1.26/edge"]),
     ("1.27", ["1.27/stable", "1.27/candidate", "1.27/beta", "1.27/edge"]),
-    ("1.28", ["1.28/edge"]),
+    ("1.28", ["1.28/candidate", "1.28/beta", "1.28/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 

@@ -73,14 +73,14 @@
     charm-channel:
       - edge:
           snap_versions: !!python/list 
+            - 1.28/edge
             - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - stable:
           snap_versions: !!python/list 
+            - 1.27/stable
             - 1.26/stable
             - 1.25/stable
-            - 1.24/stable
           dow: '0'      # Sunday
     jobs:
       - 'validate-ck-{charm-channel}-{series}'
@@ -117,9 +117,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
       - axis:
           type: user-defined
           name: series
@@ -177,9 +177,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.27/stable
             - 1.26/stable
             - 1.25/stable
-            - 1.24/stable
       - axis:
           type: user-defined
           name: arch
@@ -291,8 +291,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
-            - 1.26/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -332,8 +332,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
-            - 1.26/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -373,8 +373,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
-            - 1.26/edge
       - axis:
           type: user-defined
           name: cloud
@@ -429,8 +429,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
-            - 1.26/edge
       - axis:
           type: user-defined
           name: routing_mode
@@ -476,8 +476,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
-            - 1.26/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -517,8 +517,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
-            - 1.26/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -558,8 +558,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
-            - 1.26/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -599,8 +599,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
-            - 1.26/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -640,8 +640,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
-            - 1.26/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -681,9 +681,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/edge
             - 1.27/edge
             - 1.26/edge
-            - 1.25/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
