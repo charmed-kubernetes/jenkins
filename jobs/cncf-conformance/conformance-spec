@@ -44,12 +44,16 @@ function test::execute
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
-    juju ssh -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader -- cat config > $HOME/.kube/config
+    juju ssh -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader -- \
+        cat config | tee $HOME/.kube/config >/dev/null
+    if ! kubectl version; then
+        echo ERROR: Cluster is unreachable
+        exit 1
+    fi
     export RBAC_ENABLED=$(kubectl api-versions | grep "rbac.authorization.k8s.io/v1" -c)
-    kubectl version
 
     timeout -s INT 3h ./sonobuoy run --mode=certified-conformance --wait \
-      --plugin-env=e2e.E2E_EXTRA_ARGS=--non-blocking-taints=node-role.kubernetes.io/control-plane 2>&1
+      --plugin-env=e2e.E2E_EXTRA_ARGS="--non-blocking-taints=node-role.kubernetes.io/control-plane --ginkgo.v" 2>&1
     ret=$?
     is_pass="True"
     if (( $ret > 0 )); then
