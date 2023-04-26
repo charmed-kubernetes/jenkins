@@ -1247,7 +1247,6 @@ async def test_audit_default_config(model, tools):
 
 async def test_audit_custom_policy(model, tools):
     app = model.applications["kubernetes-control-plane"]
-    unit = app.units[0]
 
     # Set a custom policy that only logs requests to a special namespace
     namespace = "validate-audit-custom-policy"
@@ -1336,7 +1335,7 @@ async def test_audit_webhook(model, tools):
         before_count = await get_webhook_server_entry_count()
         await kubectl(model, "get po")
         after_count = await get_webhook_server_entry_count()
-        assert after_count > before_count, f"Audit Webhook isn't receiving audit logs"
+        assert after_count > before_count, "Audit Webhook isn't receiving audit logs"
 
     finally:
         # Clean up
