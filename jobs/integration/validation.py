@@ -40,6 +40,8 @@ from .utils import (
     do_series_upgrade,
     finish_series_upgrade,
     kubectl,
+    kubectl_apply,
+    kubectl_delete,
     juju_run,
     juju_run_action,
     get_ipv6_addr,
@@ -1151,33 +1153,6 @@ async def test_sans(model):
         await lb.set_config({"extra_sans": original_lb_config["extra_sans"]["value"]})
 
 
-async def test_audit_default_config(model, tools):
-    app = model.applications["kubernetes-control-plane"]
-
-    # Ensure we're using default configuration
-    await reset_audit_config(app, tools)
-
-    # Verify new entries are being logged
-    unit = app.units[0]
-    before_date = await get_last_audit_entry_date(app)
-    await asyncio.sleep(5)
-    await run_until_success(
-        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
-    )
-    after_date = await get_last_audit_entry_date(app)
-    assert after_date > before_date
-
-    # Verify total log size is less than 1 GB
-    raw = await run_until_success(unit, "du -bs /root/cdk/audit")
-    size_in_bytes = int(raw.split()[0])
-    click.echo("Audit log size in bytes: %d" % size_in_bytes)
-    max_size_in_bytes = 1000 * 1000 * 1000 * 1.01  # 1 GB, plus some tolerance
-    assert size_in_bytes <= max_size_in_bytes
-
-    # Clean up
-    await reset_audit_config(app, tools)
-
-
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_toggle_metrics(model, tools):
     """Turn metrics on/off via the 'enable-metrics' config on kubernetes-control-plane,
@@ -1230,22 +1205,49 @@ async def test_audit_empty_policy(model, tools):
     await reset_audit_config(app, tools)
     await set_config_and_wait(app, {"audit-policy": ""}, tools)
 
-    # Verify no entries are being logged
-    unit = app.units[0]
-    before_date = await get_last_audit_entry_date(app)
-    await asyncio.sleep(5)
-    await run_until_success(
-        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
-    )
-    after_date = await get_last_audit_entry_date(app)
-    assert after_date == before_date
+    try:
+        # Verify no entries are being logged
+        before_date = await get_last_audit_entry_date(app)
+        await asyncio.sleep(5)
+        await kubectl(model, "get po")
+        after_date = await get_last_audit_entry_date(app)
+        assert after_date == before_date
 
-    # Clean up
+    finally:
+        # Clean up
+        log.info("Cleaning up test_audit_empty_policy")
+        await reset_audit_config(app, tools)
+
+
+async def test_audit_default_config(model, tools):
+    app = model.applications["kubernetes-control-plane"]
+
+    # Ensure we're using default configuration
     await reset_audit_config(app, tools)
+
+    try:
+        # Verify new entries are being logged
+        unit = app.units[0]
+        before_date = await get_last_audit_entry_date(app)
+        await asyncio.sleep(5)
+        await kubectl(model, "get po")
+        after_date = await get_last_audit_entry_date(app)
+        assert after_date > before_date
+
+        # Verify total log size is less than 1 GB
+        raw = await run_until_success(unit, "du -bs /root/cdk/audit")
+        size_in_bytes = int(raw.split()[0])
+        click.echo("Audit log size in bytes: %d" % size_in_bytes)
+        max_size_in_bytes = 1000 * 1000 * 1000 * 1.01  # 1 GB, plus some tolerance
+        assert size_in_bytes <= max_size_in_bytes
+    finally:
+        # Clean up
+        await reset_audit_config(app, tools)
 
 
 async def test_audit_custom_policy(model, tools):
     app = model.applications["kubernetes-control-plane"]
+    unit = app.units[0]
 
     # Set a custom policy that only logs requests to a special namespace
     namespace = "validate-audit-custom-policy"
@@ -1257,102 +1259,69 @@ async def test_audit_custom_policy(model, tools):
     await reset_audit_config(app, tools)
     await set_config_and_wait(app, {"audit-policy": yaml.dump(policy)}, tools)
 
-    # Verify no entries are being logged
-    unit = app.units[0]
-    before_date = await get_last_audit_entry_date(app)
-    await asyncio.sleep(5)
-    await run_until_success(
-        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
-    )
-    after_date = await get_last_audit_entry_date(app)
-    assert after_date == before_date
+    try:
+        # Verify no entries are being logged
+        before_date = await get_last_audit_entry_date(app)
+        await asyncio.sleep(5)
+        await kubectl(model, "get po")
+        after_date = await get_last_audit_entry_date(app)
+        assert after_date == before_date
 
-    # Create our special namespace
-    namespace_definition = {
-        "apiVersion": "v1",
-        "kind": "Namespace",
-        "metadata": {"name": namespace},
-    }
-    path = "/tmp/validate_audit_custom_policy-namespace.yaml"
-    with NamedTemporaryFile("w") as f:
-        json.dump(namespace_definition, f)
-        f.flush()
-        await scp_to(
-            f.name,
-            unit,
-            path,
-            tools.controller_name,
-            tools.connection,
-            proxy=tools.juju_ssh_proxy,
-        )
-    await run_until_success(
-        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f " + path
-    )
+        # Create our special namespace
+        await kubectl(model, f"create ns {namespace}")
 
-    # Verify our very special request gets logged
-    before_date = await get_last_audit_entry_date(app)
-    await asyncio.sleep(5)
-    await run_until_success(
-        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -n " + namespace
-    )
-    after_date = await get_last_audit_entry_date(app)
-    assert after_date > before_date
-
-    # Clean up
-    await run_until_success(
-        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns " + namespace
-    )
-    await reset_audit_config(app, tools)
+        # Verify our very special request gets logged
+        before_date = await get_last_audit_entry_date(app)
+        await asyncio.sleep(5)
+        await kubectl(model, f"get po -n {namespace}")
+        after_date = await get_last_audit_entry_date(app)
+        assert after_date > before_date
+    finally:
+        # Clean up
+        log.info("Cleaning up test_audit_custom_policy")
+        await kubectl(model, f"delete ns {namespace}")
+        await reset_audit_config(app, tools)
 
 
 async def test_audit_webhook(model, tools):
     app = model.applications["kubernetes-control-plane"]
     unit = app.units[0]
+    await reset_audit_config(app, tools)
 
     async def get_webhook_server_entry_count():
-        cmd = (
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config logs test-audit-webhook"
-        )
-        raw = await run_until_success(unit, cmd)
-        lines = raw.splitlines()
-        count = len(lines)
-        return count
+        result = await kubectl(model, "logs test-audit-webhook")
+        lines = result.stdout.splitlines()
+        return len(lines)
 
     # Deploy an nginx target for webhook
-    local_path = os.path.dirname(__file__) + "/templates/test-audit-webhook.yaml"
-    remote_path = "/tmp/test-audit-webhook.yaml"
-    await scp_to(
-        local_path,
-        unit,
-        remote_path,
-        tools.controller_name,
-        tools.connection,
-        proxy=tools.juju_ssh_proxy,
-    )
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config apply -f " + remote_path
-    await run_until_success(unit, cmd)
+    local_path = Path(__file__).parent / "templates/test-audit-webhook.yaml"
+    await kubectl_apply(local_path, model)
 
-    # Get nginx IP
-    nginx_ip = None
-    while nginx_ip is None:
-        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get po -o json test-audit-webhook"
-        raw = await run_until_success(unit, cmd)
-        pod = json.loads(raw)
-        nginx_ip = pod["status"].get("podIP", None)
+    await retry_async_with_timeout(
+        verify_ready,
+        (unit, "po", ["test-audit-webhook"], "-n default"),
+        timeout_msg="Unable to find test-audit-webhook pod before timeout",
+    )
+
+    # Get test-audit-webhook pod IP
+    test_ip = None
+    while test_ip is None:
+        result = await kubectl(model, "get po -o json test-audit-webhook")
+        pod = json.loads(result.stdout)
+        test_ip = pod["status"].get("podIP", None)
 
     # Set audit config with webhook enabled
     audit_webhook_config = {
         "apiVersion": "v1",
         "kind": "Config",
         "clusters": [
-            {"name": "test-audit-webhook", "cluster": {"server": "http://" + nginx_ip}}
+            {"name": "test-audit-webhook", "cluster": {"server": "http://" + test_ip}}
         ],
         "contexts": [
             {"name": "test-audit-webhook", "context": {"cluster": "test-audit-webhook"}}
         ],
         "current-context": "test-audit-webhook",
     }
-    await reset_audit_config(app, tools)
     await set_config_and_wait(
         app,
         {
@@ -1362,21 +1331,18 @@ async def test_audit_webhook(model, tools):
         tools,
     )
 
-    # Ensure webhook log is growing
-    before_count = await get_webhook_server_entry_count()
-    await run_until_success(
-        unit, "/snap/bin/kubectl --kubeconfig /root/.kube/config get po"
-    )
-    after_count = await get_webhook_server_entry_count()
-    assert after_count > before_count
+    try:
+        # Ensure webhook log is growing
+        before_count = await get_webhook_server_entry_count()
+        await kubectl(model, "get po")
+        after_count = await get_webhook_server_entry_count()
+        assert after_count > before_count, f"Audit Webhook isn't receiving audit logs"
 
-    # Clean up
-    await reset_audit_config(app, tools)
-    cmd = (
-        "/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found -f "
-        + remote_path
-    )
-    await run_until_success(unit, cmd)
+    finally:
+        # Clean up
+        log.info("Cleaning up test_audit_webhook")
+        await reset_audit_config(app, tools)
+        await kubectl_delete(local_path, model)
 
 
 @pytest.fixture()
