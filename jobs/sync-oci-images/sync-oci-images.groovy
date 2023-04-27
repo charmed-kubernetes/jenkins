@@ -146,11 +146,15 @@ pipeline {
                 sh """
                     # We need jujud-operator in rocks so we can bootstrap k8s models on
                     # vsphere, but the image tag has the juju version baked in. Try to
-                    # determine a good image based on the installed juju snap.
-                    JUJUD_VER=\$(snap list juju | grep juju | awk '{print \$2}')
+                    # determine a good image based on all the possible juju snaps.
+                    JUJUD_VERS=\$(snap info juju |grep -E '[0-9]{1,}\\.[0-9]{1,}\\.[0-9]{1,} '| awk '{print \$2}')
 
-                    # Prime our image list with the jujud-op image
-                    CI_IMAGES="docker.io/jujusolutions/jujud-operator:\$JUJUD_VER"
+                    # Prime our image list with the jujud-operator images
+                    CI_IMAGES=""
+                    for ver in \${JUJUD_VERS}
+                    do
+                        CI_IMAGES="\${CI_IMAGES} docker.io/jujusolutions/jujud-operator:\$ver"
+                    done
 
                     # Key from the bundle_image_file used to identify images for CI
                     CI_KEY=ci-static:
