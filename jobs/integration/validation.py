@@ -1510,6 +1510,25 @@ async def any_keystone(model, apps_by_charm, tools):
             pytest.fail(f"Timed out waiting for {db_name} to go away")
 
 
+@pytest.mark.skip_if_apps(
+    # skip this test if ceph-mon and ceph-osd are already installed
+    lambda apps: all(a in apps for a in ["ceph-mon", "ceph-osd"])
+)
+@pytest.mark.usefixtures("ceph_apps")
+async def test_ceph(model, tools):
+    log("waiting for csi to settle")
+    unit = model.applications["kubernetes-control-plane"].units[0]
+    await retry_async_with_timeout(
+        verify_ready,
+        (unit, "po", ["csi-rbdplugin", "csi-cephfsplugin"]),
+        timeout_msg="CSI pods not ready!",
+    )
+    # create pod that writes to a pv from ceph
+    await validate_storage_class(model, "ceph-xfs", "Ceph")
+    await validate_storage_class(model, "ceph-ext4", "Ceph")
+    await validate_storage_class(model, "cephfs", "Ceph")
+
+
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_keystone(model, tools, any_keystone):
@@ -2623,25 +2642,6 @@ async def ceph_apps(model, tools):
         log.info("waiting for charm removal...")
         # block until no ceph_apps are in the current model
         await model.block_until(lambda: not (set(ceph_apps) & set(model.applications)))
-
-
-@pytest.mark.skip_if_apps(
-    # skip this test if ceph-mon and ceph-osd are already installed
-    lambda apps: all(a in apps for a in ["ceph-mon", "ceph-osd"])
-)
-@pytest.mark.usefixtures("ceph_apps")
-async def test_ceph(model, tools):
-    log.info("waiting for csi to settle")
-    unit = model.applications["kubernetes-control-plane"].units[0]
-    await retry_async_with_timeout(
-        verify_ready,
-        (unit, "po", ["csi-rbdplugin", "csi-cephfsplugin"]),
-        timeout_msg="CSI pods not ready!",
-    )
-    # create pod that writes to a pv from ceph
-    await validate_storage_class(model, "ceph-xfs", "Ceph")
-    await validate_storage_class(model, "ceph-ext4", "Ceph")
-    await validate_storage_class(model, "cephfs", "Ceph")
 
 
 async def test_series_upgrade(model, tools):
