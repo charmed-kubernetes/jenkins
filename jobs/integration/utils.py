@@ -439,6 +439,7 @@ spec:
   - name: shared-data
     persistentVolumeClaim:
       claimName: {sc_name}-pvc
+      readOnly: true
   restartPolicy: Never
 """
         cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f - << EOF{}EOF".format(
