@@ -305,6 +305,7 @@
     node: runner-validate
     description: |
       Validates CK edge for n-1 releases on s390x localhost.
+    disabled: true
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
