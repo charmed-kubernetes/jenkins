@@ -1516,7 +1516,7 @@ async def any_keystone(model, apps_by_charm, tools):
 )
 @pytest.mark.usefixtures("ceph_apps")
 async def test_ceph(model, tools):
-    log("waiting for csi to settle")
+    log.info("waiting for csi to settle")
     unit = model.applications["kubernetes-control-plane"].units[0]
     await retry_async_with_timeout(
         verify_ready,
