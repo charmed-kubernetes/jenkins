@@ -46,6 +46,7 @@ from .utils import (
     vault,
     vault_status,
     get_svc_ingress,
+    _debug_ceph_storage,
 )
 import urllib.request
 from bs4 import BeautifulSoup as bs
@@ -1527,6 +1528,10 @@ async def test_ceph(model, tools):
     await validate_storage_class(model, "ceph-xfs", "Ceph")
     await validate_storage_class(model, "ceph-ext4", "Ceph")
     await validate_storage_class(model, "cephfs", "Ceph")
+
+
+async def test_debug_ceph(model, tools):
+    await _debug_ceph_storage(model, pods=[], namespace="vmware-system-csi")
 
 
 @pytest.mark.skip_arch(["aarch64"])
