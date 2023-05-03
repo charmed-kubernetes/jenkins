@@ -523,7 +523,7 @@ async def _debug_storage_class(debug_open, test_name, sc_name, provisioner, mode
     for call in [
         _Call("describe", "node"),
         _Call("describe", "pvc"),
-        _Call("describe", "sc", A=True),
+        _Call("describe", "sc"),
         _Call("describe", "pods", *pods, n=namespace),
         *(_Call("logs", pod, n=ns) for ns, pod in provisioner_pods),
     ]:
