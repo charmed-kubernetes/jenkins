@@ -12,6 +12,7 @@ import shlex
 import uuid
 import yaml
 
+from contextlib import contextmanager
 from datetime import datetime
 from juju.model import Model
 from pathlib import Path
@@ -470,12 +471,28 @@ def skip_by_model(request, model):
 
 @pytest.fixture
 def log_dir(request):
-    """Fixture directory for storing arbitrary test logs."""
-    path = os.path.join(
-        "logs", request.module.__name__, request.node.name.replace("/", "_")
-    )
-    os.makedirs(path, exist_ok=True)
+    """Fixture directory for storing arbitrary test logs per test"""
+    path = Path("logs", request.module.__name__, request.node.name.replace("/", "_"))
+    path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+@pytest.fixture
+def log_open(log_dir):
+    """Fixture which provides a log file opener per test."""
+
+    @contextmanager
+    def _open(filename, **kwargs):
+        path = Path(log_dir, filename)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if "mode" not in kwargs:
+            # defaults to writing log files if mode not specified
+            kwargs["mode"] = "w"
+        with path.open(**kwargs) as fp:
+            log(f"Logging to {path}... ")
+            yield fp
+
+    yield _open
 
 
 @pytest.fixture(scope="session")

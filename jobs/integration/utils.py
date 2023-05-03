@@ -371,7 +371,9 @@ async def log_snap_versions(model, prefix="before"):
         click.echo(f"{prefix} {unit.name} {snap_versions}")
 
 
-async def validate_storage_class(model, sc_name, test_name):
+async def validate_storage_class(
+    model, sc_name, test_name, provisioner=None, debug_open=None
+):
     control_plane = model.applications["kubernetes-control-plane"].units[0]
 
     try:
@@ -466,12 +468,13 @@ spec:
         log.info(f"output = {output.stdout}")
         assert "Hello, Storage!" in output.stdout
 
-    except asyncio.TimeoutError:
-        await _debug_ceph_storage(
-            model,
-            pods=[f"{sc_name}-write-test", f"{sc_name}-read-test"],
-        )
-
+    except:
+        # bare except intentional to debug any failure
+        if debug_open:
+            await _debug_storage_class(
+                debug_open, test_name, sc_name, provisioner, model
+            )
+        raise
     finally:
         log.info(f"{test_name}: {sc_name} cleanup")
         pods = "{0}-read-test {0}-write-test".format(sc_name)
@@ -498,50 +501,40 @@ spec:
         )
 
 
-@dataclass
-class DebugK8sResource:
-    header: str
-    model: Model
-    kubectl_args: Tuple[str]
-    kubectl_kwargs: Mapping[str, Any]
+async def _debug_storage_class(debug_open, test_name, sc_name, provisioner, model):
+    class _Call:
+        def __init__(self, *args, **kwds):
+            self.args, self.kwds = args, kwds
 
-    def __init__(self, header, model, *args, **kwargs):
-        self.header = header
-        self.model = model
-        self.kubectl_args = args
-        self.kubectl_kwargs = kwargs
-
-    async def error(self):
-        log.error(f"-- {self.header} --")
-        output = await kubectl(self.model, *self.kubectl_args, **self.kubectl_kwargs)
-        log.error(output.stdout)
-
-
-async def _debug_ceph_storage(model, pods, namespace="default"):
-    log.error("Gathering Ceph logs from Cluster")
-    output = await kubectl(
-        model,
-        "get",
-        "pods",
-        n=namespace,
-        l="app=csi-rbdplugin-provisioner",
-        o="jsonpath='{.items[*].metadata.name}'",
-    )
-    rbd_prov_pods = output.stdout.strip().split()
-
-    for resource in [
-        DebugK8sResource("Node Status", model, "describe", "node"),
-        DebugK8sResource("PVCs Status", model, "describe", "pvc"),
-        DebugK8sResource("SCs Status", model, "describe", "sc", A=True),
-        DebugK8sResource("Pod Status", model, "describe", "pods", *pods, n=namespace),
-        *(
-            DebugK8sResource(
-                f"RBD Provisioner Status ({pod})", model, "logs", pod, n=namespace
-            )
-            for pod in rbd_prov_pods
-        ),
+    pods = [f"{sc_name}-write-test", f"{sc_name}-read-test"]
+    namespace = "default"
+    log.info(f"Gathering {test_name} storage logs from cluster")
+    provisioner_pods = []
+    if provisioner:
+        result = await kubectl(
+            model,
+            "get",
+            "pods",
+            A=True,
+            l=f"app={provisioner}",
+            o=r"""jsonpath='{range .items[*]}{@..metadata.namespace}{" "}{@..metadata.name}{"\n"}{end}'""",
+        )
+        provisioner_pods = [l.strip().split() for l in result.stdout.splitlines() if l]
+    for call in [
+        _Call("describe", "node"),
+        _Call("describe", "pvc"),
+        _Call("describe", "sc", A=True),
+        _Call("describe", "pods", *pods, n=namespace),
+        *(_Call("logs", pod, n=ns) for ns, pod in provisioner_pods),
     ]:
-        await resource.error()
+        result = await kubectl(model, *call.args, **call.kwds)
+        f_name = "_".join([test_name, sc_name, "kubectl", *call.args])
+        if result.stdout:
+            with debug_open(f"{f_name}.out") as fp:
+                fp.write(result.stdout)
+        if result.stderr:
+            with debug_open(f"{f_name}.err") as fp:
+                fp.write(result.stderr)
 
 
 def _units(machine: Machine):
