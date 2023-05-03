@@ -180,7 +180,7 @@ function test::capture
             -j snap.cdk-addons* \
             -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
-    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* || true
+    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* logs/ || true
     /usr/local/bin/columbo -r columbo.yaml -o "_out" "artifacts.tar.gz" || true
     python bin/s3 cp "columbo-report.json" columbo-report.json || true
 

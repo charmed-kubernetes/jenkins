@@ -1480,7 +1480,7 @@ async def any_keystone(model, apps_by_charm, tools):
     lambda apps: all(a in apps for a in ["ceph-mon", "ceph-osd"])
 )
 @pytest.mark.usefixtures("ceph_apps")
-async def test_ceph(model, tools):
+async def test_ceph(model, log_open):
     log.info("waiting for csi to settle")
     unit = model.applications["kubernetes-control-plane"].units[0]
     await retry_async_with_timeout(
@@ -1489,9 +1489,10 @@ async def test_ceph(model, tools):
         timeout_msg="CSI pods not ready!",
     )
     # create pod that writes to a pv from ceph
-    await validate_storage_class(model, "ceph-xfs", "Ceph")
-    await validate_storage_class(model, "ceph-ext4", "Ceph")
-    await validate_storage_class(model, "cephfs", "Ceph")
+    kwds = {"provisioner": "csi-rbdplugin-provisioner", "debug_open": log_open}
+    await validate_storage_class(model, "ceph-xfs", "Ceph", **kwds)
+    await validate_storage_class(model, "ceph-ext4", "Ceph", **kwds)
+    await validate_storage_class(model, "cephfs", "Ceph", **kwds)
 
 
 @pytest.mark.skip_arch(["aarch64"])

@@ -369,7 +369,9 @@ async def log_snap_versions(model, prefix="before"):
         click.echo(f"{prefix} {unit.name} {snap_versions}")
 
 
-async def validate_storage_class(model, sc_name, test_name):
+async def validate_storage_class(
+    model, sc_name, test_name, provisioner=None, debug_open=None
+):
     control_plane = model.applications["kubernetes-control-plane"].units[0]
 
     try:
@@ -464,12 +466,13 @@ spec:
         log.info(f"output = {output.stdout}")
         assert "Hello, Storage!" in output.stdout
 
-    except asyncio.TimeoutError:
-        await _debug_ceph_storage(
-            control_plane=control_plane,
-            pods=[f"{sc_name}-write-test", f"{sc_name}-read-test"],
-        )
-
+    except Exception:
+        # bare except intentional to debug any failure
+        if debug_open:
+            await _debug_storage_class(
+                debug_open, test_name, sc_name, provisioner, model
+            )
+        raise
     finally:
         log.info(f"{test_name}: {sc_name} cleanup")
         pods = "{0}-read-test {0}-write-test".format(sc_name)
@@ -496,37 +499,42 @@ spec:
         )
 
 
-async def _debug_ceph_storage(control_plane, pods):
-    log.error("Gathering Ceph logs from Cluster")
+async def _debug_storage_class(debug_open, test_name, sc_name, provisioner, model):
+    class _Call:
+        def __init__(self, *args, **kwds):
+            self.args, self.kwds = args, kwds
 
-    base_command = "/snap/bin/kubectl --kubeconfig /root/.kube/config"
-    resources = [
-        ("Nodes status", f"{base_command} describe nodes"),
-        ("PVCs status", f"{base_command} describe pvc"),
-        ("Storage Classes status", f"{base_command} describe sc -A"),
-        *(
-            (f"Pod {pod_name} status", f"{base_command} describe pod {pod_name}")
-            for pod_name in pods
-        ),
-    ]
-
-    for msg, cmd in resources:
-        output = await juju_run(control_plane, cmd)
-        log.error(f"{msg}: {output.output}")
-
-    cmd = (
-        base_command
-        + " get pods -l app=csi-rbdplugin-provisioner -o jsonpath='{.items[*].metadata.name}'"
-    )
-    output = await juju_run(control_plane, cmd)
-    rbd_prov_pods = output.output.split(" ")
-    log.error("RBD Provisioner status: ")
-    for pod in rbd_prov_pods:
-        cmd = f"{base_command} logs {pod} > logs.txt"
-        output = await juju_run(control_plane, cmd)
-        cmd = "cat logs.txt"
-        output = await juju_run(control_plane, cmd)
-        log.error(output.output)
+    pods = [f"{sc_name}-write-test", f"{sc_name}-read-test"]
+    namespace = "default"
+    log.info(f"Gathering {test_name} storage logs from cluster")
+    provisioner_pods = []
+    if provisioner:
+        result = await kubectl(
+            model,
+            "get",
+            "pods",
+            A=True,
+            l=f"app={provisioner}",
+            o=r"""jsonpath='{range .items[*]}{@..metadata.namespace}{" "}{@..metadata.name}{"\n"}{end}'""",
+        )
+        provisioner_pods = [
+            _l.strip().split() for _l in result.stdout.splitlines() if _l
+        ]
+    for call in [
+        _Call("describe", "node"),
+        _Call("describe", "pvc"),
+        _Call("describe", "sc"),
+        _Call("describe", "pods", *pods, n=namespace),
+        *(_Call("logs", pod, n=ns) for ns, pod in provisioner_pods),
+    ]:
+        result = await kubectl(model, *call.args, **call.kwds)
+        f_name = "_".join([test_name, sc_name, "kubectl", *call.args])
+        if result.stdout:
+            with debug_open(f"{f_name}.out") as fp:
+                fp.write(result.stdout)
+        if result.stderr:
+            with debug_open(f"{f_name}.err") as fp:
+                fp.write(result.stderr)
 
 
 def _units(machine: Machine):
@@ -787,11 +795,23 @@ async def juju_run_action(unit, action, _check=True, **kwargs) -> JujuRunResult:
     return result
 
 
-async def kubectl(model, cmd, check=True):
+async def kubectl(model, *args: str, check=True, **kwargs) -> JujuRunResult:
+    """
+    Run kubectl command on control-plane unit
+    @param check: If True, raise when the command has non-zero return code
+    @param kwargs: set of command-lines switches
+        if the value is True, only apply the switch name (-A or --help)
+        otherwise, apply switch with the value (-l=)
+    """
+    kwargs["kubeconfig"] = kwargs.pop("kubeconfig", "/root/.kube/config")
+    switches = []
+    for k, v in kwargs.items():
+        tack = "-" if len(k) == 1 else "--"
+        value = f"={v}" if v is not True else ""
+        switches.append(f"{tack}{k}{value}")
+    cmd = " ".join(list(args) + switches)
     control_plane = model.applications["kubernetes-control-plane"].units[0]
-    return await juju_run(
-        control_plane, f"/snap/bin/kubectl --kubeconfig /root/.kube/config {cmd}", check
-    )
+    return await juju_run(control_plane, f"/snap/bin/kubectl {cmd}", check)
 
 
 async def _kubectl_doc(document, model, action):
@@ -865,7 +885,10 @@ async def get_svc_ingress(model, svc_name, timeout=2 * 60):
     for attempt in range(timeout >> 2):
         result = await kubectl(
             model,
-            f"get svc {svc_name} -o jsonpath={{.status.loadBalancer.ingress[0].ip}}",
+            "get",
+            "svc",
+            svc_name,
+            o="jsonpath={.status.loadBalancer.ingress[0].ip}",
         )
         assert result.code == 0
         ingress_address = result.stdout
