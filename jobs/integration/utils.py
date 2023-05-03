@@ -11,13 +11,11 @@ import traceback
 from pathlib import Path
 
 from contextlib import contextmanager
-from dataclasses import dataclass
-from typing import Mapping, Any, Tuple, Union, Sequence
+from typing import Mapping, Any, Union, Sequence
 
 from juju.unit import Unit
 from juju.controller import Controller
 from juju.machine import Machine
-from juju.model import Model
 from juju.errors import JujuError
 from juju.utils import block_until_with_coroutine
 from tempfile import TemporaryDirectory
@@ -468,7 +466,7 @@ spec:
         log.info(f"output = {output.stdout}")
         assert "Hello, Storage!" in output.stdout
 
-    except:
+    except Exception:
         # bare except intentional to debug any failure
         if debug_open:
             await _debug_storage_class(
@@ -519,7 +517,9 @@ async def _debug_storage_class(debug_open, test_name, sc_name, provisioner, mode
             l=f"app={provisioner}",
             o=r"""jsonpath='{range .items[*]}{@..metadata.namespace}{" "}{@..metadata.name}{"\n"}{end}'""",
         )
-        provisioner_pods = [l.strip().split() for l in result.stdout.splitlines() if l]
+        provisioner_pods = [
+            _l.strip().split() for _l in result.stdout.splitlines() if _l
+        ]
     for call in [
         _Call("describe", "node"),
         _Call("describe", "pvc"),
