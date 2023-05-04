@@ -7,7 +7,6 @@ from zipfile import ZipFile
 import yaml
 
 import pytest
-from types import SimpleNamespace
 from unittest.mock import patch, call, Mock, MagicMock
 from functools import partial
 
@@ -94,15 +93,10 @@ def charm_cmd():
         entity_fname, *_ = args
         entity_fname = entity_fname[4:].replace("/", "_")
         fpath = CLI_RESPONSES / f"charm_{cmd}_{entity_fname}.yaml"
-        stdout = fpath.read_bytes() if fpath.exists() else b""
-        return SimpleNamespace(
-            stdout=stdout,
-            stderr=b"",
-            exit_code=0,
-        )
+        return fpath.read_text() if fpath.exists() else ""
 
     with patch("sh.charm", create=True) as charm:
-        charm.version.return_value.stdout = '{"charm-tools": {"version": "1.2.3"}}'
+        charm.version.return_value = '{"charm-tools": {"version": "1.2.3"}}'
         cmd = charm.bake.return_value
         cmd.build.side_effect = partial(command_response, "build")
         yield cmd
@@ -129,12 +123,7 @@ def charmcraft_cmd():
     def command_response(*args, **_kwargs):
         fname = "_".join(("charmcraft",) + args)
         fpath = CLI_RESPONSES / f"{fname}.txt"
-        stdout = fpath.read_bytes() if fpath.exists() else b""
-        return SimpleNamespace(
-            stdout=stdout,
-            stderr=b"",
-            exit_code=0,
-        )
+        return fpath.read_text() if fpath.exists() else ""
 
     with patch("sh.charmcraft", create=True) as charmcraft:
         cmd = charmcraft.bake.return_value
@@ -188,8 +177,8 @@ def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
 
 
 @patch("charms.os.makedirs", Mock())
-@patch("charms.cmd_ok")
-def test_build_entity_setup(cmd_ok, charm_environment, tmpdir, charms):
+@patch("charms.git")
+def test_build_entity_setup(git, charm_environment, tmpdir, charms):
     """Tests build entity setup."""
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
@@ -197,9 +186,13 @@ def test_build_entity_setup(cmd_ok, charm_environment, tmpdir, charms):
     assert charm_entity.reactive is False, "Initializes as false"
     charm_entity.setup()
     assert charm_entity.reactive is True, "test charm requires legacy builds"
-    cmd_ok.assert_called_once_with(
-        f"git clone --branch main https://github.com/charmed-kubernetes/jenkins.git {charm_entity.checkout_path}",
-        echo=charm_entity.echo,
+    git.assert_called_once_with(
+        "clone",
+        "https://github.com/charmed-kubernetes/jenkins.git",
+        charm_entity.checkout_path,
+        branch="main",
+        _tee=True,
+        _out=charm_entity.echo,
     )
 
 
@@ -294,9 +287,9 @@ def test_build_entity_push(
     artifacts = charm_environment.artifacts
     charm_name, charm_opts = next(iter(artifacts[0].items()))
 
-    charmcraft_cmd.upload.return_value.stdout = (
+    charmcraft_cmd.upload.return_value = (
         CLI_RESPONSES / "charmcraft_upload_k8s-ci-charm.txt"
-    ).read_bytes()
+    ).read_text()
 
     charm_entity = charms.BuildEntity(charm_environment, charm_name, charm_opts)
     charm_entity.tag = MagicMock()
@@ -437,9 +430,9 @@ def test_bundle_build_entity_push(
 
     bundle_opts["src_path"] = bundle_environment.default_repo_dir
     bundle_opts["dst_path"] = bundle_environment.bundles_dir / bundle_name
-    charmcraft_cmd.upload.return_value.stdout = (
+    charmcraft_cmd.upload.return_value = (
         CLI_RESPONSES / "charmcraft_upload_test-kubernetes.txt"
-    ).read_bytes()
+    ).read_text()
     bundle_entity = charms.BundleBuildEntity(
         bundle_environment, bundle_name, bundle_opts
     )
@@ -451,9 +444,9 @@ def test_bundle_build_entity_push(
     assert bundle_entity.new_entity == "123"
 
 
-@patch("charms.cmd_ok")
+@patch("charms.sh.Command")
 def test_bundle_build_entity_bundle_build(
-    cmd_ok, charmcraft_cmd, bundle_environment, charms
+    sh_cmd, charmcraft_cmd, bundle_environment, charms
 ):
     """Tests bundle_build method."""
     artifacts = bundle_environment.artifacts
@@ -475,7 +468,7 @@ def test_bundle_build_entity_bundle_build(
     )
     assert (dst_path / "bundle.yaml").exists()
     assert (dst_path / "tests" / "test.yaml").exists()
-    cmd_ok.assert_not_called()
+    sh_cmd.assert_not_called()
     bundle_entity.reset_dst_path()
     dst_path.mkdir()
 
@@ -486,9 +479,21 @@ def test_bundle_build_entity_bundle_build(
     )
     bundle_entity.bundle_build("edge")
     assert not (dst_path / "bundle.yaml").exists()
-    cmd = f"{K8S_CI_BUNDLE / 'bundle'} -n test-kubernetes -o {dst_path} -c edge k8s/core cni/flannel cri/containerd"
-    cmd_ok.assert_called_with(cmd, echo=bundle_entity.echo)
-    cmd_ok.reset_mock()
+    sh_cmd.assert_called_with(f"{K8S_CI_BUNDLE}/bundle")
+    sh_cmd.return_value.assert_called_with(
+        "-n",
+        "test-kubernetes",
+        "-o",
+        str(dst_path),
+        "-c",
+        "edge",
+        "k8s/core",
+        "cni/flannel",
+        "cri/containerd",
+        _tee=True,
+        _out=bundle_entity.echo,
+    )
+    sh_cmd.reset_mock()
     shutil.rmtree(dst_path)
 
 
@@ -633,9 +638,9 @@ def test_build_command(mock_build_env, mock_build_entity, charms):
     entity.promote.assert_called_once_with(to_channels=mock_build_env.to_channels)
 
 
-@patch("charms.cmd_ok")
+@patch("charms.git")
 def test_bundle_build_command(
-    cmd_ok, mock_build_env, mock_bundle_build_entity, tmpdir, charms
+    git, mock_build_env, mock_bundle_build_entity, tmpdir, charms
 ):
     """Tests cli build command which is run by jenkins job."""
     runner = CliRunner()
@@ -681,8 +686,11 @@ def test_bundle_build_command(
         "to_channel": "edge",
         "force": False,
     }
-    cmd_ok.assert_called_once_with(
-        f"git clone --branch main https://github.com/charmed-kubernetes/bundle.git {mock_build_env.default_repo_dir}"
+    git.assert_called_once_with(
+        "clone",
+        "https://github.com/charmed-kubernetes/bundle.git",
+        mock_build_env.default_repo_dir,
+        branch="main",
     )
     mock_build_env.pull_layers.assert_not_called()
     mock_build_env.save.assert_called_once_with()

@@ -10,11 +10,11 @@ See `charm build --help` for more information.
 
 Usage:
 
-  tox -e py36 -- python3 jobs/build-charms/charms.py build \
+  tox -e py -- python3 jobs/build-charms/charms.py build \
      --charm-list jobs/includes/charm-support-matrix.inc \
      --resource-spec jobs/build-charms/resource-spec.yaml
 
-  tox -e py36 -- python3 jobs/build-charms/charms.py --help
+  tox -e py -- python3 jobs/build-charms/charms.py --help
 """
 
 import os
@@ -27,7 +27,7 @@ from sh.contrib import git
 from cilib.git import default_gh_branch
 from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_SERIES_MAP, K8S_CHARM_SUPPORT_ARCHES
 from cilib.service.aws import Store
-from cilib.run import cmd_ok, script
+from cilib.run import script
 from cilib.version import ChannelRange, Release, RISKS
 from functools import partial
 from datetime import datetime
@@ -89,7 +89,7 @@ def generate_manifest(reactive_charm, archs):
         }
 
     def _generate_tools():
-        ret = json.loads(sh.charm.version(format="json").stdout)
+        ret = json.loads(sh.charm.version(format="json"))
         return {
             "charmtool-version": ret["charm-tools"]["version"],
             "charmtool-started-at": datetime.utcnow().isoformat() + "Z",
@@ -140,7 +140,8 @@ class _WrappedCmd:
         """Create an object which tees output from the command also to the log."""
         self._echo = entity.echo
         self._command = getattr(sh, command).bake(
-            _tee=True, _out=partial(entity.echo, nl=False)
+            _tee=True,
+            _out=partial(entity.echo, nl=False),
         )
         setattr(self, command, self._command)
 
@@ -149,30 +150,24 @@ class _WrappedCmd:
         return getattr(self._command, name)
 
 
-class DockerCmd(_WrappedCmd):
+class Docker(_WrappedCmd):
     """Creates a sh command for docker where the output is tee'd."""
 
     def __init__(self, entity):
         super().__init__(entity, "docker")
 
 
-class CharmCmd(_WrappedCmd):
+class Charm(_WrappedCmd):
     """Creates a sh command for charm where the output is tee'd."""
 
     def __init__(self, entity):
         super().__init__(entity, "charm")
 
-    def build(self, *args, **kwargs):
-        ret = self.charm.build(*args, **kwargs)
-        assert not getattr(ret, "ok", None), "sh lib added an 'ok' attribute"
-        ret.ok = True
-        return ret
-
     def pull_source(self, *args, **kwargs):
         return self.charm("pull-source", *args, **kwargs)
 
 
-class CharmcraftCmd(_WrappedCmd):
+class Charmcraft(_WrappedCmd):
     """Creates a sh command for charmcraft where the output is tee'd."""
 
     def __init__(self, entity):
@@ -184,13 +179,13 @@ class CharmcraftCmd(_WrappedCmd):
         except sh.ErrorReturnCode:
             self._echo(f"Failed to pack bundle in {kwargs.get('_cwd')}")
             raise
-        (entity,) = re.findall(r"Created '(\S+)'", ret.stdout.decode(), re.MULTILINE)
+        (entity,) = re.findall(r"Created '(\S+)'", ret, re.MULTILINE)
         entity = Path(entity)
         self._echo(f"Packed Bundle :: {entity.name:^35}")
         return entity
 
 
-class _CharmHub(CharmcraftCmd):
+class _CharmHub(Charmcraft):
     STATUS_RESOURCE = re.compile(r"(\S+) \(r(\d+)\)")
     BASE_RE = re.compile(r"(\S+) (\S+) \((\S+)\)")
 
@@ -218,7 +213,7 @@ class _CharmHub(CharmcraftCmd):
     def status(self, charm_entity):
         """Read CLI Table output from charmcraft status and parse."""
         charm_status = self.charmcraft.status(charm_entity, _out=None)
-        header, *body = charm_status.stdout.decode().splitlines()
+        header, *body = charm_status.splitlines()
         channel_status = self._table_to_list(header, body)
 
         for idx, row in enumerate(channel_status):
@@ -242,19 +237,19 @@ class _CharmHub(CharmcraftCmd):
     def revisions(self, charm_entity):
         """Read CLI Table output from charmcraft revisions and parse."""
         charm_status = self.charmcraft.revisions(charm_entity)
-        header, *body = charm_status.stdout.decode().splitlines()
+        header, *body = charm_status.splitlines()
         return self._table_to_list(header, body)
 
     def resources(self, charm_entity):
         """Read CLI Table output from charmcraft resources and parse."""
         charmcraft_out = self.charmcraft.resources(charm_entity)
-        header, *body = charmcraft_out.stdout.decode().splitlines()
+        header, *body = charmcraft_out.splitlines()
         return self._table_to_list(header, body)
 
     def resource_revisions(self, charm_entity, resource):
         """Read CLI Table output from charmcraft resource-revisions and parse."""
         charmcraft_out = self.charmcraft("resource-revisions", charm_entity, resource)
-        header, *body = charmcraft_out.stdout.decode().splitlines()
+        header, *body = charmcraft_out.splitlines()
         return self._table_to_list(header, body)
 
     def _unpublished_revisions(self, charm_entity):
@@ -327,10 +322,8 @@ class _CharmHub(CharmcraftCmd):
 
     def upload(self, dst_path):
         out = self.charmcraft.upload(dst_path)
-        (revision,) = re.findall(
-            r"Revision (\d+) of ", out.stdout.decode(), re.MULTILINE
-        )
-        self._echo(f"Pushing   :: returns {out.stdout or out.stderr}")
+        (revision,) = re.findall(r"Revision (\d+) of ", out, re.MULTILINE)
+        self._echo(f"Pushing   :: returns {out}")
         return revision
 
     def upload_resource(self, charm_entity, resource_name, resource):
@@ -520,11 +513,11 @@ class BuildEnv:
 
     def download(self, layer_name):
         """Pull layer source from the charm store."""
-        out = CharmCmd(self).pull_source(
+        out = Charm(self).pull_source(
             "-i", self.layer_index, "-b", self.layer_branch, layer_name
         )
         layer_manifest = {
-            "rev": self.REV.search(out.stdout.decode()).group(1),
+            "rev": self.REV.search(out).group(1),
             "url": layer_name,
         }
         return layer_manifest
@@ -698,7 +691,7 @@ class BuildEntity:
             git_commit = git("rev-parse", "--short", "HEAD", _cwd=self.src_path)
         else:
             git_commit = git("rev-parse", "HEAD", _cwd=self.src_path)
-        return git_commit.stdout.decode().strip()
+        return git_commit.strip()
 
     def _read_metadata_resources(self):
         if self.dst_path.endswith(".charm"):
@@ -714,11 +707,16 @@ class BuildEntity:
         self.echo(f"Cloning repo from {repository} branch {self.branch}")
 
         os.makedirs(self.checkout_path)
-        ret = cmd_ok(
-            f"git clone --branch {self.branch} {repository} {self.checkout_path}",
-            echo=self.echo,
-        )
-        if not ret.ok:
+        try:
+            git(
+                "clone",
+                repository,
+                self.checkout_path,
+                branch=self.branch,
+                _tee=True,
+                _out=self.echo,
+            )
+        except sh.ErrorReturnCode:
             raise BuildException("Clone failed")
 
         self.reactive = self.layer_path.exists()
@@ -746,7 +744,11 @@ class BuildEntity:
                 self.echo("Manifest path not generated.")
             args = "-r --force -i https://localhost --charm-file"
             self.echo(f"Building with: charm build {args}")
-            ret = CharmCmd(self).build(*args.split(), _cwd=self.src_path)
+            try:
+                Charm(self).build(*args.split(), _cwd=self.src_path)
+                ret.ok = True
+            except sh.ErrorReturnCode as e:
+                self.echo(e.stderr)
         elif lxc:
             self.echo(f"Building in container {lxc}")
             repository = f"https://github.com/{self.downstream}"
@@ -846,7 +848,7 @@ class BuildEntity:
                 if upstream_source:
                     # Pull any `upstream-image` annotated resources.
                     self.echo(f"Pulling {upstream_source}...")
-                    docker = DockerCmd(self)
+                    docker = Docker(self)
                     # Pulls only the amd64 image locally
                     docker.pull(upstream_source)
                     # Use the local image-id from `docker images <upstream-source> -q`
@@ -912,9 +914,18 @@ class BundleBuildEntity(BuildEntity):
 
     def bundle_build(self, to_channel):
         if not self.opts.get("skip-build"):
-            cmd = f"{self.src_path}/bundle -n {self.name} -o {self.dst_path} -c {to_channel} {self.opts['fragments']}"
-            self.echo(f"Running {cmd}")
-            cmd_ok(cmd, echo=self.echo)
+            build = sh.Command(f"{self.src_path}/bundle")
+            build(
+                "-n",
+                self.name,
+                "-o",
+                self.dst_path,
+                "-c",
+                to_channel,
+                *self.opts["fragments"].split(),
+                _tee=True,
+                _out=self.echo,
+            )
         else:
             # If we're not building the bundle from the repo, we have
             # to copy it to the expected output location instead.
@@ -940,7 +951,7 @@ class BundleBuildEntity(BuildEntity):
             }
             with charmcraft_yaml.open("w") as fp:
                 yaml.safe_dump(contents, fp)
-        self.dst_path = str(CharmcraftCmd(self).pack(_cwd=dst_path))
+        self.dst_path = str(Charmcraft(self).pack(_cwd=dst_path))
         self.channel = to_channel
 
     def reset_dst_path(self):
@@ -1010,9 +1021,9 @@ def build(
     force,
 ):
     """Build a set of charms and publish with their resources."""
-    cmd_ok("which charm", echo=lambda m: click.echo(f"charm -> {m}"))
-    cmd_ok("which charmcraft", echo=lambda m: click.echo(f"charmcraft -> {m}"))
-    cmd_ok("snap list", echo=lambda m: click.echo(f"snap list -> {m}"))
+    sh.which.charm(_tee=True, _out=lambda m: click.echo(f"charm -> {m}"))
+    sh.which.charmcraft(_tee=True, _out=lambda m: click.echo(f"charmcraft -> {m}"))
+    sh.snap.list(_tee=True, _out=lambda m: click.echo(f"snap list -> {m}"))
 
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
@@ -1116,7 +1127,7 @@ def build_bundles(
 
     build_env.clean()
     default_repo_dir = build_env.default_repo_dir
-    cmd_ok(f"git clone --branch {bundle_branch} {bundle_repo} {default_repo_dir}")
+    git("clone", bundle_repo, default_repo_dir, branch=bundle_branch)
 
     entities = []
     for bundle_map in build_env.artifacts:
