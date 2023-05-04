@@ -57,7 +57,7 @@ colorama==0.4.3
     #   mkdocs-material
 contextvars==2.4
     # via -r requirements.in
-cryptography==3.4.7
+cryptography==40.0.2
     # via
     #   paramiko
 decorator==4.4.2
