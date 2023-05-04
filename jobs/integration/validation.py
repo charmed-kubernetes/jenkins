@@ -1853,21 +1853,12 @@ async def test_dns_provider(model, k8s_model, tools):
     control_plane_unit = control_plane_app.units[0]
 
     async def deploy_validation_pod():
-        local_path = "jobs/integration/templates/validate-dns-spec.yaml"
-        remote_path = "/tmp/validate-dns-spec.yaml"
-        await scp_to(
-            local_path,
-            control_plane_unit,
-            remote_path,
-            tools.controller_name,
-            tools.connection,
-            proxy=tools.juju_ssh_proxy,
-        )
         log.info("Deploying DNS pod")
-        await kubectl(model, f"apply -f {remote_path}")
+        local_path = Path(__file__).parent / "templates/validate-dns-spec.yaml"
+        await kubectl_apply(local_path, model)
         # wait for pod to be ready (having installed required packages), or failed
         cmd = "logs validate-dns | grep 'validate-dns: \\(Ready\\|Failed\\)'"
-        while not (await kubectl(model, cmd, False)).success:
+        while not (await kubectl(model, cmd, check=False)).success:
             await asyncio.sleep(5)
 
     async def remove_validation_pod():
