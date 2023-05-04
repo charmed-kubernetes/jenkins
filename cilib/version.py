@@ -16,15 +16,21 @@ def parse(version):
 
 def compare(version_a, version_b):
     """Compares 2 sem versions"""
-    version_a = normalize(version_a)
-    version_b = normalize(version_b)
 
-    try:
-        sem_a = semver.VersionInfo.parse(version_a)
-        sem_b = semver.VersionInfo.parse(version_b)
-    except:
-        log.debug(f"Unable to parse {version_a} and/or {version_b}")
-    return sem_a.compare(sem_b)
+    def _cmp(x, y):
+        return (x > y) - (x < y)
+
+    def _from(ver):
+        ver = normalize(ver)
+        try:
+            return semver.VersionInfo.parse(ver)
+        except ValueError:
+            return tuple(map(int, ver.split(".")))
+        except Exception as ex:
+            log.error(f"Unable to parse {ver} into semver")
+            raise
+
+    return _cmp(_from(version_a), _from(version_b))
 
 
 def greater(version_a, version_b):
