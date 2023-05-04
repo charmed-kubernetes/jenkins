@@ -1850,7 +1850,6 @@ async def test_encryption_at_rest(model, tools):
 @pytest.mark.clouds(["ec2", "vsphere", "gce"])
 async def test_dns_provider(model, k8s_model, tools):
     control_plane_app = model.applications["kubernetes-control-plane"]
-    control_plane_unit = control_plane_app.units[0]
 
     async def deploy_validation_pod():
         log.info("Deploying DNS pod")
