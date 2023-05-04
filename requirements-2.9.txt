@@ -60,7 +60,7 @@ contextvars==2.4
 cryptography==3.4.7
     # via
     #   paramiko
-decorator==4.4.2
+decorator==5.1.1
     # via retry
 dill==0.3.6
     # via -r requirements.in
