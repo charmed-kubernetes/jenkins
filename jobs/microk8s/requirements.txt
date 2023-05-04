@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-certifi==2020.6.20
+certifi==2022.12.7
     # via requests
 cffi==1.14.5
     # via cryptography
