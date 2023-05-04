@@ -1,5 +1,5 @@
 import pytest
-import subprocess
+import sh
 import yaml
 import time
 import os
@@ -22,10 +22,10 @@ async def check_charm_profile_deployed(app, charm_name):
     # log("app_info %s" % machine.safe_data)
     # Assume that the only profile with juju-* is
     # the one we"re looking for.
-    result = subprocess.run(["lxc", "profile", "list"], stdout=subprocess.PIPE)
+    result = sh.lxc.profile.list()
 
     REGEX = r"(juju(-[a-zA-Z0-9]+)+(-[A-Za-z0-9]+)+(-[0-9])*)+"
-    matches = re.findall(REGEX, result.stdout.decode("utf-8"))
+    matches = re.findall(REGEX, result)
     log("[DEBUG] match: {}".format(str(matches)))
 
     # Profiles can be in the form of
@@ -34,13 +34,7 @@ async def check_charm_profile_deployed(app, charm_name):
     # Find the one which contains the profile
     for profile_name in matches[0]:
         log("Checking profile for name: %s" % profile_name)
-        # In 3.7 stdout=subprocess.PIPE
-        # can be replaced with capture_output... :-]
-        result = subprocess.run(
-            ["lxc", "profile", "show", profile_name], stdout=subprocess.PIPE
-        )
-        config = result.stdout.decode("utf-8")
-
+        config = sh.lxc.profile.show(profile_name)
         loaded_yaml = yaml.load(config)
 
         if loaded_yaml is None:
