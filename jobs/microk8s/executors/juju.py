@@ -7,7 +7,7 @@ import shlex
 import configbag
 from executors.executor import ExecutorInterface
 
-sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
+sh2 = sh.bake(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 
 class JujuExecutor(ExecutorInterface):
@@ -81,13 +81,10 @@ class JujuExecutor(ExecutorInterface):
         self._run_cmd(cmd)
 
     def _run_cmd(self, cmd):
-        cmd_array = shlex.split(
-            f"juju ssh -m {self.controller}:{self.model} --pty=true {self.unit} --"
+        juju_ssh = sh.juju.ssh.bake(m=f"{self.controller}:{self.model}", pty="true")
+        unit_ssh = juju_ssh.bake(
+            self.unit, _iter=True, _err_to_out=True, _env=os.environ.copy()
         )
-        # cmd_array = "juju run -m {}:{} --timeout=120m0s --unit {}".format(
-        #     _controller, _model, self.juju_unit
-        # ).split()
-        cmd_array.append(cmd)
-        click.echo("Executing: {}".format(cmd_array))
-        for line in sh2.env(cmd_array):
+        click.echo(f"Executing: {unit_ssh} -- {cmd}")
+        for line in unit_ssh(cmd):
             click.echo(line.strip())
