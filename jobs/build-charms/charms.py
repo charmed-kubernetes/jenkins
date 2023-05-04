@@ -914,8 +914,8 @@ class BundleBuildEntity(BuildEntity):
 
     def bundle_build(self, to_channel):
         if not self.opts.get("skip-build"):
-            cmd = sh.Command(
-                f"{self.src_path}/bundle",
+            build = sh.Command(f"{self.src_path}/bundle")
+            build(
                 "-n",
                 self.name,
                 "-o",
@@ -923,9 +923,9 @@ class BundleBuildEntity(BuildEntity):
                 "-c",
                 to_channel,
                 *self.opts["fragments"].split(),
+                _tee=True,
+                _out=self.echo,
             )
-            self.echo(f"Running {cmd}")
-            cmd(_tee=True, _out=self.echo)
         else:
             # If we're not building the bundle from the repo, we have
             # to copy it to the expected output location instead.

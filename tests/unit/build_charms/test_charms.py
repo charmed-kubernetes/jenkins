@@ -479,8 +479,8 @@ def test_bundle_build_entity_bundle_build(
     )
     bundle_entity.bundle_build("edge")
     assert not (dst_path / "bundle.yaml").exists()
-    sh_cmd.assert_called_with(
-        f"{K8S_CI_BUNDLE}/bundle",
+    sh_cmd.assert_called_with(f"{K8S_CI_BUNDLE}/bundle")
+    sh_cmd.return_value.assert_called_with(
         "-n",
         "test-kubernetes",
         "-o",
@@ -490,8 +490,9 @@ def test_bundle_build_entity_bundle_build(
         "k8s/core",
         "cni/flannel",
         "cri/containerd",
+        _tee=True,
+        _out=bundle_entity.echo,
     )
-    sh_cmd.return_value.assert_called_with(_tee=True, _out=bundle_entity.echo)
     sh_cmd.reset_mock()
     shutil.rmtree(dst_path)
 
