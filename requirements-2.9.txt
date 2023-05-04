@@ -301,7 +301,7 @@ six==1.15.0
     #   pynacl
     #   python-dateutil
     #   python-jenkins
-soupsieve==2.2.1
+soupsieve==2.4.1
     # via beautifulsoup4
 stevedore==3.3.0
     # via jenkins-job-builder
