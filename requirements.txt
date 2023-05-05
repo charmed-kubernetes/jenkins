@@ -278,7 +278,7 @@ resolvelib==0.8.1
     # via ansible-core
 retry==0.9.2
     # via -r requirements.in
-rsa==4.7.2
+rsa==4.9
     # via
     #   awscli
     #   google-auth
