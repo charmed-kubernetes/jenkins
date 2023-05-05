@@ -28,9 +28,9 @@ beautifulsoup4==4.12.0
     # via bs4
 black==23.1.0
     # via -r requirements.in
-boto3==1.26.99
+boto3==1.26.127
     # via -r requirements.in
-botocore==1.29.99
+botocore==1.29.127
     # via
     #   awscli
     #   boto3
