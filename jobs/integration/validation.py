@@ -1858,6 +1858,7 @@ async def test_dns_provider(model, k8s_model, tools):
         # wait for pod to be ready (having installed required packages), or failed
         cmd = "logs validate-dns | grep 'validate-dns: \\(Ready\\|Failed\\)'"
         while not (await kubectl(model, cmd, check=False)).success:
+            log.info("Waiting for validation pod to start...")
             await asyncio.sleep(5)
 
     async def remove_validation_pod():

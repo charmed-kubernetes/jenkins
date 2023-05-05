@@ -803,15 +803,15 @@ async def kubectl(model, *args: str, check=True, **kwargs) -> JujuRunResult:
         if the value is True, only apply the switch name (-A or --help)
         otherwise, apply switch with the value (-l=)
     """
-    kwargs["kubeconfig"] = kwargs.pop("kubeconfig", "/root/.kube/config")
+    kubeconfig = kwargs.pop("kubeconfig", "/root/.kube/config")
     switches = []
     for k, v in kwargs.items():
         tack = "-" if len(k) == 1 else "--"
         value = f"={v}" if v is not True else ""
         switches.append(f"{tack}{k}{value}")
-    cmd = " ".join(list(args) + switches)
+    c = f"/snap/bin/kubectl --kubeconfig={kubeconfig} {' '.join(list(args) + switches)}"
     control_plane = model.applications["kubernetes-control-plane"].units[0]
-    return await juju_run(control_plane, f"/snap/bin/kubectl {cmd}", check)
+    return await juju_run(control_plane, c, check)
 
 
 async def _kubectl_doc(document, model, action):
