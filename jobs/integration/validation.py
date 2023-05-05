@@ -1492,6 +1492,7 @@ async def test_ceph(model, log_open):
     kwds = {"provisioner": "csi-rbdplugin-provisioner", "debug_open": log_open}
     await validate_storage_class(model, "ceph-xfs", "Ceph", **kwds)
     await validate_storage_class(model, "ceph-ext4", "Ceph", **kwds)
+    kwds["provisioner"] = "cephfs-provisioner"
     await validate_storage_class(model, "cephfs", "Ceph", **kwds)
 
 
