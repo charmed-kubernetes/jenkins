@@ -578,6 +578,7 @@ def test_promote_command(mock_build_env, charms):
     )
 
 
+@patch("charms.sh", MagicMock())
 def test_build_command(mock_build_env, mock_build_entity, charms):
     """Tests cli build command which is run by jenkins job."""
     runner = CliRunner()
