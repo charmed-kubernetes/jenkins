@@ -5,10 +5,10 @@
 #    pip-compile
 #
 ansible==6.7.0 ; python_version < "3.9"
-ansible==7.3.0 ; python_version >= "3.9"
+ansible==7.5.0 ; python_version >= "3.9"
     # via -r requirements.in
 ansible-core==2.13.8 ; python_version < "3.9"
-ansible-core==2.14.4 ; python_version >= "3.9"
+ansible-core==2.14.5 ; python_version >= "3.9"
     # via ansible
 async-generator==1.10
     # via
@@ -145,7 +145,7 @@ mkdocs==1.4.2
     # via
     #   -r requirements.in
     #   mkdocs-material
-mkdocs-material==9.1.4
+mkdocs-material==9.1.9
     # via -r requirements.in
 mkdocs-material-extensions==1.1.1
     # via mkdocs-material
@@ -191,7 +191,7 @@ pyasn1==0.4.8
     #   juju
     #   pyasn1-modules
     #   rsa
-pyasn1-modules==0.2.8
+pyasn1-modules==0.3.0
     # via google-auth
 pycodestyle==2.10.0
     # via flake8
