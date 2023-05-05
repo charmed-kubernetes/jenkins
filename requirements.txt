@@ -4,11 +4,9 @@
 #
 #    pip-compile
 #
-ansible==6.7.0 ; python_version < "3.9"
-ansible==7.3.0 ; python_version >= "3.9"
+ansible==7.5.0 ; python_version >= "3.9"
     # via -r requirements.in
-ansible-core==2.13.8 ; python_version < "3.9"
-ansible-core==2.14.4 ; python_version >= "3.9"
+ansible-core==2.14.5
     # via ansible
 async-generator==1.10
     # via
@@ -71,8 +69,6 @@ docutils==0.16
     # via awscli
 drypy==1.0.1
     # via -r requirements.in
-exceptiongroup==1.1.1
-    # via pytest
 fasteners==0.18
     # via jenkins-job-builder
 flake8==6.0.0
@@ -310,10 +306,6 @@ surl==0.7.2
     # via -r requirements.in
 tabulate==0.9.0
     # via surl
-tomli==2.0.1
-    # via
-    #   black
-    #   pytest
 toposort==1.10
     # via juju
 typing-extensions==4.5.0
@@ -333,8 +325,6 @@ wcwidth==0.2.6
     # via prettytable
 websocket-client==1.5.1
     # via kubernetes
-websockets==8.1 ; python_version == "3.8"
-websockets>=9.0,<10.0 ; python_version == "3.9"
 websockets==10.4 ; python_version > "3.9"
     # via
     #   -r requirements.in
