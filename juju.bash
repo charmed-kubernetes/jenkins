@@ -47,8 +47,7 @@ function juju::pip::2.9
     if juju::version_2; then
         echo "juju 2.9 environment detected"
         echo "Pinning back python libjuju before starting tests"
-        pip freeze | xargs pip uninstall -y
-        pip install -r "requirements-2.9.txt"
+        pip-sync "requirements-2.9.txt"
     fi
 }
 

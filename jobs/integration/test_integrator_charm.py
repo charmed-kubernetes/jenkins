@@ -246,7 +246,7 @@ def wait_for(resource: str, key_matcher: KeyMatcher, kubeconfig=None, **kwargs):
         kubectl = sh.kubectl.bake("--kubeconfig", kubeconfig)
 
     out = kubectl.get(resource, **kwargs)
-    rsc_list = yaml.safe_load(out.stdout.decode("utf-8"))
+    rsc_list = yaml.safe_load(out)
     status, *_ = [lookup(rsc, key) for rsc in rsc_list["items"]]
     if not matcher(status):
         raise Exception(f"Resource {resource}[{key}] is {status} and doesn't match")
@@ -285,7 +285,7 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
 
         # Ensure the PV is mounted
         out = pod_exec("mount")
-        mount_points = out.stdout.decode("utf-8").splitlines()
+        mount_points = out.splitlines()
         assert any(nginx_path in mount for mount in mount_points), "PV Mount not found"
 
         # Ensure the PV is writable
@@ -294,12 +294,12 @@ async def test_storage(request, model, storage_pvc, tmp_path, kubeconfig):
 
         # Ensure the PV is readable by the application
         out = pod_exec("curl", "http://localhost/")
-        assert welcome in out.stdout.decode("utf-8")
+        assert welcome in out
     finally:
         events = kubectl.get.event(
             "--field-selector", "involvedObject.name=task-pv-pod"
         )
-        logger.info(f"NGINX POD events:\n{events.stdout.decode('utf-8')}")
+        logger.info(f"NGINX POD events:\n{events}")
         logger.info(f"Terminating NGINX with pvc={storage_pvc}.")
         await kubectl_delete(rendered, model)
 

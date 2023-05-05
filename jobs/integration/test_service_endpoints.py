@@ -8,12 +8,12 @@ SVC_PORT = 80
 
 def get_pod_yaml():
     out = sh.kubectl.get("po", o="yaml", selector="app=hello-world")
-    return yaml.safe_load(out.stdout.decode())
+    return yaml.safe_load(out)
 
 
 def get_svc_yaml():
     out = sh.kubectl.get("svc", o="yaml", selector="app=hello-world")
-    return yaml.safe_load(out.stdout.decode())
+    return yaml.safe_load(out)
 
 
 async def is_pod_running():

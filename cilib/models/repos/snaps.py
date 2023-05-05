@@ -73,7 +73,7 @@ class SnapBaseRepoModel(DebugMixin):
     # private
     def _get_revision_output(self):
         revision_list = sh.snapcraft.revisions(self.name, _err_to_out=True)
-        return revision_list.stdout.decode().splitlines()[1:]
+        return revision_list.splitlines()[1:]
 
 
 class SnapKubeApiServerRepoModel(SnapBaseRepoModel):

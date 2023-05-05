@@ -2,13 +2,11 @@ ansible<7.0.0; python_version<"3.9"
 ansible>=7.0.0; python_version>="3.9"
 async-generator
 asyncio-extras
-aiocontextvars
 awscli>=1.18.3
 backoff
 black
 boto3
 bs4
-contextvars
 dill
 drypy
 loguru
