@@ -7,8 +7,6 @@ import shlex
 import configbag
 from executors.executor import ExecutorInterface
 
-sh2 = sh.bake(_iter=True, _err_to_out=True, _env=os.environ.copy())
-
 
 class JujuExecutor(ExecutorInterface):
     """
