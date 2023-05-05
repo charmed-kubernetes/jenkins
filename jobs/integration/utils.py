@@ -227,7 +227,7 @@ async def scp_to(
 
 async def retry_async_with_timeout(
     func,
-    args,
+    args=tuple(),
     kwds=None,
     timeout_insec=600,
     timeout_msg="Timeout exceeded",

@@ -1853,40 +1853,45 @@ async def test_dns_provider(model, k8s_model, tools):
     control_plane_app = model.applications["kubernetes-control-plane"]
 
     async def deploy_validation_pod():
+        async def _check_ready():
+            log.info("Waiting for validation pod to start...")
+            return (await kubectl(model, cmd, check=False)).success
+
         log.info("Deploying DNS pod")
         local_path = Path(__file__).parent / "templates/validate-dns-spec.yaml"
         await kubectl_apply(local_path, model)
         # wait for pod to be ready (having installed required packages), or failed
         cmd = "logs validate-dns | grep 'validate-dns: \\(Ready\\|Failed\\)'"
-        while not (await kubectl(model, cmd, check=False)).success:
-            log.info("Waiting for validation pod to start...")
-            await asyncio.sleep(5)
+        await retry_async_with_timeout(_check_ready)
 
     async def remove_validation_pod():
         log.info("Removing DNS pod")
         await kubectl(model, "delete pod validate-dns --ignore-not-found")
 
     async def wait_for_pods_ready(label, ns="kube-system"):
+        async def _check_ready():
+            log.info("Waiting for validation pod to start...")
+            result = await kubectl(model, cmd)
+            return result.stdout and "false" not in result.stdout
+
         log.info(f"Waiting for pods with label {label} to be ready")
         cmd = f"get pod -n {ns} -l {label} -o jsonpath='{{.items[*].status.containerStatuses[*].started}}'"
-        while result := await kubectl(model, cmd):
-            if result.stdout and "false" not in result.stdout:
-                break
-            await asyncio.sleep(5)
+        await retry_async_with_timeout(_check_ready)
 
     async def wait_for_pods_removal(label, ns="kube-system", force=False):
-        log.info(f"Waiting for pods with label {label} to be removed")
-        cmd = f"get pod -n {ns} -l {label} -o jsonpath='{{.items[*].status.containerStatuses[*].started}}'"
-        while result := await kubectl(model, cmd):
+        async def _check_removed():
+            result = await kubectl(model, cmd)
             if result.stdout == "":
-                break
+                return True
             if force and ("true" not in result.stdout):
                 log.info("All pods stuck in terminating, forcibly deleting them")
-                await kubectl(
-                    model, f"delete -n {ns} pod -l {label} --grace-period=0 --force"
-                )
-                break
-            await asyncio.sleep(5)
+                kwds = {"grace-period": 0}
+                await kubectl("delete", "pod", n=ns, l=label, force=True, **kwds)
+                return True
+
+        log.info(f"Waiting for pods with label {label} to be removed")
+        cmd = f"get pod -n {ns} -l {label} -o jsonpath='{{.items[*].status.containerStatuses[*].started}}'"
+        await retry_async_with_timeout(_check_removed)
 
     async def verify_dns_resolution(*, fresh):
         if fresh:
@@ -1895,16 +1900,15 @@ async def test_dns_provider(model, k8s_model, tools):
         names = ["www.ubuntu.com", "kubernetes.default.svc.cluster.local"]
         for name in names:
             log.info(f"Checking domain {name}")
-            response = await kubectl(model, f"exec validate-dns -- host {name}")
+            response = await kubectl(
+                model, f"exec validate-dns -- host {name}", check=False
+            )
+            assert response.success, f"Failed to resolve {name}"
             log.debug(response)
 
-    async def verify_no_dns_resolution(*, fresh):
-        try:
-            await verify_dns_resolution(fresh=fresh)
-        except AssertionError:
-            pass
-        else:
-            pytest.fail("DNS resolution should not be working with no provider, but is")
+    async def verify_no_dns_resolution(**kwds):
+        with pytest.raises(AssertionError, match=r"Failed to resolve"):
+            await verify_dns_resolution(**kwds)
 
     async def get_offer():
         try:
@@ -2008,7 +2012,7 @@ async def test_dns_provider(model, k8s_model, tools):
             )
 
         log.info("---")
-        log.info("☆ Verifying no DNS with no provider (removel of CoreDNS charm)")
+        log.info("☆ Verifying no DNS with no provider (removal of CoreDNS charm)")
         log.info("DNS shouldn't work on existing pod")
         await verify_no_dns_resolution(fresh=False)
 
