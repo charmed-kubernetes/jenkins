@@ -165,7 +165,7 @@ packaging==23.0
     #   black
     #   mkdocs
     #   pytest
-paramiko==2.12.0
+paramiko==3.1.0
     # via juju
 pathspec==0.11.1
     # via black
