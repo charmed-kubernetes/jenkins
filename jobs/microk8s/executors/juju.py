@@ -2,7 +2,6 @@ import click
 import sh
 import os
 from subprocess import run, PIPE, STDOUT, CalledProcessError
-import shlex
 
 import configbag
 from executors.executor import ExecutorInterface

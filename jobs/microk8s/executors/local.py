@@ -1,12 +1,12 @@
 import click
 import sh
 import os
+import shlex
+from pathlib import Path
 from subprocess import run, PIPE, STDOUT, Popen
 
 import configbag
 from executors.executor import ExecutorInterface
-
-sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 
 class LocalExecutor(ExecutorInterface):
@@ -32,27 +32,19 @@ class LocalExecutor(ExecutorInterface):
         run(cmd, check=True, stdout=PIPE, stderr=STDOUT)
 
     def checkout_branch(self, branch):
-        wd = os.getcwd()
-        os.chdir("microk8s")
         cmd = "git checkout {}".format(branch)
-        self._run_cmd(cmd)
-        os.chdir(wd)
+        self._run_cmd(cmd, _cwd=Path("microk8s"))
 
     def set_version_to_build(self, version):
-        cmd_array = [
-            "sed",
+        sh.sed(
             "-i",
-            "s/KUBE_VERSION=.*/KUBE_VERSION={}/".format(version),
+            "s/KUBE_VERSION=.*/KUBE_VERSION={version}/"
             "microk8s/build-scripts/components/kubernetes/version.sh",
-        ]
-        sh2.env(cmd_array)
+        )
 
     def build_snap(self):
-        wd = os.getcwd()
-        os.chdir("microk8s")
         cmd = "/snap/bin/snapcraft --use-lxd"
-        self._run_cmd(cmd)
-        os.chdir(wd)
+        self._run_cmd(cmd, _cwd=Path("microk8s"))
 
     def fetch_created_snap(self, arch=None):
         if not arch:
@@ -63,17 +55,18 @@ class LocalExecutor(ExecutorInterface):
     def test_distro(
         self, distro, track_channel_to_upgrade, testing_track_channel, proxy=None
     ):
-        wd = os.getcwd()
-        os.chdir("microk8s")
         cmd = "tests/test-distro.sh {} {} {}".format(
             distro, track_channel_to_upgrade, testing_track_channel
         )
         if proxy:
             cmd = "{} {}".format(cmd, proxy)
-        self._run_cmd(cmd)
-        os.chdir(wd)
+        self._run_cmd(cmd, _cwd=Path("microk8s"))
 
-    def _run_cmd(self, cmd):
-        click.echo("Executing: {}".format(cmd))
-        for line in sh2.env(cmd.split()):
+    def _run_cmd(self, cmd, _cwd=Path()):
+        prog, *args = shlex.split(cmd)
+        local_run = getattr(sh, prog).bake(
+            *args, _iter=True, _err_to_out=True, _env=os.environ.copy(), _cwd=_cwd
+        )
+        click.echo(f"Executing: {cmd}")
+        for line in local_run():
             click.echo(line.strip())
