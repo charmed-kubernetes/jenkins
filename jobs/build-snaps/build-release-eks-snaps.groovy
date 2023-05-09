@@ -55,7 +55,8 @@ pipeline {
                         # eks snaps have a suffix and different base than ck; adjust snapcraft.yaml
                         cd \${EKS_SNAP}
                         sed -i -e "s/^name: \${snap}/name: \${EKS_SNAP}/" \
-                               -e "s/^base: .*/base: ${EKS_BASE}/" snapcraft.yaml
+                               -e "s/^base: .*/base: ${EKS_BASE}/" \
+                               -e "s/install-mode: .*/install-mode: disable/" snapcraft.yaml
 
                         # if we don't have any base defined at this point, add one
                         grep -q "^base: " snapcraft.yaml || echo "base: ${EKS_BASE}" >> snapcraft.yaml
