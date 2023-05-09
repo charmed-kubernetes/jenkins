@@ -71,6 +71,8 @@ docutils==0.16
     # via awscli
 drypy==1.0.1
     # via -r requirements.in
+exceptiongroup==1.1.1
+    # via pytest
 fasteners==0.18
     # via jenkins-job-builder
 flake8==6.0.0
