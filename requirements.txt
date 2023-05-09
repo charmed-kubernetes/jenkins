@@ -159,7 +159,7 @@ oauthlib==3.2.2
     # via
     #   lazr-restfulclient
     #   requests-oauthlib
-packaging==23.0
+packaging==23.1
     # via
     #   ansible-core
     #   black
