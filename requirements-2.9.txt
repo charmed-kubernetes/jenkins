@@ -59,7 +59,7 @@ dill==0.3.6
     # via -r requirements.in
 distro==1.8.0
     # via lazr-restfulclient
-docutils==0.16
+docutils==0.20
     # via awscli
 drypy==1.0.1
     # via -r requirements.in
