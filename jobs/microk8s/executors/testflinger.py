@@ -8,8 +8,6 @@ from subprocess import run, PIPE, STDOUT
 
 from executors.executor import ExecutorInterface
 
-sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
-
 
 class TestFlingerExecutor(ExecutorInterface):
     """
