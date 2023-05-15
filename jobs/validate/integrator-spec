@@ -36,6 +36,11 @@ function juju::deploy::overlay
     cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
+  easyrsa:
+    constraints: $constraints
+    to: null
+  etcd:
+    constraints: $constraints
   kubernetes-control-plane:
     constraints: $constraints
     options:
@@ -65,8 +70,6 @@ EOF
     elif [ "$JUJU_CLOUD" = "aws/us-east-1" ]; then
       # Deploy aws
       cat <<EOF >> overlay.yaml
-  easyrsa:
-    to: null
   aws-integrator:
     charm: aws-integrator
     channel: $JUJU_DEPLOY_CHANNEL
@@ -79,8 +82,6 @@ EOF
     elif [ "$JUJU_CLOUD" = "google/us-east1" ]; then
       # Deploy google
       cat <<EOF >> overlay.yaml
-  easyrsa:
-    to: null
   gcp-integrator:
     charm: gcp-integrator
     channel: $JUJU_DEPLOY_CHANNEL
@@ -96,8 +97,6 @@ EOF
   calico:
     options:
       cidr: 172.22.0.0/16
-  easyrsa:
-    to: null
   azure-integrator:
     charm: azure-integrator
     channel: $JUJU_DEPLOY_CHANNEL
