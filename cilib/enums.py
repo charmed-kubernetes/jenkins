@@ -20,7 +20,7 @@ K8S_STABLE_VERSION = "1.27"
 K8S_NEXT_VERSION = "1.28"
 
 # Lowest K8S SEMVER to process, this is usually K8S_STABLE_VERSION - 4
-K8S_STARTING_SEMVER = "1.23.0"
+K8S_STARTING_SEMVER = "1.22.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
