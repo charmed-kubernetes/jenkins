@@ -100,13 +100,18 @@ function juju::deploy::after
 
 function juju::deploy::overlay
 {
+    local constraints
+    constraints="arch=${ARCH:-amd64} cores=2 mem=8G root-disk=16G"
+
     cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
   kubernetes-control-plane:
+    constraints: $constraints
     options:
       channel: $SNAP_VERSION
   kubernetes-worker:
+    constraints: $constraints
     options:
       channel: $SNAP_VERSION
 EOF
