@@ -1,14 +1,11 @@
 import click
 import configbag
-import sh
 import os
 from dateutil import parser
 from subprocess import CalledProcessError, run, PIPE, STDOUT
 from executors.juju import JujuExecutor
 from executors.local import LocalExecutor
 from executors.testflinger import TestFlingerExecutor
-
-sh2 = sh(_iter=True, _err_to_out=True, _env=os.environ.copy())
 
 
 class Microk8sSnap:
