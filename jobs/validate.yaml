@@ -72,12 +72,12 @@
           dow: '2,4,6'  # TuThSa
     charm-channel:
       - edge:
-          snap_versions: !!python/list 
+          snap_versions:
             - 1.28/edge
             - 1.27/edge
             - 1.26/edge
       - stable:
-          snap_versions: !!python/list 
+          snap_versions:
             - 1.27/stable
             - 1.26/stable
             - 1.25/stable
