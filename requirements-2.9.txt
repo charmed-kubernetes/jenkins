@@ -163,7 +163,7 @@ py==1.11.0
     # via
     #   pytest-html
     #   retry
-pyasn1==0.4.8
+pyasn1==0.5.0
     # via
     #   juju
     #   pyasn1-modules
