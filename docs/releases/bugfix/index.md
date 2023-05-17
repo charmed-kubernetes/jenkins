@@ -80,7 +80,7 @@ with **1.25+ck1**.
 **Job**: https://jenkins.canonical.com/k8s/job/build-charms/
 
 This will build charms from the `release_x.xx` branch and promote them to the
-candidate channel for testing.
+x.xx/candidate channel for testing.
 
 #### Charm build options
 

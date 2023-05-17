@@ -258,11 +258,17 @@
       - string:
           name: TO_CHANNEL
           default: 'edge'
-          description: Channel to publish charm to
+          description: |
+            Destination charmhub channel for this build
+            
+            If the value is in [edge, candidate, beta, stable],
+            releases to both latest/<risk> and <track>/<risk>.
+            <track> is determined based on the SNAP_K8S_TRACK_MAP and
+            the newest <track> in which <track>/<risk> exists.
       - string:
           name: FROM_CHANNEL
           default: 'edge'
-          description: Channel to publish charm from (only used in promote jobs)
+          description: Source charmhub channel (only used in promote jobs)
       - string:
           name: FILTER_BY_TAG
           default: 'k8s,k8s-operator'
