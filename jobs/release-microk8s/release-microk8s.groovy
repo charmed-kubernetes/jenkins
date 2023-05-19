@@ -125,7 +125,7 @@ pipeline {
                                     --model-default resource-tags="owner=k8sci job=${job} stage=${stage}" \
                                     --bootstrap-constraints "mem=8G cores=2"
 
-                                juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu
+                                juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu --channel=latest/candidate
 
                                 juju-wait -e "${juju_full_model}" -w
 
