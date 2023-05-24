@@ -60,6 +60,15 @@ relations:
 EOF
 }
 
+function juju::wait
+{
+    echo "Waiting for deployment to settle..."
+    timeout 60m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
+
+    juju::deploy-report $?
+}
+
+
 function juju::deploy::after
 {
     juju scp -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
