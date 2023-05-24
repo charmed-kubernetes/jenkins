@@ -93,7 +93,8 @@ function test::execute
                 --cloud "$JUJU_CLOUD" \
                 --model "$JUJU_MODEL" \
                 --controller "$JUJU_CONTROLLER" \
-                --addons-model addons
+                --addons-model addons \
+                -k "not test_service_cidr_expansion"  # Skipped due to LP#2020704
     ret=$?
     is_pass="True"
     if (( $ret > 0 )); then
