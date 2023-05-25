@@ -93,7 +93,7 @@ idna==3.4
     # via requests
 iniconfig==2.0.0
     # via pytest
-invoke==2.1.1
+invoke==2.1.2
     # via -r requirements.in
 iso8601==1.1.0
     # via surl
