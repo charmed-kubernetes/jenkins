@@ -754,11 +754,15 @@ async def test_gpu_support(model, tools):
     """Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
 
-    # See if the workers have nvidia
+    # See if any the workers have nvidia
     workers = model.applications["kubernetes-worker"]
-    action = await juju_run(workers.units[0], "lspci -nnk")
-    nvidia = True if action.stdout.lower().count("nvidia") > 0 else False
-
+    kubernetes_worker = workers.units[0]
+    for worker in workers.units:
+        action = await juju_run(worker, "lspci -nnk")
+        nvidia = True if action.stdout.lower().count("nvidia") > 0 else False
+        if nvidia:
+            kubernetes_worker = worker
+            break
     control_plane_unit = model.applications["kubernetes-control-plane"].units[0]
     if not nvidia:
         # nvidia should not be running
@@ -774,16 +778,30 @@ async def test_gpu_support(model, tools):
         )
     else:
         # nvidia should be running
-        await retry_async_with_timeout(
-            verify_ready,
-            (
-                control_plane_unit,
-                "ds",
-                ["nvidia-device-plugin-daemonset"],
-                "-n kube-system",
-            ),
-            timeout_msg="nvidia-device-plugin-daemonset not running",
-        )
+        try:
+            await retry_async_with_timeout(
+              verify_ready,
+              (
+                  control_plane_unit,
+                  "ds",
+                    ["nvidia-device-plugin-daemonset"],
+                    "-n kube-system",
+                ),
+                timeout_msg="nvidia-device-plugin-daemonset not running",
+            )
+        except asyncio.TimeoutError as ex:
+            log.info("nvidia-device-plugin-daemonset not running, restarting kubernetes-worker and retrying once more")
+            await juju_run(kubernetes_worker, "sudo reboot")
+            await retry_async_with_timeout(
+              verify_ready,
+              (
+                  control_plane_unit,
+                  "ds",
+                    ["nvidia-device-plugin-daemonset"],
+                    "-n kube-system",
+                ),
+                timeout_msg="nvidia-device-plugin-daemonset not running",
+            )
 
         # Do an addition on the GPU just be sure.
         # First clean any previous runs
