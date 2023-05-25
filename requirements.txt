@@ -130,7 +130,7 @@ loguru==0.7.0
     # via -r requirements.in
 macaroonbakery==1.3.1
     # via juju
-markdown==3.3.7
+markdown==3.4.3
     # via
     #   mkdocs
     #   mkdocs-material
