@@ -20,6 +20,7 @@ from juju.errors import JujuError
 from juju.utils import block_until_with_coroutine
 from tempfile import TemporaryDirectory
 from subprocess import check_output, check_call
+from typing import List
 from cilib import log
 import click
 
@@ -269,49 +270,47 @@ async def disable_source_dest_check(model_name):
     await asyncify(check_call)(cmd, env=env)
 
 
-async def verify_deleted(unit, entity_type, name_list, extra_args=""):
-    matches = await find_entities(unit, entity_type, name_list, extra_args)
+async def find_entities(unit, entity_type, names: List[str], extra_args=""):
+    """Find kubernetes entities that match by type and partial name.
 
-    # An empty match list means we didn't find any entities with our name(s).
-    # That's good since we are verifying those entities were deleted.
-    if matches == []:
-        return True
-
-    # Otherwise, find_entities failed or found matches; that's bad either way.
-    return False
-
-
-async def find_entities(unit, entity_type, name_list, extra_args=""):
+    names is a list of entities(pods, services, etc) being searched
+        and partial matches work. If you have a pod with characters at
+        the end due to being in a deployment, just add the name of the
+        deployment and it still matches
+    """
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config {} --output json get {}"
-    cmd = cmd.format(extra_args, entity_type)
-    output = await juju_run(unit, cmd)
+    output = await juju_run(unit, cmd.format(extra_args, entity_type), check=False)
     if output.code != 0:
         # error resource type not found most likely. This can happen when the
         # api server is restarting. As such, don't assume this means ready.
         return False
     try:
-        out_list = json.loads(output.stdout)
+        resources = json.loads(output.stdout)
     except json.JSONDecodeError:
         click.echo(traceback.format_exc())
         click.echo("WARNING: Expected json, got non-json output:")
         click.echo(output.stdout)
         return False
-    matches = []
-    for name in name_list:
-        # find all entries that match this
-        [matches.append(n) for n in out_list["items"] if name in n["metadata"]["name"]]
-    return matches
+    return [
+        item
+        for item in resources["items"]
+        if any(n in item["metadata"]["name"] for n in names)
+    ]
 
 
-async def verify_ready(unit, entity_type, name_list, extra_args=""):
+async def verify_deleted(unit, entity_type, names: List[str], extra_args=""):
+    """Verify matching kubernetes entities don't exist.
+
+    An empty match list means we didn't find any entities with our name(s).
+    That's good since we are verifying those entities were deleted.
+    Otherwise, find_entities failed or found matches; that's bad either way.
     """
-    note that name_list is a list of entities(pods, services, etc) being searched
-    and that partial matches work. If you have a pod with random characters at
-    the end due to being in a deploymnet, you can add just the name of the
-    deployment and it will still match
-    """
+    return await find_entities(unit, entity_type, names, extra_args) == []
 
-    matches = await find_entities(unit, entity_type, name_list, extra_args)
+
+async def verify_ready(unit, entity_type, names: List[str], extra_args=""):
+    """Verify matching kubernetes entities are ready."""
+    matches = await find_entities(unit, entity_type, names, extra_args)
     if not matches:
         return False
 
@@ -344,15 +343,10 @@ async def verify_ready(unit, entity_type, name_list, extra_args=""):
     return True
 
 
-async def verify_completed(unit, entity_type, name_list, extra_args=""):
-    """
-    note that name_list is a list of entities(pods, services, etc) being searched
-    and that partial matches work. If you have a pod with random characters at
-    the end due to being in a deploymnet, you can add just the name of the
-    deployment and it will still match
-    """
-    matches = await find_entities(unit, entity_type, name_list, extra_args)
-    if not matches or len(matches) == 0:
+async def verify_completed(unit, entity_type, names: List[str], extra_args=""):
+    """Verify matching kubernetes entities are completed."""
+    matches = await find_entities(unit, entity_type, names, extra_args)
+    if not matches:
         return False
 
     # now verify they are ALL completed - note that is in the phase 'Succeeded'
@@ -668,6 +662,10 @@ async def do_series_upgrade(machine):
         sudo DEBIAN_FRONTEND=noninteractive do-release-upgrade -f DistUpgradeViewNonInteractive
     """
     )
+    await machine_reboot(machine)
+
+
+async def machine_reboot(machine, block=False):
     log.info(f"rebooting machine {machine.id}")
 
     try:
@@ -675,6 +673,14 @@ async def do_series_upgrade(machine):
     except JujuError:
         # We actually expect this to "fail" because the reboot closes the session prematurely.
         pass
+
+    while block:
+        try:
+            await machine.ssh("service jujud-machine-* status")
+            block = False
+        except JujuError:
+            log.info("Waiting for machine to start up")
+            await asyncio.sleep(5)
 
 
 async def finish_series_upgrade(machine, tools, new_series):
@@ -814,7 +820,7 @@ async def kubectl(model, *args: str, check=True, **kwargs) -> JujuRunResult:
     return await juju_run(control_plane, c, check)
 
 
-async def _kubectl_doc(document, model, action):
+async def _kubectl_doc(document, model, action, **kwds):
     if action not in ["apply", "delete"]:
         raise ValueError(f"Invalid action {action}")
 
@@ -828,15 +834,15 @@ async def _kubectl_doc(document, model, action):
         model.info.uuid,
     )
     cmd = f"{action} -f {remote_path}"
-    return await kubectl(model, cmd)
+    return await kubectl(model, cmd, **kwds)
 
 
-async def kubectl_apply(document, model):
-    return await _kubectl_doc(document, model, "apply")
+async def kubectl_apply(document, model, **kwds):
+    return await _kubectl_doc(document, model, "apply", **kwds)
 
 
-async def kubectl_delete(document, model):
-    return await _kubectl_doc(document, model, "delete")
+async def kubectl_delete(document, model, **kwds):
+    return await _kubectl_doc(document, model, "delete", **kwds)
 
 
 async def vault(unit, cmd, **env):
