@@ -208,7 +208,7 @@ pymacaroons==0.13.0
     #   -r requirements.in
     #   macaroonbakery
     #   surl
-pymdown-extensions==10.0
+pymdown-extensions==10.0.1
     # via mkdocs-material
 pynacl==1.5.0
     # via
