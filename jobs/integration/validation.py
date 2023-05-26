@@ -780,23 +780,25 @@ async def test_gpu_support(model, tools):
         # nvidia should be running
         try:
             await retry_async_with_timeout(
-              verify_ready,
-              (
-                  control_plane_unit,
-                  "ds",
+                verify_ready,
+                (
+                    control_plane_unit,
+                    "ds",
                     ["nvidia-device-plugin-daemonset"],
                     "-n kube-system",
                 ),
                 timeout_msg="nvidia-device-plugin-daemonset not running",
             )
         except asyncio.TimeoutError as ex:
-            log.info("nvidia-device-plugin-daemonset not running, restarting kubernetes-worker and retrying once more")
+            log.info(
+                f"{ex} nvidia-device-plugin-daemonset is not running, restarting kubernetes-worker and retrying once more"
+            )
             await juju_run(kubernetes_worker, "sudo reboot")
             await retry_async_with_timeout(
-              verify_ready,
-              (
-                  control_plane_unit,
-                  "ds",
+                verify_ready,
+                (
+                    control_plane_unit,
+                    "ds",
                     ["nvidia-device-plugin-daemonset"],
                     "-n kube-system",
                 ),
