@@ -127,7 +127,7 @@ pipeline {
 
                                 # We deploy 20.04 because the upgrade-path test deploys K8s 1.19 onwards
                                 # that requires old cgroups.
-                                juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu --base ubuntu@20.04
+                                juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu --series focal
 
                                 juju-wait -e "${juju_full_model}" -w
 
