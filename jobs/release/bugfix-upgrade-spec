@@ -39,7 +39,7 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION_UPGRADE_TO=1.25/candidate
+SNAP_VERSION_UPGRADE_TO=1.27/candidate
 export SNAP_VERSION_UPGRADE_TO
 
 SNAP_VERSION=${1:-1.25/stable}
