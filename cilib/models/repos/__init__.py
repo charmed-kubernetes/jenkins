@@ -1,3 +1,5 @@
+import traceback
+
 from cilib import git, version, log
 from drypy.patterns import sham
 
@@ -127,7 +129,7 @@ class BaseRepoModel:
             try:
                 if version.greater(_semver, starting_semver):
                     _semvers.append(_semver)
-            except Exception as error:
-                print(error)
+            except Exception:
+                traceback.print_exc()
                 continue
         return _semvers
