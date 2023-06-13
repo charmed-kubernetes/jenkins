@@ -8,6 +8,7 @@ from subprocess import run
 from .github_api import Repository
 import requests
 import requests.auth
+from retry import retry
 
 log = logging.getLogger(__name__)
 
@@ -99,6 +100,8 @@ def remote_tags(url, **subprocess_kwargs):
     return sorted(tags, key=_natural_sort_key)
 
 
+# retry because this fails often against git.launchpad.net
+@retry(delay=1, backoff=2, tries=7)  # exponential, fails after ~63 seconds
 def remote_branches(url, **subprocess_kwargs):
     """Returns a list of remote branches"""
     refs = sh.git("ls-remote", "-h", "--refs", url)
