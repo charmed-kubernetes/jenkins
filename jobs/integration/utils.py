@@ -469,16 +469,11 @@ spec:
         raise
     finally:
         log.info(f"{test_name}: {sc_name} cleanup")
-        pods = "{0}-read-test {0}-write-test".format(sc_name)
+        kubectl_delete = "/snap/bin/kubectl --kubeconfig /root/.kube/config delete --ignore-not-found=true"
+        pods = f"{sc_name}-read-test {sc_name}-write-test"
         pvcs = f"{sc_name}-pvc"
-        pod_deleted = await juju_run(
-            control_plane,
-            f"/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {pods}",
-        )
-        pvc_deleted = await juju_run(
-            control_plane,
-            f"/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {pvcs}",
-        )
+        pod_deleted = await juju_run(control_plane, f"{kubectl_delete} po {pods}")
+        pvc_deleted = await juju_run(control_plane, f"{kubectl_delete} pvc {pvcs}")
         assert all(_.status == "completed" for _ in (pod_deleted, pvc_deleted))
 
         await retry_async_with_timeout(
