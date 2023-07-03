@@ -158,8 +158,9 @@
       - string:
           name: TEST_UPGRADE_SNAP_CHANNEL
           description: |
-            Version of Kubernetes to upgrade to, in the form of
-            <major>.<minor>/<channel> (ie, 1.16/edge).
+            Version of Kubernetes to upgrade to, in the form of<br>
+
+            &lt;major&gt.&lt;minor&gt;/&lt;channel&gt; (ie, 1.16/edge).
           default: '1.16/candidate'
       - string:
           name: TEST_UPGRADE_CHARM_CHANNEL
@@ -178,8 +179,8 @@
       - string:
           name: SNAP_VERSION
           description: |
-            Version of Kubernetes to test against, in the form of
-            <major>.<minor>/<channel> (ie, 1.16/edge).
+            Version of Kubernetes to test against, in the form of<br>
+            &lt;major&gt.&lt;minor&gt;/&lt;channel&gt; (ie, 1.16/edge).
       - string:
           name: JUJU_CONTROLLER
           description: |
@@ -259,12 +260,10 @@
           name: TO_CHANNEL
           default: 'edge'
           description: |
-            Destination charmhub channel for this build
-            
-            If the value is in [edge, candidate, beta, stable],
-            releases to both latest/<risk> and <track>/<risk>.
-            <track> is determined based on the SNAP_K8S_TRACK_MAP and
-            the newest <track> in which <track>/<risk> exists.
+            Destination charmhub channel for this build.<br>
+
+            If the value is edge, candidate, beta, or stable; releases to both latest/&lt;risk&gt; and &lt;track&gt;/&lt;risk&gt;<br>
+            &lt;track&gt; is determined based on the SNAP_K8S_TRACK_MAP and the newest &lt;track&gt; in which &lt;track&gt;/&lt;risk&gt; exists.
       - string:
           name: FROM_CHANNEL
           default: 'edge'
