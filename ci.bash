@@ -176,7 +176,11 @@ function test::capture
             -s \
             -a debug-layer \
             -a config \
-            -j snap.kube* \
+            -j snap.kube-apiserver.daemon \
+            -j snap.kube-controller-manager.daemon \
+            -j snap.kube-proxy.daemon \
+            -j snap.kube-scheduler.daemon \
+            -j snap.kubelet.daemon \
             -j snap.cdk-addons* \
             -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
