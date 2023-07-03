@@ -303,7 +303,7 @@ websocket-client==1.5.1
     # via kubernetes
 websockets==7.0 ; python_version < "3.9"
 websockets==8.1 ; python_version == "3.9"
-websockets==10.3 ; python_version >= "3.10"
+websockets==11.0.3 ; python_version >= "3.10"
     # via
     #   -r requirements.in
     #   juju
