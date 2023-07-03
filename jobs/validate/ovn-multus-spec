@@ -60,6 +60,15 @@ relations:
 EOF
 }
 
+function juju::wait
+{
+    echo "Waiting for deployment to settle..."
+    timeout 60m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
+
+    juju::deploy-report $?
+}
+
+
 function juju::deploy::after
 {
     juju scp -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
@@ -84,7 +93,8 @@ function test::execute
                 --cloud "$JUJU_CLOUD" \
                 --model "$JUJU_MODEL" \
                 --controller "$JUJU_CONTROLLER" \
-                --addons-model addons
+                --addons-model addons \
+                -k "not test_service_cidr_expansion"  # Skipped due to LP#2020704
     ret=$?
     is_pass="True"
     if (( $ret > 0 )); then

@@ -23,7 +23,7 @@
         - interface:prometheus
 - interface:prometheus-manual:
     downstream: 'charmed-kubernetes/interface-prometheus-manual.git'
-    upstream: 'https://github.com/charmed-kubernetes/interface-prometheus-manual'
+    upstream: 'https://github.com/juju-solutions/interface-prometheus-manual'
     tags:
         - k8s
         - interface

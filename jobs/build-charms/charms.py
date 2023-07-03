@@ -716,8 +716,8 @@ class BuildEntity:
                 _tee=True,
                 _out=self.echo,
             )
-        except sh.ErrorReturnCode:
-            raise BuildException("Clone failed")
+        except sh.ErrorReturnCode as ex:
+            raise BuildException("Clone failed") from ex
 
         self.reactive = self.layer_path.exists()
 

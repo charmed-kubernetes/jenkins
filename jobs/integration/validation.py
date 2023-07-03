@@ -44,6 +44,7 @@ from .utils import (
     kubectl_delete,
     juju_run,
     juju_run_action,
+    machine_reboot,
     get_ipv6_addr,
     vault,
     vault_status,
@@ -754,84 +755,70 @@ async def test_gpu_support(model, tools):
     """Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
 
-    # See if the workers have nvidia
-    workers = model.applications["kubernetes-worker"]
-    action = await juju_run(workers.units[0], "lspci -nnk")
-    nvidia = True if action.stdout.lower().count("nvidia") > 0 else False
+    # Find all nvidia based workers
+    nvidia_workers = [
+        unit
+        for unit in model.applications["kubernetes-worker"].units
+        if (await unit.machine.ssh("lspci -nnk")).lower().count("nvidia")
+    ]
 
-    control_plane_unit = model.applications["kubernetes-control-plane"].units[0]
-    if not nvidia:
+    control_plane = model.applications["kubernetes-control-plane"].units[0]
+    verify_args = (
+        control_plane,
+        "ds",
+        ["nvidia-device-plugin-daemonset"],
+        "-n kube-system",
+    )
+    if not nvidia_workers:
         # nvidia should not be running
         await retry_async_with_timeout(
             verify_deleted,
-            (
-                control_plane_unit,
-                "ds",
-                ["nvidia-device-plugin-daemonset"],
-                "-n kube-system",
-            ),
+            verify_args,
             timeout_msg="nvidia-device-plugin-daemonset is setup without nvidia hardware",
         )
-    else:
-        # nvidia should be running
+        return
+
+    # nvidia should be running
+    try:
         await retry_async_with_timeout(
             verify_ready,
-            (
-                control_plane_unit,
-                "ds",
-                ["nvidia-device-plugin-daemonset"],
-                "-n kube-system",
-            ),
+            verify_args,
+            timeout_msg="nvidia-device-plugin-daemonset not running",
+        )
+    except asyncio.TimeoutError:
+        log.exception("nvidia-device-plugin-daemonset is not running")
+        log.info("restarting kubernetes-worker and retrying once more")
+        for worker in nvidia_workers:
+            await machine_reboot(worker.machine, block=True)
+        await retry_async_with_timeout(
+            verify_ready,
+            verify_args,
             timeout_msg="nvidia-device-plugin-daemonset not running",
         )
 
-        # Do an addition on the GPU just be sure.
-        # First clean any previous runs
-        here = os.path.dirname(os.path.abspath(__file__))
-        await scp_to(
-            os.path.join(here, "templates", "nvidia-smi.yaml"),
-            control_plane_unit,
-            "nvidia-smi.yaml",
-            tools.controller_name,
-            tools.connection,
-            proxy=tools.juju_ssh_proxy,
-        )
-        await juju_run(
-            control_plane_unit,
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config delete -f /home/ubuntu/nvidia-smi.yaml",
-            check=False,
-        )
-        await retry_async_with_timeout(
-            verify_deleted,
-            (control_plane_unit, "po", ["nvidia-smi"], "-n default"),
-            timeout_msg="Cleaning of nvidia-smi pod failed",
-        )
-        # Run the cuda addition
-        cmd = await juju_run(
-            control_plane_unit,
-            "/snap/bin/kubectl --kubeconfig /root/.kube/config create -f /home/ubuntu/nvidia-smi.yaml",
-            check=False,
-        )
-        if cmd.code != 0:
-            click.echo("Failed to create nvidia-smi pod test!")
-            click.echo(cmd)
-            assert False
+    # Do an addition on the GPU just be sure.
+    # First clean any previous runs
+    local_path = Path(__file__).parent / "templates/nvidia-smi.yaml"
+    await kubectl_delete(local_path, model, check=False)
+    await retry_async_with_timeout(
+        verify_deleted,
+        (control_plane, "po", ["nvidia-smi"], "-n default"),
+        timeout_msg="Cleaning of nvidia-smi pod failed",
+    )
+    # Run the cuda addition
+    await kubectl_apply(local_path, model)
 
-        async def cuda_test(control_plane):
-            action = await juju_run(
-                control_plane,
-                "/snap/bin/kubectl --kubeconfig /root/.kube/config logs nvidia-smi",
-                check=False,
-            )
-            click.echo(action.stdout)
-            return action.stdout.count("NVIDIA-SMI") > 0
+    async def cuda_test():
+        nvidia_logs = await kubectl(model, "logs", "nvidia-smi", check=False)
+        log.info(nvidia_logs.stdout)
+        return nvidia_logs.stdout.count("NVIDIA-SMI") > 0
 
-        await retry_async_with_timeout(
-            cuda_test,
-            (control_plane_unit,),
-            timeout_msg="Cuda test did not pass",
-            timeout_insec=1200,
-        )
+    await retry_async_with_timeout(
+        cuda_test,
+        tuple(),
+        timeout_msg="Cuda test did not pass",
+        timeout_insec=20 * 60,
+    )
 
 
 async def test_extra_args(model, tools):
