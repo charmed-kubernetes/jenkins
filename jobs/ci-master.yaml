@@ -55,10 +55,10 @@
 
 - parameter:
     name: lxc-runner-params
-    description: |-
-       Job parameters used to init the lxc container used in the job.
-       ci_lxc_init_runner will take each parameter and ensure
-       these packages are installed within the container.
+    # description: |-
+    #    Job parameters used to init the lxc container used in the job.
+    #    ci_lxc_init_runner will take each parameter and ensure
+    #    these packages are installed within the container.
     parameters:
       - string:
           name: LXC_APT_LIST
@@ -333,8 +333,7 @@
 
 - builder:
     name: run-lxc
-    description: |-
-        Executes the jenkins run within a lxc container on the runner.
+    # description: Executes the jenkins run within a lxc container on the runner.
     builders:
       - shell: |-
           #!/usr/bin/env bash
