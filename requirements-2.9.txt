@@ -23,7 +23,7 @@ beautifulsoup4==4.12.2
     # via bs4
 boto3==1.26.99
     # via -r requirements.in
-botocore==1.29.99
+botocore==1.30.0
     # via
     #   awscli
     #   boto3
