@@ -452,10 +452,7 @@ spec:
             timeout_msg=f"Unable to create read pod {sc_name} for ceph test",
         )
 
-        output = await juju_run(
-            control_plane,
-            f"/snap/bin/kubectl --kubeconfig /root/.kube/config logs {sc_name}-read-test",
-        )
+        output = await kubectl(model, "logs", f"{sc_name}-read-test")
         assert output.status == "completed"
         log.info(f"output = {output.stdout}")
         assert "Hello, Storage!" in output.stdout
@@ -469,26 +466,21 @@ spec:
         raise
     finally:
         log.info(f"{test_name}: {sc_name} cleanup")
-        pods = "{0}-read-test {0}-write-test".format(sc_name)
-        pvcs = f"{sc_name}-pvc"
-        pod_deleted = await juju_run(
-            control_plane,
-            f"/snap/bin/kubectl --kubeconfig /root/.kube/config delete po {pods}",
-        )
-        pvc_deleted = await juju_run(
-            control_plane,
-            f"/snap/bin/kubectl --kubeconfig /root/.kube/config delete pvc {pvcs}",
-        )
+        kubectl_kwargs = {"ignore-not-found": "true", "check": False}
+        pods = [f"{sc_name}-read-test", f"{sc_name}-write-test"]
+        pvcs = [f"{sc_name}-pvc"]
+        pod_deleted = await kubectl(model, "delete", "po", *pods, **kubectl_kwargs)
+        pvc_deleted = await kubectl(model, "delete", "pvc", *pvcs, **kubectl_kwargs)
         assert all(_.status == "completed" for _ in (pod_deleted, pvc_deleted))
 
         await retry_async_with_timeout(
             verify_deleted,
-            (control_plane, "po", pods.split()),
+            (control_plane, "po", pods),
             timeout_msg=f"Unable to remove {test_name} test pods",
         )
         await retry_async_with_timeout(
             verify_deleted,
-            (control_plane, "pvc", pvcs.split()),
+            (control_plane, "pvc", pvcs),
             timeout_msg=f"Unable to remove {test_name} test pvcs",
         )
 
@@ -521,7 +513,7 @@ async def _debug_storage_class(debug_open, test_name, sc_name, provisioner, mode
         _Call("describe", "pods", *pods, n=namespace),
         *(_Call("logs", pod, n=ns) for ns, pod in provisioner_pods),
     ]:
-        result = await kubectl(model, *call.args, **call.kwds)
+        result = await kubectl(model, *call.args, **call.kwds, check=False)
         f_name = "_".join([test_name, sc_name, "kubectl", *call.args])
         if result.stdout:
             with debug_open(f"{f_name}.out") as fp:

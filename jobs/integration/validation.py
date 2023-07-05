@@ -1462,25 +1462,27 @@ async def any_keystone(model, apps_by_charm, tools):
             pytest.fail(f"Timed out waiting for {db_name} to go away")
 
 
-@pytest.mark.skip_if_apps(
-    # skip this test if ceph-mon and ceph-osd are already installed
-    lambda apps: all(a in apps for a in ["ceph-mon", "ceph-osd"])
-)
 @pytest.mark.usefixtures("ceph_apps")
-async def test_ceph(model, log_open):
-    log.info("waiting for csi to settle")
-    unit = model.applications["kubernetes-control-plane"].units[0]
-    await retry_async_with_timeout(
-        verify_ready,
-        (unit, "po", ["csi-rbdplugin", "csi-cephfsplugin"]),
-        timeout_msg="CSI pods not ready!",
-    )
-    # create pod that writes to a pv from ceph
-    kwds = {"provisioner": "csi-rbdplugin-provisioner", "debug_open": log_open}
-    await validate_storage_class(model, "ceph-xfs", "Ceph", **kwds)
-    await validate_storage_class(model, "ceph-ext4", "Ceph", **kwds)
-    kwds["provisioner"] = "cephfs-provisioner"
-    await validate_storage_class(model, "cephfs", "Ceph", **kwds)
+class TestCeph:
+    async def test_plugins_installed(self, model):
+        log.info("waiting for csi to settle")
+        unit = model.applications["kubernetes-control-plane"].units[0]
+        await retry_async_with_timeout(
+            verify_ready,
+            (unit, "po", ["csi-rbdplugin", "csi-cephfsplugin"]),
+            timeout_msg="CSI pods not ready!",
+        )
+
+    @pytest.mark.parametrize("storage_class", ["ceph-xfs", "ceph-ext4", "cephfs"])
+    async def test_storage_class(self, model, log_open, storage_class):
+        # create pod that writes to a pv from ceph
+        kwds = dict(debug_open=log_open)
+        if storage_class == "cephfs":
+            kwds["provisioner"] = "cephfs-provisioner"
+        else:
+            kwds["provisioner"] = "csi-rbdplugin-provisioner"
+
+        await validate_storage_class(model, storage_class, "Ceph", **kwds)
 
 
 @pytest.mark.skip_arch(["aarch64"])
@@ -2505,7 +2507,7 @@ async def test_nfs(model, tools):
     await tools.juju_wait()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 async def ceph_apps(model, tools):
     # setup
     series = os.environ["SERIES"]
@@ -2521,6 +2523,9 @@ async def ceph_apps(model, tools):
         ceph_config["source"] = "cloud:{}-train".format(series)
     elif series_idx > SERIES_ORDER.index("jammy"):
         pytest.fail("ceph_charm_channel is undefined past jammy")
+
+    if any(a in model.applications for a in ["ceph-mon", "ceph-osd"]):
+        pytest.skip("Skipped since ceph apps are already installed")
 
     log.info("deploying ceph mon")
     ceph_mon = await model.deploy(
@@ -2567,7 +2572,7 @@ async def ceph_apps(model, tools):
         log.info("removing ceph applications")
 
         # LP:1929537 get ceph-fs outta there with fire.
-        ceph_apps = {
+        juju_apps = {
             "ceph-fs": dict(force=True),
             "ceph-mon": dict(),
             "ceph-osd": dict(destroy_storage=True),
@@ -2583,14 +2588,14 @@ async def ceph_apps(model, tools):
                 )
             )
 
-        for app in set(ceph_apps) & set(model.applications):
+        for app in set(juju_apps) & set(model.applications):
             # remove any applications currently deployed into the model
             await burn_units(app)
-            await model.remove_application(app, **ceph_apps[app])
+            await model.remove_application(app, **juju_apps[app])
 
         log.info("waiting for charm removal...")
-        # block until no ceph_apps are in the current model
-        await model.block_until(lambda: not (set(ceph_apps) & set(model.applications)))
+        # block until no juju_apps are in the current model
+        await model.block_until(lambda: not (set(juju_apps) & set(model.applications)))
 
 
 async def test_series_upgrade(model, tools):
