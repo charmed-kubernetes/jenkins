@@ -245,7 +245,7 @@ python-dotenv==1.0.0
     # via -r requirements.in
 python-jenkins==1.8.0
     # via jenkins-job-builder
-pytz==2023.2
+pytz==2023.3
     # via pyrfc3339
 pyyaml==5.4.1
     # via
