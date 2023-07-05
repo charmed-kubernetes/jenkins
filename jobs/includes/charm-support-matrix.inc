@@ -40,6 +40,20 @@
     upstream: 'https://github.com/charmed-kubernetes/ceph-csi-operator.git'
     channel-range:
       min: '1.25'
+- cinder-csi:
+    bugs: 'https://launchpad.net/charm-cinder-csi'
+    docs: 'https://charmhub.io/cinder-csi/docs'
+    downstream: charmed-kubernetes/cinder-csi-operator.git
+    store: 'https://charmhub.io/cinder-csi'
+    summary: Deploys Cinder CSI into a Charmed-Kubernetes cluster
+    tags:
+      - k8s
+      - cinder-csi
+      - csi
+      - openstack
+    upstream: 'https://github.com/canonical/cinder-csi-operator.git'
+    channel-range:
+      min: '1.28'
 - cilium:
     bugs: 'https://bugs.launchpad.net/charm-cilium'
     build-resources: 'cd {out_path}; bash {src_path}/fetch-resources.sh'
@@ -219,6 +233,19 @@
     upstream: 'https://github.com/charmed-kubernetes/charm-kube-virt.git'
     channel-range:
       min: '1.27'
+- openstack-cloud-controller:
+    bugs: 'https://bugs.launchpad.net/charm-openstack-cloud-controller-operator'
+    docs: 'https://charmhub.io/openstack-cloud-controller/docs'
+    downstream: charmed-kubernetes/openstack-cloud-controller-operator.git
+    store: 'https://charmhub.io/openstack-cloud-controller'
+    summary: Deploys Openstack Cloud Controller into a Charmed-Kubernetes cluster
+    tags:
+      - k8s
+      - openstack
+      - openstack-cloud-controller
+    upstream: 'https://github.com/canonical/openstack-cloud-controller-operator.git'
+    channel-range:
+      min: '1.28'
 - tigera-secure-ee:
     bugs: 'https://bugs.launchpad.net/charm-tigera-secure-ee'
     build-resources: 'cd {out_path}; bash {src_path}/build-resources.sh'
