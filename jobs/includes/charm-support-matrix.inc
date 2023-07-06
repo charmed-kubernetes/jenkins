@@ -417,6 +417,19 @@
     upstream: 'https://github.com/charmed-kubernetes/vsphere-cloud-provider.git'
     channel-range:
       min: '1.25'
+- metallb:
+    bugs: 'https://bugs.launchpad.net/operator-metallb'
+    docs: 'https://charmhub.io/metallb/docs'
+    downstream: charmed-kubernetes/metallb-operator
+    store: 'https://charmhub.io/metallb'
+    summary: Metallb loadbalancer charm
+    tags:
+      - k8s
+      - docs-extra
+      - metallb
+    upstream: 'https://github.com/charmed-kubernetes/metallb-operator.git'
+    channel-range:
+      min: '1.28'
 - metallb-controller:
     bugs: 'https://bugs.launchpad.net/operator-metallb'
     docs: 'https://charmhub.io/metallb-controller/docs'
@@ -430,6 +443,8 @@
       - metallb
       - metallb-controller
     upstream: 'https://github.com/charmed-kubernetes/metallb-operator.git'
+    channel-range:
+      max: '1.27'
 - metallb-speaker:
     bugs: https://bugs.launchpad.net/operator-metallb'
     docs: 'https://charmhub.io/metallb-speaker/docs'
@@ -443,6 +458,8 @@
       - metallb
       - metallb-speaker
     upstream: 'https://github.com/charmed-kubernetes/metallb-operator.git'
+    channel-range:
+      max: '1.27'
 - multus:
     bugs: 'https://bugs.launchpad.net/charm-multus'
     docs: 'https://charmhub.io/multus/docs'
