@@ -438,9 +438,7 @@
     subdir: charms/metallb-controller
     summary: Controller charm for the metallb loadbalancer
     tags:
-      - k8s
       - docs-extra
-      - metallb
       - metallb-controller
     upstream: 'https://github.com/charmed-kubernetes/metallb-operator.git'
     channel-range:
@@ -453,9 +451,7 @@
     subdir: charms/metallb-speaker
     summary: Speaker charm for the metallb loadbalancer
     tags:
-      - k8s
       - docs-extra
-      - metallb
       - metallb-speaker
     upstream: 'https://github.com/charmed-kubernetes/metallb-operator.git'
     channel-range:
