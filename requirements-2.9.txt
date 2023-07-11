@@ -63,7 +63,7 @@ docutils==0.16
     # via awscli
 drypy==1.0.1
     # via -r requirements.in
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via pytest
 flake8==6.0.0
     # via -r requirements.in
