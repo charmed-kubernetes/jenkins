@@ -439,7 +439,6 @@
     summary: Controller charm for the metallb loadbalancer
     tags:
       - docs-extra
-      - metallb
       - metallb-controller
     upstream: 'https://github.com/charmed-kubernetes/metallb-operator.git'
     channel-range:
