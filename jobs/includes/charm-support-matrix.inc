@@ -3,7 +3,7 @@
     bugs: 'https://bugs.launchpad.net/charm-calico'
     build-resources: 'cd {out_path}; bash {src_path}/build-calico-resource.sh'
     docs: 'https://charmhub.io/calico/docs'
-    downstream: charmed-kubernetes/calico-charm.git
+    downstream: charmed-kubernetes/charm-calico.git
     store: 'https://charmhub.io/calico'
     summary: A robust Software Defined Network from Project Calico
     architectures: [amd64, arm64]
@@ -12,7 +12,7 @@
       - calico
       - core
       - cni
-    upstream: 'https://github.com/charmed-kubernetes/calico-charm.git'
+    upstream: 'https://github.com/charmed-kubernetes/charm-calico.git'
 - canal:
     bugs: 'https://bugs.launchpad.net/charm-canal'
     build-resources: 'cd {out_path}; bash {src_path}/build-canal-resources.sh'
