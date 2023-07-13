@@ -1478,7 +1478,7 @@ class TestCeph:
         # create pod that writes to a pv from ceph
         kwds = dict(debug_open=log_open)
         if storage_class == "cephfs":
-            kwds["provisioner"] = "cephfs-provisioner"
+            kwds["provisioner"] = "csi-cephfsplugin-provisioner"
         else:
             kwds["provisioner"] = "csi-rbdplugin-provisioner"
 
@@ -2524,8 +2524,13 @@ async def ceph_apps(model, tools):
     elif series_idx > SERIES_ORDER.index("jammy"):
         pytest.fail("ceph_charm_channel is undefined past jammy")
 
-    if any(a in model.applications for a in ["ceph-mon", "ceph-osd"]):
-        pytest.skip("Skipped since ceph apps are already installed")
+    all_apps = ["ceph-mon", "ceph-osd", "ceph-fs"]
+    if any(a in model.applications for a in all_apps):
+        # allow currently deployed ceph apps to run tests
+        mon, osd, fs = (model.applications[a] for a in all_apps)
+        await model.wait_for_idle(status="active", timeout=20 * 60)
+        yield dict(mon=mon, osd=osd, fs=fs)
+        return
 
     log.info("deploying ceph mon")
     ceph_mon = await model.deploy(
