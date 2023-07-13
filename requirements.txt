@@ -331,7 +331,7 @@ watchdog==3.0.0
     # via mkdocs
 wcwidth==0.2.6
     # via prettytable
-websocket-client==1.5.1
+websocket-client==1.6.1
     # via kubernetes
 websockets==8.1 ; python_version == "3.8"
 websockets>=9.0,<10.0 ; python_version == "3.9"
