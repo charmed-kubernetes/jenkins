@@ -1045,14 +1045,15 @@ async def test_service_cidr_expansion(model):
     await app.set_config(new_config)
     await wait_for_process(model, service_cluster_ip_range)
 
-    cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get service kubernetes"
-    control_plane = model.applications["kubernetes-control-plane"].units[0]
-    output = await juju_run(control_plane, cmd, check=False)
+    output = await kubectl(model, "get service kubernetes")
     assert output.status == "completed"
 
     # Check if k8s service ip is changed as per new service cidr
     raw_output = output.stdout
     assert new_service_ip_str in raw_output
+
+    # Wait for the model to be stable
+    await model.wait_for_idle(status="active", timeout=10 * 60)
 
 
 async def test_sans(model):
