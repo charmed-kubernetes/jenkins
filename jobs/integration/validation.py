@@ -2527,6 +2527,9 @@ async def ceph_apps(model, tools):
 
     all_apps = ["ceph-mon", "ceph-osd", "ceph-fs"]
     if any(a in model.applications for a in all_apps):
+        if not tools.use_existing_ceph_apps:
+            pytest.skip("Skipped since ceph apps are already installed")
+
         # allow currently deployed ceph apps to run tests
         mon, osd, fs = (model.applications[a] for a in all_apps)
         await model.wait_for_idle(status="active", timeout=20 * 60)
