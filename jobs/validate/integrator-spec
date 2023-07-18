@@ -75,9 +75,16 @@ EOF
     channel: $JUJU_DEPLOY_CHANNEL
     num_units: 1
     trust: true
+  aws-cloud-provider:
+    charm: aws-cloud-provider
+    channel: $JUJU_DEPLOY_CHANNEL
 relations:
   - ['aws-integrator', 'kubernetes-control-plane:aws']
   - ['aws-integrator', 'kubernetes-worker:aws']
+  - ['aws-cloud-provider:certificates', 'easyrsa:client']
+  - ['aws-cloud-provider:kube-control', 'kubernetes-control-plane:kube-control']
+  - ['aws-cloud-provider:aws-integration', 'aws-integrator:aws']
+  - ['aws-cloud-provider:external-cloud-provider', 'kubernetes-control-plane:external-cloud-provider']
 EOF
     elif [ "$JUJU_CLOUD" = "google/us-east1" ]; then
       # Deploy google
