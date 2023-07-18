@@ -374,8 +374,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.28/edge   # development channel snaps
-            - 1.27/stable # previous stable snaps
+            - 1.28/edge
+            - 1.27/edge
       - axis:
           type: user-defined
           name: cloud
