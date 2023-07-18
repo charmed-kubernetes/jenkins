@@ -103,7 +103,9 @@ function test::execute
                 --addons-model addons
     ret=$?
     is_pass="True"
-    if (( $ret > 0 )); then
+    if (( ret == 124 )); then
+        is_pass="Timeout"
+    elif (( ret > 0 )); then
         is_pass="False"
     fi
 }

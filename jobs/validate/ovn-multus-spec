@@ -100,7 +100,9 @@ function test::execute
                 -k "not test_service_cidr_expansion"  # Skipped due to LP#2020704
     ret=$?
     is_pass="True"
-    if (( $ret > 0 )); then
+    if (( ret == 124 )); then
+        is_pass="Timeout"
+    elif (( ret > 0 )); then
         is_pass="False"
     fi
 }
