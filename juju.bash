@@ -47,7 +47,11 @@ function juju::pip::2.9
     if juju::version_2; then
         echo "juju 2.9 environment detected"
         echo "Pinning back python libjuju before starting tests"
-        pip-sync "requirements-2.9.txt"
+        venv/bin/tox --recreate -e juju29 --notest
+
+        set +u
+        source .tox/juju29/bin/activate
+        set -u
     fi
 }
 
