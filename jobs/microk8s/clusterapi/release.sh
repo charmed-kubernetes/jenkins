@@ -139,6 +139,8 @@ then
     export AWS_CONTROL_PLANE_MACHINE_FLAVOR=t3.large
     export AWS_NODE_MACHINE_FLAVOR=t3.large
     export UPGRADE_STRATEGY=InPlaceUpgrade
+    export SNAP_CONFINEMENT=classic
+    export SNAP_RISKLEVEL=stable
 
     # Create a cluster
     export CLUSTER_NAME="test-ci-cluster"
