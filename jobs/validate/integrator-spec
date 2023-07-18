@@ -145,6 +145,9 @@ function test::execute
     declare -n is_pass=$1
     timeout -s INT 1h pytest \
         --html="report.html" \
+        --json-report \
+        --json-report-summary \
+        --json-report-file="report.json" \
         --full-trace \
         jobs/integration/test_integrator_charm.py \
         --cloud "$JUJU_CLOUD" \
