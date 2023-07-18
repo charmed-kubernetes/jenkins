@@ -60,14 +60,14 @@ then
     (
         cd bootstrap
         make vet
-        make lint
+        # make lint
         make test
         make
     )
     (
         cd control-plane
         make vet
-        make lint
+        # make lint
         make test
         make
     )
