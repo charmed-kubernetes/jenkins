@@ -10,7 +10,7 @@ jobs:
 
   build:
     name: Verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python:
@@ -26,8 +26,10 @@ jobs:
           cache: 'pip'
       - name: Install deps
         run: |
+          pip install tox
+          python3 -m tox --recreate -e test --notest
           sudo snap install charmcraft --classic
-          python -m pip install --upgrade pip
-          pip install pip-tools -r requirements.txt
       - name: Test
-        run: PYTHONPATH=$PYTHONPATH:$(pwd) invoke test
+        run: |
+          python3 -m tox -e test
+

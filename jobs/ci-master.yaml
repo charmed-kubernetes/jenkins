@@ -352,11 +352,11 @@
           set +o allexport
 
           python3 -m venv venv
-          venv/bin/python -m pip install pip-tools wheel
-          venv/bin/pip-sync requirements.txt
+          venv/bin/python -m pip install tox
+          venv/bin/tox --recreate -e py --notest
 
           set +u
-          source venv/bin/activate
+          source .tox/py/bin/activate
           set -u
 
           {COMMAND}
@@ -374,7 +374,7 @@
           set +o allexport
 
           sudo rm -rf /usr/local/bin/aws
-          python3.8 -m venv venv
+          python3 -m venv venv
           venv/bin/python -m pip install tox wheel
 
           set +u
@@ -394,12 +394,12 @@
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
 
-          python3.8 -m venv venv
-          venv/bin/python -m pip install pip-tools wheel
-          venv/bin/pip-sync requirements.txt
+          python3 -m venv venv
+          venv/bin/python -m pip install tox
+          venv/bin/tox --recreate -e py --notest
 
           set +u
-          source venv/bin/activate
+          source .tox/py/bin/activate
           set -u
 
           {COMMAND}
