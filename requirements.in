@@ -23,6 +23,7 @@ requests
 pymacaroons
 pyyaml>=5.1.2
 pytest-asyncio
+pytest-json-report
 pytest-html
 pytest-mock
 flaky
