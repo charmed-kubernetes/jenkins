@@ -27,7 +27,8 @@ jobs:
       - name: Install deps
         run: |
           sudo snap install charmcraft --classic
-          python -m pip install --upgrade pip
-          pip install pip-tools -r requirements.txt
+          tox -e test --recreate --notest
       - name: Test
-        run: PYTHONPATH=$PYTHONPATH:$(pwd) invoke test
+        run: |
+          tox -e test
+
