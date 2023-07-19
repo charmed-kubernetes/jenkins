@@ -49,9 +49,7 @@ function juju::pip::2.9
         echo "Pinning back python libjuju before starting tests"
         venv/bin/tox --recreate -e juju29 --notest
 
-        set +u
         source .tox/juju29/bin/activate
-        set -u
     fi
 }
 
