@@ -20,7 +20,7 @@
             {% for day in row[1:] %}
             <td class="text-center align-middle" {%- if day.bg_color %}style="background-color: {{day.bg_color}}"{% endif %}>
               {% if day.index %}
-              <a class="download-link" href="{{day.index}}" host="{{day.debug_host}}" job_id="{{day.job_id}}" onmouseover="load_report_hover(this, '{{day.hover_text}}')">
+              <a class="download-link" href="{{day.index}}" job_id="{{day.job_id}}" onmouseover="load_report_hover(this, '{{day.hover_text}}')">
                 <i class="fas {{day.font_awesome_icon or 'fa-file-alt'}}"></i>
               </a>
               {% elif day.artifacts %}

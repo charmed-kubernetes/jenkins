@@ -82,7 +82,7 @@
       function load_report_hover(report, title) {
         report.title = title;
         let job_id = report.getAttribute("job_id");
-        let url = `${report.getAttribute("host")}/${job_id}/report.json`;
+        let url = `${job_id}/report.json`;
         $.getJSON(url, function(resp) {
           let summary = resp.summary;
           let addition = JSON.stringify(summary, Object.keys(summary).sort());
