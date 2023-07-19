@@ -118,6 +118,13 @@ def pytest_addoption(parser):
         help="Proxy Juju SSH and SCP commands through the Juju controller",
     )
 
+    parser.addoption(
+        "--use-existing-ceph-apps",
+        action="store_true",
+        default=False,
+        help="Run ceph tests against existing ceph apps in the model",
+    )
+
 
 class Tools:
     """Utility class for accessing juju related tools"""
@@ -148,6 +155,9 @@ class Tools:
         self.charm_channel = request.config.getoption("--charm-channel")
         self.vault_unseal_command = request.config.getoption("--vault-unseal-command")
         self.juju_ssh_proxy = request.config.getoption("--juju-ssh-proxy")
+        self.use_existing_ceph_apps = request.config.getoption(
+            "--use-existing-ceph-apps"
+        )
 
     def juju_base(self, series):
         """Retrieve juju 3.1 base from series."""
