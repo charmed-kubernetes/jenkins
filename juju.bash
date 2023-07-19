@@ -84,10 +84,7 @@ function juju::bootstrap
          --model-default logging-config="<root>=DEBUG" \
          $extra_args
 
-    ret=$?
-    if (( ret > 0 )); then
-        exit "$ret"
-    fi
+    juju::deploy-report $?
 }
 
 function juju::deploy::before
