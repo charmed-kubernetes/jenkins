@@ -33,12 +33,12 @@ REPORT_HOST = "https://jenkaas.s3.amazonaws.com"
 
 
 class Storage:
-    def __init__(self, numdays=30):
+    def __init__(self, numdays=None):
+        numdays = numdays or 30
         self.objects = self.get_all_s3_prefixes(numdays)
 
     def get_all_s3_prefixes(self, numdays=30):
-        """ Grabs all s3 prefixes for at most `numdays`
-        """
+        """Grabs all s3 prefixes for at most `numdays`"""
         date_of_last = datetime.today() - timedelta(days=numdays)
         date_of_last = date_of_last.strftime("%Y-%m-%d")
         output = run.capture(
@@ -51,7 +51,7 @@ class Storage:
 
     @property
     def reports(self):
-        """ Return mapping of report files."""
+        """Return mapping of report files."""
         _report_map = defaultdict(list)
         for item in self.objects:
             key_p = Path(item["Key"])
@@ -59,9 +59,7 @@ class Storage:
                 (
                     key_p.name,
                     int(item["Size"]),
-                    datetime.strptime(
-                        item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z"
-                    ),
+                    datetime.strptime(item["LastModified"], "%Y-%m-%dT%H:%M:%S.000Z"),
                 )
             )
         return _report_map
@@ -88,8 +86,7 @@ def get_file_prefix(prefix, files, normalize=True):
 
 
 def _gen_days(numdays=30):
-    """ Generates last numdays, date range
-    """
+    """Generates last numdays, date range"""
     base = datetime.today()
     date_list = [
         (base - timedelta(days=x)).strftime("%Y-%m-%d") for x in range(0, numdays)
@@ -132,16 +129,15 @@ def get_data():
     return items
 
 
-def _gen_metadata():
-    """ Generates metadata
-    """
-    _storage = Storage()
+def _gen_metadata(numdays=None):
+    """Generates metadata"""
+    _storage = Storage(numdays)
     db = OrderedDict()
     debug_host_url = "https://jenkaas.s3.amazonaws.com"
 
     for prefix_id, files in _storage.reports.items():
         prefix_id = str(prefix_id)
-        if 'meta' in prefix_id:
+        if "meta" in prefix_id:
             prefix_id = prefix_id.split("/")[0]
 
         obj = {}
@@ -152,14 +148,11 @@ def _gen_metadata():
         if not job_name:
             continue
 
-        test_result, _, obj["build_endtime"] = get_file_prefix("result-", files)
+        obj["test_result"], _, obj["build_endtime"] = get_file_prefix("result-", files)
         if not obj["build_endtime"]:
             continue
-        obj["test_result"] = True if test_result == "True" else False
 
-        deploy_result, _, _ = get_file_prefix("deployresult-", files)
-        obj["deploy_result"] = True if deploy_result == "True" else False
-
+        obj["deploy_result"], _, _ = get_file_prefix("deployresult-", files)
 
         # Validate jobs are now cloud-specific; drop old jobs from the report
         if "validate-ck-amd64" in job_name:
@@ -175,22 +168,29 @@ def _gen_metadata():
         if job_name not in db:
             db[job_name] = {}
 
-        if obj["test_result"]:
-            result_btn_class = "btn-success"
-            result_bg_class = "bg-success"
-            result_bg_color = "#00cc00!important;"
-        elif obj["deploy_result"]:
-            result_bg_class = "bg-warning"
-            result_btn_class = "btn-warning"
-            result_bg_color = "#FFFF00!important;"
+        if obj["deploy_result"] == "False":
+            hover_text = "Deploy Failed"  # juju deploy failed
+            result_bg_color = "#ff0000!important;"
+        elif obj["deploy_result"] == "Timeout":
+            hover_text = "Deploy Timeout"  # juju deployment timedout
+            result_bg_color = "#7700ff!important;"
+        elif obj["deploy_result"] == "True" and obj["test_result"] == "Timeout":
+            hover_text = "Test Timeout"  # juju deploys, tests timeout
+            result_bg_color = "#ff7700!important;"
+        elif obj["deploy_result"] == "True" and obj["test_result"] == "False":
+            hover_text = "Test Failures"  # juju deploys, tests failed
+            result_bg_color = "#ffff00!important;"
+        elif obj["deploy_result"] == "True" and obj["test_result"] == "True":
+            hover_text = "Test Pass"  # juju deploys, tests pass
+            result_bg_color = "#00ff00!important;"
+            obj["font_awesome_icon"] = "fa-laugh-squint"
         else:
-            result_bg_class = "bg-danger"
-            result_btn_class = "btn-danger"
-            result_bg_color = "#ff0018!important;"
+            result, deploy = obj["test_result"], obj["deploy_result"]
+            hover_text = f"Unknown status deploy={deploy} result={result}"
+            result_bg_color = "#00ffff!important;"  # dunno what happened?
 
-        obj["bg_class"] = result_bg_class
-        obj["btn_class"] = result_btn_class
         obj["bg_color"] = result_bg_color
+        obj["hover_text"] = hover_text
 
         day = obj["build_endtime"].strftime("%Y-%m-%d")
         if day not in db[job_name]:
@@ -200,10 +200,10 @@ def _gen_metadata():
 
 
 def _gen_rows():
-    """ Generates reports
-    """
-    days = _gen_days(15)
-    metadata = _gen_metadata()
+    """Generates reports"""
+    numdays = 15
+    days = _gen_days(numdays)
+    metadata = _gen_metadata(numdays)
     rows = []
     for jobname, jobdays in sorted(metadata.items()):
         sub_item = [jobname]
@@ -238,8 +238,7 @@ def cli():
 @click.option("--metadata-db", help="Database of job metadata")
 @click.option("--columbo-json", help="JSON report of Columbo results")
 def job_result(job_id, metadata_db, columbo_json):
-    """ Creates a report file of the finished job
-    """
+    """Creates a report file of the finished job"""
     db = KV(metadata_db)
     columbo_data = json.loads(Path(columbo_json).read_text())
     if Path("report.html").exists():
@@ -264,8 +263,7 @@ def job_result(job_id, metadata_db, columbo_json):
 @cli.command()
 @click.option("--job-id", help="ID of Job to parse")
 def job_info(job_id):
-    """ Get metadata info for job
-    """
+    """Get metadata info for job"""
     url = f"{REPORT_HOST}/{job_id}/metadata.json"
     log.info(f"{job_id} :: Downloading {url}")
     has_metadata = requests.get(url)
@@ -281,22 +279,21 @@ def job_info(job_id):
 @cli.command()
 @click.option("--max-days", help="Max number of previous days to report on", default=15)
 def sync_missing_reports(max_days):
-    """ syncs reports that are missing
-    """
+    """syncs reports that are missing"""
     obj = Storage(numdays=int(max_days))
     table = PrettyTable()
     table.field_names = ["ID", "Index HTML", "Metadata JSON", "Columbo JSON"]
     table.align = "l"
 
     for prefix_id, files in obj.reports.items():
-        if 'meta' in str(prefix_id):
+        if "meta" in str(prefix_id):
             continue
 
         has_index_html = has_file("index.html", files)
         if has_index_html:
             continue
 
-        os.environ['JOB_ID'] = str(prefix_id)
+        os.environ["JOB_ID"] = str(prefix_id)
         has_metadata_json = has_file("metadata.json", files)
         has_columbo_json = has_file("columbo-report.json", files)
         if has_metadata_json and has_columbo_json:
@@ -316,7 +313,9 @@ def sync_missing_reports(max_days):
             )
             run.cmd_ok(f"rm -rf {html_p}")
         try:
-            table.add_row([prefix_id, has_index_html, has_metadata_json, has_columbo_json])
+            table.add_row(
+                [prefix_id, has_index_html, has_metadata_json, has_columbo_json]
+            )
         except KeyError as e:
             click.echo(e)
     click.echo(table)
@@ -326,8 +325,7 @@ def sync_missing_reports(max_days):
 @click.option("--max-days", help="Max number of previous days to report on", default=10)
 @click.option("--job-filter", help="Job to filter on")
 def summary(max_days, job_filter):
-    """ Get summary of last X days
-    """
+    """Get summary of last X days"""
     obj = Storage(numdays=int(max_days))
     table = PrettyTable()
     table.field_names = ["Job", "Test Result", "Date"]
@@ -358,8 +356,7 @@ def summary(max_days, job_filter):
 
 @cli.command()
 def migrate():
-    """ Migrate dynamodb data
-    """
+    """Migrate dynamodb data"""
     data = get_data()
 
     def _migrate(obj):
@@ -397,8 +394,7 @@ def migrate():
 
 @cli.command()
 def build():
-    """ Generate a report
-    """
+    """Generate a report"""
     tmpl = html.template("index.html")
 
     ci_results_context = {

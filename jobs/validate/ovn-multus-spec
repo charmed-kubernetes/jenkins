@@ -88,6 +88,9 @@ function test::execute
     declare -n is_pass=$1
     timeout -s INT 2h pytest \
                 --html="report.html" \
+                --json-report \
+                --json-report-summary \
+                --json-report-file="report.json" \
                 --full-trace \
                 jobs/integration/validation.py \
                 --cloud "$JUJU_CLOUD" \
@@ -97,7 +100,9 @@ function test::execute
                 -k "not test_service_cidr_expansion"  # Skipped due to LP#2020704
     ret=$?
     is_pass="True"
-    if (( $ret > 0 )); then
+    if (( ret == 124 )); then
+        is_pass="Timeout"
+    elif (( ret > 0 )); then
         is_pass="False"
     fi
 }

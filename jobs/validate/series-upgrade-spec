@@ -21,6 +21,9 @@ function test::execute
     declare -n is_pass=$1
     timeout -s INT 3h pytest \
                 --html="report.html" \
+                --json-report \
+                --json-report-summary \
+                --json-report-file="report.json" \
                 --full-trace \
                 jobs/integration/validation.py \
                 --is-series-upgrade \
@@ -29,7 +32,9 @@ function test::execute
                 --controller "$JUJU_CONTROLLER"
     ret=$?
     is_pass="True"
-    if (( $ret > 0 )); then
+    if (( ret == 124 )); then
+        is_pass="Timeout"
+    elif (( ret > 0 )); then
         is_pass="False"
     fi
 }

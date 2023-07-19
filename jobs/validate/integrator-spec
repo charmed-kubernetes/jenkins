@@ -152,6 +152,9 @@ function test::execute
     declare -n is_pass=$1
     timeout -s INT 1h pytest \
         --html="report.html" \
+        --json-report \
+        --json-report-summary \
+        --json-report-file="report.json" \
         --full-trace \
         jobs/integration/test_integrator_charm.py \
         --cloud "$JUJU_CLOUD" \
@@ -160,7 +163,9 @@ function test::execute
         --charm-channel="$JUJU_DEPLOY_CHANNEL"
     ret=$?
     is_pass="True"
-    if (( $ret > 0 )); then
+    if (( ret == 124 )); then
+        is_pass="Timeout"
+    elif (( ret > 0 )); then
         is_pass="False"
     fi
 

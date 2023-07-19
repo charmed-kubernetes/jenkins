@@ -56,7 +56,9 @@ function test::execute
       --plugin-env=e2e.E2E_EXTRA_ARGS="--non-blocking-taints=node-role.kubernetes.io/control-plane --ginkgo.v" 2>&1
     ret=$?
     is_pass="True"
-    if (( $ret > 0 )); then
+    if (( ret == 124 )); then
+        is_pass="Timeout"
+    elif (( ret > 0 )); then
         is_pass="False"
     fi
 }

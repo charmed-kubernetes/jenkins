@@ -140,6 +140,9 @@ function test::execute
     declare -n is_pass=$1
     timeout -s INT 3h pytest \
         --html="report.html" \
+        --json-report \
+        --json-report-summary \
+        --json-report-file="report.json" \
         --full-trace \
         jobs/integration/validation.py \
         --cloud "$JUJU_CLOUD" \
@@ -149,7 +152,9 @@ function test::execute
     
     ret=$?
     is_pass="True"
-    if (( ret > 0 )); then
+    if (( ret == 124 )); then
+        is_pass="Timeout"
+    elif (( ret > 0 )); then
         is_pass="False"
     fi
 }
@@ -191,6 +196,7 @@ function test::capture
     python -c "import json; import kv; print(json.dumps(dict(kv.KV('metadata.db'))))" | tee "metadata.json"
     python bin/s3 cp "metadata.json" metadata.json || true
     python bin/s3 cp "report.html" report.html || true
+    python bin/s3 cp "report.json" report.json || true
     python bin/s3 cp "metadata.db" metadata.db || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 
