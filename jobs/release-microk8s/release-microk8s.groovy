@@ -68,7 +68,7 @@ pipeline {
         stage("Setup tox environment") {
             steps {
                 sh """
-                tox -c jobs/microk8s/tox.ini --workdir jobs/microk8s/.tox -e py38 -- python -c 'print("Tox Environment Ready")'
+                tox -c jobs/microk8s/tox.ini -e py38 -- python -c 'print("Tox Environment Ready")'
                 """
             }
         }
@@ -94,7 +94,7 @@ pipeline {
 
                                 try {
                                     sh """
-                                    . .tox/py38/bin/activate
+                                    . jobs/microk8s/.tox/py38/bin/activate
                                     ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
                                         TRACKS=${params.TRACKS}\
                                         CHANNEL=${channel}\
@@ -153,7 +153,7 @@ pipeline {
                                 }
                                 try {
                                     sh """
-                                    . .tox/py38/bin/activate
+                                    . jobs/microk8s/.tox/py38/bin/activate
                                     DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
                                         TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS}\
                                         PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0\
