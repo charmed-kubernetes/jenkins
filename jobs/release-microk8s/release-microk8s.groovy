@@ -68,7 +68,7 @@ pipeline {
         stage("Setup tox environment") {
             steps {
                 sh """
-                tox -c jobs/microk8s/tox.ini --workdir .tox -e py38 -- python -c 'print("Tox Environment Ready")'
+                tox -c jobs/microk8s/tox.ini --workdir jobs/microk8s/.tox -e py38 -- python -c 'print("Tox Environment Ready")'
                 """
             }
         }
