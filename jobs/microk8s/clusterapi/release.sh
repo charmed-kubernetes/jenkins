@@ -138,7 +138,11 @@ then
     export AWS_PUBLIC_IP=false
     export AWS_CONTROL_PLANE_MACHINE_FLAVOR=t3.large
     export AWS_NODE_MACHINE_FLAVOR=t3.large
+
+    # Optional varibles
     export UPGRADE_STRATEGY=InPlaceUpgrade
+    export SNAP_RISKLEVEL="stable"
+    export SNAP_CONFINEMENT="classic"
 
     # Create a cluster
     export CLUSTER_NAME="test-ci-cluster"
