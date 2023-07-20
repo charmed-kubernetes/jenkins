@@ -2410,6 +2410,7 @@ async def nagios(model, tools):
 
 
 @pytest.mark.skip_if_version(lambda v: v < (1, 17))
+@pytest.mark.clouds(["vsphere"]) # bionic image no longer deployable on ec2 cloud
 async def test_nagios(model, nagios: NagiosApi):
     """This test verifies the nagios relation is working
     properly. This requires:
