@@ -1,5 +1,3 @@
-@Library('juju-pipeline@master') _
-
 
 def destroy_controller(controller) {
     return """#!/bin/bash
@@ -22,7 +20,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH                 = "${utils.cipaths}"
+        PATH                 = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
         AWS_REGION           = "us-east-1"
         JUJU_CLOUD           = "aws/us-east-1"
         K8STEAMCI            = credentials('k8s_team_ci_lp')
