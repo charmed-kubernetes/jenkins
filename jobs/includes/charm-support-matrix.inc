@@ -41,7 +41,7 @@
     channel-range:
       min: '1.25'
 - cinder-csi:
-    bugs: 'https://launchpad.net/charm-cinder-csi'
+    bugs: 'https://bugs.launchpad.net/charm-cinder-csi'
     docs: 'https://charmhub.io/cinder-csi/docs'
     downstream: charmed-kubernetes/cinder-csi-operator.git
     store: 'https://charmhub.io/cinder-csi'
@@ -493,6 +493,7 @@
     upstream: >-
       https://github.com/charmed-kubernetes/charm-sriov-network-device-plugin.git
 - coredns:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-coredns'
     docs: 'https://charmhub.io/coredns/docs'
     downstream: charmed-kubernetes/charm-coredns
