@@ -23,7 +23,7 @@ from io import BytesIO
 import zipfile
 from pathlib import Path
 from cilib.github_api import Repository
-from enum import StrEnum, auto
+from enum import Enum, unique
 from sh.contrib import git
 from cilib.git import default_gh_branch
 from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_SERIES_MAP, K8S_CHARM_SUPPORT_ARCHES
@@ -33,7 +33,6 @@ from cilib.version import ChannelRange, Release, RISKS
 from dataclasses import dataclass, field
 from functools import partial
 from datetime import datetime
-from enum import Enum
 from types import SimpleNamespace
 from typing import List, Mapping, Optional, Set
 
@@ -118,6 +117,7 @@ class BuildException(Exception):
     """Define build Exception."""
 
 
+@unique
 class BuildType(Enum):
     """Enumeration for the build type."""
 
@@ -125,6 +125,7 @@ class BuildType(Enum):
     BUNDLE = 2
 
 
+@unique
 class LayerType(Enum):
     """Enumeration for the layer type."""
 
@@ -546,18 +547,20 @@ class BuildEnv:
         self.db["pull_layer_manifest"] = list(results)
 
 
-class Arch(StrEnum):
-    ALL = auto()
-    AMD64 = auto()
-    ARM64 = auto()
-    ARMHF = auto()
-    PPC64EL = auto()
-    S390X = auto()
+@unique
+class Arch(Enum):
+    ALL = "all"
+    AMD64 = "amd64"
+    ARM64 = "arm64"
+    ARMHF = "armhf"
+    PPC64EL = "ppc64el"
+    S390X = "s390x"
 
 
-class ResourceKind(StrEnum):
-    FILEPATH = auto()
-    IMAGE = auto()
+@unique
+class ResourceKind(Enum):
+    FILEPATH = "filepath"
+    IMAGE = "image"
 
 
 @dataclass
