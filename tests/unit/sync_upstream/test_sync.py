@@ -32,6 +32,7 @@ def test_sync_default_branch(mock_default_gh, mock_base, sync):
 @mock.patch("cilib.git.default_gh_branch", mock.MagicMock(return_value=None))
 def test_sync_no_default_branch(mock_base, sync):
     """Tests the repo default branch helper which runs when syncing forks."""
+    mock_base.git_user, mock_base.password = "git-user", "git-password"
     result = sync.CharmRepoModel.default_gh_branch(mock_base, remote="test/repo")
     assert result == "master"
 

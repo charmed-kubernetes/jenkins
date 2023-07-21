@@ -1,5 +1,4 @@
 import click
-import sh
 import traceback
 from sh.contrib import git
 
@@ -76,14 +75,16 @@ def build(
         "force": force,
     }
     build_env.clean()
-    # build_env.pull_layers()
+    build_env.pull_layers()
 
     entities = []
     for charm_map in build_env.job_list:
         for charm_name, charm_opts in charm_map.items():
             if any(tag in build_env.filter_by_tag for tag in charm_opts["tags"]):
                 cls = (
-                    LPBuildEntity if charm_opts.get("builder") == "launchpad" else BuildEntity
+                    LPBuildEntity
+                    if charm_opts.get("builder") == "launchpad"
+                    else BuildEntity
                 )
                 charm_entity = cls(build_env, charm_name, charm_opts)
                 entities.append(charm_entity)
@@ -98,7 +99,7 @@ def build(
             entity.echo(f"Details: {entity}")
 
             if not build_env.force:
-                if not entity.has_changed:
+                if not entity.charm_changes:
                     continue
             else:
                 entity.echo("Build forced.")
@@ -107,6 +108,7 @@ def build(
             entity.resource_build()
             for each in entity.artifacts:
                 entity.push(each)
+                entity.resource_build(each)
                 entity.assemble_resources(each)
                 entity.release(each, to_channels=build_env.to_channels)
         except Exception:
@@ -198,12 +200,12 @@ def build_bundles(
                 # Bundles are built easily, but it's pointless to push the bundle
                 # if the crcs of each file in the bundle zips are the same
                 for artifact in entity.artifacts:
-                    if build_env.force or entity.has_changes(artifact):
+                    if build_env.force or entity.bundle_differs(artifact):
                         entity.echo(
                             f"Pushing built bundle for channel={channel} (forced={build_env.force})."
                         )
                         entity.push(artifact)
-                        entity.promote(artifact, to_channels=[channel])
+                        entity.release(artifact, to_channels=[channel])
                 entity.reset_artifacts()
         finally:
             entity.echo("Stopping")

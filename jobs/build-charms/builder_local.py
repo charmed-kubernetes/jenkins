@@ -23,7 +23,6 @@ from io import BytesIO
 import zipfile
 from pathlib import Path
 from cilib.github_api import Repository
-from collections import defaultdict
 from enum import StrEnum, auto
 from sh.contrib import git
 from cilib.git import default_gh_branch
@@ -294,7 +293,7 @@ class _CharmHub(Charmcraft):
         resource_rev_args = [
             f"--resource={rsc.name}:{rsc.rev}" for rsc in artifact.resources
         ]
-        args = [entity, rev_args] + resource_rev_args + channel_args
+        args = [entity, rev_args] + channel_args + resource_rev_args
         self.charmcraft.release(*args)
 
     def promote(self, charm_entity, from_channel, to_channels):
@@ -722,8 +721,8 @@ class BuildEntity:
         return version_id
 
     @property
-    def has_changed(self):
-        """Determine if the charm/layers commits have changed since last publish."""
+    def charm_changes(self):
+        """Determine if any charm|layers commits have changed since last publish."""
         local = self.version_identification("local")
         remote = self.version_identification("remote")
 
@@ -955,7 +954,7 @@ class BundleBuildEntity(BuildEntity):
         self.type = "Bundle"
         self.src_path = str(self.opts["src_path"])
 
-    def has_changes(self, artifact: Artifact):
+    def bundle_differs(self, artifact: Artifact):
         """Determine if this bundle has changes to include in a new push."""
         remote_bundle = self.download(None)
         if not remote_bundle:
@@ -1017,7 +1016,7 @@ class BundleBuildEntity(BuildEntity):
             }
             with charmcraft_yaml.open("w") as fp:
                 yaml.safe_dump(contents, fp)
-        bundle_path = str(Charmcraft(self).pack(_cwd=outputdir))
+        bundle_path = Charmcraft(self).pack(_cwd=outputdir)
         self.channel = to_channel
         self.artifacts.append(Artifact(Arch.ALL, bundle_path))
 

@@ -5,12 +5,24 @@ import pytest
 
 
 @pytest.fixture(scope="package")
-def charms():
+def builder_local():
     sys.path.append("jobs/build-charms")
-    charms = importlib.import_module("charms")
+    builder_local = importlib.import_module("builder_local")
 
-    yield charms
+    yield builder_local
 
     sys.path.remove("jobs/build-charms")
-    del sys.modules["charms"]
-    del charms
+    del sys.modules["builder_local"]
+    del builder_local
+
+
+@pytest.fixture(scope="package")
+def main():
+    sys.path.append("jobs/build-charms")
+    main = importlib.import_module("main")
+
+    yield main
+
+    sys.path.remove("jobs/build-charms")
+    del sys.modules["main"]
+    del main
