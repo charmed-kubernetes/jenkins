@@ -108,7 +108,6 @@ def build(
             entity.resource_build()
             for each in entity.artifacts:
                 entity.push(each)
-                entity.resource_build(each)
                 entity.assemble_resources(each)
                 entity.release(each, to_channels=build_env.to_channels)
         except Exception:

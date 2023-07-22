@@ -254,7 +254,7 @@ def test_build_entity_charm_build(
     artifact = charm_entity.artifacts[0]
     assert artifact.arch.value == "all"
     assert artifact.arch_docker == "amd64"
-    assert artifact.charm_or_bundle == str(K8S_CI_CHARM / "k8s-ci-charm.charm")
+    assert artifact.charm_or_bundle == K8S_CI_CHARM / "k8s-ci-charm.charm"
     charm_cmd.build.assert_called_once_with(
         "-r",
         "--force",
@@ -375,6 +375,7 @@ def test_build_entity_assemble_resources(
     charm_name, charm_opts = next(iter(charms[0].items()))
     charm_entity = builder_local.BuildEntity(charm_environment, charm_name, charm_opts)
     artifact = MagicMock()
+    artifact.charm_or_bundle = K8S_CI_CHARM
     artifact.resources = []
     charm_entity.assemble_resources(artifact)
 

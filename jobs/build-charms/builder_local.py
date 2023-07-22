@@ -751,8 +751,12 @@ class BuildEntity:
             git_commit = git("rev-parse", "HEAD", _cwd=self.src_path)
         return git_commit.strip()
 
-    def _read_metadata_resources(self):
-        metadata_path = Path(self.src_path) / "metadata.yaml"
+    def _read_metadata_resources(self, artifact: Artifact):
+        search_path = artifact.charm_or_bundle
+        if search_path.suffix == ".charm":
+            metadata_path = zipfile.Path(search_path) / "metadata.yaml"
+        else:
+            metadata_path = Path(search_path) / "metadata.yaml"
         metadata = yaml.safe_load(metadata_path.read_text())
         return metadata.get("resources", {})
 
@@ -780,7 +784,7 @@ class BuildEntity:
         """Perform a build against charm/bundle."""
         lxc = os.environ.get("charmcraft_lxc")
         ret = SimpleNamespace(ok=False)
-        charm_path = str(Path(self.src_path, f"{self.name}.charm"))
+        charm_path = Path(self.src_path, f"{self.name}.charm")
         if "override-build" in self.opts:
             self.echo("Override build found, running in place of charm build.")
             ret = script(
@@ -911,11 +915,12 @@ class BuildEntity:
             out_path=self._resource_path,
         )
 
-        for name, details in self._read_metadata_resources().items():
+        for name, details in self._read_metadata_resources(artifact).items():
             resource_fmt = self._resource_spec.get(name)
             if not resource_fmt:
                 # Reuse most recently uploaded resource
-                revs = _CharmHub(self).status(self.entity, name)
+                self.echo(f"Reuse current resource {name} ...")
+                revs = _CharmHub(self).resource_revisions(self.entity, name)
                 resource = CharmResource(name, rev=revs[0]["Revision"])
             elif details["type"] == "oci-image":
                 if upstream_source := details.get("upstream-source"):
