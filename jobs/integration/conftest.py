@@ -609,7 +609,12 @@ def xfail_if_open_bugs(request):
         return
     bugs = xfail_marker.args
     lp = LPClient()
-    lp.login()
+    try:
+        lp.login()
+    except ConnectionRefusedError:
+        log("Cannot connect to launchpad, xfail tests may end up as failures")
+        return
+
     for bug in bugs:
         for task in lp.bug(int(bug)).bug_tasks:
             if task.status not in ["Fix Released", "Won't Fix"]:

@@ -26,15 +26,23 @@ class Client:
     def login(self):
         if self._client:
             return self._client
-        parser = ConfigParser()
-        parser.read(self.creds)
-        self._client = Launchpad.login_with(
-            application_name=parser["1"]["consumer_key"],
-            service_root=self.stage,
-            launchpadlib_dir=self.cache,
-            version=self.version,
-            credentials_file=self.creds,
-        )
+        if self.creds:
+            parser = ConfigParser()
+            parser.read(self.creds)
+            self._client = Launchpad.login_with(
+                application_name=parser["1"]["consumer_key"],
+                service_root=self.stage,
+                launchpadlib_dir=self.cache,
+                version=self.version,
+                credentials_file=self.creds,
+            )
+        else:
+            self._client = Launchpad.login_anonymously(
+                "k8s-jenkaas-bot",
+                service_root=self.stage,
+                launchpadlib_dir=self.cache,
+                version=self.version,
+            )
 
     def owner(self, name):
         """Returns LP owner object"""
