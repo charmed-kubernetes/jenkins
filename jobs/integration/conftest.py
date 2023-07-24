@@ -603,18 +603,18 @@ async def k8s_version(model):
 
 
 @pytest.fixture(autouse=True)
-def skip_if_open_bugs(request):
-    skip_marker = request.node.get_closest_marker("skip_if_open_bugs")
-    if not skip_marker:
+def xfail_if_open_bugs(request):
+    xfail_marker = request.node.get_closest_marker("xfail_if_open_bugs")
+    if not xfail_marker:
         return
-    bugs = skip_marker.args
+    bugs = xfail_marker.args
     lp = LPClient()
     lp.login()
     for bug in bugs:
         for task in lp.bug(int(bug)).bug_tasks:
             if task.status not in ["Fix Released", "Won't Fix"]:
-                reason = f"skipping until LP#{bug} affecting '{task.bug_target_display_name}' is resolved: status='{task.status}'"
-                pytest.skip(reason)
+                reason = f"expect failure until LP#{bug} affecting '{task.bug_target_display_name}' is resolved: status='{task.status}'"
+                request.node.add_marker(pytest.mark.xfail(True, reason=reason))
 
 
 @pytest.fixture(autouse=True)
