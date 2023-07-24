@@ -8,19 +8,23 @@ import time
 import urllib.request
 import zipfile
 
+from configparser import ConfigParser
+from datetime import datetime
 from functools import cached_property
 from pathlib import Path
+from typing import List
 
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import NotFound
+from lazr.restfulclient.resource import Resource
 
 from builder_local import Arch, Artifact, BuildEntity, BuildException
 
 
 class LPBuildEntity(BuildEntity):
-    """The launchpad build data class.
+    """The launchpad builder entity class.
 
-    Builds charms on launchpad with charm recipes
+    Builds charms on launchpad with charm recipes, then downloads locally
     """
 
     SNAP_CHANNEL = {"charmcraft": "latest/stable"}
@@ -35,7 +39,7 @@ class LPBuildEntity(BuildEntity):
     }
 
     @staticmethod
-    def _recipe_from_branch(branch: str):
+    def _lp_recipe_from_branch(branch: str):
         """Recipe names must be lowercase alphanumerics with allowed +, -, and ."""
         subbed = re.sub(r"[^0-9a-zA-Z\+\-\.]+", "-", branch)
         return subbed.lower()
@@ -45,7 +49,8 @@ class LPBuildEntity(BuildEntity):
         self._lp_bugs = self.opts.get("bugs", "")
         self._lp_branch = self.branch
         self._lp_project_name = self._lp_bugs.rsplit("/")[-1]
-        self._lp_recipe_name = self._recipe_from_branch(self._lp_branch)
+        self._lp_recipe_name = self._lp_recipe_from_branch(self._lp_branch)
+        self._lp_build_log_cache = {}
 
         assert self.type == "Charm", "Only supports charm builds"
         assert "launchpad.net" in self._lp_bugs, "No associated with launchpad"
@@ -53,8 +58,10 @@ class LPBuildEntity(BuildEntity):
     @cached_property
     def _lp(self):
         creds = os.environ.get("LPCREDS", None)
+        parser = ConfigParser()
+        parser.read(creds)
         return Launchpad.login_with(
-            application_name="k8s-jenkaas-bot",
+            application_name=parser["1"]["consumer_key"],
             service_root="production",
             version="devel",
             credentials_file=creds,
@@ -97,7 +104,19 @@ class LPBuildEntity(BuildEntity):
             )
         return rec
 
-    def _lp_request_builds(self):
+    def _lp_build_log(self, build: Resource) -> str:
+        """Request the build log of a completed build."""
+        if build.buildstate in self.BUILD_STATES_PENDING:
+            return ""
+        if cache := self._lp_build_log_cache.get(build.self_link):
+            return cache
+
+        with urllib.request.urlopen(build.build_log_url) as f:
+            contents = zlib.decompress(f.read(), 16 + zlib.MAX_WBITS).splitlines()
+        self._lp_build_log_cache[build.self_link] = contents
+        return contents
+
+    def _lp_request_builds(self) -> List[Resource]:
         """Request a charm build for this charm."""
         req = self._lp_recipe.requestBuilds(channels=self.SNAP_CHANNEL)
         self.echo("Waiting for charm recipe request")
@@ -112,18 +131,21 @@ class LPBuildEntity(BuildEntity):
                 break
             time.sleep(1.0)
             req.lp_refresh()
-        return req.builds
+        return [build for build in req.builds]
 
-    def _lp_complete_builds(self, builds):
+    def _lp_complete_builds(self, builds: List[Resource]):
         """Ensure that all the builds of a specified charm are completed."""
         incomplete_builds = {_.self_link for _ in builds}
+        start_time = datetime.now()
         while incomplete_builds:
             for build in builds:
                 if build.self_link not in incomplete_builds:
                     continue
+                build.lp_refresh()
                 if (status := build.buildstate) in self.BUILD_STATES_PENDING:
-                    self.echo(f"Waiting for {build.title}: build={status}")
-                    build.lp_refresh()
+                    self.echo(
+                        f"Waiting for {build.title}: build={status} (elapsed: {datetime.now() - start_time})"
+                    )
                 else:
                     self.echo(f"Completed {build.title}: build={status}")
                     incomplete_builds.remove(build.self_link)
@@ -131,15 +153,18 @@ class LPBuildEntity(BuildEntity):
                 time.sleep(30.0)
         for build in builds:
             if build.buildstate not in self.BUILD_STATES_SUCCESS:
+                self.echo(f"Failed lauchpad build {self.entity}, aborting")
+                self.echo(self._lp_build_log(build))
                 raise BuildException(f"Failed to build {build.title} on launchpad")
         return builds
 
-    @staticmethod
-    def _lp_charm_filename_from_build(build):
-        """Read the build_log to determine the charm file name.
+    def _lp_charm_filename_from_build(self, build):
+        """Determine the charm file name of a particular build.
 
         Currently, this is accomplished by reading the buildlog
         and looking for a keyword, knowing the next line is the charm name
+
+        replace once LP#2028406 is fixed
         """
 
         def find_packed_charm(lines):
@@ -151,11 +176,8 @@ class LPBuildEntity(BuildEntity):
                     yield line.decode().strip()
                     found = False
 
-        with urllib.request.urlopen(build.build_log_url) as f:
-            fp = find_packed_charm(
-                zlib.decompress(f.read(), 16 + zlib.MAX_WBITS).splitlines()
-            )
-            return next(fp)
+        fp = find_packed_charm(self._lp_build_log(build))
+        return next(fp)
 
     def _lp_build_download(self, build, dst_target: Path) -> Artifact:
         charm_file = self._lp_charm_filename_from_build(build)
