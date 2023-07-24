@@ -540,6 +540,7 @@
     channel-range:
       min: '999.0'
 - kubernetes-dashboard:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/kubernetes-dashboard-operator'
     docs: 'https://charmhub.io/kubernetes-dashboard/docs'
     downstream: charmed-kubernetes/kubernetes-dashboard-operator

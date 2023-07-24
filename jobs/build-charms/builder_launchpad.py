@@ -57,6 +57,7 @@ class LPBuildEntity(BuildEntity):
 
     @cached_property
     def _lp(self):
+        """Use launchpad credentials to interact with launchpad."""
         creds = os.environ.get("LPCREDS", None)
         parser = ConfigParser()
         parser.read(creds)
@@ -112,7 +113,7 @@ class LPBuildEntity(BuildEntity):
             return cache
 
         with urllib.request.urlopen(build.build_log_url) as f:
-            contents = zlib.decompress(f.read(), 16 + zlib.MAX_WBITS).splitlines()
+            contents = zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
         self._lp_build_log_cache[build.self_link] = contents
         return contents
 
@@ -124,9 +125,8 @@ class LPBuildEntity(BuildEntity):
         for _ in range(timeout):
             status = req.status
             if status == "Failed":
-                raise BuildException(
-                    f"Failed to request build {self.name} on launchpad"
-                )
+                err_msg = f"Failed requesting lauchpad build {self.entity}, aborting"
+                raise BuildException(err_msg)
             if status == "Completed":
                 break
             time.sleep(1.0)
@@ -142,20 +142,21 @@ class LPBuildEntity(BuildEntity):
                 if build.self_link not in incomplete_builds:
                     continue
                 build.lp_refresh()
+                dt = datetime.now() - start_time
                 if (status := build.buildstate) in self.BUILD_STATES_PENDING:
-                    self.echo(
-                        f"Waiting for {build.title}: build={status} (elapsed: {datetime.now() - start_time})"
-                    )
+                    status = f"Waiting for {build.title} status='{status}' elapsed={dt}"
                 else:
-                    self.echo(f"Completed {build.title}: build={status}")
+                    status = f"Completed {build.title} status='{status}' elapsed={dt}"
                     incomplete_builds.remove(build.self_link)
+                self.echo(status)
+
             if incomplete_builds:
                 time.sleep(30.0)
         for build in builds:
             if build.buildstate not in self.BUILD_STATES_SUCCESS:
-                self.echo(f"Failed lauchpad build {self.entity}, aborting")
-                self.echo(self._lp_build_log(build))
-                raise BuildException(f"Failed to build {build.title} on launchpad")
+                err_msg = f"Failed lauchpad build {self.entity}, aborting"
+                self.echo(err_msg + "\n" + self._lp_build_log(build))
+                raise BuildException(err_msg)
         return builds
 
     def _lp_charm_filename_from_build(self, build):
@@ -176,10 +177,11 @@ class LPBuildEntity(BuildEntity):
                     yield line.decode().strip()
                     found = False
 
-        fp = find_packed_charm(self._lp_build_log(build))
+        fp = find_packed_charm(self._lp_build_log(build).splitlines())
         return next(fp)
 
     def _lp_build_download(self, build, dst_target: Path) -> Artifact:
+        """Download charm file for a launchpad build."""
         charm_file = self._lp_charm_filename_from_build(build)
         dl_link = build.web_link + f"/+files/{charm_file}"
         with urllib.request.urlopen(dl_link) as src:
