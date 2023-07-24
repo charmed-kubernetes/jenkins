@@ -1474,16 +1474,19 @@ class TestCeph:
             timeout_msg="CSI pods not ready!",
         )
 
-    @pytest.mark.parametrize("storage_class", ["ceph-xfs", "ceph-ext4", "cephfs"])
+    @pytest.mark.parametrize("storage_class", ["ceph-xfs", "ceph-ext4"])
     async def test_storage_class(self, model, log_open, storage_class):
         # create pod that writes to a pv from ceph
         kwds = dict(debug_open=log_open)
-        if storage_class == "cephfs":
-            kwds["provisioner"] = "csi-cephfsplugin-provisioner"
-        else:
-            kwds["provisioner"] = "csi-rbdplugin-provisioner"
-
+        kwds["provisioner"] = "csi-rbdplugin-provisioner"
         await validate_storage_class(model, storage_class, "Ceph", **kwds)
+
+    @pytest.mark.skip_if_open_bugs(2028387)
+    async def test_storage_class_ceph(self, model, log_open):
+        # create pod that writes to a pv from ceph
+        kwds = dict(debug_open=log_open)
+        kwds["provisioner"] = "csi-cephfsplugin-provisioner"
+        await validate_storage_class(model, "cephfs", "Ceph", **kwds)
 
 
 @pytest.mark.skip_arch(["aarch64"])
