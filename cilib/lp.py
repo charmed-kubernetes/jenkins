@@ -4,6 +4,7 @@
 from retry.api import retry_call
 from lazr.restfulclient.errors import NotFound, PreconditionFailed
 from launchpadlib.launchpad import Launchpad
+from configparser import ConfigParser
 import os
 
 
@@ -25,14 +26,23 @@ class Client:
     def login(self):
         if self._client:
             return self._client
-
-        self._client = Launchpad.login_with(
-            application_name="k8s-jenkaas-bot",
-            service_root=self.stage,
-            launchpadlib_dir=self.cache,
-            version=self.version,
-            credentials_file=self.creds,
-        )
+        if self.creds:
+            parser = ConfigParser()
+            parser.read(self.creds)
+            self._client = Launchpad.login_with(
+                application_name=parser["1"]["consumer_key"],
+                service_root=self.stage,
+                launchpadlib_dir=self.cache,
+                version=self.version,
+                credentials_file=self.creds,
+            )
+        else:
+            self._client = Launchpad.login_anonymously(
+                "k8s-jenkaas-bot",
+                service_root=self.stage,
+                launchpadlib_dir=self.cache,
+                version=self.version,
+            )
 
     def owner(self, name):
         """Returns LP owner object"""
@@ -41,6 +51,9 @@ class Client:
     def ppas(self, owner):
         """Returns ppas associated with owner"""
         return self.owner(owner).ppas
+
+    def bug(self, bug_id):
+        return self._client.bugs[bug_id]
 
     @property
     def snaps(self):

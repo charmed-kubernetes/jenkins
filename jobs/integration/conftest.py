@@ -13,6 +13,7 @@ import uuid
 import yaml
 
 from contextlib import contextmanager
+from cilib.lp import Client as LPClient
 from datetime import datetime
 from juju.model import Model
 from pathlib import Path
@@ -599,6 +600,26 @@ async def k8s_version(model):
     except ValueError:
         k8s_minor_version = None
     return k8s_minor_version
+
+
+@pytest.fixture(autouse=True)
+def xfail_if_open_bugs(request):
+    xfail_marker = request.node.get_closest_marker("xfail_if_open_bugs")
+    if not xfail_marker:
+        return
+    bugs = xfail_marker.args
+    lp = LPClient()
+    try:
+        lp.login()
+    except ConnectionRefusedError:
+        log("Cannot connect to launchpad, xfail tests may end up as failures")
+        return
+
+    for bug in bugs:
+        for task in lp.bug(int(bug)).bug_tasks:
+            if task.status not in ["Fix Released", "Won't Fix"]:
+                reason = f"expect failure until LP#{bug} affecting '{task.bug_target_display_name}' is resolved: status='{task.status}'"
+                request.node.add_marker(pytest.mark.xfail(True, reason=reason))
 
 
 @pytest.fixture(autouse=True)
