@@ -250,6 +250,13 @@ function ci::cleanup::before
     echo "> skipping before tasks"
 }
 
+function ci::cleanup::model::addons
+{
+    if ! timeout 10m juju destroy-model -y --destroy-storage "$JUJU_CONTROLLER:addons"; then
+      timeout 10m juju destroy-model -y --destroy-storage "$JUJU_CONTROLLER:addons" --force
+    fi
+}
+
 function ci::cleanup::after
 {
     echo "> skipping after tasks"
