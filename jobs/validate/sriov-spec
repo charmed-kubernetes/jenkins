@@ -112,7 +112,7 @@ function test::execute
 
 function ci::cleanup::before
 {
-    juju destroy-model -y --destroy-storage "$JUJU_CONTROLLER:addons" || true
+    ci::cleanup::model::addons
 }
 
 ###############################################################################

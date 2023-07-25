@@ -29,13 +29,13 @@ class Client:
     def login(self):
         if self._client:
             return self._client
-        
+
         application_name = "k8s-jenkaas-bot"
         if self.creds:
             try:
                 parser = ConfigParser()
                 parser.read(self.creds)
-                application_name=parser["1"]["consumer_key"]
+                application_name = parser["1"]["consumer_key"]
             except KeyError:
                 log.warning("Failed to find consumer-key in launchpad credentials")
 
