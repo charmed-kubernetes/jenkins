@@ -5,7 +5,10 @@ from retry.api import retry_call
 from lazr.restfulclient.errors import NotFound, PreconditionFailed
 from launchpadlib.launchpad import Launchpad
 from configparser import ConfigParser
+import logging
 import os
+
+log = logging.getLogger(__name__)
 
 
 class ClientError(Exception):
@@ -26,11 +29,19 @@ class Client:
     def login(self):
         if self._client:
             return self._client
+        
+        application_name = "k8s-jenkaas-bot"
         if self.creds:
-            parser = ConfigParser()
-            parser.read(self.creds)
+            try:
+                parser = ConfigParser()
+                parser.read(self.creds)
+                application_name=parser["1"]["consumer_key"]
+            except KeyError:
+                log.warning("Failed to find consumer-key in launchpad credentials")
+
+        if self.creds:
             self._client = Launchpad.login_with(
-                application_name=parser["1"]["consumer_key"],
+                application_name=application_name,
                 service_root=self.stage,
                 launchpadlib_dir=self.cache,
                 version=self.version,
@@ -38,7 +49,7 @@ class Client:
             )
         else:
             self._client = Launchpad.login_anonymously(
-                "k8s-jenkaas-bot",
+                application_name,
                 service_root=self.stage,
                 launchpadlib_dir=self.cache,
                 version=self.version,
