@@ -30,7 +30,7 @@ black==23.3.0
     # via -r requirements.in
 boto3==1.26.99
     # via -r requirements.in
-botocore==1.29.99
+botocore==1.31.11
     # via
     #   awscli
     #   boto3
