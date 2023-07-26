@@ -1,14 +1,3 @@
 Host *
    StrictHostKeyChecking no
    UserKnownHostsFile=/dev/null
-
-Host s3lp3
-    identityfile "/var/lib/jenkins/.ssh/cdkbot_rsa"
-    hostname  {{ s390x }}
-    user ubuntu
-    port 22
-Host neader
-    identityfile "/var/lib/jenkins/.ssh/cdkbot_rsa"
-    hostname {{ arm64 }}
-    user ubuntu
-    port 22
