@@ -2,7 +2,7 @@
 
 - project:
     name: infra-ps5
-    arch: ['amd64-8', 'amd64-9', 'amd64-11', 'amd64-12']
+    arch: ['amd64-4', 'amd64-5', 'amd64-6', 'amd64-7', 'amd64-8', 'amd64-10']
     jobs:
       - 'infra-maintain-ps5-{arch}'
 
