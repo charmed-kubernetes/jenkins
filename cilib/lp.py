@@ -37,7 +37,10 @@ class Client:
                 parser.read(self.creds)
                 application_name = parser["1"]["consumer_key"]
             except KeyError:
-                log.warning("Failed to find consumer-key in launchpad credentials")
+                self.creds = None
+                log.warning(
+                    "Failed to find valid launchpad credentials, login anonymously"
+                )
 
         if self.creds:
             self._client = Launchpad.login_with(
