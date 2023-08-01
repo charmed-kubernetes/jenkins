@@ -199,6 +199,15 @@
         state: directory
       tags:
         - jenkins
+    - name: Ensure charmcraft log directory exists
+      file:
+        path: /var/lib/jenkins/.local/state/charmcraft/log
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: 0755
+      tags:
+        - jenkins
     - name: ssh config
       template:
         src: "fixtures/ssh_config"

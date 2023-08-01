@@ -173,10 +173,10 @@ def _gen_metadata(numdays=None):
             result_bg_color = "#ff0000!important;"
         elif obj["deploy_result"] == "Timeout":
             hover_text = "Deploy Timeout"  # juju deployment timedout
-            result_bg_color = "#7700ff!important;"
+            result_bg_color = "#ff5500!important;"
         elif obj["deploy_result"] == "True" and obj["test_result"] == "Timeout":
             hover_text = "Test Timeout"  # juju deploys, tests timeout
-            result_bg_color = "#ff7700!important;"
+            result_bg_color = "#ffaa00!important;"
         elif obj["deploy_result"] == "True" and obj["test_result"] == "False":
             hover_text = "Test Failures"  # juju deploys, tests failed
             result_bg_color = "#ffff00!important;"

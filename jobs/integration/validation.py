@@ -1474,15 +1474,20 @@ class TestCeph:
             timeout_msg="CSI pods not ready!",
         )
 
-    @pytest.mark.parametrize("storage_class", ["ceph-xfs", "ceph-ext4", "cephfs"])
+    @pytest.mark.parametrize(
+        "storage_class",
+        [
+            "ceph-xfs",
+            "ceph-ext4",
+            pytest.param("cephfs", marks=pytest.mark.xfail_if_open_bugs(2028387)),
+        ],
+    )
     async def test_storage_class(self, model, log_open, storage_class):
         # create pod that writes to a pv from ceph
         kwds = dict(debug_open=log_open)
+        kwds["provisioner"] = "csi-rbdplugin-provisioner"
         if storage_class == "cephfs":
             kwds["provisioner"] = "csi-cephfsplugin-provisioner"
-        else:
-            kwds["provisioner"] = "csi-rbdplugin-provisioner"
-
         await validate_storage_class(model, storage_class, "Ceph", **kwds)
 
 
@@ -2410,6 +2415,7 @@ async def nagios(model, tools):
 
 
 @pytest.mark.skip_if_version(lambda v: v < (1, 17))
+@pytest.mark.clouds(["vsphere"])  # bionic image no longer deployable on ec2 cloud
 async def test_nagios(model, nagios: NagiosApi):
     """This test verifies the nagios relation is working
     properly. This requires:

@@ -1,5 +1,3 @@
-@Library('juju-pipeline@master') _
-
 
 def destroy_controller(controller) {
     return """#!/bin/bash
@@ -22,7 +20,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH                 = "${utils.cipaths}"
+        PATH                 = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
         AWS_REGION           = "us-east-1"
         JUJU_CLOUD           = "aws/us-east-1"
         K8STEAMCI            = credentials('k8s_team_ci_lp')
@@ -68,7 +66,7 @@ pipeline {
         stage("Setup tox environment") {
             steps {
                 sh """
-                tox -e py38 -- python -c 'print("Tox Environment Ready")'
+                tox -c jobs/microk8s/tox.ini -e py38 -- python -c 'print("Tox Environment Ready")'
                 """
             }
         }
@@ -94,7 +92,7 @@ pipeline {
 
                                 try {
                                     sh """
-                                    . .tox/py38/bin/activate
+                                    . jobs/microk8s/.tox/py38/bin/activate
                                     ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
                                         TRACKS=${params.TRACKS}\
                                         CHANNEL=${channel}\
@@ -153,7 +151,7 @@ pipeline {
                                 }
                                 try {
                                     sh """
-                                    . .tox/py38/bin/activate
+                                    . jobs/microk8s/.tox/py38/bin/activate
                                     DRY_RUN=${params.DRY_RUN} ALWAYS_RELEASE=${params.ALWAYS_RELEASE}\
                                         TESTS_BRANCH=${params.TESTS_BRANCH} TRACKS=${params.TRACKS}\
                                         PROXY=${params.PROXY} JUJU_UNIT=ubuntu/0\

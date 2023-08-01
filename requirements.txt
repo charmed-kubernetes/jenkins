@@ -39,7 +39,7 @@ bs4==0.0.1
     # via -r requirements.in
 cachetools==5.3.0
     # via google-auth
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   kubernetes
     #   requests
@@ -57,7 +57,7 @@ colorama==0.4.4
     # via
     #   awscli
     #   mkdocs-material
-cryptography==41.0.1
+cryptography==41.0.2
     # via
     #   ansible-core
     #   paramiko
@@ -81,7 +81,7 @@ flaky==3.7.0
     # via -r requirements.in
 ghp-import==2.1.0
     # via mkdocs
-google-auth==2.18.0
+google-auth==2.22.0
     # via kubernetes
 httplib2==0.22.0
     # via
@@ -321,7 +321,7 @@ tomli==2.0.1
     #   pytest
 toposort==1.10
     # via juju
-typing-extensions==4.6.1
+typing-extensions==4.7.1
     # via typing-inspect
 typing-inspect==0.8.0
     # via juju
