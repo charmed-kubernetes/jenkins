@@ -18,6 +18,9 @@
   flannel-s390x: '{out_path}/flannel-s390x.tar.gz'
 'kubernetes-autoscaler':
   juju-autoscaler-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
+'kubernetes-dashboard':
+  dashboard-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
+  scraper-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
 'kubernetes-master':
   cni-amd64: '{out_path}/cni-amd64.tgz'
   cni-arm64: '{out_path}/cni-arm64.tgz'
