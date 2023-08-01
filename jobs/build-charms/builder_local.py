@@ -810,7 +810,10 @@ class BuildEntity:
             except sh.ErrorReturnCode as e:
                 self.echo(e.stderr)
         elif lxc:
-            self.echo(f"Building in container {lxc}")
+            msg = f"Consider moving {self.name} to launchpad builder"
+            border = "-".join("=" * (len(msg) // 2 + 1))
+            self.echo("\n".join((border, msg, border)))
+            self.echo(f"Building in container {lxc}.")
             repository = f"https://github.com/{self.downstream}"
             charmcraft_script = (
                 "#!/bin/bash -eux\n"
