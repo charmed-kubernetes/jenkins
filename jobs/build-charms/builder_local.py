@@ -10,11 +10,11 @@ See `charm build --help` for more information.
 
 Usage:
 
-  tox -e py -- python3 jobs/build-charms/charms.py build \
+  tox -e py -- python3 jobs/build-charms/main.py build \
      --charm-list jobs/includes/charm-support-matrix.inc \
      --resource-spec jobs/build-charms/resource-spec.yaml
 
-  tox -e py -- python3 jobs/build-charms/charms.py --help
+  tox -e py -- python3 jobs/build-charms/main.py --help
 """
 
 import os
