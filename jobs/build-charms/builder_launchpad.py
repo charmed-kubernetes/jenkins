@@ -97,6 +97,7 @@ class LPBuildEntity(BuildEntity):
                 name=self._lp_recipe_name,
                 auto_build=False,
                 auto_build_channels=self.SNAP_CHANNEL,
+                build_path=self.opts.get("subdir", ""),
                 git_ref=ref,
                 owner=self._lp_owner,
                 project=self._lp_project,
