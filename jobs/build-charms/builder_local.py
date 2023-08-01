@@ -23,15 +23,16 @@ from io import BytesIO
 import zipfile
 from pathlib import Path
 from cilib.github_api import Repository
+from enum import Enum, unique
 from sh.contrib import git
 from cilib.git import default_gh_branch
 from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_SERIES_MAP, K8S_CHARM_SUPPORT_ARCHES
 from cilib.service.aws import Store
 from cilib.run import script
 from cilib.version import ChannelRange, Release, RISKS
+from dataclasses import dataclass, field
 from functools import partial
 from datetime import datetime
-from enum import Enum
 from types import SimpleNamespace
 from typing import List, Mapping, Optional, Set
 
@@ -116,6 +117,7 @@ class BuildException(Exception):
     """Define build Exception."""
 
 
+@unique
 class BuildType(Enum):
     """Enumeration for the build type."""
 
@@ -123,6 +125,7 @@ class BuildType(Enum):
     BUNDLE = 2
 
 
+@unique
 class LayerType(Enum):
     """Enumeration for the layer type."""
 
@@ -190,7 +193,7 @@ class _CharmHub(Charmcraft):
     BASE_RE = re.compile(r"(\S+) (\S+) \((\S+)\)")
 
     @staticmethod
-    def _table_to_list(header, body):
+    def _table_to_list(header, body) -> List[Mapping[str, str]]:
         if not body:
             return []
         rows = []
@@ -284,19 +287,25 @@ class _CharmHub(Charmcraft):
             charm_status = [unpublished_rev]
         return charm_status
 
+    def release(self, entity: str, artifact: "Artifact", to_channels: List[str]):
+        self._echo(f"Releasing :: {entity:^35} :: to: {to_channels}")
+        rev_args = f"--revision={artifact.rev}"
+        channel_args = [f"--channel={chan}" for chan in to_channels]
+        resource_rev_args = [
+            f"--resource={rsc.name}:{rsc.rev}" for rsc in artifact.resources
+        ]
+        args = [entity, rev_args] + channel_args + resource_rev_args
+        self.charmcraft.release(*args)
+
     def promote(self, charm_entity, from_channel, to_channels):
         self._echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channels}"
         )
-        if "unpublished" == from_channel:
-            charm_status = self._unpublished_revisions(charm_entity)
-        else:
-            charm_status = [
-                row
-                for row in self.status(charm_entity)
-                if row["Revision"]
-                and f"{row['Track']}/{row['Channel']}" == from_channel
-            ]
+        charm_status = [
+            row
+            for row in self.status(charm_entity)
+            if row["Revision"] and f"{row['Track']}/{row['Channel']}" == from_channel
+        ]
 
         calls = set()
         for row in charm_status:
@@ -320,15 +329,18 @@ class _CharmHub(Charmcraft):
             # self._echo(" ".join(["charmcraft", "release", *args]))
             self.charmcraft.release(*args)
 
-    def upload(self, dst_path):
+    def upload(self, dst_path) -> int:
         out = self.charmcraft.upload(dst_path)
-        (revision,) = re.findall(r"Revision (\d+) of ", out, re.MULTILINE)
-        self._echo(f"Pushing   :: returns {out}")
-        return revision
+        self._echo(f"Upload   :: returns {out}")
+        (revision,) = re.findall(r"Revision (\d+) ", out, re.MULTILINE)
+        return int(revision)
 
-    def upload_resource(self, charm_entity, resource_name, resource):
-        kwargs = dict([resource])
-        self.charmcraft("upload-resource", charm_entity, resource_name, **kwargs)
+    def upload_resource(self, charm_entity, resource: "CharmResource") -> int:
+        kwargs = resource.upload_args
+        out = self.charmcraft("upload-resource", charm_entity, resource.name, **kwargs)
+        self._echo(f"Upload Resource   :: returns {out}")
+        (revision,) = re.findall(r"Revision (\d+) ", out, re.MULTILINE)
+        return int(revision)
 
 
 class BuildEnv:
@@ -402,10 +414,10 @@ class BuildEnv:
         )
 
     @property
-    def artifacts(self):
+    def job_list(self):
         """List of charms or bundles to process."""
         return yaml.safe_load(
-            Path(self.db["build_args"]["artifact_list"]).read_text(encoding="utf8")
+            Path(self.db["build_args"]["job_list"]).read_text(encoding="utf8")
         )
 
     @property
@@ -447,11 +459,11 @@ class BuildEnv:
         """
         Applies boundaries to a charm or bundle's target channel.
 
-        Uses the channel-range.min and channel-range.max arguments in self.artifacts
+        Uses the channel-range.min and channel-range.max arguments in self.job_list
         to filter the channels list.
         """
 
-        entity = next((_[name] for _ in self.artifacts if name in _.keys()), {})
+        entity = next((_[name] for _ in self.job_list if name in _.keys()), {})
         range_def = entity.get("channel-range", {})
         definitions = range_def.get("min"), range_def.get("max")
         assert all(isinstance(_, (str, type(None))) for _ in definitions)
@@ -480,7 +492,7 @@ class BuildEnv:
         self.store.put_item(Item=dict(self.db))
 
     def promote_all(self, from_channel="beta", to_channels=("edge",)):
-        """Promote set of charm artifacts in charmhub."""
+        """Promote set of charms in charmhub."""
         track = self.db["build_args"].get("track") or "latest"
         if from_channel.lower() in RISKS:
             from_channel = f"{track}/{from_channel.lower()}"
@@ -492,7 +504,7 @@ class BuildEnv:
             for chan in to_channels
         ]
         failed_entities = []
-        for charm_map in self.artifacts:
+        for charm_map in self.job_list:
             for charm_name, charm_opts in charm_map.items():
                 if not any(tag in self.filter_by_tag for tag in charm_opts["tags"]):
                     continue
@@ -533,6 +545,52 @@ class BuildEnv:
         results = pool.map(self.download, layers_to_pull)
 
         self.db["pull_layer_manifest"] = list(results)
+
+
+@unique
+class Arch(Enum):
+    ALL = "all"
+    AMD64 = "amd64"
+    ARM64 = "arm64"
+    ARMHF = "armhf"
+    PPC64EL = "ppc64el"
+    S390X = "s390x"
+
+
+@unique
+class ResourceKind(Enum):
+    FILEPATH = "filepath"
+    IMAGE = "image"
+
+
+@dataclass
+class CharmResource:
+    name: str
+    kind: Optional[ResourceKind] = None
+    value: Optional[str] = None  # location (filepath or image-id)
+    rev: Optional[int] = None  # set when uploaded or when lookedup
+
+    @property
+    def upload_args(self) -> Mapping[str, str]:
+        return {self.kind.value: str(self.value)}
+
+
+@dataclass
+class Artifact:
+    arch: Arch
+    charm_or_bundle: Path
+    rev: int = None  # set when uploaded
+    resources: List[CharmResource] = field(default_factory=list)
+
+    @property
+    def arch_docker(self) -> str:
+        """manage docker platforms with slightly different identifiers."""
+        if self.arch == Arch.PPC64EL:
+            return "ppc64le"
+        elif self.arch == Arch.ALL:
+            return Arch.AMD64.value
+        else:
+            return self.arch.value
 
 
 class BuildEntity:
@@ -580,7 +638,7 @@ class BuildEntity:
 
         self.layer_path = src_path / "layer.yaml"
         self.src_path = str(src_path.absolute())
-        self.dst_path = str(Path(self.src_path) / f"{self.name}.charm")
+        self.artifacts: List[Artifact] = []
 
         # Bundle or charm opts as defined in the layer include
         self.opts = opts
@@ -666,8 +724,8 @@ class BuildEntity:
         return version_id
 
     @property
-    def has_changed(self):
-        """Determine if the charm/layers commits have changed since last publish."""
+    def charm_changes(self):
+        """Determine if any charm|layers commits have changed since last publish."""
         local = self.version_identification("local")
         remote = self.version_identification("remote")
 
@@ -693,11 +751,12 @@ class BuildEntity:
             git_commit = git("rev-parse", "HEAD", _cwd=self.src_path)
         return git_commit.strip()
 
-    def _read_metadata_resources(self):
-        if self.dst_path.endswith(".charm"):
-            metadata_path = zipfile.Path(self.dst_path) / "metadata.yaml"
+    def _read_metadata_resources(self, artifact: Artifact):
+        search_path = artifact.charm_or_bundle
+        if search_path.suffix == ".charm":
+            metadata_path = zipfile.Path(search_path) / "metadata.yaml"
         else:
-            metadata_path = Path(self.dst_path) / "metadata.yaml"
+            metadata_path = Path(search_path) / "metadata.yaml"
         metadata = yaml.safe_load(metadata_path.read_text())
         return metadata.get("resources", {})
 
@@ -725,6 +784,7 @@ class BuildEntity:
         """Perform a build against charm/bundle."""
         lxc = os.environ.get("charmcraft_lxc")
         ret = SimpleNamespace(ok=False)
+        charm_path = Path(self.src_path, f"{self.name}.charm")
         if "override-build" in self.opts:
             self.echo("Override build found, running in place of charm build.")
             ret = script(
@@ -756,7 +816,7 @@ class BuildEntity:
                 "#!/bin/bash -eux\n"
                 f"source {Path(__file__).parent / 'charmcraft-lib.sh'}\n"
                 f"ci_charmcraft_pack {lxc} {repository} {self.branch} {self.opts.get('subdir', '')}\n"
-                f"ci_charmcraft_copy {lxc} {self.dst_path}\n"
+                f"ci_charmcraft_copy {lxc} {charm_path}\n"
             )
             ret = script(charmcraft_script, echo=self.echo)
         else:
@@ -765,6 +825,7 @@ class BuildEntity:
         if not ret.ok:
             self.echo("Failed to build, aborting")
             raise BuildException(f"Failed to build {self.name}")
+        self.artifacts.append(Artifact(Arch.ALL, charm_path))
 
     @property
     def repository(self) -> Optional[Repository]:
@@ -772,10 +833,10 @@ class BuildEntity:
         if self.downstream:
             return Repository.with_session(*self.downstream.split("/"))
 
-    def push(self):
+    def push(self, artifact: Artifact):
         """Pushes a built charm to Charmhub."""
         if "override-push" in self.opts:
-            self.echo("Override push found, running in place of charm push.")
+            self.echo("Override push found, running in place of charmcraft upload.")
             args = dict(
                 cwd=self.src_path,
                 charm=self.name,
@@ -787,10 +848,10 @@ class BuildEntity:
             return
 
         self.echo(
-            f"Pushing {self.type}({self.name}) from {self.dst_path} to {self.entity}"
+            f"Uploading {self.type}({self.name}) from {artifact.charm_or_bundle} to {self.entity}"
         )
-        self.new_entity = _CharmHub(self).upload(self.dst_path)
-        self.tag(f"{self.name}-{self.new_entity}")
+        artifact.rev = _CharmHub(self).upload(artifact.charm_or_bundle)
+        self.tag(f"{self.name}-{artifact.rev}")
 
     def tag(self, tag: str) -> bool:
         """Tag current commit in this repo with a lightweigh tag."""
@@ -814,20 +875,25 @@ class BuildEntity:
                 )
         return tagged
 
-    def attach_resources(self):
-        """Assemble charm's resources and associate in charmhub."""
-        out_path = Path(self.src_path) / "tmp"
-        os.makedirs(str(out_path), exist_ok=True)
+    @property
+    def _resource_path(self) -> Path:
+        out_path = Path(self.src_path, "tmp")
+        out_path.mkdir(parents=True, exist_ok=True)
+        return out_path
+
+    @property
+    def _resource_spec(self):
         resource_spec = yaml.safe_load(Path(self.build.resource_spec).read_text())
-        resource_spec = resource_spec.get(self.name, {})
+        return resource_spec.get(self.name, {})
+
+    def resource_build(self):
+        """Build all charm custom resources."""
         context = dict(
             src_path=self.src_path,
-            out_path=out_path,
+            out_path=self._resource_path,
         )
-
-        # Build any custom resources.
         resource_builder = self.opts.get("build-resources", None)
-        if resource_builder and not resource_spec:
+        if resource_builder and not self._resource_spec:
             raise BuildException(
                 f"Custom build-resources specified for {self.name} but no spec found"
             )
@@ -838,44 +904,53 @@ class BuildEntity:
             if not ret.ok:
                 raise BuildException("Failed to build custom resources")
 
-        for name, details in self._read_metadata_resources().items():
-            resource_fmt = resource_spec.get(name)
+    def assemble_resources(self, artifact: Artifact):
+        """Assemble charm's resources and associate in charmhub.
+
+        Upload oci-images and any built-resource, gathering their revision
+        Use the latest available for any other charm resource
+        """
+        context = dict(
+            src_path=self.src_path,
+            out_path=self._resource_path,
+        )
+
+        for name, details in self._read_metadata_resources(artifact).items():
+            resource_fmt = self._resource_spec.get(name)
             if not resource_fmt:
-                # ignore pushing a resource not defined in `resource_spec`
-                continue
-            if details["type"] == "oci-image":
-                upstream_source = details.get("upstream-source")
-                if upstream_source:
+                # Reuse most recently uploaded resource
+                self.echo(f"Reuse current resource {name} ...")
+                revs = _CharmHub(self).resource_revisions(self.entity, name)
+                resource = CharmResource(name, rev=revs[0]["Revision"])
+            elif details["type"] == "oci-image":
+                if upstream_source := details.get("upstream-source"):
                     # Pull any `upstream-image` annotated resources.
-                    self.echo(f"Pulling {upstream_source}...")
+                    self.echo(f"Pulling {upstream_source} for {artifact.arch}...")
                     docker = Docker(self)
-                    # Pulls only the amd64 image locally
-                    docker.pull(upstream_source)
+                    docker.pull(upstream_source, platform=artifact.arch_docker)
                     # Use the local image-id from `docker images <upstream-source> -q`
                     resource_fmt = docker.images(upstream_source, "-q").strip()
-                resource_spec[name] = ("image", resource_fmt)
+                resource = CharmResource(name, ResourceKind.IMAGE, resource_fmt)
             elif details["type"] == "file":
-                resource_spec[name] = (
-                    "filepath",
-                    resource_fmt.format(**context),
+                resource = CharmResource(
+                    name, ResourceKind.FILEPATH, resource_fmt.format(**context)
                 )
+            artifact.resources.append(resource)
 
-        self.echo(f"Attaching resources:\n{pformat(resource_spec)}")
-        # Attach all resources.
-        for resource_name, resource in resource_spec.items():
-            _CharmHub(self).upload_resource(self.entity, resource_name, resource)
+        for resource in artifact.resources:
+            if resource.rev is None and resource.value:
+                self.echo(f"Uploading resource:\n{pformat(resource)}")
+                resource.rev = _CharmHub(self).upload_resource(self.entity, resource)
 
-    def promote(self, from_channel="unpublished", to_channels=("edge",)):
-        """Promote charm and its resources from a channel to another."""
+    def release(self, artifact: Artifact, to_channels=("edge",)):
+        """Release charm and its resources to channels."""
         track = self.build.db["build_args"].get("track") or "latest"
         ch_channels = [
-            f"{track}/{chan.lower()}"
-            if (chan.lower() in RISKS and from_channel == "unpublished")
-            else chan
+            f"{track}/{chan.lower()}" if (chan.lower() in RISKS) else chan
             for chan in to_channels
         ]
         ch_channels = self.build.apply_channel_bounds(self.entity, ch_channels)
-        _CharmHub(self).promote(self.entity, from_channel, ch_channels)
+        _CharmHub(self).release(self.entity, artifact, ch_channels)
 
 
 class BundleBuildEntity(BuildEntity):
@@ -886,15 +961,13 @@ class BundleBuildEntity(BuildEntity):
         super().__init__(*args, **kwargs)
         self.type = "Bundle"
         self.src_path = str(self.opts["src_path"])
-        self.dst_path = str(self.opts["dst_path"])
 
-    @property
-    def has_changed(self):
+    def bundle_differs(self, artifact: Artifact):
         """Determine if this bundle has changes to include in a new push."""
         remote_bundle = self.download(None)
         if not remote_bundle:
             return True
-        local_bundle = zipfile.ZipFile(self.dst_path)
+        local_bundle = zipfile.ZipFile(artifact.charm_or_bundle)
 
         def _crc_list(bundle_zip):
             return sorted(
@@ -913,13 +986,14 @@ class BundleBuildEntity(BuildEntity):
         return False
 
     def bundle_build(self, to_channel):
+        outputdir = Path(self.opts["dst_path"])
         if not self.opts.get("skip-build"):
             build = sh.Command(f"{self.src_path}/bundle")
             build(
                 "-n",
                 self.name,
                 "-o",
-                self.dst_path,
+                str(outputdir),
                 "-c",
                 to_channel,
                 *self.opts["fragments"].split(),
@@ -930,20 +1004,19 @@ class BundleBuildEntity(BuildEntity):
             # If we're not building the bundle from the repo, we have
             # to copy it to the expected output location instead.
             shutil.copytree(
-                Path(self.src_path) / self.opts.get("subdir", ""), self.dst_path
+                Path(self.src_path) / self.opts.get("subdir", ""), outputdir
             )
 
         # If we're building for charmhub, it needs to be packed
-        dst_path = Path(self.dst_path)
-        charmcraft_yaml = dst_path / "charmcraft.yaml"
+        charmcraft_yaml = outputdir / "charmcraft.yaml"
         if not charmcraft_yaml.exists():
             contents = {
                 "type": "bundle",
                 "parts": {
                     "bundle": {
                         "prime": [
-                            str(_.relative_to(dst_path))
-                            for _ in dst_path.glob("**/*")
+                            str(_.relative_to(outputdir))
+                            for _ in outputdir.glob("**/*")
                             if _.is_file()
                         ]
                     }
@@ -951,259 +1024,22 @@ class BundleBuildEntity(BuildEntity):
             }
             with charmcraft_yaml.open("w") as fp:
                 yaml.safe_dump(contents, fp)
-        self.dst_path = str(Charmcraft(self).pack(_cwd=dst_path))
+        bundle_path = Charmcraft(self).pack(_cwd=outputdir)
         self.channel = to_channel
+        self.artifacts.append(Artifact(Arch.ALL, bundle_path))
 
-    def reset_dst_path(self):
-        """Reset the dst_path in order to facilitate multiple bundle builds by the same entity."""
+    def reset_artifacts(self):
+        """Reset the artifacts in order to facilitate multiple bundle builds by the same entity."""
 
-        def delete_file_or_dir(d):
-            cur_dst_path = Path(d)
+        def delete_file_or_dir(file_or_dir):
             try:
-                cur_dst_path.unlink(missing_ok=True)
+                file_or_dir.unlink(missing_ok=True)
             except IsADirectoryError:
-                shutil.rmtree(cur_dst_path)
+                shutil.rmtree(file_or_dir)
 
-        delete_file_or_dir(self.dst_path)  # delete any zip'd bundle file
-        self.dst_path = str(self.opts["dst_path"])  # reset the state
+        outputdir = Path(self.opts["dst_path"])
         self.channel = self.build.db["build_args"]["to_channel"]  # reset the channel
-        delete_file_or_dir(self.dst_path)  # delete any unzipped bundle directory
-
-
-@click.group()
-def cli():
-    """Define click group."""
-
-
-@cli.command()
-@click.option(
-    "--charm-list", required=True, help="path to a file with list of charms in YAML"
-)
-@click.option("--layer-list", required=True, help="list of layers in YAML format")
-@click.option("--layer-index", required=True, help="Charm layer index")
-@click.option(
-    "--charm-branch",
-    required=True,
-    help="Git branch to build charm from",
-    default="",
-)
-@click.option(
-    "--layer-branch",
-    required=True,
-    help="Git branch to pull layers/interfaces from",
-    default="main",
-)
-@click.option(
-    "--resource-spec", required=True, help="YAML Spec of resource keys and filenames"
-)
-@click.option(
-    "--filter-by-tag",
-    required=True,
-    help="only build for charms matching a tag, comma separate list",
-)
-@click.option(
-    "--track", required=True, help="track to promote charm to", default="latest"
-)
-@click.option(
-    "--to-channel", required=True, help="channel to promote charm to", default="edge"
-)
-@click.option("--force", is_flag=True)
-def build(
-    charm_list,
-    layer_list,
-    layer_index,
-    charm_branch,
-    layer_branch,
-    resource_spec,
-    filter_by_tag,
-    track,
-    to_channel,
-    force,
-):
-    """Build a set of charms and publish with their resources."""
-    sh.which.charm(_tee=True, _out=lambda m: click.echo(f"charm -> {m}"))
-    sh.which.charmcraft(_tee=True, _out=lambda m: click.echo(f"charmcraft -> {m}"))
-    sh.snap.list(_tee=True, _out=lambda m: click.echo(f"snap list -> {m}"))
-
-    build_env = BuildEnv(build_type=BuildType.CHARM)
-    build_env.db["build_args"] = {
-        "artifact_list": charm_list,
-        "layer_list": layer_list,
-        "layer_index": layer_index,
-        "branch": charm_branch,
-        "layer_branch": layer_branch,
-        "resource_spec": resource_spec,
-        "filter_by_tag": filter_by_tag.split(","),
-        "track": track,
-        "to_channel": to_channel,
-        "force": force,
-    }
-    build_env.clean()
-    build_env.pull_layers()
-
-    entities = []
-    for charm_map in build_env.artifacts:
-        for charm_name, charm_opts in charm_map.items():
-            if any(tag in build_env.filter_by_tag for tag in charm_opts["tags"]):
-                charm_entity = BuildEntity(build_env, charm_name, charm_opts)
-                entities.append(charm_entity)
-                build_env.echo(f"Queued {charm_entity.entity} for building")
-
-    failed_entities = []
-
-    for entity in entities:
-        entity.echo("Starting")
-        try:
-            entity.setup()
-            entity.echo(f"Details: {entity}")
-
-            if not build_env.force:
-                if not entity.has_changed:
-                    continue
-            else:
-                entity.echo("Build forced.")
-
-            entity.charm_build()
-
-            entity.push()
-            entity.attach_resources()
-            entity.promote(to_channels=build_env.to_channels)
-        except Exception:
-            entity.echo(traceback.format_exc())
-            failed_entities.append(entity)
-        finally:
-            entity.echo("Stopping")
-
-    if any(failed_entities):
-        count = len(failed_entities)
-        plural = "s" if count > 1 else ""
-        raise SystemExit(
-            f"Encountered {count} Charm Build Failure{plural}:\n\t"
-            + ", ".join(ch.name for ch in failed_entities)
-        )
-
-    build_env.save()
-
-
-@cli.command()
-@click.option("--bundle-list", required=True, help="list of bundles in YAML format")
-@click.option(
-    "--bundle-branch",
-    default="main",
-    required=True,
-    help="Upstream branch to build bundles from",
-)
-@click.option(
-    "--filter-by-tag",
-    required=True,
-    help="only build for charms matching a tag, comma separate list",
-)
-@click.option(
-    "--bundle-repo",
-    required=True,
-    help="upstream repo for bundle builder",
-    default="https://github.com/charmed-kubernetes/bundle.git",
-)
-@click.option(
-    "--track", required=True, help="track to promote charm to", default="latest"
-)
-@click.option(
-    "--to-channel", required=True, help="channels to promote bundle to", default="edge"
-)
-@click.option("--force", is_flag=True)
-def build_bundles(
-    bundle_list, bundle_branch, filter_by_tag, bundle_repo, track, to_channel, force
-):
-    """Build list of bundles from a specific branch according to filters."""
-    build_env = BuildEnv(build_type=BuildType.BUNDLE)
-    build_env.db["build_args"] = {
-        "artifact_list": bundle_list,
-        "branch": bundle_branch,
-        "filter_by_tag": filter_by_tag.split(","),
-        "track": track,
-        "to_channel": to_channel,
-        "force": force,
-    }
-
-    build_env.clean()
-    default_repo_dir = build_env.default_repo_dir
-    git("clone", bundle_repo, default_repo_dir, branch=bundle_branch)
-
-    entities = []
-    for bundle_map in build_env.artifacts:
-        for bundle_name, bundle_opts in bundle_map.items():
-            if any(tag in build_env.filter_by_tag for tag in bundle_opts["tags"]):
-                if "downstream" in bundle_opts:
-                    bundle_opts["sub-repo"] = bundle_name
-                    bundle_opts["src_path"] = build_env.repos_dir / bundle_name
-                else:
-                    bundle_opts["src_path"] = build_env.default_repo_dir
-                bundle_opts["dst_path"] = build_env.bundles_dir / bundle_name
-
-                build_entity = BundleBuildEntity(build_env, bundle_name, bundle_opts)
-                entities.append(build_entity)
-
-    for entity in entities:
-        entity.echo("Starting")
-        try:
-            if "downstream" in entity.opts:
-                # clone bundle repo override
-                entity.setup()
-
-            entity.echo(f"Details: {entity}")
-            for channel in build_env.to_channels:
-                entity.bundle_build(channel)
-
-                # Bundles are built easily, but it's pointless to push the bundle
-                # if the crcs of each file in the bundle zips are the same
-                if build_env.force or entity.has_changed:
-                    entity.echo(
-                        f"Pushing built bundle for channel={channel} (forced={build_env.force})."
-                    )
-                    entity.push()
-                    entity.promote(to_channels=[channel])
-
-                entity.reset_dst_path()
-        finally:
-            entity.echo("Stopping")
-
-    build_env.save()
-
-
-@cli.command()
-@click.option("--charm-list", required=True, help="path to charm list YAML")
-@click.option(
-    "--filter-by-tag",
-    required=True,
-    help="only build for charms matching a tag, comma separate list",
-)
-@click.option(
-    "--track", required=True, help="track to promote charm to", default="latest"
-)
-@click.option(
-    "--from-channel",
-    default="unpublished",
-    required=True,
-    help="Charm channel to publish from",
-)
-@click.option("--to-channel", required=True, help="Charm channel to publish to")
-def promote(charm_list, filter_by_tag, track, from_channel, to_channel):
-    """
-    Promote channel for a set of charms filtered by tag.
-    """
-    build_env = BuildEnv(build_type=BuildType.CHARM)
-    build_env.db["build_args"] = {
-        "artifact_list": charm_list,
-        "filter_by_tag": filter_by_tag.split(","),
-        "to_channel": to_channel,
-        "from_channel": from_channel,
-        "track": track,
-    }
-    build_env.clean()
-    return build_env.promote_all(
-        from_channel=from_channel, to_channels=build_env.to_channels
-    )
-
-
-if __name__ == "__main__":
-    cli()
+        delete_file_or_dir(outputdir)  # delete any unzipped bundle directory
+        for each in self.artifacts:
+            delete_file_or_dir(each.charm_or_bundle)  # delete any zip'd bundle file
+        self.artifacts = []
