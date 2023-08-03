@@ -6,17 +6,10 @@ def lxc_name = env.JOB_NAME+"-"+env.BUILD_NUMBER
 def _find_eks_base(version, override){
     if (override.length())
         return override
-    def EKS_BASE_DEFAULT = "core20"  // If not in the BASES map, use this as a default
-    def EKS_BASES = [
-        core22: {float i -> 1.28 <= i},             // 1.28 and beyond
-        core20: {float i -> 1.24 <= i && i < 1.28}, // 1.24 <= v < 1.28
-        core18: {float i -> 1.20 <= i && i < 1.24}, // 1.20 <= v < 1.24
-    ]
+    
     // assumes the version looks like r'v\d.\d+.\d+'
-    def eks_base_key = Float.parseFloat(version.substring(1, version.lastIndexOf('.')))
-    // find the first matching predicate
-    def eks_found_base = EKS_BASES.find{it -> it.value(eks_base_key)}
-    return eks_found_base ? eks_found_base.key : EKS_BASE_DEFAULT
+    def f_version = Float.parseFloat(version.substring(1, version.lastIndexOf('.')))
+    return f_version >= 1.28 ? "core22" : "core20";
 }
 def eks_base_override = params.eks_base_override
 def EKS_BASE = _find_eks_base(kube_version, eks_base_override)
