@@ -72,6 +72,11 @@
           name: build_node
           default: 'runner-{arch}'
       - string:
+          name: eks_base_override
+          default: ''
+          description: |
+            Snap base to use as an override while building snaps
+      - string:
           name: k8s_tag
           default: 'v{version}'
           description: |
