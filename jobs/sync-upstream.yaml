@@ -273,6 +273,12 @@
     parameters:
       - global-params
       - string:
+        name: STABLE_RELEASE
+        description: |
+          If blank, automatically determined based on last key of SNAP_K8S_TRACK_LIST
+          otherwise, this should be the major.minor release number (eg. 1.29)
+        default: ''
+      - string:
           name: FILTER_BY_TAG
           default: 'k8s,k8s-operator'
     wrappers:
@@ -291,6 +297,7 @@
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc \
                --ancillary-list jobs/includes/ancillary-list.inc \
+               --stable-release $STABLE_RELEASE
                --filter-by-tag $FILTER_BY_TAG $IS_DRY_RUN
 
 - job:
