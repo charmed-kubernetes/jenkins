@@ -65,12 +65,14 @@ def cli():
 @click.option("--stable-release", required=False, help="Which release branch to create")
 @click.option("--filter-by-tag", required=False, help="only build for tags")
 @click.option("--dry-run", is_flag=True)
-def cut_stable_release(layer_list, charm_list, ancillary_list, stable_release, filter_by_tag, dry_run):
+def cut_stable_release(
+    layer_list, charm_list, ancillary_list, stable_release, filter_by_tag, dry_run
+):
     """This will create a new branch based on the main branch used for the next release.
 
     layer_list: YAML spec containing git repos and their upstream/downstream properties
     charm_list: YAML spec containing git repos and their upstream/downstream properties
-    release: 
+    stable_release: <maj>.<min> version for which this stable release job is run.
     """
     layer_list = yaml.safe_load(Path(layer_list).read_text(encoding="utf8"))
     charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))

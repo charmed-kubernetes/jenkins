@@ -205,13 +205,13 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-venv:
+      - run-tox:
           COMMAND: |
             IS_DRY_RUN=""
             if [ ! -z ${DRY_RUN+x} ]; then
               IS_DRY_RUN="--dry-run"
             fi
-            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py tag-stable \
+            tox -e py38 -- python jobs/sync-upstream/sync.py tag-stable \
                      --layer-list jobs/includes/charm-layer-list.inc \
                      --charm-list jobs/includes/charm-support-matrix.inc \
                      --bundle-revision $BUNDLE_REV \
@@ -245,13 +245,13 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-venv:
+      - run-tox:
           COMMAND: |
             IS_DRY_RUN=""
             if [ ! -z ${DRY_RUN+x} ]; then
               IS_DRY_RUN="--dry-run"
             fi
-            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py tag-stable \
+            tox -e py38 -- python jobs/sync-upstream/sync.py tag-stable \
               --layer-list jobs/includes/charm-layer-list.inc \
               --charm-list jobs/includes/charm-support-matrix.inc \
               --bundle-revision $BUGFIX_REV \
@@ -287,13 +287,13 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-venv:
+      - run-tox:
           COMMAND: |
             IS_DRY_RUN=""
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py cut-stable-release \
+            tox -e py38 -- python jobs/sync-upstream/sync.py cut-stable-release \
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc \
                --ancillary-list jobs/includes/ancillary-list.inc \
@@ -332,13 +332,13 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-venv:
+      - run-tox:
           COMMAND: |
             IS_DRY_RUN=""
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            $WORKSPACE/venv/bin/python jobs/sync-upstream/sync.py rename-branch \
+            tox -e py38 -- python jobs/sync-upstream/sync.py rename-branch \
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc \
                --ancillary-list jobs/includes/ancillary-list.inc \
