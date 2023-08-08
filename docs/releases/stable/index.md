@@ -90,9 +90,9 @@ We need to make sure that the `kubernetes-<control-plane|e2e|worker>` charms
 have `1.xx/stable` set as the default snap channel. This should be done on each of
 the relevant git `release_1.xx` branches. For example, for the 1.27 GA:
 
-- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/28
-- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/pull/283
-- https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/141
+- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/29
+- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/pull/295
+- https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/147
 
 > **Note**: Changes to the above repos are required as some of our customers
 do not use our bundles for deployment.
