@@ -38,11 +38,10 @@ class LPBuildEntity(BuildEntity):
         "Successfully built",
     }
 
-    @staticmethod
-    def _lp_recipe_from_branch(branch: str):
+    def _lp_recipe_from_branch(self, branch: str):
         """Recipe names must be lowercase alphanumerics with allowed +, -, and ."""
         subbed = re.sub(r"[^0-9a-zA-Z\+\-\.]+", "-", branch)
-        return subbed.lower()
+        return f"{self.name}-{subbed.lower()}"
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
