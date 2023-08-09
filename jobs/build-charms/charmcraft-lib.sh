@@ -17,8 +17,17 @@ ci_charmcraft_launch()
     echo 'retrying charmcraft install in 3s...'
     sleep 3
   done
-  sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add http.proxy http://squid.internal:3128'
-  sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add https.proxy http://squid.internal:3128'
+
+  local clone_current="git clone $(git remote -v | grep http | head -n 1 | awk '{print $2}') clone-test"
+  if sudo lxc shell $charmcraft_lxc -- bash -c "$clone_current"; then
+    echo "$charmcraft_lxc can clone a repo"
+  else
+    echo "$charmcraft_lxc can't clone a repo, try setting proxy..."
+    sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add http.proxy http://squid.internal:3128'
+    sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add https.proxy http://squid.internal:3128'
+    sudo lxc shell $charmcraft_lxc -- bash -c "$clone_current"
+  fi
+  sudo lxc shell $charmcraft_lxc -- bash -c 'rm -rf clone-test'
 
 }
 
