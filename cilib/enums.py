@@ -17,7 +17,7 @@ K8S_STABLE_VERSION = "1.27"
 # we're working on the 1.28 GA. Set this value to '1.29' sometime between the
 # final RC and GA so we don't get pre-release builds (e.g. 1.28.1-alpha.0) in
 # our 1.28 tracks.
-K8S_NEXT_VERSION = "1.29"
+K8S_NEXT_VERSION = "1.28"
 
 # Lowest K8S SEMVER to process, this is usually K8S_STABLE_VERSION - 4
 K8S_STARTING_SEMVER = "1.23.0"
