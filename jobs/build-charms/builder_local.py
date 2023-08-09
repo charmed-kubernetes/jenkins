@@ -550,16 +550,27 @@ class BuildEnv:
 @unique
 class Arch(Enum):
     ALL = "all"
+    UNKNOWN = "unknown"
     AMD64 = "amd64"
     ARM64 = "arm64"
     ARMHF = "armhf"
     PPC64EL = "ppc64el"
     S390X = "s390x"
 
+    @classmethod
+    def from_value(cls, value: str) -> "Arch":
+        for arch in cls:
+            if arch.value == value:
+                return arch
+        if value == "arm":
+            return arch.ARMHF
+        return Arch.UNKNOWN
+
 
 @unique
 class Series(Enum):
     ALL = "all"
+    UNKNONWN = "unknown"
     XENIAL = "16.04"
     BIONIC = "18.04"
     FOCAL = "20.04"
@@ -570,6 +581,7 @@ class Series(Enum):
         for series in cls:
             if series.value == value:
                 return series
+        return Series.UNKNONWN
 
 
 @unique
@@ -598,13 +610,16 @@ class Artifact:
     rev: int = None  # set when uploaded
     resources: List[CharmResource] = field(default_factory=list)
 
+    def __str__(self) -> str:
+        return f"File: {self.charm_or_bundle.name} for arch={self.arch} and series={self.series}"
+
     @staticmethod
     def _from_run_on_base(run_on_base: str) -> Iterable[Tuple[Arch, Series]]:
         if not run_on_base.startswith("ubuntu-"):
             return
         base, *archs = run_on_base.split("-")[1:]
         for arch in archs:
-            yield Arch[arch.upper()], Series.from_value(base)
+            yield Arch.from_value(arch), Series.from_value(base)
 
     @classmethod
     def from_charm(cls, charm_file: Path) -> List["Artifact"]:
@@ -633,7 +648,7 @@ class Artifact:
         """manage docker platforms with slightly different identifiers."""
         if self.arch == Arch.PPC64EL:
             return "ppc64le"
-        elif self.arch == Arch.ALL:
+        elif self.arch in (Arch.ALL, Arch.UNKNOWN):
             return Arch.AMD64.value
         else:
             return self.arch.value
@@ -897,7 +912,7 @@ class BuildEntity:
             return
 
         self.echo(
-            f"Uploading {self.type}({self.name}) from {artifact.charm_or_bundle} to {self.entity}"
+            f"Uploading {self.type}({self.name}) from {artifact} to {self.entity}"
         )
         artifact.rev = _CharmHub(self).upload(artifact.charm_or_bundle)
         self.tag(f"{self.name}-{artifact.rev}")
