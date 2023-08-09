@@ -174,7 +174,7 @@ class LPBuildEntity(BuildEntity):
                 if line.startswith(keyword):
                     found |= True
                 elif found:
-                    yield line.decode().strip()
+                    yield line.strip()
                     found = False
 
         fp = find_packed_charm(self._lp_build_log(build).splitlines())

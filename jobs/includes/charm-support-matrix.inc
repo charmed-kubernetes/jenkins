@@ -352,7 +352,6 @@
     channel-range:
       min: '1.25'
 - github-runner:
-    builder: 'launchpad'
     downstream: charmed-kubernetes/github-runner-operator
     tags:
       - github-runner
