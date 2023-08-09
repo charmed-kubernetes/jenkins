@@ -114,8 +114,8 @@ class LPBuildEntity(BuildEntity):
 
         with urllib.request.urlopen(build.build_log_url) as f:
             contents = zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
-        self._lp_build_log_cache[build.self_link] = contents
-        return contents
+        self._lp_build_log_cache[build.self_link] = c_str = contents.decode()
+        return c_str
 
     def _lp_request_builds(self) -> List[Resource]:
         """Request a charm build for this charm."""
