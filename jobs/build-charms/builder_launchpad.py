@@ -128,6 +128,7 @@ class LPBuildEntity(BuildEntity):
                 err_msg = f"Failed requesting lauchpad build {self.entity}, aborting"
                 raise BuildException(err_msg)
             if status == "Completed":
+                self.echo(f"Build recipe started @ {self._lp_recipe.self_link}")
                 break
             time.sleep(1.0)
             req.lp_refresh()
