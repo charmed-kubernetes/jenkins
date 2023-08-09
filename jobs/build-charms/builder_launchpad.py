@@ -159,7 +159,7 @@ class LPBuildEntity(BuildEntity):
                 raise BuildException(err_msg)
         return builds
 
-    def _lp_charm_filename_from_build(self, build):
+    def _lp_charm_filename_from_build(self, build) -> str:
         """Determine the charm file name of a particular build.
 
         Currently, this is accomplished by reading the buildlog
@@ -169,7 +169,7 @@ class LPBuildEntity(BuildEntity):
         """
 
         def find_packed_charm(lines):
-            found, keyword = False, b"Charms packed:"
+            found, keyword = False, "Charms packed:"
             for line in lines:
                 if line.startswith(keyword):
                     found |= True
