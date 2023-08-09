@@ -554,6 +554,7 @@
     channel-range:
       min: '1.28'
 - volcano-admission:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-volcano'
     docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
     downstream: charmed-kubernetes/charm-volcano
@@ -569,6 +570,7 @@
     channel-range:
       min: '1.27'
 - volcano-controllers:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-volcano'
     docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
     downstream: charmed-kubernetes/charm-volcano
@@ -584,6 +586,7 @@
     channel-range:
       min: '1.27'
 - volcano-scheduler:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-volcano'
     docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
     downstream: charmed-kubernetes/charm-volcano
