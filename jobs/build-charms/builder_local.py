@@ -145,6 +145,7 @@ class _WrappedCmd:
         self._command = getattr(sh, command).bake(
             _tee=True,
             _out=partial(entity.echo, nl=False),
+            _truncate_exc=False,
         )
         setattr(self, command, self._command)
 
