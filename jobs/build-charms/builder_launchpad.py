@@ -18,7 +18,7 @@ from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import NotFound
 from lazr.restfulclient.resource import Resource
 
-from builder_local import Arch, Artifact, BuildEntity, BuildException
+from builder_local import Artifact, BuildEntity, BuildException
 
 
 class LPBuildEntity(BuildEntity):
@@ -180,7 +180,7 @@ class LPBuildEntity(BuildEntity):
         fp = find_packed_charm(self._lp_build_log(build).splitlines())
         return next(fp)
 
-    def _lp_build_download(self, build, dst_target: Path) -> Artifact:
+    def _lp_build_download(self, build, dst_target: Path) -> List[Artifact]:
         """Download charm file for a launchpad build."""
         charm_file = self._lp_charm_filename_from_build(build)
         dl_link = build.web_link + f"/+files/{charm_file}"
@@ -189,7 +189,7 @@ class LPBuildEntity(BuildEntity):
             with target.open("wb") as dst:
                 dst.write(src.read())
             self.echo(f"Downloaded {build.title}")
-            return Artifact(Arch[build.title.split(" ")[0].upper()], target)
+            return Artifact.from_charm(target)
 
     def _lp_amend_git_version(self):
         """Write the git sha into the charm."""
@@ -205,6 +205,8 @@ class LPBuildEntity(BuildEntity):
         builds = self._lp_complete_builds(request)
         download_path = Path(self.src_path)
         self.artifacts = [
-            self._lp_build_download(build, download_path) for build in builds
+            artifact
+            for build in builds
+            for artifact in self._lp_build_download(build, download_path)
         ]
         self._lp_amend_git_version()

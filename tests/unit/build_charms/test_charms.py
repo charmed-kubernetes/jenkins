@@ -22,6 +22,25 @@ CLI_RESPONSES = STATIC_TEST_PATH / "cli_response"
 CHARMCRAFT_LIB_SH = TEST_PATH.parent / "jobs" / "build-charms" / "charmcraft-lib.sh"
 
 
+architecure_test_data = [
+    # a single base and single arch -- a single artifact for this arch
+    ("charm_ubuntu-20.04-arm64.charm", [("20.04", "arm64")]),
+    # a single base and N arches -- an artifact per N arches
+    ("charm_ubuntu-20.04-arm64-amd64.charm", [("20.04", "arm64"), ("20.04", "amd64")]),
+    # N bases and one arch -- a single artifact for this arch
+    ("charm_ubuntu-20.04-arm64_ubuntu-22.04-arm64.charm", [("all", "arm64")]),
+    # N bases and M arches -- a single artifact for all series and archs
+    ("charm_ubuntu-20.04-arm64-amd64_ubuntu-22.04-arm64-amd64.charm", [("all", "all")]),
+]
+
+
+@pytest.mark.parametrize("filename, expected", architecure_test_data)
+def test_artifacts_from_charm_file(builder_local, filename, expected):
+    artifacts = builder_local.Artifact.from_charm(Path(filename))
+    as_strs = [(_.series.value, _.arch.value) for _ in artifacts]
+    assert as_strs == expected
+
+
 @pytest.mark.parametrize(
     "risk, expected",
     [
