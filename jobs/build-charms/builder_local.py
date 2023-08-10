@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from datetime import datetime
 from types import SimpleNamespace
-from typing import List, Mapping, Optional, Set
+from typing import Iterable, List, Mapping, Optional, Set, Tuple
 
 from multiprocessing.pool import ThreadPool
 from pprint import pformat
@@ -145,6 +145,7 @@ class _WrappedCmd:
         self._command = getattr(sh, command).bake(
             _tee=True,
             _out=partial(entity.echo, nl=False),
+            _truncate_exc=False,
         )
         setattr(self, command, self._command)
 
@@ -550,11 +551,38 @@ class BuildEnv:
 @unique
 class Arch(Enum):
     ALL = "all"
+    UNKNOWN = "unknown"
     AMD64 = "amd64"
     ARM64 = "arm64"
     ARMHF = "armhf"
     PPC64EL = "ppc64el"
     S390X = "s390x"
+
+    @classmethod
+    def from_value(cls, value: str) -> "Arch":
+        for arch in cls:
+            if arch.value == value:
+                return arch
+        if value == "arm":
+            return arch.ARMHF
+        return Arch.UNKNOWN
+
+
+@unique
+class Series(Enum):
+    ALL = "all"
+    UNKNOWN = "unknown"
+    XENIAL = "16.04"
+    BIONIC = "18.04"
+    FOCAL = "20.04"
+    JAMMY = "22.04"
+
+    @classmethod
+    def from_value(cls, value: str) -> "Series":
+        for series in cls:
+            if series.value == value:
+                return series
+        return Series.UNKNOWN
 
 
 @unique
@@ -577,17 +605,51 @@ class CharmResource:
 
 @dataclass
 class Artifact:
-    arch: Arch
     charm_or_bundle: Path
+    arch: Arch = Arch.ALL
+    series: Series = Series.ALL
     rev: int = None  # set when uploaded
     resources: List[CharmResource] = field(default_factory=list)
+
+    def __str__(self) -> str:
+        return f"File: {self.charm_or_bundle.name} for arch={self.arch} and series={self.series}"
+
+    @staticmethod
+    def _from_run_on_base(run_on_base: str) -> Iterable[Tuple[Arch, Series]]:
+        if not run_on_base.startswith("ubuntu-"):
+            return
+        base, *archs = run_on_base.split("-")[1:]
+        for arch in archs:
+            yield Arch.from_value(arch), Series.from_value(base)
+
+    @classmethod
+    def from_charm(cls, charm_file: Path) -> ["Artifact"]:
+        """
+        Parsed according to charmcraft file output.
+        https://discourse.charmhub.io/t/charmcraft-bases-provider-support/4713
+        """
+        run_on_bases = charm_file.stem.split("_")[1:]
+        base_arches = list(
+            pair for each in run_on_bases for pair in Artifact._from_run_on_base(each)
+        )
+        arch, series = base_arches[0]
+        if len(base_arches) == 1:
+            # single series, single arch     --> Series._specific_, Arch._specific_
+            return cls(charm_file, arch, series)
+        if len(set(arch for arch, _ in base_arches)) == 1:
+            # multiple series, single arch   --> Series.ALL       , Arch._specific_
+            return cls(charm_file, arch, Series.ALL)
+        if len(set(series for _, series in base_arches)) == 1:
+            # single series, multiple arch   --> Series._specific_, Arch.ALL
+            return cls(charm_file, Arch.ALL, series)
+        return cls(charm_file, Arch.ALL, Series.ALL)
 
     @property
     def arch_docker(self) -> str:
         """manage docker platforms with slightly different identifiers."""
         if self.arch == Arch.PPC64EL:
             return "ppc64le"
-        elif self.arch == Arch.ALL:
+        elif self.arch in (Arch.ALL, Arch.UNKNOWN):
             return Arch.AMD64.value
         else:
             return self.arch.value
@@ -810,7 +872,10 @@ class BuildEntity:
             except sh.ErrorReturnCode as e:
                 self.echo(e.stderr)
         elif lxc:
-            self.echo(f"Building in container {lxc}")
+            msg = f"Consider moving {self.name} to launchpad builder"
+            border = "-".join("=" * (len(msg) // 2 + 1))
+            self.echo("\n".join((border, msg, border)))
+            self.echo(f"Building in container {lxc}.")
             repository = f"https://github.com/{self.downstream}"
             charmcraft_script = (
                 "#!/bin/bash -eux\n"
@@ -825,7 +890,7 @@ class BuildEntity:
         if not ret.ok:
             self.echo("Failed to build, aborting")
             raise BuildException(f"Failed to build {self.name}")
-        self.artifacts.append(Artifact(Arch.ALL, charm_path))
+        self.artifacts.append(Artifact(charm_path, Arch.ALL))
 
     @property
     def repository(self) -> Optional[Repository]:
@@ -848,7 +913,7 @@ class BuildEntity:
             return
 
         self.echo(
-            f"Uploading {self.type}({self.name}) from {artifact.charm_or_bundle} to {self.entity}"
+            f"Uploading {self.type}({self.name}) from {artifact} to {self.entity}"
         )
         artifact.rev = _CharmHub(self).upload(artifact.charm_or_bundle)
         self.tag(f"{self.name}-{artifact.rev}")
@@ -925,7 +990,9 @@ class BuildEntity:
             elif details["type"] == "oci-image":
                 if upstream_source := details.get("upstream-source"):
                     # Pull any `upstream-image` annotated resources.
-                    self.echo(f"Pulling {upstream_source} for {artifact.arch}...")
+                    self.echo(
+                        f"Pulling {upstream_source} for {artifact.series}/{artifact.arch}..."
+                    )
                     docker = Docker(self)
                     docker.pull(upstream_source, platform=artifact.arch_docker)
                     # Use the local image-id from `docker images <upstream-source> -q`
@@ -1026,7 +1093,7 @@ class BundleBuildEntity(BuildEntity):
                 yaml.safe_dump(contents, fp)
         bundle_path = Charmcraft(self).pack(_cwd=outputdir)
         self.channel = to_channel
-        self.artifacts.append(Artifact(Arch.ALL, bundle_path))
+        self.artifacts.append(Artifact(bundle_path, Arch.ALL))
 
     def reset_artifacts(self):
         """Reset the artifacts in order to facilitate multiple bundle builds by the same entity."""
