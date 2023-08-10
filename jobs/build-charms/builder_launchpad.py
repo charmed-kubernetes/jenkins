@@ -1,12 +1,13 @@
 """ Launchpad Charm Builder
 """
 
-import zlib
+import hashlib
 import os
 import re
 import time
 import urllib.request
 import zipfile
+import zlib
 
 from configparser import ConfigParser
 from datetime import datetime
@@ -57,15 +58,23 @@ class LPBuildEntity(BuildEntity):
     @cached_property
     def _lp(self):
         """Use launchpad credentials to interact with launchpad."""
-        creds = os.environ.get("LPCREDS", None)
-        parser = ConfigParser()
-        parser.read(creds)
-        return Launchpad.login_with(
-            application_name=parser["1"]["consumer_key"],
-            service_root="production",
-            version="devel",
-            credentials_file=creds,
-        )
+        cred_file = os.environ.get("LPCREDS", None)
+        creds_local = os.environ.get("LPLOCAL", None)
+        if cred_file:
+            parser = ConfigParser()
+            parser.read(cred_file)
+            return Launchpad.login_with(
+                application_name=parser["1"]["consumer_key"],
+                service_root="production",
+                version="devel",
+                credentials_file=cred_file,
+            )
+        elif creds_local:
+            return Launchpad.login_with(
+                "localhost",
+                "production",
+                version="devel",
+            )
 
     @cached_property
     def _lp_project(self):
@@ -181,16 +190,20 @@ class LPBuildEntity(BuildEntity):
         fp = find_packed_charm(self._lp_build_log(build).splitlines())
         return next(fp)
 
-    def _lp_build_download(self, build, dst_target: Path) -> List[Artifact]:
+    def _lp_build_download(self, build, dst_target: Path) -> Artifact:
         """Download charm file for a launchpad build."""
         charm_file = self._lp_charm_filename_from_build(build)
         dl_link = build.web_link + f"/+files/{charm_file}"
         with urllib.request.urlopen(dl_link) as src:
-            target = dst_target / charm_file
-            with target.open("wb") as dst:
-                dst.write(src.read())
-            self.echo(f"Downloaded {build.title}")
-            return Artifact.from_charm(target)
+            buffer = src.read()
+
+        md5sum = hashlib.md5(buffer).hexdigest()
+        target = dst_target / charm_file
+        with target.open("wb") as dst:
+            dst.write(buffer)
+
+        self.echo(f"Downloaded {build.title} md5sum={md5sum}")
+        return Artifact.from_charm(target)
 
     def _lp_amend_git_version(self):
         """Write the git sha into the charm."""
@@ -206,8 +219,7 @@ class LPBuildEntity(BuildEntity):
         builds = self._lp_complete_builds(request)
         download_path = Path(self.src_path)
         self.artifacts = [
-            artifact
+            self._lp_build_download(build, download_path)
             for build in builds
-            for artifact in self._lp_build_download(build, download_path)
         ]
         self._lp_amend_git_version()

@@ -623,7 +623,7 @@ class Artifact:
             yield Arch.from_value(arch), Series.from_value(base)
 
     @classmethod
-    def from_charm(cls, charm_file: Path) -> List["Artifact"]:
+    def from_charm(cls, charm_file: Path) -> ["Artifact"]:
         """
         Parsed according to charmcraft file output.
         https://discourse.charmhub.io/t/charmcraft-bases-provider-support/4713
@@ -632,17 +632,17 @@ class Artifact:
         base_arches = list(
             pair for each in run_on_bases for pair in Artifact._from_run_on_base(each)
         )
+        arch, series = base_arches[0]
         if len(base_arches) == 1:
-            # single series, single arch     --> Series._specific_, Arch._specific_    (list of 1)
-            return [cls(charm_file, arch, series) for arch, series in base_arches]
+            # single series, single arch     --> Series._specific_, Arch._specific_
+            return cls(charm_file, arch, series)
         if len(set(arch for arch, _ in base_arches)) == 1:
-            # multiple series, single arch   --> Series.ALL       , Arch._specific_    (list of 1)
-            arch, _ = base_arches[0]
-            return [cls(charm_file, arch, Series.ALL)]
+            # multiple series, single arch   --> Series.ALL       , Arch._specific_
+            return cls(charm_file, arch, Series.ALL)
         if len(set(series for _, series in base_arches)) == 1:
-            # single series, multiple arch   --> Series._specific_, Artifact per arch  (list of N arches)
-            return [cls(charm_file, arch, series) for arch, series in base_arches]
-        return [cls(charm_file, Arch.ALL, Series.ALL)]
+            # single series, multiple arch   --> Series._specific_, Arch.ALL
+            return cls(charm_file, Arch.ALL, series)
+        return cls(charm_file, Arch.ALL, Series.ALL)
 
     @property
     def arch_docker(self) -> str:
