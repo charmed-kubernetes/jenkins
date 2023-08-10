@@ -582,7 +582,7 @@ class Series(Enum):
         for series in cls:
             if series.value == value:
                 return series
-        return Series.UNKNONWN
+        return Series.UNKNOWN
 
 
 @unique
