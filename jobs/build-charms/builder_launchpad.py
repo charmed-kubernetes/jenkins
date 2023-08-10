@@ -219,7 +219,6 @@ class LPBuildEntity(BuildEntity):
         builds = self._lp_complete_builds(request)
         download_path = Path(self.src_path)
         self.artifacts = [
-            self._lp_build_download(build, download_path)
-            for build in builds
+            self._lp_build_download(build, download_path) for build in builds
         ]
         self._lp_amend_git_version()
