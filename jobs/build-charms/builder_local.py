@@ -571,7 +571,7 @@ class Arch(Enum):
 @unique
 class Series(Enum):
     ALL = "all"
-    UNKNONWN = "unknown"
+    UNKNOWN = "unknown"
     XENIAL = "16.04"
     BIONIC = "18.04"
     FOCAL = "20.04"
