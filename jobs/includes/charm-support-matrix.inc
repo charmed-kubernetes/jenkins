@@ -204,7 +204,7 @@
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-control-plane.git'
 - kubernetes-metrics-server:
     builder: 'launchpad'
-    bugs: 'https://bugs.launchpad.net/charmed-kubernetes'
+    bugs: 'https://bugs.launchpad.net/charm-kubernetes-metrics-server'
     docs: 'https://charmhub.io/kubernetes-metrics-server/docs'
     downstream: charmed-kubernetes/kubernetes-metrics-server-operator.git
     store: 'https://charmhub.io/kubernetes-metrics-server'
@@ -243,7 +243,7 @@
       min: '1.27'
 - openstack-cloud-controller:
     builder: 'launchpad'
-    bugs: 'https://bugs.launchpad.net/charm-openstack-cloud-controller-operator'
+    bugs: 'https://bugs.launchpad.net/charm-openstack-cloud-controller'
     docs: 'https://charmhub.io/openstack-cloud-controller/docs'
     downstream: charmed-kubernetes/openstack-cloud-controller-operator.git
     store: 'https://charmhub.io/openstack-cloud-controller'
