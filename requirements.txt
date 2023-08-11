@@ -95,7 +95,7 @@ iniconfig==2.0.0
     # via pytest
 invoke==2.1.3
     # via -r requirements.in
-iso8601==1.1.0
+iso8601==2.0.0
     # via surl
 jenkins-job-builder==5.0.2
     # via -r requirements.in
