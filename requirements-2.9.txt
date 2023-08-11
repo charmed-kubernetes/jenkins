@@ -210,7 +210,7 @@ pytest-html==3.2.0
     # via -r requirements.in
 pytest-json-report==1.5.0
     # via -r requirements.in
-pytest-metadata==2.0.4
+pytest-metadata==3.0.0
     # via
     #   pytest-html
     #   pytest-json-report
