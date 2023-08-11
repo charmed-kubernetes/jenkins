@@ -541,7 +541,7 @@ class BuildEnv:
             layer_name
             for layer in self.layers
             for layer_name, layer_ops in layer.items()
-            if layer_ops.get("build_cache") != False
+            if layer_ops.get("build_cache") is not False
         ]
         pool = ThreadPool()
         results = pool.map(self.download, layers_to_pull)
