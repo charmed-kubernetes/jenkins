@@ -391,3 +391,11 @@
     needs_stable: no
     needs_tagging: no
     supports_rename: no
+    build_cache: no
+- lightkube:
+    downstream: "canonical/lightkube.git"
+    upstream: "https://github.com/gtsystem/lightkube"
+    needs_stable: no
+    needs_tagging: no
+    supports_rename: no
+    build_cache: no

@@ -540,7 +540,8 @@ class BuildEnv:
         layers_to_pull = [
             layer_name
             for layer in self.layers
-            if (layer_name := next(iter(layer))) != "layer:index"
+            for layer_name, layer_ops in layer.items()
+            if layer_ops.get("build_cache") is not False
         ]
         pool = ThreadPool()
         results = pool.map(self.download, layers_to_pull)
