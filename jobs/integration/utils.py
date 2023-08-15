@@ -112,7 +112,7 @@ async def upgrade_charms(model, channel, tools):
     model_name = model.info.name
     for app_name, app in model.applications.items():
         log.info(f"Upgrading {app_name} from {app.charm_url} to --channel={channel}")
-        juju_2 = model.connection.info["server-version"].startswith("2.")
+        juju_2 = model.connection().info["server-version"].startswith("2.")
         command = "upgrade-charm" if juju_2 else "refresh"
         await tools.run(
             "juju", command, "-m", model_name, app.name, "--channel", channel
