@@ -19,15 +19,14 @@ from juju.model import Model
 from pathlib import Path
 from py.xml import html
 from tempfile import NamedTemporaryFile
-from traceback import format_exc
 from .utils import (
     asyncify,
     upgrade_charms,
     upgrade_snaps,
     arch,
     log_snap_versions,
-    scp_from,
     juju_run,
+    juju_run_action,
 )
 
 from .logger import log
@@ -301,53 +300,42 @@ async def model(request, tools):
 
 
 @pytest.fixture(scope="module")
-async def k8s_cloud(model, tools):
-    kcp_app = model.applications["kubernetes-control-plane"]
-    kcp_unit = kcp_app.units[0]
-    created_k8s_cloud = False
+async def k8s_cloud(kubeconfig, tools):
+    clouds = await tools.run(
+        "juju", "clouds", "--format", "yaml", "-c", tools.controller_name
+    )
+    if tools.k8s_cloud in yaml.safe_load(clouds[0]):
+        yield tools.k8s_cloud
+        return
 
-    with NamedTemporaryFile(dir=Path.home() / ".local" / "share" / "juju") as f:
-        await scp_from(
-            kcp_unit,
-            "config",
-            f.name,
+    _created = False
+    click.echo("Adding k8s cloud")
+    try:
+        await tools.run(
+            "juju",
+            "add-k8s",
+            "--skip-storage",
+            "-c",
             tools.controller_name,
-            tools.connection,
-            proxy=tools.juju_ssh_proxy,
+            tools.k8s_cloud,
         )
-        try:
-            click.echo("Adding k8s cloud")
-            os.environ["KUBECONFIG"] = f.name
+        _created = True
+        yield tools.k8s_cloud
+    finally:
+        if _created:
+            click.echo("Removing k8s cloud")
             await tools.run(
                 "juju",
-                "add-k8s",
-                "--skip-storage",
+                "remove-cloud",
                 "-c",
                 tools.controller_name,
                 tools.k8s_cloud,
             )
-            del os.environ["KUBECONFIG"]
-            created_k8s_cloud = True
-            yield tools.k8s_cloud
-        finally:
-            if not created_k8s_cloud:
-                return
-            click.echo("Removing k8s cloud")
-            try:
-                await tools.run(
-                    "juju",
-                    "remove-cloud",
-                    "-c",
-                    tools.controller_name,
-                    tools.k8s_cloud,
-                )
-            except Exception:
-                click.echo(format_exc())
 
 
 @pytest.fixture(scope="module")
 async def k8s_model(k8s_cloud, tools):
-    k8s_model = None
+    _model_created = None
     try:
         click.echo("Adding k8s model")
         await tools.run(
@@ -356,35 +344,36 @@ async def k8s_model(k8s_cloud, tools):
             "-c",
             tools.controller_name,
             tools.k8s_model_name,
-            tools.k8s_cloud,
+            k8s_cloud,
             "--config",
             "test-mode=true",
             "--no-switch",
         )
 
-        k8s_model = Model()
-        await k8s_model.connect(tools.k8s_connection)
-        yield k8s_model
+        _model_created = Model()
+        await _model_created.connect(tools.k8s_connection)
+        yield _model_created
     finally:
-        if not k8s_model:
-            return
-        await tools.run("juju-crashdump", "-a", "config", "-m", tools.k8s_connection)
-        click.echo("Cleaning up k8s model")
-        try:
-            for relation in k8s_model.relations:
+        if _model_created:
+            await tools.run(
+                "juju-crashdump", "-a", "config", "-m", tools.k8s_connection
+            )
+            click.echo("Cleaning up k8s model")
+
+            for relation in _model_created.relations:
                 click.echo(f"Removing relation {relation.name} from k8s model")
                 await relation.destroy()
 
-            for name, offer in k8s_model.application_offers.items():
+            for name, offer in _model_created.application_offers.items():
                 click.echo(f"Removing offer {name} from k8s model")
                 await offer.destroy()
 
-            for name, app in k8s_model.applications.items():
+            for name, app in _model_created.applications.items():
                 click.echo(f"Removing app {name} from k8s model")
                 await app.destroy()
 
             click.echo("Disconnecting k8s model")
-            await k8s_model.disconnect()
+            await _model_created.disconnect()
 
             click.echo("Destroying k8s model")
             await tools.run(
@@ -396,8 +385,6 @@ async def k8s_model(k8s_cloud, tools):
                 "-y",
                 tools.k8s_connection,
             )
-        except Exception:
-            click.echo(format_exc())
 
 
 @pytest.fixture
@@ -688,13 +675,18 @@ def pytest_metadata(metadata):
 
 
 @pytest.fixture(scope="module")
-async def kubeconfig(tools, model, tmp_path_factory):
-    local = tmp_path_factory.getbasetemp() / "kubeconfig"
-    k8s_cp = model.applications["kubernetes-control-plane"].units[0]
-    await scp_from(
-        k8s_cp, "config", local, None, tools.connection, proxy=tools.juju_ssh_proxy
-    )
-    yield local
+async def kubeconfig(model):
+    control_planes = model.applications["kubernetes-control-plane"].units
+    (unit,) = [u for u in control_planes if await u.is_leader_from_status()]
+    action = await juju_run_action(unit, "get-kubeconfig")
+    # kubeconfig needs to be somewhere the juju confined snap client can access it
+    path = Path.home() / ".local/share/juju"
+    with NamedTemporaryFile(dir=path) as f:
+        local = Path(f.name)
+        local.write_text(action.results["kubeconfig"])
+        os.environ["KUBECONFIG"] = str(local)
+        yield local
+        del os.environ["KUBECONFIG"]
 
 
 @pytest.fixture(scope="module")
