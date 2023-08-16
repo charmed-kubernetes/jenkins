@@ -1817,7 +1817,7 @@ async def test_encryption_at_rest(model, tools):
     # for any other failed units.
     click.echo("Waiting for cluster to settle")
     await model.wait_for_idle(
-        wait_for_active=True, raise_on_blocked=True, timeout=60 * 60
+        status="active", raise_on_blocked=True, timeout=60 * 60
     )
 
     click.echo("Creating secret")
