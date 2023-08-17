@@ -1816,9 +1816,7 @@ async def test_encryption_at_rest(model, tools):
     # state, we need to give things another chance to settle out, while also checking
     # for any other failed units.
     click.echo("Waiting for cluster to settle")
-    await model.wait_for_idle(
-        wait_for_active=True, raise_on_blocked=True, timeout=60 * 60
-    )
+    await model.wait_for_idle(status="active", raise_on_blocked=True, timeout=60 * 60)
 
     click.echo("Creating secret")
     await kubectl(
