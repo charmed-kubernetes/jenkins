@@ -99,15 +99,27 @@ do not use our bundles for deployment.
 
 ### Build new CK Charms from release git branches
 
+These steps must be repeated consecutively every time another bug-fix
+is committed to the `release_1.xx`` branch of any charm (or layer/depencency change)
+
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/build-charms/
 
 This job clones the `release_1.xx` branch for each of our repos. It then builds
 each charm/bundle using those local repos. After building, they will be
 published to the `1.xx/beta` channel in Charmhub based on the job options.
 
-#### Charm build options
+#### Charm and Bundle build to 1.xx/beta
 
 ![charm build options](build-charms-options.png)
+
+**Job**: https://jenkins.canonical.com/k8s-ps5/job/promote-charms/
+
+#### Charm promote to latest/beta
+
+In preparation for running the **validate-charm-release-upgrade** job, 
+the charms should be promoted from `1.xx/beta` to `latest/beta` tracks.
+![charm promote options](promote-charms-beta.png)
+
 
 ### Promote new K8s snaps
 
@@ -184,7 +196,6 @@ operator charms. You typically run this job multiple times to get charms into
 all of the appropriate channels, for example:
 
 - `1.27/beta` -> `1.27/stable`
-- `1.27/beta` -> `latest/beta`
 - `1.27/beta` -> `latest/stable`
 
 #### Promote charm Options
