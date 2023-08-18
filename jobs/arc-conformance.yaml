@@ -22,7 +22,7 @@
       - juju-lts
       - string:
           name: CK_VERSION
-          default: '1.27'
+          default: '1.28'
           description: |
             CK version to deploy. This will be used to set the snap track
             and to identify what k8s version is associated with the results.
