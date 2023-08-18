@@ -168,6 +168,10 @@ any changes as a result of SQA testing.
 
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/conformance-cncf-ck/
 
+Sync `charmed-kubernetes/k8s-conformance` main from upstream
+
+- https://github.com/charmed-kubernetes/k8s-conformance
+
 Confirm passing results, then create a PR against the upstream `k8s-conformance`
 repo. For example, we used the following branch for CK 1.26:
 
