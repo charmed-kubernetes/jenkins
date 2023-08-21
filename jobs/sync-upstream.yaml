@@ -188,11 +188,12 @@
       - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
-          days-to-keep: 2
+          num-to-keep: 10
     wrappers:
       - default-job-wrapper
       - ci-creds
     parameters:
+      - global-params
       - string:
           name: K8S_VERSION
           description: Stable K8S version to tag branches against.
@@ -216,7 +217,8 @@
                      --charm-list jobs/includes/charm-support-matrix.inc \
                      --bundle-revision $BUNDLE_REV \
                      --k8s-version $K8S_VERSION \
-                     --filter-by-tag $FILTER_BY_TAG
+                     --filter-by-tag $FILTER_BY_TAG \
+                     $IS_DRY_RUN
 
 - job:
     name: 'sync-stable-tag-bugfix-rev'
@@ -228,11 +230,12 @@
       - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
-          days-to-keep: 1
+          num-to-keep: 10
     wrappers:
       - default-job-wrapper
       - ci-creds
     parameters:
+      - global-params
       - string:
           name: K8S_VERSION
           description: Stable K8S version to tag branches against.
@@ -257,7 +260,8 @@
               --bundle-revision $BUGFIX_REV \
               --k8s-version $K8S_VERSION \
               --filter-by-tag $FILTER_BY_TAG \
-              --bugfix
+              --bugfix \
+              $IS_DRY_RUN
 
 - job:
     name: 'cut-stable-release'
@@ -291,7 +295,8 @@
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc \
                --ancillary-list jobs/includes/ancillary-list.inc \
-               --filter-by-tag $FILTER_BY_TAG $IS_DRY_RUN
+               --filter-by-tag $FILTER_BY_TAG \
+               $IS_DRY_RUN
 
 - job:
     name: 'rename-branch'
@@ -303,7 +308,7 @@
       - k8s-jenkins-jenkaas
     properties:
       - build-discarder:
-          days-to-keep: 2
+          num-to-keep: 10
     parameters:
       - global-params
       - string:
