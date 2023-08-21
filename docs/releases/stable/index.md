@@ -206,6 +206,23 @@ all of the appropriate channels, for example:
 
 ![promote charm options](promote-charms.png)
 
+### Build bundles to **beta** and **stable**
+
+**Job**: https://jenkins.canonical.com/k8s-ps5/job/build-charms/
+
+Bundles cannot be promoted because they reference specific channels at build
+time. Therefore, it's required to build bundles which reference the <risk>
+track charms and `1.xx/stable` track snaps
+
+> **Note**: Run job two times, setting `TO_CHANNEL` as `beta` and `stable`
+
+> **Note**: The `bundle` filter shown below ensures only bundles are built
+when this job runs.
+
+#### Build bundle Options
+
+![build bundle options](build-bundle-options.png)
+
 ### Confirm snap promotion from `1.xx/<risk>` to `latest/<risk>`
 
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/sync-snaps/
@@ -229,22 +246,6 @@ default snap channel on the `release_1.xx` branch. For example, for the 1.27 GA:
 > **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
 like we've done so many times before!
 
-### Build bundles to **beta** and **stable**
-
-**Job**: https://jenkins.canonical.com/k8s-ps5/job/build-charms/
-
-Bundles cannot be promoted because they reference specific channels at build
-time. Therefore, it's required to build bundles which reference the <risk>
-track charms and `1.xx/stable` track snaps
-
-> **Note**: Run job two times, setting `TO_CHANNEL` as `beta` and `stable`
-
-> **Note**: The `bundle` filter shown below ensures only bundles are built
-when this job runs.
-
-#### Build bundle Options
-
-![build bundle options](build-bundle-options.png)
 
 ### Tag release branches with the current stable bundle
 
