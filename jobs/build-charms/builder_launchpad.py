@@ -1,12 +1,13 @@
 """ Launchpad Charm Builder
 """
 
-import zlib
+import hashlib
 import os
 import re
 import time
 import urllib.request
 import zipfile
+import zlib
 
 from configparser import ConfigParser
 from datetime import datetime
@@ -18,7 +19,7 @@ from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import NotFound
 from lazr.restfulclient.resource import Resource
 
-from builder_local import Arch, Artifact, BuildEntity, BuildException
+from builder_local import Artifact, BuildEntity, BuildException
 
 
 class LPBuildEntity(BuildEntity):
@@ -38,11 +39,10 @@ class LPBuildEntity(BuildEntity):
         "Successfully built",
     }
 
-    @staticmethod
-    def _lp_recipe_from_branch(branch: str):
+    def _lp_recipe_from_branch(self, branch: str):
         """Recipe names must be lowercase alphanumerics with allowed +, -, and ."""
         subbed = re.sub(r"[^0-9a-zA-Z\+\-\.]+", "-", branch)
-        return subbed.lower()
+        return f"{self.name}-{subbed.lower()}"
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -58,15 +58,23 @@ class LPBuildEntity(BuildEntity):
     @cached_property
     def _lp(self):
         """Use launchpad credentials to interact with launchpad."""
-        creds = os.environ.get("LPCREDS", None)
-        parser = ConfigParser()
-        parser.read(creds)
-        return Launchpad.login_with(
-            application_name=parser["1"]["consumer_key"],
-            service_root="production",
-            version="devel",
-            credentials_file=creds,
-        )
+        cred_file = os.environ.get("LPCREDS", None)
+        creds_local = os.environ.get("LPLOCAL", None)
+        if cred_file:
+            parser = ConfigParser()
+            parser.read(cred_file)
+            return Launchpad.login_with(
+                application_name=parser["1"]["consumer_key"],
+                service_root="production",
+                version="devel",
+                credentials_file=cred_file,
+            )
+        elif creds_local:
+            return Launchpad.login_with(
+                "localhost",
+                "production",
+                version="devel",
+            )
 
     @cached_property
     def _lp_project(self):
@@ -97,6 +105,7 @@ class LPBuildEntity(BuildEntity):
                 name=self._lp_recipe_name,
                 auto_build=False,
                 auto_build_channels=self.SNAP_CHANNEL,
+                build_path=self.opts.get("subdir", ""),
                 git_ref=ref,
                 owner=self._lp_owner,
                 project=self._lp_project,
@@ -114,8 +123,8 @@ class LPBuildEntity(BuildEntity):
 
         with urllib.request.urlopen(build.build_log_url) as f:
             contents = zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
-        self._lp_build_log_cache[build.self_link] = contents
-        return contents
+        self._lp_build_log_cache[build.self_link] = c_str = contents.decode()
+        return c_str
 
     def _lp_request_builds(self) -> List[Resource]:
         """Request a charm build for this charm."""
@@ -128,6 +137,7 @@ class LPBuildEntity(BuildEntity):
                 err_msg = f"Failed requesting lauchpad build {self.entity}, aborting"
                 raise BuildException(err_msg)
             if status == "Completed":
+                self.echo(f"Build recipe started @ {self._lp_recipe.web_link}")
                 break
             time.sleep(1.0)
             req.lp_refresh()
@@ -159,7 +169,7 @@ class LPBuildEntity(BuildEntity):
                 raise BuildException(err_msg)
         return builds
 
-    def _lp_charm_filename_from_build(self, build):
+    def _lp_charm_filename_from_build(self, build) -> str:
         """Determine the charm file name of a particular build.
 
         Currently, this is accomplished by reading the buildlog
@@ -169,12 +179,12 @@ class LPBuildEntity(BuildEntity):
         """
 
         def find_packed_charm(lines):
-            found, keyword = False, b"Charms packed:"
+            found, keyword = False, "Charms packed:"
             for line in lines:
                 if line.startswith(keyword):
                     found |= True
                 elif found:
-                    yield line.decode().strip()
+                    yield line.strip()
                     found = False
 
         fp = find_packed_charm(self._lp_build_log(build).splitlines())
@@ -185,11 +195,15 @@ class LPBuildEntity(BuildEntity):
         charm_file = self._lp_charm_filename_from_build(build)
         dl_link = build.web_link + f"/+files/{charm_file}"
         with urllib.request.urlopen(dl_link) as src:
-            target = dst_target / charm_file
-            with target.open("wb") as dst:
-                dst.write(src.read())
-            self.echo(f"Downloaded {build.title}")
-            return Artifact(Arch[build.title.split(" ")[0].upper()], target)
+            buffer = src.read()
+
+        md5sum = hashlib.md5(buffer).hexdigest()
+        target = dst_target / charm_file
+        with target.open("wb") as dst:
+            dst.write(buffer)
+
+        self.echo(f"Downloaded {build.title} md5sum={md5sum}")
+        return Artifact.from_charm(target)
 
     def _lp_amend_git_version(self):
         """Write the git sha into the charm."""

@@ -9,7 +9,7 @@ def _find_eks_base(version, override){
     
     // assumes the version looks like r'v\d.\d+.\d+'
     def f_version = Float.parseFloat(version.substring(1, version.lastIndexOf('.')))
-    return f_version >= 1.28 ? "core22" : "core20";
+    return f_version >= 1.99 ? "core22" : "core20";
 }
 def eks_base_override = params.eks_base_override
 def EKS_BASE = _find_eks_base(kube_version, eks_base_override)

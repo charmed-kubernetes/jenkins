@@ -116,7 +116,7 @@
         - jenkins
       ignore_errors: yes
     - name: upgrade charm
-      command: "snap refresh charm --channel 2.x/stable"
+      command: "snap refresh charm --channel 3.x/stable"
       ignore_errors: yes
       tags:
         - jenkins
@@ -149,7 +149,7 @@
       command: "snap install {{item}}"
       ignore_errors: yes
       loop:
-        - "charm --classic --channel 2.x/stable"
+        - "charm --classic --channel 3.x/stable"
         - "charmcraft --classic --edge"
         - "go --classic --stable"
         - "google-cloud-cli --classic --channel latest/stable"
