@@ -209,7 +209,7 @@
       - run-tox:
           COMMAND: |
             IS_DRY_RUN=""
-            if [ ! -z ${DRY_RUN+x} ]; then
+            if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
             tox -e py38 -- python jobs/sync-upstream/sync.py tag-stable \
@@ -251,7 +251,7 @@
       - run-tox:
           COMMAND: |
             IS_DRY_RUN=""
-            if [ ! -z ${DRY_RUN+x} ]; then
+            if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
             tox -e py38 -- python jobs/sync-upstream/sync.py tag-stable \
