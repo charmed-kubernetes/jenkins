@@ -345,7 +345,7 @@ class _CharmHub(Charmcraft):
         )
         charm_status = [
             # Get all the releases and associated bases
-            (release, mappings.base)
+            (release, mapping.base)
             # where the track matches the from_channel
             for track in self.status(charm_entity)
             if from_channel.startswith(track.track)
