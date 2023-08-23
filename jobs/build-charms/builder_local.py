@@ -344,7 +344,7 @@ class _CharmHub(Charmcraft):
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channels}"
         )
         charm_status = [
-            # Get all the releases and associted bases
+            # Get all the releases and associated bases
             (release, mappings.base)
             # where the track matches the from_channel
             for tracks in self.status(charm_entity)
