@@ -347,14 +347,14 @@ class _CharmHub(Charmcraft):
             # Get all the releases and associated bases
             (release, mappings.base)
             # where the track matches the from_channel
-            for tracks in self.status(charm_entity)
-            if from_channel.startswith(tracks.track)
+            for track in self.status(charm_entity)
+            if from_channel.startswith(track.track)
             # when that track has a base mapping
-            for mappings in tracks.mappings
-            if mappings.base
+            for mapping in track.mappings
+            if mapping.base
             # if the from_channel exact matches, and it's not a tracking release
             # The charm was really released to this channel
-            for release in mappings.releases
+            for release in mapping.releases
             if release.channel == from_channel and release.status != "tracking"
         ]
 
