@@ -186,14 +186,20 @@ def charm_environment(test_environment, builder_local):
 def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
     """Tests promote_all to charmhub."""
     charm_environment.promote_all(
-        from_channel="latest/edge", to_channels=["latest/beta"]
+        from_channel="latest/edge",
+        to_channels=["latest/beta", "1.99/beta"],
+        dry_run=False,
     )
     resource_args = [
         "--resource=test-file:994",
         "--resource=test-file-2:993",
     ]
     charmcraft_cmd.release.assert_called_once_with(
-        "k8s-ci-charm", "--revision=845", "--channel=latest/beta", *resource_args
+        "k8s-ci-charm",
+        "--revision=845",
+        *resource_args,
+        "--channel=latest/beta",
+        "--channel=1.99/beta",
     )
 
 
@@ -629,6 +635,7 @@ def test_promote_command(mock_build_env, main):
     mock_build_env.promote_all.assert_called_once_with(
         from_channel="latest/edge",
         to_channels=mock_build_env.to_channels,
+        dry_run=False,
     )
 
 

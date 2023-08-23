@@ -18,10 +18,12 @@ Usage:
 """
 
 import os
+import inspect
 import traceback
 from io import BytesIO
 import zipfile
 from pathlib import Path
+from collections import defaultdict
 from cilib.github_api import Repository
 from enum import Enum, unique
 from sh.contrib import git
@@ -189,6 +191,62 @@ class Charmcraft(_WrappedCmd):
         return entity
 
 
+@dataclass
+class Base:
+    name: str
+    channel: str
+    architecture: str
+
+    def __str__(self) -> str:
+        return f"{self.name} {self.channel} ({self.architecture})"
+
+
+@dataclass
+class ResourceRevision:
+    name: str
+    revision: int
+
+
+@dataclass
+class ReleaseStatus:
+    status: str
+    channel: str
+    version: Optional[int]
+    revision: Optional[str]
+    resources: Optional[List[ResourceRevision]]
+
+    @classmethod
+    def from_dict(cls, **kwds) -> "ResourceRevision":
+        resources = kwds.pop("resources") or []
+        kwds["resources"] = [ResourceRevision(**_) for _ in resources]
+        return cls(
+            **{k: v for k, v in kwds.items() if k in inspect.signature(cls).parameters}
+        )
+
+
+@dataclass
+class MappingStatus:
+    base: Optional[Base]
+    releases: List[ReleaseStatus]
+
+    @classmethod
+    def from_dict(cls, base, releases) -> "MappingStatus":
+        base = Base(**base) if base else None
+        releases = [ReleaseStatus.from_dict(**_) for _ in releases or []]
+        return cls(base, releases)
+
+
+@dataclass
+class TrackStatus:
+    track: str
+    mappings: List[MappingStatus]
+
+    @classmethod
+    def from_dict(cls, track, mappings) -> "TrackStatus":
+        mappings = [MappingStatus.from_dict(**_) for _ in mappings]
+        return cls(track, mappings)
+
+
 class _CharmHub(Charmcraft):
     STATUS_RESOURCE = re.compile(r"(\S+) \(r(\d+)\)")
     BASE_RE = re.compile(r"(\S+) (\S+) \((\S+)\)")
@@ -214,29 +272,12 @@ class _CharmHub(Charmcraft):
         resp = requests.get(url, params=query)
         return resp.json()
 
-    def status(self, charm_entity):
+    def status(self, charm_entity) -> List[TrackStatus]:
         """Read CLI Table output from charmcraft status and parse."""
-        charm_status = self.charmcraft.status(charm_entity, _out=None)
-        header, *body = charm_status.splitlines()
-        channel_status = self._table_to_list(header, body)
-
-        for idx, row in enumerate(channel_status):
-            base_split = self.BASE_RE.findall(row.get("Base"))
-            if base_split:
-                row["Base"] = dict(
-                    zip(["name", "channel", "architecture"], base_split[0])
-                )
-            for prop in ["Resources", "Revision", "Version"]:
-                value = row.get(prop, "")
-                if value == "↑":
-                    row[prop] = channel_status[idx - 1][prop]
-                elif value == "-":
-                    row[prop] = {} if prop == "Resources" else None
-                elif prop == "Resources":
-                    row[prop] = dict(self.STATUS_RESOURCE.findall(value))
-                else:
-                    row[prop] = value
-        return channel_status
+        charm_status_str = self.charmcraft.status(
+            charm_entity, format="json", _out=None
+        )
+        return [TrackStatus.from_dict(**_) for _ in json.loads(charm_status_str)]
 
     def revisions(self, charm_entity):
         """Read CLI Table output from charmcraft revisions and parse."""
@@ -298,37 +339,53 @@ class _CharmHub(Charmcraft):
         args = [entity, rev_args] + channel_args + resource_rev_args
         self.charmcraft.release(*args)
 
-    def promote(self, charm_entity, from_channel, to_channels):
+    def promote(self, charm_entity, from_channel, to_channels, dry_run):
         self._echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channels}"
         )
         charm_status = [
-            row
-            for row in self.status(charm_entity)
-            if row["Revision"] and f"{row['Track']}/{row['Channel']}" == from_channel
+            # Get all the releases and associated bases
+            (release, mapping.base)
+            # where the track matches the from_channel
+            for track in self.status(charm_entity)
+            if from_channel.startswith(track.track)
+            # when that track has a base mapping
+            for mapping in track.mappings
+            if mapping.base
+            # if the from_channel exact matches, and it's not a tracking release
+            # The charm was really released to this channel
+            for release in mapping.releases
+            if release.channel == from_channel and release.status != "tracking"
         ]
 
-        calls = set()
-        for row in charm_status:
-            revision, resources = int(row["Revision"]), row["Resources"]
+        calls = defaultdict(list)
+        for release, base in charm_status:
             resource_args = (
-                f"--resource={name}:{rev}" for name, rev in resources.items() if rev
+                f"--resource={rsc.name}:{rsc.revision}"
+                for rsc in release.resources
+                if rsc.revision
             )
-            calls.add(
-                (
-                    revision,
-                    charm_entity,
-                    f"--revision={revision}",
-                    *(f"--channel={chan}" for chan in to_channels),
-                    *resource_args,
-                )
+            args = (
+                charm_entity,
+                f"--revision={release.revision}",
+                *resource_args,
+                *(f"--channel={chan}" for chan in to_channels),
             )
+            calls[args].append(base)
 
-        # Act on the charm with the highest revision number
-        # This should always be the most recently built charm
-        for _, *args in sorted(calls)[-1:]:
-            # self._echo(" ".join(["charmcraft", "release", *args]))
-            self.charmcraft.release(*args)
+        # So, its very likely there could be multiple charms in this
+        # from_channel which need to be promoted to the to_channels.
+
+        # due to different charm revisions for a different base
+        # for example coredns could have a different charm revision
+        # for arm64 and amd64 -- each should be promoted
+
+        for args, bases in calls.items():
+            base_str = "# " + ", ".join(map(str, bases))
+            debug_cmd = " ".join(map(str, ["charmcraft", "release", *args]))
+            self._echo(f"\n{base_str}\n{debug_cmd}")
+            if not dry_run:
+                self.charmcraft.release(*args)
 
     def upload(self, dst_path) -> int:
         out = self.charmcraft.upload(dst_path)
@@ -452,9 +509,9 @@ class BuildEnv:
 
         Numerical channels will always be in the format i.ii/risk
         """
-        chan = self.db["build_args"].get("to_channel", None)
+        chan = self.db["build_args"].get("to_channel", None).split(",")
         numerical = matched_numerical_channel(chan, SNAP_K8S_TRACK_MAP)
-        return list(filter(None, [chan, numerical]))
+        return list(filter(None, [*chan, numerical]))
 
     def apply_channel_bounds(self, name: str, to_channels: List[str]) -> List[str]:
         """
@@ -492,7 +549,7 @@ class BuildEnv:
         self.db_json.write_text(json.dumps(dict(self.db)))
         self.store.put_item(Item=dict(self.db))
 
-    def promote_all(self, from_channel="beta", to_channels=("edge",)):
+    def promote_all(self, from_channel="beta", to_channels=("edge",), dry_run=True):
         """Promote set of charms in charmhub."""
         track = self.db["build_args"].get("track") or "latest"
         if from_channel.lower() in RISKS:
@@ -511,7 +568,9 @@ class BuildEnv:
                     continue
                 ch_channels = self.apply_channel_bounds(charm_name, to_channels)
                 try:
-                    _CharmHub(self).promote(charm_name, from_channel, ch_channels)
+                    _CharmHub(self).promote(
+                        charm_name, from_channel, ch_channels, dry_run
+                    )
                 except Exception:
                     self.echo(traceback.format_exc())
                     failed_entities.append(charm_name)

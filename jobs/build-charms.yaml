@@ -25,6 +25,7 @@
       - build-discarder:
           num-to-keep: 10
     wrappers:
+      - global-params
       - default-job-wrapper
       - ci-creds
     builders:
@@ -35,11 +36,15 @@
           COMMAND: |
             #!/bin/bash
             set -eux
+            IS_DRY_RUN=""
+            if [[ $DRY_RUN = "true" ]]; then
+              IS_DRY_RUN="--dry-run"
+            fi
             tox -e py38 -- python jobs/build-charms/main.py promote \
                 --from-channel $FROM_CHANNEL \
                 --to-channel $TO_CHANNEL \
                 --charm-list $CHARM_LIST \
-                --filter-by-tag $FILTER_BY_TAG
+                --filter-by-tag $FILTER_BY_TAG $IS_DRY_RUN
 
 # Builds and releases latest bundles
 - job:

@@ -229,7 +229,8 @@ def build_bundles(
     help="Charm channel to publish from",
 )
 @click.option("--to-channel", required=True, help="Charm channel to publish to")
-def promote(charm_list, filter_by_tag, track, from_channel, to_channel):
+@click.option("--dry-run", is_flag=True)
+def promote(charm_list, filter_by_tag, track, from_channel, to_channel, dry_run):
     """
     Promote channel for a set of charms filtered by tag.
     """
@@ -243,7 +244,7 @@ def promote(charm_list, filter_by_tag, track, from_channel, to_channel):
     }
     build_env.clean()
     return build_env.promote_all(
-        from_channel=from_channel, to_channels=build_env.to_channels
+        from_channel=from_channel, to_channels=build_env.to_channels, dry_run=dry_run
     )
 
 

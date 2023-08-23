@@ -1,13 +1,236 @@
-Track    Base                Channel    Version    Revision    Resources
-latest   ubuntu 16.04 (all)  stable     838        838         test-file (r977), test-file-2 (r976)
-                             candidate  838        838         test-file (r977), test-file-2 (r976)
-                             beta       824        824         test-file (r917), test-file-2 (r916)
-                             edge       845        845         test-file (r994), test-file-2 (r993)
-         ubuntu 18.04 (all)  stable     838        838         test-file (r977), test-file-2 (r976)
-                             candidate  838        838         test-file (r977), test-file-2 (r976)
-                             beta       824        824         test-file (r917), test-file-2 (r916)
-                             edge       845        845         test-file (r994), test-file-2 (r993)
-         ubuntu 20.04 (all)  stable     838        838         test-file (r977), test-file-2 (r976)
-                             candidate  838        838         test-file (r977), test-file-2 (r976)
-                             beta       824        824         test-file (r917), test-file-2 (r916)
-                             edge       845        845         test-file (r994), test-file-2 (r993)
+[{
+    "track": "latest",
+    "mappings": [
+        {
+            "base": {
+                "name": "ubuntu",
+                "channel": "16.04",
+                "architecture": "all"
+            },
+            "releases": [
+                {
+                    "status": "open",
+                    "channel": "latest/stable",
+                    "version": "838",
+                    "revision": "838",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 977
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 976
+                        }
+                    ],
+                    "expires_at": null
+                },
+                {
+                    "status": "open",
+                    "channel": "latest/candidate",
+                    "version": "838",
+                    "revision": "838",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 977
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 976
+                        }
+                    ],
+                    "expires_at": null
+                },
+                {
+                    "status": "open",
+                    "channel": "latest/beta",
+                    "version": "824",
+                    "revision": "824",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 917
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 916
+                        }
+                    ],
+                    "expires_at": null
+                },
+                {
+                    "status": "open",
+                    "channel": "latest/edge",
+                    "version": "845",
+                    "revision": "845",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 994
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 993
+                        }
+                    ],
+                    "expires_at": null
+                }
+            ]
+        },
+        {
+            "base": {
+                "name": "ubuntu",
+                "channel": "18.04",
+                "architecture": "all"
+            },
+            "releases": [
+                {
+                    "status": "open",
+                    "channel": "latest/stable",
+                    "version": "838",
+                    "revision": "838",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 977
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 976
+                        }
+                    ],
+                    "expires_at": null
+                },
+                {
+                    "status": "open",
+                    "channel": "latest/candidate",
+                    "version": "838",
+                    "revision": "838",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 977
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 976
+                        }
+                    ],
+                    "expires_at": null
+                },
+                {
+                    "status": "open",
+                    "channel": "latest/beta",
+                    "version": "824",
+                    "revision": "824",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 917
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 916
+                        }
+                    ],
+                    "expires_at": null
+                },
+                {
+                    "status": "open",
+                    "channel": "latest/edge",
+                    "version": "845",
+                    "revision": "845",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 994
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 993
+                        }
+                    ],
+                    "expires_at": null
+                }
+            ]
+        },
+        {
+            "base": {
+                "name": "ubuntu",
+                "channel": "20.04",
+                "architecture": "all"
+            },
+            "releases": [
+                {
+                    "status": "open",
+                    "channel": "latest/stable",
+                    "version": "838",
+                    "revision": "838",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 977
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 976
+                        }
+                    ],
+                    "expires_at": null
+                },
+                {
+                    "status": "open",
+                    "channel": "latest/candidate",
+                    "version": "838",
+                    "revision": "838",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 977
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 976
+                        }
+                    ],
+                    "expires_at": null
+                },
+                {
+                    "status": "open",
+                    "channel": "latest/beta",
+                    "version": "824",
+                    "revision": "824",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 917
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 916
+                        }
+                    ],
+                    "expires_at": null
+                },
+                {
+                    "status": "open",
+                    "channel": "latest/edge",
+                    "version": "845",
+                    "revision": "845",
+                    "resources": [
+                        {
+                            "name": "test-file",
+                            "revision": 994
+                        },
+                        {
+                            "name": "test-file-2",
+                            "revision": 993
+                        }
+                    ],
+                    "expires_at": null
+                }
+            ]
+        }
+    ]
+}]
