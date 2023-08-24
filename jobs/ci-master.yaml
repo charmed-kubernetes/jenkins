@@ -323,7 +323,7 @@
 
           export PATH=/snap/bin:$HOME/bin/:$PATH
           export NODE_LABELS="$NODE_LABELS"
-          export TMPDIR="$WORKSPACE/tmp"
+          export TMPDIR="/tmp/$BUILD_TAG"
           export PATH=venv/bin:$PATH
           export PYTHONPATH=$WORKSPACE:"${{PYTHONPATH:-}}"
 

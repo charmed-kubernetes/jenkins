@@ -7,8 +7,8 @@ __pycache__/
 logs/
 pytest.log
 site/
-*.json
-*.log
+/*.json
+/*.log
 jobs/reports/_build
 reports/_build
 *.db
