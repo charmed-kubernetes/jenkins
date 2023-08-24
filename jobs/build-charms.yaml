@@ -9,6 +9,7 @@
     scm:
       - k8s-jenkins-jenkaas
     parameters:
+      - global-params
       - string:
           name: FILTER_BY_TAG
           default: 'k8s,k8s-operator'
@@ -25,7 +26,6 @@
       - build-discarder:
           num-to-keep: 10
     wrappers:
-      - global-params
       - default-job-wrapper
       - ci-creds
     builders:
