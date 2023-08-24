@@ -1982,7 +1982,7 @@ async def test_dns_provider(model, k8s_model, tools):
             await model.wait_for_idle(status="active")
 
             log.info("Waiting CoreDNS pod to be ready")
-            wait_for_pods_ready(
+            await wait_for_pods_ready(
                 "app.kubernetes.io/name=coredns", ns=tools.k8s_model_name
             )
 
@@ -2018,7 +2018,7 @@ async def test_dns_provider(model, k8s_model, tools):
         log.info("☆ Verifying DNS with core-dns from cdk-addons (none -> coredns)")
 
         log.info("Waiting for CoreDNS pod to be ready")
-        wait_for_pods_ready("app.kubernetes.io/name=coredns")
+        await wait_for_pods_ready("app.kubernetes.io/name=coredns")
 
         log.info("Verifying DNS works again")
         await verify_dns_resolution(fresh=True)
