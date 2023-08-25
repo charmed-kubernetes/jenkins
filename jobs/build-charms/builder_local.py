@@ -509,9 +509,11 @@ class BuildEnv:
 
         Numerical channels will always be in the format i.ii/risk
         """
-        chan = self.db["build_args"].get("to_channel", None).split(",")
-        numerical = matched_numerical_channel(chan, SNAP_K8S_TRACK_MAP)
-        return list(filter(None, [*chan, numerical]))
+        chans: List[str] = self.db["build_args"].get("to_channel", None).split(",")
+        numerical = [
+            matched_numerical_channel(chan, SNAP_K8S_TRACK_MAP) for chan in chans
+        ]
+        return list(filter(None, {*chans, *numerical}))
 
     def apply_channel_bounds(self, name: str, to_channels: List[str]) -> List[str]:
         """
