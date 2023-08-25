@@ -125,7 +125,7 @@
     parameters:
       - string:
           name: channel
-          default: 1.28/edge
+          default: 1.29/edge
           description: channel for charmed-kubernetes bundle to deploy
 
 - parameter:
