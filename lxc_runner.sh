@@ -31,7 +31,6 @@ ci_lxc_init_runner()
     echo "declare -x HUDSON_HOME=${LXC_HOME}" >> ${WORKSPACE}/.env
     echo "declare -x JENKINS_HOME=${LXC_HOME}" >> ${WORKSPACE}/.env
     echo "declare -x PWD=${LXC_WORKSPACE}" >> ${WORKSPACE}/.env
-    echo "declare -x TMPDIR=${LXC_WORKSPACE}/tmp" >> ${WORKSPACE}/.env
     echo "declare -x WORKSPACE=${LXC_WORKSPACE}" >> ${WORKSPACE}/.env
     echo "declare -x WORKSPACE_TMP=${LXC_WORKSPACE}@tmp" >> ${WORKSPACE}/.env
     echo "declare -x PYTHONPATH=${LXC_WORKSPACE}:\"${PYTHONPATH:-}\"" >> ${WORKSPACE}/.env
