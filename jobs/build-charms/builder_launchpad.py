@@ -212,9 +212,35 @@ class LPBuildEntity(BuildEntity):
             zip = zipfile.ZipFile(artifact.charm_or_bundle, "a")
             zip.writestr("version", git_sha + "\n")
 
+    def _lp_request_sync(self):
+        """Ensure that the upstream github repo is in sync with the launchpad repo."""
+        self.echo(f"Creating recipe for branch :{self._lp_branch}")
+        git_sha = self.commit()
+        repo = self._lp.git_repositories.getDefaultRepository(target=self._lp_project)
+
+        def _shas_in_sync():
+            commit_shas = [
+                branch.commit_sha1
+                for branch in repo.branches_collection
+                if branch.path == f"refs/heads/{self._lp_branch}"
+            ]
+            return commit_shas == [git_sha]
+
+        if _shas_in_sync():
+            return
+
+        start_time = datetime.now()
+        repo.code_import.requestImport()
+        while not _shas_in_sync():
+            dt = datetime.now() - start_time
+            status = f"Waiting for {self._lp_branch} sha256='{git_sha}' elapsed={dt}"
+            self.echo(status)
+            time.sleep(30.0)
+
     def charm_build(self):
         """Perform a build using a launchpad charm recipe."""
         self.echo(f"Starting a build of {self.name} on launchpad")
+        self._lp_request_sync()
         request = self._lp_request_builds()
         builds = self._lp_complete_builds(request)
         download_path = Path(self.src_path)
