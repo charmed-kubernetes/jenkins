@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx
+        image: rocks.canonical.com/cdk/nginx:1.18
         ports:
         - containerPort: 80

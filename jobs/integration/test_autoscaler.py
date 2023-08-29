@@ -29,6 +29,7 @@ async def deployment(kubectl, namespace):
     kubectl.create.namespace(namespace)
     kubectl.create(f=path_to_deployment, namespace=namespace)
     yield path_to_deployment
+    kubectl.delete(f=path_to_deployment, namespace=namespace, grace_period=5*60)
     kubectl.delete.namespace(namespace)
 
 
