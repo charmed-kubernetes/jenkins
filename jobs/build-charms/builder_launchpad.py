@@ -214,7 +214,7 @@ class LPBuildEntity(BuildEntity):
 
     def _lp_request_sync(self):
         """Ensure that the upstream github repo is in sync with the launchpad repo."""
-        self.echo(f"Syncing lp branch from upstream :{self._lp_branch}")
+        self.echo(f"Syncing lp branch from upstream: {self._lp_branch}")
         git_sha = self.commit()
         repo = self._lp.git_repositories.getDefaultRepository(target=self._lp_project)
 

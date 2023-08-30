@@ -1040,7 +1040,7 @@ class BuildEntity:
         context = dict(
             src_path=self.src_path,
             out_path=self._resource_path,
-            arch=artifact.arch,
+            arch=artifact.arch.value,
         )
         ch_channels = apply_channel_bounds(self.opts, to_channels)
 
