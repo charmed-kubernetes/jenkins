@@ -14,34 +14,6 @@ set -ex
 ###############################################################################
 # FUNCTION OVERRIDES
 ###############################################################################
-function juju::bootstrap::before
-{
-    # azure-cli
-    which az || sudo apt-get install -qyf azure-cli
-    rm -rf ${HOME}/.azure/cliextensions/*
-
-    # can't get to az extension index from jenkins worker, so install the bundled extensions
-    az extension add -y --source ./jobs/arc-conformance/connectedk8s-1.3.13-py2.py3-none-any.whl --pip-proxy http://squid.internal:3128
-    az version || exit 1
-
-    # helm needs to be < 3.7.0 for:
-    #  https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/troubleshooting#azure-cli-is-unable-to-download-helm-chart-for-azure-arc-agents
-    if snap list helm 2>/dev/null; then
-        sudo snap refresh helm --channel=3.6/stable
-    else
-        sudo snap install helm --classic --channel=3.6/stable
-    fi
-    helm version || exit 1
-
-    # sonobuoy
-    rm -rf sonobuoy*
-    SB_FILE="sonobuoy_${SONOBUOY_VERSION}_linux_${ARCH}.tar.gz"
-    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERSION}/${SB_FILE}
-    tar xvf ${SB_FILE}
-    rm -f ${SB_FILE}
-    ./sonobuoy version || exit 1
-}
-
 function juju::bootstrap
 {
     # override because azure needs image-stream=released
@@ -64,7 +36,7 @@ function juju::bootstrap
 
 function juju::deploy::overlay
 {
-    # override to set allow-privileged for sonobuoy
+    # override to set cidr and allow-privileged for sonobuoy
     cat <<EOF > overlay.yaml
 series: $SERIES
 applications:
@@ -86,12 +58,15 @@ function test::execute
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
-    juju ssh -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader -- cat config > $HOME/.kube/config
-    kubectl version
+    juju ssh -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader -- \
+        cat config | tee $HOME/.kube/config >/dev/null
+    if ! kubectl version; then
+        echo ERROR: Cluster is unreachable
+        exit 1
+    fi
 
     # prep azure env
     CK_SEMVER=$(snap find kube-apiserver | grep -o ${CK_VERSION}.[0-9])
-    helm uninstall azure-arc || true
     export PATH=${PATH}:$(pwd)
     git clone https://github.com/Azure/azure-arc-validation
     pushd azure-arc-validation/testsuite
@@ -122,7 +97,7 @@ EOF
       -e "s/^global.RESOURCE_GROUP=.*/global.RESOURCE_GROUP=external-canonical/" \
       -e "s/^global.CLIENT_ID=.*/global.CLIENT_ID=${AZ_CLIENT_ID}/" \
       -e "s/^global.CLIENT_SECRET=.*/global.CLIENT_SECRET=${AZ_CLIENT_SECRET}/" \
-      -e "s/^azure-arc-platform.OBJECT_ID=.*/azure-arc-platform.OBJECT_ID='${AZ_OBJECT_ID}'/" \
+      -e "s/^azure-arc-platform.OBJECT_ID=.*/azure-arc-platform.OBJECT_ID=${AZ_OBJECT_ID}/" \
       azure-arc-conformance.properties
     set -x
     kubectl apply -k .
@@ -182,22 +157,10 @@ ARC_NS=azure-arc-kubernetes-conformance
 ARCH=amd64
 SERIES=jammy
 SNAP_VERSION=${CK_VERSION}/${CK_RISK}
-SONOBUOY_VERSION=0.56.15
 
 JOB_ID=$(identifier)
 JOB_NAME_CUSTOM="arc-ck-$SERIES-$SNAP_VERSION"
 
-# Make sure azure repo is available in this env. Doing this manually because
-# builders cant curl the auto script from:
-# https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt
-sudo apt-get install -qyf ca-certificates curl apt-transport-https lsb-release gnupg
-cat ./jobs/arc-conformance/microsoft.asc |
-    gpg --dearmor |
-    sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
-AZ_REPO=$(lsb_release -cs)
-echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ ${AZ_REPO} main" |
-    sudo tee /etc/apt/sources.list.d/azure-cli.list
-sudo apt-get update
 
 ###############################################################################
 # START
