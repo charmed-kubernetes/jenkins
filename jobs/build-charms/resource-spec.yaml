@@ -16,6 +16,11 @@
   flannel-amd64: '{out_path}/flannel-amd64.tar.gz'
   flannel-arm64: '{out_path}/flannel-arm64.tar.gz'
   flannel-s390x: '{out_path}/flannel-s390x.tar.gz'
+'kubeapi-load-balancer':
+  nginx-prometheus-exporter: 
+    format: '{out_path}/nginx-prometheus-exporter_linux_{arch}.tar.gz'
+    channel-range:
+      min: '1.29'
 'kubernetes-autoscaler':
   juju-autoscaler-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
 'kubernetes-dashboard':

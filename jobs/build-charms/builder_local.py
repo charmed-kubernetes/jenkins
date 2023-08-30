@@ -36,7 +36,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from datetime import datetime
 from types import SimpleNamespace
-from typing import Iterable, List, Mapping, Optional, Set, Tuple
+from typing import Any, Iterable, List, Mapping, Optional, Set, Tuple
 
 from multiprocessing.pool import ThreadPool
 from pprint import pformat
@@ -401,6 +401,18 @@ class _CharmHub(Charmcraft):
         return int(revision)
 
 
+def apply_channel_bounds(opts: Mapping[str, Any], to_channels: List[str]) -> List[str]:
+    """
+    Applies boundaries to a charm or bundle's target channel.
+
+    Uses the channel-range.min and channel-range.max arguments in self.job_list
+    to filter the channels list.
+    """
+
+    channel_range = ChannelRange.from_dict(opts)
+    return [channel for channel in to_channels if channel in channel_range]
+
+
 class BuildEnv:
     """Charm or Bundle build data class."""
 
@@ -515,21 +527,6 @@ class BuildEnv:
         ]
         return list(filter(None, {*chans, *numerical}))
 
-    def apply_channel_bounds(self, name: str, to_channels: List[str]) -> List[str]:
-        """
-        Applies boundaries to a charm or bundle's target channel.
-
-        Uses the channel-range.min and channel-range.max arguments in self.job_list
-        to filter the channels list.
-        """
-
-        entity = next((_[name] for _ in self.job_list if name in _.keys()), {})
-        range_def = entity.get("channel-range", {})
-        definitions = range_def.get("min"), range_def.get("max")
-        assert all(isinstance(_, (str, type(None))) for _ in definitions)
-        channel_range = ChannelRange(*definitions)
-        return [channel for channel in to_channels if channel in channel_range]
-
     @property
     def from_channel(self):
         """Get source channel."""
@@ -551,16 +548,19 @@ class BuildEnv:
         self.db_json.write_text(json.dumps(dict(self.db)))
         self.store.put_item(Item=dict(self.db))
 
+    @property
+    def track(self):
+        return self.db["build_args"].get("track") or "latest"
+
     def promote_all(self, from_channel="beta", to_channels=("edge",), dry_run=True):
         """Promote set of charms in charmhub."""
-        track = self.db["build_args"].get("track") or "latest"
         if from_channel.lower() in RISKS:
-            from_channel = f"{track}/{from_channel.lower()}"
+            from_channel = f"{self.track}/{from_channel.lower()}"
         assert (
             from_channel != "unpublished"
         ), "It's unwise to promote unpublished charms."
         to_channels = [
-            f"{track}/{chan.lower()}" if (chan.lower() in RISKS) else chan
+            f"{self.track}/{chan.lower()}" if (chan.lower() in RISKS) else chan
             for chan in to_channels
         ]
         failed_entities = []
@@ -568,7 +568,7 @@ class BuildEnv:
             for charm_name, charm_opts in charm_map.items():
                 if not any(tag in self.filter_by_tag for tag in charm_opts["tags"]):
                     continue
-                ch_channels = self.apply_channel_bounds(charm_name, to_channels)
+                ch_channels = apply_channel_bounds(charm_opts, to_channels)
                 try:
                     _CharmHub(self).promote(
                         charm_name, from_channel, ch_channels, dry_run
@@ -1031,7 +1031,7 @@ class BuildEntity:
             if not ret.ok:
                 raise BuildException("Failed to build custom resources")
 
-    def assemble_resources(self, artifact: Artifact):
+    def assemble_resources(self, artifact: Artifact, to_channels=("latest/edge",)):
         """Assemble charm's resources and associate in charmhub.
 
         Upload oci-images and any built-resource, gathering their revision
@@ -1040,10 +1040,22 @@ class BuildEntity:
         context = dict(
             src_path=self.src_path,
             out_path=self._resource_path,
+            arch=artifact.arch,
         )
+        ch_channels = apply_channel_bounds(self.opts, to_channels)
 
         for name, details in self._read_metadata_resources(artifact).items():
-            resource_fmt = self._resource_spec.get(name)
+            channel_range = ChannelRange()  # The resource is unbound by a charm channel
+            if resource_fmt := self._resource_spec.get(name):
+                if isinstance(resource_fmt, dict):
+                    channel_range = ChannelRange.from_dict(resource_fmt)
+                    resource_fmt = resource_fmt["format"]
+            if not all(chan in channel_range for chan in ch_channels):
+                self.echo(
+                    f"Skipping resource {name} as at least one channel"
+                    f"in {ch_channels} was out of the range of {channel_range}"
+                )
+
             if not resource_fmt:
                 # Reuse most recently uploaded resource
                 self.echo(f"Reuse current resource {name} ...")
@@ -1073,12 +1085,7 @@ class BuildEntity:
 
     def release(self, artifact: Artifact, to_channels=("edge",)):
         """Release charm and its resources to channels."""
-        track = self.build.db["build_args"].get("track") or "latest"
-        ch_channels = [
-            f"{track}/{chan.lower()}" if (chan.lower() in RISKS) else chan
-            for chan in to_channels
-        ]
-        ch_channels = self.build.apply_channel_bounds(self.entity, ch_channels)
+        ch_channels = apply_channel_bounds(self.opts, to_channels)
         _CharmHub(self).release(self.entity, artifact, ch_channels)
 
 
