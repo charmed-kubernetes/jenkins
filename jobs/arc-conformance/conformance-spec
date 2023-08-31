@@ -58,6 +58,8 @@ function test::execute
     declare -n is_pass=$1
 
     mkdir -p $HOME/.kube
+    # this job runs in lxc with a strict juju snap; stdout redir doesn't work,
+    # but tee does. use that and fail fast if the kubeconfig is bad (#1273).
     juju ssh -m $JUJU_CONTROLLER:$JUJU_MODEL kubernetes-control-plane/leader -- \
         cat config | tee $HOME/.kube/config >/dev/null
     if ! kubectl version; then
