@@ -4,6 +4,7 @@ from sh.contrib import git
 
 from builder_local import BundleBuildEntity, BuildEnv, BuildEntity, BuildType
 from builder_launchpad import LPBuildEntity
+from cilib.version import RISKS
 
 
 @click.group()
@@ -91,6 +92,10 @@ def build(
                 build_env.echo(f"Queued {charm_entity.entity} for building")
 
     failed_entities = []
+    to_channels = [
+        f"{build_env.track}/{chan.lower()}" if (chan.lower() in RISKS) else chan
+        for chan in build_env.to_channels
+    ]
 
     for entity in entities:
         entity.echo("Starting")
@@ -108,8 +113,8 @@ def build(
             entity.resource_build()
             for each in entity.artifacts:
                 entity.push(each)
-                entity.assemble_resources(each)
-                entity.release(each, to_channels=build_env.to_channels)
+                entity.assemble_resources(each, to_channels=to_channels)
+                entity.release(each, to_channels=to_channels)
         except Exception:
             entity.echo(traceback.format_exc())
             failed_entities.append(entity)

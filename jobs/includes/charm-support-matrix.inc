@@ -145,9 +145,11 @@
     channel-range:
       min: '1.25'
 - kubeapi-load-balancer:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-kubeapi-load-balancer'
     docs: 'https://charmhub.io/kubeapi-load-balancer/docs'
     downstream: charmed-kubernetes/charm-kubeapi-load-balancer.git
+    build-resources: 'cd {out_path}; bash {src_path}/build-resources.sh'
     store: 'https://charmhub.io/kubeapi-load-balancer'
     summary: Nginx Load Balancer
     tags:

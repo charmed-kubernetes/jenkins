@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, Mapping, Union
 import semver
 from cilib import log
 
@@ -98,8 +98,15 @@ class ChannelRange:
         assert "1.24/edge" in ChannelRange(None, None)              # No bounds
     """
 
-    _min: Optional[str]
-    _max: Optional[str]
+    _min: Optional[str] = None
+    _max: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, d: Mapping[str, Optional[str]]) -> "ChannelRange":
+        range_def = d.get("channel-range", {})
+        definitions = range_def.get("min"), range_def.get("max")
+        assert all(isinstance(_, (str, type(None))) for _ in definitions)
+        return cls(*definitions)
 
     @property
     def min(self) -> Optional[Release]:

@@ -442,7 +442,7 @@ def test_build_entity_promote(
             "test-image", kind=builder_local.ResourceKind.IMAGE, rev=4
         ),
     ]
-    charm_entity.release(artifact, to_channels=("edge", "0.15/edge"))
+    charm_entity.release(artifact, to_channels=("latest/edge", "0.15/edge"))
     charm_cmd.release.assert_not_called()
     charmcraft_cmd.release.assert_called_once_with(
         "k8s-ci-charm",
@@ -454,7 +454,7 @@ def test_build_entity_promote(
     )
     charmcraft_cmd.release.reset_mock()
 
-    charm_entity.release(artifact, to_channels=("stable", "0.15/stable"))
+    charm_entity.release(artifact, to_channels=("latest/stable", "0.15/stable"))
     charm_cmd.release.assert_not_called()
     charmcraft_cmd.release.assert_called_once_with(
         "k8s-ci-charm",
@@ -653,7 +653,9 @@ def test_build_command(mock_build_env, mock_build_entity, main):
             "ignored": dict(tags=["ignore-me"]),
         }
     ]
+    mock_build_env.track = "latest"
     mock_build_env.filter_by_tag = ["tag1", "tag2"]
+    mock_build_env.to_channels = ["edge", "1.18/edge"]
     artifact = MagicMock()
     entity = mock_build_entity.return_value
     entity.artifacts = [artifact]
@@ -698,9 +700,11 @@ def test_build_command(mock_build_env, mock_build_entity, main):
     entity.setup.assert_called_once_with()
     entity.charm_build.assert_called_once_with()
     entity.push.assert_called_once_with(artifact)
-    entity.assemble_resources.assert_called_once_with(artifact)
+    entity.assemble_resources.assert_called_once_with(
+        artifact, to_channels=["latest/edge", "1.18/edge"]
+    )
     entity.release.assert_called_once_with(
-        artifact, to_channels=mock_build_env.to_channels
+        artifact, to_channels=["latest/edge", "1.18/edge"]
     )
 
 
