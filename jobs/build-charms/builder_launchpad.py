@@ -30,10 +30,11 @@ class LPBuildEntity(BuildEntity):
 
     SNAP_CHANNEL = {"charmcraft": "latest/stable"}
     BUILD_STATES_PENDING = {
-        "Needs building",
-        "Currently building",
-        "Uploading build",
         "Cancelling build",
+        "Currently building",
+        "Gathering build output",
+        "Needs building",
+        "Uploading build",
     }
     BUILD_STATES_SUCCESS = {
         "Successfully built",
@@ -134,7 +135,7 @@ class LPBuildEntity(BuildEntity):
         for _ in range(timeout):
             status = req.status
             if status == "Failed":
-                err_msg = f"Failed requesting lauchpad build {self.entity}, aborting"
+                err_msg = f"Failed requesting launchpad build {self.entity}, aborting"
                 raise BuildException(err_msg)
             if status == "Completed":
                 self.echo(f"Build recipe started @ {self._lp_recipe.web_link}")
@@ -164,7 +165,10 @@ class LPBuildEntity(BuildEntity):
                 time.sleep(30.0)
         for build in builds:
             if build.buildstate not in self.BUILD_STATES_SUCCESS:
-                err_msg = f"Failed lauchpad build {self.entity}, aborting"
+                err_msg = (
+                    f"Failed launchpad build {self.entity} due to "
+                    f"unsuccessful build state '{build.buildstate}'."
+                )
                 self.echo(err_msg + "\n" + self._lp_build_log(build))
                 raise BuildException(err_msg)
         return builds
