@@ -5,7 +5,6 @@ import ipaddress
 import json
 import os
 import sys
-import tempfile
 import time
 import yaml
 import boto3
@@ -91,11 +90,28 @@ def tag_resource(resource_id):
     ec2.create_tags(Resources=[resource_id], Tags=[{"Key": "owner", "Value": OWNER}])
 
 
-def juju(cmd, *args, json=True):
+def juju_version():
+    ver, _ = sh(["juju", "version"]).split("-", 1)
+    return tuple(map(int, ver.split(".")))
+
+
+def juju_base(series):
+    """Retrieve juju 3.1 base from series."""
+    if juju_version() < (3, 1):
+        return f"--series={series}"
+    mapping = {
+        "bionic": "ubuntu@18.04",
+        "focal": "ubuntu@20.04",
+        "jammy": "ubuntu@22.04",
+    }
+    return f"--base={mapping[series]}"
+
+
+def juju(cmd, *args, **kwargs):
     model = os.environ["JUJU_MODEL"]
     controller = os.environ["JUJU_CONTROLLER"]
     cmd = ["juju", cmd, "-m", f"{controller}:{model}"] + list(args)
-    return sh(cmd)
+    return sh(cmd, **kwargs)
 
 
 def juju_wait(*args, **kwargs):
@@ -361,6 +377,7 @@ def get_subnets_in_vpc(vpc_id):
     log("Getting subnets in VPC " + vpc_id)
     subnets = ec2.describe_subnets()["Subnets"]
     subnets = [subnet for subnet in subnets if subnet["VpcId"] == vpc_id]
+    log(f'  SubnetIds: {",".join(s["SubnetId"] for s in subnets)}')
     return subnets
 
 
@@ -395,7 +412,9 @@ def deploy_bgp_router():
     subnets = get_subnets_in_vpc(vpc_id)
 
     log("Deploying router to first subnet")
-    juju("deploy", "ubuntu", "router", "--to", "subnet=" + subnets[0]["CidrBlock"])
+    series = juju_base(os.environ.get("SERIES"))
+    subnet = "subnet=" + subnets[0]["CidrBlock"]
+    juju("deploy", "ubuntu", "router", series, "--to", subnet)
     machine_id = get_machine_id("router/0")
     instance_id = get_instance_id(machine_id)
 
@@ -435,6 +454,7 @@ def deploy_bgp_router():
     expected_nics = {f"ens{i+5}" for i in range(1, len(subnets))}
     max_retries, current_nics = 10, set()
     while not expected_nics.issubset(current_nics) and max_retries:
+        time.sleep(10 - max_retries)
         current_nics = {
             line.split("  ", 1)[0]
             for line in juju(
@@ -464,12 +484,11 @@ def deploy_bgp_router():
             interface,
             "-e",
             "IF_METRIC=101",
-            json=False,
         )
 
     log("Installing BIRD")
-    juju("ssh", "router/0", "sudo", "apt", "update", json=False)
-    juju("ssh", "router/0", "sudo", "apt", "install", "-y", "bird", json=False)
+    juju("ssh", "router/0", "sudo", "apt", "update")
+    juju("ssh", "router/0", "sudo", "apt", "install", "-y", "bird")
 
     log("Getting VPC CIDR")
     vpc = ec2.describe_vpcs(VpcIds=[vpc_id])["Vpcs"][0]
@@ -565,14 +584,10 @@ def configure_bgp():
         calico_ips.update(ips)
 
     # Configure BIRD
-    bird_conf = BIRD_CONFIG_BASE % list(router_ips)[0]
+    bird_conf: str = BIRD_CONFIG_BASE % list(router_ips)[0]
     for ip in calico_ips:
         bird_conf += BIRD_CONFIG_PEER % ip
-    with tempfile.NamedTemporaryFile("w") as f:
-        f.write(bird_conf)
-        f.flush()
-        juju("scp", f.name, "router/0:bird.conf")
-    juju("ssh", "router/0", "sudo", "cp", "bird.conf", "/etc/bird/bird.conf")
+    juju("ssh", "router/0", "cat > /etc/bird/bird.conf", input=bird_conf.encode())
     juju("ssh", "router/0", "sudo", "service", "bird", "restart")
 
 
@@ -583,4 +598,5 @@ def main():
     command_defs[args.command]()
 
 
-main()
+if __name__ == "__main__":
+    main()
