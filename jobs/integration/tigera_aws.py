@@ -587,7 +587,8 @@ def configure_bgp():
     bird_conf: str = BIRD_CONFIG_BASE % list(router_ips)[0]
     for ip in calico_ips:
         bird_conf += BIRD_CONFIG_PEER % ip
-    juju("ssh", "router/0", "cat > /etc/bird/bird.conf", input=bird_conf.encode())
+    juju("ssh", "router/0", "cat > bird.conf", input=bird_conf.encode())
+    juju("ssh", "router/0", "sudo", "cp", "bird.conf", "/etc/bird/bird.conf")
     juju("ssh", "router/0", "sudo", "service", "bird", "restart")
 
 
