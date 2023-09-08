@@ -29,7 +29,7 @@ def main():
         )
 
         if not release_helper.run_integration_tests(
-            config.from_channel, config.tests_repo, config.tests_branch
+            config.from_channel, config.tests_repo, config.tests_branch, config.juju_controller
         ):
             echo(config, "Tests failed, stopping release process.")
             exit(1)

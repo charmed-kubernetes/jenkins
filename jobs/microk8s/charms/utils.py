@@ -111,20 +111,22 @@ class ReleaseHelper:
         cmd = "git checkout {}".format(branch)
         self._run_cmd(cmd, _cwd=Path("charm-microk8s"))
 
-    def run_integration_tests(self, channel, repo, branch) -> bool:
+    def run_integration_tests(self, channel, repo, branch, controller) -> bool:
         self._remove_microk8s_directory()
         self._clone_repo(repo)
         self._checkout_branch(branch)
+
+        # Passing '-c' will force pytest not to use the pytest.ini from the jenkins repo
+        cmd = f"juju switch {controller}"
+        self._run_cmd(cmd)
 
         env = os.environ.copy()
         env["MK8S_SERIES"] = self.series
         env["MK8S_CHARM"] = "ch:microk8s"
         env["MK8S_CHARM_CHANNEL"] = channel
 
-        model = os.environ.get("JUJU_MODEL", "testmodel")
-
         # Passing '-c' will force pytest not to use the pytest.ini from the jenkins repo
-        cmd = f"tox -e integration-3.1 -- --model {model} -c /dev/null"
+        cmd = f"tox -e integration-3.1 -- -c /dev/null"
         self._run_cmd(cmd, _cwd=Path("charm-microk8s"), _env=env)
         return True
 
@@ -146,6 +148,9 @@ class Configuration:
         self.to_channel = os.environ.get("TO_CHANNEL", "latest/beta")
         skip_tests_env = os.environ.get("SKIP_TESTS", "false")
         self.skip_tests = skip_tests_env == "true"
+        self.juju_controller = os.environ.get("CONTROLLER")
+        if self.juju_controller and self.juju_controller.strip() == "":
+            self.juju_controller = None
         dry_run_env = os.environ.get("DRY_RUN", "true")
         self.dry_run = dry_run_env == "true"
         self.tests_repo = os.environ.get(
@@ -164,6 +169,7 @@ class Configuration:
         click.echo(f"Tests taken from repo: {self.tests_repo} (REPOSITORY)")
         click.echo(f"Tests taken from branch: {self.tests_branch} (BRANCH)")
         click.echo(f"Tests run on: {self.series} (SERIES)")
+        click.echo(f"Juju controller to use: {self.juju_controller} (CONTROLLER)")
         click.echo(f"This is a dry run: {self.dry_run} (DRY_RUN)")
 
     def valid(self) -> bool:
@@ -173,6 +179,12 @@ class Configuration:
             )
             click.echo("  charmcraft login --ttl 8766 --export ch.cred")
             click.echo("  export CHARMCRAFT_AUTH=$(cat ch.cred)")
+            return False
+
+        if not self.juju_controller:
+            click.echo(
+                "JUJU_CONTROLLER is not set. Please, set the controller to test on."
+            )
             return False
 
         return True
