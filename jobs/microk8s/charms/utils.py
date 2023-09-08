@@ -17,7 +17,9 @@ from pathlib import Path
 class CharmhubHelper:
     def with_store_client(func: Callable[[StoreClient], Any]):
         def _run_with_store_client():
-            auth = Auth("microk8s-ci", "api.charmhub.io", environment_auth="CHARMCRAFT_AUTH")
+            auth = Auth(
+                "microk8s-ci", "api.charmhub.io", environment_auth="CHARMCRAFT_AUTH"
+            )
             store_client = StoreClient(
                 application_name="microk8s-ci",
                 base_url="https://api.charmhub.io",
@@ -70,7 +72,9 @@ class ReleaseHelper:
             raise ValueError("This base version is not available for the channel!")
 
         if self.arch not in self.revision_map[channel][self.version]:
-            raise ValueError("This arch is not available for the channel and base version!")
+            raise ValueError(
+                "This arch is not available for the channel and base version!"
+            )
 
         return self.revision_map[channel][self.version][self.arch]
 
@@ -82,7 +86,9 @@ class ReleaseHelper:
         if to_channel not in self.revision_map:
             return True
 
-        return self.get_channel_revision(from_channel) > self.get_channel_revision(to_channel)
+        return self.get_channel_revision(from_channel) > self.get_channel_revision(
+            to_channel
+        )
 
     def _remove_microk8s_directory(self):
         cmd = "rm -rf charm-microk8s"
@@ -131,6 +137,7 @@ class ReleaseHelper:
             ),
         )
 
+
 class Configuration:
     def __init__(self):
         self.series = os.environ.get("SERIES", "jammy")
@@ -141,8 +148,10 @@ class Configuration:
         self.skip_tests = skip_tests_env == "true"
         dry_run_env = os.environ.get("DRY_RUN", "true")
         self.dry_run = dry_run_env == "true"
-        self.tests_repo = os.environ.get("REPOSITORY", "https://github.com/canonical/charm-microk8s")
-        self.tests_branch = os.environ.get("BRANCH", "master") # wokeignore:rule=master
+        self.tests_repo = os.environ.get(
+            "REPOSITORY", "https://github.com/canonical/charm-microk8s"
+        )
+        self.tests_branch = os.environ.get("BRANCH", "master")  # wokeignore:rule=master
         if self.from_channel.startswith("1."):
             self.version = self.from_channel.split("/")[0]
             self.tests_branch = f"release-{self.version}"
@@ -159,7 +168,9 @@ class Configuration:
 
     def valid(self) -> bool:
         if "CHARMCRAFT_AUTH" not in os.environ:
-            click.echo("CHARMCRAFT_AUTH is not set. Export cramstore credentials with:")
+            click.echo(
+                "CHARMCRAFT_AUTH is not set. Export charmstore credentials with:"
+            )
             click.echo("  charmcraft login --ttl 8766 --export ch.cred")
             click.echo("  export CHARMCRAFT_AUTH=$(cat ch.cred)")
             return False
