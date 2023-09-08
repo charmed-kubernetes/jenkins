@@ -104,21 +104,22 @@ class ReleaseHelper:
             print(line.strip())
 
     def _clone_repo(self, repo):
-        cmd = "git clone {}".format(repo)
+        cmd = f"git clone {repo}"
         self._run_cmd(cmd)
 
     def _checkout_branch(self, branch):
-        cmd = "git checkout {}".format(branch)
+        cmd = f"git checkout {branch}"
         self._run_cmd(cmd, _cwd=Path("charm-microk8s"))
+
+    def _juju_switch(self, controller):
+        cmd = f"juju switch {controller}"
+        self._run_cmd(cmd)
 
     def run_integration_tests(self, channel, repo, branch, controller) -> bool:
         self._remove_microk8s_directory()
         self._clone_repo(repo)
         self._checkout_branch(branch)
-
-        # Passing '-c' will force pytest not to use the pytest.ini from the jenkins repo
-        cmd = f"juju switch {controller}"
-        self._run_cmd(cmd)
+        self._juju_switch(controller)
 
         env = os.environ.copy()
         env["MK8S_SERIES"] = self.series
@@ -156,12 +157,18 @@ class Configuration:
         self.tests_repo = os.environ.get(
             "REPOSITORY", "https://github.com/canonical/charm-microk8s"
         )
-        self.tests_branch = os.environ.get("BRANCH", "master")  # wokeignore:rule=master
-        if self.from_channel.startswith("1."):
-            self.version = self.from_channel.split("/")[0]
-            self.tests_branch = f"release-{self.version}"
+        self.tests_branch = os.environ.get("BRANCH")
+        if not self.tests_branch:
+            if self.from_channel.startswith("1."):
+                self.version = self.from_channel.split("/")[0]
+                self.tests_branch = f"release-{self.version}"
+            else:
+                self.tests_branch = f"master"  # wokeignore:rule=master
 
     def print(self):
+        """
+        Print requested setup on the release job
+        """
         click.echo(f"Release from: {self.from_channel} (FROM_CHANNEL)")
         click.echo(f"Release to: {self.to_channel} (TO_CHANNEL)")
         click.echo(f"Architecture: {self.arch} (ARCH)")
@@ -173,6 +180,9 @@ class Configuration:
         click.echo(f"This is a dry run: {self.dry_run} (DRY_RUN)")
 
     def valid(self) -> bool:
+        """
+        Do some basic checks on the environment variables passed
+        """
         if "CHARMCRAFT_AUTH" not in os.environ:
             click.echo(
                 "CHARMCRAFT_AUTH is not set. Export charmstore credentials with:"
