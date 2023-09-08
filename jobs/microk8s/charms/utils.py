@@ -15,7 +15,6 @@ from pathlib import Path
 
 
 class CharmhubHelper:
-
     def get_store_client():
         auth = Auth(
             "microk8s-ci", "api.charmhub.io", environment_auth="CHARMCRAFT_AUTH"
@@ -54,7 +53,7 @@ class CharmhubHelper:
             ] = channel_map.revision
 
         return revmap
-    
+
 
 class ReleaseHelper:
     def __init__(
@@ -137,7 +136,7 @@ class ReleaseHelper:
         return True
 
     def do_release(self, from_channel, to_channel):
-        req=ReleaseRequestModel(
+        req = ReleaseRequestModel(
             channel=to_channel, revision=self.get_channel_revision(from_channel)
         )
         store_client = CharmhubHelper.get_store_client()
