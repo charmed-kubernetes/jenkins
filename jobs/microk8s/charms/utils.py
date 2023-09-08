@@ -84,7 +84,6 @@ class ReleaseHelper:
         return self.revision_map[channel][self.version][self.arch]
 
     def is_release_needed(self, from_channel: str, to_channel: str) -> bool:
-        print(self.revision_map)
         if from_channel not in self.revision_map:
             raise ValueError("Can not promote a non-existing channel!")
 
