@@ -15,19 +15,24 @@ from pathlib import Path
 
 
 class CharmhubHelper:
+
+    def get_store_client():
+        auth = Auth(
+            "microk8s-ci", "api.charmhub.io", environment_auth="CHARMCRAFT_AUTH"
+        )
+        store_client = StoreClient(
+            application_name="microk8s-ci",
+            base_url="https://api.charmhub.io",
+            storage_base_url="https://storage.snapcraftcontent.com",
+            endpoints=endpoints.CHARMHUB,
+            user_agent="microk8s-ci",
+            environment_auth="CHARMCRAFT_AUTH",
+        )
+        return store_client
+
     def with_store_client(func: Callable[[StoreClient], Any]):
         def _run_with_store_client():
-            auth = Auth(
-                "microk8s-ci", "api.charmhub.io", environment_auth="CHARMCRAFT_AUTH"
-            )
-            store_client = StoreClient(
-                application_name="microk8s-ci",
-                base_url="https://api.charmhub.io",
-                storage_base_url="https://storage.snapcraftcontent.com",
-                endpoints=endpoints.CHARMHUB,
-                user_agent="microk8s-ci",
-                environment_auth="CHARMCRAFT_AUTH",
-            )
+            store_client = CharmhubHelper.get_store_client()
             return func(store_client)
 
         return _run_with_store_client
@@ -49,7 +54,7 @@ class CharmhubHelper:
             ] = channel_map.revision
 
         return revmap
-
+    
 
 class ReleaseHelper:
     def __init__(
@@ -79,6 +84,7 @@ class ReleaseHelper:
         return self.revision_map[channel][self.version][self.arch]
 
     def is_release_needed(self, from_channel: str, to_channel: str) -> bool:
+        print(self.revision_map)
         if from_channel not in self.revision_map:
             raise ValueError("Can not promote a non-existing channel!")
 
@@ -131,14 +137,12 @@ class ReleaseHelper:
         self._run_cmd(cmd, _cwd=Path("charm-microk8s"), _env=env)
         return True
 
-    @CharmhubHelper.with_store_client
-    def do_release(self, store_client: StoreClient, from_channel, to_channel):
-        store_client.release(
-            "microk8s",
-            release_request=ReleaseRequestModel(
-                channel=to_channel, revision=self.get_channel_revision(from_channel)
-            ),
+    def do_release(self, from_channel, to_channel):
+        req=ReleaseRequestModel(
+            channel=to_channel, revision=self.get_channel_revision(from_channel)
         )
+        store_client = CharmhubHelper.get_store_client()
+        store_client.release(name="microk8s", release_request=[req])
 
 
 class Configuration:
@@ -152,8 +156,8 @@ class Configuration:
         self.juju_controller = os.environ.get("CONTROLLER")
         if self.juju_controller and self.juju_controller.strip() == "":
             self.juju_controller = None
-        dry_run_env = os.environ.get("DRY_RUN", "true")
-        self.dry_run = dry_run_env == "true"
+        dry_run_env = os.environ.get("DRY_RUN", "false")
+        self.dry_run = dry_run_env != "false"
         self.tests_repo = os.environ.get(
             "REPOSITORY", "https://github.com/canonical/charm-microk8s"
         )
@@ -187,11 +191,12 @@ class Configuration:
             click.echo(
                 "CHARMCRAFT_AUTH is not set. Export charmstore credentials with:"
             )
+            click.echo("  unset CHARMCRAFT_AUTH")
             click.echo("  charmcraft login --ttl 8766 --export ch.cred")
             click.echo("  export CHARMCRAFT_AUTH=$(cat ch.cred)")
             return False
 
-        if not self.juju_controller:
+        if not self.skip_tests and not self.juju_controller:
             click.echo(
                 "JUJU_CONTROLLER is not set. Please, set the controller to test on."
             )
