@@ -78,9 +78,9 @@
             - 1.26/edge
       - stable:
           snap_versions:
+            - 1.28/stable
             - 1.27/stable
             - 1.26/stable
-            - 1.25/stable
           dow: '0'      # Sunday
     jobs:
       - 'validate-ck-{charm-channel}-{series}'
