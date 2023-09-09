@@ -196,7 +196,7 @@ class Configuration:
 
         if not self.skip_tests and not self.juju_controller:
             click.echo(
-                "JUJU_CONTROLLER is not set. Please, set the controller to test on."
+                "CONTROLLER is not set. Please, set the controller to test on."
             )
             return False
 
