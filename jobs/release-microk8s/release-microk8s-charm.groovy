@@ -16,6 +16,7 @@ pipeline {
     environment {
         PATH                 = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
         JUJU_CLOUD           = "aws/us-east-1"
+        CONTROLLER           = "release-microk8s-charm"
         CHARMCRAFT_AUTH      = credentials('charm_creds')
         NOTIFY_EMAIL         = credentials('microk8s_notify_email')
     }
@@ -34,11 +35,7 @@ pipeline {
         stage("Run Release Steps") {
             steps {
                 script {
-                    def job="release-microk8s-charm"
-                    def juju_controller="${job}"
-                    def juju_model="${job}-model"
-
-                    sh destroy_controller(juju_controller)
+                    sh destroy_controller('${CONTROLLER}')
                     sh """#!/bin/bash -x
                     juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
                         -d "${juju_model}" \
@@ -62,7 +59,7 @@ pipeline {
                                     body: "Please go to ${BUILD_URL} and verify the build"
                         )
                     } finally {
-                        sh destroy_controller(juju_controller)
+                        sh destroy_controller('${CONTROLLER}')
                     }
                 }
             }
@@ -71,9 +68,7 @@ pipeline {
     post {
         always {
             script {
-                def job="release-microk8s-charm"
-                def juju_controller="${job}"
-                sh destroy_controller(juju_controller)
+                sh destroy_controller('${CONTROLLER}')
             }
         }
     }
