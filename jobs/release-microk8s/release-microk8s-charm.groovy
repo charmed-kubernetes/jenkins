@@ -39,7 +39,7 @@ pipeline {
                     sh """#!/bin/bash -x
                     juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
                         --model-default test-mode=true \
-                        --model-default resource-tags="owner=k8sci job=${job} stage=${stage}" \
+                        --model-default resource-tags="owner=k8sci stage=${stage}" \
                         --bootstrap-constraints "mem=8G cores=2"
                     """
                     try {
