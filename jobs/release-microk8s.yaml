@@ -128,3 +128,64 @@
           COMMAND: |
             timeout 2h snapcraft login --with /var/lib/jenkins/snapcraft-creds
             timeout 2h tox -e py38 -- python jobs/microk8s/update-gh-branches-and-lp-builders.py
+
+- job:
+    name: 'release-microk8s-charm'
+    description: |
+      Tests and releases microk8s charm.
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release-microk8s/release-microk8s-charm.groovy
+    wrappers:
+      - default-job-wrapper
+      - ci-creds
+    parameters:
+      - string:
+          name: FROM_CHANNEL
+          default: ""
+          description: |
+            Choose a specific channel to release from. For example latest/edge, 1.28/edge.
+      - string:
+          name: TO_CHANNEL
+          default: ""
+          description: |
+            Choose a specific channel to release to. For example latest/stable, 1.28/stable.
+      - choice:
+          name: DRY_RUN
+          description: |
+            Do not release. Run all tests but do not release.
+          choices:
+            - "false"
+            - "true"
+      - choice:
+          name: SKIP_TESTS
+          description: |
+            Skip the tests and go directly to release.
+          choices:
+            - "false"
+            - "true"
+      - string:
+          name: TESTS_REPOSITORY
+          default: ""
+          description: |
+            You might want to test with a set of tests that are in your own
+            repository. By default https://github.com/canonical/charm-microk8s is used.
+      - string:
+          name: TESTS_BRANCH
+          default: ""
+          description: |
+            You might want to test with a set of tests that are in your own
+            branch. Here is where you set the branch name. By default tests are taken
+            from the release branch corresponding to the FROM_CHANNEL.
+    triggers:
+        - timed: "@daily"
+    properties:
+      - build-discarder:
+          num-to-keep: 10
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "infra.*"
+          block-level: 'NODE'
