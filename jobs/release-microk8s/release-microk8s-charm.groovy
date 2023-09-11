@@ -17,7 +17,6 @@ pipeline {
         PATH                 = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
         JUJU_CLOUD           = "aws/us-east-1"
         CONTROLLER           = "release-microk8s-charm"
-        CHARMCRAFT_AUTH      = credentials('charm_creds')
         NOTIFY_EMAIL         = credentials('microk8s_notify_email')
     }
     options {
