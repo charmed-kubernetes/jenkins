@@ -1,3 +1,11 @@
+def destroy_controller(controller) {
+    return """#!/bin/bash
+    if ! timeout 4m juju destroy-controller -y --destroy-all-models --destroy-storage "${controller}"; then
+        timeout 4m juju kill-controller -y "${controller}" || true
+    fi
+    """
+}
+
 pipeline {
     agent {
         label "runner-amd64"
