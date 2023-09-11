@@ -37,7 +37,7 @@ pipeline {
                 script {
                     sh destroy_controller('${CONTROLLER}')
                     sh """#!/bin/bash -x
-                    juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
+                    juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
                         -d "${juju_model}" \
                         --model-default test-mode=true \
                         --model-default resource-tags="owner=k8sci job=${job} stage=${stage}" \
@@ -48,7 +48,6 @@ pipeline {
                         . jobs/microk8s/.tox/py38/bin/activate
                         DRY_RUN=${params.DRY_RUN} SKIP_TESTS=${params.SKIP_TESTS}\
                             BRANCH=${params.TESTS_BRANCH} REPOSITORY=${params.TESTS_REPOSITORY}\
-                            CONTROLLER=${juju_controller}\
                             timeout 6h python jobs/microk8s/charms/release.py
                         """
                     } catch (err) {
