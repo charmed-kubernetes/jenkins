@@ -141,6 +141,10 @@
     wrappers:
       - default-job-wrapper
       - ci-creds
+      - credentials-binding:
+          - text:
+              credential-id: charmcraft_creds
+              variable: CHARMCRAFT_AUTH
     parameters:
       - string:
           name: FROM_CHANNEL
