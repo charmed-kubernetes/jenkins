@@ -23,6 +23,11 @@
 ## - JUJUCONTROLLERS: controllers.yaml configuration file for Juju
 ## - JUJUACCOUNTS: accounts.yaml configuration file for Juju
 
+pwd
+ls -l 
+exit 0
+
+
 _DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "$_DIR" ]]; then _DIR="$PWD"; fi
 . "$_DIR/../../build-charms/charmcraft-lib.sh"
