@@ -48,7 +48,7 @@ pipeline {
                         cd jobs/microk8s/charms
                         DRY_RUN=${params.DRY_RUN} SKIP_TESTS=${params.SKIP_TESTS}\
                             BRANCH=${params.TESTS_BRANCH} REPOSITORY=${params.TESTS_REPOSITORY}\
-                            timeout 6h python jobs/microk8s/charms/release.py
+                            timeout 6h python release.py
                         """
                     } catch (err) {
                         unstable("Completed with errors.")
