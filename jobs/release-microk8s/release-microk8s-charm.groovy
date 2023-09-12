@@ -45,9 +45,12 @@ pipeline {
                     try {
                         sh """
                         . jobs/microk8s/.tox/py38/bin/activate
-                        DRY_RUN=${params.DRY_RUN} SKIP_TESTS=${params.SKIP_TESTS}\
-                            BRANCH=${params.TESTS_BRANCH} REPOSITORY=${params.TESTS_REPOSITORY}\
-                            timeout 6h python jobs/microk8s/charms/release.py
+                        cd (jobs/microk8s/charms
+                            pwd
+                            DRY_RUN=${params.DRY_RUN} SKIP_TESTS=${params.SKIP_TESTS}\
+                                BRANCH=${params.TESTS_BRANCH} REPOSITORY=${params.TESTS_REPOSITORY}\
+                                timeout 6h python jobs/microk8s/charms/release.py
+                        )
                         """
                     } catch (err) {
                         unstable("Completed with errors.")

@@ -159,8 +159,10 @@ class Configuration:
         self.tests_repo = os.environ.get(
             "REPOSITORY", "https://github.com/canonical/charm-microk8s"
         )
+        if self.tests_repo and self.tests_repo.strip() == "":
+            self.tests_repo = "https://github.com/canonical/charm-microk8s"
         self.tests_branch = os.environ.get("BRANCH")
-        if not self.tests_branch:
+        if not self.tests_branch or self.tests_branch.strip() == "":
             if self.from_channel.startswith("1."):
                 self.version = self.from_channel.split("/")[0]
                 self.tests_branch = f"release-{self.version}"
