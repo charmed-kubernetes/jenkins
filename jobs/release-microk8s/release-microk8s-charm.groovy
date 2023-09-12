@@ -28,7 +28,7 @@ pipeline {
         stage("Setup tox environment") {
             steps {
                 sh """
-                tox -c jobs/microk8s/tox.ini -e py38 -- python -c 'print("Tox Environment Ready")'
+                tox -c jobs/microk8s/tox.ini -e py310 -- python -c 'print("Tox Environment Ready")'
                 """
             }
         }
@@ -44,7 +44,7 @@ pipeline {
                     """
                     try {
                         sh """
-                        # . jobs/microk8s/.tox/py38/bin/activate
+                        . jobs/microk8s/.tox/py38/bin/activate
                         cd jobs/microk8s/charms
                         DRY_RUN=${params.DRY_RUN} SKIP_TESTS=${params.SKIP_TESTS}\
                             BRANCH=${params.TESTS_BRANCH} REPOSITORY=${params.TESTS_REPOSITORY}\
