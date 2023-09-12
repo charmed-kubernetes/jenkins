@@ -603,7 +603,7 @@ async def test_ipv6(model, tools):
     control_plane = control_plane_app.units[0]
     await kubectl(
         model,
-        "create -f - << EOF{}EOF".format(
+        "apply -f - << EOF{}EOF".format(
             f"""
 apiVersion: apps/v1
 kind: Deployment
@@ -686,7 +686,7 @@ spec:
         # pods might not be up by this point, retry until it works
         with timeout_for_current_task(60):
             while True:
-                cmd = "curl '{}'".format(url)
+                cmd = "curl '{}' --max-time 1".format(url)
                 output = await juju_run(control_plane, cmd, check=False)
                 if (
                     output.status == "completed"
