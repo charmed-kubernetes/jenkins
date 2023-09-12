@@ -410,6 +410,7 @@ def build():
     index_html_p.write_text(rendered)
     run.cmd_ok("aws s3 cp index.html s3://jenkaas/index.html", shell=True)
     run.cmd_ok("aws s3 cp index.json s3://jenkaas/index.json", shell=True)
+    run.cmd_ok("aws s3 cp --recursive jobs/templates/images s3://jenkaas/images", shell=True)
 
 
 if __name__ == "__main__":
