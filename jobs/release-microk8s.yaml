@@ -133,18 +133,10 @@
     name: 'release-microk8s-charm'
     description: |
       Tests and releases microk8s charm.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/release-microk8s/release-microk8s-charm.groovy
+    project-type: freestyle
     wrappers:
       - default-job-wrapper
       - ci-creds
-      - credentials-binding:
-          - text:
-              credential-id: charmcraft_creds
-              variable: CHARMCRAFT_AUTH
     parameters:
       - string:
           name: FROM_CHANNEL
@@ -193,3 +185,9 @@
           blocking-jobs:
             - "infra.*"
           block-level: 'NODE'
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/microk8s"
+      - run-lxc:
+          COMMAND: |
+            bash jobs/microk8s/charms/release.sh
