@@ -146,15 +146,11 @@
             variable: CHARMCRAFT_AUTH
     parameters:
       - lxc-runner-params
-      - juju-lts
       - string:
-          name: LXC_SNAP_LIST
+          name: juju_channel
           description: |-
-            Override to include jq installation
-
-            comma-separated list of snaps to install into the container
-            if the snap requires multiple arguments
-          default: juju --channel=3.1/stable
+            specify the juju channel to use
+          default: 3.1/stable
       - string:
           name: FROM_CHANNEL
           default: "1.{minor_version}/edge"
