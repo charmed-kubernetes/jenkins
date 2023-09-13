@@ -24,8 +24,7 @@ juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
   --model-default resource-tags="owner=k8sci" \
   --bootstrap-constraints "mem=8G cores=2"
 
-tox -c jobs/microk8s/tox.ini -e py310 -- python -c 'print("Tox Environment Ready")'
-. jobs/microk8s/.tox/py310/bin/activate
+pip install -r jobs/microk8s/tox.ini
 cd jobs/microk8s/charms
 DRY_RUN=${DRY_RUN} SKIP_TESTS=${SKIP_TESTS}\
   BRANCH=${TESTS_BRANCH} REPOSITORY=${TESTS_REPOSITORY}\
