@@ -133,11 +133,21 @@
     name: 'release-microk8s-charm'
     description: |
       Tests and releases microk8s charm.
+    node: runner-amd64
     project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
     wrappers:
       - default-job-wrapper
       - ci-creds
     parameters:
+      - lxc-runner-params
+      - juju-lts
+      - string:
+          name: juju_channel
+          description: |-
+            specify the juju channel to use
+          default: 3.1/stable
       - string:
           name: FROM_CHANNEL
           default: ""

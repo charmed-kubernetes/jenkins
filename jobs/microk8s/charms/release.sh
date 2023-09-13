@@ -23,8 +23,24 @@
 ## - JUJUCONTROLLERS: controllers.yaml configuration file for Juju
 ## - JUJUACCOUNTS: accounts.yaml configuration file for Juju
 
-pwd
-ls -l 
+JUJU_CLOUD           = "aws/us-east-1"
+CONTROLLER           = "release-microk8s-charm"
+
+
+function juju::cleanup() {
+  controller=$1
+  if ! timeout 4m juju destroy-controller -y --destroy-all-models --destroy-storage "${controller}"; then
+    timeout 4m juju kill-controller -y "${controller}" || true
+  fi
+}
+trap "juju::cleanup ${CONTROLLER}" EXIT
+
+juju::cleanup "${CONTROLLER}"
+juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
+  --model-default test-mode=true \
+  --model-default resource-tags="owner=k8sci" \
+  --bootstrap-constraints "mem=8G cores=2"
+s
 exit 0
 
 
