@@ -1,4 +1,5 @@
-#!/bin/bash -eux
+#!/usr/bin/env bash 
+set -eux
 
 ## Requirements
 ## - Juju (>= 3.1)
@@ -24,7 +25,7 @@ juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
   --model-default resource-tags="owner=k8sci" \
   --bootstrap-constraints "mem=8G cores=2"
 
-pip install -r jobs/microk8s/tox.ini
+pip install -r jobs/microk8s/requirements.txt
 cd jobs/microk8s/charms
 DRY_RUN=${DRY_RUN} SKIP_TESTS=${SKIP_TESTS}\
   BRANCH=${TESTS_BRANCH} REPOSITORY=${TESTS_REPOSITORY}\
