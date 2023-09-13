@@ -142,8 +142,8 @@
       - ci-creds
       - credentials-binding:
         - text:
-          credential-id: charmhub_microk8s
-          variable: CHARMCRAFT_AUTH
+            credential-id: charmhub_microk8s
+            variable: CHARMCRAFT_AUTH
     parameters:
       - lxc-runner-params
       - juju-lts
