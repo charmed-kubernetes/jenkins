@@ -9,6 +9,12 @@ set -eux
 
 JUJU_CLOUD="aws/us-east-1"
 CONTROLLER="release-microk8s-charm"
+DRY_RUN="${DRY_RUN:-'true'}"
+SKIP_TESTS="${SKIP_TESTS:-'false'}"
+REPOSITORY="${TESTS_REPOSITORY:-''}"
+BRANCH="${TESTS_BRANCH:-''}"
+TO_CHANNEL="${TO_CHANNEL:-'latest/edge/testing'}"
+FROM_CHANNEL="${FROM_CHANNEL:-'latest/edge'}"
 
 
 function juju::cleanup() {
@@ -27,8 +33,6 @@ juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
 
 pip install -r jobs/microk8s/requirements.txt
 cd jobs/microk8s/charms
-DRY_RUN=${DRY_RUN} SKIP_TESTS=${SKIP_TESTS}\
-  BRANCH=${TESTS_BRANCH} REPOSITORY=${TESTS_REPOSITORY}\
-  timeout 6h python release.py
+timeout 6h python release.py
 
 exit 0

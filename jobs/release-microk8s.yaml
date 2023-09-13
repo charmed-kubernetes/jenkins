@@ -148,10 +148,13 @@
       - lxc-runner-params
       - juju-lts
       - string:
-          name: juju_channel
+          name: LXC_SNAP_LIST
           description: |-
-            specify the juju channel to use
-          default: 3.1/stable
+            Override to include jq installation
+
+            comma-separated list of snaps to install into the container
+            if the snap requires multiple arguments
+          default: juju --channel=3.1/stable
       - string:
           name: FROM_CHANNEL
           default: ""
@@ -178,7 +181,7 @@
             - "true"
       - string:
           name: TESTS_REPOSITORY
-          default: ""
+          default: "https://github.com/canonical/charm-microk8s"
           description: |
             You might want to test with a set of tests that are in your own
             repository. By default https://github.com/canonical/charm-microk8s is used.
