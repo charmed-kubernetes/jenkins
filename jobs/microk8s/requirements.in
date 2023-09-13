@@ -9,3 +9,5 @@ urllib3
 craft-store
 juju
 tox
+pytest-operator
+charmcraft
