@@ -23,8 +23,8 @@
 ## - JUJUCONTROLLERS: controllers.yaml configuration file for Juju
 ## - JUJUACCOUNTS: accounts.yaml configuration file for Juju
 
-JUJU_CLOUD           = "aws/us-east-1"
-CONTROLLER           = "release-microk8s-charm"
+JUJU_CLOUD="aws/us-east-1"
+CONTROLLER="release-microk8s-charm"
 
 
 function juju::cleanup() {
