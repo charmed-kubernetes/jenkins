@@ -129,8 +129,8 @@
             timeout 2h snapcraft login --with /var/lib/jenkins/snapcraft-creds
             timeout 2h tox -e py38 -- python jobs/microk8s/update-gh-branches-and-lp-builders.py
 
-- job:
-    name: 'release-microk8s-charm'
+- job-template:
+    name: 'release-microk8s-charm-{track}'
     description: |
       Tests and releases microk8s charm.
     node: runner-amd64
@@ -157,12 +157,12 @@
           default: juju --channel=3.1/stable
       - string:
           name: FROM_CHANNEL
-          default: ""
+          default: "{track}/edge"
           description: |
             Choose a specific channel to release from. For example latest/edge, 1.28/edge.
       - string:
           name: TO_CHANNEL
-          default: ""
+          default: "{track}/stable"
           description: |
             Choose a specific channel to release to. For example latest/stable, 1.28/stable.
       - choice:
@@ -192,6 +192,11 @@
             You might want to test with a set of tests that are in your own
             branch. Here is where you set the branch name. By default tests are taken
             from the release branch corresponding to the FROM_CHANNEL.
+      - string:
+          name: CONTROLLER
+          default: "release-microk8s-charm-{track}"
+          description: |
+            The juju controller to be used for running the tests.
     triggers:
         - timed: "@daily"
     properties:
@@ -208,3 +213,9 @@
       - run-lxc:
           COMMAND: |
             bash jobs/microk8s/charms/release.sh
+
+- project:
+    name: release-microk8s-charm
+    track: ['1.28']
+    jobs:
+      - 'release-microk8s-charm-{track}'

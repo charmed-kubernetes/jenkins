@@ -8,7 +8,7 @@ set -eux
 ## - CHARMCRAFT_AUTH: charmcraft credentials. output of `charmcraft login --export auth; cat auth`
 
 JUJU_CLOUD="aws/us-east-1"
-CONTROLLER="release-microk8s-charm"
+CONTROLLER="${CONTROLLER:-'release-microk8s-charm'}"
 DRY_RUN="${DRY_RUN:-'true'}"
 SKIP_TESTS="${SKIP_TESTS:-'false'}"
 REPOSITORY="${TESTS_REPOSITORY:-''}"
@@ -26,13 +26,13 @@ function juju::cleanup() {
 trap "juju::cleanup ${CONTROLLER}" EXIT
 
 juju::cleanup "${CONTROLLER}"
+
+pip install -r jobs/microk8s/charms/requirements.txt
+
 juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
   --model-default test-mode=true \
   --model-default resource-tags="owner=k8sci" \
   --bootstrap-constraints "mem=8G cores=2"
 
-pip install -r jobs/microk8s/requirements.txt
 cd jobs/microk8s/charms
-CONTROLLER="${CONTROLLER}" timeout 6h python release.py
-
-exit 0
+timeout 6h python release.py

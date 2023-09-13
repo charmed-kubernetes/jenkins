@@ -6,3 +6,8 @@ click
 sh
 lazr.restfulclient
 urllib3
+craft-store
+juju
+tox
+pytest-operator
+charmcraft
