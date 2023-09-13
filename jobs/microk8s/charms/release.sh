@@ -33,6 +33,6 @@ juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
 
 pip install -r jobs/microk8s/requirements.txt
 cd jobs/microk8s/charms
-timeout 6h python release.py
+CONTROLLER="${CONTROLLER}" timeout 6h python release.py
 
 exit 0
