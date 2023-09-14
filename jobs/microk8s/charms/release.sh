@@ -7,7 +7,8 @@ set -eux
 ## Secrets
 ## - CHARMCRAFT_AUTH: charmcraft credentials. output of `charmcraft login --export auth; cat auth`
 
-JUJU_CLOUD="aws/us-east-1"
+# JUJU_CLOUD="aws/us-east-1"
+JUJU_CLOUD="vsphere/Boston"
 CONTROLLER="${CONTROLLER:-'release-microk8s-charm'}"
 DRY_RUN="${DRY_RUN:-'true'}"
 SKIP_TESTS="${SKIP_TESTS:-'false'}"
@@ -37,8 +38,7 @@ juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
 cd jobs/microk8s/charms
 
 # TODO(neoaggelos): attempt with proxy
-export http_proxy=http://squid.internal:3128
-export https_proxy=http://squid.internal:3128
-export no_proxy=127.0.0.1,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,localhost
+export MK8S_PROXY=http://squid.internal:3128
+export MK8S_NO_PROXY=127.0.0.1,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,localhost
 
 timeout 6h python release.py
