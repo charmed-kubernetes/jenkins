@@ -33,6 +33,10 @@ pip install -r jobs/microk8s/charms/requirements.txt
 juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
   --model-default test-mode=true \
   --model-default resource-tags="owner=k8sci" \
+  --model-default datastore=vsanDatastore \
+  --model-default primary-network=VLAN_2763 \
+  --model-default force-vm-hardware-version=17 \
+  --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions \
   --bootstrap-constraints "mem=8G cores=2"
 
 cd jobs/microk8s/charms
