@@ -76,6 +76,7 @@ function juju::bootstrap
 
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          ${add_model[@]} \
+         --debug \
          --force --bootstrap-series "$SERIES" \
          --bootstrap-constraints arch="${ARCH:-amd64}" \
          --model-default test-mode=true \
