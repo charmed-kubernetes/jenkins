@@ -37,6 +37,9 @@ juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
   --model-default primary-network=VLAN_2763 \
   --model-default force-vm-hardware-version=17 \
   --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions \
+  --bootstrap-image=juju-ci-root/templates/jammy-test-template \
+  --bootstrap-base ubuntu@22.04 \
+  --bootstrap-constraints arch=amd64 \
   --bootstrap-constraints "mem=8G cores=2"
 
 cd jobs/microk8s/charms
