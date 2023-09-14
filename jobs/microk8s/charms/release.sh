@@ -39,8 +39,7 @@ juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
   --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions \
   --bootstrap-image=juju-ci-root/templates/jammy-test-template \
   --bootstrap-base ubuntu@22.04 \
-  --bootstrap-constraints arch=amd64 \
-  --bootstrap-constraints "mem=8G cores=2"
+  --bootstrap-constraints "mem=8G cores=2 arch=amd64"
 
 cd jobs/microk8s/charms
 
