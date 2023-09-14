@@ -1,4 +1,4 @@
-#!/usr/bin/env bash 
+#!/usr/bin/env bash
 set -eux
 
 ## Requirements
@@ -35,4 +35,10 @@ juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
   --bootstrap-constraints "mem=8G cores=2"
 
 cd jobs/microk8s/charms
+
+# TODO(neoaggelos): attempt with proxy
+export http_proxy=http://squid.internal:3128
+export https_proxy=http://squid.internal:3128
+export no_proxy=127.0.0.1,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,localhost
+
 timeout 6h python release.py
