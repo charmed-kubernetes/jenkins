@@ -123,7 +123,6 @@ class ReleaseHelper:
         self._remove_microk8s_directory()
         self._clone_repo(repo)
         self._checkout_branch(branch)
-        self._juju_switch(controller)
 
         env = os.environ.copy()
         env["MK8S_SERIES"] = self.series
@@ -131,7 +130,7 @@ class ReleaseHelper:
         env["MK8S_CHARM_CHANNEL"] = channel
 
         # Passing '-c' will force pytest not to use the pytest.ini from the jenkins repo
-        cmd = f"tox -e integration-3.1 -- -c /dev/null"
+        cmd = f"tox -e integration-3.1 -- --controller '{controller}' -c /dev/null"
         self._run_cmd(cmd, _cwd=Path("charm-microk8s"), _env=env)
         return True
 
