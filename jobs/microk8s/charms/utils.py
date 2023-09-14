@@ -130,7 +130,7 @@ class ReleaseHelper:
         env["MK8S_CHARM_CHANNEL"] = channel
 
         # Passing '-c' will force pytest not to use the pytest.ini from the jenkins repo
-        cmd = f"tox -e integration-3.1 -- --controller '{controller}' -c /dev/null"
+        cmd = f"tox -e integration-3.1 -- --maxfail=1 --controller '{controller}' -c /dev/null"
         self._run_cmd(cmd, _cwd=Path("charm-microk8s"), _env=env)
         return True
 
