@@ -41,6 +41,8 @@ juju bootstrap "${JUJU_CLOUD}" "${CONTROLLER}" \
   --bootstrap-base ubuntu@22.04 \
   --bootstrap-constraints "mem=8G cores=2 arch=amd64"
 
+juju model-defaults {apt-http{,s},http{,s},snap-http{,s}}-proxy=http://squid.internal:3128 apt-no-proxy=localhost,127.0.0.1,ppa.launchpad.net,launchpad.net no-proxy=localhost,127.0.0.1,ppa.launchpad.net,launchpad.net,10.0.0.0/8,192.168.0.0/16,127.0.0.1,172.16.0.0/16
+
 cd jobs/microk8s/charms
 
 # TODO(neoaggelos): attempt with proxy
