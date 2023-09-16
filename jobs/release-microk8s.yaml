@@ -68,7 +68,6 @@
           use-build-blocker: true
           blocking-jobs:
             - "infra.*"
-            - "release-microk8s.*"
           block-level: 'NODE'
 
 - project:
