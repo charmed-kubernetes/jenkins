@@ -328,11 +328,12 @@ async def verify_ready(unit, entity_type, names: List[str], extra_args=""):
     if len(ready) != len(matches):
         for n in not_ready:
             kind = n["kind"]
-            name, ns = (
-                n["metadata"]["name"],
-                n["metadata"].get("namespace"),
-            )
-            log.info(f"Not yet ready: {kind}/{ns}/{name}")
+            name = n["metadata"]["name"]
+            ns = n["metadata"].get("namespace")
+            phase = n["status"]["phase"]
+            spec = n.get("spec") or {}
+            node_name = f" on {_s}" if (_s := spec.get("nodeName")) else ""
+            log.info(f"Not yet ready: {kind}/{ns}/{name} is {phase}{node_name}")
         return False
 
     # made it here then all the matches are ready
