@@ -65,7 +65,7 @@ Create a PR against the [docs repo][docs-repo] with release notes including:
 
 ### Tag release branches with bugfix revision
 
-**Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bugfix-rev/
+**Job**: https://jenkins.canonical.com/k8s-ps5/job/sync-stable-tag-bugfix-rev/
 
 This will tag all `release_x.xx` branches with the k8s version and bugfix revision.
 For example, the first bugfix release for 1.25 will tag the `release_1.25` branch
@@ -77,7 +77,7 @@ with **1.25+ck1**.
 
 ### Run the **build-charms** job
 
-**Job**: https://jenkins.canonical.com/k8s/job/build-charms/
+**Job**: https://jenkins.canonical.com/k8s-ps5/build-charms/
 
 This will build charms from the `release_x.xx` branch and promote them to the
 x.xx/candidate channel for testing.
@@ -106,15 +106,24 @@ doing a 1.25+ckX release, run:
 
 ### Required Testing
 
+#### Confirm that todays builds are in the "latest/candidate" channel of charmhub
+
+```bash
+charms=(list of charm names)
+for charm in ${charms[@]}; do
+echo $charm - $(juju info $charm --channel=candidate | grep candidate)
+done
+```
+
 #### Run **validate-charm-bugfix**
 
-**Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix/
+**Job**: https://jenkins.canonical.com/k8s-ps5/validate-charm-bugfix/
 
 This validates the deployment using the charms from the candidate channel.
 
 #### Run **validate-charm-bugfix-upgrade**
 
-**Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix-upgrade/
+**Job**: https://jenkins.canonical.com/k8s-ps5/validate-charm-bugfix-upgrade/
 
 This deploys `charmed-kubernetes` from the stable channel, upgrades the charms to
 the candidate channel, then validates the deployment.
@@ -131,7 +140,7 @@ Verify that the `validate-charm-bugfix-*` tests are passing. If failures occur:
 
 ### Promote charms from candidate to stable
 
-**Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
+**Job**: https://jenkins.canonical.com/k8s-ps5/promote-charms/
 
 This job takes a tag, from_channel, and to_channel. The tag defaults to
 `k8s,k8s-operator` to promote all charms that make up Charmed Kubernetes.
@@ -154,7 +163,7 @@ If this is a bugfix for a previous major release:
 
 ### Build stable bundles
 
-**Job**: https://jenkins.canonical.com/k8s/job/build-charms/
+**Job**: https://jenkins.canonical.com/k8s-ps5/build-charms/
 
 Bundles should not be promoted because a candidate bundle points to candidate charms.
 Instead, rebuild the bundles targetting the correct `to_channel`. It's possible this
