@@ -148,11 +148,14 @@ def _gen_metadata(numdays=None):
         if not job_name:
             continue
 
+        obj.update(**_job_metadata(prefix_id) or {})
         obj["test_result"], _, obj["build_endtime"] = get_file_prefix("result-", files)
         if not obj["build_endtime"]:
             continue
 
-        obj["deploy_result"], _, _ = get_file_prefix("deployresult-", files)
+        for key, value in obj.items():
+            if isinstance(value, str) and any(key.endswith(_) for _ in ["starttime", "endtime"]):
+                obj[key] = datetime.fromisoformat(value)
 
         # Validate jobs are now cloud-specific; drop old jobs from the report
         if "validate-ck-amd64" in job_name:
@@ -168,28 +171,40 @@ def _gen_metadata(numdays=None):
         if job_name not in db:
             db[job_name] = {}
 
-        if obj["deploy_result"] == "False":
-            hover_text = "Deploy Failed"  # juju deploy failed
-            result_bg_color = "#ff0000!important;"
-        elif obj["deploy_result"] == "Timeout":
-            hover_text = "Deploy Timeout"  # juju deployment timedout
-            result_bg_color = "#ff5500!important;"
-        elif obj["deploy_result"] == "True" and obj["test_result"] == "Timeout":
-            hover_text = "Test Timeout"  # juju deploys, tests timeout
-            result_bg_color = "#ffaa00!important;"
-        elif obj["deploy_result"] == "True" and obj["test_result"] == "False":
-            hover_text = "Test Failures"  # juju deploys, tests failed
-            result_bg_color = "#ffff00!important;"
-        elif obj["deploy_result"] == "True" and obj["test_result"] == "True":
-            hover_text = "Test Pass"  # juju deploys, tests pass
-            result_bg_color = "#00ff00!important;"
+        result = obj["test_result"]
+        deploy = obj["deploy_result"]
+        stage = obj.get("deploy_stage") or "Unknown"
+
+        if deploy != "True" and stage == "bootstrap":
+            # juju bootstrap failed
+            hover_text = "Bootstrap Failed"
+            result_style = "test-bootstrap-fail"
+        elif deploy == "False":
+            # juju deploy failed
+            hover_text = f"Deploy Failed ({stage})"
+            result_style = "test-deploy-fail"
+        elif deploy == "Timeout":
+             # juju deployment timeout
+            hover_text = f"Deploy Timeout ({stage})"
+            result_style = "test-deploy-timeout"
+        elif deploy == "True" and result == "Timeout":
+            # juju deploys, tests timeout
+            hover_text = "Test Timeout"
+            result_style = "test-test-timeout"
+        elif deploy == "True" and result == "False":
+            # juju deploys, tests failed
+            hover_text = "Test Failures"
+            result_style = "test-test-failure"
+        elif deploy == "True" and result == "True":
+            # juju deploys, tests pass
+            hover_text = "Test Pass"
+            result_style = "test-test-passing"
             obj["font_awesome_icon"] = "fa-laugh-squint"
         else:
-            result, deploy = obj["test_result"], obj["deploy_result"]
             hover_text = f"Unknown status deploy={deploy} result={result}"
-            result_bg_color = "#00ffff!important;"  # dunno what happened?
+            result_style = "test-unknown-status"
 
-        obj["bg_color"] = result_bg_color
+        obj["result_style"] = result_style
         obj["hover_text"] = hover_text
 
         day = obj["build_endtime"].strftime("%Y-%m-%d")
@@ -260,19 +275,25 @@ def job_result(job_id, metadata_db, columbo_json):
     run.cmd_ok(f"rm -rf {html_p}")
 
 
+def _job_metadata(job_id):
+    url = f"{REPORT_HOST}/{job_id}/metadata.json"
+    log.info(f"{job_id} :: Fetching {url}")
+    metadata = requests.get(url)
+    if metadata.ok:
+        try:
+            return metadata.json()
+        except json.decoder.JSONDecodeError:
+            log.error(f"{job_id} :: Invalid JSON {url}")
+            return None
+    log.error(f"{job_id} :: Missing Metadata {url}")
+    return None
+
+
 @cli.command()
 @click.option("--job-id", help="ID of Job to parse")
 def job_info(job_id):
     """Get metadata info for job"""
-    url = f"{REPORT_HOST}/{job_id}/metadata.json"
-    log.info(f"{job_id} :: Downloading {url}")
-    has_metadata = requests.get(url)
-    if has_metadata.ok:
-        try:
-            obj = has_metadata.json()
-        except json.decoder.JSONDecodeError:
-            return
-
+    obj = _job_metadata(job_id)
     click.echo(pformat(obj))
 
 

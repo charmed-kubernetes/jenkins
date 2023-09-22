@@ -8,6 +8,26 @@
         <table class="table table-hover table-bordered">
           <thead class="thead-dark">
             <tr>
+              <th class="align-middle">Color Key</th>
+              <th class="test-bootstrap-fail" style="min-width:175px">Bootstrap Fail</th>
+              <th class="test-deploy-fail" style="min-width:175px">   Model Deploy Fail</th>
+              <th class="test-deploy-timeout" style="min-width:175px; color:black">Model Deploy Timedout</th>
+              <th class="test-test-timeout" style="min-width:175px">  PyTest Timedout</th>
+              <th class="test-test-failure" style="min-width:175px">  PyTest Failure</th>
+              <th class="test-test-passing" style="min-width:175px">  PyTest Success</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+    </div>
+    <div class="col"></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="table">
+        <table class="table table-hover table-bordered">
+          <thead class="thead-dark">
+            <tr>
               <th class="align-middle">Job Name <small>Last modified: {{ modified.strftime('%Y-%m-%d %H:%M:%S') }}</small></th>
               {% for day in headers %}
               <th class="align-middle text-center" style="min-width: 70px;">{{ day }}</th>
@@ -18,9 +38,9 @@
           <tr>
             <td class="align-middle">{{ row[0] }}</td>
             {% for day in row[1:] %}
-            <td class="text-center align-middle" {%- if day.bg_color %}style="background-color: {{day.bg_color}}"{% endif %}>
+            <td class="text-center align-middle test-global {% if day.result_style %}{{day.result_style}}{% endif %}">
               {% if day.index %}
-              <a class="download-link" href="{{day.index}}" job_id="{{day.job_id}}" onmouseover="load_report_hover(this, '{{day.hover_text}}')">
+              <a href="{{day.index}}" job_id="{{day.job_id}}" onmouseover="load_report_hover(this, '{{day.hover_text}}')">
                 <i class="fas {{day.font_awesome_icon or 'fa-file-alt'}}"></i>
               </a>
               {% elif day.artifacts %}

@@ -37,6 +37,8 @@ function juju::bootstrap
       --model-default logging-config="<root>=DEBUG" \
       --model-default vpc-id=$vpc_id
 
+    juju::deploy-report $? "bootstrap"
+
     if [ "$ROUTING_MODE" = "bgp-router" ]; then
       echo "Deploying bgp router"
       python3 $WORKSPACE/jobs/integration/tigera_aws.py deploy-bgp-router
@@ -44,7 +46,7 @@ function juju::bootstrap
       ret=$?
       if (( ret > 0 )); then
           # Fail Deploy Early
-          juju::deploy-report $ret
+          juju::deploy-report $ret "bgp-setup"
       fi
     fi
 }
@@ -105,7 +107,7 @@ function juju::deploy
         python $WORKSPACE/jobs/integration/tigera_aws.py configure-bgp
       fi
     )
-    juju::deploy-report $?
+    juju::deploy-report $? "bgp-setup"
 }
 
 ###############################################################################

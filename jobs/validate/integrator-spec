@@ -142,7 +142,7 @@ function juju::wait
     echo "Waiting for deployment to settle..."
     timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w -x kubernetes-control-plane
 
-    juju::deploy-report $?
+    juju::deploy-report $? "model-wait"
 }
 
 function test::execute
