@@ -1,0 +1,87 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC1090
+
+set -x
+
+###############################################################################
+# INITIALIZE
+###############################################################################
+: "${WORKSPACE:=$(pwd)}"
+
+. "$WORKSPACE/ci.bash"
+. "$WORKSPACE/juju.bash"
+
+###############################################################################
+# FUNCTION OVERRIDES
+###############################################################################
+
+function juju::deploy::overlay
+{
+    local constraints
+    constraints="arch=${ARCH:-amd64} cores=2 mem=8G root-disk=16G"
+
+    cat <<EOF > overlay.yaml
+series: $SERIES
+applications:
+  etcd:
+    constraints: $constraints
+  calico:
+    options:
+      ignore-loose-rpf: true
+  kubernetes-control-plane:
+    options:
+      channel: $SNAP_VERSION
+    num_units: 3
+    to:
+    - lxd:etcd/0
+    - lxd:etcd/1
+    - lxd:etcd/2
+  kubernetes-worker:
+    constraints: $constraints
+    options:
+      channel: $SNAP_VERSION
+EOF
+}
+
+function juju::deploy::after
+{
+
+    # Apply an updated lxd profile
+    machine_app=etcd
+    juju exec -m "$JUJU_CONTROLLER:$JUJU_MODEL" -a $machine_app -- 'sudo lxc profile edit default << EOF                                                                                                                           ──(Wed,Sep20)─┘
+devices:
+  sysfsbpf:
+    path: /sys/fs/bpf
+    source: /sys/fs/bpf
+    type: disk
+EOF'
+    readarray units < <(
+        juju status -m "$JUJU_CONTROLLER:$JUJU_MODEL" $machine_app --format yaml |
+        yq ".applications.$machine_app.units | keys" 
+    )
+    for unit in "${units[@]}"; do
+        juju exec -m "$JUJU_CONTROLLER:$JUJU_MODEL" -u $(echo $unit | yq .[0]) -- 'sudo lxc restart --all'
+    done
+    juju::wait
+}
+
+###############################################################################
+# ENV
+###############################################################################
+SNAP_VERSION=${1:-1.26/edge}
+SERIES=${2:-jammy}
+JUJU_DEPLOY_BUNDLE=charmed-kubernetes
+JUJU_DEPLOY_CHANNEL=${3:-edge}
+JUJU_CLOUD=${5:-vsphere/Boston}
+JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_MODEL=validate-ck
+ARCH=${4:-amd64}
+JUJU_VERSION=$(juju --version | cut -f-2 -d.)
+CUSTOM_CLOUD=$(echo "$JUJU_CLOUD" | cut -f1 -d/)
+JOB_NAME_CUSTOM="validate-ck-$CUSTOM_CLOUD-$ARCH-$SERIES-$JUJU_VERSION-$SNAP_VERSION"
+JOB_ID=$(identifier)
+
+###############################################################################
+# START
+###############################################################################
+ci::run
