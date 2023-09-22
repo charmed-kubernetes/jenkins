@@ -106,14 +106,36 @@ doing a 1.25+ckX release, run:
 
 ### Required Testing
 
-#### Confirm that todays builds are in the "latest/candidate" channel of charmhub
+#### Confirm that recent builds are in the "latest/candidate" channel of charmhub
 
 ```bash
 charms=(list of charm names)
 for charm in ${charms[@]}; do
-echo $charm - $(juju info $charm --channel=candidate | grep candidate)
+printf "Charm = %-30s Date = %s\n" $charm $(juju info $charm --channel=candidate | grep candidate | awk '{print $3}')
 done
 ```
+
+For instance if the list of charm names was:
+```
+charms=(metallb calico kubernetes-control-plane coredns kube-ovn kubeapi-load-balancer ceph-csi gcp-integrator aws-integrator vsphere-integrator)
+```
+
+Expected output should show all the charms recently up-to-date
+```bash
+Charm = metallb                        Date =            <-- this is missing
+Charm = calico                         Date = 2023-09-22
+Charm = kubernetes-control-plane       Date = 2023-09-22
+Charm = coredns                        Date = 2023-06-07 <-- this is old
+Charm = kube-ovn                       Date = 2023-09-22
+Charm = kubeapi-load-balancer          Date = 2023-09-22
+Charm = ceph-csi                       Date = 2023-09-22
+Charm = gcp-integrator                 Date = 2023-09-22
+Charm = aws-integrator                 Date = 2023-09-22
+Charm = vsphere-integrator             Date = 2023-09-22
+```
+
+If not, confirm the build settings and rebuild until the correct charms and dates
+appear in the output.
 
 #### Run **validate-charm-bugfix**
 
