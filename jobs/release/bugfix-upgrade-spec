@@ -24,8 +24,8 @@ function test::execute
                 --full-trace \
                 jobs/integration/validation.py \
                 --is-upgrade \
-                --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
-                --upgrade-charm-channel candidate \
+                --upgrade-snap-channel "$SNAP_CHANNEL_UPGRADE_TO" \
+                --upgrade-charm-channel "$CHARM_CHANNEL_UPGRADE_TO" \
                 --cloud "$JUJU_CLOUD" \
                 --model "$JUJU_MODEL" \
                 --controller "$JUJU_CONTROLLER"
@@ -41,10 +41,8 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION_UPGRADE_TO=1.25/candidate
-export SNAP_VERSION_UPGRADE_TO
 
-SNAP_VERSION=${1:-1.25/stable}
+SNAP_VERSION=${1:-1.27/stable}
 SERIES=${2:-focal}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=stable
@@ -54,6 +52,17 @@ JUJU_MODEL=validate-bugfix-upgrade
 ARCH=amd64
 JOB_NAME_CUSTOM="validate-charm-bugfix-upgrade-$SERIES-$SNAP_VERSION"
 JOB_ID=$(identifier)
+
+# this job deploys with
+#   charm-channel at {K8S_STABLE_VERSION}/stable
+#   snap-channel  at {K8S_STABLE_VERSION - 1}/stable or {K8S_STABLE_VERSION - 2}/stable
+# then upgrades charm-channel to K8S_STABLE_VERSION/candidate
+# and  upgrades snap-channel  to K8S_STABLE_VERSION/candidate
+K8S_STABLE_VERSION=$(python -c 'from cilib.enums import K8S_STABLE_VERSION; print(K8S_STABLE_VERSION)')
+
+export CHARM_CHANNEL_UPGRADE_TO=${K8S_STABLE_VERSION}/candidate
+export SNAP_CHANNEL_UPGRADE_TO=${K8S_STABLE_VERSION}/candidate
+
 
 ###############################################################################
 # START
