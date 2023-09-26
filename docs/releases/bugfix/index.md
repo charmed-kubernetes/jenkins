@@ -65,7 +65,7 @@ Create a PR against the [docs repo][docs-repo] with release notes including:
 
 ### Tag release branches with bugfix revision
 
-**Job**: https://jenkins.canonical.com/k8s/job/sync-stable-tag-bugfix-rev/
+**Job**: https://jenkins.canonical.com/k8s-ps5/job/sync-stable-tag-bugfix-rev/
 
 This will tag all `release_x.xx` branches with the k8s version and bugfix revision.
 For example, the first bugfix release for 1.25 will tag the `release_1.25` branch
@@ -77,7 +77,7 @@ with **1.25+ck1**.
 
 ### Run the **build-charms** job
 
-**Job**: https://jenkins.canonical.com/k8s/job/build-charms/
+**Job**: https://jenkins.canonical.com/k8s-ps5/job/build-charms/
 
 This will build charms from the `release_x.xx` branch and promote them to the
 x.xx/candidate channel for testing.
@@ -106,15 +106,46 @@ doing a 1.25+ckX release, run:
 
 ### Required Testing
 
+#### Confirm that recent builds are in the "latest/candidate" channel of charmhub
+
+```bash
+charms=(list of charm names)
+for charm in ${charms[@]}; do
+printf "Charm = %-30s Date = %s\n" $charm $(juju info $charm --channel=candidate | grep candidate | awk '{print $3}')
+done
+```
+
+For instance if the list of charm names was:
+```
+charms=(metallb calico kubernetes-control-plane coredns kube-ovn kubeapi-load-balancer ceph-csi gcp-integrator aws-integrator vsphere-integrator)
+```
+
+Expected output should show all the charms recently up-to-date
+```bash
+Charm = metallb                        Date =            <-- this is missing
+Charm = calico                         Date = 2023-09-22
+Charm = kubernetes-control-plane       Date = 2023-09-22
+Charm = coredns                        Date = 2023-06-07 <-- this is old
+Charm = kube-ovn                       Date = 2023-09-22
+Charm = kubeapi-load-balancer          Date = 2023-09-22
+Charm = ceph-csi                       Date = 2023-09-22
+Charm = gcp-integrator                 Date = 2023-09-22
+Charm = aws-integrator                 Date = 2023-09-22
+Charm = vsphere-integrator             Date = 2023-09-22
+```
+
+If not, confirm the build settings and rebuild until the correct charms and dates
+appear in the output.
+
 #### Run **validate-charm-bugfix**
 
-**Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix/
+**Job**: https://jenkins.canonical.com/k8s-ps5/job/validate-charm-bugfix/
 
 This validates the deployment using the charms from the candidate channel.
 
 #### Run **validate-charm-bugfix-upgrade**
 
-**Job**: https://jenkins.canonical.com/k8s/job/validate-charm-bugfix-upgrade/
+**Job**: https://jenkins.canonical.com/k8s-ps5/job/validate-charm-bugfix-upgrade/
 
 This deploys `charmed-kubernetes` from the stable channel, upgrades the charms to
 the candidate channel, then validates the deployment.
@@ -131,17 +162,26 @@ Verify that the `validate-charm-bugfix-*` tests are passing. If failures occur:
 
 ### Promote charms from candidate to stable
 
-**Job**: https://jenkins.canonical.com/k8s/job/promote-charms/
+**Job**: https://jenkins.canonical.com/k8s-ps5/job/promote-charms/
 
 This job takes a tag, from_channel, and to_channel. The tag defaults to
 `k8s,k8s-operator` to promote all charms that make up Charmed Kubernetes.
+
+**Note: Only promote charms that were built by the *build-charms* job**
+
+Otherwise, you would end up promoting charms from the last candidate release
+overwriting the previous stable with an invalid charm.
+
+It can be wise to run first with the `--dry-run` flag to ensure the correct
+promotions are correct specifically for charms that require multiple promotions 
+because they support multiple arches with potentionally different resources.
 
 **Note about `to_channel`**
 
 If this is a bugfix for the current latest/stable release:
 
 `ex) 1.25 is the current release, and this is a bugfix for 1.25`
-* set the `from_channel` = `candidate`
+* set the `from_channel` = `1.25/candidate`
 * set the `to_channel` = `stable`
 * the charms will be released to both `latest/stable` and `1.25/stable`
 
@@ -154,7 +194,7 @@ If this is a bugfix for a previous major release:
 
 ### Build stable bundles
 
-**Job**: https://jenkins.canonical.com/k8s/job/build-charms/
+**Job**: https://jenkins.canonical.com/k8s-ps5/job/build-charms/
 
 Bundles should not be promoted because a candidate bundle points to candidate charms.
 Instead, rebuild the bundles targetting the correct `to_channel`. It's possible this

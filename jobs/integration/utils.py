@@ -726,11 +726,15 @@ class JujuRunResult:
     @property
     def stdout(self) -> str:
         stdout = self.results.get("Stdout", self.results.get("stdout")) or ""
+        if isinstance(stdout, bytes):
+            stdout = stdout.decode()
         return stdout.strip()
 
     @property
     def stderr(self) -> str:
         stderr = self.results.get("Stderr", self.results.get("stderr")) or ""
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode()
         return stderr.strip()
 
     @property
