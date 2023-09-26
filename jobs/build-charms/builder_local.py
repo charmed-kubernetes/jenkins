@@ -360,6 +360,8 @@ class _CharmHub(Charmcraft):
 
         calls = defaultdict(list)
         for release, base in charm_status:
+            if release.revision is None:
+                continue
             resource_args = (
                 f"--resource={rsc.name}:{rsc.revision}"
                 for rsc in release.resources
