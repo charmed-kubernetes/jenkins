@@ -167,12 +167,21 @@ Verify that the `validate-charm-bugfix-*` tests are passing. If failures occur:
 This job takes a tag, from_channel, and to_channel. The tag defaults to
 `k8s,k8s-operator` to promote all charms that make up Charmed Kubernetes.
 
+**Note: Only promote charms that were built by the *build-charms* job**
+
+Otherwise, you would end up promoting charms from the last candidate release
+overwriting the previous stable with an invalid charm.
+
+It can be wise to run first with the `--dry-run` flag to ensure the correct
+promotions are correct specifically for charms that require multiple promotions 
+because they support multiple arches with potentionally different resources.
+
 **Note about `to_channel`**
 
 If this is a bugfix for the current latest/stable release:
 
 `ex) 1.25 is the current release, and this is a bugfix for 1.25`
-* set the `from_channel` = `candidate`
+* set the `from_channel` = `1.25/candidate`
 * set the `to_channel` = `stable`
 * the charms will be released to both `latest/stable` and `1.25/stable`
 
