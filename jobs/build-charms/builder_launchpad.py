@@ -146,29 +146,39 @@ class LPBuildEntity(BuildEntity):
 
     def _lp_complete_builds(self, builds: List[Resource]):
         """Ensure that all the builds of a specified charm are completed."""
-        incomplete_builds = {_.self_link for _ in builds}
+        pending_builds = {_.self_link for _ in builds}
+        failed_builds = set()
         start_time = datetime.now()
-        while incomplete_builds:
+        while pending_builds and not failed_builds:
             for build in builds:
-                if build.self_link not in incomplete_builds:
+                if build.self_link not in pending_builds:
                     continue
                 build.lp_refresh()
                 dt = datetime.now() - start_time
-                if (status := build.buildstate) in self.BUILD_STATES_PENDING:
-                    status = f"Waiting for {build.title} status='{status}' elapsed={dt}"
+                if (state := build.buildstate) in self.BUILD_STATES_PENDING:
+                    status = f"Waiting for {build.title} status='{state}' elapsed={dt}"
                 else:
-                    status = f"Completed {build.title} status='{status}' elapsed={dt}"
-                    incomplete_builds.remove(build.self_link)
+                    status = f"Completed {build.title} status='{state}' elapsed={dt}"
+                    pending_builds.remove(build.self_link)
+                    if state not in self.BUILD_STATES_SUCCESS:
+                        failed_builds.add(build.self_link)
                 self.echo(status)
 
-            if incomplete_builds:
+            if pending_builds and not failed_builds:
                 time.sleep(30.0)
+        for build_link in pending_builds:
+            # If one build fails, cancel the others first
+            build = next(_ for _ in builds if _.self_link == build_link)
+            if build.can_be_cancelled:
+                self.echo(f"Cancelling {build.title}...")
+                build.cancel()
         for build in builds:
             if build.buildstate not in self.BUILD_STATES_SUCCESS:
                 err_msg = (
                     f"Failed launchpad build {self.entity} due to "
                     f"unsuccessful build state '{build.buildstate}'."
                 )
+
                 self.echo(err_msg + "\n" + self._lp_build_log(build))
                 raise BuildException(err_msg)
         return builds
