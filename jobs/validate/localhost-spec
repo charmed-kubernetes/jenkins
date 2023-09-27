@@ -26,7 +26,7 @@ function juju::deploy
         juju relate ubuntu ci-setup
     )
 
-    juju::deploy-report $?
+    juju::deploy-report $? "model-deploy"
 }
 
 function juju::deploy::after

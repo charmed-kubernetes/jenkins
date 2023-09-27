@@ -86,7 +86,7 @@ EOF
 
     juju deploy -m "${JUJU_CONTROLLER}:addons" ./k8s_overlay.yaml --trust
     timeout 45m juju-wait -e "${JUJU_CONTROLLER}:addons" -w
-    juju::deploy-report $?
+    juju::deploy-report $? "model-wait"
 
     # Retaint control-plane nodes
     for node in $(kubectl get nodes | grep control-plane | cut -d' ' -f1); do

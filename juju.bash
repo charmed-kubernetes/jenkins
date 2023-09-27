@@ -85,7 +85,7 @@ function juju::bootstrap
          --model-default logging-config="<root>=DEBUG" \
          $extra_args
 
-    juju::deploy-report $?
+    juju::deploy-report $? "bootstrap"
 }
 
 function juju::deploy::before
@@ -124,7 +124,7 @@ function juju::deploy
          --force \
          --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE"
 
-    juju::deploy-report $?
+    juju::deploy-report $? "model-deploy"
 }
 
 function juju::wait
@@ -132,7 +132,7 @@ function juju::wait
     echo "Waiting for deployment to settle..."
     timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
 
-    juju::deploy-report $?
+    juju::deploy-report $? "model-wait"
 }
 
 function juju::unitAddress
@@ -153,6 +153,7 @@ function juju::deploy-report
 {
     # report deployment failure
     local ret=$1
+    local stage=${2:unspecified}
 
     local is_pass="True"
     if (( ret == 124 )); then
@@ -162,6 +163,7 @@ function juju::deploy-report
     fi
     kv::set "deploy_result" "${is_pass}"
     kv::set "deploy_endtime" "$(timestamp)"
+    kv::set "deploy_stage" "$(stage)"
     touch "meta/deployresult-${is_pass}"
     python bin/s3 cp "meta/deployresult-${is_pass}" "meta/deployresult-${is_pass}"
 
