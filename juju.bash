@@ -163,7 +163,7 @@ function juju::deploy-report
     fi
     kv::set "deploy_result" "${is_pass}"
     kv::set "deploy_endtime" "$(timestamp)"
-    kv::set "deploy_stage" "$(stage)"
+    kv::set "deploy_stage" "${stage}"
     touch "meta/deployresult-${is_pass}"
     python bin/s3 cp "meta/deployresult-${is_pass}" "meta/deployresult-${is_pass}"
 
