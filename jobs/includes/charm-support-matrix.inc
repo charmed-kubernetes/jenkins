@@ -14,6 +14,22 @@
       - core
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-calico.git'
+- calico-enterprise:
+    builder: 'launchpad'
+    bugs: 'https://bugs.launchpad.net/charm-calico-enterprise'
+    docs: 'https://charmhub.io/calico-enterprise/docs'
+    downstream: charmed-kubernetes/charm-calico-enterprise.git
+    store: 'https://charmhub.io/calico-enterprise'
+    summary: A robust Software Defined Network from Project Calico
+    architectures: [amd64]
+    tags:
+      - k8s
+      - calico-enterprise
+      - core
+      - cni
+    upstream: 'https://github.com/charmed-kubernetes/charm-calico-enterprise.git'
+    channel-range:
+      max: '1.29'
 - canal:
     bugs: 'https://bugs.launchpad.net/charm-canal'
     build-resources: 'cd {out_path}; bash {src_path}/build-canal-resources.sh'
@@ -269,6 +285,8 @@
       - tigera-secure-ee
       - cni
     upstream: 'https://github.com/charmed-kubernetes/layer-tigera-secure-ee.git'
+    channel-range:
+      max: '1.28'
 - keepalived:
     bugs: 'https://bugs.launchpad.net/charm-keepalived'
     docs: 'https://charmhub.io/keepalived/docs'
