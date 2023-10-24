@@ -27,7 +27,6 @@ from .utils import (
     timeout_for_current_task,
     retry_async_with_timeout,
     scp_to,
-    scp_from,
     disable_source_dest_check,
     find_entities,
     verify_deleted,
@@ -359,21 +358,12 @@ async def test_microbot(model, tools, teardown_microbot):
 
 
 @pytest.mark.clouds(["ec2", "vsphere"])
+@pytest.mark.usefixtures("log_dir")
 @backoff.on_exception(backoff.expo, TypeError, max_tries=5)
-async def test_dashboard(model, log_dir, tools):
+async def test_dashboard(model, kubeconfig, tools):
     """Validate that the dashboard is operational"""
     unit = model.applications["kubernetes-control-plane"].units[0]
-    with NamedTemporaryFile() as f:
-        await scp_from(
-            unit,
-            "config",
-            f.name,
-            tools.controller_name,
-            tools.connection,
-            proxy=tools.juju_ssh_proxy,
-        )
-        with open(f.name, "r") as stream:
-            config = yaml.safe_load(stream)
+    config = yaml.safe_load(kubeconfig.open())
 
     async def query_dashboard(url, config):
         # handle pre 1.19 authentication
