@@ -270,7 +270,7 @@
       - k8s
       - openstack
       - openstack-cloud-controller
-    upstream: 'https://github.com/canonical/openstack-cloud-controller-operator.git'
+    upstream: 'https://github.com/charmed-kubernetes/openstack-cloud-controller-operator.git'
     channel-range:
       min: '1.28'
 - tigera-secure-ee:
