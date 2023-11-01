@@ -45,7 +45,7 @@
 - ceph-csi:
     builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-ceph-csi'
-    docs: 'https://charmhub.io/ceph-csi/README.md'
+    docs: 'https://charmhub.io/ceph-csi/docs'
     downstream: charmed-kubernetes/ceph-csi-operator.git
     store: 'https://charmhub.io/ceph-csi'
     summary: |
