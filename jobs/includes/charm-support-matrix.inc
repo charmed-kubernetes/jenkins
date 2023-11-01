@@ -29,7 +29,7 @@
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-calico-enterprise.git'
     channel-range:
-      max: '1.29'
+      min: '1.29'
 - canal:
     bugs: 'https://bugs.launchpad.net/charm-canal'
     build-resources: 'cd {out_path}; bash {src_path}/build-canal-resources.sh'
