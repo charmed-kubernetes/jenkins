@@ -371,6 +371,20 @@
     upstream: 'https://github.com/charmed-kubernetes/gcp-k8s-storage.git'
     channel-range:
       min: '1.25'
+- gcp-cloud-provider:
+    builder: 'launchpad'
+    bugs: 'https://bugs.launchpad.net/charm-gcp-cloud-provider'
+    docs: 'https://charmhub.io/gcp-cloud-provider/docs'
+    downstream: charmed-kubernetes/charm-gcp-cloud-provider
+    store: 'https://charmhub.io/gcp-cloud-provider'
+    summary: 'Charm which enables GCP out-of-tree integrations for Charmed Kubernetes'
+    tags:
+      - k8s
+      - charm-gcp-cloud-provider
+      - integrator
+    upstream: 'https://github.com/charmed-kubernetes/charm-gcp-cloud-provider.git'
+    channel-range:
+      min: '1.29'
 - github-runner:
     downstream: charmed-kubernetes/github-runner-operator
     tags:
