@@ -12,7 +12,7 @@ import shlex
 import uuid
 import yaml
 
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
 from cilib.lp import Client as LPClient
 from datetime import datetime
 from juju.model import Model
@@ -257,6 +257,28 @@ class Tools:
         juju_wait = sh.Command("/snap/bin/juju-wait")
         command = shlex.split(str(juju_wait.bake(**kwargs)))
         return await self.run(*command, _tee="err")
+
+    @asynccontextmanager
+    async def fast_forward(
+        self, model: Model, fast_interval: str = "10s", slow_interval=None
+    ):
+        """Temporarily speed up update-status firing rate for the current model.
+
+        Returns an async context manager that temporarily sets update-status
+        firing rate to `fast_interval`.
+        If provided, when the context exits the update-status firing rate will
+        be set to `slow_interval`. Otherwise, it will be set to the previous
+        value.
+        """
+        update_interval_key = "update-status-hook-interval"
+        if slow_interval:
+            interval_after = slow_interval
+        else:
+            interval_after = (await model.get_config())[update_interval_key]
+
+        await model.set_config({update_interval_key: fast_interval})
+        yield
+        await model.set_config({update_interval_key: interval_after})
 
 
 @pytest.fixture(scope="module")
@@ -661,7 +683,7 @@ def pytest_runtest_makereport(item, call):
             f.write(report.longreprtext + "\n")
 
 
-@pytest.mark.optionalhook
+@pytest.hookimpl(optionalhook=True)
 def pytest_metadata(metadata):
     custom_name = os.environ.get("JOB_NAME_CUSTOM", None)
     if custom_name:
