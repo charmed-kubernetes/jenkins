@@ -1011,11 +1011,11 @@ async def test_kubelet_extra_config(model, tools):
     )
 
 
-async def test_service_cidr_expansion(model):
+async def test_service_cidr_expansion(model, tools):
     """Expand the service cidr by 1 and verify if kubernetes service is
     updated with the new cluster IP.
 
-    Note the cluster cannot be revert back to the oiriginal service cidr.
+    Note the cluster cannot revert back to the oiriginal service cidr.
     """
     app = model.applications["kubernetes-control-plane"]
     original_config = await app.get_config()
@@ -1042,8 +1042,9 @@ async def test_service_cidr_expansion(model):
     raw_output = output.stdout
     assert new_service_ip_str in raw_output
 
-    # Wait for the model to be stable
-    await model.wait_for_idle(status="active", timeout=10 * 60)
+    # Wait for the model to be stable after 10 minutes
+    async with tools.fast_forward(model, fast_interval="60s"):
+        await model.wait_for_idle(status="active", timeout=10 * 60)
 
 
 async def test_sans(model):
