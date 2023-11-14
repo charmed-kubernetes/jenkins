@@ -8,6 +8,7 @@ function compile::env
     : "${JUJU_DEPLOY_BUNDLE:?Must have a bundle defined}"
     : "${JUJU_DEPLOY_CHANNEL:?Must have a channel defined}"
     : "${JUJU_MODEL:?Must have a model defined}"
+    : "${JUJU_UPDATE_STATUS_INTERVAL:=150s}"
     : "${SERIES:?Must have a release series defined}"
     : "${SNAP_VERSION:?Must have a snap version defined}"
     : "${JOB_NAME_CUSTOM:?Must have a job name defined}"
@@ -223,6 +224,7 @@ function ci::run
         juju::bootstrap::before
         juju::bootstrap
         juju::bootstrap::after
+        juju::model::speed-up
         juju::deploy::before
         juju::deploy::overlay
         juju::deploy
