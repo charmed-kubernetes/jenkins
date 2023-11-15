@@ -24,6 +24,13 @@ function juju::bootstrap::after
     echo "> skipping after tasks"
 }
 
+function juju::model::speed-up
+{
+    # Override the update-status hook rather than the default of 5m
+    echo "> Setting update-status-hook-interval=${JUJU_UPDATE_STATUS_INTERVAL}"
+    juju model-config -m "$JUJU_CONTROLLER:$JUJU_MODEL" update-status-hook-interval="${JUJU_UPDATE_STATUS_INTERVAL}"
+}
+
 function juju::version
 {
     # yields the short sem version of juju
