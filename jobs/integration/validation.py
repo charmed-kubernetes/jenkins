@@ -197,6 +197,7 @@ async def reset_audit_config(control_plane_app, tools):
 
 
 # START TESTS
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_auth_file_propagation(model, tools):
     """Validate that changes to /root/cdk/serviceaccount.key on the leader
     control-plane unit are propagated to the other control-plane units.
@@ -242,8 +243,8 @@ async def test_auth_file_propagation(model, tools):
 async def test_status_messages(model):
     """Validate that the status messages are correct."""
     expected_messages = {
-        "kubernetes-control-plane": "Kubernetes control-plane running.",
-        "kubernetes-worker": "Kubernetes worker running",
+        "kubernetes-control-plane": "",
+        "kubernetes-worker": "",
     }
     for app, message in expected_messages.items():
         for unit in model.applications[app].units:
@@ -327,6 +328,7 @@ async def teardown_microbot(model):
 
 
 @pytest.mark.clouds(["ec2", "vsphere"])
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_microbot(model, tools, teardown_microbot):
     """Validate the microbot action"""
     unit = model.applications["kubernetes-worker"].units[0]
@@ -741,6 +743,7 @@ async def test_worker_master_removal(model, tools):
 
 
 @pytest.mark.on_model("validate-nvidia")
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_gpu_support(model, tools):
     """Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
@@ -1011,6 +1014,7 @@ async def test_kubelet_extra_config(model, tools):
     )
 
 
+@pytest.mark.skip("https://bugs.launchpad.net/bugs/2045696")
 async def test_service_cidr_expansion(model, tools):
     """Expand the service cidr by 1 and verify if kubernetes service is
     updated with the new cluster IP.
@@ -1455,6 +1459,7 @@ async def any_keystone(model, apps_by_charm, tools):
 
 
 @pytest.mark.usefixtures("ceph_apps")
+@pytest.mark.skip("Feature removed in ops rewrite")
 class TestCeph:
     async def test_plugins_installed(self, model):
         log.info("waiting for csi to settle")
@@ -1484,6 +1489,7 @@ class TestCeph:
 
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.clouds(["ec2", "vsphere"])
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_keystone(model, tools, any_keystone):
     control_plane = model.applications["kubernetes-control-plane"]
 
@@ -1671,6 +1677,7 @@ data:
 
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.on_model("validate-vault")
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
     control_plane_app = model.applications["kubernetes-control-plane"]
@@ -2405,6 +2412,7 @@ async def nagios(model, tools):
 
 @pytest.mark.skip_if_version(lambda v: v < (1, 17))
 @pytest.mark.clouds(["vsphere"])  # bionic image no longer deployable on ec2 cloud
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_nagios(model, nagios: NagiosApi):
     """This test verifies the nagios relation is working
     properly. This requires:
@@ -2477,6 +2485,7 @@ async def test_nagios(model, nagios: NagiosApi):
 
 
 @pytest.mark.skip("Failing and being investigated on possible deprecation")
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_nfs(model, tools):
     # setup
     log.info("deploying nfs")
