@@ -589,9 +589,6 @@ async def test_ipv6(model, tools):
     if all(ipaddress.ip_network(cidr).version != 6 for cidr in service_cidr.split(",")):
         pytest.skip("kubernetes-control-plane not configured for IPv6")
 
-    k8s_version_str = control_plane_app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-
     control_plane = control_plane_app.units[0]
     await kubectl(
         model,
@@ -625,7 +622,7 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  {"ipFamily: IPv6" if k8s_minor_version < (1, 20) else "ipFamilies: [IPv6]"}
+  ipFamilies: [IPv6]
   ports:
   - port: 80
     protocol: TCP
@@ -640,7 +637,7 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  {"ipFamily: IPv4" if k8s_minor_version < (1, 20) else "ipFamilies: [IPv4]"}
+  ipFamilies: [IPv4]
   ports:
   - port: 80
     protocol: TCP
@@ -955,11 +952,6 @@ async def test_extra_args(model, tools):
 
 async def test_kubelet_extra_config(model, tools):
     worker_app = model.applications["kubernetes-worker"]
-    k8s_version_str = worker_app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 10):
-        click.echo("skipping, k8s version v" + k8s_version_str)
-        return
 
     config = await worker_app.get_config()
     old_extra_config = config["kubelet-extra-config"]["value"]
@@ -1160,12 +1152,6 @@ async def test_toggle_metrics(model, tools):
 
     app = model.applications["kubernetes-control-plane"]
 
-    k8s_version_str = app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 16):
-        click.echo("skipping, k8s version v" + k8s_version_str)
-        return
-
     config = await app.get_config()
     old_value = config["enable-metrics"]["value"]
     new_value = not old_value
@@ -1336,11 +1322,6 @@ async def any_keystone(model, apps_by_charm, tools):
 
     keystone_apps = apps_by_charm("keystone")
     masters = model.applications["kubernetes-control-plane"]
-    k8s_version_str = masters.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 12):
-        pytest.skip(f"skipping, k8s version v{k8s_version_str} isn't supported")
-        return
 
     keystone_creds = "kubernetes-control-plane:keystone-credentials"
     if len(keystone_apps) > 1:
