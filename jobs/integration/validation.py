@@ -593,7 +593,7 @@ async def test_ipv6(model, tools):
     await kubectl(
         model,
         "apply -f - << EOF{}EOF".format(
-            f"""
+            """
 apiVersion: apps/v1
 kind: Deployment
 metadata:
