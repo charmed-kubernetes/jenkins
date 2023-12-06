@@ -2059,7 +2059,7 @@ async def test_sysctl(model, tools):
         await app.set_config({"sysctl": config["sysctl"]["value"]})
 
 
-async def test_cloud_node_labels(model, tools):
+async def test_cloud_node_labels(cloud, model, tools):
     unit = model.applications["kubernetes-control-plane"].units[0]
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get no -o json"
     raw_nodes = await run_until_success(unit, cmd)
@@ -2067,16 +2067,8 @@ async def test_cloud_node_labels(model, tools):
     labels = [node["metadata"].get("labels", {}).get("juju.io/cloud") for node in nodes]
     assert all(label == labels[0] for label in labels)
     label = labels[0]
-    if "aws-integrator" in model.applications:
-        assert label == "ec2"
-    elif "azure-integrator" in model.applications:
-        assert label == "azure"
-    elif "gcp-integrator" in model.applications:
-        assert label == "gce"
-    elif "openstack-integrator" in model.applications:
-        assert label == "openstack"
-    elif "vsphere-integrator" in model.applications:
-        assert label == "vsphere"
+    if cloud in ["azure", "ec2", "gce", "openstack", "vsphere"]:
+        assert label == cloud
     else:
         assert label is None
 
