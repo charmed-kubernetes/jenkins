@@ -26,7 +26,6 @@ from .utils import (
     arch,
     log_snap_versions,
     juju_run,
-    juju_run_action,
 )
 
 from .logger import log
@@ -700,12 +699,12 @@ def pytest_metadata(metadata):
 async def kubeconfig(model):
     control_planes = model.applications["kubernetes-control-plane"].units
     (unit,) = [u for u in control_planes if await u.is_leader_from_status()]
-    action = await juju_run_action(unit, "get-kubeconfig")
+    action = await juju_run(unit, "cat /home/ubuntu/config")
     # kubeconfig needs to be somewhere the juju confined snap client can access it
     path = Path.home() / ".local/share/juju"
     with NamedTemporaryFile(dir=path) as f:
         local = Path(f.name)
-        local.write_text(action.results["kubeconfig"])
+        local.write_text(action.stdout)
         os.environ["KUBECONFIG"] = str(local)
         yield local
         del os.environ["KUBECONFIG"]

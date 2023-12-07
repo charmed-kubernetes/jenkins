@@ -197,6 +197,7 @@ async def reset_audit_config(control_plane_app, tools):
 
 
 # START TESTS
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_auth_file_propagation(model, tools):
     """Validate that changes to /root/cdk/serviceaccount.key on the leader
     control-plane unit are propagated to the other control-plane units.
@@ -242,8 +243,8 @@ async def test_auth_file_propagation(model, tools):
 async def test_status_messages(model):
     """Validate that the status messages are correct."""
     expected_messages = {
-        "kubernetes-control-plane": "Kubernetes control-plane running.",
-        "kubernetes-worker": "Kubernetes worker running",
+        "kubernetes-control-plane": "",
+        "kubernetes-worker": "",
     }
     for app, message in expected_messages.items():
         for unit in model.applications[app].units:
@@ -327,6 +328,7 @@ async def teardown_microbot(model):
 
 
 @pytest.mark.clouds(["ec2", "vsphere"])
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_microbot(model, tools, teardown_microbot):
     """Validate the microbot action"""
     unit = model.applications["kubernetes-worker"].units[0]
@@ -587,14 +589,11 @@ async def test_ipv6(model, tools):
     if all(ipaddress.ip_network(cidr).version != 6 for cidr in service_cidr.split(",")):
         pytest.skip("kubernetes-control-plane not configured for IPv6")
 
-    k8s_version_str = control_plane_app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-
     control_plane = control_plane_app.units[0]
     await kubectl(
         model,
         "apply -f - << EOF{}EOF".format(
-            f"""
+            """
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -623,7 +622,7 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  {"ipFamily: IPv6" if k8s_minor_version < (1, 20) else "ipFamilies: [IPv6]"}
+  ipFamilies: [IPv6]
   ports:
   - port: 80
     protocol: TCP
@@ -638,7 +637,7 @@ metadata:
     run: nginxdualstack
 spec:
   type: NodePort
-  {"ipFamily: IPv4" if k8s_minor_version < (1, 20) else "ipFamilies: [IPv4]"}
+  ipFamilies: [IPv4]
   ports:
   - port: 80
     protocol: TCP
@@ -741,6 +740,7 @@ async def test_worker_master_removal(model, tools):
 
 
 @pytest.mark.on_model("validate-nvidia")
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_gpu_support(model, tools):
     """Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
@@ -952,11 +952,6 @@ async def test_extra_args(model, tools):
 
 async def test_kubelet_extra_config(model, tools):
     worker_app = model.applications["kubernetes-worker"]
-    k8s_version_str = worker_app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 10):
-        click.echo("skipping, k8s version v" + k8s_version_str)
-        return
 
     config = await worker_app.get_config()
     old_extra_config = config["kubelet-extra-config"]["value"]
@@ -1011,6 +1006,7 @@ async def test_kubelet_extra_config(model, tools):
     )
 
 
+@pytest.mark.skip("https://bugs.launchpad.net/bugs/2045696")
 async def test_service_cidr_expansion(model, tools):
     """Expand the service cidr by 1 and verify if kubernetes service is
     updated with the new cluster IP.
@@ -1155,12 +1151,6 @@ async def test_toggle_metrics(model, tools):
             )
 
     app = model.applications["kubernetes-control-plane"]
-
-    k8s_version_str = app.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 16):
-        click.echo("skipping, k8s version v" + k8s_version_str)
-        return
 
     config = await app.get_config()
     old_value = config["enable-metrics"]["value"]
@@ -1332,11 +1322,6 @@ async def any_keystone(model, apps_by_charm, tools):
 
     keystone_apps = apps_by_charm("keystone")
     masters = model.applications["kubernetes-control-plane"]
-    k8s_version_str = masters.data["workload-version"]
-    k8s_minor_version = tuple(int(i) for i in k8s_version_str.split(".")[:2])
-    if k8s_minor_version < (1, 12):
-        pytest.skip(f"skipping, k8s version v{k8s_version_str} isn't supported")
-        return
 
     keystone_creds = "kubernetes-control-plane:keystone-credentials"
     if len(keystone_apps) > 1:
@@ -1455,6 +1440,7 @@ async def any_keystone(model, apps_by_charm, tools):
 
 
 @pytest.mark.usefixtures("ceph_apps")
+@pytest.mark.skip("Feature removed in ops rewrite")
 class TestCeph:
     async def test_plugins_installed(self, model):
         log.info("waiting for csi to settle")
@@ -1484,6 +1470,7 @@ class TestCeph:
 
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.clouds(["ec2", "vsphere"])
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_keystone(model, tools, any_keystone):
     control_plane = model.applications["kubernetes-control-plane"]
 
@@ -1671,6 +1658,7 @@ data:
 
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.on_model("validate-vault")
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
     control_plane_app = model.applications["kubernetes-control-plane"]
@@ -2071,7 +2059,7 @@ async def test_sysctl(model, tools):
         await app.set_config({"sysctl": config["sysctl"]["value"]})
 
 
-async def test_cloud_node_labels(model, tools):
+async def test_cloud_node_labels(cloud, model, tools):
     unit = model.applications["kubernetes-control-plane"].units[0]
     cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config get no -o json"
     raw_nodes = await run_until_success(unit, cmd)
@@ -2079,16 +2067,8 @@ async def test_cloud_node_labels(model, tools):
     labels = [node["metadata"].get("labels", {}).get("juju.io/cloud") for node in nodes]
     assert all(label == labels[0] for label in labels)
     label = labels[0]
-    if "aws-integrator" in model.applications:
-        assert label == "ec2"
-    elif "azure-integrator" in model.applications:
-        assert label == "azure"
-    elif "gcp-integrator" in model.applications:
-        assert label == "gce"
-    elif "openstack-integrator" in model.applications:
-        assert label == "openstack"
-    elif "vsphere-integrator" in model.applications:
-        assert label == "vsphere"
+    if cloud in ["azure", "ec2", "gce", "openstack", "vsphere"]:
+        assert label == cloud
     else:
         assert label is None
 
@@ -2405,6 +2385,7 @@ async def nagios(model, tools):
 
 @pytest.mark.skip_if_version(lambda v: v < (1, 17))
 @pytest.mark.clouds(["vsphere"])  # bionic image no longer deployable on ec2 cloud
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_nagios(model, nagios: NagiosApi):
     """This test verifies the nagios relation is working
     properly. This requires:
@@ -2477,6 +2458,7 @@ async def test_nagios(model, nagios: NagiosApi):
 
 
 @pytest.mark.skip("Failing and being investigated on possible deprecation")
+@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_nfs(model, tools):
     # setup
     log.info("deploying nfs")
