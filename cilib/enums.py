@@ -44,7 +44,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
-    "1.29": "go/1.21/stable",
+    "1.29": "go/1.21/candidate",
     "1.28": "go/1.20/stable",
     "1.27": "go/1.20/stable",
     "1.26": "go/1.19/stable",
@@ -77,7 +77,7 @@ SNAP_K8S_TRACK_LIST = [
     ("1.26", ["1.26/stable", "1.26/candidate", "1.26/beta", "1.26/edge"]),
     ("1.27", ["1.27/stable", "1.27/candidate", "1.27/beta", "1.27/edge"]),
     ("1.28", ["1.28/stable", "1.28/candidate", "1.28/beta", "1.28/edge"]),
-    ("1.29", ["1.29/edge"]),
+    ("1.29", ["1.29/beta", "1.29/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
