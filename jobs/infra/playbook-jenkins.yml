@@ -122,7 +122,7 @@
         - jenkins
         - adhoc
     - name: upgrade charmcraft
-      command: "snap refresh charmcraft --channel latest/edge"
+      command: "snap refresh charmcraft --channel latest/stable"
       ignore_errors: yes
       tags:
         - jenkins
