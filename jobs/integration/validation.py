@@ -2065,12 +2065,24 @@ async def test_cloud_node_labels(cloud, model, tools):
     raw_nodes = await run_until_success(unit, cmd)
     nodes = json.loads(raw_nodes)["items"]
     labels = [node["metadata"].get("labels", {}).get("juju.io/cloud") for node in nodes]
-    assert all(label == labels[0] for label in labels)
+    all_same_labels = all(l == labels[0] for l in labels)
+    assert (
+        all_same_labels
+    ), f"Unique label juju.io/cloud values found ({','.join(map(str,labels))})"
+
     label = labels[0]
-    if cloud in ["azure", "ec2", "gce", "openstack", "vsphere"]:
-        assert label == cloud
+    known_clouds = ["azure", "ec2", "gce", "openstack", "vsphere"]
+    expected_label = f"Node label (juju.io/cloud={cloud})"
+    if label is None:
+        # if the label is None, expect there's no integrator app in the model
+        integrators = [c + "-integrator" for c in known_clouds]
+        integrator = set(app for app in integrators if app in model.applications)
+        assert (
+            not integrator
+        ), f"Expect {expected_label} because {cloud} is integrated with {integrator}"
     else:
-        assert label is None
+        # Otherwise expect the label to match the cloud
+        assert f"Node label (juju.io/cloud={label})" == expected_label
 
 
 async def test_multus(model, tools, addons_model):
