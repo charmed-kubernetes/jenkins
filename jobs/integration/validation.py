@@ -2079,7 +2079,7 @@ async def test_cloud_node_labels(cloud, model, tools):
         integrator = set(app for app in integrators if app in model.applications)
         assert (
             not integrator
-        ), f"Expect {expected_label} because {cloud} is integrated with {integrator}"
+        ), f"Expect {expected_label} because the model is integrated with {integrator}"
     else:
         # Otherwise expect the label to match the cloud
         assert f"Node label (juju.io/cloud={label})" == expected_label
