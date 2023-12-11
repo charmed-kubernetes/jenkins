@@ -2065,7 +2065,7 @@ async def test_cloud_node_labels(cloud, model, tools):
     raw_nodes = await run_until_success(unit, cmd)
     nodes = json.loads(raw_nodes)["items"]
     labels = [node["metadata"].get("labels", {}).get("juju.io/cloud") for node in nodes]
-    all_same_labels = all(l == labels[0] for l in labels)
+    all_same_labels = all(item == labels[0] for item in labels)
     assert (
         all_same_labels
     ), f"Unique label juju.io/cloud values found ({','.join(map(str,labels))})"
