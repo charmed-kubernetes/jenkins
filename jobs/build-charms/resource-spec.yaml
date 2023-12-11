@@ -31,13 +31,39 @@
   cni-arm64: '{out_path}/cni-arm64.tgz'
   cni-s390x: '{out_path}/cni-s390x.tgz'
 'kubernetes-control-plane':
-  cni-amd64: '{out_path}/cni-amd64.tgz'
-  cni-arm64: '{out_path}/cni-arm64.tgz'
-  cni-s390x: '{out_path}/cni-s390x.tgz'
+  cni-amd64:
+    format: '{out_path}/cni-amd64.tgz'
+    channel-range:
+      max: '1.29'
+  cni-arm64:
+    format: '{out_path}/cni-amd64.tgz'
+    channel-range:
+      max: '1.29'
+  cni-s390x:
+    format: '{out_path}/cni-amd64.tgz'
+    channel-range:
+      max: '1.29'
+  cni-plugins:
+    format: '{out_path}/cni-plugins-{arch}.tar.gz'
+    channel-range:
+      min: '1.29'
 'kubernetes-worker':
-  cni-amd64: '{out_path}/cni-amd64.tgz'
-  cni-arm64: '{out_path}/cni-arm64.tgz'
-  cni-s390x: '{out_path}/cni-s390x.tgz'
+  cni-amd64:
+    format: '{out_path}/cni-amd64.tgz'
+    channel-range:
+      max: '1.29'
+  cni-arm64:
+    format: '{out_path}/cni-amd64.tgz'
+    channel-range:
+      max: '1.29'
+  cni-s390x:
+    format: '{out_path}/cni-amd64.tgz'
+    channel-range:
+      max: '1.29'
+  cni-plugins:
+    format: '{out_path}/cni-plugins-{arch}.tar.gz'
+    channel-range:
+      min: '1.29'
 'kube-ovn':
   kubectl-ko: '{src_path}/plugins/kubectl-ko'
 'metallb-controller':
