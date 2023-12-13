@@ -13,11 +13,11 @@ K8S_STABLE_VERSION = "1.28"
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
 # Typically, this is K8S_STABLE_VERSION +1. However, when prepping the next
-# stable release, this will be +2. For example, 1.27 is currently stable and
-# we're working on the 1.28 GA. Set this value to '1.29' sometime between the
-# final RC and GA so we don't get pre-release builds (e.g. 1.28.1-alpha.0) in
-# our 1.28 tracks.
-K8S_NEXT_VERSION = "1.29"
+# stable release, this will be +2. For example, 1.28 is currently stable and
+# we're working on the 1.29 GA. Set this value to '1.30' sometime between the
+# final RC and GA so we don't get pre-release builds (e.g. 1.29.1-alpha.0) in
+# our 1.29 tracks.
+K8S_NEXT_VERSION = "1.30"
 
 # Lowest K8S SEMVER to process, this is usually K8S_STABLE_VERSION - 4
 K8S_STARTING_SEMVER = "1.24.0"
@@ -44,7 +44,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
-    "1.29": "go/1.21/candidate",
+    "1.29": "go/1.21/stable",
     "1.28": "go/1.20/stable",
     "1.27": "go/1.20/stable",
     "1.26": "go/1.19/stable",
@@ -77,7 +77,7 @@ SNAP_K8S_TRACK_LIST = [
     ("1.26", ["1.26/stable", "1.26/candidate", "1.26/beta", "1.26/edge"]),
     ("1.27", ["1.27/stable", "1.27/candidate", "1.27/beta", "1.27/edge"]),
     ("1.28", ["1.28/stable", "1.28/candidate", "1.28/beta", "1.28/edge"]),
-    ("1.29", ["1.29/beta", "1.29/edge"]),
+    ("1.29", ["1.29/stable", "1.29/candidate", "1.29/beta", "1.29/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
