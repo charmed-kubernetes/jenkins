@@ -735,6 +735,7 @@ def test_bundle_build_command(
     mock_build_env.bundles_dir = mock_build_env.tmp_dir / "bundles"
     mock_build_env.default_repo_dir = mock_build_env.repos_dir / "bundles-kubernetes"
     mock_build_env.to_channels = ("edge", "0.15/edge")
+    mock_build_env.track = "latest"
     mock_build_env.filter_by_tag = ["k8s"]
     mock_build_env.force = False
 
@@ -771,7 +772,7 @@ def test_bundle_build_command(
             [
                 call("Starting"),
                 call(f"Details: {entity}"),
-                call("Pushing built bundle for channel=edge (forced=False)."),
+                call("Pushing built bundle for channel=latest/edge (forced=False)."),
                 call("Pushing built bundle for channel=0.15/edge (forced=False)."),
                 call("Stopping"),
             ],
@@ -781,11 +782,11 @@ def test_bundle_build_command(
             entity.setup.assert_called_once_with()
 
         assert entity.bundle_build.mock_calls == [
-            call(channel) for channel in mock_build_env.to_channels
+            call(channel) for channel in ["latest/edge", "0.15/edge"]
         ]
         assert entity.push.mock_calls == [call(artifact), call(artifact)]
         assert entity.release.mock_calls == [
             call(artifact, to_channels=[channel])
-            for channel in mock_build_env.to_channels
+            for channel in ["latest/edge", "0.15/edge"]
         ]
         assert entity.reset_artifacts.mock_calls == [call(), call()]
