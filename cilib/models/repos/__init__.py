@@ -101,6 +101,8 @@ class BaseRepoModel:
                     _semvers.append(str(semver_version))
             except:
                 continue
+        if not _semvers:
+            return None
         max_ver = max(map(version.parse, _semvers))
 
         # Grab the branches for max_ver to determine if there are any patches that need to be applied
