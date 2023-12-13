@@ -190,6 +190,11 @@ def build_bundles(
                 build_entity = BundleBuildEntity(build_env, bundle_name, bundle_opts)
                 entities.append(build_entity)
 
+    to_channels = [
+        f"{build_env.track}/{chan.lower()}" if (chan.lower() in RISKS) else chan
+        for chan in build_env.to_channels
+    ]
+
     for entity in entities:
         entity.echo("Starting")
         try:
@@ -198,7 +203,7 @@ def build_bundles(
                 entity.setup()
 
             entity.echo(f"Details: {entity}")
-            for channel in build_env.to_channels:
+            for channel in to_channels:
                 entity.bundle_build(channel)
 
                 # Bundles are built easily, but it's pointless to push the bundle
