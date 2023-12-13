@@ -129,6 +129,10 @@ class SnapService(DebugMixin):
                     )
                 )
 
+                if not latest_branch_version:
+                    self.log(f"Found no pre-release branches ({_version}), skipping.")
+                    continue
+
                 # S-a-n-i-t-y check; there is a period of time where K8S_NEXT_VERSION
                 # is stable (1.xx.0) *and* has a pre-release branch (1.xx.1-alpha.1).
                 # If our latest branch version is not a pre-release, bail out.
@@ -141,11 +145,17 @@ class SnapService(DebugMixin):
                     continue
             else:
                 # We don't want pre-releases when syncing our stable versions
+                self.log(
+                    f"Ignore pre-releases when syncing our stable versions: ({_version})."
+                )
                 latest_branch_version = (
                     self.snap_model.base.latest_branch_from_major_minor(
                         _version, exclude_pre=True
                     )
                 )
+                if not latest_branch_version:
+                    self.log(f"Found no stable branches ({_version}), skipping.")
+                    continue
 
             for arch in enums.K8S_SUPPORT_ARCHES:
                 self.log(f"> Checking snaps in version {_version} for arch {arch}")
