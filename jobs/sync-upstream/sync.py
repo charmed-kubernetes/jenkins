@@ -119,7 +119,7 @@ def cut_stable_release(
             try:
                 repo.copy_branch(default_branch, new_branch)
             except HTTPError:
-                log.exception("Failed to copy branch")
+                log.error("Failed to copy branch")
                 failed.append(layer_name)
     if failed:
         raise RuntimeError("Couldn't create branch for " + ", ".join(failed))
@@ -189,7 +189,7 @@ def _rename_branch(
             try:
                 repo.rename_branch(from_name, to_name)
             except HTTPError:
-                log.exception("Failed to rename branch")
+                log.error("Failed to rename branch")
                 failed.append(layer_name)
     if failed:
         raise RuntimeError("Couldn't create branch for " + ", ".join(failed))
