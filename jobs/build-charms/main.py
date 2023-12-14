@@ -100,6 +100,9 @@ def build(
     for entity in entities:
         entity.echo("Starting")
         try:
+            if not entity.within_channel_bounds(to_channels=to_channels):
+                entity.echo("Skipped due to channel boundaries")
+                continue
             entity.setup()
             entity.echo(f"Details: {entity}")
 

@@ -906,6 +906,10 @@ class BuildEntity:
 
         self.reactive = self.layer_path.exists()
 
+    def within_channel_bounds(self, to_channels):
+        """Check if there's a valid channel to publish to."""
+        return apply_channel_bounds(self.opts, to_channels)
+
     def charm_build(self):
         """Perform a build against charm/bundle."""
         lxc = os.environ.get("charmcraft_lxc")
