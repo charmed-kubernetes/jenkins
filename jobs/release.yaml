@@ -68,8 +68,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.28/stable
             - 1.27/stable
-            - 1.26/stable
       - axis:
           type: user-defined
           name: series
@@ -118,8 +118,8 @@
           type: user-defined
           name: deploy_snap
           values:
+            - 1.28/stable
             - 1.27/stable
-            - 1.26/stable
       - axis:
           type: user-defined
           name: series
