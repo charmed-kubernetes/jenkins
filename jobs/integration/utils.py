@@ -154,8 +154,8 @@ async def upgrade_snaps(model, channel, tools):
                     log.info(message)
                     if (
                         unit.workload_status == "blocked"
-                        and unit.workload_status_message
-                        == "Needs manual upgrade, run the upgrade action"
+                        and "Needs manual upgrade, run the upgrade action"
+                        in unit.workload_status_message
                     ):
                         break
                     await asyncio.sleep(3)
