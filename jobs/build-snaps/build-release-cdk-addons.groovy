@@ -7,6 +7,7 @@ def kube_ersion = null
 if (kube_version != "") {
     kube_ersion = kube_version.substring(1)
 }
+def snapcraft_channel = ""
 def lxc_name = env.JOB_NAME.replaceAll('\\.', '-')+"-"+env.BUILD_NUMBER
 
 pipeline {
@@ -91,12 +92,22 @@ pipeline {
                 /* override sh for this step:
 
                  Needed because cilib.sh has some non POSIX bits.
-                 */
+                */
+                script {
+                    def core = sh(
+                        returnStdout: true, 
+                        script: "grep -e '^base:' cdk-addons/cdk-addons.yaml | awk '{ print \$2 }'"
+                    ).trim()
+                    if(core == "core18" || core == "core16") {
+                        snapcraft_channel="--channel=7.x/stable"
+                    }
+                }
+
                 sh """#!/usr/bin/env bash
                     . \${WORKSPACE}/cilib.sh
 
                     ci_lxc_launch ubuntu:20.04 ${lxc_name}
-                    until sudo lxc shell ${lxc_name} -- bash -c "snap install snapcraft --classic"; do
+                    until sudo lxc shell ${lxc_name} -- bash -c "snap install snapcraft ${snapcraft_channel} --classic"; do
                         echo 'retrying snapcraft install in 3s...'
                         sleep 3
                     done
