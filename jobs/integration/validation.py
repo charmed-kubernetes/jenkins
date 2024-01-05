@@ -968,42 +968,50 @@ async def test_kubelet_extra_config(model, tools):
             "authentication": {"webhook": {"enabled": False}},
         }
     )
-    await set_config_and_wait(
-        worker_app, {"kubelet-extra-config": new_extra_config}, tools
-    )
+    try:
+        await set_config_and_wait(
+            worker_app, {"kubelet-extra-config": new_extra_config}, tools
+        )
 
-    # wait for and validate new maxPods value
-    click.echo("waiting for nodes to show new pod capacity")
-    control_plane_unit = model.applications["kubernetes-control-plane"].units[0]
-    while True:
-        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node -l 'juju-application=kubernetes-worker'"
-        action = await juju_run(control_plane_unit, cmd, check=False)
-        if action.status == "completed" and action.code == 0:
-            nodes = yaml.safe_load(action.stdout)
-            all_nodes_updated = all(
-                [node["status"]["capacity"]["pods"] == "111" for node in nodes["items"]]
-            )
-            if all_nodes_updated:
-                break
+        # wait for and validate new maxPods value
+        log.info("waiting for nodes to show new pod capacity")
+        control_plane_unit = model.applications["kubernetes-control-plane"].units[0]
+        for tries in range(19, -1, -1):  # 20 tries, 5s apart
+            cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node -l 'juju-application=kubernetes-worker'"
+            action = await juju_run(control_plane_unit, cmd, check=False)
+            if action.status == "completed" and action.code == 0:
+                nodes = yaml.safe_load(action.stdout)
+                s_nodes = ",".join(node["metadata"]["name"] for node in nodes["items"])
+                w_nodes = ",".join(
+                    node["metadata"]["name"]
+                    for node in nodes["items"]
+                    if node["status"]["capacity"]["pods"] != "111"
+                )
+                if not w_nodes:
+                    log.info("All nodes(%s) adjusted capacity", s_nodes)
+                    break
+                log.warning("Waiting for nodes(%s) to adjust capacity", w_nodes)
+            else:
+                log.error("Failed to collect node status: %s", action.results)
+            await asyncio.sleep(5)
+            assert tries, "Timeout waiting for nodes to adjust capacity"
 
-        await asyncio.sleep(5)
-
-    # validate config.yaml on each worker
-    click.echo("validating generated config.yaml files")
-    for worker_unit in worker_app.units:
-        cmd = "cat /root/cdk/kubelet/config.yaml"
-        action = await juju_run(worker_unit, cmd, check=False)
-        if action.status == "completed" and action.code == 0:
-            config = yaml.safe_load(action.stdout)
-            assert config["evictionHard"]["memory.available"] == "200Mi"
-            assert config["authentication"]["webhook"]["enabled"] is False
-            assert "anonymous" in config["authentication"]
-            assert "x509" in config["authentication"]
-
-    # clean up
-    await set_config_and_wait(
-        worker_app, {"kubelet-extra-config": old_extra_config}, tools
-    )
+        # validate config.yaml on each worker
+        log.info("validating generated config.yaml files")
+        for worker_unit in worker_app.units:
+            cmd = "cat /root/cdk/kubelet/config.yaml"
+            action = await juju_run(worker_unit, cmd, check=False)
+            if action.status == "completed" and action.code == 0:
+                config = yaml.safe_load(action.stdout)
+                assert config["evictionHard"]["memory.available"] == "200Mi"
+                assert config["authentication"]["webhook"]["enabled"] is False
+                assert "anonymous" in config["authentication"]
+                assert "x509" in config["authentication"]
+    finally:
+        # clean up
+        await set_config_and_wait(
+            worker_app, {"kubelet-extra-config": old_extra_config}, tools
+        )
 
 
 @pytest.mark.skip("https://bugs.launchpad.net/bugs/2045696")
