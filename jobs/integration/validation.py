@@ -530,6 +530,8 @@ async def test_network_policies(model, tools):
             and "index.html" in cmd_bad.stderr
         ):
             return True
+        log.warning("No restrictions: bboxdbad: (%s)", cmd_bad.results)
+        log.warning("No restrictions: bboxgood: (%s)", cmd_good.results)
         return False
 
     await retry_async_with_timeout(
@@ -567,6 +569,8 @@ async def test_network_policies(model, tools):
             and "timed out" in cmd_bad.stderr
         ):
             return True
+        log.warning("Restricted: bboxdbad: (%s)", cmd_bad.results)
+        log.warning("Restricted: bboxgood: (%s)", cmd_good.results)
         return False
 
     await retry_async_with_timeout(
