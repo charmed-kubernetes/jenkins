@@ -127,10 +127,7 @@ function juju::deploy
          --channel "$JUJU_DEPLOY_CHANNEL" "$JUJU_DEPLOY_BUNDLE" \
          --trust
 
-    ret=$?
-    if (( ret > 0 )); then
-        exit "$ret"
-    fi
+    juju::deploy-report $? "model-deploy"
 }
 
 function juju::wait

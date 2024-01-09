@@ -149,7 +149,8 @@
     name: 'validate-ck-upgrade'
     node: runner-cloud
     description: |
-      Validates CK upgrades from previous 2 stables to latest edge
+      Validates CK upgrades from charms-stable charm to edge
+      Snap upgrade from previous 2 stable to current stable
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -179,7 +180,6 @@
           values:
             - 1.27/stable
             - 1.26/stable
-            - 1.25/stable
       - axis:
           type: user-defined
           name: arch
