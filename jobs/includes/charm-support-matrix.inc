@@ -198,6 +198,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-autoscaler.git'
 - kubernetes-e2e:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-kubernetes-e2e'
     docs: 'https://charmhub.io/kubernetes-e2e/docs'
     downstream: charmed-kubernetes/charm-kubernetes-e2e.git
