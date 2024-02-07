@@ -254,8 +254,8 @@ function ci::cleanup::before
 
 function ci::cleanup::model::addons
 {
-    if ! timeout 10m juju destroy-model -y --destroy-storage "$JUJU_CONTROLLER:addons"; then
-      timeout 10m juju destroy-model -y --destroy-storage "$JUJU_CONTROLLER:addons" --force
+    if ! timeout 10m juju destroy-model --no-prompt --destroy-storage "$JUJU_CONTROLLER:addons"; then
+      timeout 10m juju destroy-model --no-prompt --destroy-storage "$JUJU_CONTROLLER:addons" --force
     fi
 }
 

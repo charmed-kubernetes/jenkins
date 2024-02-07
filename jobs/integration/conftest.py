@@ -403,7 +403,7 @@ async def k8s_model(k8s_cloud, tools):
                 "--destroy-storage",
                 "--force",
                 "--no-wait",
-                "-y",
+                "--no-prompt",
                 tools.k8s_connection,
             )
 
@@ -541,7 +541,7 @@ async def deploy(request, tools):
     await _model_obj.connect(f"{tools.controller_name}:{nonce_model}")
     yield (tools.controller_name, _model_obj)
     await _model_obj.disconnect()
-    await tools.run("juju", "destroy-model", "-y", nonce_model)
+    await tools.run("juju", "destroy-model", "--no-prompt", nonce_model)
 
 
 @pytest.fixture(scope="module")
