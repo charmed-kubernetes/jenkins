@@ -152,7 +152,7 @@ pipeline {
         }
         stage('Process CI Images'){
             steps {
-                sh '''#!/usr/bin/env bash
+                sh '''
                     # We need jujud-operator in rocks so we can bootstrap k8s models on
                     # vsphere, but the image tag has the juju version baked in. Try to
                     # determine a good image based on all the possible juju snaps.
@@ -176,7 +176,7 @@ pipeline {
                     done
 
                     # Clean up dupes by making a sortable list, uniq it, and turn it back to a string
-                    CI_IMAGES=$(echo "${CI_IMAGES}" | xargs -n1 | sort -u | xargs)
+                    CI_IMAGES=$(echo "${CI_IMAGES}" | xargs -n1 | sort -u | grep nvcr.io | xargs)
 
                     # All CK CI images live under ./cdk in our registry
                     TAG_PREFIX=$REGISTRY_URL/cdk
