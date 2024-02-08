@@ -197,16 +197,30 @@ pipeline {
                             PULL_CREDS=
                         fi
 
+                        # Pull Through proxy
+                        if echo ${i} | grep -qi -e 'nvcr.io'
+                        then
+                            PROXY="HTTPS_PROXY=http://squid.internal:3128"
+                        else
+                            PROXY=
+                        fi
+
                         # Pull upstream image
                         if [ "$IS_DRY_RUN" = true ] ; then
                             echo "Dry run; would have pulled: ${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec $LXC_NAME -- ctr content fetch ${PULL_CREDS} ${i} --all-platforms >/dev/null
-                            then
-                                echo "Retrying pull"
+                            function pull { 
+                                lxc exec $LXC_NAME \
+                                  --env PROXY="${PROXY}" \
+                                  --env CREDS="${PULL_CREDS}" \
+                                  -- sh -c 'ctr content fetch ${CREDS} '${1}' --all-platforms > /dev/null'; 
+                            }
+
+                            if ! sudo pull ${i}; then
+                                echo "Retrying pull ${i}"
                                 sleep 5
-                                sudo lxc exec $LXC_NAME -- ctr content fetch ${PULL_CREDS} ${i} --all-platforms >/dev/null
+                                sudo pull ${i}
                             fi
                         fi
 
