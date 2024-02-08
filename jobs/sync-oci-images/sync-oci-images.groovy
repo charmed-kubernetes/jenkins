@@ -152,7 +152,7 @@ pipeline {
         }
         stage('Process CI Images'){
             steps {
-                sh '''
+                sh '''#!/usr/bin/env bash
                     # We need jujud-operator in rocks so we can bootstrap k8s models on
                     # vsphere, but the image tag has the juju version baked in. Try to
                     # determine a good image based on all the possible juju snaps.
@@ -181,6 +181,22 @@ pipeline {
                     # All CK CI images live under ./cdk in our registry
                     TAG_PREFIX=$REGISTRY_URL/cdk
 
+                    function pull_ctr () {
+                        sudo lxc exec $LXC_NAME \
+                        --env HTTP_PROXY="${PROXY}" \
+                        --env HTTPS_PROXY="${PROXY}" \
+                        --env CREDS="${PULL_CREDS}" \
+                        --env IMAGE=${1} \
+                        -- sh -c 'ctr content fetch ${CREDS} ${IMAGE} --all-platforms > /dev/null'; 
+                    }
+
+                    function push_ctr () {
+                        sudo lxc exec $LXC_NAME \
+                          -- ctr image push ${1} \
+                          --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null;
+                    }
+
+
                     for i in ${CI_IMAGES}
                     do
                         # Skip images that we already host
@@ -206,22 +222,15 @@ pipeline {
                         fi
 
                         # Pull upstream image
-                        if [ "$IS_DRY_RUN" = true ] ; then
+                        if [ "$IS_DRY_RUN" = true ]
+                        then
                             echo "Dry run; would have pulled: ${i}"
                         else
                             # simple retry if initial pull fails
-                            function pull { 
-                                lxc exec $LXC_NAME \
-                                  --env HTTP_PROXY="${PROXY}" \
-                                  --env HTTPS_PROXY="${PROXY}" \
-                                  --env CREDS="${PULL_CREDS}" \
-                                  -- sh -c 'ctr content fetch ${CREDS} '${1}' --all-platforms > /dev/null'; 
-                            }
-
-                            if ! sudo pull ${i}; then
+                            if ! pull_ctr ${i} ; then
                                 echo "Retrying pull ${i}"
                                 sleep 5
-                                sudo pull ${i}
+                                pull_ctr ${i}
                             fi
                         fi
 
@@ -243,11 +252,11 @@ pipeline {
                         else
                             sudo lxc exec $LXC_NAME -- ctr image tag ${i} ${TAG_PREFIX}/${RAW_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec $LXC_NAME -- ctr image push ${TAG_PREFIX}/${RAW_IMAGE} --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null
+                            if ! push_ctr ${TAG_PREFIX}/${RAW_IMAGE}
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec $LXC_NAME -- ctr image push ${TAG_PREFIX}/${RAW_IMAGE} --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null
+                                push_ctr ${TAG_PREFIX}/${RAW_IMAGE}
                             fi
                         fi
 
