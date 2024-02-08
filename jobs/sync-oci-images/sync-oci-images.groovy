@@ -176,12 +176,12 @@ pipeline {
                     done
 
                     # Clean up dupes by making a sortable list, uniq it, and turn it back to a string
-                    CI_IMAGES=$(echo "${CI_IMAGES}" | xargs -n1 | sort -u | grep nvcr.io | xargs)
+                    CI_IMAGES=$(echo "${CI_IMAGES}" | xargs -n1 | sort -u | xargs)
 
                     # All CK CI images live under ./cdk in our registry
                     TAG_PREFIX=$REGISTRY_URL/cdk
 
-                    function pull_ctr () {
+                    pull_ctr () {
                         sudo lxc exec $LXC_NAME \
                         --env HTTP_PROXY="http://squid.internal:3128" \
                         --env HTTPS_PROXY="http://squid.internal:3128" \
@@ -190,12 +190,11 @@ pipeline {
                         -- sh -c 'ctr content fetch ${CREDS} ${IMAGE} --all-platforms > /dev/null'; 
                     }
 
-                    function push_ctr () {
+                    push_ctr () {
                         sudo lxc exec $LXC_NAME \
                           -- ctr image push ${1} \
                           --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null;
                     }
-
 
                     for i in ${CI_IMAGES}
                     do
@@ -284,6 +283,21 @@ pipeline {
                     # All CK images are staged under ./staging/cdk in our registry
                     TAG_PREFIX=$REGISTRY_URL/staging/cdk
 
+                    pull_ctr () {
+                        sudo lxc exec $LXC_NAME \
+                        --env HTTP_PROXY="http://squid.internal:3128" \
+                        --env HTTPS_PROXY="http://squid.internal:3128" \
+                        --env CREDS="${PULL_CREDS}" \
+                        --env IMAGE=${1} \
+                        -- sh -c 'ctr content fetch ${CREDS} ${IMAGE} --all-platforms > /dev/null'; 
+                    }
+
+                    push_ctr () {
+                        sudo lxc exec $LXC_NAME \
+                          -- ctr image push ${1} \
+                          --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null;
+                    }
+
                     for i in ${ALL_IMAGES}
                     do
                         # Skip images that we already host
@@ -305,11 +319,11 @@ pipeline {
                             echo "Dry run; would have pulled: ${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec $LXC_NAME -- ctr content fetch ${PULL_CREDS} ${i} --all-platforms >/dev/null
+                            if ! pull_ctr ${i}
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec $LXC_NAME -- ctr content fetch ${PULL_CREDS} ${i} --all-platforms >/dev/null
+                                pull_ctr ${i}
                             fi
                         fi
 
@@ -331,11 +345,11 @@ pipeline {
                         else
                             sudo lxc exec $LXC_NAME -- ctr image tag ${i} ${TAG_PREFIX}/${RAW_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec $LXC_NAME -- ctr image push ${TAG_PREFIX}/${RAW_IMAGE} --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null
+                            if ! push_ctr ${TAG_PREFIX}/${RAW_IMAGE}
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec $LXC_NAME -- ctr image push ${TAG_PREFIX}/${RAW_IMAGE} --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null
+                                push_ctr ${TAG_PREFIX}/${RAW_IMAGE}
                             fi
                         fi
 
