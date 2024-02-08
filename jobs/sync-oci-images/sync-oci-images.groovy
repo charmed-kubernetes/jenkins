@@ -200,7 +200,7 @@ pipeline {
                         # Pull Through proxy
                         if echo ${i} | grep -qi -e 'nvcr.io'
                         then
-                            PROXY="HTTPS_PROXY=http://squid.internal:3128"
+                            PROXY="http://squid.internal:3128"
                         else
                             PROXY=
                         fi
@@ -212,7 +212,8 @@ pipeline {
                             # simple retry if initial pull fails
                             function pull { 
                                 lxc exec $LXC_NAME \
-                                  --env PROXY="${PROXY}" \
+                                  --env HTTP_PROXY="${PROXY}" \
+                                  --env HTTPS_PROXY="${PROXY}" \
                                   --env CREDS="${PULL_CREDS}" \
                                   -- sh -c 'ctr content fetch ${CREDS} '${1}' --all-platforms > /dev/null'; 
                             }
