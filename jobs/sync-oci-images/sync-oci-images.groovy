@@ -180,20 +180,18 @@ pipeline {
 
                     # All CK CI images live under ./cdk in our registry
                     TAG_PREFIX=$REGISTRY_URL/cdk
+                    PUSH_CREDS="-u $REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW"
 
                     pull_ctr () {
                         sudo lxc exec $LXC_NAME \
-                        --env HTTP_PROXY="http://squid.internal:3128" \
-                        --env HTTPS_PROXY="http://squid.internal:3128" \
-                        --env CREDS="${PULL_CREDS}" \
-                        --env IMAGE=${1} \
-                        -- sh -c 'ctr content fetch ${CREDS} ${IMAGE} --all-platforms > /dev/null'; 
+                        --env HTTP_PROXY="${PULL_PROXY}" \
+                        --env HTTPS_PROXY="${PULL_PROXY}" \
+                        -- ctr content fetch ${PULL_CREDS} ${1} --all-platforms >/dev/null; 
                     }
 
                     push_ctr () {
                         sudo lxc exec $LXC_NAME \
-                          -- ctr image push ${1} \
-                          --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null;
+                        -- ctr image push ${PUSH_CREDS} ${1} >/dev/null;
                     }
 
                     for i in ${CI_IMAGES}
@@ -210,6 +208,14 @@ pipeline {
                             PULL_CREDS="-u $DOCKERHUB_CREDS_USR:$DOCKERHUB_CREDS_PSW"
                         else
                             PULL_CREDS=
+                        fi
+
+                        # Determine if proxy should be used
+                        if echo ${i} | grep -qi -e 'nvcr.io'
+                        then
+                            PULL_PROXY="http://squid.internal:3128"
+                        else
+                            PULL_PROXY=
                         fi
 
                         # Pull upstream image
@@ -282,20 +288,18 @@ pipeline {
 
                     # All CK images are staged under ./staging/cdk in our registry
                     TAG_PREFIX=$REGISTRY_URL/staging/cdk
+                    PUSH_CREDS="-u $REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW"
 
                     pull_ctr () {
                         sudo lxc exec $LXC_NAME \
-                        --env HTTP_PROXY="http://squid.internal:3128" \
-                        --env HTTPS_PROXY="http://squid.internal:3128" \
-                        --env CREDS="${PULL_CREDS}" \
-                        --env IMAGE=${1} \
-                        -- sh -c 'ctr content fetch ${CREDS} ${IMAGE} --all-platforms > /dev/null'; 
+                        --env HTTP_PROXY="${PULL_PROXY}" \
+                        --env HTTPS_PROXY="${PULL_PROXY}" \
+                        -- ctr content fetch ${PULL_CREDS} ${1} --all-platforms >/dev/null; 
                     }
 
                     push_ctr () {
                         sudo lxc exec $LXC_NAME \
-                          -- ctr image push ${1} \
-                          --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null;
+                        -- ctr image push ${PUSH_CREDS} ${1} >/dev/null;
                     }
 
                     for i in ${ALL_IMAGES}
@@ -312,6 +316,14 @@ pipeline {
                             PULL_CREDS="-u $DOCKERHUB_CREDS_USR:$DOCKERHUB_CREDS_PSW"
                         else
                             PULL_CREDS=
+                        fi
+
+                        # Determine if proxy should be used
+                        if echo ${i} | grep -qi -e 'nvcr.io'
+                        then
+                            PULL_PROXY="http://squid.internal:3128"
+                        else
+                            PULL_PROXY=
                         fi
 
                         # Pull upstream image
