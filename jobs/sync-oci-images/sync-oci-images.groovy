@@ -183,8 +183,8 @@ pipeline {
 
                     function pull_ctr () {
                         sudo lxc exec $LXC_NAME \
-                        --env HTTP_PROXY="${PROXY}" \
-                        --env HTTPS_PROXY="${PROXY}" \
+                        --env HTTP_PROXY="http://squid.internal:3128" \
+                        --env HTTPS_PROXY="http://squid.internal:3128" \
                         --env CREDS="${PULL_CREDS}" \
                         --env IMAGE=${1} \
                         -- sh -c 'ctr content fetch ${CREDS} ${IMAGE} --all-platforms > /dev/null'; 
@@ -211,14 +211,6 @@ pipeline {
                             PULL_CREDS="-u $DOCKERHUB_CREDS_USR:$DOCKERHUB_CREDS_PSW"
                         else
                             PULL_CREDS=
-                        fi
-
-                        # Pull Through proxy
-                        if echo ${i} | grep -qi -e 'nvcr.io'
-                        then
-                            PROXY="http://squid.internal:3128"
-                        else
-                            PROXY=
                         fi
 
                         # Pull upstream image
