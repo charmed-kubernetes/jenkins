@@ -183,6 +183,7 @@ pipeline {
                     PUSH_CREDS="-u $REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW"
 
                     pull_ctr () {
+                        PULL_PROXY="http://squid.internal:3128"
                         sudo lxc exec $LXC_NAME \
                         --env HTTP_PROXY="${PULL_PROXY}" \
                         --env HTTPS_PROXY="${PULL_PROXY}" \
@@ -208,14 +209,6 @@ pipeline {
                             PULL_CREDS="-u $DOCKERHUB_CREDS_USR:$DOCKERHUB_CREDS_PSW"
                         else
                             PULL_CREDS=
-                        fi
-
-                        # Determine if proxy should be used
-                        if echo ${i} | grep -qi -e 'nvcr.io'
-                        then
-                            PULL_PROXY="http://squid.internal:3128"
-                        else
-                            PULL_PROXY=
                         fi
 
                         # Pull upstream image
@@ -291,6 +284,7 @@ pipeline {
                     PUSH_CREDS="-u $REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW"
 
                     pull_ctr () {
+                        PULL_PROXY="http://squid.internal:3128"
                         sudo lxc exec $LXC_NAME \
                         --env HTTP_PROXY="${PULL_PROXY}" \
                         --env HTTPS_PROXY="${PULL_PROXY}" \
@@ -316,14 +310,6 @@ pipeline {
                             PULL_CREDS="-u $DOCKERHUB_CREDS_USR:$DOCKERHUB_CREDS_PSW"
                         else
                             PULL_CREDS=
-                        fi
-
-                        # Determine if proxy should be used
-                        if echo ${i} | grep -qi -e 'nvcr.io'
-                        then
-                            PULL_PROXY="http://squid.internal:3128"
-                        else
-                            PULL_PROXY=
                         fi
 
                         # Pull upstream image
