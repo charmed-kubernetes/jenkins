@@ -180,6 +180,20 @@ pipeline {
 
                     # All CK CI images live under ./cdk in our registry
                     TAG_PREFIX=$REGISTRY_URL/cdk
+                    PUSH_CREDS="-u $REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW"
+
+                    pull_ctr () {
+                        PULL_PROXY="http://squid.internal:3128"
+                        sudo lxc exec $LXC_NAME \
+                        --env HTTP_PROXY="${PULL_PROXY}" \
+                        --env HTTPS_PROXY="${PULL_PROXY}" \
+                        -- ctr content fetch ${PULL_CREDS} ${1} --all-platforms >/dev/null; 
+                    }
+
+                    push_ctr () {
+                        sudo lxc exec $LXC_NAME \
+                        -- ctr image push ${PUSH_CREDS} ${1} >/dev/null;
+                    }
 
                     for i in ${CI_IMAGES}
                     do
@@ -198,15 +212,15 @@ pipeline {
                         fi
 
                         # Pull upstream image
-                        if [ "$IS_DRY_RUN" = true ] ; then
+                        if [ "$IS_DRY_RUN" = true ]
+                        then
                             echo "Dry run; would have pulled: ${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec $LXC_NAME -- ctr content fetch ${PULL_CREDS} ${i} --all-platforms >/dev/null
-                            then
-                                echo "Retrying pull"
+                            if ! pull_ctr ${i} ; then
+                                echo "Retrying pull ${i}"
                                 sleep 5
-                                sudo lxc exec $LXC_NAME -- ctr content fetch ${PULL_CREDS} ${i} --all-platforms >/dev/null
+                                pull_ctr ${i}
                             fi
                         fi
 
@@ -228,11 +242,11 @@ pipeline {
                         else
                             sudo lxc exec $LXC_NAME -- ctr image tag ${i} ${TAG_PREFIX}/${RAW_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec $LXC_NAME -- ctr image push ${TAG_PREFIX}/${RAW_IMAGE} --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null
+                            if ! push_ctr ${TAG_PREFIX}/${RAW_IMAGE}
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec $LXC_NAME -- ctr image push ${TAG_PREFIX}/${RAW_IMAGE} --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null
+                                push_ctr ${TAG_PREFIX}/${RAW_IMAGE}
                             fi
                         fi
 
@@ -267,6 +281,20 @@ pipeline {
 
                     # All CK images are staged under ./staging/cdk in our registry
                     TAG_PREFIX=$REGISTRY_URL/staging/cdk
+                    PUSH_CREDS="-u $REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW"
+
+                    pull_ctr () {
+                        PULL_PROXY="http://squid.internal:3128"
+                        sudo lxc exec $LXC_NAME \
+                        --env HTTP_PROXY="${PULL_PROXY}" \
+                        --env HTTPS_PROXY="${PULL_PROXY}" \
+                        -- ctr content fetch ${PULL_CREDS} ${1} --all-platforms >/dev/null; 
+                    }
+
+                    push_ctr () {
+                        sudo lxc exec $LXC_NAME \
+                        -- ctr image push ${PUSH_CREDS} ${1} >/dev/null;
+                    }
 
                     for i in ${ALL_IMAGES}
                     do
@@ -289,11 +317,11 @@ pipeline {
                             echo "Dry run; would have pulled: ${i}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec $LXC_NAME -- ctr content fetch ${PULL_CREDS} ${i} --all-platforms >/dev/null
+                            if ! pull_ctr ${i}
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec $LXC_NAME -- ctr content fetch ${PULL_CREDS} ${i} --all-platforms >/dev/null
+                                pull_ctr ${i}
                             fi
                         fi
 
@@ -315,11 +343,11 @@ pipeline {
                         else
                             sudo lxc exec $LXC_NAME -- ctr image tag ${i} ${TAG_PREFIX}/${RAW_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec $LXC_NAME -- ctr image push ${TAG_PREFIX}/${RAW_IMAGE} --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null
+                            if ! push_ctr ${TAG_PREFIX}/${RAW_IMAGE}
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec $LXC_NAME -- ctr image push ${TAG_PREFIX}/${RAW_IMAGE} --user "$REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW" >/dev/null
+                                push_ctr ${TAG_PREFIX}/${RAW_IMAGE}
                             fi
                         fi
 
