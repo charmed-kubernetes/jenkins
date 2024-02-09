@@ -110,7 +110,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-juju==3.2.3.0
+juju==3.3.0.0
     # via -r requirements.in
 kubernetes==26.1.0
     # via juju

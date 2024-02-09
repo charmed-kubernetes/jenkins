@@ -89,7 +89,7 @@
           name: juju_channel
           description: |-
             specify the juju channel to use
-          default: 2.9/stable
+          default: 3.1/stable
 
 - parameter:
     name: series-stable

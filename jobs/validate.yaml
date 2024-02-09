@@ -33,8 +33,8 @@
           description: |-
             specify the juju channel to use
           values:
-            - 2.9/stable
             - 3.1/stable
+            - 3.3/stable
       - axis:
           type: user-defined
           name: snap_version
@@ -751,7 +751,11 @@
       - snap-edge
       - series-stable
       - lxc-runner-params
-      - juju-lts
+      - string:
+          name: juju_channel
+          description: |-
+            specify the juju channel to use
+          default: 2.9/stable
       - string:
           name: LXC_SNAP_LIST
           description: |-
