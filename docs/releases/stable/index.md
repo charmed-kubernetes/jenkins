@@ -40,9 +40,9 @@ It may feel early, but part of releasing the next stable version requires
 preparing for the release that will follow. This requires opening tracks and
 building relevant snaps and charms that will be used in the new `edge` channel.
 
-For example, we requested 1.28 snap tracks while preparing for the 1.27 release:
+For example, we requested 1.30 snap tracks while preparing for the 1.29 release:
 
-- https://forum.snapcraft.io/t/kubernetes-1-28-snap-tracks/34655
+- https://forum.snapcraft.io/t/charmed-kubernetes-1-30-snap-tracks/38912
 
 Bundle/charm track requests are made by emailing
 `snap-store-admins@lists.canonical.com` (cc: k8s-crew)
@@ -59,16 +59,15 @@ owned by `Canonical Kubernetes`. For example:
 Once upstream has an RC for the upcoming release, our CI should stop
 building pre-prelease snaps. This ensures the 1.xx track will end up
 with 1.xx.0 instead of 1.xx.1-alpha.0. For example, we merged the following
-between 1.27 RC and GA:
+between 1.29 RC and GA:
 
-- https://github.com/charmed-kubernetes/jenkins/pull/1264
+- https://github.com/charmed-kubernetes/jenkins/pull/1462
 
 Additionally, if not done already, CI should include 1.xx in the version matrix
 and config for relevant jobs. For example, see these updates where we adjusted
-tests for our 1.27 release:
+tests for our 1.29 release:
 
-- https://github.com/charmed-kubernetes/jenkins/pull/1270
-- https://github.com/charmed-kubernetes/jenkins/pull/1279
+- https://github.com/charmed-kubernetes/jenkins/pull/1463
 
 ## Preparing the release
 
@@ -84,11 +83,11 @@ from which we test, fix, and subsequently promote to the new release.
 
 We need to make sure that the `kubernetes-<control-plane|e2e|worker>` charms
 have `1.xx/stable` set as the default snap channel. This should be done on each of
-the relevant git `release_1.xx` branches. For example, for the 1.28 GA:
+the relevant git `release_1.xx` branches. For example, for the 1.29 GA:
 
-- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/pull/29
-- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/pull/295
-- https://github.com/charmed-kubernetes/charm-kubernetes-worker/pull/147
+- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/commit/b70b313a8ec983f1f32560f16ce5bcb18fd189a4
+- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/pull/319
+- https://github.com/charmed-kubernetes/charm-kubernetes-worker/commit/3ae4edac9632a9c6581bcfcab7fb70087c181add
 
 > **Note**: Changes to the above repos are required as some of our customers
 do not use our bundles for deployment.
@@ -129,7 +128,7 @@ is rebuilt in the `1.xx/beta` channel.
 K8s snap promotion is handled by the `sync-snaps` job and will happen
 automatically after following the `Prepare CI` section above. If for some
 reason you need to manually build K8s snaps from a specific branch, use the
-above job with a `branch` parameter like `1.27.0`.
+above job with a `branch` parameter like `1.29.0`.
 
 The `branch` parameter gets translated to `v$branch` by
 [snap.py](https://github.com/charmed-kubernetes/jenkins/blob/0b334c52b2c4f816b03ff866c44301724b8b471c/cilib/service/snap.py#L172)
@@ -147,7 +146,7 @@ then performing an upgrade to `latest/beta`. The tests are parameterized to
 run on multiple series and with multiple snap channels.
 
 Before running this job, confirm that the `snap_version` job parameter is set to the
-appropriate channel for this release (e.g. 1.28/beta).
+appropriate channel for this release (e.g. 1.29/beta).
 
 ### Notify Solutions QA
 
@@ -206,6 +205,16 @@ all of the appropriate channels, for example:
 
 ![promote charm options](promote-charms.png)
 
+### Pin snap channel for bundles in the release branches
+
+We need to make sure that the bundle fragments have `1.xx/stable` set as the
+default snap channel on the `release_1.xx` branch. For example, for the 1.29 GA:
+
+- https://github.com/charmed-kubernetes/bundle/commit/0b12765f61e5cfc17ac1c86731819b3e600e39e1
+
+> **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
+like we've done so many times before!
+
 ### Build bundles to **beta** and **stable**
 
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/build-charms/
@@ -235,16 +244,6 @@ to this release `1.xx`. For example, for the 1.27 GA:
 
 > **Note**: Nightly charm and bundle builds will publish to both `latest/edge`
 and `K8S_STABLE_VERSION/edge` channels.
-
-### Pin snap channel for bundles in the release branches
-
-We need to make sure that the bundle fragments have `1.xx/stable` set as the
-default snap channel on the `release_1.xx` branch. For example, for the 1.27 GA:
-
-- https://github.com/charmed-kubernetes/bundle/pull/879
-
-> **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
-like we've done so many times before!
 
 
 ### Tag release branches with the current stable bundle
