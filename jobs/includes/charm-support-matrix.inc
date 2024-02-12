@@ -496,7 +496,7 @@
     channel-range:
       max: '1.27'
 - metallb-speaker:
-    bugs: https://bugs.launchpad.net/operator-metallb'
+    bugs: 'https://bugs.launchpad.net/operator-metallb'
     docs: 'https://charmhub.io/metallb-speaker/docs'
     downstream: charmed-kubernetes/metallb-operator
     store: 'https://charmhub.io/metallb-speaker'
