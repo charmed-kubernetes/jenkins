@@ -132,7 +132,7 @@ pipeline {
                                 """
                                 if (channel == "pre-release"){
                                     sh """
-                                    sudo -E juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
+                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
                                     """
                                 }
                                 try {
