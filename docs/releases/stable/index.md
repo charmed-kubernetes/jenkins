@@ -232,6 +232,16 @@ when this job runs.
 
 ![build bundle options](build-bundle-options.png)
 
+### Extract the release bundle to our bundle repo
+
+For reference purposes, we extract all Charmed Kubernetes bundles to our bundle repo.
+Use the
+[release.sh script](https://github.com/charmed-kubernetes/bundle/blob/main/releases/release.sh)
+to extract the newly built bundle to the `./releases/$track` directory and raise a PR.
+For example, for the 1.29 GA:
+
+- https://github.com/charmed-kubernetes/bundle/pull/891
+
 ### Confirm snap promotion from `1.xx/<risk>` to `latest/<risk>`
 
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/sync-snaps/
@@ -244,7 +254,6 @@ to this release `1.xx`. For example, for the 1.27 GA:
 
 > **Note**: Nightly charm and bundle builds will publish to both `latest/edge`
 and `K8S_STABLE_VERSION/edge` channels.
-
 
 ### Tag release branches with the current stable bundle
 
