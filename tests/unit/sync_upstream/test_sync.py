@@ -17,8 +17,8 @@ def test_sync_default_branch(mock_default_gh, mock_base, sync):
     assert result.exception is None
     mock_default_gh.assert_has_calls(
         [
-            mock.call("juju-solutions/interface-aws-iam"),
-            mock.call("charmed-kubernetes/interface-aws-iam"),
+            mock.call("juju-solutions/interface-aws-integration"),
+            mock.call("charmed-kubernetes/interface-aws-integration"),
         ],
         any_order=False,
     )
