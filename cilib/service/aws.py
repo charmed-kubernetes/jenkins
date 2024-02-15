@@ -1,5 +1,6 @@
 """ AWS session
 """
+
 import boto3
 import botocore.exceptions
 

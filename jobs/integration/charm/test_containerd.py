@@ -1,6 +1,7 @@
 """
 Test Containerd charm specific.
 """
+
 from ..logger import log
 from ..utils import retry_async_with_timeout, juju_run
 
