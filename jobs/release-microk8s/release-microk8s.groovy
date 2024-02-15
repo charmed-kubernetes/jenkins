@@ -2,12 +2,7 @@
 def destroy_controller(controller) {
     return """#!/bin/bash
     if ! timeout 4m juju destroy-controller -y --destroy-all-models --destroy-storage "${controller}"; then
-        timeout 4m juju kill-controller -y "${controller}" || true
-    fi
-
-    if [[ \$(aws --region us-east-1 cloudformation describe-stacks --query "length(Stacks[?StackName == '${controller}'])") = *1* ]]
-    then
-        aws cloudformation delete-stack --stack-name ${controller} --region us-east-1 || true
+        timeout 4m juju kill-controller --no-prompt "${controller}" || true
     fi
     """
 }
@@ -115,30 +110,21 @@ pipeline {
                                 } else {
                                     error("Aborting build due to unknown arch=${arch}")
                                 }
+
                                 sh destroy_controller(juju_controller)
                                 sh """#!/bin/bash -x
                                 juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
-                                    -d "${juju_model}" \
                                     --model-default test-mode=true \
                                     --model-default resource-tags="owner=k8sci job=${job} stage=${stage}" \
                                     --bootstrap-constraints "mem=8G cores=2"
 
+                                juju add-model "${juju_model}" -c "${juju_controller}"
+
                                 # We deploy 20.04 because the upgrade-path test deploys K8s 1.19 onwards
                                 # that requires old cgroups.
-                                juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu --series focal
+                                juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu --base ubuntu@20.04
 
                                 juju-wait -e "${juju_full_model}" -w
-
-                                set +x
-                                AWS_ACCESS_KEY_ID=\$(aws configure get aws_access_key_id)
-                                AWS_SECRET_ACCESS_KEY=\$(aws configure get aws_secret_access_key)
-
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo sh -c 'echo INSTANCE_TYPE=${eksd_instance_type} >> /etc/environment'"
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo sh -c 'echo STACK_NAME=${juju_controller} >> /etc/environment'"
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo sh -c 'echo AWS_REGION=\$AWS_REGION >> /etc/environment'"
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo sh -c 'echo AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID >> /etc/environment'"
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- "sudo sh -c 'echo AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY >> /etc/environment'"
-                                set -x
 
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
                                 juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true

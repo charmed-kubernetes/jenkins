@@ -25,6 +25,12 @@
       tags:
         - adhoc
         - jenkins
+    - name: set homedir
+      shell: |
+        snap set system homedirs=/var/lib/
+      tags:
+        - adhoc
+        - jenkins
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
