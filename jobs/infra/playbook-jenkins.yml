@@ -163,8 +163,6 @@
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"
-        - "lxd"
-        - "multipass"
         - "yq"
         - "snapcraft --classic"
       tags:
@@ -368,37 +366,6 @@
         groups: docker,lxd
         append: yes
       tags:
-        - jenkins
-    - name: setup lxd network
-      command: "/snap/bin/lxd init --auto"
-      tags:
-        - jenkins
-      ignore_errors: yes
-    - name: disable ipv6 in lxd
-      command: "lxc network set {{item}} ipv6.address none"
-      ignore_errors: yes
-      loop:
-        - 'lxdbr0'
-        - 'lxdbr1'
-      tags:
-        - adhoc
-        - jenkins
-    - name: set lxd mtu
-      command: "lxc network set {{item}} bridge.mtu 1458"
-      ignore_errors: yes
-      loop:
-        - 'lxdbr0'
-        - 'lxdbr1'
-      tags:
-        - adhoc
-        - jenkins
-    - name: set lxd proxy
-      shell: |
-        lxc config set core.proxy_http http://squid.internal:3128
-        lxc config set core.proxy_https http://squid.internal:3128
-        lxc config set core.proxy_ignore_hosts localhost
-      tags:
-        - adhoc
         - jenkins
     - name: set docker daemon config
       copy:
