@@ -25,12 +25,6 @@
       tags:
         - adhoc
         - jenkins
-    - name: set homedir
-      shell: |
-        snap set system homedirs=/var/lib/
-      tags:
-        - adhoc
-        - jenkins
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
@@ -131,7 +125,7 @@
         - jenkins
         - adhoc
     - name: upgrade juju
-      command: "snap refresh juju --channel 3.1/stable"
+      command: "snap refresh juju --channel 2.9/stable"
       ignore_errors: yes
       tags:
         - jenkins
@@ -153,7 +147,7 @@
       ignore_errors: yes
       loop:
         - "go --classic --stable"
-        - "juju --channel=3.1/stable"
+        - "juju --channel=2.9/stable"
         - "kubectl --classic"
         - "yq"
         - "snapcraft --classic"
