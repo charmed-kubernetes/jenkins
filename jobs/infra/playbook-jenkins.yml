@@ -63,8 +63,6 @@
           curl \
           dh-systemd \
           debhelper \
-          default-jre \
-          docker.io \
           expect-dev \
           file \
           flake8 \
@@ -84,7 +82,6 @@
           python3.8 \
           python3.8-dev \
           python3.8-venv \
-          redis-server \
           snapd \
           sosreport \
           squashfuse \
@@ -155,13 +152,8 @@
       command: "snap install {{item}}"
       ignore_errors: yes
       loop:
-        - "charm --classic --channel 3.x/stable"
-        - "charmcraft --classic --edge"
         - "go --classic --stable"
-        - "google-cloud-cli --classic --channel latest/stable"
         - "juju --channel=3.1/stable"
-        - "juju-crashdump --classic --edge"
-        - "juju-wait --classic"
         - "kubectl --classic"
         - "yq"
         - "snapcraft --classic"
