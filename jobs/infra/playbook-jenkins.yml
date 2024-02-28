@@ -25,9 +25,9 @@
       tags:
         - adhoc
         - jenkins
-    - name: set homedir
+    - name: clear homedir
       shell: |
-        snap set system homedirs=/var/lib/
+        snap set system homedirs!
       tags:
         - adhoc
         - jenkins
