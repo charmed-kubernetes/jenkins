@@ -131,7 +131,7 @@
         - jenkins
         - adhoc
     - name: upgrade juju
-      command: "snap refresh juju --channel 2.9/stable"
+      command: "snap refresh juju --channel 2.9/stable" --classic
       ignore_errors: yes
       tags:
         - jenkins
@@ -153,7 +153,7 @@
       ignore_errors: yes
       loop:
         - "go --classic --stable"
-        - "juju --channel=2.9/stable"
+        - "juju --channel=2.9/stable" --classic
         - "kubectl --classic"
         - "yq"
         - "snapcraft --classic"
