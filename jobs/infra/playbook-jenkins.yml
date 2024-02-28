@@ -25,6 +25,12 @@
       tags:
         - adhoc
         - jenkins
+    - name: clear snap homedir
+      shell: |
+        snap set system homedirs!
+      tags:
+        - adhoc
+        - jenkins
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
