@@ -124,7 +124,7 @@ pipeline {
                                 # that requires old cgroups.
                                 # For juju 3.1:
                                 #juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu --base ubuntu@20.04
-                                For juju 2.9:
+                                # For juju 2.9:
                                 juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu --series focal
 
                                 juju-wait -e "${juju_full_model}" -w
