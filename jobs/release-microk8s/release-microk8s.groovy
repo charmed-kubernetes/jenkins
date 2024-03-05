@@ -1,8 +1,8 @@
 
 def destroy_controller(controller) {
     return """#!/bin/bash
-    if ! timeout 4m juju destroy-controller -y --destroy-all-models --destroy-storage "${controller}"; then
-        timeout 4m juju kill-controller --no-prompt "${controller}" || true
+    if ! timeout 4m sudo -E juju destroy-controller -y --destroy-all-models --destroy-storage "${controller}"; then
+        timeout 4m sudo -E juju kill-controller --no-prompt "${controller}" || true
     fi
     """
 }
@@ -113,26 +113,26 @@ pipeline {
 
                                 sh destroy_controller(juju_controller)
                                 sh """#!/bin/bash -x
-                                juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
+                                sudo -E juju bootstrap "${JUJU_CLOUD}" "${juju_controller}" \
                                     --model-default test-mode=true \
                                     --model-default resource-tags="owner=k8sci job=${job} stage=${stage}" \
                                     --bootstrap-constraints "mem=8G cores=2"
 
-                                juju add-model "${juju_model}" -c "${juju_controller}"
+                                sudo -E juju add-model "${juju_model}" -c "${juju_controller}"
 
                                 # We deploy 20.04 because the upgrade-path test deploys K8s 1.19 onwards
                                 # that requires old cgroups.
-                                juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu --base ubuntu@20.04
+                                sudo -E juju deploy -m "${juju_full_model}" --constraints "${constraints}" ubuntu --base ubuntu@20.04
 
-                                juju-wait -e "${juju_full_model}" -w
+                                sudo -E juju-wait -e "${juju_full_model}" -w
 
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true
-                                juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd init --auto'
+                                sudo -E juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install lxd'
+                                sudo -E juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd.migrate -yes' || true
+                                sudo -E juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo lxd init --auto'
                                 """
                                 if (channel == "pre-release"){
                                     sh """
-                                    juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
+                                    sudo -E juju ssh -m "${juju_full_model}" --pty=true ubuntu/0 -- 'sudo snap install snapcraft --classic'
                                     """
                                 }
                                 try {
