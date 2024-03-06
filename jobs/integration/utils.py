@@ -839,9 +839,9 @@ async def kubectl_delete(document, model, **kwds):
 
 
 async def vault(unit, cmd, **env):
-    env[
-        "VAULT_FORMAT"
-    ] = "json"  # Can't override this or we won't be able to parse the results
+    env["VAULT_FORMAT"] = (
+        "json"  # Can't override this or we won't be able to parse the results
+    )
     env.setdefault("VAULT_ADDR", "http://localhost:8200")
     env = " ".join(f"{key}='{value}'" for key, value in env.items())
     result = await juju_run(unit, f"{env} /snap/bin/vault {cmd}")

@@ -1,5 +1,6 @@
 """ some helpers to write out html snippets
 """
+
 import os
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
