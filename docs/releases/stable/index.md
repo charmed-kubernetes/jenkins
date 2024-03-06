@@ -44,15 +44,14 @@ For example, we requested 1.30 snap tracks while preparing for the 1.29 release:
 
 - https://forum.snapcraft.io/t/charmed-kubernetes-1-30-snap-tracks/38912
 
-Bundle/charm track requests are made by emailing
-`snap-store-admins@lists.canonical.com` (cc: k8s-crew)
-and asking for new tracks to be opened for every neccessary
+Bundle/charm track requests are made by posting to the `charmhub requests` forum
+asking for new tracks to be opened for every neccessary
 [charm](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-support-matrix.inc)
 and
 [bundle](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-bundles-list.inc)
 owned by `Canonical Kubernetes`. For example:
 
-- https://lists.canonical.com/mailman3/hyperkitty/list/k8s-crew@lists.canonical.com/thread/XRNGFKIZUQJUEAGOU54EXFV5TBUM7M3D/
+- https://discourse.charmhub.io/t/request-new-1-30-track-for-all-charmed-k8s-charms-and-bundles/13394
 
 ### $stable release
 
