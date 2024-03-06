@@ -52,7 +52,7 @@ and
 [bundle](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-bundles-list.inc)
 owned by `Canonical Kubernetes`. For example:
 
-- https://lists.canonical.com/mailman3/hyperkitty/list/k8s-crew@lists.canonical.com/thread/IX2VTCQRT3MLIJN2RNJZAJK2Z3KHCYXV/
+- https://lists.canonical.com/mailman3/hyperkitty/list/k8s-crew@lists.canonical.com/thread/XRNGFKIZUQJUEAGOU54EXFV5TBUM7M3D/
 
 ### $stable release
 
@@ -91,6 +91,16 @@ the relevant git `release_1.xx` branches. For example, for the 1.29 GA:
 
 > **Note**: Changes to the above repos are required as some of our customers
 do not use our bundles for deployment.
+
+### Pin snap channel for bundles in the release branches
+
+We need to make sure that the bundle fragments have `1.xx/stable` set as the
+default snap channel on the `release_1.xx` branch. For example, for the 1.29 GA:
+
+- https://github.com/charmed-kubernetes/bundle/commit/0b12765f61e5cfc17ac1c86731819b3e600e39e1
+
+> **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
+like we've done so many times before!
 
 ### Build charms and bundles from the release branches
 
@@ -169,13 +179,13 @@ Sync `charmed-kubernetes/k8s-conformance` main from upstream
 - https://github.com/charmed-kubernetes/k8s-conformance
 
 Confirm passing results, then create a PR against the upstream `k8s-conformance`
-repo. For example, we used the following branch for CK 1.26:
+repo. For example, we used the following branch for CK 1.29:
 
-- https://github.com/charmed-kubernetes/k8s-conformance/tree/1.26-ck
+- https://github.com/charmed-kubernetes/k8s-conformance/tree/1.29-ck
 
 And opened this upstream PR:
 
-- https://github.com/cncf/k8s-conformance/pull/2473
+- https://github.com/cncf/k8s-conformance/pull/3043
 
 > **Note**: CNCF requires a sign-off. After confirming results, issue a
 `git commit --amend --signoff` on the branch prior to submitting the PR.
@@ -204,16 +214,6 @@ all of the appropriate channels, for example:
 #### Promote 1.xx/beta charms to stable channels
 
 ![promote charm options](promote-charms.png)
-
-### Pin snap channel for bundles in the release branches
-
-We need to make sure that the bundle fragments have `1.xx/stable` set as the
-default snap channel on the `release_1.xx` branch. For example, for the 1.29 GA:
-
-- https://github.com/charmed-kubernetes/bundle/commit/0b12765f61e5cfc17ac1c86731819b3e600e39e1
-
-> **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
-like we've done so many times before!
 
 ### Build bundles to **beta** and **stable**
 
@@ -248,9 +248,9 @@ For example, for the 1.29 GA:
 
 This job will automatically promote snaps to `latest`. The only prereqs are
 that charms have been promoted and that the `K8S_STABLE_VERSION` enum is set
-to this release `1.xx`. For example, for the 1.27 GA:
+to this release `1.xx`. For example, for the 1.29 GA:
 
-- https://github.com/charmed-kubernetes/jenkins/pull/1271
+- https://github.com/charmed-kubernetes/jenkins/pull/1481
 
 > **Note**: Nightly charm and bundle builds will publish to both `latest/edge`
 and `K8S_STABLE_VERSION/edge` channels.
@@ -276,25 +276,25 @@ Email announcement to k8s-crew with any relevant information.
 ## Post Release
 
 When $stable++ tracks are open, add them to our CI enumerations as well as our
-custom snap jobs. For example, see the additions made during our 1.27 GA to
+custom snap jobs. For example, see the additions made during our 1.29 GA to
 support the future 1.28 release:
 
-- https://github.com/charmed-kubernetes/jenkins/pull/1271
+- https://github.com/charmed-kubernetes/jenkins/pull/1481
 
 ### Set cdk-addons envars
 
 Update cdk-addons `release-1.xx` Makefile, e.g.:
 
-- https://github.com/charmed-kubernetes/cdk-addons/commit/55d42859ede457345f899b7e88ea9db904028bf3
+- https://github.com/charmed-kubernetes/cdk-addons/commit/a05377aa2fa153fe1f815a9b82039cb769575d7f
 
 Update cdk-addons `main` Makefile
-- https://github.com/charmed-kubernetes/cdk-addons/commit/ee169e9d742f31e525c6209df8460194c2aea38d
+- https://github.com/charmed-kubernetes/cdk-addons/commit/9f22ff78003f2f20d3834db623fb57dbb51e4844
 
 ### Bump snap channel to the $stable++ release
 
 Bump the `kubernetes-<control-plane|e2e|worker>` charms and bundle
 fragments in the `main` git branches to the future $stable++ release,
-e.g. `1.29/edge`. You don't have to do this right away; in fact, you
+e.g. `1.30/edge`. You don't have to do this right away; in fact, you
 should wait until you actually have snaps in the `$stable++/edge` channels
 before making this change.
 
@@ -304,8 +304,8 @@ Run the `[close|open]-milestone.py` scripts found in the
 [cdk-scripts repo](https://github.com/canonical/cdk-scripts) repository.
 For example:
 ```
-./close-milestone.py 1.27
-./create-milestone.py 1.27+ck1
+./close-milestone.py 1.29
+./create-milestone.py 1.29+ck1
 ```
 
 # Fin
