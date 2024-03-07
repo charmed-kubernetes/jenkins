@@ -2,17 +2,24 @@ storage-class: csi-gce-pd-default
 storage:
   application: gcp-k8s-storage
   out-relations:
-    - - gcp-k8s-storage:certificates
-      - easyrsa:client
-    - - gcp-k8s-storage:kube-control
-      - kubernetes-control-plane:kube-control
-    - - gcp-k8s-storage:gcp-integration
-      - gcp-integrator:gcp
-  in-relations: []
+    - [gcp-k8s-storage:certificates, easyrsa:client]
+    - [gcp-k8s-storage:kube-control, kubernetes-control-plane:kube-control]
+    - [gcp-k8s-storage:gcp-integration, gcp-integrator:gcp]
+  in-relations:
+    - [gcp-integrator:gcp, kubernetes-control-plane:gcp]
+    - [gcp-integrator:gcp, kubernetes-worker:gcp]
   in-tree-until: '1.24'
   trust: true
   config:
     image-registry: k8s.gcr.io
 cloud-controller:
-  application: null
-  in-tree-until: '999.0'
+  application: gcp-cloud-provider
+  out-relations:
+    - [gcp-cloud-provider:certificates, easyrsa:client]
+    - [gcp-cloud-provider:kube-control, kubernetes-control-plane:kube-control]
+    - [gcp-cloud-provider:gcp-integration, gcp-integrator:gcp]
+    - [gcp-cloud-provider:external-cloud-provider, kubernetes-control-plane:external-cloud-provider]
+  in-relations:
+    - [gcp-integrator:gcp, kubernetes-control-plane:gcp]
+    - [gcp-integrator:gcp, kubernetes-worker:gcp]
+  in-tree-until: '1.28'
