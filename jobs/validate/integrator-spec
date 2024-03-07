@@ -63,9 +63,6 @@ EOF
       folder: k8s-crew-root
     num_units: 1
     trust: true
-relations:
-  - ['vsphere-integrator', 'kubernetes-control-plane:vsphere']
-  - ['vsphere-integrator', 'kubernetes-worker:vsphere']
 EOF
     elif [ "$JUJU_CLOUD" = "aws/us-east-1" ]; then
       # Deploy aws
