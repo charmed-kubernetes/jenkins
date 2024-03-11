@@ -20,12 +20,12 @@ mkdocs
 requests
 pymacaroons
 pyyaml>=5.1.2
-pytest-asyncio
+pytest-asyncio<0.22
 pytest-json-report
 pytest-html
 pytest-mock
 flaky
-pytest
+pytest<8
 python-dotenv
 lazr.restfulclient
 launchpadlib
