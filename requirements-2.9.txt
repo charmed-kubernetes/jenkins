@@ -302,7 +302,7 @@ wadllib==1.3.6
     # via lazr-restfulclient
 watchdog==3.0.0
     # via mkdocs
-wcwidth==0.2.6
+wcwidth==0.2.13
     # via prettytable
 websocket-client==1.5.1
     # via kubernetes
