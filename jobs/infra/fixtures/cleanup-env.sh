@@ -23,8 +23,8 @@ juju controllers --format json | jq -r '.controllers | keys[]' | parallel --ungr
 # for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
 #     if [ "$i" != "jaas" ]; then
 #         echo "$i"
-#         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$i"; then
-#             timeout 2m juju kill-controller -y "$i" 2>&1
+#         if ! timeout 2m juju destroy-controller --no-prompt --destroy-all-models --destroy-storage "$i"; then
+#             timeout 2m juju kill-controller --no-prompt "$i" 2>&1
 #         fi
 #     fi
 # done

@@ -106,8 +106,8 @@ function ci::cleanup::before
     scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa -r ubuntu@10.13.6.3:jenkins/*.html . || true
 
     ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- rm -rf juju-crashdump* || true
-    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"
-    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- timeout 10m juju kill-controller -y "$JUJU_CONTROLLER"
+    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- timeout 2m juju destroy-controller --no-prompt --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"
+    ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -i /var/lib/jenkins/.ssh/cdkbot_rsa -tt ubuntu@10.13.6.3 -- timeout 10m juju kill-controller --no-prompt "$JUJU_CONTROLLER"
 }
 
 ###############################################################################
