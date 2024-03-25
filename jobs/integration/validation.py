@@ -1670,7 +1670,6 @@ data:
 
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.on_model("validate-vault")
-@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
     control_plane_app = model.applications["kubernetes-control-plane"]
@@ -1725,7 +1724,7 @@ async def test_encryption_at_rest(model, tools):
     # just go straight to waiting for etcd to settle.
     click.echo("Waiting for etcd to settle")
     await model.wait_for_idle(apps=["etcd"], timeout=30 * 60)
-    for attempt in range(3):
+    for _ in range(3):
         actual_status = {unit.workload_status_message for unit in etcd_app.units}
         expected_status = {"Healthy with 3 known peers"}
         if actual_status == expected_status:
@@ -1790,7 +1789,7 @@ async def test_encryption_at_rest(model, tools):
             all_=False, retry=True, tags={"entities": [{"tag": unit.tag}]}
         )
 
-    for attempt in range(3):
+    for _ in range(3):
         errored_units = [
             unit for unit in control_plane_app.units if unit.workload_status == "error"
         ]
@@ -1826,7 +1825,10 @@ async def test_encryption_at_rest(model, tools):
     result = await juju_run(
         etcd,
         "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
-        "--endpoints http://127.0.0.1:4001 "
+        "--endpoints https://127.0.0.1:2379 "
+        "--cacert=/var/snap/etcd/common/ca.crt "
+        "--cert=/var/snap/etcd/common/server.crt "
+        "--key=/var/snap/etcd/common/server.key "
         "get /registry/secrets/default/test-secret | strings",
     )
     assert b64_value not in result.output
