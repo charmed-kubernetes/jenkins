@@ -1,18 +1,32 @@
 # Tests and releases microk8s to beta
 
+
 - job-template:
     name: 'release-microk8s-arch-{arch}'
+    node: runner-cloud
     description: |
       Tests and releases microk8s. Affects all tracks on {arch}.
-    project-type: pipeline
-    pipeline-scm:
-      scm:
-        - k8s-jenkins-jenkaas
-      script-path: jobs/release-microk8s/release-microk8s.groovy
+    project-type: matrix
+    scm:
+      - k8s-jenkins-jenkaas
     wrappers:
       - default-job-wrapper
       - ci-creds
+    properties:
+      - block-on-infra
+      - build-discarder:
+          num-to-keep: 10
+    triggers:
+        - timed: "@daily"
     parameters:
+      - lxc-runner-params
+      - juju-lts
+      - string:
+          name: LXC_SNAP_LIST
+          default: snapcraft --channel=6.x/stable,juju-wait,juju-crashdump,juju --channel=$juju_channel
+      - string:
+          name: LXC_MOUNT_LIST
+          default: .local,.ssh,.aws,snap
       - choice:
           name: ARCH
           description: |
@@ -59,16 +73,10 @@
           default: ""
           description: |
             Proxy endpoint
-    triggers:
-        - timed: "@daily"
-    properties:
-      - build-discarder:
-          num-to-keep: 10
-      - build-blocker:
-          use-build-blocker: true
-          blocking-jobs:
-            - "infra.*"
-          block-level: 'NODE'
+    builders:
+      - run-lxc:
+          COMMAND: |
+            bash jobs/microk8s/release.sh $ARCH $CHANNEL $TRACKS $DRY_RUN $ALWAYS_RELEASE $TESTS_BRANCH $PROXY
 
 - project:
     name: release-microk8s-arch

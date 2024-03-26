@@ -9,6 +9,8 @@ function compile::env
     : "${JUJU_DEPLOY_CHANNEL:?Must have a channel defined}"
     : "${JUJU_MODEL:?Must have a model defined}"
     : "${JUJU_UPDATE_STATUS_INTERVAL:=150s}"
+    : "${JOB_STAGE:-}"
+    : "${JOB_REPORTING:-yes}"
     : "${SERIES:?Must have a release series defined}"
     : "${SNAP_VERSION:?Must have a snap version defined}"
     : "${JOB_NAME_CUSTOM:?Must have a job name defined}"
@@ -48,6 +50,7 @@ function compile::env
     kv::set "job_id" "$JOB_ID"
     kv::set "job_name" "$JOB_NAME_CUSTOM"
     kv::set "job_name_custom" "$JOB_NAME_CUSTOM"
+    kv::set "job_stage" "$JOB_STAGE"
     kv::set "series" "$SERIES"
     kv::set "arch" "$ARCH"
     kv::set "snap_version" "$SNAP_VERSION"
@@ -164,6 +167,10 @@ function test::execute
 function test::report
 {
     result=$1
+    if [ "${JOB_REPORTING}" == "no" ]; then
+        echo "Job reporting disabled"
+        exit 0
+    fi
 
     kv::set "result" "$result"
     touch "meta/result-$result"
@@ -172,6 +179,11 @@ function test::report
 
 function test::capture
 {
+    if [ "${JOB_REPORTING}" == "no" ]; then
+        echo "Job reporting disabled"
+        exit 0
+    fi
+
     if which juju-crashdump; then
         # -s                     small crashdump by skipping /var/lib/juju
         # -a debug-layer         included debug-layer addon
@@ -272,9 +284,7 @@ function ci::cleanup
         ci::cleanup::before || true
         test::capture || true
 
-        if ! timeout 2m juju destroy-controller --no-prompt --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
-            timeout 10m juju kill-controller -t 2m0s --no-prompt "$JUJU_CONTROLLER" || true
-        fi
+        juju::destroy
         ci::cleanup::after || true
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
 }
