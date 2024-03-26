@@ -18,13 +18,13 @@ set -x
 ###############################################################################
 # ENV
 ###############################################################################
-export ARCH=${1:-amd64}
-export TRACKS=${3:-}
-export DRY_RUN=${4:-yes}
-export ALWAYS_RELEASE=${5:-no}
-export TESTS_BRANCH=${6:-}
-export PROXY=${7:-}
-CHOSEN_CHANNEL=${2:-all}
+export ARCH=${ARCH:-amd64}
+export TRACKS=${TRACKS:-}
+export DRY_RUN=${DRY_RUN:-yes}
+export ALWAYS_RELEASE=${ALWAYS_RELEASE:-no}
+export TESTS_BRANCH=${TESTS_BRANCH:-}
+export PROXY=${PROXY:-}
+export RELEASE_CHANNEL=${RELEASE_CHANNEL:-all}
 
 
 SERIES=focal
@@ -46,10 +46,10 @@ function snapcraft::login
 
 function gather::channels
 {
-    if [[ ${CHOSEN_CHANNEL} == "all" ]]; then
+    if [[ ${RELEASE_CHANNEL} == "all" ]]; then
         CHANNELS=("beta" "stable" "pre-release")
     else
-        CHANNELS=($CHOSEN_CHANNEL)
+        CHANNELS=($RELEASE_CHANNEL)
     fi
     echo "Running for channels ${ARCH}/${CHANNELS}"
 }

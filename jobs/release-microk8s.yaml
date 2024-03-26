@@ -1,9 +1,13 @@
 # Tests and releases microk8s to beta
 
-
 - job-template:
-    name: 'release-microk8s-arch-{arch}'
-    node: runner-cloud
+    name: 'release-microk8s-arch-{arch}-test'
+    axes:
+      - axis:
+          type: slave  # wokeignore:rule=slave
+          name: node
+          values:
+            - runner-cloud
     description: |
       Tests and releases microk8s. Affects all tracks on {arch}.
     project-type: matrix
@@ -19,14 +23,32 @@
     triggers:
         - timed: "@daily"
     parameters:
-      - lxc-runner-params
       - juju-lts
-      - string:
+      - choice:
+          name: LXC_APT_LIST
+          description: |-
+            comma-separated list of apt packages to install into the container
+          choices:
+            - pip,python3-venv,python3-dev,libffi-dev
+      - choice:
           name: LXC_SNAP_LIST
-          default: snapcraft --channel=6.x/stable,juju-wait,juju-crashdump,juju --channel=$juju_channel
-      - string:
+          description: |-
+            comma-separated list of snaps to install into the container
+            if the snap requires multiple arguments
+          choices:
+            - snapcraft --channel=6.x/stable,juju-wait,juju-crashdump,juju --channel=$juju_channel
+      - choice:
+          name: LXC_PUSH_LIST
+          description: |-
+            comma-separated list of paths to push into the container
+          choices:
+            - /var/lib/jenkins/snapcraft-creds
+      - choice:
           name: LXC_MOUNT_LIST
-          default: .local,.ssh,.aws,snap
+          description: |-
+            comma-separated list of paths to mount in the container from $HOME to $LXC_HOME
+          choices:
+            - .local,.ssh,.aws,snap
       - choice:
           name: ARCH
           description: |
@@ -34,7 +56,7 @@
           choices:
             - "{arch}"
       - choice:
-          name: CHANNEL
+          name: RELEASE_CHANNEL
           description: |
             Choose a specific release channel
           choices:
@@ -76,7 +98,7 @@
     builders:
       - run-lxc:
           COMMAND: |
-            bash jobs/microk8s/release.sh $ARCH $CHANNEL $TRACKS $DRY_RUN $ALWAYS_RELEASE $TESTS_BRANCH $PROXY
+            bash jobs/microk8s/release.sh
 
 - project:
     name: release-microk8s-arch
@@ -84,7 +106,7 @@
       - amd64
       - arm64
     jobs:
-      - 'release-microk8s-arch-{arch}'
+      - 'release-microk8s-arch-{arch}-test'
 
 - job:
     name: 'release-microk8s-edge'
