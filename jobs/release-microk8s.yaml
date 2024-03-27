@@ -1,7 +1,7 @@
 # Tests and releases microk8s to beta
 
 - job-template:
-    name: 'release-microk8s-arch-{arch}-test'
+    name: 'release-microk8s-arch-{arch}'
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -42,7 +42,7 @@
           description: |-
             comma-separated list of paths to push into the container
           choices:
-            - /var/lib/jenkins/snapcraft-creds
+            - $SNAPCRAFTCREDS
       - choice:
           name: LXC_MOUNT_LIST
           description: |-
@@ -106,7 +106,7 @@
       - amd64
       - arm64
     jobs:
-      - 'release-microk8s-arch-{arch}-test'
+      - 'release-microk8s-arch-{arch}'
 
 - job:
     name: 'release-microk8s-edge'

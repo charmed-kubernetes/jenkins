@@ -5,7 +5,7 @@
       - git:
           url: https://github.com/charmed-kubernetes/jenkins.git
           branches:
-            - 'KU-486/microk8s-release-jobs-on-lxc'
+            - 'main'
         skip-tag: true
         fastpoll: true
         shallow-clone: true
