@@ -167,21 +167,20 @@ function test::execute
 function test::report
 {
     result=$1
-    if [ "${JOB_REPORTING}" == "no" ]; then
-        echo "Job reporting disabled"
-        exit 0
-    fi
-
     kv::set "result" "$result"
     touch "meta/result-$result"
-    python bin/s3 cp "meta/result-$result" "meta/result-$result"
+    if [ "${JOB_REPORTING}" == "no" ]; then
+        echo "Job reporting disabled"
+    else
+        python bin/s3 cp "meta/result-$result" "meta/result-$result"
+    fi
 }
 
 function test::capture
 {
     if [ "${JOB_REPORTING}" == "no" ]; then
         echo "Job reporting disabled"
-        exit 0
+        return 0
     fi
 
     if which juju-crashdump; then
