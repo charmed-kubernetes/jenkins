@@ -68,8 +68,8 @@
           name: TRACKS
           default: ""
           description: |
-            The tracks you want to test and release. For example latest 1.10
-            1.11 1.12. Leave empty to iterate over all tracks.
+            Space separated list of tracks you want to test and release.
+            For example "latest 1.10 1.11 1.12". Leave empty to iterate over all tracks.
       - choice:
           name: DRY_RUN
           description: |
