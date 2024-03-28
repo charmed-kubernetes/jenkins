@@ -74,7 +74,14 @@ ci_lxc_push()
     local lxc_container=$1
     local source=$2
     local dest=$3
-    sudo lxc file push ${source} ${lxc_container}/${dest}
+    local args=(-p --mode "$(stat -c '0%a' $source)")
+    if [ "$(stat -c '%U' $source)" == "$(whoami)" ]; then
+        args+=(--uid 1000)
+    fi
+    if [ "$(stat -c '%G' $source)" == "$(whoami)" ]; then
+        args+=(--gid 1000)
+    fi
+    sudo lxc file push "${args[@]}" ${source} ${lxc_container}/${dest}
 }
 
 
