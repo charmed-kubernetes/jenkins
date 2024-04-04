@@ -819,6 +819,9 @@ async def test_gpu_support(model, k8s_model, tools):
         timeout_insec=20 * 60,
     )
 
+    # Cleanup the deployed nvidia-gpu-operator charm
+    k8s_model.remove_application("nvidia-gpu-operator")
+
 
 async def test_extra_args(model, tools):
     async def get_filtered_service_args(app, service):
