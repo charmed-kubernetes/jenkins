@@ -754,7 +754,7 @@ async def test_gpu_support(model, k8s_model, tools):
     await k8s_model.deploy(
         entity_url="nvidia-gpu-operator", channel="latest/stable", trust=True
     )
-
+    await k8s_model.wait_for_idle(status="active")
     # Find all nvidia based workers
     nvidia_workers = [
         unit
