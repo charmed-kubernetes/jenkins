@@ -749,7 +749,7 @@ async def test_gpu_support(model, k8s_model, tools):
     is not detected and functional if hardware is fine"""
 
     # Deploy nvidia-gpu-operator charm
-    # Trust is True because the charm needs priviledges to install drivers
+    # Trust is True because the charm needs privileges to install drivers
     # and packages on the workers
     await k8s_model.deploy(
         entity_url="nvidia-gpu-operator", channel="1.29/stable", trust=True
