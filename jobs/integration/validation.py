@@ -748,7 +748,9 @@ async def test_gpu_support(model, k8s_model, tools):
     """Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
 
-    # Add cloud as a k8s cloud to deploy nvidia-gpu-operator charm to
+    # Deploy nvidia-gpu-operator charm
+    # Trust is True because the charm needs priviledges to install drivers
+    # and packages on the workers
     await k8s_model.deploy(
         entity_url="nvidia-gpu-operator", channel="1.29/stable", trust=True
     )
@@ -765,7 +767,6 @@ async def test_gpu_support(model, k8s_model, tools):
         control_plane,
         "ds",
         ["nvidia-device-plugin-daemonset"],
-        "-n kube-system",
     )
     if not nvidia_workers:
         # nvidia should not be running
