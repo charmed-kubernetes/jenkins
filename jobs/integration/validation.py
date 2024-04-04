@@ -750,9 +750,7 @@ async def test_gpu_support(model, k8s_model, tools):
 
     # Add cloud as a k8s cloud to deploy nvidia-gpu-operator charm to
     await k8s_model.deploy(
-        entity_url="nvidia-gpu-operator",
-        channel="1.29/stable",
-        trust=True
+        entity_url="nvidia-gpu-operator", channel="1.29/stable", trust=True
     )
 
     # Find all nvidia based workers
