@@ -19,7 +19,7 @@ set -x
 function juju::deploy
 {
     tee overlay.yaml <<EOF > /dev/null
-SERIES: $SERIES
+series: $SERIES
 applications:
   containerd:
     options:
