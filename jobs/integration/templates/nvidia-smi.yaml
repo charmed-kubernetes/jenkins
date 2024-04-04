@@ -1,14 +1,32 @@
-apiVersion: v1
-kind: Pod
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: nvidia-smi
 spec:
-  restartPolicy: OnFailure
-  containers:
-  - image: nvidia/cuda:12.1.1-runtime-ubuntu22.04
-    name: nvidia-smi
-    args:
-      - nvidia-smi
-    resources:
-      limits:
-        nvidia.com/gpu: 1
+  template:
+    metadata:
+      name: nvidia-smi
+    spec:
+      restartPolicy: Never
+      containers:
+      - image: nvidia/cuda:12.1.0-base-ubuntu22.04
+        name: nvidia-smi
+        args:
+          - nvidia-smi
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+          requests:
+            nvidia.com/gpu: 1
+        volumeMounts:
+        - mountPath: /usr/bin/
+          name: binaries
+        - mountPath: /usr/lib/x86_64-linux-gnu
+          name: libraries
+      volumes:
+      - name: binaries
+        hostPath:
+          path: /usr/bin/
+      - name: libraries
+        hostPath:
+          path: /usr/lib/x86_64-linux-gnu
