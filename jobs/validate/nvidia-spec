@@ -14,18 +14,23 @@ set -x
 ###############################################################################
 # FUNCTION OVERRIDES
 ###############################################################################
+
+# Reference: https://ubuntu.com/kubernetes/docs/gpu-workers
 function juju::deploy
 {
     tee overlay.yaml <<EOF > /dev/null
 series: $SERIES
 applications:
+  containerd:
+    options:
+      gpu_driver: none
   kubernetes-control-plane:
     options:
+      allow-privileged: "true"
       channel: $SNAP_VERSION
   kubernetes-worker:
-    constraints: 'instance-type=p2.xlarge root-disk=16G'
-    options:
-      channel: $SNAP_VERSION
+    constraints: "instance-type=p3.2xlarge root-disk=128G"
+    channel: $SNAP_VERSION
 EOF
 
     juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \

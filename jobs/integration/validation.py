@@ -744,11 +744,17 @@ async def test_worker_master_removal(model, tools):
 
 
 @pytest.mark.on_model("validate-nvidia")
-@pytest.mark.skip("Feature removed in ops rewrite")
-async def test_gpu_support(model, tools):
+async def test_gpu_support(model, k8s_model, tools):
     """Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
 
+    # Deploy nvidia-gpu-operator charm
+    # Trust is True because the charm needs privileges to install drivers
+    # and packages on the workers
+    await k8s_model.deploy(
+        entity_url="nvidia-gpu-operator", channel="latest/stable", trust=True
+    )
+    await k8s_model.wait_for_idle(status="active")
     # Find all nvidia based workers
     nvidia_workers = [
         unit
@@ -761,7 +767,6 @@ async def test_gpu_support(model, tools):
         control_plane,
         "ds",
         ["nvidia-device-plugin-daemonset"],
-        "-n kube-system",
     )
     if not nvidia_workers:
         # nvidia should not be running
@@ -803,7 +808,7 @@ async def test_gpu_support(model, tools):
     await kubectl_apply(local_path, model)
 
     async def cuda_test():
-        nvidia_logs = await kubectl(model, "logs", "nvidia-smi", check=False)
+        nvidia_logs = await kubectl(model, "logs", "job.batch/nvidia-smi", check=False)
         log.info(nvidia_logs.stdout)
         return nvidia_logs.stdout.count("NVIDIA-SMI") > 0
 
@@ -813,6 +818,9 @@ async def test_gpu_support(model, tools):
         timeout_msg="Cuda test did not pass",
         timeout_insec=20 * 60,
     )
+
+    # Cleanup the deployed nvidia-gpu-operator charm
+    k8s_model.remove_application("nvidia-gpu-operator")
 
 
 async def test_extra_args(model, tools):
