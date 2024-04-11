@@ -20,7 +20,7 @@ httplib2==0.19.0
     # via
     #   launchpadlib
     #   lazr-restfulclient
-idna==2.10
+idna==3.7
     # via requests
 jeepney==0.6.0
     # via
