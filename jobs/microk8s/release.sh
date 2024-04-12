@@ -108,8 +108,10 @@ function test::execute
     is_pass="True"
     if (( ret == 124 )); then
         is_pass="Timeout"
+        exit ${ret}
     elif (( ret > 0 )); then
         is_pass="False"
+        exit ${ret}
     fi
 }
 
