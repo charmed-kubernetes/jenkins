@@ -59,7 +59,7 @@ function juju::deploy::overlay
     local constraints
     constraints="cores=8 mem=16G root-disk=80G arch=${ARCH}"
     if [ "${ARCH}" == "amd64" ] && [ "${CHANNEL}" == "stable" ]; then
-        constraints=" instance-type=g3s.xlarge root-disk=80G arch=${ARCH}"
+        constraints="instance-type=g3s.xlarge root-disk=80G arch=${ARCH}"
     fi
 
     cat << EOF > $JUJU_DEPLOY_BUNDLE
