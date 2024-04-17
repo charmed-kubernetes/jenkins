@@ -22,7 +22,7 @@ set -x
 #          --force --bootstrap-series "$SERIES" \
 #          --bootstrap-constraints arch="amd64" \
 #          --model-default test-mode=true \
-#          --model-default resource-tags=owner=k8sci \
+#          --model-default resource-tags=owner=$JUJU_OWNER \
 #          --model-default image-stream=daily \
 #          --model-default vpc-id=vpc-0e4f11d0d4e9ba35f \
 #          --model-default automatically-retry-hooks=true \

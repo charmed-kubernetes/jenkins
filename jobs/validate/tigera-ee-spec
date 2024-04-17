@@ -25,7 +25,7 @@ function juju::bootstrap
       --force --bootstrap-series "$SERIES" \
       --bootstrap-constraints arch="amd64" \
       --model-default test-mode=true \
-      --model-default resource-tags=owner=k8sci \
+      --model-default resource-tags=owner=$JUJU_OWNER \
       --model-default image-stream=daily \
       --model-default automatically-retry-hooks=true \
       --model-default logging-config="<root>=DEBUG" \
