@@ -89,7 +89,7 @@ function juju::bootstrap
     fi
 
     juju::destroy
-    TAGS="owner=k8sci job=${JOB_NAME_CUSTOM}"
+    TAGS="owner=${JUJU_OWNER} job=${JOB_NAME_CUSTOM}"
     if [ "${JOB_STAGE}" ]; then TAGS+=" stage=${STAGE}"; fi
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          ${add_model[@]} \

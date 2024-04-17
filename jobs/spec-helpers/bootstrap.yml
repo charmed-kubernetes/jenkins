@@ -8,7 +8,7 @@ juju:
     replace-controller: yes
     model-default:
       - test-mode=true
-      - resource-tags=owner=k8sci
+      - resource-tags=owner=$JUJU_OWNER
   deploy:
     reuse: no
     bundle: $JUJU_DEPLOY_BUNDLE

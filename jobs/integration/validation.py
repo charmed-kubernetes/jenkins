@@ -1928,30 +1928,18 @@ async def test_dns_provider(model, k8s_model, tools):
         log.info("---")
         log.info("☆ Verifying DNS with CoreDNS charm")
 
-        # Apply a few workarounds for deploying a multiarch coredns image
-        # See LP#1998607
         worker_arch = os.environ.get("ARCH", "amd64")
-        series = os.environ["SERIES"]
-        with NamedTemporaryFile("w", dir=Path.cwd()) as f:
-            f.write(
-                '{"ImageName": "rocks.canonical.com:443/cdk/coredns/coredns:1.10.0"}'
-            )
-            f.flush()
-            await tools.run(
-                "juju",
-                "deploy",
-                "-m",
-                f"{tools.controller_name}:{tools.k8s_model_name}",
-                f"--constraints=arch={worker_arch}",
-                f"--channel={tools.charm_channel}",
-                tools.juju_base(series),
-                "coredns",
-                "--trust",
-                "--resource",
-                f"coredns-image={f.name}",
-            )
-            await k8s_model.block_until(lambda: "coredns" in k8s_model.applications)
-            coredns = k8s_model.applications["coredns"]
+        base_cli_args = tools.juju_base(os.environ["SERIES"])
+        base_args = dict([base_cli_args.strip("--").split("=")])
+        await k8s_model.deploy(
+            "coredns",
+            channel=tools.charm_channel,
+            constraints={"arch": worker_arch},
+            trust=True,
+            **base_args,
+        )
+        await k8s_model.block_until(lambda: "coredns" in k8s_model.applications)
+        coredns = k8s_model.applications["coredns"]
 
         log.info("Waiting for CoreDNS charm to be ready")
         await k8s_model.wait_for_idle(raise_on_error=False, status="active")

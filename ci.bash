@@ -9,6 +9,7 @@ function compile::env
     : "${JUJU_DEPLOY_CHANNEL:?Must have a channel defined}"
     : "${JUJU_MODEL:?Must have a model defined}"
     : "${JUJU_UPDATE_STATUS_INTERVAL:=150s}"
+    : "${JUJU_OWNER:=k8sci}"
     : "${JOB_STAGE:-}"
     : "${JOB_REPORTING:-yes}"
     : "${SERIES:?Must have a release series defined}"
