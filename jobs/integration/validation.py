@@ -1843,6 +1843,9 @@ async def test_encryption_at_rest(model, tools):
 @pytest.mark.clouds(["ec2", "vsphere", "gce"])
 async def test_dns_provider(model, k8s_model, tools):
     control_plane_app = model.applications["kubernetes-control-plane"]
+    machine = control_plane_app.units[0].machine
+    machine_arch = machine.safe_data["hardware-characteristics"]["arch"]
+    machine_base = machine.safe_data["base"]
 
     async def deploy_validation_pod():
         async def _check_ready():
@@ -1936,15 +1939,12 @@ async def test_dns_provider(model, k8s_model, tools):
         log.info("---")
         log.info("☆ Verifying DNS with CoreDNS charm")
 
-        worker_arch = os.environ.get("ARCH", "amd64")
-        base_cli_args = tools.juju_base(os.environ["SERIES"])
-        base_args = dict([base_cli_args.strip("--").split("=")])
         await k8s_model.deploy(
             "coredns",
             channel=tools.charm_channel,
-            constraints={"arch": worker_arch},
+            base=machine_base,
+            constraints={"arch": machine_arch},
             trust=True,
-            **base_args,
         )
         await k8s_model.block_until(lambda: "coredns" in k8s_model.applications)
         coredns = k8s_model.applications["coredns"]
