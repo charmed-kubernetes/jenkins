@@ -59,7 +59,7 @@ function juju::deploy::overlay
     local constraints
     constraints="cores=8 mem=16G root-disk=80G arch=${ARCH}"
     if [ "${ARCH}" == "amd64" ] && [ "${CHANNEL}" == "stable" ]; then
-        constraints+=" instance-type=g3s.xlarge"
+        constraints="instance-type=g3s.xlarge root-disk=80G arch=${ARCH}"
     fi
 
     cat << EOF > $JUJU_DEPLOY_BUNDLE
@@ -108,8 +108,10 @@ function test::execute
     is_pass="True"
     if (( ret == 124 )); then
         is_pass="Timeout"
+        exit ${ret}
     elif (( ret > 0 )); then
         is_pass="False"
+        exit ${ret}
     fi
 }
 
