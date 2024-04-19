@@ -1940,7 +1940,7 @@ async def test_dns_provider(model, k8s_model, tools):
         log.info("☆ Verifying DNS with CoreDNS charm")
 
         await k8s_model.deploy(
-            "coredns",
+            f"ch:{machine_arch}/coredns",
             channel=tools.charm_channel,
             base=machine_base,
             constraints={"arch": machine_arch},
