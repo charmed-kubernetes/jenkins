@@ -1942,7 +1942,6 @@ async def test_dns_provider(model, k8s_model, tools):
         await k8s_model.deploy(
             f"ch:{machine_arch}/coredns",
             channel=tools.charm_channel,
-            base=machine_base,
             constraints={"arch": machine_arch},
             trust=True,
         )
