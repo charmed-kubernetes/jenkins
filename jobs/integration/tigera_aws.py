@@ -12,9 +12,9 @@ from subprocess import check_output, CalledProcessError
 
 VPC_CIDR = "172.30.0.0/16"
 SUBNET_CIDRS = ["172.30.0.0/24", "172.30.1.0/24"]
-REGION = "us-east-2"
-AVAILABILITY_ZONE = "us-east-2a"
-OWNER = "k8sci"
+REGION = os.environ.get("JUJU_CLOUD", "us-east-2")
+AVAILABILITY_ZONE = f"{REGION}a"
+OWNER = os.environ.get("JUJU_OWNER", "k8sci")
 
 BIRD_CONFIG_BASE = """
 log syslog all;

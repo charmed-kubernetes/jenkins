@@ -172,7 +172,7 @@ def _gen_metadata(numdays=None):
             db[job_name] = {}
 
         result = obj["test_result"]
-        deploy = obj["deploy_result"]
+        deploy = obj.get("deploy_result") or "Unknown"
         stage = obj.get("deploy_stage") or "Unknown"
 
         if deploy != "True" and stage == "bootstrap":
