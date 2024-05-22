@@ -403,7 +403,7 @@ async def k8s_model(k8s_cloud, tools):
                 "--destroy-storage",
                 "--force",
                 "--no-wait",
-                "-y",
+                "--no-prompt",
                 tools.k8s_connection,
             )
 
@@ -541,7 +541,7 @@ async def deploy(request, tools):
     await _model_obj.connect(f"{tools.controller_name}:{nonce_model}")
     yield (tools.controller_name, _model_obj)
     await _model_obj.disconnect()
-    await tools.run("juju", "destroy-model", "-y", nonce_model)
+    await tools.run("juju", "destroy-model", "--no-prompt", nonce_model)
 
 
 @pytest.fixture(scope="module")
@@ -687,12 +687,12 @@ def pytest_metadata(metadata):
     custom_name = os.environ.get("JOB_NAME_CUSTOM", None)
     if custom_name:
         metadata["JOB_NAME"] = custom_name
-        metadata[
-            "ARTIFACTS"
-        ] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/artifacts.tar.gz'>Download Artifacts</a>"
-        metadata[
-            "ANALYTICS"
-        ] = f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/columbo.html'>View Report</a>"
+        metadata["ARTIFACTS"] = (
+            f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/artifacts.tar.gz'>Download Artifacts</a>"
+        )
+        metadata["ANALYTICS"] = (
+            f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/columbo.html'>View Report</a>"
+        )
 
 
 @pytest.fixture(scope="module")

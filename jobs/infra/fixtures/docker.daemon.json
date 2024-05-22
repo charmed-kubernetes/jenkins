@@ -1,3 +1,4 @@
 {
-    "mtu": 1458
+    "mtu": 1458,
+    "iptables": false
 }

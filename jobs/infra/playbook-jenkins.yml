@@ -25,6 +25,12 @@
       tags:
         - adhoc
         - jenkins
+    - name: clear homedir
+      shell: |
+        snap set system homedirs!
+      tags:
+        - adhoc
+        - jenkins
     - sysctl:
         name: net.ipv4.ip_forward
         value: 1
@@ -128,7 +134,7 @@
         - jenkins
         - adhoc
     - name: upgrade juju
-      command: "snap refresh juju --channel 2.9/stable --classic"
+      command: "snap refresh juju --channel 3.1/stable"
       ignore_errors: yes
       tags:
         - jenkins
@@ -153,7 +159,7 @@
         - "charmcraft --classic --edge"
         - "go --classic --stable"
         - "google-cloud-cli --classic --channel latest/stable"
-        - "juju --classic --channel=2.9/stable"
+        - "juju --channel=3.1/stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"

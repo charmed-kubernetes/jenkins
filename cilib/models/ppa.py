@@ -1,4 +1,5 @@
 """Launchpad PPA model"""
+
 from cilib import lp, version
 
 

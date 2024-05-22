@@ -198,6 +198,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-autoscaler.git'
 - kubernetes-e2e:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-kubernetes-e2e'
     docs: 'https://charmhub.io/kubernetes-e2e/docs'
     downstream: charmed-kubernetes/charm-kubernetes-e2e.git
@@ -495,7 +496,7 @@
     channel-range:
       max: '1.27'
 - metallb-speaker:
-    bugs: https://bugs.launchpad.net/operator-metallb'
+    bugs: 'https://bugs.launchpad.net/operator-metallb'
     docs: 'https://charmhub.io/metallb-speaker/docs'
     downstream: charmed-kubernetes/metallb-operator
     store: 'https://charmhub.io/metallb-speaker'
@@ -656,6 +657,32 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-volcano'
     subdir: charms/volcano-scheduler
+    channel-range:
+      min: '1.27'
+- nvidia-gpu-operator:
+    builder: 'launchpad'
+    bugs: 'https://bugs.launchpad.net/nvidia-operators'
+    downstream: charmed-kubernetes/nvidia
+    store: 'https://charmhub.io/nvidia-gpu-operator'
+    summary: Simplifies the management of NVIDIA GPU resources in a Kubernetes cluster.
+    tags:
+      - nvidia
+      - nvidia-gpu
+    upstream: 'https://github.com/charmed-kubernetes/nvidia'
+    subdir: charms/gpu-operator
+    channel-range:
+      min: '1.29'
+- nvidia-network-operator:
+    builder: 'launchpad'
+    bugs: 'https://bugs.launchpad.net/nvidia-operators'
+    downstream: charmed-kubernetes/nvidia
+    store: 'https://charmhub.io/nvidia-network-operator'
+    summary: Simplifies the management of NVIDIA networking resources in a Kubernetes cluster
+    tags:
+      - nvidia
+      - nvidia-network
+    upstream: 'https://github.com/charmed-kubernetes/nvidia'
+    subdir: charms/network-operator
     channel-range:
       min: '1.27'
 

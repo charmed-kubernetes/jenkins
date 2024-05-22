@@ -2,7 +2,7 @@
 # K8s layers
 - interface:aws-iam:
     downstream: 'charmed-kubernetes/interface-aws-iam.git'
-    upstream: 'https://github.com/juju-solutions/interface-aws-iam.git'
+    upstream: 'https://github.com/charmed-kubernetes/interface-aws-iam'
     tags:
         - k8s
         - interface

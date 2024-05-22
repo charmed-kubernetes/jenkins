@@ -60,6 +60,13 @@ function juju::pip::2.9
     fi
 }
 
+function juju::destroy
+{
+    if ! timeout 2m juju destroy-controller --no-prompt --destroy-all-models --destroy-storage "$JUJU_CONTROLLER"; then
+        timeout 10m juju kill-controller -t 2m0s --no-prompt "$JUJU_CONTROLLER" || true
+    fi
+}
+
 function juju::bootstrap
 {
     extra_args='--model-default image-stream=daily'
@@ -81,13 +88,16 @@ function juju::bootstrap
         add_model=("--add-model ${JUJU_MODEL}")
     fi
 
+    juju::destroy
+    TAGS="owner=${JUJU_OWNER} job=${JOB_NAME_CUSTOM}"
+    if [ "${JOB_STAGE}" ]; then TAGS+=" stage=${STAGE}"; fi
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          ${add_model[@]} \
          --debug \
          --force --bootstrap-series "$SERIES" \
          --bootstrap-constraints arch="${ARCH:-amd64}" \
          --model-default test-mode=true \
-         --model-default resource-tags=owner=k8sci \
+         --model-default resource-tags="${TAGS}" \
          --model-default automatically-retry-hooks=true \
          --model-default logging-config="<root>=DEBUG" \
          $extra_args
@@ -137,7 +147,7 @@ function juju::deploy
 function juju::wait
 {
     echo "Waiting for deployment to settle..."
-    timeout 45m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
+    timeout 60m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
 
     juju::deploy-report $? "model-wait"
 }

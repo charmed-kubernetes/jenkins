@@ -31,13 +31,13 @@ milestone accordingly.
 #### Setup the next milestone
 
 Any milestone bugs that will not make it into this release should be moved to either
-the next major (e.g. 1.26) or the next bugfix (e.g. 1.25+ck2) milestone.
+the next major (e.g. 1.28) or the next bugfix (e.g. 1.27+ck2) milestone.
 
 If the next milestone does not exist, create it with the `create-milestone.py` script
 found in the [cdk-scripts repo][cdk-scripts]. This will create a new milestone for
 every launchpad project in the Charmed Kubernetes group. For example:
 ```
-./create-milestone.py 1.25+ck2
+./create-milestone.py 1.27+ck2
 ```
 
 ### Performing the cherry-pick
@@ -67,9 +67,9 @@ Create a PR against the [docs repo][docs-repo] with release notes including:
 
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/sync-stable-tag-bugfix-rev/
 
-This will tag all `release_x.xx` branches with the k8s version and bugfix revision.
-For example, the first bugfix release for 1.25 will tag the `release_1.25` branch
-with **1.25+ck1**.
+This will tag `release_x.xx` branches for all charms that match the `FILTER_BY_TAG`
+parameter with the k8s version and bugfix revision. For example, the first bugfix
+release for 1.27 will tag the `release_1.27` branch with **1.27+ck1**.
 
 #### Charm tag options
 
@@ -95,14 +95,10 @@ the stable branches of what was built in the previous build-charms job:
 
 https://github.com/Cynerva/cdk-release-checkers
 
-### Build cdk-addons
+### Ensure cdk-addons
 
-Run build jobs for n, n-1, and n-2 versions of cdk-addons. For example, if
-doing a 1.25+ckX release, run:
-
-* build-release-cdk-addons-amd64-1.25
-* build-release-cdk-addons-amd64-1.24
-* build-release-cdk-addons-amd64-1.23
+Ensure cdk-addons `1.xx/candidate` channel matches the latest k8s release. If
+it does not, run the `build-release-cdk-addons-amd64-1.xx` job.
 
 ### Required Testing
 
@@ -180,54 +176,47 @@ because they support multiple arches with potentionally different resources.
 
 If this is a bugfix for the current latest/stable release:
 
-`ex) 1.25 is the current release, and this is a bugfix for 1.25`
-* set the `from_channel` = `1.25/candidate`
+`ex) 1.27 is the current release, and this is a bugfix for 1.27`
+* set the `from_channel` = `candidate`
 * set the `to_channel` = `stable`
-* the charms will be released to both `latest/stable` and `1.25/stable`
+* the charms will be released to both `latest/stable` and `1.27/stable`
 
 If this is a bugfix for a previous major release:
 
-`ex) 1.25 is the current release, but this is a bugfix for 1.24`
-* set the `from_channel` = `1.24/candidate`
-* set the `to_channel` = `1.24/stable`
-* the charms will be released to only `1.24/stable`
+`ex) 1.27 is the current release, but this is a bugfix for 1.26`
+* set the `from_channel` = `1.26/candidate`
+* set the `to_channel` = `1.26/stable`
+* the charms will be released to only `1.26/stable`
 
 ### Build stable bundles
 
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/build-charms/
 
-Bundles should not be promoted because a candidate bundle points to candidate charms.
-Instead, rebuild the bundles targetting the correct `to_channel`. It's possible this
-does not result in a new bundle if the `bundle.yaml` hasn't changed since the
-previous release.
+Bundles reference specific charm channels at build time and should therefore
+not be promoted. Instead, rebuild the bundles targetting the correct `to_channel`.
+It's possible this does not result in a new bundle if the `bundle.yaml` hasn't
+changed since the previous release.
 
 **Note about `to_channel`**
 
 If this is a bugfix for the current latest/stable release:
 
-`ex) 1.25 is the latest release, and this is a bugfix for 1.25`
+`ex) 1.27 is the latest release, and this is a bugfix for 1.27`
 * set the `to_channel` = `stable`
-* the bundles will be released to both `latest/stable` and `1.25/stable`
+* the bundles will be released to both `latest/stable` and `1.27/stable`
 
 If this is a bugfix for a previous major release:
 
-`ex) 1.25 is the latest release, but this is a bugfix for 1.24`
-* set the `to_channel` = `1.24/stable`
-* the bundles will be released to only `1.24/stable`
+`ex) 1.27 is the latest release, but this is a bugfix for 1.26`
+* set the `to_channel` = `1.26/stable`
+* the bundles will be released to only `1.26/stable`
 
-Run the job for the `charmed-kubernetes` bundle with the following:
+Run the job against needed bundles with the following:
   * layer_branch = release_x.xx
   * charm_branch = release_x.xx
   * bundle_branch = release_x.xx
   * to_channel = `see-note-above`
-  * filter_by_tag = charmed-kubernetes
-
-Run the job again for the `kubernetes-core` bundle:
-  * layer_branch = release_x.xx
-  * charm_branch = release_x.xx
-  * bundle_branch = release_x.xx
-  * to_channel = `see-note-above`
-  * filter_by_tag = kubernetes-core
+  * filter_by_tag = charmed-kubernetes,kubernetes-core
 
 ### Promote cdk-addons
 

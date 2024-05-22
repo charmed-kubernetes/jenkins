@@ -8,19 +8,19 @@ JOBS_PATH = Path("jobs")
 # Current supported STABLE K8s MAJOR.MINOR release. This determines what the
 # latest/stable channel is set to. It should be updated whenever a new CK
 # major.minor is GA.
-K8S_STABLE_VERSION = "1.28"
+K8S_STABLE_VERSION = "1.29"
 
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
 # Typically, this is K8S_STABLE_VERSION +1. However, when prepping the next
-# stable release, this will be +2. For example, 1.28 is currently stable and
-# we're working on the 1.29 GA. Set this value to '1.30' sometime between the
-# final RC and GA so we don't get pre-release builds (e.g. 1.29.1-alpha.0) in
-# our 1.29 tracks.
-K8S_NEXT_VERSION = "1.30"
+# stable release, this will be +2. For example, 1.29 is currently stable and
+# we're working on the 1.30 GA. Set this value to '1.31' sometime between the
+# final RC and GA so we don't get pre-release builds (e.g. 1.30.1-alpha.0) in
+# our 1.30 tracks.
+K8S_NEXT_VERSION = "1.31"
 
 # Lowest K8S SEMVER to process, this is usually K8S_STABLE_VERSION - 4
-K8S_STARTING_SEMVER = "1.24.0"
+K8S_STARTING_SEMVER = "1.26.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -34,6 +34,7 @@ K8S_SERIES_MAP = {
     "bionic": "18.04",
     "focal": "20.04",
     "jammy": "22.04",
+    "noble": "24.04",
 }
 
 # Kubernetes CNI version
@@ -44,6 +45,8 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
+    "1.31": "go/latest/edge",
+    "1.30": "go/1.22/stable",
     "1.29": "go/1.21/stable",
     "1.28": "go/1.20/stable",
     "1.27": "go/1.20/stable",
@@ -78,6 +81,7 @@ SNAP_K8S_TRACK_LIST = [
     ("1.27", ["1.27/stable", "1.27/candidate", "1.27/beta", "1.27/edge"]),
     ("1.28", ["1.28/stable", "1.28/candidate", "1.28/beta", "1.28/edge"]),
     ("1.29", ["1.29/stable", "1.29/candidate", "1.29/beta", "1.29/edge"]),
+    ("1.30", ["1.30/stable", "1.30/candidate", "1.30/beta", "1.30/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
@@ -97,6 +101,8 @@ DEB_K8S_TRACK_MAP = {
     "1.27": "ppa:k8s-maintainers/1.27",
     "1.28": "ppa:k8s-maintainers/1.28",
     "1.29": "ppa:k8s-maintainers/1.29",
+    "1.30": "ppa:k8s-maintainers/1.30",
+    "1.31": "ppa:k8s-maintainers/1.31",
 }
 
 

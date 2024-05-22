@@ -530,6 +530,8 @@ async def test_network_policies(model, tools):
             and "index.html" in cmd_bad.stderr
         ):
             return True
+        log.warning("No restrictions: bboxdbad: (%s)", cmd_bad.results)
+        log.warning("No restrictions: bboxgood: (%s)", cmd_good.results)
         return False
 
     await retry_async_with_timeout(
@@ -567,6 +569,8 @@ async def test_network_policies(model, tools):
             and "timed out" in cmd_bad.stderr
         ):
             return True
+        log.warning("Restricted: bboxdbad: (%s)", cmd_bad.results)
+        log.warning("Restricted: bboxgood: (%s)", cmd_good.results)
         return False
 
     await retry_async_with_timeout(
@@ -740,11 +744,17 @@ async def test_worker_master_removal(model, tools):
 
 
 @pytest.mark.on_model("validate-nvidia")
-@pytest.mark.skip("Feature removed in ops rewrite")
-async def test_gpu_support(model, tools):
+async def test_gpu_support(model, k8s_model, tools):
     """Test gpu support. Should be disabled if hardware
     is not detected and functional if hardware is fine"""
 
+    # Deploy nvidia-gpu-operator charm
+    # Trust is True because the charm needs privileges to install drivers
+    # and packages on the workers
+    await k8s_model.deploy(
+        entity_url="nvidia-gpu-operator", channel="latest/stable", trust=True
+    )
+    await k8s_model.wait_for_idle(status="active")
     # Find all nvidia based workers
     nvidia_workers = [
         unit
@@ -757,7 +767,6 @@ async def test_gpu_support(model, tools):
         control_plane,
         "ds",
         ["nvidia-device-plugin-daemonset"],
-        "-n kube-system",
     )
     if not nvidia_workers:
         # nvidia should not be running
@@ -799,7 +808,7 @@ async def test_gpu_support(model, tools):
     await kubectl_apply(local_path, model)
 
     async def cuda_test():
-        nvidia_logs = await kubectl(model, "logs", "nvidia-smi", check=False)
+        nvidia_logs = await kubectl(model, "logs", "job.batch/nvidia-smi", check=False)
         log.info(nvidia_logs.stdout)
         return nvidia_logs.stdout.count("NVIDIA-SMI") > 0
 
@@ -809,6 +818,9 @@ async def test_gpu_support(model, tools):
         timeout_msg="Cuda test did not pass",
         timeout_insec=20 * 60,
     )
+
+    # Cleanup the deployed nvidia-gpu-operator charm
+    k8s_model.remove_application("nvidia-gpu-operator")
 
 
 async def test_extra_args(model, tools):
@@ -968,42 +980,50 @@ async def test_kubelet_extra_config(model, tools):
             "authentication": {"webhook": {"enabled": False}},
         }
     )
-    await set_config_and_wait(
-        worker_app, {"kubelet-extra-config": new_extra_config}, tools
-    )
+    try:
+        await set_config_and_wait(
+            worker_app, {"kubelet-extra-config": new_extra_config}, tools
+        )
 
-    # wait for and validate new maxPods value
-    click.echo("waiting for nodes to show new pod capacity")
-    control_plane_unit = model.applications["kubernetes-control-plane"].units[0]
-    while True:
-        cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node -l 'juju-application=kubernetes-worker'"
-        action = await juju_run(control_plane_unit, cmd, check=False)
-        if action.status == "completed" and action.code == 0:
-            nodes = yaml.safe_load(action.stdout)
-            all_nodes_updated = all(
-                [node["status"]["capacity"]["pods"] == "111" for node in nodes["items"]]
-            )
-            if all_nodes_updated:
-                break
+        # wait for and validate new maxPods value
+        log.info("waiting for nodes to show new pod capacity")
+        control_plane_unit = model.applications["kubernetes-control-plane"].units[0]
+        for tries in range(19, -1, -1):  # 20 tries, 5s apart
+            cmd = "/snap/bin/kubectl --kubeconfig /root/.kube/config -o yaml get node -l 'juju-application=kubernetes-worker'"
+            action = await juju_run(control_plane_unit, cmd, check=False)
+            if action.status == "completed" and action.code == 0:
+                nodes = yaml.safe_load(action.stdout)
+                s_nodes = ",".join(node["metadata"]["name"] for node in nodes["items"])
+                w_nodes = ",".join(
+                    node["metadata"]["name"]
+                    for node in nodes["items"]
+                    if node["status"]["capacity"]["pods"] != "111"
+                )
+                if not w_nodes:
+                    log.info("All nodes(%s) adjusted capacity", s_nodes)
+                    break
+                log.warning("Waiting for nodes(%s) to adjust capacity", w_nodes)
+            else:
+                log.error("Failed to collect node status: %s", action.results)
+            await asyncio.sleep(5)
+            assert tries, "Timeout waiting for nodes to adjust capacity"
 
-        await asyncio.sleep(5)
-
-    # validate config.yaml on each worker
-    click.echo("validating generated config.yaml files")
-    for worker_unit in worker_app.units:
-        cmd = "cat /root/cdk/kubelet/config.yaml"
-        action = await juju_run(worker_unit, cmd, check=False)
-        if action.status == "completed" and action.code == 0:
-            config = yaml.safe_load(action.stdout)
-            assert config["evictionHard"]["memory.available"] == "200Mi"
-            assert config["authentication"]["webhook"]["enabled"] is False
-            assert "anonymous" in config["authentication"]
-            assert "x509" in config["authentication"]
-
-    # clean up
-    await set_config_and_wait(
-        worker_app, {"kubelet-extra-config": old_extra_config}, tools
-    )
+        # validate config.yaml on each worker
+        log.info("validating generated config.yaml files")
+        for worker_unit in worker_app.units:
+            cmd = "cat /root/cdk/kubelet/config.yaml"
+            action = await juju_run(worker_unit, cmd, check=False)
+            if action.status == "completed" and action.code == 0:
+                config = yaml.safe_load(action.stdout)
+                assert config["evictionHard"]["memory.available"] == "200Mi"
+                assert config["authentication"]["webhook"]["enabled"] is False
+                assert "anonymous" in config["authentication"]
+                assert "x509" in config["authentication"]
+    finally:
+        # clean up
+        await set_config_and_wait(
+            worker_app, {"kubelet-extra-config": old_extra_config}, tools
+        )
 
 
 @pytest.mark.skip("https://bugs.launchpad.net/bugs/2045696")
@@ -1823,6 +1843,9 @@ async def test_encryption_at_rest(model, tools):
 @pytest.mark.clouds(["ec2", "vsphere", "gce"])
 async def test_dns_provider(model, k8s_model, tools):
     control_plane_app = model.applications["kubernetes-control-plane"]
+    machine = control_plane_app.units[0].machine
+    machine_arch = machine.safe_data["hardware-characteristics"]["arch"]
+    machine_base = machine.safe_data["base"]
 
     async def deploy_validation_pod():
         async def _check_ready():
@@ -1916,30 +1939,14 @@ async def test_dns_provider(model, k8s_model, tools):
         log.info("---")
         log.info("☆ Verifying DNS with CoreDNS charm")
 
-        # Apply a few workarounds for deploying a multiarch coredns image
-        # See LP#1998607
-        worker_arch = os.environ.get("ARCH", "amd64")
-        series = os.environ["SERIES"]
-        with NamedTemporaryFile("w", dir=Path.cwd()) as f:
-            f.write(
-                '{"ImageName": "rocks.canonical.com:443/cdk/coredns/coredns:1.10.0"}'
-            )
-            f.flush()
-            await tools.run(
-                "juju",
-                "deploy",
-                "-m",
-                f"{tools.controller_name}:{tools.k8s_model_name}",
-                f"--constraints=arch={worker_arch}",
-                f"--channel={tools.charm_channel}",
-                tools.juju_base(series),
-                "coredns",
-                "--trust",
-                "--resource",
-                f"coredns-image={f.name}",
-            )
-            await k8s_model.block_until(lambda: "coredns" in k8s_model.applications)
-            coredns = k8s_model.applications["coredns"]
+        await k8s_model.deploy(
+            f"ch:{machine_arch}/coredns",
+            channel=tools.charm_channel,
+            constraints={"arch": machine_arch},
+            trust=True,
+        )
+        await k8s_model.block_until(lambda: "coredns" in k8s_model.applications)
+        coredns = k8s_model.applications["coredns"]
 
         log.info("Waiting for CoreDNS charm to be ready")
         await k8s_model.wait_for_idle(raise_on_error=False, status="active")

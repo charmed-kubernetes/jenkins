@@ -11,8 +11,8 @@ function purge::controllers
 {
     if [ "$1" != "jaas" ]; then
         echo "$1"
-        if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$1"; then
-            timeout 5m juju kill-controller -t 2m0s -y "$1" 2>&1
+        if ! timeout 2m juju destroy-controller --no-prompt --destroy-all-models --destroy-storage "$1"; then
+            timeout 5m juju kill-controller -t 2m0s --no-prompt "$1" 2>&1
         fi
     fi
 }
@@ -23,19 +23,18 @@ juju controllers --format json | jq -r '.controllers | keys[]' | parallel --ungr
 # for i in $(juju controllers --format json | jq -r '.controllers | keys[]'); do
 #     if [ "$i" != "jaas" ]; then
 #         echo "$i"
-#         if ! timeout 2m juju destroy-controller -y --destroy-all-models --destroy-storage "$i"; then
-#             timeout 2m juju kill-controller -y "$i" 2>&1
+#         if ! timeout 2m juju destroy-controller --no-prompt --destroy-all-models --destroy-storage "$i"; then
+#             timeout 2m juju kill-controller --no-prompt "$i" 2>&1
 #         fi
 #     fi
 # done
 
 sudo apt clean
-sudo rm -rf /var/log/*
 docker image prune -a --filter until=24h --force
 docker container prune --filter until=24h --force
 rm -rf /var/lib/jenkins/venvs
 rm -rf /var/lib/jenkins/.tox
-tmpreaper 5h /tmp
+sudo tmpreaper 5h /tmp
 
 purge::aws
 purge::gce
