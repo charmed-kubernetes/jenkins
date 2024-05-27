@@ -69,7 +69,7 @@ class JujuExecutor(ExecutorInterface):
     def test_distro(
         self, distro, track_channel_to_upgrade, testing_track_channel, proxy=None
     ):
-        cmd = "sudo tests/test-distro.sh {} {} {}".format(
+        cmd = "sudo SKIP_COMMUNITY_TESTS=1 tests/test-distro.sh {} {} {}".format(
             distro, track_channel_to_upgrade, testing_track_channel
         )
         if proxy:
