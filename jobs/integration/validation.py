@@ -1678,7 +1678,6 @@ data:
 
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.on_model("validate-vault")
-@pytest.mark.skip("Feature removed in ops rewrite")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
     control_plane_app = model.applications["kubernetes-control-plane"]
@@ -1693,6 +1692,88 @@ async def test_encryption_at_rest(model, tools):
             )
         )
 
+    async def init_vault():
+        # init vault
+        click.echo("Initializing Vault")
+        await ensure_vault_up()
+        init_info = await vault(leader, "operator init -key-shares=5 -key-threshold=3")
+        click.echo(init_info)
+        # unseal vault leader (could also unseal follower, but it will be resealed later anyway)
+        for key in init_info["unseal_keys_hex"][:3]:
+            await vault(leader, "operator unseal " + key)
+
+        # authorize charm
+        click.echo("Authorizing charm")
+        root_token = init_info["root_token"]
+        token_info = await vault(
+            leader, "token create -ttl=10m", VAULT_TOKEN=root_token
+        )
+        click.echo(token_info)
+        charm_token = token_info["auth"]["client_token"]
+        await juju_run_action(leader, "authorize-charm", token=charm_token)
+        # At this point, Vault is up but in non-HA mode. If we weren't using the
+        # auto-generate-root-ca-cert config, though, it would still be blocking
+        # etcd until we ran either the generate-root-ca or upload-signed-csr
+        # actions. NB: If we did need to manually generate or provide a root CA,
+        # the current charm release (cs:vault-44) would also still be reporting the
+        # less than helpful "'etcd' incomplete" status, while the newer charm would
+        # more helpfully report that it was blocked on the root CA.
+
+        # Since we are using the auto-generate-root-ca-cert config, though, we can
+        # just go straight to waiting for etcd to settle.
+        click.echo("Waiting for etcd to settle")
+        await model.wait_for_idle(apps=["etcd"], timeout=30 * 60)
+        for _ in range(3):
+            actual_status = {unit.workload_status_message for unit in etcd_app.units}
+            expected_status = {"Healthy with 3 known peers"}
+            if actual_status == expected_status:
+                break
+            # The etcd service tends takes a bit to get the cluster up and
+            # report the proper status, during which time it's not really
+            # feasible for the charm code to block, so it sometimes takes an
+            # update-status hook or two before the unit status is accurate. We
+            # can hurry that along a bit, however.
+            click.echo("Poking etcd to refresh status")
+            await asyncio.gather(
+                *(
+                    juju_run(unit, "hooks/update-status", check=False)
+                    for unit in etcd_app.units
+                )
+            )
+
+        # Even once etcd is ready, Vault will remain in non-HA mode until the Vault
+        # service is restarted, which will re-seal the vault.
+        click.echo("Restarting Vault for HA")
+        await asyncio.gather(
+            *(
+                juju_run(unit, "systemctl restart vault", check=False)
+                for unit in vault_app.units
+            )
+        )
+        await ensure_vault_up()
+
+        click.echo("Unsealing Vault again in HA mode")
+        for key in init_info["unseal_keys_hex"][:3]:
+            await asyncio.gather(
+                *(vault(unit, "operator unseal " + key) for unit in vault_app.units)
+            )
+        # force unit status to update
+        await asyncio.gather(
+            *(
+                juju_run(unit, "hooks/update-status", check=False)
+                for unit in vault_app.units
+            )
+        )
+        assert await vault_ready_status()
+
+    async def vault_ready_status():
+        statuses = sorted(unit.workload_status_message for unit in vault_app.units)
+        click.echo(statuses)
+        return statuses == [
+            "Unit is ready (active: false, mlock: disabled)",
+            "Unit is ready (active: true, mlock: disabled)",
+        ]
+
     click.echo("Waiting for Vault to settle")
     await model.wait_for_idle(apps=["vault"], timeout=30 * 60)
 
@@ -1701,85 +1782,12 @@ async def test_encryption_at_rest(model, tools):
     else:
         leader = vault_app.units[1]
 
+    if not await vault_ready_status():
+        await init_vault()
+
     # NB: At this point, depending on the version of the Vault charm, its status
     # might either be (a less than informative) "'etcd' incomplete" (cs:vault-44)
     # or "Vault needs to be initialized" (cs:~openstack-charmers-next/vault).
-
-    # init vault
-    click.echo("Initializing Vault")
-    await ensure_vault_up()
-    init_info = await vault(leader, "operator init -key-shares=5 -key-threshold=3")
-    click.echo(init_info)
-    # unseal vault leader (could also unseal follower, but it will be resealed later anyway)
-    for key in init_info["unseal_keys_hex"][:3]:
-        await vault(leader, "operator unseal " + key)
-
-    # authorize charm
-    click.echo("Authorizing charm")
-    root_token = init_info["root_token"]
-    token_info = await vault(leader, "token create -ttl=10m", VAULT_TOKEN=root_token)
-    click.echo(token_info)
-    charm_token = token_info["auth"]["client_token"]
-    await juju_run_action(leader, "authorize-charm", token=charm_token)
-    # At this point, Vault is up but in non-HA mode. If we weren't using the
-    # auto-generate-root-ca-cert config, though, it would still be blocking
-    # etcd until we ran either the generate-root-ca or upload-signed-csr
-    # actions. NB: If we did need to manually generate or provide a root CA,
-    # the current charm release (cs:vault-44) would also still be reporting the
-    # less than helpful "'etcd' incomplete" status, while the newer charm would
-    # more helpfully report that it was blocked on the root CA.
-
-    # Since we are using the auto-generate-root-ca-cert config, though, we can
-    # just go straight to waiting for etcd to settle.
-    click.echo("Waiting for etcd to settle")
-    await model.wait_for_idle(apps=["etcd"], timeout=30 * 60)
-    for attempt in range(3):
-        actual_status = {unit.workload_status_message for unit in etcd_app.units}
-        expected_status = {"Healthy with 3 known peers"}
-        if actual_status == expected_status:
-            break
-        # The etcd service tends takes a bit to get the cluster up and
-        # report the proper status, during which time it's not really
-        # feasible for the charm code to block, so it sometimes takes an
-        # update-status hook or two before the unit status is accurate. We
-        # can hurry that along a bit, however.
-        click.echo("Poking etcd to refresh status")
-        await asyncio.gather(
-            *(
-                juju_run(unit, "hooks/update-status", check=False)
-                for unit in etcd_app.units
-            )
-        )
-
-    # Even once etcd is ready, Vault will remain in non-HA mode until the Vault
-    # service is restarted, which will re-seal the vault.
-    click.echo("Restarting Vault for HA")
-    await asyncio.gather(
-        *(
-            juju_run(unit, "systemctl restart vault", check=False)
-            for unit in vault_app.units
-        )
-    )
-    await ensure_vault_up()
-
-    click.echo("Unsealing Vault again in HA mode")
-    for key in init_info["unseal_keys_hex"][:3]:
-        await asyncio.gather(
-            *(vault(unit, "operator unseal " + key) for unit in vault_app.units)
-        )
-    # force unit status to update
-    await asyncio.gather(
-        *(
-            juju_run(unit, "hooks/update-status", check=False)
-            for unit in vault_app.units
-        )
-    )
-    statuses = sorted(unit.workload_status_message for unit in vault_app.units)
-    click.echo(statuses)
-    assert statuses == [
-        "Unit is ready (active: false, mlock: disabled)",
-        "Unit is ready (active: true, mlock: disabled)",
-    ]
 
     # Until https://github.com/juju-solutions/layer-vault-kv/pull/11 lands, the
     # k8s-control-plane units can go into error due to trying to talk to Vault during
@@ -1798,7 +1806,7 @@ async def test_encryption_at_rest(model, tools):
             all_=False, retry=True, tags={"entities": [{"tag": unit.tag}]}
         )
 
-    for attempt in range(3):
+    for _ in range(3):
         errored_units = [
             unit for unit in control_plane_app.units if unit.workload_status == "error"
         ]
@@ -1823,21 +1831,29 @@ async def test_encryption_at_rest(model, tools):
         "create secret generic test-secret --from-literal=username='secret-value'",
     )
 
-    click.echo("Verifying secret")
-    result = await kubectl(model, "get secret test-secret -o json")
-    secret_value = json.loads(result.stdout)["data"]["username"]
-    b64_value = b64encode(b"secret-value").decode("utf8")
-    assert secret_value == b64_value
+    try:
+        click.echo("Verifying secret")
+        result = await kubectl(model, "get secret test-secret -o json")
+        secret_value = json.loads(result.stdout)["data"]["username"]
+        b64_value = b64encode(b"secret-value").decode("utf8")
+        assert secret_value == b64_value
 
-    click.echo("Verifying secret encryption")
-    etcd = model.applications["etcd"].units[0]
-    result = await juju_run(
-        etcd,
-        "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
-        "--endpoints http://127.0.0.1:4001 "
-        "get /registry/secrets/default/test-secret | strings",
-    )
-    assert b64_value not in result.output
+        click.echo("Verifying secret encryption")
+        etcd = model.applications["etcd"].units[0]
+        result = await juju_run(
+            etcd,
+            "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
+            "--endpoints https://127.0.0.1:2379 "
+            "--cacert=/var/snap/etcd/common/ca.crt "
+            "--cert=/var/snap/etcd/common/server.crt "
+            "--key=/var/snap/etcd/common/server.key "
+            "get /registry/secrets/default/test-secret | strings",
+        )
+        assert "enc:aescbc:v1" in result.output, "Should see encoded secret"
+        assert "secret-value" not in result.output, "Should not see plain-text secret"
+    finally:
+        click.echo("Deleting secret")
+        await kubectl(model, "delete secret test-secret")
 
 
 @pytest.mark.clouds(["ec2", "vsphere", "gce"])
