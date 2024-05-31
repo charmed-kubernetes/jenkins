@@ -140,6 +140,10 @@ async def upgrade_snaps(model, channel, tools):
         log.info(f"Upgrading {app_name} snaps from {current_channel} to {channel}")
         await app.set_config({"channel": channel})
 
+        # If the channel change doesn't alter the track, the charms don't block
+        new_track, old_track = channel.split("/")[0], current_channel.split("/")[0]
+        blocking &= new_track != old_track
+
         if blocking:
             for unit in app.units:
                 # wait for blocked status
