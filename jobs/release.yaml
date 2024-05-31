@@ -22,6 +22,11 @@
       - snap-stable
       - lxc-runner-params
       - juju-lts
+      - string:
+          name: charm_channel
+          description: "The charm channel to validate"
+          default: "candidate"
+          trim: true
     axes:
       - axis:
           type: slave
@@ -39,7 +44,7 @@
           JOB_SPEC_DIR: "jobs/release"
       - run-lxc:
           COMMAND: |
-            bash jobs/release/bugfix-spec $snap_version $series
+            bash jobs/release/bugfix-spec $snap_version $series $charm_channel
 
 - job:
     name: 'validate-charm-bugfix-upgrade'
@@ -58,6 +63,11 @@
     parameters:
       - lxc-runner-params
       - juju-lts
+      - string:
+          name: charm_channel
+          description: "The charm channel to validate"
+          default: "1.29/candidate"
+          trim: true
     axes:
       - axis:
           type: slave
@@ -86,7 +96,7 @@
           JOB_SPEC_DIR: "jobs/release"
       - run-lxc:
           COMMAND: |
-           bash jobs/release/bugfix-upgrade-spec $snap_version $series
+           bash jobs/release/bugfix-upgrade-spec $snap_version $series $charm_channel
 
 - job:
     name: 'validate-charm-release-upgrade'

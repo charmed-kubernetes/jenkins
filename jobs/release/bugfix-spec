@@ -18,12 +18,14 @@ set -x
 SNAP_VERSION=${1:-1.25/stable}
 SERIES=${2:-focal}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=candidate
+JUJU_DEPLOY_CHANNEL=${3:-candidate}
 JUJU_CLOUD=aws/us-east-2
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-bugfix
+JUJU_VERSION=$(juju --version | cut -f-2 -d.)
 ARCH=amd64
-JOB_NAME_CUSTOM="validate-charm-bugfix-$SERIES-$SNAP_VERSION"
+CUSTOM_CLOUD=$(echo "$JUJU_CLOUD" | cut -f1 -d/)
+JOB_NAME_CUSTOM="validate-charm-bugfix-$CUSTOM_CLOUD-$SERIES-$JUJU_DEPLOY_CHANNEL-$SNAP_VERSION-$JUJU_VERSION"
 JOB_ID=$(identifier)
 
 

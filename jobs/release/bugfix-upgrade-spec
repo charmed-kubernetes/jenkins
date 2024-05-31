@@ -44,24 +44,27 @@ function test::execute
 
 SNAP_VERSION=${1:-1.27/stable}
 SERIES=${2:-focal}
+CANDIDATE_CHANNEL=${3}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=stable
 JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-bugfix-upgrade
+JUJU_VERSION=$(juju --version | cut -f-2 -d.)
 ARCH=amd64
-JOB_NAME_CUSTOM="validate-charm-bugfix-upgrade-$SERIES-$SNAP_VERSION"
+CUSTOM_CLOUD=$(echo "$JUJU_CLOUD" | cut -f1 -d/)
 JOB_ID=$(identifier)
 
-# this job deploys with
-#   charm-channel at {K8S_STABLE_VERSION}/stable
-#   snap-channel  at {K8S_STABLE_VERSION - 1}/stable or {K8S_STABLE_VERSION - 2}/stable
-# then upgrades charm-channel to K8S_STABLE_VERSION/candidate
-# and  upgrades snap-channel  to K8S_STABLE_VERSION/candidate
-K8S_STABLE_VERSION=$(python -c 'from cilib.enums import K8S_STABLE_VERSION; print(K8S_STABLE_VERSION)')
 
-export CHARM_CHANNEL_UPGRADE_TO=${K8S_STABLE_VERSION}/candidate
-export SNAP_CHANNEL_UPGRADE_TO=${K8S_STABLE_VERSION}/candidate
+# this job deploys with
+#   charm-channel=stable
+#   snap-channel  at {K8S_STABLE_VERSION - 1}/stable or {K8S_STABLE_VERSION - 2}/stable
+# then upgrades charm-channel to candidate
+# and  upgrades snap-channel  to candidate
+export CHARM_CHANNEL_UPGRADE_TO=${CANDIDATE_CHANNEL}
+export SNAP_CHANNEL_UPGRADE_TO=${CANDIDATE_CHANNEL}
+
+JOB_NAME_CUSTOM="validate-charm-bugfix-upgrade-$CUSTOM_CLOUD-$SERIES-$CANDIDATE_CHANNEL-$SNAP_VERSION-$JUJU_VERSION"
 
 
 ###############################################################################
