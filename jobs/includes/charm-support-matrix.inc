@@ -284,7 +284,6 @@
     store: 'https://charmhub.io/tigera-secure-ee'
     summary: Tigera Secure Enterprise Edition
     tags:
-      - k8s
       - tigera-secure-ee
       - cni
     upstream: 'https://github.com/charmed-kubernetes/layer-tigera-secure-ee.git'
