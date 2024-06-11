@@ -1860,7 +1860,6 @@ async def test_dns_provider(model, k8s_model, tools):
     control_plane_app = model.applications["kubernetes-control-plane"]
     machine = control_plane_app.units[0].machine
     machine_arch = machine.safe_data["hardware-characteristics"]["arch"]
-    machine_base = machine.safe_data["base"]
 
     async def deploy_validation_pod():
         async def _check_ready():
