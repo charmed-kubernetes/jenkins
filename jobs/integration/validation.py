@@ -1460,14 +1460,13 @@ async def any_keystone(model, apps_by_charm, tools):
 
 
 @pytest.mark.usefixtures("ceph_apps")
-@pytest.mark.skip("Feature removed in ops rewrite")
 class TestCeph:
     async def test_plugins_installed(self, model):
         log.info("waiting for csi to settle")
         unit = model.applications["kubernetes-control-plane"].units[0]
         await retry_async_with_timeout(
             verify_ready,
-            (unit, "po", ["csi-rbdplugin", "csi-cephfsplugin"]),
+            (unit, "po", ["csi-rbdplugin", "csi-cephfsplugin"], "-n kube-system"),
             timeout_msg="CSI pods not ready!",
         )
 
@@ -1476,7 +1475,7 @@ class TestCeph:
         [
             "ceph-xfs",
             "ceph-ext4",
-            pytest.param("cephfs", marks=pytest.mark.xfail_if_open_bugs(2028387)),
+            "cephfs",
         ],
     )
     async def test_storage_class(self, model, log_open, storage_class):
@@ -2527,25 +2526,18 @@ async def ceph_apps(model, tools):
     series_idx = SERIES_ORDER.index(series)
     ceph_config = {}
     ceph_charms_channel = "quincy/stable"
-    if series == "bionic":
-        log.info("adding cloud:train to k8s-control-plane")
-        await model.applications["kubernetes-control-plane"].set_config(
-            {"install_sources": "[cloud:{}-train]".format(series)}
-        )
-        await tools.juju_wait()
-        ceph_config["source"] = "cloud:{}-train".format(series)
-    elif series_idx > SERIES_ORDER.index("jammy"):
+    if series_idx > SERIES_ORDER.index("jammy"):
         pytest.fail("ceph_charm_channel is undefined past jammy")
 
-    all_apps = ["ceph-mon", "ceph-osd", "ceph-fs"]
-    if any(a in model.applications for a in all_apps):
+    all_apps = ["ceph-mon", "ceph-osd", "ceph-fs", "ceph-csi"]
+    if all(a in model.applications for a in all_apps):
         if not tools.use_existing_ceph_apps:
             pytest.skip("Skipped since ceph apps are already installed")
 
         # allow currently deployed ceph apps to run tests
-        mon, osd, fs = (model.applications[a] for a in all_apps)
+        mon, osd, fs, csi = (model.applications[a] for a in all_apps)
         await model.wait_for_idle(status="active", timeout=20 * 60)
-        yield dict(mon=mon, osd=osd, fs=fs)
+        yield dict(mon=mon, osd=osd, fs=fs, csi=csi)
         return
 
     log.info("deploying ceph mon")
@@ -2580,14 +2572,26 @@ async def ceph_apps(model, tools):
         channel=ceph_charms_channel,
     )
 
+    log.info("deploying ceph-csi")
+    ceph_csi = await model.deploy(
+        "ceph-csi",
+        series=series,
+        config={
+            "cephfs-enable": True,
+            "namespace": "kube-system",
+        },
+        channel=tools.charm_channel,
+    )
+
     log.info("adding relations")
-    await model.add_relation("ceph-mon", "ceph-osd")
-    await model.add_relation("ceph-mon", "ceph-fs")
-    await model.add_relation("ceph-mon:client", "kubernetes-control-plane")
+    await model.integrate("ceph-mon", "ceph-osd")
+    await model.integrate("ceph-mon", "ceph-fs")
+    await model.integrate("ceph-mon:client", "ceph-csi:ceph-client")
+    await model.integrate("kubernetes-control-plane", "ceph-csi:kubernetes")
     log.info("waiting for charm deployment...")
     try:
         await model.wait_for_idle(status="active", timeout=20 * 60)
-        yield dict(mon=ceph_mon, osd=ceph_osd, fs=ceph_fs)
+        yield dict(mon=ceph_mon, osd=ceph_osd, fs=ceph_fs, csi=ceph_csi)
     finally:
         # cleanup
         log.info("removing ceph applications")
@@ -2597,6 +2601,7 @@ async def ceph_apps(model, tools):
             "ceph-fs": dict(force=True),
             "ceph-mon": dict(),
             "ceph-osd": dict(destroy_storage=True),
+            "ceph-csi": dict(),
         }
 
         async def burn_units(app, status="error"):
