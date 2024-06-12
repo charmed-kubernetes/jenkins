@@ -36,7 +36,12 @@ def pytest_addoption(parser):
         "--controller", action="store", required=True, help="Juju controller to use"
     )
     parser.addoption("--model", action="store", required=True, help="Juju model to use")
-    parser.addoption("--series", action="store", default="bionic", help="Base series")
+    parser.addoption(
+        "--series",
+        action="store",
+        default=os.environ.get("SERIES", "focal"),
+        help="Base series",
+    )
     parser.addoption(
         "--cloud", action="store", default="aws/us-east-2", help="Juju cloud to use"
     )
@@ -152,6 +157,7 @@ class Tools:
         self.k8s_connection = f"{self.controller_name}:{self.k8s_model_name_full}"
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
         self.charm_channel = request.config.getoption("--charm-channel")
+        self.snap_channel = request.config.getoption("--snap-channel")
         self.vault_unseal_command = request.config.getoption("--vault-unseal-command")
         self.juju_ssh_proxy = request.config.getoption("--juju-ssh-proxy")
         self.use_existing_ceph_apps = request.config.getoption(
@@ -448,7 +454,9 @@ def _charm_name(app):
     """Resolve charm_name from juju.applications.Application"""
     cs, charm_url = "cs:", app.data["charm-url"].rpartition("-")[0]
     if charm_url.startswith(cs):
-        return charm_url[len(cs) :]  # noqa: E203
+        charm_url = charm_url[len(cs) :]  # noqa: E203
+    elif any(charm_url.startswith(prefix) for prefix in ("ch:", "local:")):
+        charm_url = charm_url.split("/")[-1]  # noqa: E203
     return charm_url
 
 

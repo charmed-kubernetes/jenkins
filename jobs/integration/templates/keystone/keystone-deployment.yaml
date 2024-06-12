@@ -1,0 +1,47 @@
+# https://github.com/kubernetes/cloud-provider-openstack/blob/release-1.30/examples/webhook/keystone-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-keystone-auth
+  namespace: kube-system
+  labels:
+    app: k8s-keystone-auth
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: k8s-keystone-auth
+  template:
+    metadata:
+      labels:
+        app: k8s-keystone-auth
+    spec:
+      serviceAccountName: k8s-keystone
+      containers:
+        - name: k8s-keystone-auth
+          image: rocks.canonical.com:443/cdk/provider-os/k8s-keystone-auth:v1.28.1
+          args:
+            - ./bin/k8s-keystone-auth
+          env:
+            - name: OS_AUTH_URL
+              value: {{ keystone_server_url }}
+            - name: TLS_CERT_FILE
+              value: /etc/pki/tls.crt
+            - name: TLS_PRIVATE_KEY_FILE
+              value: /etc/pki/tls.key
+            - name: KEYSTONE_POLICY_CONFIGMAP_NAME
+              value: k8s-auth-policy
+            {% if keystone_server_ca %}
+            - name: KEYSTONE_CA_FILE
+              value: /etc/pki/ca.crt
+            {% endif %}
+          volumeMounts:
+            - mountPath: /etc/pki
+              name: certs
+              readOnly: true
+          ports:
+            - containerPort: 8443
+      volumes:
+      - name: certs
+        secret:
+          secretName: keystone-auth-certs

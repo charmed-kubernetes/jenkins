@@ -1,0 +1,13 @@
+# https://github.com/kubernetes/cloud-provider-openstack/blob/release-1.30/examples/webhook/keystone-service.yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name: k8s-keystone-auth-service
+  namespace: kube-system
+spec:
+  selector:
+    app: k8s-keystone-auth
+  ports:
+    - protocol: TCP
+      port: 8443
+      targetPort: 8443
