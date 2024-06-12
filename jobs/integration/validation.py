@@ -2535,7 +2535,7 @@ async def ceph_apps(model, tools):
 
         # allow currently deployed ceph apps to run tests
         mon, osd, fs, csi = (model.applications[a] for a in all_apps)
-        await model.wait_for_idle(status="active", timeout=20 * 60)
+        await model.wait_for_idle(status="active", timeout=40 * 60)
         yield dict(mon=mon, osd=osd, fs=fs, csi=csi)
         return
 
