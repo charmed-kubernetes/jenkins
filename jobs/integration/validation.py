@@ -2589,7 +2589,7 @@ async def ceph_apps(model, tools):
     await model.integrate("kubernetes-control-plane", "ceph-csi:kubernetes")
     log.info("waiting for charm deployment...")
     try:
-        await model.wait_for_idle(status="active", timeout=20 * 60)
+        await model.wait_for_idle(status="active", timeout=40 * 60)
         yield dict(mon=ceph_mon, osd=ceph_osd, fs=ceph_fs, csi=ceph_csi)
     finally:
         # cleanup
