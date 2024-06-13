@@ -1,0 +1,19 @@
+# https://github.com/kubernetes/cloud-provider-openstack/blob/release-1.30/examples/webhook/keystone-policy-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-auth-policy
+  namespace: kube-system
+data:
+  policies: |
+    [
+      {
+        "users": {
+          "projects": ["admin"],
+          "user": ["admin"]
+        },
+        "resource_permissions": {
+          "default/pods": ["get", "list", "watch"]
+        }
+      }
+    ]

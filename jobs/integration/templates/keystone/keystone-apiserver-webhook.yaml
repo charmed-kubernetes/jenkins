@@ -1,0 +1,17 @@
+# https://github.com/kubernetes/cloud-provider-openstack/blob/release-1.30/examples/webhook/keystone-apiserver-webhook.yaml
+apiVersion: v1
+kind: Config
+preferences: {}
+clusters:
+  - cluster:
+      insecure-skip-tls-verify: true
+      server: https://{{ keystone_auth_service_ip }}:8443/webhook
+    name: webhook
+users:
+  - name: webhook
+contexts:
+  - context:
+      cluster: webhook
+      user: webhook
+    name: webhook
+current-context: webhook

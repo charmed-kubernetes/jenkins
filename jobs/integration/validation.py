@@ -41,6 +41,9 @@ from .utils import (
     kubectl,
     kubectl_apply,
     kubectl_delete,
+    render,
+    render_and_apply,
+    render_and_delete,
     juju_run,
     juju_run_action,
     machine_reboot,
@@ -52,6 +55,8 @@ from .utils import (
 import urllib.request
 from bs4 import BeautifulSoup as bs
 from bs4.element import ResultSet as bs_ResultSet
+from juju.application import Application
+from juju.unit import Unit
 
 # Quiet the noise
 logging.getLogger("websockets.protocol").setLevel(logging.INFO)
@@ -1335,94 +1340,52 @@ async def test_audit_webhook(model, tools):
 
 @pytest.fixture()
 async def any_keystone(model, apps_by_charm, tools):
-    def _find_relation(*specs):
-        for rel in model.relations:
-            if rel.matches(*specs):
-                yield rel
-
     keystone_apps = apps_by_charm("keystone")
-    masters = model.applications["kubernetes-control-plane"]
 
-    keystone_creds = "kubernetes-control-plane:keystone-credentials"
+    if not (client := model.applications.get("keystone-client")):
+        client = await model.deploy(
+            "ubuntu",
+            channel="stable",
+            application_name="keystone-client",
+            series=tools.series,
+            num_units=1,
+            config={},
+        )
+
     if len(keystone_apps) > 1:
         pytest.fail(f"More than one keystone app available {','.join(keystone_apps)}")
     elif len(keystone_apps) == 1:
-        # One keystone found, ensure related to kubernetes-control-plane
+        # One keystone found
         keystone, *_ = keystone_apps.values()
-        credentials_rel = list(_find_relation(keystone_creds))
-        if not credentials_rel:
-            await keystone.add_relation("identity-credentials", keystone_creds)
-            await tools.juju_wait()
 
         keystone_main = random.choice(keystone.units)
         action = await juju_run(keystone_main, "leader-get admin_passwd")
         admin_password = action.stdout.strip()
 
-        # Work around the following bugs which lead to the CA used by Keystone not being passed along
-        # and honored from the keystone-credentials relation itself by getting the CA directly from Vault and
-        # passing it in via explicit config.
-        #   * https://bugs.launchpad.net/charm-keystone/+bug/1954835
-        #   * https://bugs.launchpad.net/charm-kubernetes-control-plane/+bug/1954838
-        keystone_ssl_ca = (await masters.get_config())["keystone-ssl-ca"]["value"]
-        if not keystone_ssl_ca:
-            vault_root_ca = None
-            vault_apps = apps_by_charm("vault")
-            for name, vault_app in vault_apps.items():
-                vault_tls = f"{name}:certificates"
-                rels = set(
-                    app.name
-                    for rel in _find_relation(vault_tls)
-                    for app in rel.applications
-                )
-                if all(
-                    name in rels
-                    for name in [
-                        "kubernetes-control-plane",
-                        "kubernetes-worker",
-                        keystone.name,
-                    ]
-                ):
-                    vault_unit = random.choice(vault_app.units)
-                    action = await juju_run_action(vault_unit, "get-root-ca")
-                    vault_root_ca = action.results.get("output")
-                    if vault_root_ca:
-                        vault_root_ca = base64.b64encode(
-                            vault_root_ca.encode("ascii")
-                        ).decode("ascii")
-                        break
-
-            if vault_root_ca:
-                await masters.set_config({"keystone-ssl-ca": vault_root_ca})
-
-        yield SimpleNamespace(app=keystone, admin_password=admin_password)
-
-        if not credentials_rel:
-            await keystone.destroy_relation("identity-credentials", keystone_creds)
-            await tools.juju_wait()
-
-        await masters.set_config({"keystone-ssl-ca": keystone_ssl_ca})
+        yield SimpleNamespace(
+            app=keystone, admin_password=admin_password, client=client.units[0]
+        )
     else:
         # No keystone available, add/setup one
-        series = os.environ["SERIES"]
         admin_password = "testpw"
         channel, mysql_channel = "yoga/stable", "8.0/stable"
         keystone = await model.deploy(
             "keystone",
             channel=channel,
-            series=series,
+            series=tools.series,
             config={"admin-password": admin_password},
         )
         db_router = await model.deploy(
             "mysql-router",
             application_name="keystone-mysql-router",
-            series=series,
+            series=tools.series,
             channel=mysql_channel,
         )
         db = await model.deploy(
             "mysql-innodb-cluster",
             channel=mysql_channel,
             constraints="cores=2 mem=8G root-disk=64G",
-            series=series,
+            series=tools.series,
             num_units=3,
             config={
                 "enable-binlogs": True,
@@ -1432,12 +1395,14 @@ async def any_keystone(model, apps_by_charm, tools):
             },
         )
 
-        await model.add_relation(keystone_creds, "keystone:identity-credentials")
-        await model.add_relation("keystone:shared-db", f"{db_router.name}:shared-db")
-        await model.add_relation(f"{db.name}:db-router", f"{db_router.name}:db-router")
+        await model.integrate("keystone:shared-db", f"{db_router.name}:shared-db")
+        await model.integrate(f"{db.name}:db-router", f"{db_router.name}:db-router")
         await tools.juju_wait()
 
-        yield SimpleNamespace(app=keystone, admin_password=admin_password)
+        yield SimpleNamespace(
+            app=keystone, admin_password=admin_password, client=client.units[0]
+        )
+        await tools.juju_wait()
 
         # cleanup
         await model.applications[keystone.name].destroy()
@@ -1457,6 +1422,131 @@ async def any_keystone(model, apps_by_charm, tools):
             )
         except asyncio.TimeoutError:
             pytest.fail(f"Timed out waiting for {db_name} to go away")
+
+
+async def load_keystone_ca(model, apps_by_charm, keystone) -> str:
+    def _find_relation(*specs):
+        for rel in model.relations:
+            if rel.matches(*specs):
+                yield rel
+
+    vault_root_ca = None
+    vault_apps = apps_by_charm("vault")
+    for name, vault_app in vault_apps.items():
+        vault_tls = f"{name}:certificates"
+        rels = set(
+            app.name for rel in _find_relation(vault_tls) for app in rel.applications
+        )
+        if keystone.name in rels:
+            vault_unit = random.choice(vault_app.units)
+            action = await juju_run_action(vault_unit, "get-root-ca")
+            vault_root_ca: str = action.results.get("output")
+            if vault_root_ca:
+                return base64.b64encode(vault_root_ca.encode()).decode()
+    return ""
+
+
+def cert_encode(cert: str) -> str:
+    return base64.b64encode(cert.encode()).decode()
+
+
+async def leader_read(unit: Unit, path: str):
+    action = await juju_run(unit, f"cat {path}")
+    return action.stdout
+
+
+@pytest.fixture()
+async def keystone_deployment(
+    model, apps_by_charm, any_keystone, tools, tmp_path: Path
+):
+    keystone: Application = any_keystone.app
+    control_plane: Application = model.applications["kubernetes-control-plane"]
+    kubeapi_loadbalancer: Application = model.applications["kubeapi-load-balancer"]
+
+    control_plane_unit = control_plane.units[0]
+    server_crt = await leader_read(control_plane_unit, "/root/cdk/server.crt")
+    server_key = await leader_read(control_plane_unit, "/root/cdk/server.key")
+
+    # assemble key variables to populate the keystone deployment templates
+    context = dict(
+        # keystone endpoint data
+        keystone_server_url=f"http://{keystone.units[0].public_address}:5000/v3",
+        keystone_server_ca=await load_keystone_ca(model, apps_by_charm, keystone),
+        # keystone auth endpoint data
+        keystone_auth_crt=cert_encode(server_crt),
+        keystone_auth_key=cert_encode(server_key),
+        keystone_auth_service_ip="",  # filled in after service starts
+        # keystone login data
+        keystone_user="admin",
+        keystone_password=any_keystone.admin_password,
+        keystone_project="admin",
+        keystone_domain="admin_domain",
+        # kube api data
+        kubernetes_api_server=f"https://{kubeapi_loadbalancer.units[0].public_address}",
+    )
+    # render and apply the keystone deployment templates
+    resources = [
+        "templates/keystone/keystone-deployment.yaml",
+        "templates/keystone/keystone-policy-configmap.yaml",
+        "templates/keystone/keystone-rbac.yaml",
+        "templates/keystone/keystone-secret.yaml",
+        "templates/keystone/keystone-service.yaml",
+    ]
+
+    await render_and_apply(*resources, context=context, model=model)
+
+    # find the service ip of the keystone auth service
+    svc_ip = ""
+    while not svc_ip:
+        auth_svc = await find_entities(
+            control_plane_unit, "svc", ["k8s-keystone-auth-service"], "-n kube-system"
+        )
+        svc_ip = auth_svc[0]["spec"]["clusterIP"]
+    context["keystone_auth_service_ip"] = svc_ip
+
+    # setups the keystone-client with a kubeconfig
+    original_config = await control_plane.get_config()
+    kubeconfig = tmp_path / "config"
+    kubeconfig.write_text(
+        render("templates/keystone/keystone-kubeconfig.yaml", context=context)
+    )
+    await scp_to(
+        kubeconfig,
+        any_keystone.client,
+        "/home/ubuntu/config",
+        tools.controller_name,
+        tools.connection,
+        proxy=tools.juju_ssh_proxy,
+    )
+    await juju_run(
+        any_keystone.client,
+        (
+            f'snap install kubectl --channel={original_config["channel"]["value"]} --classic;\n'
+            f'snap install client-keystone-auth --channel={original_config["channel"]["value"]};\n'
+            "mkdir -p /root/.kube;\n"
+            "mv /home/ubuntu/config /root/.kube/config;\n"
+            "chown -R root:root /root/.kube;"
+        ),
+    )
+
+    # configure the kube-apiserver to use the keystone auth webhook
+    webhook_config = render(
+        "templates/keystone/keystone-apiserver-webhook.yaml", context=context
+    )
+    await control_plane.set_config(
+        {
+            "authorization-webhook-config-file": webhook_config,
+            "authorization-mode": "Node,Webhook,RBAC",
+            "authn-webhook-endpoint": f"https://{svc_ip}:8443/webhook",
+        }
+    )
+    await tools.juju_wait()
+    yield any_keystone
+
+    # cleanup
+    await render_and_delete(*resources, context=context, model=model)
+    await control_plane.set_config(original_config)
+    await tools.juju_wait()
 
 
 @pytest.mark.usefixtures("ceph_apps")
@@ -1489,38 +1579,9 @@ class TestCeph:
 
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.clouds(["ec2", "vsphere"])
-@pytest.mark.skip("Feature removed in ops rewrite")
-async def test_keystone(model, tools, any_keystone):
+async def test_keystone(model, keystone_deployment):
     control_plane = model.applications["kubernetes-control-plane"]
-
-    # save off config
-    config = await control_plane.get_config()
-
-    # verify kubectl config file has keystone in it
     control_plane_unit = random.choice(control_plane.units)
-    for i in range(60):
-        action = await juju_run(
-            control_plane_unit, "cat /home/ubuntu/config", check=False
-        )
-        if "client-keystone-auth" in action.stdout:
-            break
-        click.echo("Unable to find keystone information in kubeconfig, retrying...")
-        await asyncio.sleep(10)
-
-    assert "client-keystone-auth" in action.stdout
-
-    # verify kube-keystone.sh exists
-    control_plane_unit = random.choice(control_plane.units)
-    action = await juju_run(control_plane_unit, "cat /home/ubuntu/kube-keystone.sh")
-    assert "OS_AUTH_URL" in action.stdout
-
-    # verify webhook enabled on apiserver
-    await wait_for_process(model, "authentication-token-webhook-config-file")
-    control_plane_unit = random.choice(control_plane.units)
-    action = await juju_run(
-        control_plane_unit, "sudo cat /root/cdk/keystone/webhook.yaml"
-    )
-    assert "webhook" in action.stdout
 
     # verify keystone pod is running
     await retry_async_with_timeout(
@@ -1529,150 +1590,34 @@ async def test_keystone(model, tools, any_keystone):
         timeout_msg="Unable to find keystone auth pod before timeout",
     )
 
-    skip_tests = False
-    action = await juju_run(
-        control_plane_unit, "cat /snap/cdk-addons/current/templates/keystone-rbac.yaml"
-    )
-    if "kind: Role" in action.stdout:
-        # we need to skip tests for the old template that incorrectly had a Role instead
-        # of a ClusterRole
-        skip_tests = True
-
-    if skip_tests:
-        await control_plane.set_config({"enable-keystone-authorization": "true"})
-    else:
-        # verify authorization
-        await control_plane.set_config(
-            {
-                "enable-keystone-authorization": "true",
-                "authorization-mode": "Node,Webhook,RBAC",
-            }
-        )
+    # verify kube-apiserver configuration
+    await wait_for_process(model, "authentication-token-webhook-config-file")
     await wait_for_process(model, "authorization-webhook-config-file")
 
     # verify auth fail - bad user
-    control_plane_unit = random.choice(control_plane.units)
-    await juju_run(
-        control_plane_unit, "/usr/bin/snap install --edge client-keystone-auth"
-    )
-
-    cmd = "source /home/ubuntu/kube-keystone.sh && \
-        OS_PROJECT_NAME=k8s OS_DOMAIN_NAME=k8s OS_USERNAME=fake \
-        OS_PASSWORD=bad /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
-    output = await juju_run(control_plane_unit, cmd, check=False)
+    kubectl = "kubectl --kubeconfig=/root/.kube/config"
+    cmd = f"{kubectl} --context bad-user-context get clusterroles"
+    output = await juju_run(keystone_deployment.client, cmd, check=False)
     assert output.status == "completed"
-    if "invalid user credentials" not in output.stderr.lower():
-        click.echo("Failing, auth did not fail as expected")
-        click.echo(pformat(output))
-        assert False
+    assert "invalid user credentials" in output.stderr.lower(), output.stderr
 
     # verify auth fail - bad password
-    cmd = "source /home/ubuntu/kube-keystone.sh && \
-        OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
-        OS_PASSWORD=badpw /snap/bin/kubectl --kubeconfig /home/ubuntu/config get clusterroles"
-    output = await juju_run(control_plane_unit, cmd, check=False)
+    cmd = f"{kubectl} --context bad-password-context get clusterroles"
+    output = await juju_run(keystone_deployment.client, cmd, check=False)
     assert output.status == "completed"
-    if "invalid user credentials" not in output.stderr.lower():
-        click.echo("Failing, auth did not fail as expected")
-        click.echo(pformat(output))
-        assert False
+    assert "invalid user credentials" in output.stderr.lower(), output.stderr
 
-    if not skip_tests:
-        # set up read only access to pods only
-        await control_plane.set_config(
-            {
-                "keystone-policy": """apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: k8s-auth-policy
-  namespace: kube-system
-  labels:
-    k8s-app: k8s-keystone-auth
-data:
-  policies: |
-    [
-      {
-        "resource": {
-          "verbs": ["get", "list", "watch"],
-          "resources": ["pods"],
-          "version": "*",
-          "namespace": "default"
-        },
-        "match": [
-          {
-            "type": "user",
-            "values": ["admin"]
-          }
-        ]
-      }
-    ]"""
-            }
-        )
-        await tools.juju_wait()
-
-        # verify auth failure on something not a pod
-        cmd = f"source /home/ubuntu/kube-keystone.sh && \
-            OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
-            OS_PASSWORD={any_keystone.admin_password} /snap/bin/kubectl \
-            --kubeconfig /home/ubuntu/config get clusterroles"
-        output = await juju_run(control_plane_unit, cmd, check=False)
-        assert output.status == "completed"
-        assert "error" in output.stderr.lower()
-
-        # the config set writes out a file and updates a configmap, which is then picked up by the
-        # keystone pod and updated. This all takes time and I don't know of a great way to tell
-        # that it is all done. I could compare the configmap to this, but that doesn't mean the
-        # pod has updated. The pod does write a log line about the configmap updating, but
-        # I'd need to watch both in succession and it just seems much easier and just as reliable
-        # to just retry on failure a few times.
-
-        for i in range(18):  # 3 minutes
-            # verify auth success on pods
-            cmd = f"source /home/ubuntu/kube-keystone.sh && \
-                OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
-                OS_PASSWORD={any_keystone.admin_password} /snap/bin/kubectl \
-                --kubeconfig /home/ubuntu/config get po"
-            output = await juju_run(control_plane_unit, cmd, check=False)
-            if (
-                output.status == "completed"
-                and "invalid user credentials" not in output.stderr.lower()
-                and "error" not in output.stderr.lower()
-            ):
-                break
-            click.echo("Unable to verify configmap change, retrying...")
-            await asyncio.sleep(10)
-
-        assert output.status == "completed"
-        assert "invalid user credentials" not in output.stderr.lower()
-        assert "error" not in output.stderr.lower()
-
-        # verify auth failure on pods outside of default namespace
-        cmd = f"source /home/ubuntu/kube-keystone.sh && \
-            OS_PROJECT_NAME=admin OS_DOMAIN_NAME=admin_domain OS_USERNAME=admin \
-            OS_PASSWORD={any_keystone.admin_password} /snap/bin/kubectl \
-            --kubeconfig /home/ubuntu/config get po -n kube-system"
-        output = await juju_run(control_plane_unit, cmd, check=False)
-        assert output.status == "completed"
-        assert "invalid user credentials" not in output.stderr.lower()
-        assert "forbidden" in output.stderr.lower()
-
-    # verify auth works now that it is off
-    original_auth = config["authorization-mode"]["value"]
-    await control_plane.set_config(
-        {
-            "enable-keystone-authorization": "false",
-            "authorization-mode": original_auth,
-        }
-    )
-    await wait_for_not_process(model, "authorization-webhook-config-file")
-    await tools.juju_wait()
-    cmd = "/snap/bin/kubectl --context=juju-context \
-        --kubeconfig /home/ubuntu/config get clusterroles"
-    output = await juju_run(control_plane_unit, cmd, check=False)
+    # verify auth failure on pods outside of default namespace
+    cmd = f"{kubectl} --context good-context get pod -n kube-system"
+    output = await juju_run(keystone_deployment.client, cmd, check=False)
     assert output.status == "completed"
-    assert "invalid user credentials" not in output.stderr.lower()
-    assert "error" not in output.stderr.lower()
-    assert "forbidden" not in output.stderr.lower()
+    assert 'cannot list resource "pods"' in output.stderr.lower(), output.stderr
+
+    # verify auth success on pods
+    cmd = f"{kubectl} --context good-context get pod"
+    output = await juju_run(keystone_deployment.client, cmd, check=False)
+    assert output.status == "completed"
+    assert output.code == 0, output.stderr
 
 
 @pytest.mark.skip_arch(["aarch64"])
