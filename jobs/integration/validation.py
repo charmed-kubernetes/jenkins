@@ -2521,7 +2521,7 @@ async def ceph_apps(model, tools):
         "ceph-csi",
         series=series,
         config={
-            "cephfs-enable": True,
+            "cephfs-enable": "true",
             "namespace": "kube-system",
         },
         channel=tools.charm_channel,
