@@ -5,7 +5,6 @@ from typing import Callable, Mapping
 
 import backoff
 import ipaddress
-import jinja2
 import json
 import os
 import requests
@@ -42,6 +41,9 @@ from .utils import (
     kubectl,
     kubectl_apply,
     kubectl_delete,
+    render,
+    render_and_apply,
+    render_and_delete,
     juju_run,
     juju_run_action,
     machine_reboot,
@@ -1340,6 +1342,16 @@ async def test_audit_webhook(model, tools):
 async def any_keystone(model, apps_by_charm, tools):
     keystone_apps = apps_by_charm("keystone")
 
+    if not (client := model.applications.get("keystone-client")):
+        client = await model.deploy(
+            "ubuntu",
+            channel="stable",
+            application_name="keystone-client",
+            series=tools.series,
+            num_units=1,
+            config={},
+        )
+
     if len(keystone_apps) > 1:
         pytest.fail(f"More than one keystone app available {','.join(keystone_apps)}")
     elif len(keystone_apps) == 1:
@@ -1350,7 +1362,9 @@ async def any_keystone(model, apps_by_charm, tools):
         action = await juju_run(keystone_main, "leader-get admin_passwd")
         admin_password = action.stdout.strip()
 
-        yield SimpleNamespace(app=keystone, admin_password=admin_password)
+        yield SimpleNamespace(
+            app=keystone, admin_password=admin_password, client=client.units[0]
+        )
     else:
         # No keystone available, add/setup one
         admin_password = "testpw"
@@ -1385,7 +1399,10 @@ async def any_keystone(model, apps_by_charm, tools):
         await model.integrate(f"{db.name}:db-router", f"{db_router.name}:db-router")
         await tools.juju_wait()
 
-        yield SimpleNamespace(app=keystone, admin_password=admin_password)
+        yield SimpleNamespace(
+            app=keystone, admin_password=admin_password, client=client.units[0]
+        )
+        await tools.juju_wait()
 
         # cleanup
         await model.applications[keystone.name].destroy()
@@ -1439,13 +1456,18 @@ async def leader_read(unit: Unit, path: str):
 
 
 @pytest.fixture()
-async def keystone_deployment(model, apps_by_charm, any_keystone, tools, tmp_path):
+async def keystone_deployment(
+    model, apps_by_charm, any_keystone, tools, tmp_path: Path
+):
     keystone: Application = any_keystone.app
     control_plane: Application = model.applications["kubernetes-control-plane"]
-    control_plane_unit = control_plane.units[0]
     kubeapi_loadbalancer: Application = model.applications["kubeapi-load-balancer"]
+
+    control_plane_unit = control_plane.units[0]
     server_crt = await leader_read(control_plane_unit, "/root/cdk/server.crt")
     server_key = await leader_read(control_plane_unit, "/root/cdk/server.key")
+
+    # assemble key variables to populate the keystone deployment templates
     context = dict(
         # keystone endpoint data
         keystone_server_url=f"http://{keystone.units[0].public_address}:5000/v3",
@@ -1453,7 +1475,7 @@ async def keystone_deployment(model, apps_by_charm, any_keystone, tools, tmp_pat
         # keystone auth endpoint data
         keystone_auth_crt=cert_encode(server_crt),
         keystone_auth_key=cert_encode(server_key),
-        keystone_auth_service_ip="",
+        keystone_auth_service_ip="",  # filled in after service starts
         # keystone login data
         keystone_user="admin",
         keystone_password=any_keystone.admin_password,
@@ -1462,6 +1484,7 @@ async def keystone_deployment(model, apps_by_charm, any_keystone, tools, tmp_pat
         # kube api data
         kubernetes_api_server=f"https://{kubeapi_loadbalancer.units[0].public_address}",
     )
+    # render and apply the keystone deployment templates
     resources = [
         "templates/keystone/keystone-deployment.yaml",
         "templates/keystone/keystone-policy-configmap.yaml",
@@ -1470,52 +1493,23 @@ async def keystone_deployment(model, apps_by_charm, any_keystone, tools, tmp_pat
         "templates/keystone/keystone-service.yaml",
     ]
 
-    def _render(resource):
-        source = Path(__file__).parent / resource
-        template = jinja2.Template(source.read_text())
-        rendered = tmp_path / source.name
-        rendered.write_text(template.render(context))
-        return rendered
-
-    async def _render_and_apply(resource):
-        await kubectl_apply(_render(resource), model)
-
-    async def _render_and_delete(resource):
-        await kubectl_delete(_render(resource), model)
-
-    await asyncio.gather(*(_render_and_apply(resource) for resource in resources))
+    await render_and_apply(*resources, context=context, model=model)
 
     # find the service ip of the keystone auth service
-    while context["keystone_auth_service_ip"] == "":
+    svc_ip = ""
+    while not svc_ip:
         auth_svc = await find_entities(
             control_plane_unit, "svc", ["k8s-keystone-auth-service"], "-n kube-system"
         )
-        if auth_svc and (svc_ip := auth_svc[0]["spec"]["clusterIP"]):
-            context["keystone_auth_service_ip"] = svc_ip
+        svc_ip = auth_svc[0]["spec"]["clusterIP"]
+    context["keystone_auth_service_ip"] = svc_ip
 
-    keystone_webhook_endpoint = f"https://{svc_ip}:8443/webhook"
-    webhook_config = _render("templates/keystone/keystone-apiserver-webhook.yaml")
-
+    # setups the keystone-client with a kubeconfig
     original_config = await control_plane.get_config()
-    await control_plane.set_config(
-        {
-            "authorization-webhook-config-file": webhook_config.read_text(),
-            "authorization-mode": "Node,Webhook,RBAC",
-            "authn-webhook-endpoint": keystone_webhook_endpoint,
-        }
+    kubeconfig = tmp_path / "config"
+    kubeconfig.write_text(
+        render("templates/keystone/keystone-kubeconfig.yaml", context=context)
     )
-    if not (keystone_client := model.applications.get("keystone-client")):
-        keystone_client = await model.deploy(
-            "ubuntu",
-            application_name="keystone-client",
-            series=tools.series,
-            config={},
-            num_units=1,
-            channel="stable",
-        )
-        await tools.juju_wait()
-    any_keystone.client = keystone_client.units[0]
-    kubeconfig = _render("templates/keystone/keystone-kubeconfig.yaml")
     await scp_to(
         kubeconfig,
         any_keystone.client,
@@ -1527,18 +1521,32 @@ async def keystone_deployment(model, apps_by_charm, any_keystone, tools, tmp_pat
     await juju_run(
         any_keystone.client,
         (
-            f'snap install kubectl --channel={original_config["channel"]["value"]} --classic;'
-            f'snap install client-keystone-auth --channel={original_config["channel"]["value"]};'
-            "mkdir -p /root/.kube;"
-            "mv /home/ubuntu/config /root/.kube/config;"
+            f'snap install kubectl --channel={original_config["channel"]["value"]} --classic;\n'
+            f'snap install client-keystone-auth --channel={original_config["channel"]["value"]};\n'
+            "mkdir -p /root/.kube;\n"
+            "mv /home/ubuntu/config /root/.kube/config;\n"
             "chown -R root:root /root/.kube;"
         ),
     )
 
+    # configure the kube-apiserver to use the keystone auth webhook
+    webhook_config = render(
+        "templates/keystone/keystone-apiserver-webhook.yaml", context=context
+    )
+    await control_plane.set_config(
+        {
+            "authorization-webhook-config-file": webhook_config,
+            "authorization-mode": "Node,Webhook,RBAC",
+            "authn-webhook-endpoint": f"https://{svc_ip}:8443/webhook",
+        }
+    )
+    await tools.juju_wait()
     yield any_keystone
+
+    # cleanup
+    await render_and_delete(*resources, context=context, model=model)
     await control_plane.set_config(original_config)
     await tools.juju_wait()
-    await asyncio.gather(*(_render_and_delete(resource) for resource in resources))
 
 
 @pytest.mark.usefixtures("ceph_apps")

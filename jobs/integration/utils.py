@@ -13,7 +13,9 @@ from pathlib import Path
 from contextlib import contextmanager
 from typing import Mapping, Any, Union, Sequence
 
+import jinja2
 from juju.unit import Unit
+from juju.model import Model
 from juju.controller import Controller
 from juju.machine import Machine
 from juju.errors import JujuError
@@ -817,19 +819,28 @@ async def kubectl(model, *args: str, check=True, **kwargs) -> JujuRunResult:
     return await juju_run(control_plane, c, check)
 
 
-async def _kubectl_doc(document, model, action, **kwds):
+async def _kubectl_doc(document: str, model, action, **kwds):
     if action not in ["apply", "delete"]:
         raise ValueError(f"Invalid action {action}")
 
     control_plane = model.applications["kubernetes-control-plane"].units[0]
-    remote_path = f"/tmp/{document.name}"
-    await scp_to(
-        document,
-        control_plane,
-        remote_path,
-        None,
-        model.info.uuid,
-    )
+    with TemporaryDirectory(dir=Path.home() / ".local" / "share" / "juju") as tmpdir:
+        if isinstance(document, Path):
+            local_path = Path(tmpdir) / document.name
+            remote_path = f"/tmp/{document.name}"
+        elif isinstance(document, str):
+            local_path = Path(tmpdir) / "source"
+            remote_path = f"/tmp/{Path(tmpdir).name}"
+            local_path.write_text(document)
+        else:
+            raise ValueError(f"Invalid document type {type(document)}")
+        await scp_to(
+            local_path,
+            control_plane,
+            remote_path,
+            None,
+            model.info.uuid,
+        )
     cmd = f"{action} -f {remote_path}"
     return await kubectl(model, cmd, **kwds)
 
@@ -904,3 +915,39 @@ async def get_svc_ingress(model, svc_name, timeout=2 * 60):
         raise TimeoutError(
             f"Timed out waiting for {svc_name} to have an ingress address"
         )
+
+
+def render(path: os.PathLike, context: dict) -> str:
+    """Render a jinja2 template with the given context.
+
+    Args:
+        path: The path to the jinja2 template.
+        context: The context to render the template with.
+    """
+    source = Path(__file__).parent / path
+    template = jinja2.Template(source.read_text())
+    return template.render(context)
+
+
+async def render_and_apply(*resources: os.PathLike, context: dict, model: Model):
+    """Render and apply k8s resources to the model.
+
+    Args:
+        resources: Paths to the k8s resources to render and apply.
+        context: The context to render the resources with.
+        model: The model to apply the resources to.
+    """
+    await asyncio.gather(*(kubectl_apply(render(r, context), model) for r in resources))
+
+
+async def render_and_delete(*resources: os.PathLike, context: dict, model: Model):
+    """Render and delete k8s resources from the model.
+
+    Args:
+        resources: Paths to the k8s resources to render and delete.
+        context: The context to render the resources with.
+        model: The model to apply the resources to.
+    """
+    await asyncio.gather(
+        *(kubectl_delete(render(r, context), model) for r in resources)
+    )
