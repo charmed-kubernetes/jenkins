@@ -819,14 +819,14 @@ async def kubectl(model, *args: str, check=True, **kwargs) -> JujuRunResult:
     return await juju_run(control_plane, c, check)
 
 
-async def _kubectl_doc(document: str, model, action, **kwds):
+async def _kubectl_doc(document: Union[str, Path], model, action, **kwds):
     if action not in ["apply", "delete"]:
         raise ValueError(f"Invalid action {action}")
 
     control_plane = model.applications["kubernetes-control-plane"].units[0]
     with TemporaryDirectory(dir=Path.home() / ".local" / "share" / "juju") as tmpdir:
         if isinstance(document, Path):
-            local_path = Path(tmpdir) / document.name
+            local_path = document
             remote_path = f"/tmp/{document.name}"
         elif isinstance(document, str):
             local_path = Path(tmpdir) / "source"
