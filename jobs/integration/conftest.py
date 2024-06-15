@@ -46,7 +46,7 @@ def pytest_addoption(parser):
         "--cloud", action="store", default="aws/us-east-2", help="Juju cloud to use"
     )
     parser.addoption(
-        "--charm-channel", action="store", default="edge", help="Charm channel to use"
+        "--charm-channel", action="store", default="", help="Charm channel to use"
     )
     parser.addoption(
         "--bundle-channel", action="store", default="edge", help="Bundle channel to use"
@@ -156,7 +156,12 @@ class Tools:
         self.connection = f"{self.controller_name}:{self.model_name_full}"
         self.k8s_connection = f"{self.controller_name}:{self.k8s_model_name_full}"
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
-        self.charm_channel = request.config.getoption("--charm-channel")
+        self.charm_channel = (
+            request.config.getoption("--charm-channel")    # use specified channel
+            or os.environ.get("CHARM_CHANNEL_UPGRADE_TO")  # fallback to upgrade env var
+            or os.environ.get("JUJU_DEPLOY_CHANNEL")       # fallback to env var
+            or "edge"  # default to edge
+        )
         self.snap_channel = request.config.getoption("--snap-channel")
         self.vault_unseal_command = request.config.getoption("--vault-unseal-command")
         self.juju_ssh_proxy = request.config.getoption("--juju-ssh-proxy")
