@@ -1466,6 +1466,7 @@ async def keystone_deployment(
     control_plane_unit = control_plane.units[0]
     server_crt = await leader_read(control_plane_unit, "/root/cdk/server.crt")
     server_key = await leader_read(control_plane_unit, "/root/cdk/server.key")
+    await keystone.expose()
 
     # assemble key variables to populate the keystone deployment templates
     context = dict(
@@ -2520,6 +2521,7 @@ async def ceph_apps(model, tools):
     ceph_csi = await model.deploy(
         "ceph-csi",
         series=series,
+        num_units=0,
         config={
             "cephfs-enable": "true",
             "namespace": "kube-system",
