@@ -146,6 +146,15 @@
       - cri
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kata.git'
+- keystone-k8s-auth:
+    bugs: 'https://github.com/canonical/keystone-k8s-auth-operator/issues'
+    docs: 'https://charmhub.io/keystone-k8s-auth/docs'
+    store: 'https://charmhub.io/keystone-k8s-auth'
+    summary: Charm to install the keystone k8s authn and authz deployment
+    tags:
+      - keystone-k8s-auth
+    downstream: canonical/keystone-k8s-auth-operator.git
+    upstream: 'https://github.com/canonical/keystone-k8s-auth-operator.git'
 - kube-ovn:
     builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-kube-ovn'
