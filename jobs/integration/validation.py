@@ -320,10 +320,10 @@ async def test_snap_versions(model, tools):
             for snap in snaps:
                 snap_version = snap_versions[snap]
                 if snap == "cdk-addons" and addons_track:
-                    msg=f"Snap {snap} is version {snap_version} and not {addons_track}.*"
+                    msg = f"Snap {snap} is version {snap_version} and not {addons_track}.*"
                     assert snap_version.startswith(addons_track + "."), msg
                 else:
-                    msg=f"Snap {snap} is version {snap_version} and not {track}.*"
+                    msg = f"Snap {snap} is version {snap_version} and not {track}.*"
                     assert snap_version.startswith(track + "."), msg
 
 
