@@ -340,6 +340,9 @@ wcwidth==0.2.13
 websocket-client==1.7.0
     # via kubernetes
 websockets==8.1 ; python_version == "3.8"
+websockets>=9.0,<10.0 ; python_version == "3.9"
+websockets==10.4,<11.0 ; python_version == "3.10"
+websockets==11.0.3 ; python_version == "3.11"
     # via
     #   -r requirements.in
     #   juju
