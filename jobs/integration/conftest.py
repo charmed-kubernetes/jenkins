@@ -157,9 +157,9 @@ class Tools:
         self.k8s_connection = f"{self.controller_name}:{self.k8s_model_name_full}"
         self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
         self.charm_channel = (
-            request.config.getoption("--charm-channel")    # use specified channel
+            request.config.getoption("--charm-channel")  # use specified channel
             or os.environ.get("CHARM_CHANNEL_UPGRADE_TO")  # fallback to upgrade env var
-            or os.environ.get("JUJU_DEPLOY_CHANNEL")       # fallback to env var
+            or os.environ.get("JUJU_DEPLOY_CHANNEL")  # fallback to env var
             or "edge"  # default to edge
         )
         self.snap_channel = request.config.getoption("--snap-channel")
