@@ -63,7 +63,7 @@ six==1.15.0
     #   python-dateutil
 testresources==2.0.1
     # via launchpadlib
-urllib3==1.25.9
+urllib3==1.26.19
     # via
     #   -r requirements.in
     #   requests
