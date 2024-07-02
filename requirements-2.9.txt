@@ -41,7 +41,7 @@ cffi==1.15.1
     #   bcrypt
     #   cryptography
     #   pynacl
-charset-normalizer==3.1.0
+charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via
