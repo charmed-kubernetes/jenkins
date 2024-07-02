@@ -89,7 +89,7 @@
           name: juju_channel
           description: |-
             specify the juju channel to use
-          default: 3.1/stable
+          default: 3/stable
 
 - parameter:
     name: series-stable
@@ -141,7 +141,7 @@
     parameters:
       - string:
           name: snap_version
-          default: 1.29/beta
+          default: 1.30/beta
           description: channel for charmed-kubernetes snap used in deployment
 
 - parameter:
