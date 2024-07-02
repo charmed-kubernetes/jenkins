@@ -270,6 +270,14 @@ async def test_snap_versions(model, tools):
         ],
         "kubernetes-worker": ["kubectl", "kubelet", "kube-proxy"],
     }
+
+    # cdk-addons snap track follows the charm track starting in 1.29 charms
+    addons_track = tools.charm_channel.split("/")[0]
+    if addons_track in ["stable", "candidate", "beta", "edge"]:
+        addons_track = "latest"
+    if addons_track != "latest" and tuple(map(int, addons_track.split("."))) < (1, 29):
+        addons_track = None
+
     for app_name, snaps in snaps_to_validate.items():
         app = model.applications[app_name]
         config = await app.get_config()
@@ -279,7 +287,15 @@ async def test_snap_versions(model, tools):
             message = message % (app_name, channel)
             click.echo(message)
             continue
-        track = channel.split("/")[0]
+        track, risk = channel.split("/", 1)
+        if app_name.endswith("control-plane") and addons_track == "latest":
+            stdout, *_ = await tools.run("snap", "info", "cdk-addons")
+            info = {
+                i["name"]: i["channels"][f"latest/{risk}"].split(".", 2)[:2]
+                for i in yaml.safe_load_all(stdout)
+            }
+            expected, *_ = info.values()
+            addons_track = ".".join(expected)
         if track == "latest":
             # Use snap info to determine the versions of the latest/{risk}
             stdout, *_ = await tools.run("snap", "info", *snaps)
@@ -303,13 +319,12 @@ async def test_snap_versions(model, tools):
             snap_versions = dict(line.split()[:2] for line in lines)
             for snap in snaps:
                 snap_version = snap_versions[snap]
-                if not snap_version.startswith(track + "."):
-                    click.echo(
-                        "Snap {} is version {} and not {}".format(
-                            snap, snap_version, track + "."
-                        )
-                    )
-                assert snap_version.startswith(track + ".")
+                if snap == "cdk-addons" and addons_track:
+                    msg=f"Snap {snap} is version {snap_version} and not {addons_track}.*"
+                    assert snap_version.startswith(addons_track + "."), msg
+                else:
+                    msg=f"Snap {snap} is version {snap_version} and not {track}.*"
+                    assert snap_version.startswith(track + "."), msg
 
 
 async def test_rbac(model):
