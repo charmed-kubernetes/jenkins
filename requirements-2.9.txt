@@ -98,7 +98,7 @@ juju==3.0.4
     # via -r requirements.in
 jujubundlelib==0.5.7
     # via theblues
-kubernetes==26.1.0
+kubernetes==30.1.0
     # via juju
 kv==0.4.1
     # via -r requirements.in
