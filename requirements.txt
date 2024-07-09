@@ -105,7 +105,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-juju==3.3.0.0
+juju==3.5.2.0
     # via -r requirements.in
 kubernetes==29.0.0
     # via juju
@@ -348,7 +348,7 @@ websockets==11.0.3 ; python_version == "3.11"
     #   juju
 wheel==0.42.0
     # via -r requirements.in
-zipp==3.17.0
+zipp==3.19.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
