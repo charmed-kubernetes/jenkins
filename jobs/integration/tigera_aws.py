@@ -451,7 +451,7 @@ def deploy_bgp_router():
     juju_wait(timeout=15 * 60)
 
     log("Enabling secondary network interfaces")
-    expected_nics = {f"ens{i+5}" for i in range(1, len(subnets))}
+    expected_nics = {f"ens{i + 5}" for i in range(1, len(subnets))}
     max_retries, current_nics = 10, set()
     while not expected_nics.issubset(current_nics) and max_retries:
         time.sleep(10 - max_retries)

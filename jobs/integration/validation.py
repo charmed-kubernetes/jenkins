@@ -351,7 +351,7 @@ async def test_microbot(model, tools, teardown_microbot):
             )
         await asyncio.sleep(_sleep)
     else:
-        pytest.fail(f"Failed to connect to microbot after {_times*_sleep} sec")
+        pytest.fail(f"Failed to connect to microbot after {_times * _sleep} sec")
 
 
 @pytest.mark.clouds(["ec2", "vsphere"])
@@ -2025,7 +2025,7 @@ async def test_cloud_node_labels(cloud, model, tools):
     all_same_labels = all(item == labels[0] for item in labels)
     assert (
         all_same_labels
-    ), f"Unique label juju.io/cloud values found ({','.join(map(str,labels))})"
+    ), f"Unique label juju.io/cloud values found ({','.join(map(str, labels))})"
 
     label = labels[0]
     known_clouds = ["azure", "ec2", "gce", "openstack", "vsphere"]
