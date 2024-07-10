@@ -24,8 +24,8 @@ function test::execute
                 --full-trace \
                 jobs/integration/validation.py \
                 --is-upgrade \
-                --upgrade-snap-channel "$SNAP_VERSION_UPGRADE_TO" \
-                --upgrade-charm-channel beta \
+                --upgrade-snap-channel "$SNAP_CHANNEL_UPGRADE_TO" \
+                --upgrade-charm-channel "$CHARM_CHANNEL_UPGRADE_TO" \
                 --cloud "$JUJU_CLOUD" \
                 --model "$JUJU_MODEL" \
                 --controller "$JUJU_CONTROLLER"
@@ -41,8 +41,8 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
-SNAP_VERSION_UPGRADE_TO=${1:-1.27/beta}
-export SNAP_VERSION_UPGRADE_TO
+export CHARM_CHANNEL_UPGRADE_TO=beta
+export SNAP_CHANNEL_UPGRADE_TO=${1:-1.27/beta}
 
 SNAP_VERSION=${2:-1.26/stable}
 SERIES=${3:-focal}
