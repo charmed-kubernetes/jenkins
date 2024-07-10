@@ -2,8 +2,13 @@
 
 from cilib.log import DebugMixin
 from urllib.parse import urlparse
+import dataclasses
+import json
+import subprocess
 import tempfile
 from pathlib import Path
+from functools import cached_property
+from typing import FrozenSet
 
 
 class CharmService(DebugMixin):
@@ -42,3 +47,93 @@ class CharmService(DebugMixin):
             self.repo.base.checkout(ref=downstream_ref, cwd=str(src_path))
             self.repo.base.merge(origin="upstream", ref=upstream_ref, cwd=str(src_path))
             self.repo.base.push(origin="origin", ref=downstream_ref, cwd=str(src_path))
+
+
+@dataclasses.dataclass(frozen=True)
+class CharmBase:
+    name: str
+    channel: str
+
+    def __str__(self) -> str:
+        return f"{self.name}@{self.channel}"
+
+    def __contains__(self, item: str) -> bool:
+        return item in self.name or item in self.channel
+
+
+@dataclasses.dataclass(frozen=True)
+class CharmRev:
+    name: str
+    track: str
+    risk: str
+    revision: int
+    version: str
+    size: str
+    architectures: FrozenSet[str]
+    bases: FrozenSet[CharmBase]
+
+    @property
+    def channel(self) -> str:
+        return f"{self.track}/{self.risk}"
+
+    @property
+    def archs(self) -> str:
+        return ", ".join(sorted(self.architectures))
+
+    @property
+    def base(self) -> str:
+        return ", ".join(sorted(map(str, self.bases)))
+
+    @classmethod
+    def from_dict(cls, **kwargs) -> "CharmRev":
+        names = set([f.name for f in dataclasses.fields(cls)])
+        kwargs["architectures"] = frozenset(kwargs["architectures"])
+        kwargs["bases"] = frozenset(CharmBase(**b) for b in kwargs["bases"])
+        return cls(**{k: v for k, v in kwargs.items() if k in names})
+
+
+class CharmInfo(DebugMixin):
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    @cached_property
+    def _fetched(self):
+        try:
+            out = subprocess.check_output(
+                ["juju", "info", self.name, "--format", "json"]
+            )
+        except subprocess.CalledProcessError:
+            return {}
+        return json.loads(out)
+
+    def at(self, track: str, risk: str) -> FrozenSet[CharmRev]:
+        p = self._fetched
+        if track not in p["tracks"]:
+            return set()
+        return frozenset(
+            CharmRev.from_dict(name=self.name, **r)
+            for revlist in p["channels"][track].values()
+            for r in revlist
+            if r["risk"] == risk
+        )
+
+    def unreleased(self, track: str) -> FrozenSet[CharmRev]:
+        unreleased_risks = [
+            "beta",
+            "candidate",
+        ]  # look in these tracks for unreleased charms
+        stable_revisions = self.at(track, "stable")
+        unreleased_revisions = set()
+        for risk in unreleased_risks:
+            for rev in self.at(track, risk):
+                match = next(
+                    (
+                        r
+                        for r in stable_revisions
+                        if r.architectures == rev.architectures
+                    ),
+                    None,
+                )
+                if match and rev.revision > match.revision:
+                    unreleased_revisions |= {rev}
+        return unreleased_revisions

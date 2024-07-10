@@ -38,7 +38,7 @@ from cilib.models.repos.charms import CharmRepoModel
 from cilib.service.snap import SnapService
 from cilib.service.deb import DebService, DebCNIService, DebCriToolsService
 from cilib.service.ppa import PPAService
-from cilib.service.charm import CharmService
+from cilib.service.charm import CharmInfo, CharmService
 from cilib.version import ChannelRange
 from drypy import dryrun
 
@@ -276,6 +276,66 @@ def tag_stable(
         bugfix,
         dry_run,
     )
+
+
+@cli.command()
+@click.option(
+    "--charm-list",
+    required=True,
+    help="Path to supported charm list",
+    type=click.Path(exists=True),
+)
+@click.option(
+    "--k8s-version",
+    required=True,
+    help="Comma separated list of versions of k8s to test",
+)
+@click.option("--filter-by-tag", required=False, help="apply tag filter to charms")
+@click.option(
+    "--ignored-bases",
+    required=False,
+    help="apply tag filter to charms",
+    default="16.04,18.04",
+)
+def identify_unreleased_charms(
+    charm_list: str, k8s_version: str, filter_by_tag: str, ignored_bases: str
+):
+    versions = k8s_version.split(",")
+    charm_list = yaml.safe_load(Path(charm_list).read_text(encoding="utf8"))
+    charm_map = {name: opts for items in charm_list for name, opts in items.items()}
+    bases = ignored_bases.split(",")
+    tags = filter_by_tag.split(",")
+    for charm, params in charm_map.items():
+        if filter_by_tag and not any(tag in tags for tag in params.get("tags", [])):
+            log.debug(
+                f"Skipping  :: {charm:^40} :: does not match filter: {filter_by_tag}"
+            )
+            continue
+
+        charm_info = CharmInfo(charm)
+        for version in versions:
+            if version not in channel_range(params):
+                log.debug(
+                    f"Skipping  :: {charm:^40} :: does not match version range: {version}"
+                )
+                continue
+
+            log.debug(
+                f"Checking  :: {charm:^40} :: checking version for unreleased charm {version}"
+            )
+
+            revs = charm_info.unreleased(version)
+            for rev in sorted(revs, key=lambda x: x.revision):
+                if ignored_bases and any(
+                    base in charm_base for base in bases for charm_base in rev.bases
+                ):
+                    log.debug(
+                        f"Skipping  :: {charm:^40} :: {rev.channel} revision={rev.revision} for {rev.archs} on {rev.base}"
+                    )
+                    continue
+                log.info(
+                    f"Found     :: {charm:^40} :: {rev.channel:14} revision={rev.revision:4} for {rev.archs} on {rev.base}"
+                )
 
 
 @cli.command()
