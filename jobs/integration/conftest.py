@@ -3,6 +3,7 @@
 
 import asyncio
 import click
+import logging
 import inspect
 import os
 import pytest
@@ -29,6 +30,15 @@ from .utils import (
 )
 
 from .logger import log
+
+
+# Quiet the noise
+logging.getLogger("asyncio").setLevel(logging.INFO)
+logging.getLogger("connector").setLevel(logging.INFO)
+logging.getLogger("websockets.client").setLevel(logging.INFO)
+logging.getLogger("websockets.protocol").setLevel(logging.INFO)
+# bump up juju debug
+logging.getLogger("juju").setLevel(logging.INFO)
 
 
 def pytest_addoption(parser):

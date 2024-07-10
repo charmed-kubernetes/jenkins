@@ -13,8 +13,6 @@ import random
 import pytest
 import logging
 import click
-from asyncio_extras import async_contextmanager
-from async_generator import yield_
 from base64 import b64encode
 from cilib.enums import K8S_STABLE_VERSION
 
@@ -60,6 +58,9 @@ from juju.application import Application
 from juju.unit import Unit
 
 # Quiet the noise
+logging.getLogger("asyncio").setLevel(logging.INFO)
+logging.getLogger("connector").setLevel(logging.INFO)
+logging.getLogger("websockets.client").setLevel(logging.INFO)
 logging.getLogger("websockets.protocol").setLevel(logging.INFO)
 # bump up juju debug
 logging.getLogger("juju").setLevel(logging.INFO)
@@ -155,51 +156,25 @@ async def get_last_audit_entry_date(application):
     return sorted(times)[-1]
 
 
-@async_contextmanager
-async def assert_hook_occurs_on_all_units(app, hook):
-    started_units = set()
-    finished_units = set()
-
-    for unit in app.units:
-
-        @unit.on_change
-        async def on_change(delta, old, new, model):
-            unit_id = new.entity_id
-            if new.agent_status_message == "running " + hook + " hook":
-                started_units.add(unit_id)
-            if new.agent_status == "idle" and unit_id in started_units:
-                finished_units.add(unit_id)
-
-    await yield_()
-
-    click.echo("assert_hook_occurs_on_all_units: waiting for " + hook + " hook")
-    while len(finished_units) < len(app.units):
-        await asyncio.sleep(5)
-
-
-async def set_config_and_wait(app, config, tools, max_wait=False):
+async def set_config_and_wait(app: Application, config, tools, max_wait=False):
+    log.debug("Getting config for %s", app.name)
     current_config = await app.get_config()
 
     if all(config[key] == current_config[key]["value"] for key in config):
-        click.echo("set_config_and_wait: new config identical to current, skipping")
+        log.info("set_config_and_wait: new config identical to current, skipping")
         return
 
-    async with assert_hook_occurs_on_all_units(app, "config-changed"):
-        await app.set_config(config)
-        await tools.juju_wait(max_wait=max_wait)
+    log.debug("Setting configs for %s (%s)", app.name, ",".join(config.keys()))
+    await app.set_config(config)
+    await tools.juju_wait(max_wait=max_wait)
 
 
 async def reset_audit_config(control_plane_app, tools):
+    audit_configs = ["audit-policy", "audit-webhook-config", "api-extra-args"]
+    log.debug("Resetting audit configs")
     config = await control_plane_app.get_config()
-    await set_config_and_wait(
-        control_plane_app,
-        {
-            "audit-policy": config["audit-policy"]["default"],
-            "audit-webhook-config": config["audit-webhook-config"]["default"],
-            "api-extra-args": config["api-extra-args"]["default"],
-        },
-        tools,
-    )
+    defaults = {k: config[k]["default"] for k in audit_configs}
+    await set_config_and_wait(control_plane_app, defaults, tools)
 
 
 # START TESTS
@@ -376,7 +351,7 @@ async def test_microbot(model, tools, teardown_microbot):
             )
         await asyncio.sleep(_sleep)
     else:
-        pytest.fail(f"Failed to connect to microbot after {_times*_sleep} sec")
+        pytest.fail(f"Failed to connect to microbot after {_times * _sleep} sec")
 
 
 @pytest.mark.clouds(["ec2", "vsphere"])
@@ -2050,7 +2025,7 @@ async def test_cloud_node_labels(cloud, model, tools):
     all_same_labels = all(item == labels[0] for item in labels)
     assert (
         all_same_labels
-    ), f"Unique label juju.io/cloud values found ({','.join(map(str,labels))})"
+    ), f"Unique label juju.io/cloud values found ({','.join(map(str, labels))})"
 
     label = labels[0]
     known_clouds = ["azure", "ec2", "gce", "openstack", "vsphere"]
