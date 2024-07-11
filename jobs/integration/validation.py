@@ -1609,17 +1609,6 @@ async def get_leader(app: Application):
             return idx
 
 
-async def retry_hook(unit):
-    # Until https://github.com/juju/python-libjuju/issues/484 is fixed, we
-    # have to do this manually.
-    from juju.client import client
-
-    app_facade = client.ApplicationFacade.from_connection(unit.connection)
-    await app_facade.ResolveUnitErrors(
-        all_=False, retry=True, tags={"entities": [{"tag": unit.tag}]}
-    )
-
-
 @pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.on_model("validate-vault")
 class TestEncryptionAtRest:
