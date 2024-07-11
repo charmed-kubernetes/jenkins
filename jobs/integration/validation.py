@@ -1745,12 +1745,7 @@ class TestEncryptionAtRest:
             # update-status hook or two before the unit status is accurate. We
             # can hurry that along a bit, however.
             log.info("Poking etcd to refresh status")
-            await asyncio.gather(
-                *(
-                    juju_run(unit, "hooks/update-status", check=False)
-                    for unit in self.etcd_app.units
-                )
-            )
+            await self.force_update_status(self.etcd_app)
 
         await self.ensure_vault_up()
         await self.force_update_status(self.vault_app)
