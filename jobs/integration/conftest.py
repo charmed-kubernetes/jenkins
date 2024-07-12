@@ -406,9 +406,9 @@ async def k8s_model(k8s_cloud, tools):
                 click.echo(f"Removing relation {relation.name} from k8s model")
                 await relation.destroy()
 
-            for name, offer in _model_created.application_offers.items():
-                click.echo(f"Removing offer {name} from k8s model")
-                await offer.destroy()
+            for offer in (await _model_created.list_offers()).results:
+                click.echo(f"Removing offer {offer.offer_name} from k8s model")
+                await _model_created.remove_offer(offer.offer_url)
 
             for name, app in _model_created.applications.items():
                 click.echo(f"Removing app {name} from k8s model")
