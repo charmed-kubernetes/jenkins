@@ -67,7 +67,7 @@ exceptiongroup==1.1.2
     # via pytest
 flake8==6.0.0
     # via -r requirements.in
-flaky==3.7.0
+flaky==3.8.1
     # via -r requirements.in
 ghp-import==2.1.0
     # via mkdocs
