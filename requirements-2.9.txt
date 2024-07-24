@@ -55,7 +55,7 @@ cryptography==42.0.5
     #   paramiko
 decorator==5.1.1
     # via retry
-dill==0.3.6
+dill==0.3.8
     # via -r requirements.in
 distro==1.8.0
     # via lazr-restfulclient
