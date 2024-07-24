@@ -65,7 +65,7 @@ drypy==1.0.1
     # via -r requirements.in
 exceptiongroup==1.1.2
     # via pytest
-flake8==6.0.0
+flake8==7.1.0
     # via -r requirements.in
 flaky==3.8.1
     # via -r requirements.in
