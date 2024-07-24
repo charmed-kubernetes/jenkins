@@ -300,6 +300,7 @@
     channel-range:
       max: '1.28'
 - keepalived:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-keepalived'
     docs: 'https://charmhub.io/keepalived/docs'
     downstream: charmed-kubernetes/charm-keepalived.git
