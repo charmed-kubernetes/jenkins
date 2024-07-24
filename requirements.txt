@@ -31,7 +31,7 @@ botocore==1.34.42
     #   s3transfer
 bs4==0.0.2
     # via -r requirements.in
-cachetools==5.3.2
+cachetools==5.3.3
     # via google-auth
 certifi==2024.2.2
     # via
@@ -51,7 +51,7 @@ colorama==0.4.4
     # via
     #   awscli
     #   mkdocs-material
-cryptography==42.0.2
+cryptography==43.0.0
     # via paramiko
 decorator==5.1.1
     # via retry
@@ -67,9 +67,9 @@ exceptiongroup==1.2.0
     # via pytest
 fasteners==0.19
     # via jenkins-job-builder
-flake8==7.0.0
+flake8==7.1.0
     # via -r requirements.in
-flaky==3.7.0
+flaky==3.8.1
     # via -r requirements.in
 ghp-import==2.1.0
     # via mkdocs
@@ -107,7 +107,7 @@ jmespath==1.0.1
     #   botocore
 juju==3.5.2.0
     # via -r requirements.in
-kubernetes==29.0.0
+kubernetes==30.1.0
     # via juju
 kv==0.4.1
     # via -r requirements.in
