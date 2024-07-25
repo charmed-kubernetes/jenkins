@@ -134,7 +134,7 @@
         - jenkins
         - adhoc
     - name: upgrade juju
-      command: "snap refresh juju --channel 3.1/stable"
+      command: "snap refresh juju --channel 3/stable"
       ignore_errors: yes
       tags:
         - jenkins
@@ -159,7 +159,7 @@
         - "charmcraft --classic --edge"
         - "go --classic --stable"
         - "google-cloud-cli --classic --channel latest/stable"
-        - "juju --channel=3.1/stable"
+        - "juju --channel=3/stable"
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"
