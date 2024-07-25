@@ -89,6 +89,7 @@
     channel-range:
       min: '1.27'
 - containerd:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-containerd'
     docs: 'https://charmhub.io/containerd/docs'
     downstream: charmed-kubernetes/charm-containerd.git
@@ -101,6 +102,7 @@
       - cri
     upstream: 'https://github.com/charmed-kubernetes/charm-containerd.git'
 - easyrsa:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-easyrsa'
     docs: 'https://charmhub.io/easyrsa/docs'
     downstream: charmed-kubernetes/layer-easyrsa.git
@@ -112,6 +114,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/layer-easyrsa.git'
 - etcd:
+    builder: 'launchpad'
     bugs: 'https://bugs.launchpad.net/charm-etcd'
     docs: 'https://charmhub.io/etcd/docs'
     downstream: charmed-kubernetes/layer-etcd.git
