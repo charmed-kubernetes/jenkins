@@ -258,7 +258,7 @@ s3transfer==0.6.1
     # via
     #   awscli
     #   boto3
-semver==2.13.0
+semver==3.0.2
     # via -r requirements.in
 sh==2.0.7
     # via -r requirements.in
