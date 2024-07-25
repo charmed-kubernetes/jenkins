@@ -14,6 +14,20 @@ verlt() {
     [ "$1" = "$2" ] && return 1 || verlte $1 $2
 }
 
+function juju::base::from_series
+{
+    case "$1" in
+        "noble")  echo "ubuntu@24.04";;
+        "jammy")  echo "ubuntu@22.04";;
+        "focal")  echo "ubuntu@20.04";;
+        "bionic") echo "ubuntu@18.04";;
+        *) 
+          test::report "unknown series=$1"
+          exit 1
+        ;;
+    esac
+}
+
 function juju::bootstrap::before
 {
     echo "> skipping before tasks"
@@ -94,7 +108,8 @@ function juju::bootstrap
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          ${add_model[@]} \
          --debug \
-         --force --bootstrap-series "$SERIES" \
+         --force \
+         --bootstrap-base "$(juju::base::from_series $SERIES)" \
          --bootstrap-constraints arch="${ARCH:-amd64}" \
          --model-default test-mode=true \
          --model-default resource-tags="${TAGS}" \
@@ -121,7 +136,8 @@ function juju::deploy::overlay
     constraints="arch=${ARCH:-amd64} cores=2 mem=8G root-disk=16G"
 
     cat <<EOF > overlay.yaml
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     constraints: $constraints

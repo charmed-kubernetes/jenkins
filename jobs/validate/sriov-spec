@@ -20,7 +20,8 @@ function juju::deploy::overlay
    constraints="arch=$ARCH instance-type=c4.xlarge root-disk=16G"
 
    tee overlay.yaml <<EOF > /dev/null
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     constraints: $constraints
@@ -61,7 +62,8 @@ function juju::deploy::after
 
     tee k8s-bundle.yaml <<EOF > /dev/null
 bundle: kubernetes
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   sriov-cni:
     charm: sriov-cni

@@ -17,7 +17,8 @@ set -x
 function juju::deploy::overlay
 {
     tee overlay.yaml <<EOF > /dev/null
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     options:
@@ -61,7 +62,8 @@ function juju::deploy::after
 
     tee k8s_overlay.yaml <<EOF > /dev/null
 bundle: kubernetes
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-autoscaler:
     charm: kubernetes-autoscaler

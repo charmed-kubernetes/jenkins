@@ -17,7 +17,7 @@ function juju::deploy
     (
         set -e
         juju deploy -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
-        --series "$SERIES" \
+        --base "$(juju::base::from_series $SERIES)" \
         --force \
         --constraints "mem=32G root-disk=100G cores=8" \
         ubuntu
@@ -32,7 +32,8 @@ function juju::deploy
 function juju::deploy::after
 {
     tee overlay.yaml <<EOF > /dev/null
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     options:
@@ -62,7 +63,7 @@ export SNAP_VERSION=$SNAP_VERSION
 juju bootstrap localhost/localhost \
     \$JUJU_CONTROLLER \
     --add-model \$JUJU_MODEL \
-    --bootstrap-series \$SERIES \
+    --bootstrap-base $(juju::base::from_series $SERIES) \
     --force \
     --model-default image-stream=daily
 
