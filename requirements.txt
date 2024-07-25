@@ -160,6 +160,7 @@ oauthlib==3.2.2
 packaging==23.2
     # via
     #   black
+    #   juju
     #   mkdocs
     #   pytest
 paginate==0.5.6
@@ -196,7 +197,7 @@ pyasn1==0.5.1
     #   rsa
 pyasn1-modules==0.3.0
     # via google-auth
-pycodestyle==2.11.1
+pycodestyle==2.12.0
     # via flake8
 pycparser==2.21
     # via cffi
@@ -343,6 +344,7 @@ websockets==8.1 ; python_version == "3.8"
 websockets>=9.0,<10.0 ; python_version == "3.9"
 websockets==10.4,<11.0 ; python_version == "3.10"
 websockets==11.0.3 ; python_version == "3.11"
+websockets==12.0 ; python_version == "3.12"
     # via
     #   -r requirements.in
     #   juju
