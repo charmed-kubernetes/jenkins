@@ -27,7 +27,7 @@ function juju::bootstrap
 
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
       --add-model "$JUJU_MODEL" \
-      --bootstrap-series "$SERIES" \
+      --bootstrap-base "$(juju::base::from_series $SERIES)" \
       --force \
       --bootstrap-constraints arch="$ARCH" \
       --model-default test-mode=true \
@@ -56,7 +56,8 @@ function juju::deploy::overlay
     if [ "$ROUTING_MODE" = "vxlan" ]; then
       # Calico does not support VXLAN + IPv6, so we need to skip the IPv6 CIDRs
       cat <<EOF > overlay.yaml
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     options:
@@ -72,7 +73,8 @@ EOF
     else
       # No VXLAN, so we'll test IPv6
       cat <<EOF > overlay.yaml
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     options:

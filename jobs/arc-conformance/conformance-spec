@@ -19,7 +19,7 @@ function juju::bootstrap
     # override because azure needs image-stream=released
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
          --add-model "$JUJU_MODEL" \
-         --bootstrap-series "$SERIES" \
+         --bootstrap-base "$(juju::base::from_series $SERIES)" \
          --force \
          --bootstrap-constraints arch="$ARCH" \
          --model-default test-mode=true \
@@ -38,7 +38,8 @@ function juju::deploy::overlay
 {
     # override to set cidr and allow-privileged for sonobuoy
     cat <<EOF > overlay.yaml
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   calico:
     options:

@@ -27,7 +27,8 @@ function juju::wait
 function juju::deploy
 {
     tee overlay.yaml <<EOF > /dev/null
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     options:
@@ -53,7 +54,7 @@ export LANG=C.UTF-8
 juju bootstrap localhost/localhost \
     $JUJU_CONTROLLER \
     --add-model $JUJU_MODEL \
-    --bootstrap-series $SERIES \
+    --bootstrap-base $(juju::base::from_series $SERIES) \
     --force \
     --config juju-http-proxy=http://squid.internal:3128 \
     --config juju-https-proxy=http://squid.internal:3128 \

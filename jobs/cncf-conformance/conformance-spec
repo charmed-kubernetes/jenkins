@@ -27,7 +27,7 @@ function juju::bootstrap::before
 function juju::deploy::overlay
 {
     cat <<EOF > overlay.yaml
-series: $SERIES
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     options:
