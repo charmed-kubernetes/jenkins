@@ -5,7 +5,7 @@ This document outlines the process for publishing a Charmed Kubernetes stable re
 
 ### Repository layout
 
-All charm repositories used by Charmed Kuberentes have a common branch scheme to provide a
+All charm repositories used by Charmed Kubernetes have a common branch scheme to provide a
 consistent experience across all code bases. Any external or shared repositories are forked
 into the `charmed-kubernetes` github organization and have the following branches:
 
@@ -45,7 +45,7 @@ For example, we requested 1.30 snap tracks while preparing for the 1.29 release:
 - https://forum.snapcraft.io/t/charmed-kubernetes-1-30-snap-tracks/38912
 
 Bundle/charm track requests are made by posting to the `charmhub requests` forum
-asking for new tracks to be opened for every neccessary
+asking for new tracks to be opened for every necessary
 [charm](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-support-matrix.inc)
 and
 [bundle](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-bundles-list.inc)
