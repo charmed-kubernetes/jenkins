@@ -203,7 +203,6 @@
     store: 'https://charmhub.io/kubernetes-autoscaler'
     summary: automatically scales up and down a kubernetes cluster
     tags:
-      - k8s-operator
       - kubernetes-autoscaler
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-autoscaler.git'
