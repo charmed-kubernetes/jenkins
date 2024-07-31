@@ -170,7 +170,7 @@ overwriting the previous stable with an invalid charm.
 
 It can be wise to run first with the `--dry-run` flag to ensure the correct
 promotions are correct specifically for charms that require multiple promotions 
-because they support multiple arches with potentionally different resources.
+because they support multiple arches with potentially different resources.
 
 **Note about `to_channel`**
 
