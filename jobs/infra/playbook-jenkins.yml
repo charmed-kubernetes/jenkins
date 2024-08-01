@@ -128,7 +128,7 @@
         - jenkins
         - adhoc
     - name: upgrade charmcraft
-      command: "snap refresh charmcraft --channel latest/stable"
+      command: "snap refresh charmcraft --channel 2.x/stable"
       ignore_errors: yes
       tags:
         - jenkins
@@ -156,7 +156,7 @@
       ignore_errors: yes
       loop:
         - "charm --classic --channel 3.x/stable"
-        - "charmcraft --classic --edge"
+        - "charmcraft --classic --channel 2.x/stable"
         - "go --classic --stable"
         - "google-cloud-cli --classic --channel latest/stable"
         - "juju --channel=3.1/stable"

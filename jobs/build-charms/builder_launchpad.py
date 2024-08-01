@@ -28,7 +28,7 @@ class LPBuildEntity(BuildEntity):
     Builds charms on launchpad with charm recipes, then downloads locally
     """
 
-    SNAP_CHANNEL = {"charmcraft": "latest/stable"}
+    SNAP_CHANNEL = {"charmcraft": "2.x/stable"}
     BUILD_STATES_PENDING = {
         "Cancelling build",
         "Currently building",
@@ -129,7 +129,11 @@ class LPBuildEntity(BuildEntity):
 
     def _lp_request_builds(self) -> List[Resource]:
         """Request a charm build for this charm."""
-        req = self._lp_recipe.requestBuilds(channels=self.SNAP_CHANNEL)
+        channels = self.SNAP_CHANNEL
+        charmcraft_channel_file = Path(self.src_path) / ".charmcraft-channel"
+        if charmcraft_channel_file.exists():
+            channels["charmcraft"] = charmcraft_channel_file.read_text().strip()
+        req = self._lp_recipe.requestBuilds(channels=channels)
         self.echo("Waiting for charm recipe request")
         timeout = 5 * 60
         for _ in range(timeout):
