@@ -93,6 +93,9 @@ class LPBuildEntity(BuildEntity):
         charmcraft_channel_file = Path(self.src_path) / ".charmcraft-channel"
         if charmcraft_channel_file.exists():
             channels["charmcraft"] = charmcraft_channel_file.read_text().strip()
+            self.echo(
+                f"Using channel from {charmcraft_channel_file}: {channels['charmcraft']}"
+            )
         return channels
 
     @cached_property
