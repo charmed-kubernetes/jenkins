@@ -117,7 +117,7 @@ class LPBuildEntity(BuildEntity):
                 name=self._lp_recipe_name,
                 auto_build=False,
                 auto_build_channels={},
-                build_path=self.opts.get("subdir", ""),
+                build_path=self.opts.get("subdir"),
                 description=f"Recipe for {self._lp_project} {self._lp_branch}",
                 git_ref=ref,
                 owner=self._lp_owner,
