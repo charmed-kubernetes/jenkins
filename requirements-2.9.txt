@@ -152,7 +152,7 @@ paramiko==2.12.0
 pbr==5.11.1
     # via
     #   stevedore
-pluggy==1.2.0
+pluggy==1.5.0
     # via pytest
 prettytable==3.7.0
     # via -r requirements.in
@@ -189,7 +189,7 @@ pynacl==1.5.0
     #   macaroonbakery
     #   paramiko
     #   pymacaroons
-pyparsing==3.0.9
+pyparsing==3.1.2
     # via httplib2
 pyrfc3339==1.1
     # via
@@ -215,7 +215,7 @@ pytest-metadata==3.0.0
     #   pytest-json-report
 pytest-mock==3.11.1
     # via -r requirements.in
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   botocore
     #   ghp-import
@@ -258,9 +258,9 @@ s3transfer==0.6.1
     # via
     #   awscli
     #   boto3
-semver==2.13.0
+semver==3.0.2
     # via -r requirements.in
-sh==2.0.4
+sh==2.0.7
     # via -r requirements.in
 six==1.16.0
     # via

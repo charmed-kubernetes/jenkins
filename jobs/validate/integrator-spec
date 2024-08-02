@@ -34,7 +34,8 @@ function juju::deploy::overlay
     constraints="arch=$ARCH cores=2 mem=8G root-disk=16G"
 
     cat <<EOF > overlay.yaml
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   easyrsa:
     constraints: $constraints

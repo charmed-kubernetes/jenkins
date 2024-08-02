@@ -105,7 +105,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-juju==3.5.2.0
+juju==3.3.1.1
     # via -r requirements.in
 kubernetes==30.1.0
     # via juju
@@ -180,7 +180,7 @@ platformdirs==4.2.0
     # via
     #   black
     #   mkdocs
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 prettytable==3.9.0
     # via -r requirements.in
@@ -217,7 +217,7 @@ pynacl==1.5.0
     #   macaroonbakery
     #   paramiko
     #   pymacaroons
-pyparsing==3.1.1
+pyparsing==3.1.2
     # via httplib2
 pyrfc3339==1.1
     # via
@@ -243,7 +243,7 @@ pytest-metadata==3.0.0
     #   pytest-json-report
 pytest-mock==3.12.0
     # via -r requirements.in
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   botocore
     #   ghp-import
@@ -294,7 +294,7 @@ s3transfer==0.10.0
     #   boto3
 semver==3.0.2
     # via -r requirements.in
-sh==2.0.6
+sh==2.0.7
     # via -r requirements.in
 six==1.16.0
     # via

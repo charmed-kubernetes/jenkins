@@ -13,7 +13,7 @@ ci_charmcraft_launch()
   # Launch local LXD container to publish to charmcraft
   local charmcraft_lxc=$1
   ci_lxc_launch ubuntu:20.04 $charmcraft_lxc
-  until sudo lxc shell $charmcraft_lxc -- bash -c 'snap install charmcraft --classic'; do
+  until sudo lxc shell $charmcraft_lxc -- bash -c "snap install charmcraft --classic --channel=2.x/stable"; do
     echo 'retrying charmcraft install in 3s...'
     sleep 3
   done
@@ -38,6 +38,7 @@ ci_charmcraft_pack()
   local repository=$2
   local branch=$3
   local subdir=${4:-.}
+
   sudo lxc shell $charmcraft_lxc -- bash -c "rm -rf /root/*"
   sudo lxc shell $charmcraft_lxc -- bash -c "git clone ${repository} -b ${branch} charm"
   sudo lxc shell $charmcraft_lxc -- bash -c "cd charm/$subdir; cat version || git rev-parse --short HEAD | tee version"

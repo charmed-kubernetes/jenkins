@@ -19,7 +19,7 @@ set -x
 # {
 #     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
 #          --add-model "$JUJU_MODEL" \
-#          --force --bootstrap-series "$SERIES" \
+#          --force --bootstrap-base "$(juju::base::from_series $SERIES)" \
 #          --bootstrap-constraints arch="amd64" \
 #          --model-default test-mode=true \
 #          --model-default resource-tags=owner=$JUJU_OWNER \
@@ -32,7 +32,8 @@ set -x
 function juju::deploy::overlay
 {
     cat <<EOF > overlay.yaml
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     options:

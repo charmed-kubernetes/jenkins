@@ -20,7 +20,8 @@ function juju::deploy::overlay
     constraints="arch=$ARCH cores=2 mem=8G root-disk=16G"
 
     tee overlay.yaml <<EOF > /dev/null
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
     constraints: $constraints

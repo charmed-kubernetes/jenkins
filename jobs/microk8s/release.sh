@@ -63,7 +63,8 @@ function juju::deploy::overlay
     fi
 
     cat << EOF > $JUJU_DEPLOY_BUNDLE
-series: $SERIES
+series: null
+default-base: $(juju::base::from_series $SERIES)
 applications:
   ubuntu:
     charm: ubuntu
