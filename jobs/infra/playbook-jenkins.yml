@@ -133,6 +133,12 @@
       tags:
         - jenkins
         - adhoc
+    - name: upgrade charmcraft
+      command: "snap refresh charmcraft --channel 2.x/stable --classic"
+      ignore_errors: yes
+      tags:
+        - jenkins
+        - adhoc
     - name: upgrade snapcraft
       command: "snap refresh snapcraft --channel 6.x/stable"
       ignore_errors: yes
@@ -150,6 +156,7 @@
       ignore_errors: yes
       loop:
         - "charm --classic --channel 3.x/stable"
+        - "charmcraft --classic --channel 2.x/stable"
         - "go --classic --stable"
         - "google-cloud-cli --classic --channel latest/stable"
         - "juju --channel=3.1/stable"
@@ -171,7 +178,6 @@
         - "microk8s"
         - "bundletester"
         - "surl"
-        - "charmcraft"
       tags:
         - jenkins
     - name: copy bashrc
