@@ -106,7 +106,7 @@
           JOB_SPEC_DIR: "jobs/build-charms"
       - run-tox:
           JOB_SPEC_DIR: "jobs/build-charms"
-          COMMAND: |
+          COMMAND: |-
             #!/bin/bash
             set -eux
 
@@ -120,17 +120,17 @@
             fi
 
             WITH_CHARM_BRANCH=""
-            if [[ -n ${CHARM_BRANCH:-} ]]; then
+            if [[ -n ${{CHARM_BRANCH:-}} ]]; then
               WITH_CHARM_BRANCH="--charm-branch $CHARM_BRANCH"
             fi 
 
             rm -rf "$WORKSPACE/charms" || true
 
             # Cleanup old charmcraft containers
-            ci_lxc_delete "${JOB_NAME}"
+            ci_lxc_delete "$JOB_NAME"
             
             # Configure cleanup routine for exit
-            export charmcraft_lxc="${JOB_NAME}-${BUILD_NUMBER}"
+            export charmcraft_lxc="$JOB_NAME-$BUILD_NUMBER"
             trap 'ci_lxc_delete $charmcraft_lxc' EXIT
             ci_charmcraft_launch $charmcraft_lxc
 
