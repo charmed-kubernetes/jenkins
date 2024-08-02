@@ -66,7 +66,7 @@
       - string:
           name: charm_channel
           description: "The charm channel to validate"
-          default: "1.29/candidate"
+          default: "1.30/candidate"
           trim: true
     axes:
       - axis:
@@ -78,8 +78,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.30/stable
             - 1.29/stable
-            - 1.28/stable
       - axis:
           type: user-defined
           name: series
@@ -128,8 +128,8 @@
           type: user-defined
           name: deploy_snap
           values:
+            - 1.30/stable
             - 1.29/stable
-            - 1.28/stable
       - axis:
           type: user-defined
           name: series

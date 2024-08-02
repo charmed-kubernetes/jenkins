@@ -280,7 +280,7 @@
           name: STABLE_RELEASE
           description: |
             If blank, automatically determined based on last key of SNAP_K8S_TRACK_LIST
-            otherwise, this should be the major.minor release number (eg. 1.29)
+            otherwise, this should be the major.minor release number (eg. 1.30)
           default: ''
       - string:
           name: FILTER_BY_TAG

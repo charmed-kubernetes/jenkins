@@ -73,14 +73,14 @@
     charm-channel:
       - edge:
           snap_versions:
+            - 1.31/edge
             - 1.30/edge
             - 1.29/edge
-            - 1.28/edge
       - stable:
           snap_versions:
+            - 1.30/stable
             - 1.29/stable
             - 1.28/stable
-            - 1.27/stable
           dow: '0'      # Sunday
     jobs:
       - 'validate-ck-{charm-channel}-{series}'
@@ -117,9 +117,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
             - 1.29/edge
-            - 1.28/edge
       - axis:
           type: user-defined
           name: series
@@ -291,8 +291,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
-            - 1.29/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -333,8 +333,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
-            - 1.29/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -374,8 +374,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
-            - 1.29/edge
       - axis:
           type: user-defined
           name: cloud
@@ -430,8 +430,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
-            - 1.29/edge
       - axis:
           type: user-defined
           name: routing_mode
@@ -477,8 +477,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
-            - 1.29/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -518,8 +518,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
-            - 1.29/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -559,8 +559,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
-            - 1.29/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -600,8 +600,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
-            - 1.29/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -641,8 +641,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
-            - 1.29/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -682,9 +682,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.31/edge
             - 1.30/edge
             - 1.29/edge
-            - 1.28/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -727,7 +727,6 @@
       - run-lxc:
           COMMAND: |
             bash jobs/validate/cilium-spec $snap_version $series $channel
-
 
 - job:
     name: 'validate-ck-autoscaler'
