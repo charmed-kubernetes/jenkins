@@ -424,8 +424,19 @@ def test_build_entity_assemble_resources(
     charm_cmd.assert_not_called()
 
 
+@pytest.fixture
+def ensure_track(builder_local):
+    with patch.object(builder_local, "ensure_track") as mocked:
+        yield mocked
+
+
 def test_build_entity_promote(
-    charm_environment, charm_cmd, charmcraft_cmd, tmpdir, builder_local
+    charm_environment,
+    charm_cmd,
+    charmcraft_cmd,
+    tmpdir,
+    builder_local,
+    ensure_track,
 ):
     """Test that BuildEntity releases to appropriate store."""
     charms = charm_environment.job_list
@@ -444,6 +455,10 @@ def test_build_entity_promote(
     ]
     charm_entity.release(artifact, to_channels=("latest/edge", "0.15/edge"))
     charm_cmd.release.assert_not_called()
+    ensure_track.assert_has_calls(
+        [call("k8s-ci-charm", "latest/edge"), call("k8s-ci-charm", "0.15/edge")]
+    )
+    ensure_track.reset_mock()
     charmcraft_cmd.release.assert_called_once_with(
         "k8s-ci-charm",
         "--revision=6",
@@ -456,6 +471,10 @@ def test_build_entity_promote(
 
     charm_entity.release(artifact, to_channels=("latest/stable", "0.15/stable"))
     charm_cmd.release.assert_not_called()
+    ensure_track.assert_has_calls(
+        [call("k8s-ci-charm", "latest/stable"), call("k8s-ci-charm", "0.15/stable")]
+    )
+    ensure_track.reset_mock()
     charmcraft_cmd.release.assert_called_once_with(
         "k8s-ci-charm",
         "--revision=6",
@@ -465,8 +484,10 @@ def test_build_entity_promote(
         "--resource=test-image:4",
     )
     charmcraft_cmd.release.reset_mock()
+
     charm_entity.release(artifact, to_channels=("0.14/stable",))
     charm_cmd.release.assert_not_called()
+    ensure_track.assert_called_once_with("k8s-ci-charm", "0.14/stable")
     charmcraft_cmd.release.assert_called_once_with(
         "k8s-ci-charm",
         "--revision=6",

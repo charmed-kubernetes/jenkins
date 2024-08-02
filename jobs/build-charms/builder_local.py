@@ -24,6 +24,7 @@ from io import BytesIO
 import zipfile
 from pathlib import Path
 from collections import defaultdict
+from cilib.ch import ensure_track
 from cilib.github_api import Repository
 from enum import Enum, unique
 from sh.contrib import git
@@ -332,6 +333,8 @@ class _CharmHub(Charmcraft):
     def release(self, entity: str, artifact: "Artifact", to_channels: List[str]):
         self._echo(f"Releasing :: {entity:^35} :: to: {to_channels}")
         rev_args = f"--revision={artifact.rev}"
+        for channel in to_channels:
+            ensure_track(entity, channel)
         channel_args = [f"--channel={chan}" for chan in to_channels]
         resource_rev_args = [
             f"--resource={rsc.name}:{rsc.rev}" for rsc in artifact.resources
