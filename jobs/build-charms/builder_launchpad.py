@@ -28,7 +28,7 @@ class LPBuildEntity(BuildEntity):
     Builds charms on launchpad with charm recipes, then downloads locally
     """
 
-    SNAP_CHANNEL = {"charmcraft": "latest/stable"}
+    SNAP_CHANNEL = {"charmcraft": "2.x/stable"}
     BUILD_STATES_PENDING = {
         "Cancelling build",
         "Currently building",
@@ -88,6 +88,17 @@ class LPBuildEntity(BuildEntity):
         return self._lp.people[self._lp_project.owner.name]
 
     @cached_property
+    def _lp_channels(self):
+        channels = self.SNAP_CHANNEL
+        charmcraft_channel_file = Path(self.src_path) / ".charmcraft-channel"
+        if charmcraft_channel_file.exists():
+            channels["charmcraft"] = charmcraft_channel_file.read_text().strip()
+            self.echo(
+                f"Using channel from {charmcraft_channel_file}: {channels['charmcraft']}"
+            )
+        return channels
+
+    @cached_property
     def _lp_recipe(self):
         """Lookup or create the charm recipe."""
         try:
@@ -105,14 +116,17 @@ class LPBuildEntity(BuildEntity):
             rec = self._lp.charm_recipes.new(
                 name=self._lp_recipe_name,
                 auto_build=False,
-                auto_build_channels=self.SNAP_CHANNEL,
-                build_path=self.opts.get("subdir", ""),
+                auto_build_channels={},
+                build_path=self.opts.get("subdir"),
+                description=f"Recipe for {self._lp_project} {self._lp_branch}",
                 git_ref=ref,
                 owner=self._lp_owner,
                 project=self._lp_project,
                 store_channels=[],
                 store_upload=False,
             )
+        rec.auto_build_channels = self._lp_channels
+        rec.lp_save()
         return rec
 
     def _lp_build_log(self, build: Resource) -> str:
@@ -129,7 +143,7 @@ class LPBuildEntity(BuildEntity):
 
     def _lp_request_builds(self) -> List[Resource]:
         """Request a charm build for this charm."""
-        req = self._lp_recipe.requestBuilds(channels=self.SNAP_CHANNEL)
+        req = self._lp_recipe.requestBuilds(channels=self._lp_channels)
         self.echo("Waiting for charm recipe request")
         timeout = 5 * 60
         for _ in range(timeout):

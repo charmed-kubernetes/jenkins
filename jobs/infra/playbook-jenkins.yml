@@ -127,12 +127,6 @@
       tags:
         - jenkins
         - adhoc
-    - name: upgrade charmcraft
-      command: "snap refresh charmcraft --channel latest/stable"
-      ignore_errors: yes
-      tags:
-        - jenkins
-        - adhoc
     - name: upgrade juju
       command: "snap refresh juju --channel 3.1/stable"
       ignore_errors: yes
@@ -156,7 +150,6 @@
       ignore_errors: yes
       loop:
         - "charm --classic --channel 3.x/stable"
-        - "charmcraft --classic --edge"
         - "go --classic --stable"
         - "google-cloud-cli --classic --channel latest/stable"
         - "juju --channel=3.1/stable"
@@ -178,6 +171,7 @@
         - "microk8s"
         - "bundletester"
         - "surl"
+        - "charmcraft"
       tags:
         - jenkins
     - name: copy bashrc
