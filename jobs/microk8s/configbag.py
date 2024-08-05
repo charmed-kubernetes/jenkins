@@ -18,9 +18,6 @@ def get_tracks(all=False):
     """
     return [
         "latest",
-        "1.24",
-        "1.25",
-        "1.25-strict",
         "1.26",
         "1.26-strict",
         "1.27",
@@ -31,6 +28,8 @@ def get_tracks(all=False):
         "1.29-strict",
         "1.30",
         "1.30-strict",
+        "1.31",
+        "1.31-strict",
     ]
 
 
