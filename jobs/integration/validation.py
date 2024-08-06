@@ -14,7 +14,7 @@ import pytest
 import logging
 import click
 from base64 import b64encode
-from cilib.enums import K8S_STABLE_VERSION
+from cilib.enums import SNAP_K8S_TRACK_LIST
 
 from datetime import datetime
 from pathlib import Path
@@ -256,7 +256,7 @@ async def test_snap_versions(model, tools):
             message = message % (app_name, channel)
             click.echo(message)
             continue
-        track, _ = channel.split("/", 1)
+        track, risk = channel.split("/", 1)
         if track == "latest":
             # Use snap info to determine the versions of the latest/{risk}
             stdout, *_ = await tools.run("snap", "info", *snaps)
@@ -292,8 +292,12 @@ async def test_snap_versions(model, tools):
                         # follows the track defined in the charm_branch file
                         addons_track = branch.replace("release_", "")
                     else:
-                        # cdk-addons follows the stable track in other cases.
-                        addons_track = K8S_STABLE_VERSION
+                        # cdk-addons follows the track by risk in other cases.
+                        for addons_track, channels in reversed(SNAP_K8S_TRACK_LIST):
+                            if any(risk in c for c in channels):
+                                break
+                        else:
+                            raise ValueError(f"no addons_track found for risk={risk}")
 
                     msg = f"Snap {snap} is version {snap_version} and not {addons_track}.*"
                     assert snap_version.startswith(addons_track + "."), msg
