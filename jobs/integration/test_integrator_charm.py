@@ -85,7 +85,7 @@ def _prepare_relation(linkage, model, add=True):
     ]
     exists = any(right in str(_) for _ in right_endpoints)
     if add and not exists:
-        return app.integrate(left_relation, right)
+        return app.relate(left_relation, right)
     elif not add and exists:
         return app.destroy_relation(left_relation, right)
     return asyncio.sleep(0)
