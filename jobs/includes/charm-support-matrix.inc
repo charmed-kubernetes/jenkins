@@ -1,6 +1,6 @@
 # -*- mode:yaml; -*-
 - calico:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-calico'
     build-resources: 'cd {out_path}; bash {src_path}/build-calico-resource.sh'
     docs: 'https://charmhub.io/calico/docs'
@@ -15,7 +15,7 @@
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-calico.git'
 - calico-enterprise:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-calico-enterprise'
     docs: 'https://charmhub.io/calico-enterprise/docs'
     downstream: charmed-kubernetes/charm-calico-enterprise.git
@@ -31,6 +31,7 @@
     channel-range:
       min: '1.29'
 - canal:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-canal'
     build-resources: 'cd {out_path}; bash {src_path}/build-canal-resources.sh'
     docs: 'https://charmhub.io/canal/docs'
@@ -43,7 +44,7 @@
       - cni
     upstream: 'https://github.com/charmed-kubernetes/layer-canal.git'
 - ceph-csi:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-ceph-csi'
     docs: 'https://charmhub.io/ceph-csi/docs'
     downstream: charmed-kubernetes/ceph-csi-operator.git
@@ -59,6 +60,7 @@
     channel-range:
       min: '1.25'
 - cinder-csi:
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-cinder-csi'
     docs: 'https://charmhub.io/cinder-csi/docs'
     downstream: charmed-kubernetes/cinder-csi-operator.git
@@ -73,7 +75,7 @@
     channel-range:
       min: '1.28'
 - cilium:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-cilium'
     build-resources: 'cd {out_path}; bash {src_path}/fetch-resources.sh'
     docs: 'https://charmhub.io/cilium/docs'
@@ -89,6 +91,7 @@
     channel-range:
       min: '1.27'
 - containerd:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-containerd'
     docs: 'https://charmhub.io/containerd/docs'
     downstream: charmed-kubernetes/charm-containerd.git
@@ -101,6 +104,7 @@
       - cri
     upstream: 'https://github.com/charmed-kubernetes/charm-containerd.git'
 - easyrsa:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-easyrsa'
     docs: 'https://charmhub.io/easyrsa/docs'
     downstream: charmed-kubernetes/layer-easyrsa.git
@@ -112,6 +116,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/layer-easyrsa.git'
 - etcd:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-etcd'
     docs: 'https://charmhub.io/etcd/docs'
     downstream: charmed-kubernetes/layer-etcd.git
@@ -123,6 +128,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/layer-etcd.git'
 - flannel:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-flannel'
     build-resources: 'cd {out_path}; bash {src_path}/build-flannel-resources.sh'
     docs: 'https://charmhub.io/flannel/docs'
@@ -135,6 +141,7 @@
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-flannel.git'
 - kata:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-kata'
     docs: 'https://charmhub.io/kata/docs'
     downstream: charmed-kubernetes/charm-kata.git
@@ -147,7 +154,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kata.git'
 - keystone-k8s-auth:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/keystone-k8s-auth-operator'
     docs: 'https://charmhub.io/keystone-k8s-auth/docs'
     store: 'https://charmhub.io/keystone-k8s-auth'
@@ -157,7 +164,7 @@
     downstream: canonical/keystone-k8s-auth-operator.git
     upstream: 'https://github.com/canonical/keystone-k8s-auth-operator.git'
 - kube-ovn:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-kube-ovn'
     docs: 'https://charmhub.io/kube-ovn/docs'
     downstream: charmed-kubernetes/charm-kube-ovn.git
@@ -171,7 +178,7 @@
     channel-range:
       min: '1.25'
 - kubeapi-load-balancer:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-kubeapi-load-balancer'
     docs: 'https://charmhub.io/kubeapi-load-balancer/docs'
     downstream: charmed-kubernetes/charm-kubeapi-load-balancer.git
@@ -184,7 +191,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/charm-kubeapi-load-balancer.git'
 - kube-state-metrics:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/kube-state-metrics-operator'
     docs: 'https://charmhub.io/kube-state-metrics/docs'
     downstream: charmed-kubernetes/kube-state-metrics-operator.git
@@ -196,7 +203,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/kube-state-metrics-operator.git'
 - kubernetes-autoscaler:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-kubernetes-autoscaler'
     docs: 'https://charmhub.io/kubernetes-autoscaler/docs'
     downstream: charmed-kubernetes/charm-kubernetes-autoscaler.git
@@ -207,7 +214,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-autoscaler.git'
 - kubernetes-e2e:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-kubernetes-e2e'
     docs: 'https://charmhub.io/kubernetes-e2e/docs'
     downstream: charmed-kubernetes/charm-kubernetes-e2e.git
@@ -219,7 +226,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-e2e.git'
 - kubernetes-control-plane:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-kubernetes-control-plane'
     build-resources: 'cd {out_path}; bash {src_path}/build-cni-resources.sh'
     docs: 'https://charmhub.io/kubernetes-control-plane/docs'
@@ -232,7 +239,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-control-plane.git'
 - kubernetes-metrics-server:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-kubernetes-metrics-server'
     docs: 'https://charmhub.io/kubernetes-metrics-server/docs'
     downstream: charmed-kubernetes/kubernetes-metrics-server-operator.git
@@ -245,7 +252,7 @@
     upstream: >-
       https://github.com/charmed-kubernetes/kubernetes-metrics-server-operator.git
 - kubernetes-worker:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-kubernetes-worker'
     build-resources: 'cd {out_path}; bash {src_path}/build-cni-resources.sh'
     docs: 'https://charmhub.io/kubernetes-worker/docs'
@@ -258,7 +265,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/charm-kubernetes-worker.git'
 - kubevirt:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-kubevirt'
     docs: 'https://charmhub.io/kubevirt/docs'
     downstream: charmed-kubernetes/charm-kube-virt.git
@@ -272,7 +279,7 @@
     channel-range:
       min: '1.27'
 - openstack-cloud-controller:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-openstack-cloud-controller'
     docs: 'https://charmhub.io/openstack-cloud-controller/docs'
     downstream: charmed-kubernetes/openstack-cloud-controller-operator.git
@@ -286,6 +293,7 @@
     channel-range:
       min: '1.28'
 - tigera-secure-ee:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-tigera-secure-ee'
     build-resources: 'cd {out_path}; bash {src_path}/build-resources.sh'
     docs: 'https://charmhub.io/tigera-secure-ee/docs'
@@ -299,6 +307,7 @@
     channel-range:
       max: '1.28'
 - keepalived:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-keepalived'
     docs: 'https://charmhub.io/keepalived/docs'
     downstream: charmed-kubernetes/charm-keepalived.git
@@ -311,6 +320,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-keepalived.git'
 - docker-registry:
+    builder: local
     bugs: 'https://bugs.launchpad.net/layer-docker-registry'
     docs: 'https://charmhub.io/docker-registry/docs'
     downstream: charmed-kubernetes/docker-registry-charm.git
@@ -322,6 +332,7 @@
       - docs-extra
     upstream: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
 - aws-iam:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-aws-iam'
     docs: 'https://charmhub.io/aws-iam/docs'
     downstream: charmed-kubernetes/charm-aws-iam
@@ -333,6 +344,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-aws-iam.git'
 - azure-integrator:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-azure-integrator'
     docs: 'https://charmhub.io/azure-integrator/docs'
     downstream: charmed-kubernetes/charm-azure-integrator
@@ -344,7 +356,7 @@
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-azure-integrator.git'
 - azure-cloud-provider:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-azure-cloud-provider'
     docs: 'https://charmhub.io/azure-cloud-provider/docs'
     downstream: charmed-kubernetes/charm-azure-cloud-provider
@@ -358,6 +370,7 @@
     channel-range:
       min: '1.25'
 - gcp-integrator:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-gcp-integrator'
     docs: 'https://charmhub.io/gcp-integrator/docs'
     downstream: charmed-kubernetes/charm-gcp-integrator
@@ -369,7 +382,7 @@
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-gcp-integrator.git'
 - gcp-k8s-storage:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-gcp-k8s-storage'
     docs: 'https://charmhub.io/gcp-k8s-storage/docs'
     downstream: charmed-kubernetes/gcp-k8s-storage
@@ -383,7 +396,7 @@
     channel-range:
       min: '1.25'
 - gcp-cloud-provider:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-gcp-cloud-provider'
     docs: 'https://charmhub.io/gcp-cloud-provider/docs'
     downstream: charmed-kubernetes/charm-gcp-cloud-provider
@@ -402,6 +415,7 @@
       - github-runner
     upstream: 'https://github.com/charmed-kubernetes/github-runner-operator.git'
 - aws-integrator:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-aws-integrator'
     docs: 'https://charmhub.io/aws-integrator/docs'
     downstream: charmed-kubernetes/charm-aws-integrator
@@ -413,7 +427,7 @@
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-aws-integrator.git'
 - aws-k8s-storage:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-aws-k8s-storage'
     docs: 'https://charmhub.io/aws-k8s-storage/docs'
     downstream: charmed-kubernetes/aws-k8s-storage
@@ -427,7 +441,7 @@
     channel-range:
       min: '1.25'
 - aws-cloud-provider:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-aws-cloud-provider'
     docs: 'https://charmhub.io/aws-cloud-provider/docs'
     downstream: charmed-kubernetes/charm-aws-cloud-provider
@@ -441,6 +455,7 @@
     channel-range:
       min: '1.27'
 - openstack-integrator:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-openstack-integrator'
     docs: 'https://charmhub.io/openstack-integrator/docs'
     downstream: charmed-kubernetes/charm-openstack-integrator
@@ -452,6 +467,7 @@
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-openstack-integrator.git'
 - vsphere-integrator:
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-vsphere-integrator'
     docs: 'https://charmhub.io/vsphere-integrator/docs'
     downstream: charmed-kubernetes/charm-vsphere-integrator
@@ -463,7 +479,7 @@
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-vsphere-integrator.git'
 - vsphere-cloud-provider:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-vsphere-cloud-provider'
     docs: 'https://charmhub.io/vsphere-cloud-provider/docs'
     downstream: charmed-kubernetes/vsphere-cloud-provider
@@ -477,7 +493,7 @@
     channel-range:
       min: '1.25'
 - metallb:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/operator-metallb'
     docs: 'https://charmhub.io/metallb/docs'
     downstream: charmed-kubernetes/metallb-operator
@@ -517,7 +533,7 @@
     channel-range:
       max: '1.27'
 - multus:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-multus'
     docs: 'https://charmhub.io/multus/docs'
     downstream: charmed-kubernetes/charm-multus
@@ -529,7 +545,7 @@
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-multus.git'
 - sriov-cni:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-sriov-cni'
     docs: 'https://charmhub.io/sriov-cni/docs'
     downstream: charmed-kubernetes/charm-sriov-cni
@@ -542,7 +558,7 @@
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-sriov-cni.git'
 - sriov-network-device-plugin:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-sriov-network-device-plugin'
     docs: 'https://charmhub.io/sriov-network-device-plugin/docs'
     downstream: charmed-kubernetes/charm-sriov-network-device-plugin
@@ -556,7 +572,7 @@
     upstream: >-
       https://github.com/charmed-kubernetes/charm-sriov-network-device-plugin.git
 - coredns:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-coredns'
     docs: 'https://charmhub.io/coredns/docs'
     downstream: charmed-kubernetes/charm-coredns
@@ -568,7 +584,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-coredns.git'
 - gatekeeper-controller-manager:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/opa-gatekeeper-operator'
     docs: 'https://charmhub.io/gatekeeper-controller-manager/docs'
     downstream: charmed-kubernetes/opa-gatekeeper-operators
@@ -581,7 +597,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
 - gatekeeper-audit:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/opa-gatekeeper-operator'
     docs: 'https://charmhub.io/gatekeeper-audit/docs'
     downstream: charmed-kubernetes/opa-gatekeeper-operators
@@ -594,7 +610,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
 - bird:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-bird'
     docs: 'https://charmhub.io/bird/docs'
     downstream: charmed-kubernetes/bird-operator
@@ -606,7 +622,7 @@
     channel-range:
       min: '999.0'
 - kubernetes-dashboard:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/kubernetes-dashboard-operator'
     docs: 'https://charmhub.io/kubernetes-dashboard/docs'
     downstream: charmed-kubernetes/kubernetes-dashboard-operator
@@ -620,7 +636,7 @@
     channel-range:
       min: '1.28'
 - volcano-admission:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-volcano'
     docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
     downstream: charmed-kubernetes/charm-volcano
@@ -636,7 +652,7 @@
     channel-range:
       min: '1.27'
 - volcano-controllers:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-volcano'
     docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
     downstream: charmed-kubernetes/charm-volcano
@@ -652,7 +668,7 @@
     channel-range:
       min: '1.27'
 - volcano-scheduler:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-volcano'
     docs: 'https://discourse.charmhub.io/t/volcano-docs-index/9600'
     downstream: charmed-kubernetes/charm-volcano
@@ -668,7 +684,7 @@
     channel-range:
       min: '1.27'
 - nvidia-gpu-operator:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/nvidia-operators'
     downstream: charmed-kubernetes/nvidia
     store: 'https://charmhub.io/nvidia-gpu-operator'
@@ -681,7 +697,7 @@
     channel-range:
       min: '1.29'
 - nvidia-network-operator:
-    builder: 'launchpad'
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/nvidia-operators'
     downstream: charmed-kubernetes/nvidia
     store: 'https://charmhub.io/nvidia-network-operator'
