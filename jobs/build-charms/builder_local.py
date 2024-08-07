@@ -474,6 +474,7 @@ class BuildEnv:
         )
         if response and "Item" in response:
             self.db = response["Item"]
+        self.db["pull_layer_manifest"] = None
 
     def clean(self):
         for each in self.clean_dirs:
@@ -602,7 +603,10 @@ class BuildEnv:
         return layer_manifest
 
     def pull_layers(self):
-        """Clone all downstream layers to be processed locally when doing charm builds."""
+        """Clone all downstream layers to be processed locally when doing local charm builds."""
+        layers = self.db.get("pull_layer_manifest")
+        if layers is not None:
+            return layers
         layers_to_pull = [
             layer_name
             for layer in self.layers
@@ -611,8 +615,8 @@ class BuildEnv:
         ]
         pool = ThreadPool()
         results = pool.map(self.download, layers_to_pull)
-
-        self.db["pull_layer_manifest"] = list(results)
+        self.db["pull_layer_manifest"] = layers = list(results)
+        return layers
 
 
 @unique
@@ -831,8 +835,7 @@ class BuildEntity:
             version_id = [{"rev": version, "url": self.entity}] if version else None
         elif self.reactive and source == "local":
             version_id = [
-                {k: curr[k] for k in comparisons}
-                for curr in self.build.db["pull_layer_manifest"]
+                {k: curr[k] for k in comparisons} for curr in self.build.pull_layers()
             ]
 
             # Check the current git cloned charm repo commit and add that to
@@ -915,7 +918,6 @@ class BuildEntity:
 
     def charm_build(self):
         """Perform a build against charm/bundle."""
-        lxc = os.environ.get("charmcraft_lxc")
         ret = SimpleNamespace(ok=False)
         charm_path = Path(self.src_path, f"{self.name}.charm")
         if "override-build" in self.opts:
@@ -927,6 +929,7 @@ class BuildEntity:
                 echo=self.echo,
             )
         elif self.reactive:
+            self.build.pull_layers()
             supported_architectures = (
                 self.opts.get("architectures") or K8S_CHARM_SUPPORT_ARCHES
             )
@@ -942,21 +945,8 @@ class BuildEntity:
                 ret.ok = True
             except sh.ErrorReturnCode as e:
                 self.echo(e.stderr)
-        elif lxc:
-            msg = f"Consider moving {self.name} to launchpad builder"
-            border = "-".join("=" * (len(msg) // 2 + 1))
-            self.echo("\n".join((border, msg, border)))
-            self.echo(f"Building in container {lxc}.")
-            repository = f"https://github.com/{self.downstream}"
-            charmcraft_script = (
-                "#!/bin/bash -eux\n"
-                f"source {Path(__file__).parent / 'charmcraft-lib.sh'}\n"
-                f"ci_charmcraft_pack {lxc} {repository} {self.branch} {self.opts.get('subdir', '')}\n"
-                f"ci_charmcraft_copy {lxc} {charm_path}\n"
-            )
-            ret = script(charmcraft_script, echo=self.echo)
         else:
-            self.echo("No 'charmcraft_lxc' container available")
+            self.echo("charmcraft pack should be performed on launchpad builder")
 
         if not ret.ok:
             self.echo("Failed to build, aborting")
@@ -990,7 +980,7 @@ class BuildEntity:
         self.tag(f"{self.name}-{artifact.rev}")
 
     def tag(self, tag: str) -> bool:
-        """Tag current commit in this repo with a lightweigh tag."""
+        """Tag current commit in this repo with a lightweight tag."""
         tagged = False
         current_sha = self.commit()
         if repo := self.repository:
