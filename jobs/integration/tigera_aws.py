@@ -96,13 +96,14 @@ def juju_version():
 
 
 def juju_base(series):
-    """Retrieve juju 3.1 base from series."""
+    """Retrieve juju 3.x base from series."""
     if juju_version() < (3, 1):
         return f"--series={series}"
     mapping = {
         "bionic": "ubuntu@18.04",
         "focal": "ubuntu@20.04",
         "jammy": "ubuntu@22.04",
+        "noble": "ubuntu@24.04",
     }
     return f"--base={mapping[series]}"
 

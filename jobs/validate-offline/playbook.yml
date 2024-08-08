@@ -27,7 +27,7 @@
       command: "snap install {{item}}"
       ignore_errors: yes
       loop:
-        - "juju --channel=3.1/stable"
+        - "juju --channel=3/stable"
         - "juju-wait --classic"
         - "lxd"
       tags:
