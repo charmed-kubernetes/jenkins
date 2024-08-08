@@ -1516,8 +1516,8 @@ async def keystone_deployment(
     await juju_run(
         any_keystone.client,
         (
-            f'snap install kubectl --channel={original_config["channel"]["value"]} --classic;\n'
-            f'snap install client-keystone-auth --channel={original_config["channel"]["value"]};\n'
+            "snap install kubectl --classic;\n"
+            "snap install client-keystone-auth;\n"
             "mkdir -p /root/.kube;\n"
             "mv /home/ubuntu/config /root/.kube/config;\n"
             "chown -R root:root /root/.kube;"
