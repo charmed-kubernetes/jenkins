@@ -426,7 +426,7 @@ def test_build_entity_assemble_resources(
 
 @pytest.fixture
 def ensure_track(builder_local):
-    with patch.object(builder_local, "ensure_track") as mocked:
+    with patch.object(builder_local, "ensure_charm_track") as mocked:
         yield mocked
 
 
