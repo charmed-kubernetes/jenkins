@@ -20,7 +20,7 @@ K8S_STABLE_VERSION = "1.30"
 K8S_NEXT_VERSION = "1.32"
 
 # Lowest K8S SEMVER to process, this is usually K8S_STABLE_VERSION - 4
-K8S_STARTING_SEMVER = "1.26.0"
+K8S_STARTING_SEMVER = "1.27.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -83,7 +83,7 @@ SNAP_K8S_TRACK_LIST = [
     ("1.28", ["1.28/stable", "1.28/candidate", "1.28/beta", "1.28/edge"]),
     ("1.29", ["1.29/stable", "1.29/candidate", "1.29/beta", "1.29/edge"]),
     ("1.30", ["1.30/stable", "1.30/candidate", "1.30/beta", "1.30/edge"]),
-    ("1.31", ["1.31/edge"]),
+    ("1.31", ["1.31/stable", "1.31/candidate", "1.31/beta", "1.31/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
