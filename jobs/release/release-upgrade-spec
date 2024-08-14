@@ -46,9 +46,9 @@ export SNAP_CHANNEL_UPGRADE_TO=${1:-1.27/beta}
 
 SNAP_VERSION=${2:-1.26/stable}
 SERIES=${3:-focal}
+JUJU_CLOUD=${4:-vsphere/Boston}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=stable
-JUJU_CLOUD=vsphere/Boston
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-release-upgrade
 ARCH=amd64
