@@ -117,6 +117,11 @@
       - snap-beta  # this value represents the snap channel after the upgrade
       - lxc-runner-params
       - juju-lts
+      - string:
+          name: cloud
+          description: "The cloud to use in validation"
+          default: "vsphere/Boston"
+          trim: true
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -146,4 +151,4 @@
           JOB_SPEC_DIR: "jobs/release"
       - run-lxc:
           COMMAND: |
-            bash jobs/release/release-upgrade-spec $snap_version $deploy_snap $series
+            bash jobs/release/release-upgrade-spec $snap_version $deploy_snap $series $cloud
