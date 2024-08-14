@@ -2,6 +2,7 @@
 
 def kube_version = params.k8s_tag
 def kube_ersion = kube_version.substring(1)
+def channels = params.channels.tokenize(',').collect { kube_ersion + '/' + it }.join(',')
 def lxc_name = env.JOB_NAME+"-"+env.BUILD_NUMBER
 def _find_eks_base(version, override){
     if (override.length())
@@ -127,7 +128,7 @@ pipeline {
             steps {
                 script {
                     if(params.dry_run) {
-                        echo "Dry run; would have uploaded snaps to ${params.channels}"
+                        echo "Dry run; would have uploaded snaps to ${channels}"
                     } else {
                         sh """
                             BUILD_ARCH=\$(dpkg --print-architecture)
@@ -140,7 +141,7 @@ pipeline {
 
                                 echo "Uploading \${BUILT_SNAP}."
                                 sudo lxc shell ${lxc_name} -- bash -c \
-                                    "snapcraft -v upload /\${EKS_SNAP}/\${BUILT_SNAP} --release ${params.channels}"
+                                    "snapcraft -v upload /\${EKS_SNAP}/\${BUILT_SNAP} --release ${channels}"
                             done
                             sudo lxc shell ${lxc_name} -- bash -c "snapcraft logout"
                         """
