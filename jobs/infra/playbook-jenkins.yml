@@ -121,6 +121,12 @@
       tags:
         - jenkins
       ignore_errors: yes
+    - name: upgrade snapd
+      command: "snap refresh snapd --channel latest/stable"
+      ignore_errors: yes
+      tags:
+        - jenkins
+        - adhoc
     - name: upgrade charm
       command: "snap refresh charm --channel 3.x/stable"
       ignore_errors: yes
