@@ -201,22 +201,29 @@ class LPBuildEntity(BuildEntity):
         """Determine the charm file name of a particular build.
 
         Currently, this is accomplished by reading the buildlog
-        and looking for a keyword, knowing the next line is the charm name
+        and looking for a regex match of the charmn name.
 
         replace once LP#2028406 is fixed
         """
 
-        def find_packed_charm(lines):
-            found, keyword = False, "Charms packed:"
-            for line in lines:
-                if line.startswith(keyword):
-                    found |= True
-                elif found:
-                    yield line.strip()
-                    found = False
+        content = self._lp_build_log(build)
+        charm_file_matches = re.findall(r"([\w\-\.]+\.charm)", content, re.MULTILINE)
+        uniq = set(charm_file_matches)
+        if not uniq:
+            err_msg = (
+                f"Failed launchpad build {self.entity} due to "
+                "not finding a named packed charm."
+            )
+            raise BuildException(err_msg)
+        elif len(uniq) > 1:
+            err_msg = (
+                f"Failed launchpad build {self.entity} due to "
+                "not finding too many named packed charms."
+                "Found charm files: " + ", ".join(uniq)
+            )
+            raise BuildException(err_msg)
 
-        fp = find_packed_charm(self._lp_build_log(build).splitlines())
-        return next(fp)
+        return uniq.pop()
 
     def _lp_build_download(self, build, dst_target: Path) -> Artifact:
         """Download charm file for a launchpad build."""
