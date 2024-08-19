@@ -14,7 +14,6 @@ import pytest
 import logging
 import click
 from base64 import b64encode
-from cilib.enums import SNAP_K8S_TRACK_LIST
 
 from datetime import datetime
 from pathlib import Path
@@ -288,21 +287,36 @@ async def test_snap_versions(model, tools):
                     if not charm_branch.success:
                         # follows the same track as the other snaps
                         addons_track = track
+                        log.info(
+                            "cdk-addons track not defined, following %s", addons_track
+                        )
                     elif (branch := charm_branch.stdout.strip()).startswith("release_"):
                         # follows the track defined in the charm_branch file
                         addons_track = branch.replace("release_", "")
+                        log.info(
+                            "cdk-addons track defined by charm_branch: %s", addons_track
+                        )
                     else:
-                        # cdk-addons follows the track by risk in other cases.
-                        for addons_track, channels in reversed(SNAP_K8S_TRACK_LIST):
-                            if any(risk in c for c in channels):
-                                break
+                        # cdk-addons follows the track by latest/$risk in other cases.
+                        stdout, *_ = await tools.run("snap", "info", snap)
+                        snap_info = yaml.safe_load(stdout)
+                        if version := snap_info.get("channels", {}).get(
+                            f"latest/{risk}"
+                        ):
+                            addons_track = ".".join(version.split(".", 2)[:2])
+                            log.info(
+                                "cdk-addons track defined by latest/%s: %s",
+                                risk,
+                                addons_track,
+                            )
                         else:
-                            raise ValueError(f"no addons_track found for risk={risk}")
-
-                    msg = f"Snap {snap} is version {snap_version} and not {addons_track}.*"
+                            raise ValueError(
+                                f"no latest/{risk} version found for cdk-addons"
+                            )
+                    msg = f"{unit.name}: Snap {snap} is version {snap_version} and not {addons_track}.*"
                     assert snap_version.startswith(addons_track + "."), msg
                 else:
-                    msg = f"Snap {snap} is version {snap_version} and not {track}.*"
+                    msg = f"{unit.name}: Snap {snap} is version {snap_version} and not {track}.*"
                     assert snap_version.startswith(track + "."), msg
 
 
