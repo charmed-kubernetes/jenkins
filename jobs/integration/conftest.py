@@ -10,10 +10,13 @@ import pytest
 import requests
 import sh
 import shlex
+import subprocess
 import uuid
 import yaml
 
 from contextlib import contextmanager, asynccontextmanager
+from functools import cached_property
+
 from cilib.lp import Client as LPClient
 from datetime import datetime
 from juju.model import Model
@@ -24,7 +27,6 @@ from .utils import (
     asyncify,
     upgrade_charms,
     upgrade_snaps,
-    arch,
     log_snap_versions,
     juju_run,
 )
@@ -52,9 +54,7 @@ def pytest_addoption(parser):
         default=os.environ.get("SERIES", "focal"),
         help="Base series",
     )
-    parser.addoption(
-        "--cloud", action="store", default="aws/us-east-2", help="Juju cloud to use"
-    )
+    parser.addoption("--cloud", action="store", help="Juju cloud to use")
     parser.addoption(
         "--charm-channel", action="store", default="", help="Charm channel to use"
     )
@@ -143,41 +143,49 @@ def pytest_addoption(parser):
 class Tools:
     """Utility class for accessing juju related tools"""
 
-    def __init__(self, request):
-        self._request = request
+    def __init__(self, config):
+        self._config = config
         self.requests = requests
         self.requests_get = asyncify(requests.get)
+        self.run = asyncify(self.exec)
 
-    async def _load(self):
-        request = self._request
-        whoami, _ = await self.run("juju", "whoami", "--format=yaml")
-        stdout, _ = await self.run("juju", "--version")
+    def _load(self):
+        whoami, _ = self.exec("juju", "whoami", "--format=yaml")
+        stdout, _ = self.exec("juju", "--version")
         ver_str = stdout.splitlines()[-1].split("-")[0]
         self.juju_version = tuple(map(int, ver_str.split(".")))
         self.juju_user = yaml.safe_load(whoami)["user"]
-        self.controller_name = request.config.getoption("--controller")
-        self.model_name = request.config.getoption("--model")
+        self.controller_name = self._config.getoption("--controller")
+        self.model_name = self._config.getoption("--model")
         self.model_name_full = f"{self.juju_user}/{self.model_name}"
         self.k8s_model_name = f"{self.model_name}-k8s"
         self.k8s_model_name_full = f"{self.model_name_full}-k8s"
-        self.series = request.config.getoption("--series")
-        self.cloud = request.config.getoption("--cloud")
+        self.series = self._config.getoption("--series")
         self.k8s_cloud = f"{self.k8s_model_name}-cloud"
         self.connection = f"{self.controller_name}:{self.model_name_full}"
         self.k8s_connection = f"{self.controller_name}:{self.k8s_model_name_full}"
-        self.is_series_upgrade = request.config.getoption("--is-series-upgrade")
+        self.is_series_upgrade = self._config.getoption("--is-series-upgrade")
         self.charm_channel = (
-            request.config.getoption("--charm-channel")  # use specified channel
+            self._config.getoption("--charm-channel")  # use specified channel
             or os.environ.get("CHARM_CHANNEL_UPGRADE_TO")  # fallback to upgrade env var
             or os.environ.get("JUJU_DEPLOY_CHANNEL")  # fallback to env var
             or "edge"  # default to edge
         )
-        self.snap_channel = request.config.getoption("--snap-channel")
-        self.vault_unseal_command = request.config.getoption("--vault-unseal-command")
-        self.juju_ssh_proxy = request.config.getoption("--juju-ssh-proxy")
-        self.use_existing_ceph_apps = request.config.getoption(
-            "--use-existing-ceph-apps"
+        self.snap_channel = self._config.getoption("--snap-channel")
+        self.vault_unseal_command = self._config.getoption("--vault-unseal-command")
+        self.juju_ssh_proxy = self._config.getoption("--juju-ssh-proxy")
+        self.use_existing_ceph_apps = self._config.getoption("--use-existing-ceph-apps")
+
+    @cached_property
+    def cloud(self):
+        if _it := self._config.getoption("--cloud"):
+            return _it
+        controller_data, _ = self.exec(
+            "juju", "show-controller", self.controller_name, "--format", "yaml"
         )
+        controller_infos = yaml.safe_load(controller_data)
+        controller_info, *_ = controller_infos.values()
+        return controller_info["details"]["cloud"]
 
     def juju_base(self, series):
         """Retrieve juju 3.x base from series."""
@@ -191,9 +199,9 @@ class Tools:
         }
         return f"--base={mapping[series]}"
 
-    async def run(self, cmd: str, *args: str, stdin=None, _tee=False):
+    def exec(self, cmd: str, *args: str, stdin=None, _tee=False):
         """
-        asynchronously run a command as a subprocess
+        exec a command as a subprocess
 
         @param str cmd: path to command on filesystem
         @param str *args: arguments to the command
@@ -204,12 +212,11 @@ class Tools:
             "out" -- stdout is tee'd to test stdout
             "err" -- stderr is tee'd to test stderr
         """
-        proc = await asyncio.create_subprocess_exec(
-            cmd,
-            *args,
-            stdin=asyncio.subprocess.PIPE if stdin else None,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+        process = subprocess.Popen(
+            [cmd] + list(args),
+            stdin=subprocess.PIPE if stdin else None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             env=os.environ.copy(),
         )
 
@@ -218,43 +225,21 @@ class Tools:
 
         stdout, stderr = bytearray(), bytearray()
 
-        def tee(line: bytes, sink: bytearray, fd: int):
-            sink += line
+        def tee(reader, sink: bytearray, fd: int):
+            _read = reader.read(1024)
+            sink += _read
             write = _tee == "out" and fd == 1
             write |= _tee == "err" and fd == 2
             if write or _tee is True:
-                os.write(fd, line)
+                os.write(fd, _read)
 
-        async def _read_stream(stream, callback):
-            while True:
-                line = await stream.read(1024)
-                if line:
-                    callback(line)
-                else:
-                    break
+        while process.poll() is None:
+            tee(process.stdout, stdout, 1)
+            tee(process.stderr, stderr, 2)
 
-        async def _feed_stream(input):
-            if input:
-                # replicates what proc.communicate() does with stdin
-                await proc._feed_stdin(input)
-
-        await asyncio.wait(
-            map(
-                asyncio.create_task,
-                [
-                    _read_stream(proc.stdout, lambda _l: tee(_l, stdout, 1)),
-                    _read_stream(proc.stderr, lambda _l: tee(_l, stderr, 2)),
-                    _feed_stream(input=stdin),
-                ],
-            )
-        )
-
-        return_code = await proc.wait()
-        if return_code != 0:
-            raise Exception(
-                f"Problem with run command {' '.join((cmd, *args))} (exit {return_code}):\n"
-                f"stdout:\n{str(stdout, 'utf8')}\n"
-                f"stderr:\n{str(stderr, 'utf8')}\n"
+        if rc := process.returncode:
+            raise subprocess.CalledProcessError(
+                rc, [cmd] + list(args), output=stdout, stderr=stderr
             )
         return str(stdout, "utf8"), str(stderr, "utf8")
 
@@ -304,9 +289,7 @@ class Tools:
 
 @pytest.fixture(scope="module")
 async def tools(request):
-    tools = Tools(request)
-    await tools._load()
-    return tools
+    yield request.config.test_tools
 
 
 @pytest.fixture(scope="module")
@@ -343,7 +326,8 @@ async def model(request, tools):
 
 
 @pytest.fixture(scope="module")
-async def k8s_cloud(kubeconfig, tools):
+@pytest.mark.usefixtures("kubeconfig")
+async def k8s_cloud(tools):
     clouds = await tools.run(
         "juju", "clouds", "--format", "yaml", "-c", tools.controller_name
     )
@@ -430,19 +414,6 @@ async def k8s_model(k8s_cloud, tools):
             )
 
 
-@pytest.fixture
-def system_arch():
-    return arch
-
-
-@pytest.fixture(autouse=True)
-def skip_by_arch(request, system_arch):
-    """Skip tests on specified arches"""
-    if request.node.get_closest_marker("skip_arch"):
-        if system_arch in request.node.get_closest_marker("skip_arch").args[0]:
-            pytest.skip("skipped on this arch: {}".format(system_arch))
-
-
 @pytest.fixture(scope="module")
 async def proxy_app(model):
     proxy_app = model.applications.get("squid-forwardproxy")
@@ -485,7 +456,7 @@ def skip_unless_all_charms(request, model):
         current_charms = set(map(_charm_name, model.applications.values()))
         all_are_available = all(charm in current_charms for charm in charms)
         if not all_are_available:
-            pytest.skip("skipped, not all matching charms found: {}".format(charms))
+            pytest.skip("not all matching charms found: {}".format(charms))
 
 
 @pytest.fixture()
@@ -502,14 +473,15 @@ def apps_by_charm(model):
     return _apps_by_charm
 
 
-@pytest.fixture(autouse=True)
-def skip_by_model(request, model):
+def skip_by_model(item) -> bool:
     """Skips tests if model isn't referenced, ie validate-vault for only
     running tests applicable to vault
     """
-    if request.node.get_closest_marker("on_model"):
-        if request.node.get_closest_marker("on_model").args[0] not in model.info.name:
-            pytest.skip("skipped on this model: {}".format(model.info.name))
+    model_name = item.config.getoption("--model")
+    on_models = [mark.args[0] for mark in item.iter_markers(name="on_model")]
+    if on_models:
+        if model_name not in on_models:
+            pytest.skip(f"model {model_name!r} not in [{', '.join(on_models)}]")
 
 
 @pytest.fixture
@@ -574,7 +546,6 @@ async def addons_model(request):
     model_name = request.config.getoption("--addons-model")
     if not model_name:
         pytest.skip("--addons-model not specified")
-        return
     model = Model()
     await model.connect(controller_name + ":" + model_name)
     yield model
@@ -587,12 +558,15 @@ async def cloud(model):
     return config["type"].value
 
 
-@pytest.fixture(autouse=True)
-def skip_by_cloud(request, cloud):
-    clouds_marker = request.node.get_closest_marker("clouds")
-    if not clouds_marker:
+def skip_by_cloud(item):
+    allowed_clouds = set()
+    for mark in item.iter_markers(name="clouds"):
+        allowed_clouds |= set(mark.args[0])
+
+    if not allowed_clouds:
+        # All clouds are allowed, as no restricts exist on this test
         return
-    allowed_clouds = set(clouds_marker.args[0])
+
     # from: juju add-cloud --help
     known_clouds = {
         # private clouds
@@ -603,24 +577,23 @@ def skip_by_cloud(request, cloud):
         "vsphere",
         # public clouds
         "azure",
-        "cloudsigma",
         "ec2",
         "gce",
         "oci",
     }
+
     unknown_clouds = allowed_clouds - known_clouds
     if unknown_clouds:
-        nodeid = request.node.nodeid
+        nodeid = item.nodeid
         s = "s" if len(unknown_clouds) > 1 else ""
         unknown_clouds = ", ".join(unknown_clouds)
         raise ValueError(
             f"Unrecognized cloud{s} in marker for {nodeid}: {unknown_clouds}"
         )
-    if cloud not in allowed_clouds:
-        log(
-            f"Skipping due to unsupported cloud: {cloud} not in [{', '.join(allowed_clouds)}]"
-        )
-        pytest.skip("unsupported cloud")
+    _cloud = item.config.test_tools.cloud
+    if _cloud not in allowed_clouds:
+        msg = f"cloud '{_cloud}' not in [{', '.join(allowed_clouds)}]"
+        pytest.skip(msg)
 
 
 @pytest.fixture()
@@ -660,10 +633,10 @@ def skip_if_version(request, k8s_version):
     if not skip_marker:
         return
     if k8s_version is None:
-        pytest.skip("skipping, Couldn't determine k8s version yet.")
+        pytest.skip("Couldn't determine k8s version yet.")
     version_predicate, *_ = skip_marker.args
     if version_predicate(k8s_version):
-        pytest.skip(f"skipping, k8s version v{'.'.join(k8s_version)}")
+        pytest.skip(f"k8s version v{'.'.join(k8s_version)}")
 
 
 # def pytest_itemcollected(item):
@@ -717,6 +690,17 @@ def pytest_metadata(metadata):
         metadata["ANALYTICS"] = (
             f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/columbo.html'>View Report</a>"
         )
+
+
+def pytest_runtest_setup(item):
+    """Called to perform the setup phase for a test item."""
+    skip_by_model(item)  # skip tests if model marking on test mismatches
+    skip_by_cloud(item)  # skip tests if cloud marking on test mismatches
+
+
+def pytest_configure(config):
+    config.test_tools = Tools(config)
+    config.test_tools._load()
 
 
 @pytest.fixture(scope="module")

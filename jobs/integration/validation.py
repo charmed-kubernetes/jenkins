@@ -1586,7 +1586,6 @@ class TestCeph:
         await validate_storage_class(model, storage_class, "Ceph", **kwds)
 
 
-@pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.clouds(["ec2", "vsphere"])
 async def test_keystone(model, keystone_deployment):
     control_plane = model.applications["kubernetes-control-plane"]
@@ -1629,7 +1628,6 @@ async def test_keystone(model, keystone_deployment):
     assert output.code == 0, output.stderr
 
 
-@pytest.mark.skip_arch(["aarch64"])
 @pytest.mark.on_model("validate-vault")
 async def test_encryption_at_rest(model, tools):
     """Testing integrating vault secrets into cluster"""
