@@ -24,7 +24,6 @@ from .utils import (
     asyncify,
     upgrade_charms,
     upgrade_snaps,
-    arch,
     log_snap_versions,
     juju_run,
 )
@@ -343,7 +342,8 @@ async def model(request, tools):
 
 
 @pytest.fixture(scope="module")
-async def k8s_cloud(kubeconfig, tools):
+@pytest.mark.usefixtures("kubeconfig")
+async def k8s_cloud(tools):
     clouds = await tools.run(
         "juju", "clouds", "--format", "yaml", "-c", tools.controller_name
     )
@@ -430,19 +430,6 @@ async def k8s_model(k8s_cloud, tools):
             )
 
 
-@pytest.fixture
-def system_arch():
-    return arch
-
-
-@pytest.fixture(autouse=True)
-def skip_by_arch(request, system_arch):
-    """Skip tests on specified arches"""
-    if request.node.get_closest_marker("skip_arch"):
-        if system_arch in request.node.get_closest_marker("skip_arch").args[0]:
-            pytest.skip("skipped on this arch: {}".format(system_arch))
-
-
 @pytest.fixture(scope="module")
 async def proxy_app(model):
     proxy_app = model.applications.get("squid-forwardproxy")
@@ -502,14 +489,15 @@ def apps_by_charm(model):
     return _apps_by_charm
 
 
-@pytest.fixture(autouse=True)
-def skip_by_model(request, model):
+def skip_by_model(item) -> bool:
     """Skips tests if model isn't referenced, ie validate-vault for only
     running tests applicable to vault
     """
-    if request.node.get_closest_marker("on_model"):
-        if request.node.get_closest_marker("on_model").args[0] not in model.info.name:
-            pytest.skip("skipped on this model: {}".format(model.info.name))
+    model_name = item.config.getoption("--model")
+    on_models = [mark.args[0] for mark in item.iter_markers(name="on_model")]
+    if on_models:
+        if model_name not in on_models:
+            pytest.skip(f"skipped on this model: {model_name!r}")
 
 
 @pytest.fixture
@@ -574,7 +562,6 @@ async def addons_model(request):
     model_name = request.config.getoption("--addons-model")
     if not model_name:
         pytest.skip("--addons-model not specified")
-        return
     model = Model()
     await model.connect(controller_name + ":" + model_name)
     yield model
@@ -717,6 +704,11 @@ def pytest_metadata(metadata):
         metadata["ANALYTICS"] = (
             f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/columbo.html'>View Report</a>"
         )
+
+
+def pytest_runtest_setup(item):
+    """Called to perform the setup phase for a test item."""
+    skip_by_model(item)  # skip tests if model marking on test mismatches
 
 
 @pytest.fixture(scope="module")
