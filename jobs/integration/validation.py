@@ -2647,6 +2647,7 @@ async def test_cinder(model, tools):
 @pytest.mark.clouds(["openstack"])
 @pytest.mark.usefixtures("teardown_microbot")
 async def test_octavia(model, tools):
+    # TODO: Update the microbot deployment mechanism since the action has been deprecated.
     assert "openstack-integrator" in model.applications, "Missing integrator"
     log.info("Deploying microbot")
     unit = model.applications["kubernetes-worker"].units[0]
