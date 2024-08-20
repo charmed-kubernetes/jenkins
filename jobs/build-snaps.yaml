@@ -83,7 +83,7 @@
             Source tag from https://github.com/kubernetes/kubernetes.
       - string:
           name: channels
-          default: '{version}/edge,{version}/beta,{version}/candidate'
+          default: 'edge,beta,candidate,stable'
           description: |
             Comma separated snap store channels to release the built snaps to.
       - bool:
