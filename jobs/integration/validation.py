@@ -13,6 +13,7 @@ import random
 import pytest
 import logging
 import click
+import jinja2
 from base64 import b64encode
 
 from datetime import datetime
@@ -333,26 +334,53 @@ async def test_rbac(model):
 
 
 @pytest.fixture
-async def teardown_microbot(model):
-    unit = model.applications["kubernetes-worker"].units[0]
-    await juju_run_action(unit, "microbot", delete=True)
-    yield
-    await juju_run_action(unit, "microbot", delete=True)
+def microbot_deployment(model, tmp_path):
+    parent = Path(__file__).parent
+    path_to_deployment = parent / "templates" / "microbot.yaml"
+    kw = model.applications["kubernetes-worker"]
+    machine = kw.units[0].machine
+    machine_arch = machine.safe_data["hardware-characteristics"]["arch"]
+
+    context = {
+        "arch": machine_arch,
+        "public_address": kw.units[0].public_address,
+        "replicas": len(kw.units),
+        "registry": "rocks.canonical.com:443/cdk",
+    }
+    content = jinja2.Template(path_to_deployment.read_text()).render(context)
+    path = tmp_path / "microbot.yaml"
+    path.write_text(content)
+    yield path
 
 
-@pytest.mark.clouds(["ec2", "vsphere"])
-@pytest.mark.skip("Feature removed in ops rewrite")
-async def test_microbot(model, tools, teardown_microbot):
-    """Validate the microbot action"""
+@pytest.fixture
+async def teardown_microbot(model, microbot_deployment):
+    await kubectl_delete(
+        microbot_deployment, model, namespace="default", grace_period=5 * 60
+    )
+
+
+@pytest.fixture
+async def setup_microbot(model, microbot_deployment):
+    """Setup the microbot on ingress"""
+    await kubectl_apply(microbot_deployment, model, namespace="default")
     unit = model.applications["kubernetes-worker"].units[0]
-    action = await juju_run_action(unit, "microbot", replicas=3)
     await retry_async_with_timeout(
         verify_ready,
         (unit, "po", ["microbot"], "-n default"),
         timeout_msg="Unable to create microbot pods for test",
     )
+    yield "http://microbot.{public_address}.nip.io"
+    await kubectl_delete(
+        microbot_deployment, model, namespace="default", grace_period=5 * 60
+    )
 
-    url = "http://" + action.results["address"]
+
+@pytest.mark.clouds(["azure", "ec2", "vsphere"])
+async def test_microbot(model, tools, setup_microbot):
+    """Validate the microbot action"""
+    kw = model.applications["kubernetes-worker"].units[0]
+    url = setup_microbot.format(public_address=kw.public_address)
     _times, _sleep = 5, 60
     for _ in range(_times):  # 5 min should be enough time
         try:
@@ -372,7 +400,7 @@ async def test_microbot(model, tools, teardown_microbot):
         pytest.fail(f"Failed to connect to microbot after {_times * _sleep} sec")
 
 
-@pytest.mark.clouds(["ec2", "vsphere"])
+@pytest.mark.clouds(["azure", "ec2", "vsphere"])
 @pytest.mark.usefixtures("log_dir")
 @backoff.on_exception(backoff.expo, TypeError, max_tries=5)
 async def test_dashboard(model, kubeconfig, tools):
@@ -2617,7 +2645,8 @@ async def test_cinder(model, tools):
 
 
 @pytest.mark.clouds(["openstack"])
-async def test_octavia(model, tools, teardown_microbot):
+@pytest.mark.usefixtures("teardown_microbot")
+async def test_octavia(model, tools):
     assert "openstack-integrator" in model.applications, "Missing integrator"
     log.info("Deploying microbot")
     unit = model.applications["kubernetes-worker"].units[0]
