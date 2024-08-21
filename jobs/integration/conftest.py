@@ -160,6 +160,7 @@ class Tools:
         self.k8s_model_name = f"{self.model_name}-k8s"
         self.k8s_model_name_full = f"{self.model_name_full}-k8s"
         self.series = self._config.getoption("--series")
+        self.cloud_region = self._config.getoption("--cloud")
         self.k8s_cloud = f"{self.k8s_model_name}-cloud"
         self.connection = f"{self.controller_name}:{self.model_name_full}"
         self.k8s_connection = f"{self.controller_name}:{self.k8s_model_name_full}"
@@ -177,14 +178,26 @@ class Tools:
 
     @cached_property
     def cloud(self):
-        if _it := self._config.getoption("--cloud"):
-            return _it
         controller_data = subprocess.check_output(
             ["juju", "show-controller", self.controller_name, "--format", "yaml"]
         )
         controller_infos = yaml.safe_load(controller_data)
         controller_info, *_ = controller_infos.values()
-        return controller_info["details"]["cloud"]
+        cloud_name = controller_info["details"]["cloud"]
+
+        cloud_data = subprocess.check_output(
+            [
+                "juju",
+                "show-cloud",
+                cloud_name,
+                "--controller",
+                self.controller_name,
+                "--format",
+                "yaml",
+            ]
+        )
+        cloud_info = yaml.safe_load(cloud_data)
+        return cloud_info["type"]
 
     def juju_base(self, series):
         """Retrieve juju 3.x base from series."""
@@ -549,7 +562,7 @@ async def deploy(request, tools):
         "-c",
         tools.controller_name,
         nonce_model,
-        tools.cloud,
+        tools.cloud_region,
         "--config",
         "test-mode=true",
     )
