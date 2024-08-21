@@ -147,12 +147,11 @@ class Tools:
         self._config = config
         self.requests = requests
         self.requests_get = asyncify(requests.get)
-        self.run = asyncify(self.exec)
 
     def _load(self):
-        whoami, _ = self.exec("juju", "whoami", "--format=yaml")
-        stdout, _ = self.exec("juju", "--version")
-        ver_str = stdout.splitlines()[-1].split("-")[0]
+        whoami = subprocess.check_output(["juju", "whoami", "--format=yaml"])
+        stdout = subprocess.check_output(["juju", "--version"])
+        ver_str = stdout.decode().split("-", 1)[0]
         self.juju_version = tuple(map(int, ver_str.split(".")))
         self.juju_user = yaml.safe_load(whoami)["user"]
         self.controller_name = self._config.getoption("--controller")
@@ -180,8 +179,8 @@ class Tools:
     def cloud(self):
         if _it := self._config.getoption("--cloud"):
             return _it
-        controller_data, _ = self.exec(
-            "juju", "show-controller", self.controller_name, "--format", "yaml"
+        controller_data = subprocess.check_output(
+            ["juju", "show-controller", self.controller_name, "--format", "yaml"]
         )
         controller_infos = yaml.safe_load(controller_data)
         controller_info, *_ = controller_infos.values()
@@ -199,9 +198,9 @@ class Tools:
         }
         return f"--base={mapping[series]}"
 
-    def exec(self, cmd: str, *args: str, stdin=None, _tee=False):
+    async def run(self, cmd: str, *args: str, stdin=None, _tee=False):
         """
-        exec a command as a subprocess
+        asynchronously run a command as a subprocess
 
         @param str cmd: path to command on filesystem
         @param str *args: arguments to the command
@@ -212,12 +211,12 @@ class Tools:
             "out" -- stdout is tee'd to test stdout
             "err" -- stderr is tee'd to test stderr
         """
-        process = subprocess.Popen(
-            [cmd] + list(args),
-            stdin=subprocess.PIPE if stdin else None,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env=os.environ.copy(),
+        process = await asyncio.create_subprocess_exec(
+            cmd,
+            *args,
+            stdin=asyncio.subprocess.PIPE if stdin else None,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
 
         if hasattr(stdin, "encode"):
@@ -225,21 +224,42 @@ class Tools:
 
         stdout, stderr = bytearray(), bytearray()
 
-        def tee(reader, sink: bytearray, fd: int):
-            _read = reader.read(1024)
-            sink += _read
+        def tee(line: bytes, sink: bytearray, fd: int):
+            sink += line
             write = _tee == "out" and fd == 1
             write |= _tee == "err" and fd == 2
             if write or _tee is True:
-                os.write(fd, _read)
+                os.write(fd, line)
 
-        while process.poll() is None:
-            tee(process.stdout, stdout, 1)
-            tee(process.stderr, stderr, 2)
+        async def _read_stream(stream, callback):
+            while True:
+                line = await stream.read(1024)
+                if line:
+                    callback(line)
+                else:
+                    break
 
-        if rc := process.returncode:
-            raise subprocess.CalledProcessError(
-                rc, [cmd] + list(args), output=stdout, stderr=stderr
+        async def _feed_stream(input):
+            if input:
+                # replicates what proc.communicate() does with stdin
+                await process._feed_stdin(input)
+
+        await asyncio.wait(
+            map(
+                asyncio.create_task,
+                [
+                    _read_stream(process.stdout, lambda _l: tee(_l, stdout, 1)),
+                    _read_stream(process.stderr, lambda _l: tee(_l, stderr, 2)),
+                    _feed_stream(input=stdin),
+                ],
+            )
+        )
+        return_code = await process.wait()
+        if return_code != 0:
+            raise Exception(
+                f"Problem with run command {' '.join((cmd, *args))} (exit {return_code}):\n"
+                f"stdout:\n{str(stdout, 'utf8')}\n"
+                f"stderr:\n{str(stderr, 'utf8')}\n"
             )
         return str(stdout, "utf8"), str(stderr, "utf8")
 
@@ -297,6 +317,7 @@ async def model(request, tools):
     model = Model()
     await model.connect(tools.connection)
     if request.config.getoption("--is-upgrade"):
+        await tools.juju_wait()
         upgrade_snap_channel = request.config.getoption("--upgrade-snap-channel")
         upgrade_charm_channel = request.config.getoption("--upgrade-charm-channel")
         if not upgrade_snap_channel and upgrade_charm_channel:
