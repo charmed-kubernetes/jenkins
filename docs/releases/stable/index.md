@@ -81,12 +81,13 @@ from which we test, fix, and subsequently promote to the new release.
 ### Pin snap channel for charms in the release branches
 
 We need to make sure that the `kubernetes-<control-plane|e2e|worker>` charms
-have `1.xx/stable` set as the default snap channel. This should be done on each of
-the relevant git `release_1.xx` branches. For example, for the 1.29 GA:
+have `1.xx/stable` set as the default snap channel and pin charm requirements.
+This should be done on each of the relevant git `release_1.xx` branches.
+For example, for the 1.29 GA:
 
-- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/commit/b70b313a8ec983f1f32560f16ce5bcb18fd189a4
-- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/pull/319
-- https://github.com/charmed-kubernetes/charm-kubernetes-worker/commit/3ae4edac9632a9c6581bcfcab7fb70087c181add
+- https://github.com/charmed-kubernetes/charm-kubernetes-e2e/commit/90018090f5621494e095ab94c4b88078fd23c768
+- https://github.com/charmed-kubernetes/charm-kubernetes-control-plane/commit/4677d8aed2f3c5a9f1a62227067ad30704192585
+- https://github.com/charmed-kubernetes/charm-kubernetes-worker/commit/19a0d1ee3a1ab85fc322da84234e45a71d936f3e
 
 > **Note**: Changes to the above repos are required as some of our customers
 do not use our bundles for deployment.
@@ -96,9 +97,9 @@ do not use our bundles for deployment.
 We need to make sure that the bundle fragments have `1.xx/stable` set as the
 default snap channel on the `release_1.xx` branch. For example, for the 1.29 GA:
 
-- https://github.com/charmed-kubernetes/bundle/commit/0b12765f61e5cfc17ac1c86731819b3e600e39e1
+- https://github.com/charmed-kubernetes/bundle/commit/87d320d899b7ff94a49f49e7d22acc8c6a9a915a
 
-> **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
+> **Note**: Don't miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
 like we've done so many times before!
 
 ### Build charms and bundles from the release branches
@@ -143,6 +144,15 @@ The `branch` parameter gets translated to `v$branch` by
 [snap.py](https://github.com/charmed-kubernetes/jenkins/blob/0b334c52b2c4f816b03ff866c44301724b8b471c/cilib/service/snap.py#L172)
 which must correspond to a valid tag in our
 [internal k8s mirror](https://git.launchpad.net/k8s-internal-mirror/refs/).
+
+### Promote cdk-addons
+
+Promote **cdk-addons** snaps from beta to stable for n tracks.
+For example, if doing a 1.31 release, then you would promote:
+
+```
+for rev in `snapcraft revisions cdk-addons | grep "1.31/beta\*" | cut -d ' ' -f 1`; do snapcraft release cdk-addons "$rev" "latest/stable"; done;
+```
 
 ## Internal verification
 
