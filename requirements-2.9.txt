@@ -275,7 +275,7 @@ six==1.16.0
     #   pymacaroons
     #   pynacl
     #   python-dateutil
-soupsieve==2.4.1
+soupsieve==2.6
     # via beautifulsoup4
 surl==0.7.2
     # via -r requirements.in
