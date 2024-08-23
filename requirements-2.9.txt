@@ -288,7 +288,7 @@ tomli==2.0.1
     #   pytest
 toposort==1.10
     # via juju
-typing-extensions==4.7.1
+typing-extensions==4.12.2
     # via typing-inspect
 typing-inspect==0.9.0
     # via juju
