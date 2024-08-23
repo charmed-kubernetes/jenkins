@@ -307,7 +307,7 @@ six==1.16.0
     #   pymacaroons
     #   python-dateutil
     #   python-jenkins
-soupsieve==2.5
+soupsieve==2.6
     # via beautifulsoup4
 stevedore==5.1.0
     # via jenkins-job-builder
