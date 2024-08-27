@@ -1,7 +1,10 @@
+import asyncio
+import logging
 import sh
 import yaml
 from .utils import retry_async_with_timeout, juju_run
 
+log = logging.getLogger(__name__)
 APP_PORT = 50000
 SVC_PORT = 80
 
@@ -75,7 +78,7 @@ async def cleanup():
 
 
 async def test_nodeport_service_endpoint(tools):
-    """Create k8s Deployement and NodePort service, send request to NodePort"""
+    """Create k8s Deployment and NodePort service, send request to NodePort"""
 
     try:
         await setup_svc("NodePort")
@@ -99,9 +102,26 @@ async def test_nodeport_service_endpoint(tools):
 
 
 async def test_clusterip_service_endpoint(model):
-    """Create k8s Deployement and ClusterIP service, send request to ClusterIP
+    """Create k8s Deployment and ClusterIP service, send request to ClusterIP
     from each kubernetes master and worker
     """
+
+    async def test_svc(unit, ip) -> bool:
+        # Build the url
+        url = f"http://{ip}:{SVC_PORT}"
+        cmd = f'curl -vk --noproxy "{ip}" {url}'
+        action = await juju_run(unit, cmd, check=False, timeout=10)
+        success = action.success and "Hello, world!\n" in action.stdout
+        if not success:
+            err_message = f"Failed to curl {url} from {unit.name}"
+            err_message += f"\n  Command: {cmd}"
+            err_message += f"\n  Exit code: {action.code}"
+            err_message += f"\n  Output: {action.stdout}"
+            err_message += f"\n  Error: {action.stderr}"
+            log.error(err_message)
+        else:
+            log.info("Successfully curled %s from %s", url, unit.name)
+        return success
 
     try:
         await setup_svc("ClusterIP")
@@ -110,17 +130,13 @@ async def test_clusterip_service_endpoint(model):
         pod = get_svc_yaml()
         ip = pod["items"][0]["spec"]["clusterIP"]
 
-        # Build the url
-        set_url = f"http://{ip}:{SVC_PORT}"
-        cmd = f'curl -vk --noproxy "{ip}" {set_url}'
-
-        # Curl the ClusterIP from each control-plane and worker unit
+        # curl the ClusterIP from each control-plane and worker unit
         control_plane = model.applications["kubernetes-control-plane"]
         worker = model.applications["kubernetes-worker"]
         nodes_lst = control_plane.units + worker.units
-        for unit in nodes_lst:
-            action = await juju_run(unit, cmd)
-            assert "Hello, world!\n" in action.stdout
+        reachable = await asyncio.gather(*[test_svc(unit, ip) for unit in nodes_lst])
+        for unit, success in zip(nodes_lst, reachable):
+            assert success, f"Failed to reach {ip} from {unit.name}"
 
     finally:
         await cleanup()
