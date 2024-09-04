@@ -366,9 +366,7 @@ class _CharmHub(Charmcraft):
             if release.revision is None:
                 continue
             resource_args = (
-                f"--resource={rsc.name}:{rsc.revision}"
-                for rsc in release.resources
-                if rsc.revision
+                f"--resource={rsc.name}:{rsc.revision}" for rsc in release.resources
             )
             args = (
                 charm_entity,
