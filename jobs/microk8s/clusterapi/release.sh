@@ -129,37 +129,6 @@ then
     # deploy microk8s providers
     kubectl apply -f bootstrap/bootstrap-components.yaml -f control-plane/control-plane-components.yaml
 
-    # Set cloud specific variables
-    export AWS_REGION=us-east-1
-    export AWS_SSH_KEY_NAME=capi
-    export CONTROL_PLANE_MACHINE_COUNT=3
-    export WORKER_MACHINE_COUNT=3
-    export AWS_CREATE_BASTION=false
-    export AWS_PUBLIC_IP=false
-    export AWS_CONTROL_PLANE_MACHINE_FLAVOR=t3.large
-    export AWS_NODE_MACHINE_FLAVOR=t3.large
-
-    # Optional varibles
-    export UPGRADE_STRATEGY=InPlaceUpgrade
-    export SNAP_RISKLEVEL="stable"
-    export SNAP_CONFINEMENT="classic"
-
-    # Create a cluster
-    export CLUSTER_NAME="test-ci-cluster"
-    export CAPI_UPGRADE_VERSION=v1.26.0
-    export CAPI_UPGRADE_MD_NAME=${CLUSTER_NAME}-md-0
-    export CAPI_UPGRADE_MD_TYPE=machinedeployments.cluster.x-k8s.io
-    export CAPI_UPGRADE_CP_NAME=${CLUSTER_NAME}-control-plane
-    export CAPI_UPGRADE_CP_TYPE=microk8scontrolplanes.controlplane.cluster.x-k8s.io
-    clusterctl generate cluster ${CLUSTER_NAME} --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
-    export CLUSTER_MANIFEST_FILE=$PWD/cluster.yaml
-
-    # Create a new cluster for in-place upgrades
-    CONTROL_PLANE_MACHINE_COUNT=1
-    WORKER_MACHINE_COUNT=1
-    clusterctl generate cluster ${CLUSTER_NAME} --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster-inplace.yaml
-    export CLUSTER_INPLACE_MANIFEST_FILE=$PWD/cluster-inplace.yaml
-
     (
         cd bootstrap
         make e2e
