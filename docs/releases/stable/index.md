@@ -40,9 +40,9 @@ It may feel early, but part of releasing the next stable version requires
 preparing for the release that will follow. This requires opening tracks and
 building relevant snaps and charms that will be used in the new `edge` channel.
 
-For example, we requested 1.30 snap tracks while preparing for the 1.29 release:
+For example, we requested 1.31 snap tracks while preparing for the 1.30 release:
 
-- https://forum.snapcraft.io/t/charmed-kubernetes-1-30-snap-tracks/38912
+- https://forum.snapcraft.io/t/charmed-kubernetes-1-31-snap-tracks/39824
 
 Bundle/charm track requests are made by posting to the `charmhub requests` forum
 asking for new tracks to be opened for every necessary
@@ -168,6 +168,25 @@ them resolved prior to GA.
 
 Please note the [Conflict Resolution Section](#conflict-resolution) for making
 any changes as a result of SQA testing.
+
+### Azure Arc Conformance
+
+We certify Charmed Kubernetes with the Azure Arc program by running the following
+job on each new release:
+
+https://jenkins.canonical.com/k8s-ps5/view/Conformance/job/conformance-arc-ck/
+
+This job runs weekly, but publishing the results to Microsoft's bucket is not done
+by default. Ensure we have passing results, and run the above job with the
+"UPLOAD_RESULTS" parameter checked.
+
+Credentials for this job are exported by the `azure-arc.sh` script, defined in the
+"Juju Data - Azure ARC" BitWarden entry, and delivered to all Jenkins workers as part of
+the `juju_creds` [credential](https://jenkins.canonical.com/k8s-ps5/manage/credentials/).
+
+> **Note**: The `AZ_STORAGE_ACCOUNT_SAS` key expires monthly and will need to be
+rotated via [the partner credential portal](https://forms.office.com/pages/responsepage.aspx?id=v4j5cvGGr0GRqy180BHbR9r2AMIPNzpPnFQdZ9IWxshUOFpaWlQ1MkdVRUpBWEtaWU1UUkZJVlA4UCQlQCN0PWcu);
+use the `ARC_CANONICAL_GUID` from the BitWarden entry to get a new value.
 
 ### CNCF Conformance
 
