@@ -77,6 +77,12 @@
           description: |
             Snap base to use as an override while building snaps
       - string:
+          name: eks_go_override
+          default: ''
+          description: |
+            Snap go version to use as an override while building snaps
+            MUST be in format 'go/\d+\.\d+/stable'
+      - string:
           name: k8s_tag
           default: 'v{version}'
           description: |
