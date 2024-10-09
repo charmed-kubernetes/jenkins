@@ -14,6 +14,7 @@ def _find_eks_base(version, override){
 }
 def eks_base_override = params.eks_base_override
 def EKS_BASE = _find_eks_base(kube_version, eks_base_override)
+def GO_VERSION = params.eks_go_override
 
 pipeline {
     agent {
@@ -67,6 +68,11 @@ pipeline {
                         sed -i -e "s/^name: \${snap}/name: \${EKS_SNAP}/" \
                                -e "s/^base: .*/base: ${EKS_BASE}/" \
                                -e "s/install-mode: .*/install-mode: disable/" snapcraft.yaml
+
+                        # update the go version if overriden
+                        if [ -n "${GO_VERSION}" ]; then
+                            sed -i -e "s#go/.*#${GO_VERSION}#g" snapcraft.yaml
+                        fi
 
                         # if we don't have any base defined at this point, add one
                         grep -q "^base: " snapcraft.yaml || echo "base: ${EKS_BASE}" >> snapcraft.yaml
