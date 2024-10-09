@@ -2,6 +2,10 @@ import traceback
 
 from cilib import git, version, log
 from drypy.patterns import sham
+from pathlib import Path
+from urllib.parse import urlparse
+
+import requests
 
 
 class BaseRepoModel:
@@ -14,6 +18,40 @@ class BaseRepoModel:
 
     def __str__(self):
         return self.repo
+
+    def cat(self, branch, path):
+        """Cat file from a git repo"""
+        parsed = urlparse(self.repo)
+        if "git.launchpad.net" in parsed.netloc:
+            """
+            Launchpad supports viewing files directly from the web interface
+            for example)
+                repo: git+ssh://k8s-team-ci@git.launchpad.net/snap-kube-apiserver
+                branch: v1.28.13
+                file: /snapcraft.yaml
+
+                becomes
+                https://k8s-team-ci@git.launchpad.net/snap-kubectl/plain/snapcraft.yaml?h=v1.28.13
+            """
+            full_path = Path("/") / path
+            url = f"https://{parsed.netloc}{parsed.path}/plain{full_path}?h={branch}"
+        elif "github.com" in parsed.netloc:
+            """
+            Github supports viewing files directly from the web interface
+            https://raw.githubusercontent.com/kubernetes/kubernetes/refs/tags/v1.31.0/.go-version
+            """
+            full_path = Path("/") / path
+            url = f"https://raw.githubusercontent.com{parsed.path}/refs/tags/{branch}{full_path}"
+        else:
+            raise NotImplementedError("Only launchpad.net and github.com supported")
+
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text
+        elif response.status_code == 404:
+            raise FileNotFoundError(f"File not found: {url}")
+        else:
+            raise Exception(f"Failed to fetch {url}: {response.status_code}")
 
     def clone(self, **subprocess_kwargs):
         """Clone package repo"""
@@ -32,6 +70,10 @@ class BaseRepoModel:
     def add(self, files, **subprocess_kwargs):
         """Add files to git repo"""
         git.add(files, **subprocess_kwargs)
+
+    def diff(self, **subprocess_kwargs):
+        """Diff git repo"""
+        return git.diff(**subprocess_kwargs)
 
     @sham
     def push(self, origin="origin", ref="master", **subprocess_kwargs):

@@ -14,6 +14,7 @@ class InternalKubernetesRepoModel(BaseRepoModel):
         self.name = "k8s-internal-mirror"
         self.git_user = "k8s-team-ci"
         self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/{self.name}"
+        self.source = UpstreamKubernetesRepoModel()
 
 
 class CriToolsUpstreamRepoModel(BaseRepoModel):
