@@ -25,7 +25,7 @@ class BaseRepoModel:
         if "git.launchpad.net" in parsed.netloc:
             """
             Launchpad supports viewing files directly from the web interface
-            for example)
+            for example:
                 repo: git+ssh://k8s-team-ci@git.launchpad.net/snap-kube-apiserver
                 branch: v1.28.13
                 file: /snapcraft.yaml
