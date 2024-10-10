@@ -294,7 +294,7 @@ class SnapService(DebugMixin):
             "track": self.snap_model.tracks,
         }
 
-        self.log(f"> Creating recipe for {params}")
+        self.log("> Creating recipe for {}", params)
 
         snap_recipe_email = os.environ.get("K8STEAMCI_USR")
         snap_recipe_password = os.environ.get("K8STEAMCI_PSW")

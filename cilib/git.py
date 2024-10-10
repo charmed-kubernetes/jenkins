@@ -112,7 +112,7 @@ def remote_tags(url, **subprocess_kwargs):
 def remote_branches(url, **subprocess_kwargs):
     """Returns a list of remote branches"""
     refs = sh.git("ls-remote", "-h", "--refs", url)
-    tags = [line.split("/")[2] for line in refs.splitlines()]
+    tags = ["/".join(line.split("/")[2:]) for line in refs.splitlines()]
     branches = ["main", "master"]  # wokeignore:rule=master
     return sorted(filter(lambda t: t not in branches, tags), key=_natural_sort_key)
 

@@ -3,49 +3,45 @@
 
 import sys
 
-import click
 from loguru import logger
 
 logger.remove()
 logger.add(
     "ci.log", rotation="5 MB", level="DEBUG"
 )  # Automatically rotate too big file
+logger.level("INFO", color="<green><bold>")
 logger.add(
     sys.stderr,
     colorize=True,
-    format="{time:HH:mm:ss} | <level>{level}</level> <green><b>{message}</b></green>",
-    level="INFO",
-)
-logger.add(
-    sys.stderr,
-    colorize=True,
-    format="{time:HH:mm:ss} | <level>{level}</level> <red><b>{message}</b></red>",
-    level="ERROR",
+    format="{time:HH:mm:ss} | <level>{level: <8} | {message}</level>",
 )
 
 
-def debug(ctx):
-    logger.debug(ctx)
-
-
-def error(ctx):
-    click.secho(ctx, fg="red", bold=True)
-    logger.debug(ctx)
-
-
-def info(ctx):
-    logger.info(ctx)
+debug = logger.debug
+error = logger.error
+info = logger.info
+exception = logger.exception
 
 
 class DebugMixin:
-    def debug(self, msg):
+    def _prep_args(self, args):
         name = self.__class__.__name__
         if hasattr(self, "name"):
             name = self.name
-        debug(f"[{name}] {msg}")
+        msg, *tail = args
+        return f"[{name}] {msg}", *tail
 
-    def log(self, msg):
-        name = self.__class__.__name__
-        if hasattr(self, "name"):
-            name = self.name
-        info(f"[{name}] {msg}")
+    def log(self, *args, **kwargs):
+        self.info(*args, **kwargs)
+
+    def debug(self, *args, **kwargs):
+        debug(*self._prep_args(args), **kwargs)
+
+    def info(self, *args, **kwargs):
+        info(*self._prep_args(args), **kwargs)
+
+    def exception(self, *args, **kwargs):
+        exception(*self._prep_args(args), **kwargs)
+
+    def error(self, *args, **kwargs):
+        error(*self._prep_args(args), **kwargs)

@@ -1,5 +1,3 @@
-import traceback
-
 from cilib import git, version, log
 from drypy.patterns import sham
 from pathlib import Path
@@ -8,7 +6,7 @@ from urllib.parse import urlparse
 import requests
 
 
-class BaseRepoModel:
+class BaseRepoModel(log.DebugMixin):
     """Represents the upstream source to be included in the debian packaging"""
 
     def __init__(self, repo=None, git_user=None, name=None):
@@ -173,7 +171,12 @@ class BaseRepoModel:
             try:
                 if version.greater(_semver, starting_semver):
                     _semvers.append(_semver)
+            except ValueError:
+                self.debug(f"Ignoring non-semver branch: {_semver}")
+                continue
             except Exception:
-                traceback.print_exc()
+                self.exception(
+                    f"Unexpected semver error while parsing branch: {_semver}"
+                )
                 continue
         return _semvers
