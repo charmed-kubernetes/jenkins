@@ -69,6 +69,13 @@ def add(files, **subprocess_kwargs):
         run(["git", "add", fn], **subprocess_kwargs)
 
 
+def diff(**subprocess_kwargs):
+    """Diff git repo"""
+    cmd = ["git", "diff", "--name-only"]
+    output = run(cmd, capture_output=True, text=True, **subprocess_kwargs)
+    return [line for line in output.stdout.splitlines()]
+
+
 def commit(message, **subprocess_kwargs):
     """Add commit to repo"""
     run(["git", "config", "user.email", "cdkbot@gmail.com"], **subprocess_kwargs)
