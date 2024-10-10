@@ -202,7 +202,6 @@ class SnapService(DebugMixin):
                 self.log(f"> Checking snaps in version {_version} for arch {arch}")
 
                 # Set the current version in the snap model
-                self.snap_model.version = _version
                 max_rev = self.snap_model.latest_revision(
                     track=f"{_version}/edge",
                     arch=arch,
@@ -238,14 +237,11 @@ class SnapService(DebugMixin):
     def build_snap_from_branch(self, branch_version):
         """Builds a snap from a certain branch version"""
         branch_version_parsed = semver.VersionInfo.parse(branch_version)
-        self.snap_model.version = (
-            f"{branch_version_parsed.major}.{branch_version_parsed.minor}"
-        )
-
+        version = f"{branch_version_parsed.major}.{branch_version_parsed.minor}"
         self.log(
-            f"Building snap for {str(branch_version_parsed)} into {self.snap_model.tracks}"
+            f"Building snap for {str(branch_version_parsed)} into {self.snap_model.tracks(version)}"
         )
-        self._create_recipe(self.snap_model.version, f"v{str(branch_version_parsed)}")
+        self._create_recipe(version, f"v{str(branch_version_parsed)}")
 
     def render(self, tmpl_file, context):
         """Renders a jinja template with context"""
@@ -291,7 +287,7 @@ class SnapService(DebugMixin):
             "version": version,
             "branch": branch,
             "repo": self.snap_model.repo,
-            "track": self.snap_model.tracks,
+            "track": self.snap_model.tracks(version),
         }
 
         self.log("> Creating recipe for {}", params)
