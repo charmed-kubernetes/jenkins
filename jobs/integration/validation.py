@@ -12,7 +12,6 @@ import yaml
 import random
 import pytest
 import logging
-import click
 import jinja2
 from base64 import b64encode
 
@@ -55,15 +54,9 @@ import urllib.request
 from bs4 import BeautifulSoup as bs
 from bs4.element import ResultSet as bs_ResultSet
 from juju.application import Application
+from juju.model import Model
 from juju.unit import Unit
 
-# Quiet the noise
-logging.getLogger("asyncio").setLevel(logging.INFO)
-logging.getLogger("connector").setLevel(logging.INFO)
-logging.getLogger("websockets.client").setLevel(logging.INFO)
-logging.getLogger("websockets.protocol").setLevel(logging.INFO)
-# bump up juju debug
-logging.getLogger("juju").setLevel(logging.INFO)
 # validation logging
 log = logging.getLogger(__name__)
 
@@ -185,15 +178,13 @@ async def test_auth_file_propagation(model, tools):
 
     """
     # Get a leader and non-leader unit to test with
-    masters = model.applications["kubernetes-control-plane"]
-    if len(masters.units) < 2:
+    app = model.applications["kubernetes-control-plane"]
+    if len(app.units) < 2:
         pytest.skip("Test requires multiple control-plane units")
 
-    for master in masters.units:
-        if await master.is_leader_from_status():
-            leader = master
-        else:
-            follower = master
+    idx = await get_leader(app)
+    leader = app.units[idx]
+    follower = app.units[(idx + 1) % len(app.units)]
 
     # Change serviceaccount.key on the leader, and get its md5sum
     leader_md5 = await run_until_success(
@@ -254,7 +245,7 @@ async def test_snap_versions(model, tools):
         if "/" not in channel:
             message = "validate_snap_versions: skipping %s, channel=%s"
             message = message % (app_name, channel)
-            click.echo(message)
+            log.info(message)
             continue
         track, risk = channel.split("/", 1)
         if track == "latest":
@@ -391,7 +382,7 @@ async def test_microbot(model, tools, setup_microbot):
             if resp.status_code == 200:
                 break
         except requests.exceptions.ConnectionError as e:
-            click.echo(
+            log.info(
                 f"Caught connection error attempting to hit {url}, "
                 f"retrying. Error follows: {e}"
             )
@@ -434,7 +425,7 @@ async def test_dashboard(model, kubeconfig, tools):
         "/proxy/#!/login"
     )
 
-    click.echo("Waiting for dashboard to stabilize...")
+    log.info("Waiting for dashboard to stabilize...")
 
     async def dashboard_present(url, config):
         resp = await query_dashboard(url, config)
@@ -515,7 +506,7 @@ async def test_network_policies(model, tools):
         "/snap/bin/kubectl --kubeconfig /root/.kube/config delete ns netpolicy",
         check=False,
     )
-    click.echo("Waiting for pods to finish terminating...")
+    log.info("Waiting for pods to finish terminating...")
 
     await retry_async_with_timeout(
         verify_deleted,
@@ -546,10 +537,10 @@ async def test_network_policies(model, tools):
         check=False,
     )
     if not cmd.code == 0:
-        click.echo("Failed to create netpolicy test!")
-        click.echo(cmd.results)
+        log.info("Failed to create netpolicy test!")
+        log.info(cmd.results)
     assert cmd.status == "completed" and cmd.code == 0
-    click.echo("Waiting for pods to show up...")
+    log.info("Waiting for pods to show up...")
     await retry_async_with_timeout(
         verify_ready,
         (unit, "po", ["bboxgood", "bboxbad"], "-n netpolicy"),
@@ -559,7 +550,7 @@ async def test_network_policies(model, tools):
     # Try to get to nginx from both busyboxes.
     # We expect no failures since we have not applied the policy yet.
     async def get_to_networkpolicy_service():
-        click.echo("Reaching out to nginx.netpolicy with no restrictions")
+        log.info("Reaching out to nginx.netpolicy with no restrictions")
         query_from_bad = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxbad -n netpolicy -- wget --timeout=30  nginx.netpolicy"
         query_from_good = "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxgood -n netpolicy -- wget --timeout=30  nginx.netpolicy"
         cmd_good = await juju_run(unit, query_from_good, check=False)
@@ -592,7 +583,7 @@ async def test_network_policies(model, tools):
     await asyncio.sleep(10)
 
     async def get_to_restricted_networkpolicy_service():
-        click.echo("Reaching out to nginx.netpolicy with restrictions")
+        log.info("Reaching out to nginx.netpolicy with restrictions")
         query_from_bad = (
             "/snap/bin/kubectl --kubeconfig /root/.kube/config exec bboxbad -n netpolicy -- "
             "wget --timeout=30  nginx.netpolicy -O foo.html"
@@ -732,12 +723,12 @@ spec:
 
 
 @pytest.mark.skip("Unskip when this can be speed up considerably")
-async def test_worker_master_removal(model, tools):
-    # Add a second master
-    masters = model.applications["kubernetes-control-plane"]
-    original_master_count = len(masters.units)
-    if original_master_count < 2:
-        await masters.add_unit(1)
+async def test_worker_control_plane_removal(model, tools):
+    # Add a second control-plane
+    control_plane = model.applications["kubernetes-control-plane"]
+    original_cp_count = len(control_plane.units)
+    if original_cp_count < 2:
+        await control_plane.add_unit(1)
         await disable_source_dest_check(tools.model_name)
 
     # Add a second worker
@@ -748,28 +739,28 @@ async def test_worker_master_removal(model, tools):
         await disable_source_dest_check(tools.model_name)
     await tools.juju_wait()
 
-    # Remove a worker to see how the masters handle it
+    # Remove a worker to see how the control_plane handle it
     unit_count = len(workers.units)
     await workers.units[0].remove()
     await tools.juju_wait()
 
     while len(workers.units) == unit_count:
         await asyncio.sleep(15)
-        click.echo(
+        log.info(
             "Waiting for worker removal. (%d/%d)" % (len(workers.units), unit_count)
         )
 
-    # Remove the master leader
-    unit_count = len(masters.units)
-    for master in masters.units:
-        if await master.is_leader_from_status():
-            await master.remove()
+    # Remove the control_plane leader
+    unit_count = len(control_plane.units)
+    idx = get_leader(control_plane)
+    await control_plane.units[idx].remove()
     await tools.juju_wait()
 
-    while len(masters.units) == unit_count:
+    while len(control_plane.units) == unit_count:
         await asyncio.sleep(15)
-        click.echo(
-            "Waiting for master removal. (%d/%d)" % (len(masters.units), unit_count)
+        log.info(
+            "Waiting for control-plane removal. (%d/%d)"
+            % (len(control_plane.units), unit_count)
         )
 
     # Try and restore the cluster state
@@ -777,10 +768,10 @@ async def test_worker_master_removal(model, tools):
     # would fail in a multi-control-plane situation
     while len(workers.units) < original_worker_count:
         await workers.add_unit(1)
-    while len(masters.units) < original_master_count:
-        await masters.add_unit(1)
+    while len(control_plane.units) < original_cp_count:
+        await control_plane.add_unit(1)
     await disable_source_dest_check(tools.model_name)
-    click.echo("Waiting for new master and worker.")
+    log.info("Waiting for new control-plane and worker.")
     await tools.juju_wait()
 
 
@@ -918,7 +909,7 @@ async def test_extra_args(model, tools):
                             break
                         await asyncio.sleep(5)
             except asyncio.CancelledError as e:
-                click.echo("Dumping locals:\n" + pformat(locals()))
+                log.info("Dumping locals:\n" + pformat(locals()))
                 msg = f"While applying new_config to {app_name}, {service} has {args_per_unit}"
                 raise AssertionError(msg) from e
 
@@ -937,7 +928,7 @@ async def test_extra_args(model, tools):
                             break
                         await asyncio.sleep(5)
             except asyncio.CancelledError as e:
-                click.echo("Dumping locals:\n" + pformat(locals()))
+                log.info("Dumping locals:\n" + pformat(locals()))
                 msg = f"While restoring config to {app_name}, {service} has {new_args}"
                 raise AssertionError(msg) from e
 
@@ -1267,7 +1258,7 @@ async def test_audit_default_config(model, tools):
         # Verify total log size is less than 1 GB
         raw = await run_until_success(unit, "du -bs /root/cdk/audit")
         size_in_bytes = int(raw.split()[0])
-        click.echo("Audit log size in bytes: %d" % size_in_bytes)
+        log.info("Audit log size in bytes: %d" % size_in_bytes)
         max_size_in_bytes = 1000 * 1000 * 1000 * 1.01  # 1 GB, plus some tolerance
         assert size_in_bytes <= max_size_in_bytes
     finally:
@@ -1656,39 +1647,78 @@ async def test_keystone(model, keystone_deployment):
     assert output.code == 0, output.stderr
 
 
-@pytest.mark.on_model("validate-vault")
-async def test_encryption_at_rest(model, tools):
-    """Testing integrating vault secrets into cluster"""
-    control_plane_app = model.applications["kubernetes-control-plane"]
-    etcd_app = model.applications["etcd"]
-    vault_app = model.applications["vault"]
+async def get_leader(app: Application):
+    is_leader = await asyncio.gather(*(u.is_leader_from_status() for u in app.units))
+    for idx, flag in enumerate(is_leader):
+        if flag:
+            return idx
 
-    async def ensure_vault_up():
+
+@pytest.mark.on_model("validate-vault")
+class TestEncryptionAtRest:
+    vault_app: Application = None
+    control_plane: Application = None
+    etcd_app: Application = None
+
+    def _load(self, model: Model):
+        self.model = model
+        self.vault_app = model.applications["vault"]
+        self.control_plane = model.applications["kubernetes-control-plane"]
+        self.etcd_app = model.applications["etcd"]
+
+    async def ensure_vault_up(self):
         await asyncio.gather(
             *(
                 retry_async_with_timeout(vault_status, [unit])
-                for unit in vault_app.units
+                for unit in self.vault_app.units
             )
         )
 
-    async def init_vault():
-        # init vault
-        click.echo("Initializing Vault")
-        await ensure_vault_up()
+    async def force_update_status(self, app):
+        # force unit status to update
+        await asyncio.gather(
+            *(juju_run(unit, "hooks/update-status", check=False) for unit in app.units)
+        )
+        await self.model.wait_for_idle(apps=[app.name])
+
+    async def vault_ready_status(self):
+        statuses = [unit.workload_status_message for unit in self.vault_app.units]
+        log.info(statuses)
+        return set(statuses) == {
+            "Unit is ready (active: false, mlock: disabled)",
+            "Unit is ready (active: true, mlock: disabled)",
+        }
+
+    async def test_init_vault(self, model: Model):
+        """Test initializing vault and unsealing it"""
+        log.info("Waiting for Vault to settle")
+        self._load(model)
+        await self.model.wait_for_idle(apps=["vault"], timeout=30 * 60)
+        idx = await get_leader(self.vault_app)
+        leader = self.vault_app.units[idx]
+
+        if await self.vault_ready_status():
+            log.info("Vault is already initialized and unsealed")
+            return
+
+        log.info("Initializing Vault")
+        await self.ensure_vault_up()
         init_info = await vault(leader, "operator init -key-shares=5 -key-threshold=3")
-        click.echo(init_info)
+        log.info(init_info)
         # unseal vault leader (could also unseal follower, but it will be resealed later anyway)
         for key in init_info["unseal_keys_hex"][:3]:
             await vault(leader, "operator unseal " + key)
+        await self.force_update_status(self.vault_app)
 
         # authorize charm
-        click.echo("Authorizing charm")
+        log.info("Collect Authorization Token")
         root_token = init_info["root_token"]
         token_info = await vault(
             leader, "token create -ttl=10m", VAULT_TOKEN=root_token
         )
-        click.echo(token_info)
+        log.info(token_info)
         charm_token = token_info["auth"]["client_token"]
+        log.info("Authorizing charm")
         await juju_run_action(leader, "authorize-charm", token=charm_token)
         # At this point, Vault is up but in non-HA mode. If we weren't using the
         # auto-generate-root-ca-cert config, though, it would still be blocking
@@ -1700,10 +1730,12 @@ async def test_encryption_at_rest(model, tools):
 
         # Since we are using the auto-generate-root-ca-cert config, though, we can
         # just go straight to waiting for etcd to settle.
-        click.echo("Waiting for etcd to settle")
-        await model.wait_for_idle(apps=["etcd"], timeout=30 * 60)
+        log.info("Waiting for etcd to settle")
+        await self.model.wait_for_idle(apps=["etcd"], timeout=30 * 60)
         for _ in range(3):
-            actual_status = {unit.workload_status_message for unit in etcd_app.units}
+            actual_status = {
+                unit.workload_status_message for unit in self.etcd_app.units
+            }
             expected_status = {"Healthy with 3 known peers"}
             if actual_status == expected_status:
                 break
@@ -1712,127 +1744,93 @@ async def test_encryption_at_rest(model, tools):
             # feasible for the charm code to block, so it sometimes takes an
             # update-status hook or two before the unit status is accurate. We
             # can hurry that along a bit, however.
-            click.echo("Poking etcd to refresh status")
-            await asyncio.gather(
-                *(
-                    juju_run(unit, "hooks/update-status", check=False)
-                    for unit in etcd_app.units
-                )
-            )
+            log.info("Poking etcd to refresh status")
+            await self.force_update_status(self.etcd_app)
 
-        # Even once etcd is ready, Vault will remain in non-HA mode until the Vault
-        # service is restarted, which will re-seal the vault.
-        click.echo("Restarting Vault for HA")
-        await asyncio.gather(
-            *(
-                juju_run(unit, "systemctl restart vault", check=False)
-                for unit in vault_app.units
-            )
-        )
-        await ensure_vault_up()
-
-        click.echo("Unsealing Vault again in HA mode")
+        await self.ensure_vault_up()
+        await self.force_update_status(self.vault_app)
+        log.info("Unsealing Vault again in HA mode")
         for key in init_info["unseal_keys_hex"][:3]:
             await asyncio.gather(
-                *(vault(unit, "operator unseal " + key) for unit in vault_app.units)
+                *(
+                    vault(unit, "operator unseal " + key)
+                    for unit in self.vault_app.units
+                )
             )
-        # force unit status to update
-        await asyncio.gather(
-            *(
-                juju_run(unit, "hooks/update-status", check=False)
-                for unit in vault_app.units
+        await self.force_update_status(self.vault_app)
+        assert await self.vault_ready_status()
+
+    async def test_kubernetes_with_vault(self, model: Model):
+        # NB: At this point, depending on the version of the Vault charm, its status
+        # might either be (a less than informative) "'etcd' incomplete" (cs:vault-44)
+        # or "Vault needs to be initialized" (cs:~openstack-charmers-next/vault).
+
+        # Until https://github.com/juju-solutions/layer-vault-kv/pull/11 lands, the
+        # k8s-control-plane units can go into error due to trying to talk to Vault during
+        # the restart. Once Vault is back up, the errored hooks can just be retried.
+        self._load(model)
+        await self.model.wait_for_idle(
+            apps=[self.control_plane.name], raise_on_error=False, timeout=60 * 60
+        )
+
+        for _ in range(3):
+            blocked_unit = [
+                unit
+                for unit in self.control_plane.units
+                if unit.workload_status in "blocked"
+            ]
+            if not blocked_unit:
+                break
+            if any(
+                "refresh-secrets" in u.workload_status_message for u in blocked_unit
+            ):
+                idx = await get_leader(self.vault_app)
+                leader = self.vault_app.units[idx]
+                await juju_run_action(leader, "refresh-secrets")
+            await self.model.wait_for_idle(
+                apps=[self.control_plane.name], raise_on_error=False
             )
-        )
-        assert await vault_ready_status()
 
-    async def vault_ready_status():
-        statuses = sorted(unit.workload_status_message for unit in vault_app.units)
-        click.echo(statuses)
-        return statuses == [
-            "Unit is ready (active: false, mlock: disabled)",
-            "Unit is ready (active: true, mlock: disabled)",
-        ]
-
-    click.echo("Waiting for Vault to settle")
-    await model.wait_for_idle(apps=["vault"], timeout=30 * 60)
-
-    if await vault_app.units[0].is_leader_from_status():
-        leader = vault_app.units[0]
-    else:
-        leader = vault_app.units[1]
-
-    if not await vault_ready_status():
-        await init_vault()
-
-    # NB: At this point, depending on the version of the Vault charm, its status
-    # might either be (a less than informative) "'etcd' incomplete" (cs:vault-44)
-    # or "Vault needs to be initialized" (cs:~openstack-charmers-next/vault).
-
-    # Until https://github.com/juju-solutions/layer-vault-kv/pull/11 lands, the
-    # k8s-control-plane units can go into error due to trying to talk to Vault during
-    # the restart. Once Vault is back up, the errored hooks can just be retried.
-    await model.wait_for_idle(
-        apps=["kubernetes-control-plane"], raise_on_error=False, timeout=60 * 60
-    )
-
-    async def retry_hook(unit):
-        # Until https://github.com/juju/python-libjuju/issues/484 is fixed, we
-        # have to do this manually.
-        from juju.client import client
-
-        app_facade = client.ApplicationFacade.from_connection(unit.connection)
-        await app_facade.ResolveUnitErrors(
-            all_=False, retry=True, tags={"entities": [{"tag": unit.tag}]}
+        # The cluster is probably mostly settled by this point, since the controllers typically
+        # take the longest to go into quiescence. However, in case they got into an errored
+        # state, we need to give things another chance to settle out, while also checking
+        # for any other failed units.
+        log.info("Waiting for cluster to settle")
+        await self.model.wait_for_idle(
+            status="active", raise_on_blocked=True, timeout=60 * 60
         )
 
-    for _ in range(3):
-        errored_units = [
-            unit for unit in control_plane_app.units if unit.workload_status == "error"
-        ]
-        if not errored_units:
-            break
-        click.echo("Retrying failed k8s-control-plane hook for Vault restart")
-        await asyncio.gather(*(retry_hook(unit) for unit in errored_units))
-        await model.wait_for_idle(
-            apps=["kubernetes-control-plane"], raise_on_error=False
+        log.info("Creating secret")
+        await kubectl(
+            self.model,
+            "create secret generic test-secret --from-literal=username='secret-value'",
         )
 
-    # The cluster is probably mostly settled by this point, since the masters typically
-    # take the longest to go into quiescence. However, in case they got into an errored
-    # state, we need to give things another chance to settle out, while also checking
-    # for any other failed units.
-    click.echo("Waiting for cluster to settle")
-    await model.wait_for_idle(status="active", raise_on_blocked=True, timeout=60 * 60)
+        try:
+            log.info("Verifying secret")
+            result = await kubectl(self.model, "get secret test-secret -o json")
+            secret_value = json.loads(result.stdout)["data"]["username"]
+            b64_value = b64encode(b"secret-value").decode("utf8")
+            assert secret_value == b64_value
 
-    click.echo("Creating secret")
-    await kubectl(
-        model,
-        "create secret generic test-secret --from-literal=username='secret-value'",
-    )
-
-    try:
-        click.echo("Verifying secret")
-        result = await kubectl(model, "get secret test-secret -o json")
-        secret_value = json.loads(result.stdout)["data"]["username"]
-        b64_value = b64encode(b"secret-value").decode("utf8")
-        assert secret_value == b64_value
-
-        click.echo("Verifying secret encryption")
-        etcd = model.applications["etcd"].units[0]
-        result = await juju_run(
-            etcd,
-            "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
-            "--endpoints https://127.0.0.1:2379 "
-            "--cacert=/var/snap/etcd/common/ca.crt "
-            "--cert=/var/snap/etcd/common/server.crt "
-            "--key=/var/snap/etcd/common/server.key "
-            "get /registry/secrets/default/test-secret | strings",
-        )
-        assert "enc:aescbc:v1" in result.output, "Should see encoded secret"
-        assert "secret-value" not in result.output, "Should not see plain-text secret"
-    finally:
-        click.echo("Deleting secret")
-        await kubectl(model, "delete secret test-secret")
+            log.info("Verifying secret encryption")
+            etcd = self.model.applications["etcd"].units[0]
+            result = await juju_run(
+                etcd,
+                "ETCDCTL_API=3 /snap/bin/etcd.etcdctl "
+                "--endpoints https://127.0.0.1:2379 "
+                "--cacert=/var/snap/etcd/common/ca.crt "
+                "--cert=/var/snap/etcd/common/server.crt "
+                "--key=/var/snap/etcd/common/server.key "
+                "get /registry/secrets/default/test-secret | strings",
+            )
+            assert "enc:aescbc:v1" in result.output, "Should see encoded secret"
+            assert (
+                "secret-value" not in result.output
+            ), "Should not see plain-text secret"
+        finally:
+            log.info("Deleting secret")
+            await kubectl(self.model, "delete secret test-secret")
 
 
 @pytest.mark.clouds(["ec2", "vsphere", "gce"])
@@ -2026,7 +2024,7 @@ async def test_sysctl(model, tools):
             lines = raw_output.splitlines()
             assert len(lines) == len(desired_results)
             if not lines == desired_results:
-                click.echo(f"retry...{lines} != {desired_results}")
+                log.info(f"retry...{lines} != {desired_results}")
                 return False
         return True
 
