@@ -89,24 +89,24 @@ EOF
       export AZ_STORAGE_ACCOUNT_SAS='invalid'
     else
       # sed treats '&' specially; make sure we escape it if we have any in the key
-      export AZ_STORAGE_ACCOUNT_SAS=$(echo ${AZ_STORAGE_ACCOUNT_SAS} | sed -e "s/&/\\\&/g")
+      export AZ_STORAGE_ACCOUNT_SAS=$(printf %s "${AZ_STORAGE_ACCOUNT_SAS}" | sed 's/&/\\&/g')
     fi
     sed -i \
-      -e "s/^az-storage-account=.*/az-storage-account=${AZ_STORAGE_ACCOUNT}/" \
-      -e "s/^az-storage-account-sas=.*/az-storage-account-sas='${AZ_STORAGE_ACCOUNT_SAS}'/" \
-      -e "s/^offering-name=.*/offering-name=charmed-kubernetes/" \
-      -e "s/^global.SUBSCRIPTION_ID=.*/global.SUBSCRIPTION_ID=${AZ_SUBSCRIPTION_ID}/" \
-      -e "s/^global.TENANT_ID=.*/global.TENANT_ID=${AZ_TENANT_ID}/" \
-      -e "s/^global.RESOURCE_GROUP=.*/global.RESOURCE_GROUP=external-canonical/" \
-      -e "s/^global.CLIENT_ID=.*/global.CLIENT_ID=${AZ_CLIENT_ID}/" \
-      -e "s/^global.CLIENT_SECRET=.*/global.CLIENT_SECRET=${AZ_CLIENT_SECRET}/" \
-      -e "s/^azure-arc-platform.OBJECT_ID=.*/azure-arc-platform.OBJECT_ID=${AZ_OBJECT_ID}/" \
+      -e "s|^az-storage-account=.*|az-storage-account=${AZ_STORAGE_ACCOUNT}|" \
+      -e "s|^az-storage-account-sas=.*|az-storage-account-sas=\"${AZ_STORAGE_ACCOUNT_SAS}\"|" \
+      -e "s|^offering-name=.*|offering-name=charmed-kubernetes|" \
+      -e "s|^global.SUBSCRIPTION_ID=.*|global.SUBSCRIPTION_ID=${AZ_SUBSCRIPTION_ID}|" \
+      -e "s|^global.TENANT_ID=.*|global.TENANT_ID=${AZ_TENANT_ID}|" \
+      -e "s|^global.RESOURCE_GROUP=.*|global.RESOURCE_GROUP=external-canonical|" \
+      -e "s|^global.CLIENT_ID=.*|global.CLIENT_ID=${AZ_CLIENT_ID}|" \
+      -e "s|^global.CLIENT_SECRET=.*|global.CLIENT_SECRET=${AZ_CLIENT_SECRET}|" \
+      -e "s|^azure-arc-platform.OBJECT_ID=.*|azure-arc-platform.OBJECT_ID=${AZ_OBJECT_ID}|" \
       azure-arc-conformance.properties
     set -x
     kubectl apply -k .
     # give the arc pod 5 minutes to get settled before tailing its logs
     sleep 300
-    ARC_POD=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n ${ARC_NS})
+    ARC_POD=$(kubectl get pods -n ${ARC_NS} -o jsonpath="{.items[0].metadata.name}"})
     # NB: we always want the logging to succeed so we can watch progress in jenkins;
     # the tail will disconnect when arc tears down (or we timeout)
     timeout -s INT 3h bash -c "kubectl logs -n ${ARC_NS} ${ARC_POD} -f || true"
@@ -125,16 +125,29 @@ function test::capture
 {
     # Arc does 3ish runs; get all of them for our artifacts tarball.
     # NB: strip leading '/' and trailing carriage return since busybox 'find' cant.
-    ARC_POD=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n ${ARC_NS})
-    for res in $(kubectl exec -it ${ARC_POD} -n ${ARC_NS} -- find / -name conformance-results*.gz | sed -e 's|^/||' -e 's|\r$||')
-    do
-        kubectl cp ${ARC_NS}/${ARC_POD}:${res} ${res} || true
-    done
+    ARC_POD=$(kubectl get pods -n ${ARC_NS} -o jsonpath='{.items[?(@.status.phase=="Running")].metadata.name}')
+    if [[ -n "${ARC_POD}" ]]; then
+        kubectl exec ${ARC_POD} -n ${ARC_NS} -- \
+            find / -name 'conformance-results*.gz' 2>/dev/null | \
+            sed -e 's|^/||' -e 's|\r$||' | \
+            while IFS= read -r result_file; do
+                if [[ -n "${result_file}" ]]; then
+                    if kubectl cp "${ARC_NS}/${ARC_POD}:${result_file}" "${result_file}"; then
+                        echo "Successfully copied ${result_file}"
+                    else
+                        echo "Failed to copy ${result_file}"
+                    fi
+                fi
+            done
+    else
+        echo "No ARC pod running to copy results from"
+        kubectl logs -n ${ARC_NS} ${ARC_POD} > arc-logs
+    fi
 
     if which juju-crashdump; then
         juju-crashdump -s -a debug-layer -a config -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
-    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* conformance-results*.gz || true
+    tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* conformance-results*.gz arc-logs || true
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 
     echo "@@@ CAPTURE RESULTS @@@"
