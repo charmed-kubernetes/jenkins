@@ -106,7 +106,7 @@ EOF
     kubectl apply -k .
     # give the arc pod 5 minutes to get settled before tailing its logs
     sleep 300
-    ARC_POD=$(kubectl get pods -n ${ARC_NS} -o jsonpath="{.items[0].metadata.name}"})
+    ARC_POD=$(kubectl get pods -n ${ARC_NS} -o jsonpath="{.items[0].metadata.name}")
     # NB: we always want the logging to succeed so we can watch progress in jenkins;
     # the tail will disconnect when arc tears down (or we timeout)
     timeout -s INT 3h bash -c "kubectl logs -n ${ARC_NS} ${ARC_POD} -f || true"
