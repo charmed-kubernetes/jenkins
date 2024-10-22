@@ -150,7 +150,7 @@ function test::capture
 ###############################################################################
 # ENV
 ###############################################################################
-JUJU_CLOUD=azure/eastus
+JUJU_CLOUD=azure/centralus
 JUJU_CONTROLLER=arc-ck-$(identifier::short)
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${CK_VERSION}/${CK_RISK}
