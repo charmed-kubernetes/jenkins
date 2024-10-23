@@ -69,9 +69,9 @@ class BaseRepoModel(log.DebugMixin):
         """Add files to git repo"""
         git.add(files, **subprocess_kwargs)
 
-    def diff(self, **subprocess_kwargs):
+    def status(self, **subprocess_kwargs):
         """Diff git repo"""
-        return git.diff(**subprocess_kwargs)
+        return git.status(**subprocess_kwargs)
 
     @sham
     def push(self, origin="origin", ref="master", **subprocess_kwargs):

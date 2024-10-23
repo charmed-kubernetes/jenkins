@@ -5,6 +5,7 @@ import logging
 import sh
 import re
 from subprocess import run
+from typing import Dict
 from .github_api import Repository
 import requests
 import requests.auth
@@ -69,11 +70,18 @@ def add(files, **subprocess_kwargs):
         run(["git", "add", fn], **subprocess_kwargs)
 
 
-def diff(**subprocess_kwargs):
-    """Diff git repo"""
-    cmd = ["git", "diff", "--name-only"]
+def status(**subprocess_kwargs) -> Dict[str, str]:
+    """Show any uncommitted files in a git repo.
+
+    Returns:
+        Dict[str, str]: A dictionary of uncommitted files and their status.
+
+        key values are the file names and the values are the status of the file.
+        https://git-scm.com/docs/git-status
+    """
+    cmd = ["git", "status", "--porcelain"]
     output = run(cmd, capture_output=True, text=True, **subprocess_kwargs)
-    return [line for line in output.stdout.splitlines()]
+    return dict(reversed(line.split(maxsplit=1)) for line in output.stdout.splitlines())
 
 
 def commit(message, **subprocess_kwargs):

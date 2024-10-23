@@ -66,7 +66,7 @@ class SnapService(DebugMixin):
         snapcraft_yml = self.render(snapcraft_fn_tpl, snapcraft_yml_context)
         snapcraft_fn.write_text(snapcraft_yml)
 
-        if self.snap_model.base.diff(cwd=str(src_path)):
+        if self.snap_model.base.status(cwd=str(src_path)):
             self.log(f"Committing {branch}")
             self.snap_model.base.add([str(snapcraft_fn)], cwd=str(src_path))
             self.snap_model.base.commit(f"{commit_msg} {branch}", cwd=str(src_path))
