@@ -66,7 +66,12 @@
       - string:
           name: charm_channel
           description: "The charm channel to validate"
-          default: "1.30/candidate"
+          default: "1.31/candidate"
+          trim: true
+      - string:
+          name: cloud
+          description: "The cloud to use in validation"
+          default: "vsphere/Boston"
           trim: true
     axes:
       - axis:
@@ -96,7 +101,7 @@
           JOB_SPEC_DIR: "jobs/release"
       - run-lxc:
           COMMAND: |
-           bash jobs/release/bugfix-upgrade-spec $snap_version $series $charm_channel
+           bash jobs/release/bugfix-upgrade-spec $snap_version $series $charm_channel $cloud
 
 - job:
     name: 'validate-charm-release-upgrade'

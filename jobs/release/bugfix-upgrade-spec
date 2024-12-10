@@ -42,12 +42,12 @@ function test::execute
 # ENV
 ###############################################################################
 
-SNAP_VERSION=${1:-1.27/stable}
-SERIES=${2:-focal}
+SNAP_VERSION=${1}
+SERIES=${2}
 CANDIDATE_CHANNEL=${3}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=stable
-JUJU_CLOUD=vsphere/Boston
+JUJU_CLOUD=${4}
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-bugfix-upgrade
 JUJU_VERSION=$(juju --version | cut -f-2 -d.)
