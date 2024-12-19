@@ -798,6 +798,7 @@ class BuildEntity:
         info = _CharmHub.info(
             name, channel=channel, fields="default-release.revision.download.url"
         )
+        self.echo(f"Received channel info\n{yaml.safe_dump(info)}")
         try:
             url = info["default-release"]["revision"]["download"]["url"]
         except (KeyError, TypeError):
@@ -825,6 +826,7 @@ class BuildEntity:
                 channel=self.channel,
                 fields="default-release.revision.version",
             )
+            self.echo(f"Received channel info \n{yaml.safe_dump(info)}")
             version = info.get("default-release", {}).get("revision", {}).get("version")
             version_id = [{"rev": version, "url": self.entity}] if version else None
         elif self.reactive and source == "local":
@@ -853,16 +855,22 @@ class BuildEntity:
     @property
     def charm_changes(self):
         """Determine if any charm|layers commits have changed since last publish."""
-        local = self.version_identification("local")
-        remote = self.version_identification("remote")
+        locals = self.version_identification("local")
+        remotes = self.version_identification("remote")
 
-        if remote is None:
+        if remotes is None:
             self.echo("No released versions in charmhub. Building...")
             return True
 
-        the_diff = [rev for rev in remote if rev not in local]
+        locals = {loc["url"]: loc["rev"] for loc in locals}
+        remotes = {rem["url"]: rem["rev"] for rem in remotes}
+        the_diff = {k: remotes[k] for k in remotes if locals[k] != remotes[k]}
+
         if the_diff:
-            self.echo(f"Changes found {the_diff}")
+            all_differences = {
+                k: f"local: {locals.get(k)} remote: {remotes[k]}" for k in the_diff
+            }
+            self.echo(f"Changes found\n{yaml.safe_dump(all_differences)}")
             return True
 
         self.echo(f"No changes found in {self.entity}")
