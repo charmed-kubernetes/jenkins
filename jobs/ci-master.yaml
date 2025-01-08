@@ -141,7 +141,7 @@
     parameters:
       - string:
           name: snap_version
-          default: 1.31/beta
+          default: 1.32/beta
           description: channel for charmed-kubernetes snap used in deployment
 
 - parameter:
@@ -149,7 +149,7 @@
     parameters:
       - string:
           name: snap_version
-          default: 1.31/edge
+          default: 1.32/edge
           description: channel for charmed-kubernetes snap used in deployment
 
 - parameter:
