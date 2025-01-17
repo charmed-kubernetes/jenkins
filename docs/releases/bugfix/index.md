@@ -57,11 +57,15 @@ When all bugs in the milestone are done, you are ready to proceed.
 
 ### Document release notes
 
-Create a PR against the [docs repo][docs-repo] with release notes including:
+Create a PR against the [docs repo][docs-repo] and
+[ubuntu docs repo][ubuntu-docs-repo] with release notes including:
 
 * Bugfixes
 * Enhancements
 * Known Limitations/Issues
+
+These two PRs should be almost identical.
+Note that you might need to clone the `ubuntu` to make the PR.
 
 ### Tag release branches with bugfix revision
 
@@ -86,19 +90,21 @@ x.xx/candidate channel for testing.
 
 ![build charm options](bugfix-options.png)
 
-### Verify Commit SHAs of charms/layers/interfaces
-
-> NOTE: (kwm) i do not think we do this anymore since the migration to charmhub.
-
-Verify the charm manifests for the build charms matches the commit SHAs of
-the stable branches of what was built in the previous build-charms job:
-
-https://github.com/Cynerva/cdk-release-checkers
-
 ### Ensure cdk-addons
 
 Ensure cdk-addons `1.xx/candidate` channel matches the latest k8s release. If
 it does not, run the `build-release-cdk-addons-amd64-1.xx` job.
+
+As an example here both `kubelet` and `cdk-addons` snaps show
+the same `1.31.5` in their `1.31/candidate`:
+
+```bash
+$ snap info kubelet | grep 1.31/candidate
+> 1.31/candidate:   1.31.5         2025-01-16 (3503) 18MB classic
+
+$ snap info cdk-addons | grep 1.31/candidate
+> 1.31/candidate:   1.31.5  2025-01-17 (30236) 13MB -
+```
 
 ### Required Testing
 
@@ -247,6 +253,39 @@ For example:
 
 ### Send announcement to k8s-crew with any relevant information
 
+Send an email to the `k8s-crew@lists.canonical.com` mailing list with something like the following information.
+{VERSION} should be something like `1.31+ck1` and {CHANNEL} `1.31/stable`.
+
+---
+
+**Subject: Announcing the Release of Charmed Kubernetes {VERSION}**
+ 
+
+We are excited to announce the release of Charmed Kubernetes {VERSION} in the {CHANNEL} channel!
+This release includes several notable fixes and improvements across the Kubernetes charms, ensuring better stability, enhanced functionality, and improved security.
+
+**Highlights of the Release:**
+
+- **{CHARM}:**
+
+  - {IMPROVEMENT_TITLE} ({LP_LINK})
+  - ...
+
+- ...
+
+
+See the full release notes for details: {LINK_TO_RELEASE_NOTES}
+
+We encourage you to upgrade and take advantage of the improvements. If you have any questions or encounter issues, please reach out via the mailing list or our support channels.
+
+Thank you for using Charmed Kubernetes!
+
+---
+
+
+### References
+
 [cdk-scripts]: https://github.com/canonical/cdk-scripts
 [docs-repo]: https://github.com/charmed-kubernetes/kubernetes-docs
+[ubuntu-docs-repo]: https://github.com/canonical/ubuntu.com/tree/main/templates/kubernetes/docs
 [milestones]: https://launchpad.net/charmed-kubernetes/+milestones
