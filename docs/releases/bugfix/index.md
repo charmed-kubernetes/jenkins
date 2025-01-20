@@ -65,7 +65,7 @@ Create a PR against the [docs repo][docs-repo] and
 * Known Limitations/Issues
 
 These two PRs should be almost identical.
-Note that you might need to clone the `ubuntu` to make the PR.
+Note that you might need to fork the `ubuntu` repository to make the PR.
 
 ### Tag release branches with bugfix revision
 
