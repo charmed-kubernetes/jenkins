@@ -54,6 +54,7 @@ This file should be located in `jobs/jjb-conf.ini` and **not** checked into the 
 Then, execute:
 
 ```sh
+# wokeignore:rule=master
 tox -e py -- jenkins-jobs --conf jobs/jjb-conf.ini update jobs/ci-master.yaml:jobs/*.yaml
 ```
 
@@ -80,6 +81,11 @@ for the charms/snaps as defined in the [charm-support-matrix](https://github.com
 ### Bump cdk-addons version
 
 In [cdk-addons](https://github.com/charmed-kubernetes/cdk-addons) create a new release branch 1.xx and update the make file similar to [this PR](https://github.com/charmed-kubernetes/cdk-addons/commit/9352559d5e1822b897745b6c254c31ac0e616e33)
+
+
+### Bump cdk-addons build jobs
+
+In [build-snaps.yaml](../../../jobs/build-snaps.yaml) update the `build-release-snaps` job definition to add `1.xx` and remove `1.xx-4`. 
 
 ### Add release images to containers-image sync list
 
