@@ -10,7 +10,6 @@ site/
 /*.json
 /*.log
 jobs/reports/_build
-jobs/jjb-config.ini
 reports/_build
 *.db
 report.*

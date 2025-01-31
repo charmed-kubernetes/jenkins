@@ -80,12 +80,12 @@ for the charms/snaps as defined in the [charm-support-matrix](https://github.com
 
 ### Bump cdk-addons version
 
-In [cdk-addons](https://github.com/charmed-kubernetes/cdk-addons) create a new release branch 1.xx and update the make file similar to [this PR](https://github.com/charmed-kubernetes/cdk-addons/commit/9352559d5e1822b897745b6c254c31ac0e616e33)
+In [cdk-addons](https://github.com/charmed-kubernetes/cdk-addons) create a new release branch named after your release, e.g. `release-1.XX` and update the make file similar to [this PR](https://github.com/charmed-kubernetes/cdk-addons/commit/9352559d5e1822b897745b6c254c31ac0e616e33)
 
 
 ### Bump cdk-addons build jobs
 
-In [build-snaps.yaml](../../../jobs/build-snaps.yaml) update the `build-release-snaps` job definition to add `1.xx` and remove `1.xx-4`. 
+In [build-snaps.yaml](../../../jobs/build-snaps.yaml) update the `build-release-snaps` job definition to add `1.xx` and remove `1.xx-4`. See e.g. [this PR](https://github.com/charmed-kubernetes/jenkins/pull/1610)
 
 ### Add release images to containers-image sync list
 
@@ -172,6 +172,7 @@ appropriate channel for this release (e.g. 1.29/beta).
 
 A successful Jenkins job run only confirms that the tests were started, **not** that they passed.
 Check [Jenkaas](http://jenkaas.s3-website-us-east-1.amazonaws.com/) to ensure all tests completed successfully.
+Each column represents a day. Look for the day you triggered the release tests and check if all validation tests passed in that column.
 
 ### Notify Solutions QA
 
