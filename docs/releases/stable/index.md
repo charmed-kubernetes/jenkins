@@ -74,7 +74,7 @@ We do have guard-rails defined for the charms and snaps, so we don't need to req
 However, we still need to manually create the tracks.
 For that, execute
 
-https://github.com/charmed-kubernetes/jenkins/blob/main/bin/ensure_track --kind <charm|snap> --name <entity-name> --track <track to create, e.g. 1.32>
+https://github.com/charmed-kubernetes/jenkins/blob/main/bin/ensure_track --kind <charm|snap> --name <charm/snap-name> --track <track to create, e.g. 1.32>
 
 for the charms/snaps as defined in the [charm-support-matrix](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-support-matrix.inc)
 
@@ -82,14 +82,15 @@ for the charms/snaps as defined in the [charm-support-matrix](https://github.com
 
 In [cdk-addons](https://github.com/charmed-kubernetes/cdk-addons) create a new release branch named after your release, e.g. `release-1.XX` and update the make file similar to [this PR](https://github.com/charmed-kubernetes/cdk-addons/commit/9352559d5e1822b897745b6c254c31ac0e616e33)
 
-
 ### Bump cdk-addons build jobs
 
 In [build-snaps.yaml](../../../jobs/build-snaps.yaml) update the `build-release-snaps` job definition to add `1.xx` and remove `1.xx-4`. See e.g. [this PR](https://github.com/charmed-kubernetes/jenkins/pull/1610)
 
 ### Add release images to containers-image sync list
 
-In the [bundle](https://github.com/charmed-kubernetes/bundle) repository, add a new line for the static container list similar to [this PR](https://github.com/charmed-kubernetes/bundle/commit/fcdcc54177f2514216d5aa8fb6fa3cb1ef13ebfe)
+In the [bundle](https://github.com/charmed-kubernetes/bundle) repository, add a new line for the static container list similar to [this PR](https://github.com/charmed-kubernetes/bundle/commit/fcdcc54177f2514216d5aa8fb6fa3cb1ef13ebfe).
+This is required for [this job](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/build-snaps/build-release-cdk-addons.groovy#L158) to build the cdk-addons and [this job](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/sync-oci-images/sync-oci-images.groovy#L266) to copy images from upstream to rocks.cc.
+This `-static` field gives these to jobs an indication of some base set of static images we wish to copy from upstream to rocks.cc and to reference when building cdk-addons.
 
 ### Pin snap channel for charms in the release branches
 
