@@ -18,11 +18,11 @@ function juju::bootstrap
 {
     # VPC with multiple subnets and IPv6, created with:
     # NUM_SUBNETS=2 jobs/integration/tigera_aws.py create-vpc
-    vpc_id=vpc-0c1bef0e84fca294d
+    vpc_id=vpc-004c1e2386cc4712f
     if [ "$ROUTING_MODE" = "bgp-simple" ]; then
       # VPC with a single subnet and IPv6, created with:
       # NUM_SUBNETS=1 jobs/integration/tigera_aws.py create-vpc
-      vpc_id=vpc-03f2c7351e64c6e0f
+      vpc_id=vpc-01fb8cb84a901aa98
     fi
 
     juju bootstrap "$JUJU_CLOUD" "$JUJU_CONTROLLER" \
@@ -119,7 +119,7 @@ SNAP_VERSION=${1:-1.26/edge}
 SERIES=${2:-jammy}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
-JUJU_CLOUD=aws/us-east-2
+JUJU_CLOUD=aws/us-east-1
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-calico
 ARCH=${4:-amd64}
