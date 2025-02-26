@@ -36,7 +36,7 @@ class BaseRepoModel(log.DebugMixin):
         elif "github.com" in parsed.netloc:
             """
             Github supports viewing files directly from the web interface
-            https://raw.githubusercontent.com/kubernetes/kubernetes/refs/tags/v1.31.0/.go-version
+            https://raw.githubusercontent.com/kubernetes/kubernetes/refs/tags/v1.32.0/.go-version
             """
             full_path = Path("/") / path
             url = f"https://raw.githubusercontent.com{parsed.path}/refs/tags/{branch}{full_path}"
