@@ -27,7 +27,7 @@ bucket = s3.Bucket("jenkaas")
 
 OBJECTS = bucket.objects.all()
 
-SERIES = ["focal", "bionic", "xenial"]
+SERIES = ["noble", "jammy"]
 
 REPORT_HOST = "https://jenkaas.s3.amazonaws.com"
 
