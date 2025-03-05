@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
     - name: ubuntu
-      image: rocks.canonical.com/cdk/ubuntu:focal
+      image: rocks.canonical.com/cdk/ubuntu:jammy
       imagePullPolicy: IfNotPresent
       command: ['sh', '-c', 'apt update -qqy && apt install -qqfy bind9-host && echo "validate-dns: Ready" && sleep 3600 || echo "validate-dns: Failed"']
   restartPolicy: Never

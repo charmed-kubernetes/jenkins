@@ -16,7 +16,7 @@ set -x
 # ENV
 ###############################################################################
 SNAP_VERSION=${1:-1.25/stable}
-SERIES=${2:-focal}
+SERIES=${2:-jammy}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-candidate}
 JUJU_CLOUD=aws/us-east-2

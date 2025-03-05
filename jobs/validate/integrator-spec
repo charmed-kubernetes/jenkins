@@ -46,7 +46,6 @@ applications:
     constraints: $constraints
     options:
       channel: $SNAP_VERSION
-      allow-privileged: 'true'
   kubernetes-worker:
     constraints: $constraints
     options:
@@ -67,6 +66,11 @@ EOF
   vsphere-cloud-provider:
     charm: vsphere-cloud-provider
     channel: $JUJU_DEPLOY_CHANNEL
+relations:
+- [vsphere-cloud-provider:certificates, easyrsa:client]
+- [vsphere-cloud-provider:kube-control, kubernetes-control-plane:kube-control]
+- [vsphere-cloud-provider:external-cloud-provider, kubernetes-control-plane:external-cloud-provider]
+- [vsphere-cloud-provider:vsphere-integration, vsphere-integrator:clients]
 EOF
     elif [ "$JUJU_CLOUD" = "aws/us-east-1" ]; then
       # Deploy aws
@@ -80,12 +84,12 @@ EOF
     charm: aws-cloud-provider
     channel: $JUJU_DEPLOY_CHANNEL
 relations:
-  - ['aws-integrator', 'kubernetes-control-plane:aws']
-  - ['aws-integrator', 'kubernetes-worker:aws']
-  - ['aws-cloud-provider:certificates', 'easyrsa:client']
-  - ['aws-cloud-provider:kube-control', 'kubernetes-control-plane:kube-control']
-  - ['aws-cloud-provider:aws-integration', 'aws-integrator:aws']
-  - ['aws-cloud-provider:external-cloud-provider', 'kubernetes-control-plane:external-cloud-provider']
+- [aws-integrator, kubernetes-control-plane:aws]
+- [aws-integrator, kubernetes-worker:aws]
+- [aws-integrator, aws-cloud-provider:aws-integration]
+- [aws-cloud-provider:certificates, easyrsa:client]
+- [aws-cloud-provider:kube-control, kubernetes-control-plane:kube-control]
+- [aws-cloud-provider:external-cloud-provider, kubernetes-control-plane:external-cloud-provider]
 EOF
     elif [ "$JUJU_CLOUD" = "google/us-east1" ]; then
       # Deploy google
@@ -100,6 +104,13 @@ EOF
     channel: $JUJU_DEPLOY_CHANNEL
     options:
       enable-loadbalancers: true
+relations:
+- [gcp-integrator, kubernetes-control-plane:gcp]
+- [gcp-integrator, kubernetes-worker:gcp]
+- [gcp-integrator, gcp-cloud-provider:gcp-integration]
+- [gcp-cloud-provider:certificates, easyrsa:client]
+- [gcp-cloud-provider:kube-control, kubernetes-control-plane:kube-control]
+- [gcp-cloud-provider:external-cloud-provider, kubernetes-control-plane:external-cloud-provider]
 EOF
     elif [ "$JUJU_CLOUD" = "azure/centralus" ]; then
       # Deploy azure
@@ -112,9 +123,16 @@ EOF
     channel: $JUJU_DEPLOY_CHANNEL
     num_units: 1
     trust: true
+  azure-cloud-provider
+    charm: azure-cloud-provider
+    channel: $JUJU_DEPLOY_CHANNEL
 relations:
-  - ['azure-integrator', 'kubernetes-control-plane:azure']
-  - ['azure-integrator', 'kubernetes-worker:azure']
+- [azure-integrator, kubernetes-control-plane:azure]
+- [azure-integrator, kubernetes-worker:azure]
+- [azure-integrator, azure-cloud-provider:azure-integration]
+- [azure-cloud-provider:certificates, easyrsa:client]
+- [azure-cloud-provider:kube-control, kubernetes-control-plane:kube-control]
+- [azure-cloud-provider:external-cloud-provider, kubernetes-control-plane:external-cloud-provider]
 EOF
     else
       >&2 echo "Unspecified cloud"
