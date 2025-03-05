@@ -67,9 +67,6 @@
       - jammy:
           hour: '0' # Midnight
           dow: '1,3,5'  # MWF
-      - focal:
-          hour: '12' # Noon
-          dow: '2,4,6'  # TuThSa
     charm-channel:
       - edge:
           snap_versions:
@@ -124,7 +121,6 @@
           type: user-defined
           name: series
           values:
-            - focal
             - jammy
       - axis:
           type: user-defined

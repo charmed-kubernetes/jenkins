@@ -116,7 +116,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/layer-easyrsa.git'
 - etcd:
-    builder: launchpad
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-etcd'
     docs: 'https://charmhub.io/etcd/docs'
     downstream: charmed-kubernetes/layer-etcd.git
@@ -455,7 +455,7 @@
     channel-range:
       min: '1.27'
 - openstack-integrator:
-    builder: launchpad
+    builder: local
     bugs: 'https://bugs.launchpad.net/charm-openstack-integrator'
     docs: 'https://charmhub.io/openstack-integrator/docs'
     downstream: charmed-kubernetes/charm-openstack-integrator

@@ -51,7 +51,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--series",
         action="store",
-        default=os.environ.get("SERIES", "focal"),
+        default=os.environ.get("SERIES", "jammy"),
         help="Base series",
     )
     parser.addoption("--cloud", action="store", help="Juju cloud to use")
