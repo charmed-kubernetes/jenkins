@@ -116,7 +116,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/layer-easyrsa.git'
 - etcd:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-etcd'
     docs: 'https://charmhub.io/etcd/docs'
     downstream: charmed-kubernetes/layer-etcd.git
@@ -128,7 +128,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/layer-etcd.git'
 - flannel:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-flannel'
     build-resources: 'cd {out_path}; bash {src_path}/build-flannel-resources.sh'
     docs: 'https://charmhub.io/flannel/docs'
@@ -455,7 +455,7 @@
     channel-range:
       min: '1.27'
 - openstack-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-openstack-integrator'
     docs: 'https://charmhub.io/openstack-integrator/docs'
     downstream: charmed-kubernetes/charm-openstack-integrator
