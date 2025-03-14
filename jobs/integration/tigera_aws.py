@@ -12,7 +12,7 @@ from subprocess import check_output, CalledProcessError
 
 VPC_CIDR = "172.30.0.0/16"
 SUBNET_CIDRS = ["172.30.0.0/24", "172.30.1.0/24"]
-REGION = os.environ.get("JUJU_CLOUD", "us-east-2").replace("aws/","")
+REGION = os.environ.get("JUJU_CLOUD", "us-east-2").replace("aws/", "")
 AVAILABILITY_ZONE = f"{REGION}a"
 OWNER = os.environ.get("JUJU_OWNER", "k8sci")
 
