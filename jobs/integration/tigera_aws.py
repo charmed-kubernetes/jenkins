@@ -477,7 +477,7 @@ def deploy_bgp_router():
         )
         raise TimeoutError()
 
-    for interface in expected_nics:
+    for interface in nic_matches:
         # Setting IF_METRIC=101 lowers the priority of the routes for this network
         # interface. We need the primary network's default route to be higher
         # priority so that the public/elastic IP, which is bound to the primary
