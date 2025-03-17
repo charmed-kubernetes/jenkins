@@ -4,11 +4,13 @@ import argparse
 import ipaddress
 import json
 import os
+import re
 import sys
 import time
-import yaml
+from subprocess import CalledProcessError, check_output
+
 import boto3
-from subprocess import check_output, CalledProcessError
+import yaml
 
 VPC_CIDR = "172.30.0.0/16"
 SUBNET_CIDRS = ["172.30.0.0/24", "172.30.1.0/24"]
@@ -452,9 +454,11 @@ def deploy_bgp_router():
     juju_wait(timeout=15 * 60)
 
     log("Enabling secondary network interfaces")
-    expected_nics = {f"enp{i + 39}s0" for i in range(0, len(subnets))}
+    num_expected_nics = len(subnets)
+    nic_pattern = re.compile("^enp.+s0$")
+    nic_matches = set()
     max_retries, current_nics = 10, set()
-    while not expected_nics.issubset(current_nics) and max_retries:
+    while not len(nic_matches) == num_expected_nics and max_retries:
         time.sleep(10 - max_retries)
         current_nics = {
             line.split("  ", 1)[0]
@@ -462,12 +466,13 @@ def deploy_bgp_router():
                 "ssh", "router/0", "ip", "-br", "link", "show"
             ).splitlines()
         }
+        nic_matches = {nic for nic in current_nics if nic_pattern.match(nic)}
         max_retries -= 1
 
-    if not expected_nics.issubset(current_nics):
+    if not len(nic_matches) == num_expected_nics:
         log(
             "Failed to find all nics\n"
-            f"  expected: {', '.join(expected_nics)}\n"
+            f"  expected {num_expected_nics} nics matching '{nic_pattern.pattern}'\n"
             f"  current : {', '.join(current_nics)}"
         )
         raise TimeoutError()
