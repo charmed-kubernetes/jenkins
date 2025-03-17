@@ -641,6 +641,7 @@ class Series(Enum):
     BIONIC = "18.04"
     FOCAL = "20.04"
     JAMMY = "22.04"
+    NOBLE = "24.04"
 
     @classmethod
     def from_value(cls, value: str) -> "Series":
