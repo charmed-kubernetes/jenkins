@@ -455,7 +455,7 @@ def deploy_bgp_router():
 
     log("Enabling secondary network interfaces")
     num_expected_nics = len(subnets)
-    nic_pattern = re.compile("^enp.+s0$")
+    nic_pattern = re.compile("^enp\d+s\d+$")
     nic_matches = set()
     max_retries, current_nics = 10, set()
     while not len(nic_matches) == num_expected_nics and max_retries:
