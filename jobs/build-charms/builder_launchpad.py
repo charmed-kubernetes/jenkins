@@ -207,7 +207,9 @@ class LPBuildEntity(BuildEntity):
         """
 
         content = self._lp_build_log(build)
-        charm_file_matches = re.findall(r"([\w\-\.]+\.charm)", content, re.MULTILINE)
+        charm_file_matches = re.findall(
+            r"\s([\w\-\.]+\.charm)\s", content, re.MULTILINE
+        )
         uniq = set(charm_file_matches)
         if not uniq:
             err_msg = (
