@@ -274,8 +274,7 @@
       - block-on-infra
       - build-discarder:
           num-to-keep: 10
-    triggers:
-        - timed: "@weekly"
+    triggers: []
     parameters:
       - charms-edge
       - series-stable
@@ -534,8 +533,7 @@
       - block-on-infra
       - build-discarder:
           num-to-keep: 10
-    triggers:
-        - timed: "@monthly"
+    triggers: []
     parameters:
       - charms-edge
       - series-stable
@@ -575,8 +573,7 @@
       - block-on-infra
       - build-discarder:
           num-to-keep: 10
-    triggers:
-        - timed: "@monthly"
+    triggers: []
     parameters:
       - charms-edge
       - series-stable
