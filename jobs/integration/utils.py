@@ -28,11 +28,7 @@ import click
 
 
 # note: we can't upgrade to focal until after it's released
-SERIES_ORDER = [
-    "bionic",
-    "focal",
-    "jammy",
-]
+SERIES_ORDER = ["bionic", "focal", "jammy", "noble"]
 
 
 def tracefunc(frame, event, arg):

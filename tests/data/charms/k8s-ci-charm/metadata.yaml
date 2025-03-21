@@ -15,5 +15,5 @@ resources:
 tags:
 - k8s
 series:
-- focal
-- bionic
+- noble
+- jammy

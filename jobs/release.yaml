@@ -37,7 +37,6 @@
           type: user-defined
           name: series
           values:
-            - focal
             - jammy
     builders:
       - set-env:
@@ -89,7 +88,6 @@
           type: user-defined
           name: series
           values:
-            - focal
             - jammy
       - axis:
           type: user-defined
@@ -144,7 +142,6 @@
           type: user-defined
           name: series
           values:
-            - focal
             - jammy
       - axis:
           type: user-defined
