@@ -147,6 +147,9 @@ applications:
     constraints: $constraints
     options:
       channel: $SNAP_VERSION
+  etcd:
+    options:
+      channel: ${ETCD_VERSION:-auto}
 EOF
 }
 

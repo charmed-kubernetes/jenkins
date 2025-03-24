@@ -101,6 +101,15 @@
             Set default series to use in test deployment
 
 - parameter:
+    name: etcd-channel
+    parameters:
+      - string:
+          name: etcd_channel
+          default: auto
+          description: |-
+            Specify the etcd snap channel to use
+
+- parameter:
     name: snap-params
     parameters:
       - string:
