@@ -21,6 +21,7 @@
     parameters:
       - 'charms-{charm-channel}'
       - lxc-runner-params
+      - etcd-channel
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -59,7 +60,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
           COMMAND: |
-            bash jobs/validate/spec $snap_version $series $channel $arch $cloud
+            bash jobs/validate/spec $snap_version $series $channel $arch $cloud $etcd_channel
 
 - project:
     name: validate-ck
@@ -102,6 +103,7 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - etcd-channel
       - lxc-runner-params
       - juju-lts
     axes:
@@ -138,7 +140,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
           COMMAND: |
-            bash jobs/validate/spec $snap_version $series $channel $arch $cloud
+            bash jobs/validate/spec $snap_version $series $channel $arch $cloud $etcd_channel
 
 # UPGRADE --------------------------------------------------------------------------- #
 - job:
