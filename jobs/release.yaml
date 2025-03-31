@@ -80,10 +80,16 @@
             - runner-validate
       - axis:
           type: user-defined
-          name: snap_version
+          name: prior_snap_offset
+          description: |
+            Stable snap channel offset behind the charm candidate channel.
+
+            for example)
+            0 with charm_channel is 1.32/candidate, then prior_snap_version is 1.32/stable
+            1 with charm_channel is 1.30/candidate, then prior_snap_version is 1.29/stable
           values:
-            - 1.30/stable
-            - 1.29/stable
+            - 0
+            - 1
       - axis:
           type: user-defined
           name: series
@@ -99,7 +105,7 @@
           JOB_SPEC_DIR: "jobs/release"
       - run-lxc:
           COMMAND: |
-           bash jobs/release/bugfix-upgrade-spec $snap_version $series $charm_channel $cloud
+           bash jobs/release/bugfix-upgrade-spec $prior_snap_offset $series $charm_channel $cloud
 
 - job:
     name: 'validate-charm-release-upgrade'
