@@ -94,6 +94,7 @@
           type: user-defined
           name: series
           values:
+            - focal
             - jammy
       - axis:
           type: user-defined

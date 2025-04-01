@@ -118,55 +118,41 @@ async def upgrade_charms(model, channel, tools):
     await tools.juju_wait()
 
 
-async def upgrade_snaps(model, channel, tools):
-    for app_name, blocking in {
-        "kubernetes-control-plane": True,
-        "kubernetes-worker": True,
-        "kubernetes-e2e": False,
-    }.items():
+async def upgrade_snaps(model: Model, channel, tools):
+    for app_name in [
+        "kubernetes-control-plane",
+        "kubernetes-worker",
+        "kubernetes-e2e",
+    ]:
         app = model.applications.get(app_name)
         # missing applications are simply not upgraded
         if not app:
             continue
 
-        config = await app.get_config()
         # If there is no change in the snaps skipping the upgrade
+        config = await app.get_config()
         current_channel = config["channel"]["value"]
         if channel == current_channel:
             continue
 
         log.info(f"Upgrading {app_name} snaps from {current_channel} to {channel}")
         await app.set_config({"channel": channel})
+        await model.wait_for_idle(apps=[app_name])
 
-        # If the channel change doesn't alter the track, the charms don't block
-        new_track, old_track = channel.split("/")[0], current_channel.split("/")[0]
-        blocking &= new_track != old_track
-
-        if blocking:
-            for unit in app.units:
-                # wait for blocked status
-                deadline = time.time() + 180
-                while time.time() < deadline:
-                    message = "{} [{}] {}: {}".format(
-                        unit.name,
-                        unit.agent_status,
-                        unit.workload_status,
-                        unit.workload_status_message,
-                    )
-                    log.info(message)
-                    if (
-                        unit.workload_status == "blocked"
-                        and "Needs manual upgrade, run the upgrade action"
-                        in unit.workload_status_message
-                    ):
-                        break
-                    await asyncio.sleep(3)
-                else:
-                    raise asyncio.TimeoutError(
-                        "Unable to find blocked status on unit {0} - {1} {2}".format(
-                            unit.name, unit.workload_status, unit.agent_status
-                        )
-                    )
+        for unit in app.units:
+            # Upgrade any application that is blocked due to snap changes
+            message = "{} [{}] {}: {}".format(
+                unit.name,
+                unit.agent_status,
+                unit.workload_status,
+                unit.workload_status_message,
+            )
+            log.info(message)
+            if (
+                unit.workload_status == "blocked"
+                and "Needs manual upgrade, run the upgrade action"
+                in unit.workload_status_message
+            ):
                 # run upgrade action
                 log.info(f"{unit.name} starting upgrade action")
                 await juju_run_action(unit, "upgrade")
