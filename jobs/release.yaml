@@ -49,7 +49,7 @@
     name: 'validate-charm-bugfix-upgrade'
     node: runner-validate
     description: |
-      Validates CK upgrades from previous 2 stables to latest candidate
+      Validates CK upgrades from current stable, and previous 2 stables to latest candidate
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -90,10 +90,12 @@
           values:
             - 0
             - 1
+            - 2
       - axis:
           type: user-defined
           name: series
           values:
+            - focal
             - jammy
       - axis:
           type: user-defined

@@ -333,7 +333,7 @@ async def model(request, tools):
         await tools.juju_wait()
         upgrade_snap_channel = request.config.getoption("--upgrade-snap-channel")
         upgrade_charm_channel = request.config.getoption("--upgrade-charm-channel")
-        if not upgrade_snap_channel and upgrade_charm_channel:
+        if not (upgrade_snap_channel and upgrade_charm_channel):
             raise Exception(
                 "Must have both snap and charm upgrade "
                 "channels set to perform upgrade prior to validation test."
