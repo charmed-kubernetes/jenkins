@@ -320,9 +320,10 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-keepalived.git'
 - docker-registry:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/layer-docker-registry'
     docs: 'https://charmhub.io/docker-registry/docs'
+    upstream: 'https://github.com/canonical/docker-registry-charm.git'
     downstream: charmed-kubernetes/docker-registry-charm.git
     store: 'https://charmhub.io/docker-registry'
     summary: Registry for docker images
@@ -330,7 +331,6 @@
       - k8s
       - docker-registry
       - docs-extra
-    upstream: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
 - aws-iam:
     builder: local
     bugs: 'https://bugs.launchpad.net/charm-aws-iam'
