@@ -34,7 +34,6 @@
           description: |-
             specify the juju channel to use
           values:
-            - 3.1/stable
             - 3/stable
       - axis:
           type: user-defined
