@@ -344,7 +344,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-aws-iam.git'
 - azure-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-azure-integrator'
     docs: 'https://charmhub.io/azure-integrator/docs'
     downstream: charmed-kubernetes/charm-azure-integrator
@@ -370,7 +370,7 @@
     channel-range:
       min: '1.25'
 - gcp-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-gcp-integrator'
     docs: 'https://charmhub.io/gcp-integrator/docs'
     downstream: charmed-kubernetes/charm-gcp-integrator
@@ -415,7 +415,7 @@
       - github-runner
     upstream: 'https://github.com/charmed-kubernetes/github-runner-operator.git'
 - aws-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-aws-integrator'
     docs: 'https://charmhub.io/aws-integrator/docs'
     downstream: charmed-kubernetes/charm-aws-integrator
@@ -467,7 +467,7 @@
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-openstack-integrator.git'
 - vsphere-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-vsphere-integrator'
     docs: 'https://charmhub.io/vsphere-integrator/docs'
     downstream: charmed-kubernetes/charm-vsphere-integrator
