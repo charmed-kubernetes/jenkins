@@ -31,7 +31,7 @@
     channel-range:
       min: '1.29'
 - canal:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-canal'
     build-resources: 'cd {out_path}; bash {src_path}/build-canal-resources.sh'
     docs: 'https://charmhub.io/canal/docs'
@@ -91,7 +91,7 @@
     channel-range:
       min: '1.27'
 - containerd:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-containerd'
     docs: 'https://charmhub.io/containerd/docs'
     downstream: charmed-kubernetes/charm-containerd.git
@@ -104,7 +104,7 @@
       - cri
     upstream: 'https://github.com/charmed-kubernetes/charm-containerd.git'
 - easyrsa:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-easyrsa'
     docs: 'https://charmhub.io/easyrsa/docs'
     downstream: charmed-kubernetes/layer-easyrsa.git
