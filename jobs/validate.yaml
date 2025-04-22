@@ -70,9 +70,9 @@
     charm-channel:
       - edge:
           snap_versions:
+            - 1.33/edge
             - 1.32/edge
             - 1.31/edge
-            - 1.30/edge
       - stable:
           snap_versions:
             - 1.32/stable
@@ -115,9 +115,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
             - 1.31/edge
-            - 1.30/edge
       - axis:
           type: user-defined
           name: series
@@ -287,8 +287,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
-            - 1.31/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -329,8 +329,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
-            - 1.31/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -370,8 +370,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
-            - 1.31/edge
       - axis:
           type: user-defined
           name: cloud
@@ -422,8 +422,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
-            - 1.31/edge
       - axis:
           type: user-defined
           name: routing_mode
@@ -465,8 +465,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
-            - 1.31/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -506,8 +506,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
-            - 1.31/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -546,8 +546,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
-            - 1.31/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -586,8 +586,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
-            - 1.31/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -627,8 +627,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
-            - 1.31/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -668,9 +668,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
             - 1.32/edge
             - 1.31/edge
-            - 1.30/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
