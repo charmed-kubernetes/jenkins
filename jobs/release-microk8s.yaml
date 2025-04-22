@@ -21,7 +21,7 @@
       - build-discarder:
           num-to-keep: 10
     triggers:
-        - timed: "@daily"
+        - timed: "H 0 * * 1-4"  # Monday -> Thursday at midnight
     parameters:
       - juju-lts
       - choice:

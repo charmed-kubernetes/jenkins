@@ -8,7 +8,7 @@ JOBS_PATH = Path("jobs")
 # Current supported STABLE K8s MAJOR.MINOR release. This determines what the
 # latest/stable channel is set to. It should be updated whenever a new CK
 # major.minor is GA.
-K8S_STABLE_VERSION = "1.31"
+K8S_STABLE_VERSION = "1.32"
 
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
@@ -20,7 +20,7 @@ K8S_STABLE_VERSION = "1.31"
 K8S_NEXT_VERSION = "1.33"
 
 # Lowest K8S SEMVER to process, this is usually K8S_STABLE_VERSION - 4
-K8S_STARTING_SEMVER = "1.27.0"
+K8S_STARTING_SEMVER = "1.28.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -45,7 +45,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
-    "1.33": "go/latest/edge",
+    "1.33": "go/1.24/stable",
     "1.32": "go/1.23/stable",
     "1.31": "go/1.22/stable",
     "1.30": "go/1.22/stable",
@@ -85,7 +85,8 @@ SNAP_K8S_TRACK_LIST = [
     ("1.29", ["1.29/stable", "1.29/candidate", "1.29/beta", "1.29/edge"]),
     ("1.30", ["1.30/stable", "1.30/candidate", "1.30/beta", "1.30/edge"]),
     ("1.31", ["1.31/stable", "1.31/candidate", "1.31/beta", "1.31/edge"]),
-    ("1.32", ["1.32/beta", "1.32/edge"]),
+    ("1.32", ["1.32/stable", "1.32/candidate", "1.32/beta", "1.32/edge"]),
+    ("1.33", ["1.33/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
@@ -108,6 +109,7 @@ DEB_K8S_TRACK_MAP = {
     "1.30": "ppa:k8s-maintainers/1.30",
     "1.31": "ppa:k8s-maintainers/1.31",
     "1.32": "ppa:k8s-maintainers/1.32",
+    "1.33": "ppa:k8s-maintainers/1.33",
 }
 
 

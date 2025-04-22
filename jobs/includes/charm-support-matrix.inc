@@ -31,7 +31,7 @@
     channel-range:
       min: '1.29'
 - canal:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-canal'
     build-resources: 'cd {out_path}; bash {src_path}/build-canal-resources.sh'
     docs: 'https://charmhub.io/canal/docs'
@@ -91,7 +91,7 @@
     channel-range:
       min: '1.27'
 - containerd:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-containerd'
     docs: 'https://charmhub.io/containerd/docs'
     downstream: charmed-kubernetes/charm-containerd.git
@@ -104,7 +104,7 @@
       - cri
     upstream: 'https://github.com/charmed-kubernetes/charm-containerd.git'
 - easyrsa:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-easyrsa'
     docs: 'https://charmhub.io/easyrsa/docs'
     downstream: charmed-kubernetes/layer-easyrsa.git
@@ -116,7 +116,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/layer-easyrsa.git'
 - etcd:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-etcd'
     docs: 'https://charmhub.io/etcd/docs'
     downstream: charmed-kubernetes/layer-etcd.git
@@ -128,7 +128,7 @@
       - core
     upstream: 'https://github.com/charmed-kubernetes/layer-etcd.git'
 - flannel:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-flannel'
     build-resources: 'cd {out_path}; bash {src_path}/build-flannel-resources.sh'
     docs: 'https://charmhub.io/flannel/docs'
@@ -320,9 +320,10 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-keepalived.git'
 - docker-registry:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/layer-docker-registry'
     docs: 'https://charmhub.io/docker-registry/docs'
+    upstream: 'https://github.com/canonical/docker-registry-charm.git'
     downstream: charmed-kubernetes/docker-registry-charm.git
     store: 'https://charmhub.io/docker-registry'
     summary: Registry for docker images
@@ -330,7 +331,6 @@
       - k8s
       - docker-registry
       - docs-extra
-    upstream: 'https://github.com/CanonicalLtd/docker-registry-charm.git'
 - aws-iam:
     builder: local
     bugs: 'https://bugs.launchpad.net/charm-aws-iam'
@@ -344,7 +344,7 @@
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-aws-iam.git'
 - azure-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-azure-integrator'
     docs: 'https://charmhub.io/azure-integrator/docs'
     downstream: charmed-kubernetes/charm-azure-integrator
@@ -370,7 +370,7 @@
     channel-range:
       min: '1.25'
 - gcp-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-gcp-integrator'
     docs: 'https://charmhub.io/gcp-integrator/docs'
     downstream: charmed-kubernetes/charm-gcp-integrator
@@ -415,7 +415,7 @@
       - github-runner
     upstream: 'https://github.com/charmed-kubernetes/github-runner-operator.git'
 - aws-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-aws-integrator'
     docs: 'https://charmhub.io/aws-integrator/docs'
     downstream: charmed-kubernetes/charm-aws-integrator
@@ -455,7 +455,7 @@
     channel-range:
       min: '1.27'
 - openstack-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-openstack-integrator'
     docs: 'https://charmhub.io/openstack-integrator/docs'
     downstream: charmed-kubernetes/charm-openstack-integrator
@@ -467,7 +467,7 @@
       - integrator
     upstream: 'https://github.com/juju-solutions/charm-openstack-integrator.git'
 - vsphere-integrator:
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-vsphere-integrator'
     docs: 'https://charmhub.io/vsphere-integrator/docs'
     downstream: charmed-kubernetes/charm-vsphere-integrator
