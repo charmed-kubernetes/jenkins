@@ -12,7 +12,7 @@ charset-normalizer==3.3.2
     # via requests
 click==7.1.2
     # via -r requirements.in
-cryptography==39.0.1
+cryptography==43.0.1
     # via secretstorage
 distro==1.5.0
     # via lazr-restfulclient
