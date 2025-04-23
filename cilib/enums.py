@@ -13,11 +13,11 @@ K8S_STABLE_VERSION = "1.32"
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
 # Typically, this is K8S_STABLE_VERSION+1. However, when preparing the next
-# stable release, this will be +2. For example, 1.30 is currently stable and
-# we're working on the 1.31 GA. Set this value to '1.32' sometime between the
-# final RC and GA so we don't get pre-release builds (e.g. 1.31.1-alpha.0) in
-# our 1.31 tracks.
-K8S_NEXT_VERSION = "1.33"
+# stable release, this will be +2. For example, 1.32 is currently stable and
+# we're working on the 1.33 GA. Set this value to '1.34' sometime between the
+# final RC and GA so we don't get pre-release builds (e.g. 1.33.1-alpha.0) in
+# our 1.33 tracks.
+K8S_NEXT_VERSION = "1.34"
 
 # Lowest K8S SEMVER to process, this is usually K8S_STABLE_VERSION - 4
 K8S_STARTING_SEMVER = "1.28.0"
@@ -86,7 +86,7 @@ SNAP_K8S_TRACK_LIST = [
     ("1.30", ["1.30/stable", "1.30/candidate", "1.30/beta", "1.30/edge"]),
     ("1.31", ["1.31/stable", "1.31/candidate", "1.31/beta", "1.31/edge"]),
     ("1.32", ["1.32/stable", "1.32/candidate", "1.32/beta", "1.32/edge"]),
-    ("1.33", ["1.33/edge"]),
+    ("1.33", ["1.33/stable", "1.33/candidate", "1.33/beta", "1.33/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
