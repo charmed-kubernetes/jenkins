@@ -49,7 +49,7 @@ class BaseRepoModel(log.DebugMixin):
         elif response.status_code == 404:
             raise FileNotFoundError(f"File not found: {url}")
         else:
-            raise Exception(f"Failed to fetch {url}: {response.status_code}")
+            raise Exception(f"Failed to fetch {url}: {response.status_code}, {response.text}")
 
     def clone(self, **subprocess_kwargs):
         """Clone package repo"""

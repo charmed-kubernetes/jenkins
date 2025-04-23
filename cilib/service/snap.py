@@ -194,7 +194,7 @@ class SnapService(DebugMixin):
                         self.template_snapcraft_yml(
                             src_path, branch, branch_ver, commit_msg="Update Snapcraft"
                         )
-                    self.log("Go version changed to {go_version}, building new snap")
+                    self.log(f"Go version changed to {go_version}, building new snap")
                     self._create_recipe(_version, branch)
                     continue
 
