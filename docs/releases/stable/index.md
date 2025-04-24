@@ -43,6 +43,11 @@ between 1.29 RC and GA:
 
 - https://github.com/charmed-kubernetes/jenkins/pull/1462
 
+**^ NOTE**: Only add `1.xx/stable` to the `SNAP_K8S_TRACK_LIST` in the `enums.py` file
+if the `1.xx.0` snaps are available. Otherwise, the snap stable channels would have
+an rc1 in them.
+
+
 Additionally, if not done already, CI should include 1.xx in the version matrix
 and config for relevant jobs. For example, see these updates where we adjusted
 tests for our 1.29 release:
