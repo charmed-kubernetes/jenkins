@@ -26,9 +26,8 @@ jobs:
       - name: Install deps
         run: |
           pip install tox
-          python3 -m tox --recreate -e test --notest
+          tox -re test --notest
           sudo snap install charmcraft --classic
       - name: Test
         run: |
           python3 -m tox -e test
-
