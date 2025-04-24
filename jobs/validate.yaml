@@ -67,6 +67,9 @@
       - jammy:
           hour: '0' # Midnight
           dow: '1,3,5'  # MWF
+      - noble:
+          hour: '0' # Midnight
+          dow: '1,3,5'  # MWF
     charm-channel:
       - edge:
           snap_versions:
@@ -123,6 +126,7 @@
           name: series
           values:
             - jammy
+            - noble
       - axis:
           type: user-defined
           name: arch
