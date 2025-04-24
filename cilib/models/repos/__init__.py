@@ -3,7 +3,19 @@ from drypy.patterns import sham
 from pathlib import Path
 from urllib.parse import urlparse
 
+import retry
 import requests
+
+
+@retry.retry(requests.exceptions.HTTPError, tries=5)
+def _request_get(url: str) -> str:
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.text
+    elif response.status_code == 404:
+        raise FileNotFoundError(f"File not found: {url}")
+    else:
+        response.raise_for_status()
 
 
 class BaseRepoModel(log.DebugMixin):
@@ -17,7 +29,7 @@ class BaseRepoModel(log.DebugMixin):
     def __str__(self):
         return self.repo
 
-    def cat(self, branch, path):
+    def cat(self, branch: str, path) -> str:
         """Cat file from a git repo"""
         parsed = urlparse(self.repo)
         if "git.launchpad.net" in parsed.netloc:
@@ -43,15 +55,7 @@ class BaseRepoModel(log.DebugMixin):
         else:
             raise NotImplementedError("Only launchpad.net and github.com supported")
 
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.text
-        elif response.status_code == 404:
-            raise FileNotFoundError(f"File not found: {url}")
-        else:
-            raise Exception(
-                f"Failed to fetch {url}: {response.status_code}, {response.text}"
-            )
+        return _request_get(url)
 
     def clone(self, **subprocess_kwargs):
         """Clone package repo"""
