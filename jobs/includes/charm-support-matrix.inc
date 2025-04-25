@@ -331,12 +331,12 @@
       max: '1.28'
 - keepalived:
     framework: reactive
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-keepalived'
     docs: 'https://charmhub.io/keepalived/docs'
     downstream: charmed-kubernetes/charm-keepalived.git
     store: 'https://charmhub.io/keepalived'
-    subdir: src
+    subdir: .
     summary: Failover and monitoring daemon for LVS clusters
     tags:
       - k8s
@@ -767,7 +767,7 @@
 
 # EOL in favor of operator charm: https://charmhub.io/kubernetes-dashboard
 # - k8s-dashboard:
-#     framework: ops 
+#     framework: ops
 #     upstream: "https://github.com/charmed-kubernetes/kubernetes-dashboard-operator"
 #     subdir: "charms/kubernetes-dashboard"
 #     namespace: "containers"
