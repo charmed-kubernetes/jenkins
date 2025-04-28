@@ -76,7 +76,6 @@ def build(
         "force": force,
     }
     build_env.clean()
-    build_env.pull_layers()
 
     entities = []
     for charm_map in build_env.job_list:
