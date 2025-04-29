@@ -2501,12 +2501,12 @@ async def test_nfs(model, tools):
 @pytest.fixture(scope="class")
 async def ceph_apps(model, tools):
     # setup
-    series = os.environ["SERIES"]
+    series = csi_series = os.environ["SERIES"]
     series_idx = SERIES_ORDER.index(series)
     ceph_config = {}
     ceph_charms_channel = "quincy/stable"
     if series_idx > SERIES_ORDER.index("jammy"):
-        pytest.fail("ceph_charm_channel is undefined past jammy")
+        series = "jammy"
 
     all_apps = ["ceph-mon", "ceph-osd", "ceph-fs", "ceph-csi"]
     if all(a in model.applications for a in all_apps):
@@ -2554,7 +2554,7 @@ async def ceph_apps(model, tools):
     log.info("deploying ceph-csi")
     ceph_csi = await model.deploy(
         "ceph-csi",
-        series=series,
+        series=csi_series,
         num_units=0,
         config={
             "cephfs-enable": "true",
