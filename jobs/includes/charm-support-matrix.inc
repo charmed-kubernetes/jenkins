@@ -358,7 +358,7 @@
       - docs-extra
 - aws-iam:
     framework: reactive
-    builder: local
+    builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-aws-iam'
     docs: 'https://charmhub.io/aws-iam/docs'
     downstream: charmed-kubernetes/charm-aws-iam
