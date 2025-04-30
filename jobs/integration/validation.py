@@ -1405,6 +1405,13 @@ async def any_keystone(model, apps_by_charm, tools):
         # No keystone available, add/setup one
         admin_password = "testpw"
         channel, mysql_channel = "yoga/stable", "8.0/stable"
+
+        # jammy is the latest series supporting mysql and keystone
+        series = tools.series
+        series_idx = SERIES_ORDER.index(series)
+        if series_idx > SERIES_ORDER.index("jammy"):
+            series = "jammy"
+
         keystone = await model.deploy(
             "keystone",
             channel=channel,
