@@ -32,6 +32,7 @@
     upstream: 'https://github.com/charmed-kubernetes/charm-calico-enterprise.git'
     channel-range:
       min: '1.29'
+      max: '1.32'
 - canal:
     framework: reactive
     builder: launchpad
@@ -164,6 +165,8 @@
       - cri
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/charm-kata.git'
+    channel-range:
+      max: '1.32'
 - keystone-k8s-auth:
     framework: ops
     builder: launchpad
