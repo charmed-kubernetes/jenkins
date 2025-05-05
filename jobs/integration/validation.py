@@ -1415,20 +1415,20 @@ async def any_keystone(model, apps_by_charm, tools):
         keystone = await model.deploy(
             "keystone",
             channel=channel,
-            series=tools.series,
+            series=series,
             config={"admin-password": admin_password},
         )
         db_router = await model.deploy(
             "mysql-router",
             application_name="keystone-mysql-router",
-            series=tools.series,
+            series=series,
             channel=mysql_channel,
         )
         db = await model.deploy(
             "mysql-innodb-cluster",
             channel=mysql_channel,
             constraints="cores=2 mem=8G root-disk=64G",
-            series=tools.series,
+            series=series,
             num_units=3,
             config={
                 "enable-binlogs": True,
@@ -1964,7 +1964,7 @@ async def test_dns_provider(model, k8s_model, tools):
             await model.consume(offer_name, controller_name=tools.controller_name)
 
             log.info("Adding cross-model relation to CK")
-            await model.add_relation("kubernetes-control-plane", "coredns")
+            await model.integrate("kubernetes-control-plane", "coredns")
             await k8s_model.wait_for_idle(status="active")
             await model.wait_for_idle(status="active")
 

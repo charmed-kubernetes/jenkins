@@ -689,7 +689,7 @@ class Artifact:
             yield Arch.from_value(arch), Series.from_value(base)
 
     @classmethod
-    def from_charm(cls, charm_file: Path) -> ["Artifact"]:
+    def from_charm(cls, charm_file: Path) -> "Artifact":
         """
         Parsed according to charmcraft file output.
         https://discourse.charmhub.io/t/charmcraft-bases-provider-support/4713
