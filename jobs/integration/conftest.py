@@ -18,6 +18,7 @@ from contextlib import contextmanager, asynccontextmanager
 from functools import cached_property
 
 from cilib.lp import Client as LPClient
+from cilib.enums import Series
 from datetime import datetime
 from juju.model import Model
 from pathlib import Path
@@ -51,7 +52,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--series",
         action="store",
-        default=os.environ.get("SERIES", "jammy"),
+        default=os.environ.get("SERIES", Series.jammy.name),
         help="Base series",
     )
     parser.addoption("--cloud", action="store", help="Juju cloud to use")
@@ -203,13 +204,7 @@ class Tools:
         """Retrieve juju 3.x base from series."""
         if self.juju_version < (3, 1):
             return f"--series={series}"
-        mapping = {
-            "bionic": "ubuntu@18.04",
-            "focal": "ubuntu@20.04",
-            "jammy": "ubuntu@22.04",
-            "noble": "ubuntu@24.04",
-        }
-        return f"--base={mapping[series]}"
+        return f"--base=ubuntu@{Series[series].value}"
 
     async def run(self, cmd: str, *args: str, stdin=None, _tee=False):
         """

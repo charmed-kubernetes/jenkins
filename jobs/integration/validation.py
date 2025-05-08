@@ -21,6 +21,8 @@ from pathlib import Path
 from pprint import pformat
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
+
+from cilib.enums import Series, SERIES_ORDER
 from .utils import (
     juju_run_retry,
     timeout_for_current_task,
@@ -32,7 +34,6 @@ from .utils import (
     verify_ready,
     is_localhost,
     validate_storage_class,
-    SERIES_ORDER,
     refresh_openstack_charms,
     prep_series_upgrade,
     do_series_upgrade,
@@ -1408,9 +1409,8 @@ async def any_keystone(model, apps_by_charm, tools):
 
         # jammy is the latest series supporting mysql and keystone
         series = tools.series
-        series_idx = SERIES_ORDER.index(series)
-        if series_idx > SERIES_ORDER.index("jammy"):
-            series = "jammy"
+        if SERIES_ORDER.index(Series[series]) > SERIES_ORDER.index(Series.jammy):
+            series = Series.jammy.name
 
         keystone = await model.deploy(
             "keystone",
@@ -2509,11 +2509,10 @@ async def test_nfs(model, tools):
 async def ceph_apps(model, tools):
     # setup
     series = csi_series = os.environ["SERIES"]
-    series_idx = SERIES_ORDER.index(series)
     ceph_config = {}
     ceph_charms_channel = "quincy/stable"
-    if series_idx > SERIES_ORDER.index("jammy"):
-        series = "jammy"
+    if SERIES_ORDER.index(Series[series]) > SERIES_ORDER.index(Series.jammy):
+        series = Series.jammy.name
 
     all_apps = ["ceph-mon", "ceph-osd", "ceph-fs", "ceph-csi"]
     if all(a in model.applications for a in all_apps):
@@ -2559,15 +2558,14 @@ async def ceph_apps(model, tools):
     )
 
     log.info("deploying ceph-csi")
+    ceph_csi_config = {"cephfs-enable": "true", "namespace": "kube-system"}
+    if SERIES_ORDER.index(Series[csi_series]) >= SERIES_ORDER.index(Series.noble):
+        ceph_csi_config["release"] = "v3.13.0"
     ceph_csi = await model.deploy(
         "ceph-csi",
         series=csi_series,
         num_units=0,
-        config={
-            "cephfs-enable": "true",
-            "release": "v3.13.0",
-            "namespace": "kube-system",
-        },
+        config=ceph_csi_config,
         channel=tools.charm_channel,
     )
 
@@ -2617,7 +2615,7 @@ async def test_series_upgrade(model, tools):
         pytest.skip("No series upgrade argument found")
     skipped = True
     for machine in model.machines.values():
-        old_series = machine.series
+        old_series = Series[machine.series]
         try:
             new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
             skipped = False
@@ -2630,10 +2628,10 @@ async def test_series_upgrade(model, tools):
                 f"{old_series}"
             )
             continue
-        await refresh_openstack_charms(machine, new_series, tools)
-        await prep_series_upgrade(machine, new_series, tools)
+        await refresh_openstack_charms(machine, new_series.name, tools)
+        await prep_series_upgrade(machine, new_series.name, tools)
         await do_series_upgrade(machine)
-        await finish_series_upgrade(machine, tools, new_series)
+        await finish_series_upgrade(machine, tools, new_series.name)
     if skipped:
         pytest.skip("no supported series to upgrade to")
     expected_messages = {
