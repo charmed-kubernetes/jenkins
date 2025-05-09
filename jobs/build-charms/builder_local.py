@@ -29,7 +29,7 @@ from cilib.github_api import Repository
 from enum import Enum, unique
 from sh.contrib import git
 from cilib.git import default_gh_branch
-from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_SERIES_MAP, K8S_CHARM_SUPPORT_ARCHES
+from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_CHARM_SUPPORT_ARCHES
 from cilib.service.aws import Store
 from cilib.run import script
 from cilib.version import ChannelRange, Release, RISKS
@@ -88,7 +88,7 @@ def generate_manifest(reactive_charm, archs):
     def _generate_base(series: str):
         return {
             "architectures": archs,
-            "channel": K8S_SERIES_MAP[series.lower()],
+            "channel": CharmSeries[series.upper()].value,
             "name": "ubuntu",
         }
 
@@ -634,7 +634,7 @@ class Arch(Enum):
 
 
 @unique
-class Series(Enum):
+class CharmSeries(Enum):
     ALL = "all"
     UNKNOWN = "unknown"
     XENIAL = "16.04"
@@ -644,11 +644,11 @@ class Series(Enum):
     NOBLE = "24.04"
 
     @classmethod
-    def from_value(cls, value: str) -> "Series":
+    def from_value(cls, value: str) -> "CharmSeries":
         for series in cls:
             if series.value == value:
                 return series
-        return Series.UNKNOWN
+        return cls.UNKNOWN
 
 
 @unique
@@ -673,7 +673,7 @@ class CharmResource:
 class Artifact:
     charm_or_bundle: Path
     arch: Arch = Arch.ALL
-    series: Series = Series.ALL
+    series: CharmSeries = CharmSeries.ALL
     rev: int = None  # set when uploaded
     resources: List[CharmResource] = field(default_factory=list)
 
@@ -681,12 +681,12 @@ class Artifact:
         return f"File: {self.charm_or_bundle.name} for arch={self.arch} and series={self.series}"
 
     @staticmethod
-    def _from_run_on_base(run_on_base: str) -> Iterable[Tuple[Arch, Series]]:
+    def _from_run_on_base(run_on_base: str) -> Iterable[Tuple[Arch, CharmSeries]]:
         if not run_on_base.startswith("ubuntu-"):
             return
         base, *archs = run_on_base.split("-")[1:]
         for arch in archs:
-            yield Arch.from_value(arch), Series.from_value(base)
+            yield Arch.from_value(arch), CharmSeries.from_value(base)
 
     @classmethod
     def from_charm(cls, charm_file: Path) -> "Artifact":
@@ -704,11 +704,11 @@ class Artifact:
             return cls(charm_file, arch, series)
         if len(set(arch for arch, _ in base_arches)) == 1:
             # multiple series, single arch   --> Series.ALL       , Arch._specific_
-            return cls(charm_file, arch, Series.ALL)
+            return cls(charm_file, arch, CharmSeries.ALL)
         if len(set(series for _, series in base_arches)) == 1:
             # single series, multiple arch   --> Series._specific_, Arch.ALL
             return cls(charm_file, Arch.ALL, series)
-        return cls(charm_file, Arch.ALL, Series.ALL)
+        return cls(charm_file, Arch.ALL, CharmSeries.ALL)
 
     @property
     def arch_docker(self) -> str:
