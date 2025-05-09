@@ -1,5 +1,7 @@
 """Contains all the concrete variables used throughout job processing code"""
 
+from enum import Enum
+from functools import total_ordering
 from pathlib import Path
 import yaml
 
@@ -28,14 +30,41 @@ K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
 # Supported charm arches
 K8S_CHARM_SUPPORT_ARCHES = ["amd64", "s390x", "arm64"]
 
+
 # Support series map
-K8S_SERIES_MAP = {
-    "xenial": "16.04",
-    "bionic": "18.04",
-    "focal": "20.04",
-    "jammy": "22.04",
-    "noble": "24.04",
-}
+@total_ordering
+class Series(Enum):
+    focal = "20.04"
+    jammy = "22.04"
+    noble = "24.04"
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def _version_tuple(self):
+        try:
+            return tuple(map(int, self.value.split(".")))
+        except ValueError as e:
+            raise ValueError("Unsupported version format {self.value}") from e
+
+    def __lt__(self, other) -> bool:
+        """Compare two Series enums based on their version numbers."""
+        if not isinstance(other, Series):
+            return NotImplemented
+        return self._version_tuple() < other._version_tuple()
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Series):
+            return NotImplemented
+        return self._version_tuple() == other._version_tuple()
+
+    @classmethod
+    def next(cls, current: "Series") -> "Series":
+        """Get the next series in the order."""
+        sorted_series = sorted(cls)
+        idx = sorted_series.index(current)
+        return sorted_series[idx + 1]
+
 
 # Kubernetes CNI version
 K8S_CNI_SEMVER = "0.8"

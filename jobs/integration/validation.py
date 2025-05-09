@@ -21,6 +21,8 @@ from pathlib import Path
 from pprint import pformat
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
+
+from cilib.enums import Series
 from .utils import (
     juju_run_retry,
     timeout_for_current_task,
@@ -32,8 +34,7 @@ from .utils import (
     verify_ready,
     is_localhost,
     validate_storage_class,
-    SERIES_ORDER,
-    refresh_openstack_charms,
+    supports_series_upgrade,
     prep_series_upgrade,
     do_series_upgrade,
     finish_series_upgrade,
@@ -175,6 +176,42 @@ async def reset_audit_config(control_plane_app, tools):
     config = await control_plane_app.get_config()
     defaults = {k: config[k]["default"] for k in audit_configs}
     await set_config_and_wait(control_plane_app, defaults, tools)
+
+
+async def test_series_upgrade(model, tools):
+    if not tools.is_series_upgrade:
+        pytest.skip("No series upgrade argument found")
+    skipped = True
+    for machine in model.machines.values():
+        old_lts = machine.safe_data["base"].split("@")[1]
+        old_series = Series(old_lts)
+        try:
+            new_series = Series.next(old_series)
+            skipped = False
+        except IndexError:
+            log.info(f"no supported series to upgrade machine {machine.tag} to")
+            continue
+        except ValueError:
+            log.info(
+                f"unrecognized series to upgrade machine {machine.tag} from: "
+                f"{old_series}"
+            )
+            continue
+        supported = await supports_series_upgrade(machine, new_series)
+        if not supported:
+            continue
+        await prep_series_upgrade(machine, new_series, tools)
+        await do_series_upgrade(machine)
+        await finish_series_upgrade(machine, new_series, tools)
+    if skipped:
+        pytest.skip("no supported series to upgrade to")
+    expected_ready = {
+        "kubernetes-control-plane",
+        "kubernetes-worker",
+    }
+    for app in expected_ready:
+        for unit in model.applications[app].units:
+            assert unit.workload_status_message == "Ready"
 
 
 # START TESTS
@@ -1408,9 +1445,8 @@ async def any_keystone(model, apps_by_charm, tools):
 
         # jammy is the latest series supporting mysql and keystone
         series = tools.series
-        series_idx = SERIES_ORDER.index(series)
-        if series_idx > SERIES_ORDER.index("jammy"):
-            series = "jammy"
+        if Series[series] > Series.jammy:
+            series = Series.jammy.name
 
         keystone = await model.deploy(
             "keystone",
@@ -2509,11 +2545,10 @@ async def test_nfs(model, tools):
 async def ceph_apps(model, tools):
     # setup
     series = csi_series = os.environ["SERIES"]
-    series_idx = SERIES_ORDER.index(series)
     ceph_config = {}
     ceph_charms_channel = "quincy/stable"
-    if series_idx > SERIES_ORDER.index("jammy"):
-        series = "jammy"
+    if Series[series] > Series.jammy:
+        series = Series.jammy.name
 
     all_apps = ["ceph-mon", "ceph-osd", "ceph-fs", "ceph-csi"]
     if all(a in model.applications for a in all_apps):
@@ -2559,15 +2594,14 @@ async def ceph_apps(model, tools):
     )
 
     log.info("deploying ceph-csi")
+    ceph_csi_config = {"cephfs-enable": "true", "namespace": "kube-system"}
+    if Series[csi_series] >= Series.noble:
+        ceph_csi_config["release"] = "v3.13.0"
     ceph_csi = await model.deploy(
         "ceph-csi",
         series=csi_series,
         num_units=0,
-        config={
-            "cephfs-enable": "true",
-            "release": "v3.13.0",
-            "namespace": "kube-system",
-        },
+        config=ceph_csi_config,
         channel=tools.charm_channel,
     )
 
@@ -2610,39 +2644,6 @@ async def ceph_apps(model, tools):
         log.info("waiting for charm removal...")
         # block until no juju_apps are in the current model
         await model.block_until(lambda: not (set(juju_apps) & set(model.applications)))
-
-
-async def test_series_upgrade(model, tools):
-    if not tools.is_series_upgrade:
-        pytest.skip("No series upgrade argument found")
-    skipped = True
-    for machine in model.machines.values():
-        old_series = machine.series
-        try:
-            new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
-            skipped = False
-        except IndexError:
-            log.info(f"no supported series to upgrade machine {machine.tag} to")
-            continue
-        except ValueError:
-            log.info(
-                f"unrecognized series to upgrade machine {machine.tag} from: "
-                f"{old_series}"
-            )
-            continue
-        await refresh_openstack_charms(machine, new_series, tools)
-        await prep_series_upgrade(machine, new_series, tools)
-        await do_series_upgrade(machine)
-        await finish_series_upgrade(machine, tools, new_series)
-    if skipped:
-        pytest.skip("no supported series to upgrade to")
-    expected_messages = {
-        "kubernetes-control-plane": "Kubernetes control-plane running.",
-        "kubernetes-worker": "Kubernetes worker running.",
-    }
-    for app, message in expected_messages.items():
-        for unit in model.applications[app].units:
-            assert unit.workload_status_message == message
 
 
 @pytest.mark.clouds(["openstack"])
