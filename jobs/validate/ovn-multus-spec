@@ -20,8 +20,7 @@ function juju::deploy::overlay
     constraints="arch=$ARCH cores=2 mem=8G root-disk=16G"
 
     tee overlay.yaml <<EOF > /dev/null
-series: null
-default-base: $(juju::base::from_series $SERIES)
+series: $SERIES
 applications:
   kubernetes-control-plane:
     constraints: $constraints
@@ -34,10 +33,10 @@ applications:
     channel: $JUJU_DEPLOY_CHANNEL
     options:
       channel: $SNAP_VERSION
-  calico: null
   containerd:
     options:
       no_proxy: "localhost,127.0.0.1,::1,10.246.154.0/24,10.152.183.0/24,192.168.0.0/16"
+  calico: null
   kube-ovn:
     charm: kube-ovn
     channel: $JUJU_DEPLOY_CHANNEL
@@ -45,11 +44,13 @@ applications:
     charm: ceph-mon
     channel: $CEPH_CHANNEL
     num_units: 3
+    base: $CEPH_BASE
   ceph-osd:
     charm: ceph-osd
     channel: $CEPH_CHANNEL
     constraints: "root-disk=32G"
     num_units: 3
+    base: $CEPH_BASE
     storage:
       osd-devices: 8G,1
       osd-journals: 8G,1
@@ -120,6 +121,7 @@ function ci::cleanup::before
 SNAP_VERSION=${1:-1.26/stable}
 SERIES=${2:-jammy}
 CEPH_CHANNEL=${5:-quincy/stable}
+CEPH_BASE="ubuntu@22.04"
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_DEPLOY_CHANNEL=${3:-edge}
 JUJU_CLOUD=vsphere/Boston
