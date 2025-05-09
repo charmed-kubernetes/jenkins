@@ -34,8 +34,6 @@ K8S_CHARM_SUPPORT_ARCHES = ["amd64", "s390x", "arm64"]
 # Support series map
 @total_ordering
 class Series(Enum):
-    xenial = "16.04"
-    bionic = "18.04"
     focal = "20.04"
     jammy = "22.04"
     noble = "24.04"
