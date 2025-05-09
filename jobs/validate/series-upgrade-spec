@@ -19,7 +19,10 @@ function test::execute
     juju::pip::2.9
 
     declare -n is_pass=$1
-    timeout -s INT 3h pytest \
+    # The timeout command is used to limit the execution time of the pytest command.
+    # If the command exceeds the specified time limit, it will be terminated.
+    # a 9 machine cluster takes about 2hrs just to upgrade the series.
+    timeout -s INT 5h pytest \
                 --html="report.html" \
                 --json-report \
                 --json-report-summary \

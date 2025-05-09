@@ -178,6 +178,42 @@ async def reset_audit_config(control_plane_app, tools):
     await set_config_and_wait(control_plane_app, defaults, tools)
 
 
+async def test_series_upgrade(model, tools):
+    if not tools.is_series_upgrade:
+        pytest.skip("No series upgrade argument found")
+    skipped = True
+    for machine in model.machines.values():
+        old_lts = machine.safe_data["base"].split("@")[1]
+        old_series = Series(old_lts)
+        try:
+            new_series = Series.next(old_series)
+            skipped = False
+        except IndexError:
+            log.info(f"no supported series to upgrade machine {machine.tag} to")
+            continue
+        except ValueError:
+            log.info(
+                f"unrecognized series to upgrade machine {machine.tag} from: "
+                f"{old_series}"
+            )
+            continue
+        supported = await supports_series_upgrade(machine, new_series)
+        if not supported:
+            continue
+        await prep_series_upgrade(machine, new_series, tools)
+        await do_series_upgrade(machine)
+        await finish_series_upgrade(machine, new_series, tools)
+    if skipped:
+        pytest.skip("no supported series to upgrade to")
+    expected_messages = {
+        "kubernetes-control-plane": "Kubernetes control-plane running.",
+        "kubernetes-worker": "Kubernetes worker running.",
+    }
+    for app, message in expected_messages.items():
+        for unit in model.applications[app].units:
+            assert unit.workload_status_message == message
+
+
 # START TESTS
 @pytest.mark.skip("Feature removed in ops rewrite")
 async def test_auth_file_propagation(model, tools):
@@ -2608,42 +2644,6 @@ async def ceph_apps(model, tools):
         log.info("waiting for charm removal...")
         # block until no juju_apps are in the current model
         await model.block_until(lambda: not (set(juju_apps) & set(model.applications)))
-
-
-async def test_series_upgrade(model, tools):
-    if not tools.is_series_upgrade:
-        pytest.skip("No series upgrade argument found")
-    skipped = True
-    for machine in model.machines.values():
-        old_lts = machine.safe_data["base"].split("@")[1]
-        old_series = Series(old_lts)
-        try:
-            new_series = Series.next(old_series)
-            skipped = False
-        except IndexError:
-            log.info(f"no supported series to upgrade machine {machine.tag} to")
-            continue
-        except ValueError:
-            log.info(
-                f"unrecognized series to upgrade machine {machine.tag} from: "
-                f"{old_series}"
-            )
-            continue
-        supported = await supports_series_upgrade(machine, new_series)
-        if not supported:
-            continue
-        await prep_series_upgrade(machine, new_series, tools)
-        await do_series_upgrade(machine)
-        await finish_series_upgrade(machine, new_series, tools)
-    if skipped:
-        pytest.skip("no supported series to upgrade to")
-    expected_messages = {
-        "kubernetes-control-plane": "Kubernetes control-plane running.",
-        "kubernetes-worker": "Kubernetes worker running.",
-    }
-    for app, message in expected_messages.items():
-        for unit in model.applications[app].units:
-            assert unit.workload_status_message == message
 
 
 @pytest.mark.clouds(["openstack"])
