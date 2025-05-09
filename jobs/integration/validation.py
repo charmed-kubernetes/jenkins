@@ -22,7 +22,7 @@ from pprint import pformat
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
 
-from cilib.enums import Series, SERIES_ORDER
+from cilib.enums import Series
 from .utils import (
     juju_run_retry,
     timeout_for_current_task,
@@ -34,7 +34,7 @@ from .utils import (
     verify_ready,
     is_localhost,
     validate_storage_class,
-    refresh_openstack_charms,
+    supports_series_upgrade,
     prep_series_upgrade,
     do_series_upgrade,
     finish_series_upgrade,
@@ -1409,7 +1409,7 @@ async def any_keystone(model, apps_by_charm, tools):
 
         # jammy is the latest series supporting mysql and keystone
         series = tools.series
-        if SERIES_ORDER.index(Series[series]) > SERIES_ORDER.index(Series.jammy):
+        if Series[series] > Series.jammy:
             series = Series.jammy.name
 
         keystone = await model.deploy(
@@ -2511,7 +2511,7 @@ async def ceph_apps(model, tools):
     series = csi_series = os.environ["SERIES"]
     ceph_config = {}
     ceph_charms_channel = "quincy/stable"
-    if SERIES_ORDER.index(Series[series]) > SERIES_ORDER.index(Series.jammy):
+    if Series[series] > Series.jammy:
         series = Series.jammy.name
 
     all_apps = ["ceph-mon", "ceph-osd", "ceph-fs", "ceph-csi"]
@@ -2559,7 +2559,7 @@ async def ceph_apps(model, tools):
 
     log.info("deploying ceph-csi")
     ceph_csi_config = {"cephfs-enable": "true", "namespace": "kube-system"}
-    if SERIES_ORDER.index(Series[csi_series]) >= SERIES_ORDER.index(Series.noble):
+    if Series[csi_series] >= Series.noble:
         ceph_csi_config["release"] = "v3.13.0"
     ceph_csi = await model.deploy(
         "ceph-csi",
@@ -2615,9 +2615,10 @@ async def test_series_upgrade(model, tools):
         pytest.skip("No series upgrade argument found")
     skipped = True
     for machine in model.machines.values():
-        old_series = Series[machine.series]
+        old_lts = machine.safe_data["base"].split("@")[1]
+        old_series = Series(old_lts)
         try:
-            new_series = SERIES_ORDER[SERIES_ORDER.index(old_series) + 1]
+            new_series = Series.next(old_series)
             skipped = False
         except IndexError:
             log.info(f"no supported series to upgrade machine {machine.tag} to")
@@ -2628,10 +2629,12 @@ async def test_series_upgrade(model, tools):
                 f"{old_series}"
             )
             continue
-        await refresh_openstack_charms(machine, new_series.name, tools)
-        await prep_series_upgrade(machine, new_series.name, tools)
+        supported = await supports_series_upgrade(machine, new_series)
+        if not supported:
+            continue
+        await prep_series_upgrade(machine, new_series, tools)
         await do_series_upgrade(machine)
-        await finish_series_upgrade(machine, tools, new_series.name)
+        await finish_series_upgrade(machine, new_series, tools)
     if skipped:
         pytest.skip("no supported series to upgrade to")
     expected_messages = {
