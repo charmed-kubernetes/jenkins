@@ -1,5 +1,7 @@
 """Contains all the concrete variables used throughout job processing code"""
 
+from enum import Enum
+from functools import total_ordering
 from pathlib import Path
 import yaml
 
@@ -8,7 +10,7 @@ JOBS_PATH = Path("jobs")
 # Current supported STABLE K8s MAJOR.MINOR release. This determines what the
 # latest/stable channel is set to. It should be updated whenever a new CK
 # major.minor is GA.
-K8S_STABLE_VERSION = "1.30"
+K8S_STABLE_VERSION = "1.32"
 
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
@@ -17,10 +19,10 @@ K8S_STABLE_VERSION = "1.30"
 # we're working on the 1.31 GA. Set this value to '1.32' sometime between the
 # final RC and GA so we don't get pre-release builds (e.g. 1.31.1-alpha.0) in
 # our 1.31 tracks.
-K8S_NEXT_VERSION = "1.32"
+K8S_NEXT_VERSION = "1.34"
 
 # Lowest K8S SEMVER to process, this is usually K8S_STABLE_VERSION - 4
-K8S_STARTING_SEMVER = "1.27.0"
+K8S_STARTING_SEMVER = "1.28.0"
 
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
@@ -28,14 +30,41 @@ K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
 # Supported charm arches
 K8S_CHARM_SUPPORT_ARCHES = ["amd64", "s390x", "arm64"]
 
+
 # Support series map
-K8S_SERIES_MAP = {
-    "xenial": "16.04",
-    "bionic": "18.04",
-    "focal": "20.04",
-    "jammy": "22.04",
-    "noble": "24.04",
-}
+@total_ordering
+class Series(Enum):
+    focal = "20.04"
+    jammy = "22.04"
+    noble = "24.04"
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def _version_tuple(self):
+        try:
+            return tuple(map(int, self.value.split(".")))
+        except ValueError as e:
+            raise ValueError("Unsupported version format {self.value}") from e
+
+    def __lt__(self, other) -> bool:
+        """Compare two Series enums based on their version numbers."""
+        if not isinstance(other, Series):
+            return NotImplemented
+        return self._version_tuple() < other._version_tuple()
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Series):
+            return NotImplemented
+        return self._version_tuple() == other._version_tuple()
+
+    @classmethod
+    def next(cls, current: "Series") -> "Series":
+        """Get the next series in the order."""
+        sorted_series = sorted(cls)
+        idx = sorted_series.index(current)
+        return sorted_series[idx + 1]
+
 
 # Kubernetes CNI version
 K8S_CNI_SEMVER = "0.8"
@@ -45,7 +74,8 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
-    "1.32": "go/latest/edge",
+    "1.33": "go/1.24/stable",
+    "1.32": "go/1.23/stable",
     "1.31": "go/1.22/stable",
     "1.30": "go/1.22/stable",
     "1.29": "go/1.21/stable",
@@ -84,6 +114,8 @@ SNAP_K8S_TRACK_LIST = [
     ("1.29", ["1.29/stable", "1.29/candidate", "1.29/beta", "1.29/edge"]),
     ("1.30", ["1.30/stable", "1.30/candidate", "1.30/beta", "1.30/edge"]),
     ("1.31", ["1.31/stable", "1.31/candidate", "1.31/beta", "1.31/edge"]),
+    ("1.32", ["1.32/stable", "1.32/candidate", "1.32/beta", "1.32/edge"]),
+    ("1.33", ["1.33/candidate", "1.33/beta", "1.33/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
@@ -105,6 +137,8 @@ DEB_K8S_TRACK_MAP = {
     "1.29": "ppa:k8s-maintainers/1.29",
     "1.30": "ppa:k8s-maintainers/1.30",
     "1.31": "ppa:k8s-maintainers/1.31",
+    "1.32": "ppa:k8s-maintainers/1.32",
+    "1.33": "ppa:k8s-maintainers/1.33",
 }
 
 

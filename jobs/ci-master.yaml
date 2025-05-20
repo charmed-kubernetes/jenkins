@@ -101,6 +101,15 @@
             Set default series to use in test deployment
 
 - parameter:
+    name: etcd-channel
+    parameters:
+      - string:
+          name: etcd_channel
+          default: auto
+          description: |-
+            Specify the etcd snap channel to use
+
+- parameter:
     name: snap-params
     parameters:
       - string:
@@ -117,7 +126,7 @@
     parameters:
       - string:
           name: channel
-          default: 1.30/stable
+          default: 1.32/stable
           description: channel for charmed-kubernetes bundle to deploy
 
 - parameter:
@@ -125,7 +134,7 @@
     parameters:
       - string:
           name: channel
-          default: 1.31/edge
+          default: 1.33/edge
           description: channel for charmed-kubernetes bundle to deploy
 
 - parameter:
@@ -133,7 +142,7 @@
     parameters:
       - string:
           name: snap_version
-          default: 1.30/stable
+          default: 1.32/stable
           description: channel for charmed-kubernetes snap used in deployment
 
 - parameter:
@@ -141,7 +150,7 @@
     parameters:
       - string:
           name: snap_version
-          default: 1.31/beta
+          default: 1.33/beta
           description: channel for charmed-kubernetes snap used in deployment
 
 - parameter:
@@ -149,7 +158,7 @@
     parameters:
       - string:
           name: snap_version
-          default: 1.31/edge
+          default: 1.33/edge
           description: channel for charmed-kubernetes snap used in deployment
 
 - parameter:

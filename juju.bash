@@ -21,7 +21,7 @@ function juju::base::from_series
         "jammy")  echo "ubuntu@22.04";;
         "focal")  echo "ubuntu@20.04";;
         "bionic") echo "ubuntu@18.04";;
-        *) 
+        *)
           test::report "unknown series=$1"
           exit 1
         ;;
@@ -136,7 +136,7 @@ function juju::deploy::overlay
     constraints="arch=${ARCH:-amd64} cores=2 mem=8G root-disk=16G"
 
     cat <<EOF > overlay.yaml
-series: null
+series: ${SERIES}
 default-base: $(juju::base::from_series $SERIES)
 applications:
   kubernetes-control-plane:
@@ -147,6 +147,9 @@ applications:
     constraints: $constraints
     options:
       channel: $SNAP_VERSION
+  etcd:
+    options:
+      channel: ${ETCD_VERSION:-auto}
 EOF
 }
 

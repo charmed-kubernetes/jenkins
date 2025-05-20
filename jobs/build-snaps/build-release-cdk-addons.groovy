@@ -128,7 +128,7 @@ pipeline {
                     for arch in ${env.ADDONS_ARCHES}
                     do
                         echo "Prepping cdk-addons (\${arch}) snap source."
-                        wget -O build/kubectl https://storage.googleapis.com/kubernetes-release/release/${kube_version}/bin/linux/\${arch}/kubectl
+                        wget -O build/kubectl https://dl.k8s.io/${kube_version}/bin/linux/\${arch}/kubectl
                         chmod +x build/kubectl
                         sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
                         if [ "\${arch}" = "ppc64le" ]

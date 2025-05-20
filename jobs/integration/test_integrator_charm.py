@@ -112,8 +112,9 @@ async def _add_provider(model, provider: Provider):
         await model.deploy(
             provider_app,
             channel=provider.channel,
-            trust=provider.trust,
             config=provider.config,
+            series=os.environ.get("SERIES"),
+            trust=provider.trust,
         )
 
     # remove provider.in_relations

@@ -26,7 +26,7 @@ def compare(version_a, version_b):
             return semver.VersionInfo.parse(ver)
         except ValueError:
             return tuple(map(int, ver.split(".")))
-        except Exception as ex:
+        except Exception:
             log.error(f"Unable to parse {ver} into semver")
             raise
 

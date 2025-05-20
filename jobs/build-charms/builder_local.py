@@ -29,7 +29,7 @@ from cilib.github_api import Repository
 from enum import Enum, unique
 from sh.contrib import git
 from cilib.git import default_gh_branch
-from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_SERIES_MAP, K8S_CHARM_SUPPORT_ARCHES
+from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_CHARM_SUPPORT_ARCHES
 from cilib.service.aws import Store
 from cilib.run import script
 from cilib.version import ChannelRange, Release, RISKS
@@ -88,7 +88,7 @@ def generate_manifest(reactive_charm, archs):
     def _generate_base(series: str):
         return {
             "architectures": archs,
-            "channel": K8S_SERIES_MAP[series.lower()],
+            "channel": CharmSeries[series.upper()].value,
             "name": "ubuntu",
         }
 
@@ -366,9 +366,7 @@ class _CharmHub(Charmcraft):
             if release.revision is None:
                 continue
             resource_args = (
-                f"--resource={rsc.name}:{rsc.revision}"
-                for rsc in release.resources
-                if rsc.revision
+                f"--resource={rsc.name}:{rsc.revision}" for rsc in release.resources
             )
             args = (
                 charm_entity,
@@ -636,20 +634,21 @@ class Arch(Enum):
 
 
 @unique
-class Series(Enum):
+class CharmSeries(Enum):
     ALL = "all"
     UNKNOWN = "unknown"
     XENIAL = "16.04"
     BIONIC = "18.04"
     FOCAL = "20.04"
     JAMMY = "22.04"
+    NOBLE = "24.04"
 
     @classmethod
-    def from_value(cls, value: str) -> "Series":
+    def from_value(cls, value: str) -> "CharmSeries":
         for series in cls:
             if series.value == value:
                 return series
-        return Series.UNKNOWN
+        return cls.UNKNOWN
 
 
 @unique
@@ -674,7 +673,7 @@ class CharmResource:
 class Artifact:
     charm_or_bundle: Path
     arch: Arch = Arch.ALL
-    series: Series = Series.ALL
+    series: CharmSeries = CharmSeries.ALL
     rev: int = None  # set when uploaded
     resources: List[CharmResource] = field(default_factory=list)
 
@@ -682,15 +681,15 @@ class Artifact:
         return f"File: {self.charm_or_bundle.name} for arch={self.arch} and series={self.series}"
 
     @staticmethod
-    def _from_run_on_base(run_on_base: str) -> Iterable[Tuple[Arch, Series]]:
+    def _from_run_on_base(run_on_base: str) -> Iterable[Tuple[Arch, CharmSeries]]:
         if not run_on_base.startswith("ubuntu-"):
             return
         base, *archs = run_on_base.split("-")[1:]
         for arch in archs:
-            yield Arch.from_value(arch), Series.from_value(base)
+            yield Arch.from_value(arch), CharmSeries.from_value(base)
 
     @classmethod
-    def from_charm(cls, charm_file: Path) -> ["Artifact"]:
+    def from_charm(cls, charm_file: Path) -> "Artifact":
         """
         Parsed according to charmcraft file output.
         https://discourse.charmhub.io/t/charmcraft-bases-provider-support/4713
@@ -705,11 +704,11 @@ class Artifact:
             return cls(charm_file, arch, series)
         if len(set(arch for arch, _ in base_arches)) == 1:
             # multiple series, single arch   --> Series.ALL       , Arch._specific_
-            return cls(charm_file, arch, Series.ALL)
+            return cls(charm_file, arch, CharmSeries.ALL)
         if len(set(series for _, series in base_arches)) == 1:
             # single series, multiple arch   --> Series._specific_, Arch.ALL
             return cls(charm_file, Arch.ALL, series)
-        return cls(charm_file, Arch.ALL, Series.ALL)
+        return cls(charm_file, Arch.ALL, CharmSeries.ALL)
 
     @property
     def arch_docker(self) -> str:
@@ -800,6 +799,7 @@ class BuildEntity:
         info = _CharmHub.info(
             name, channel=channel, fields="default-release.revision.download.url"
         )
+        self.echo(f"Received channel info\n{yaml.safe_dump(info)}")
         try:
             url = info["default-release"]["revision"]["download"]["url"]
         except (KeyError, TypeError):
@@ -827,6 +827,7 @@ class BuildEntity:
                 channel=self.channel,
                 fields="default-release.revision.version",
             )
+            self.echo(f"Received channel info \n{yaml.safe_dump(info)}")
             version = info.get("default-release", {}).get("revision", {}).get("version")
             version_id = [{"rev": version, "url": self.entity}] if version else None
         elif self.reactive and source == "local":
@@ -855,16 +856,22 @@ class BuildEntity:
     @property
     def charm_changes(self):
         """Determine if any charm|layers commits have changed since last publish."""
-        local = self.version_identification("local")
-        remote = self.version_identification("remote")
+        locals = self.version_identification("local")
+        remotes = self.version_identification("remote")
 
-        if remote is None:
+        if remotes is None:
             self.echo("No released versions in charmhub. Building...")
             return True
 
-        the_diff = [rev for rev in remote if rev not in local]
+        locals = {loc["url"]: loc["rev"] for loc in locals}
+        remotes = {rem["url"]: rem["rev"] for rem in remotes}
+        the_diff = {k: remotes[k] for k in remotes if locals[k] != remotes[k]}
+
         if the_diff:
-            self.echo(f"Changes found {the_diff}")
+            all_differences = {
+                k: f"local: {locals.get(k)} remote: {remotes[k]}" for k in the_diff
+            }
+            self.echo(f"Changes found\n{yaml.safe_dump(all_differences)}")
             return True
 
         self.echo(f"No changes found in {self.entity}")

@@ -41,6 +41,48 @@ class SnapService(DebugMixin):
         )
         return list(set(upstream_tags) - set(snap_branches))
 
+    def template_snapcraft_yml(
+        self,
+        src_path: Path,
+        branch: str,
+        k8s_version: semver.Version,
+        commit_msg: str = "Creating branch",
+    ):
+        snapcraft_fn = src_path / "snapcraft.yaml"
+        snapcraft_fn_tpl = src_path / "snapcraft.yaml.in"
+        snapcraft_yml_context = {
+            "snap_version": branch.lstrip("v"),
+            "patches": [],
+            "go_version": self.go_version(k8s_version),
+        }
+
+        if k8s_version.compare("1.27.0-alpha.0") >= 0:
+            snapcraft_yml_context["base"] = "core20"
+        elif k8s_version.compare("1.19.0") >= 0:
+            snapcraft_yml_context["base"] = "core18"
+
+        self.log(f"Writing template vars {snapcraft_yml_context}")
+        snapcraft_yml = snapcraft_fn_tpl.read_text()
+        snapcraft_yml = self.render(snapcraft_fn_tpl, snapcraft_yml_context)
+        snapcraft_fn.write_text(snapcraft_yml)
+
+        if self.snap_model.base.status(cwd=str(src_path)):
+            self.log(f"Committing {branch}")
+            self.snap_model.base.add([str(snapcraft_fn)], cwd=str(src_path))
+            self.snap_model.base.commit(f"{commit_msg} {branch}", cwd=str(src_path))
+            self.snap_model.base.push(ref=branch, cwd=str(src_path))
+
+    def go_version(self, k8s_version: semver.Version):
+        """Determines the go version to use for a given k8s version"""
+        k8s_major_minor = f"{k8s_version.major}.{k8s_version.minor}"
+        default = enums.K8S_GO_MAP[k8s_major_minor]
+        try:
+            go_ver = self.upstream_model.source.cat(f"v{k8s_version}", "/.go-version")
+        except FileNotFoundError:
+            return default
+        go_parsed = semver.VersionInfo.parse(go_ver)
+        return f"go/{go_parsed.major}.{go_parsed.minor}/stable"
+
     def sync_from_upstream(self):
         """Syncs branches from upstream tags"""
         if not self.missing_branches:
@@ -49,47 +91,22 @@ class SnapService(DebugMixin):
 
         for branch in self.missing_branches:
             self.log(f"Processing branch {branch}")
+            k8s_version = semver.VersionInfo.parse(branch.lstrip("v"))
+            k8s_major_minor = f"{k8s_version.major}.{k8s_version.minor}"
+
+            if k8s_major_minor not in enums.K8S_GO_MAP:
+                self.log(
+                    f"Skipping {k8s_version} because {k8s_major_minor} isn't in K8S_GO_MAP"
+                )
+                continue
+
             with tempfile.TemporaryDirectory() as tmpdir:
                 src_path = Path(tmpdir) / self.snap_model.src
                 self.snap_model.base.clone(cwd=tmpdir)
                 self.snap_model.base.checkout(
                     branch, new_branch=True, cwd=str(src_path)
                 )
-
-                snapcraft_fn = src_path / "snapcraft.yaml"
-                snapcraft_fn_tpl = src_path / "snapcraft.yaml.in"
-
-                k8s_version = semver.VersionInfo.parse(branch.lstrip("v"))
-                k8s_major_minor = f"{k8s_version.major}.{k8s_version.minor}"
-
-                if k8s_major_minor not in enums.K8S_GO_MAP:
-                    self.log(
-                        f"Skipping {k8s_version} because {k8s_major_minor} isn't in K8S_GO_MAP"
-                    )
-                    continue
-
-                snapcraft_yml_context = {
-                    "snap_version": branch.lstrip("v"),
-                    "patches": [],
-                    "go_version": enums.K8S_GO_MAP[k8s_major_minor],
-                }
-
-                if k8s_version.compare("1.27.0-alpha.0") >= 0:
-                    snapcraft_yml_context["base"] = "core20"
-                elif k8s_version.compare("1.19.0") >= 0:
-                    snapcraft_yml_context["base"] = "core18"
-
-                self.log(f"Writing template vars {snapcraft_yml_context}")
-                snapcraft_yml = snapcraft_fn_tpl.read_text()
-                snapcraft_yml = self.render(snapcraft_fn_tpl, snapcraft_yml_context)
-                snapcraft_fn.write_text(snapcraft_yml)
-
-                self.log(f"Committing {branch}")
-                self.snap_model.base.add([str(snapcraft_fn)], cwd=str(src_path))
-                self.snap_model.base.commit(
-                    f"Creating branch {branch}", cwd=str(src_path)
-                )
-                self.snap_model.base.push(ref=branch, cwd=str(src_path))
+                self.template_snapcraft_yml(src_path, branch, k8s_version)
 
     def sync_stable_track_snaps(self):
         """Keeps current stable version snap builds in sync with latest track"""
@@ -157,11 +174,34 @@ class SnapService(DebugMixin):
                     self.log(f"Found no stable branches ({_version}), skipping.")
                     continue
 
+            # Go versions within a single track can update over time
+            # just because 1.28.0 builds with go/1.20, 1.28.13 may use go/1.22
+            # so we need to confirm this branch is using the correct go version
+            # and trigger new builds if it changes.
+            branch = f"v{latest_branch_version}"
+            branch_ver = semver.VersionInfo.parse(latest_branch_version)
+            if content := self.snap_model.base.cat(branch, "/snapcraft.yaml"):
+                go_version = self.go_version(branch_ver)
+                if go_version not in content:
+                    self.log(
+                        f"Go version mismatch for {branch}, updating snapcraft.yaml"
+                    )
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        branch = f"v{latest_branch_version}"
+                        src_path = Path(tmpdir) / self.snap_model.src
+                        self.snap_model.base.clone(cwd=tmpdir)
+                        self.snap_model.base.checkout(branch, cwd=str(src_path))
+                        self.template_snapcraft_yml(
+                            src_path, branch, branch_ver, commit_msg="Update Snapcraft"
+                        )
+                    self.log(f"Go version changed to {go_version}, building new snap")
+                    self._create_recipe(_version, branch)
+                    continue
+
             for arch in enums.K8S_SUPPORT_ARCHES:
                 self.log(f"> Checking snaps in version {_version} for arch {arch}")
 
                 # Set the current version in the snap model
-                self.snap_model.version = _version
                 max_rev = self.snap_model.latest_revision(
                     track=f"{_version}/edge",
                     arch=arch,
@@ -197,14 +237,11 @@ class SnapService(DebugMixin):
     def build_snap_from_branch(self, branch_version):
         """Builds a snap from a certain branch version"""
         branch_version_parsed = semver.VersionInfo.parse(branch_version)
-        self.snap_model.version = (
-            f"{branch_version_parsed.major}.{branch_version_parsed.minor}"
-        )
-
+        version = f"{branch_version_parsed.major}.{branch_version_parsed.minor}"
         self.log(
-            f"Building snap for {str(branch_version_parsed)} into {self.snap_model.tracks}"
+            f"Building snap for {str(branch_version_parsed)} into {self.snap_model.tracks(version)}"
         )
-        self._create_recipe(self.snap_model.version, f"v{str(branch_version_parsed)}")
+        self._create_recipe(version, f"v{str(branch_version_parsed)}")
 
     def render(self, tmpl_file, context):
         """Renders a jinja template with context"""
@@ -250,10 +287,10 @@ class SnapService(DebugMixin):
             "version": version,
             "branch": branch,
             "repo": self.snap_model.repo,
-            "track": self.snap_model.tracks,
+            "track": self.snap_model.tracks(version),
         }
 
-        self.log(f"> Creating recipe for {params}")
+        self.log("> Creating recipe for {}", params)
 
         snap_recipe_email = os.environ.get("K8STEAMCI_USR")
         snap_recipe_password = os.environ.get("K8STEAMCI_PSW")

@@ -5,6 +5,7 @@ import logging
 import sh
 import re
 from subprocess import run
+from typing import Dict, List
 from .github_api import Repository
 import requests
 import requests.auth
@@ -69,6 +70,29 @@ def add(files, **subprocess_kwargs):
         run(["git", "add", fn], **subprocess_kwargs)
 
 
+def status(**subprocess_kwargs) -> List[Dict[str, str]]:
+    """Show any uncommitted files in a git repo.
+
+    Returns:
+        List[Dict[str, str]]: A list of uncommitted files objects and their status.
+
+        key values are the file names and the values are the status of the file.
+        https://git-scm.com/docs/git-status
+    """
+    cmd = ["git", "status", "--porcelain"]
+    output = run(cmd, capture_output=True, text=True, **subprocess_kwargs)
+
+    def _mk_status(line):
+        status = line[:2]
+        path, *orig_path = line[3:].split(" -> ", maxsplit=1)
+        if orig_path:
+            return {"status": status, "path": path, "orig_path": orig_path[0]}
+        else:
+            return {"status": status, "path": path}
+
+    return [_mk_status(line) for line in output.stdout.splitlines()]
+
+
 def commit(message, **subprocess_kwargs):
     """Add commit to repo"""
     run(["git", "config", "user.email", "cdkbot@gmail.com"], **subprocess_kwargs)
@@ -105,7 +129,7 @@ def remote_tags(url, **subprocess_kwargs):
 def remote_branches(url, **subprocess_kwargs):
     """Returns a list of remote branches"""
     refs = sh.git("ls-remote", "-h", "--refs", url)
-    tags = [line.split("/")[2] for line in refs.splitlines()]
+    tags = ["/".join(line.split("/")[2:]) for line in refs.splitlines()]
     branches = ["main", "master"]  # wokeignore:rule=master
     return sorted(filter(lambda t: t not in branches, tags), key=_natural_sort_key)
 

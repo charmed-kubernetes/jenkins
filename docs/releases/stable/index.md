@@ -34,25 +34,6 @@ Solutions QA period, fixes which need to be applied to address CI or QA failures
 
 ## Prepare CI
 
-### $stable++ release
-
-It may feel early, but part of releasing the next stable version requires
-preparing for the release that will follow. This requires opening tracks and
-building relevant snaps and charms that will be used in the new `edge` channel.
-
-For example, we requested 1.30 snap tracks while preparing for the 1.29 release:
-
-- https://forum.snapcraft.io/t/charmed-kubernetes-1-30-snap-tracks/38912
-
-Bundle/charm track requests are made by posting to the `charmhub requests` forum
-asking for new tracks to be opened for every necessary
-[charm](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-support-matrix.inc)
-and
-[bundle](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-bundles-list.inc)
-owned by `Canonical Kubernetes`. For example:
-
-- https://discourse.charmhub.io/t/request-new-1-30-track-for-all-charmed-k8s-charms-and-bundles/13394
-
 ### $stable release
 
 Once upstream has an RC for the upcoming release, our CI should stop
@@ -62,11 +43,25 @@ between 1.29 RC and GA:
 
 - https://github.com/charmed-kubernetes/jenkins/pull/1462
 
+**^ NOTE**: Only add `1.xx/stable` to the `SNAP_K8S_TRACK_LIST` in the `enums.py` file
+if the `1.xx.0` snaps are available. Otherwise, the snap stable channels would have
+an rc1 in them.
+
+
 Additionally, if not done already, CI should include 1.xx in the version matrix
 and config for relevant jobs. For example, see these updates where we adjusted
 tests for our 1.29 release:
 
 - https://github.com/charmed-kubernetes/jenkins/pull/1463
+
+You now need to tell Jenkins that the jobs changed. First, get the `jjb-config.ini` from the Kubernetes BitWarden.
+This file should be located in `jobs/jjb-conf.ini` and **not** checked into the repo.
+Then, execute:
+
+```sh
+# wokeignore:rule=master
+tox -e py -- jenkins-jobs --conf jobs/jjb-conf.ini update jobs/ci-master.yaml:jobs/*.yaml
+```
 
 ## Preparing the release
 
@@ -77,6 +72,30 @@ tests for our 1.29 release:
 We need to create `release_1.xx` branches from `main` for all
 Charmed Kubernetes repositories. This will be our snapshot
 from which we test, fix, and subsequently promote to the new release.
+
+### Create tracks for charms/snaps
+
+We do have guard-rails defined for the charms and snaps, so we don't need to request tracks anymore.
+However, we still need to manually create the tracks.
+For that, execute
+
+https://github.com/charmed-kubernetes/jenkins/blob/main/bin/ensure_track --kind <charm|snap> --name <charm/snap-name> --track <track to create, e.g. 1.32>
+
+for the charms/snaps as defined in the [charm-support-matrix](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/includes/charm-support-matrix.inc)
+
+### Bump cdk-addons version
+
+In [cdk-addons](https://github.com/charmed-kubernetes/cdk-addons) create a new release branch named after your release, e.g. `release-1.XX` and update the make file similar to [this PR](https://github.com/charmed-kubernetes/cdk-addons/commit/9352559d5e1822b897745b6c254c31ac0e616e33)
+
+### Bump cdk-addons build jobs
+
+In [build-snaps.yaml](../../../jobs/build-snaps.yaml) update the `build-release-snaps` job definition to add `1.xx` and remove `1.xx-4`. See e.g. [this PR](https://github.com/charmed-kubernetes/jenkins/pull/1610)
+
+### Add release images to containers-image sync list
+
+In the [bundle](https://github.com/charmed-kubernetes/bundle) repository, add a new line for the static container list similar to [this PR](https://github.com/charmed-kubernetes/bundle/commit/fcdcc54177f2514216d5aa8fb6fa3cb1ef13ebfe).
+This is required for [this job](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/build-snaps/build-release-cdk-addons.groovy#L158) to build the cdk-addons and [this job](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/sync-oci-images/sync-oci-images.groovy#L266) to copy images from upstream to rocks.cc.
+This `-static` field gives these to jobs an indication of some base set of static images we wish to copy from upstream to rocks.cc and to reference when building cdk-addons.
 
 ### Pin snap channel for charms in the release branches
 
@@ -120,7 +139,7 @@ published to the `1.xx/beta` channel in Charmhub based on the job options.
 
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/promote-charms/
 
-In preparation for running the **validate-charm-release-upgrade** job, 
+In preparation for running the **validate-charm-release-upgrade** job,
 the charms must be promoted from `1.xx/beta` to `latest/beta` channels.
 
 > **Note**: This job must be run again if any charm needed by this release
@@ -157,6 +176,10 @@ run on multiple series and with multiple snap channels.
 Before running this job, confirm that the `snap_version` job parameter is set to the
 appropriate channel for this release (e.g. 1.29/beta).
 
+A successful Jenkins job run only confirms that the tests were started, **not** that they passed.
+Check [Jenkaas](http://jenkaas.s3-website-us-east-1.amazonaws.com/) to ensure all tests completed successfully.
+Each column represents a day. Look for the day you triggered the release tests and check if all validation tests passed in that column.
+
 ### Notify Solutions QA
 
 At the end of the first week and assuming all major blockers are resolved, the
@@ -168,6 +191,25 @@ them resolved prior to GA.
 
 Please note the [Conflict Resolution Section](#conflict-resolution) for making
 any changes as a result of SQA testing.
+
+### Azure Arc Conformance
+
+We certify Charmed Kubernetes with the Azure Arc program by running the following
+job on each new release:
+
+https://jenkins.canonical.com/k8s-ps5/view/Conformance/job/conformance-arc-ck/
+
+This job runs weekly, but publishing the results to Microsoft's bucket is not done
+by default. Ensure we have passing results, and run the above job with the
+"UPLOAD_RESULTS" parameter checked.
+
+Credentials for this job are exported by the `azure-arc.sh` script, defined in the
+"Juju Data - Azure ARC" BitWarden entry, and delivered to all Jenkins workers as part of
+the `juju_creds` [credential](https://jenkins.canonical.com/k8s-ps5/manage/credentials/).
+
+> **Note**: The `AZ_STORAGE_ACCOUNT_SAS` key expires monthly and will need to be
+rotated via [the partner credential portal](https://forms.office.com/pages/responsepage.aspx?id=v4j5cvGGr0GRqy180BHbR9r2AMIPNzpPnFQdZ9IWxshUOFpaWlQ1MkdVRUpBWEtaWU1UUkZJVlA4UCQlQCN0PWcu);
+use the `ARC_CANONICAL_GUID` from the BitWarden entry to get a new value.
 
 ### CNCF Conformance
 

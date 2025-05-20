@@ -24,15 +24,8 @@ from tempfile import TemporaryDirectory
 from subprocess import check_output, check_call
 from typing import List
 from cilib import log
+from cilib.enums import Series
 import click
-
-
-# note: we can't upgrade to focal until after it's released
-SERIES_ORDER = [
-    "bionic",
-    "focal",
-    "jammy",
-]
 
 
 def tracefunc(frame, event, arg):
@@ -122,55 +115,41 @@ async def upgrade_charms(model, channel, tools):
     await tools.juju_wait()
 
 
-async def upgrade_snaps(model, channel, tools):
-    for app_name, blocking in {
-        "kubernetes-control-plane": True,
-        "kubernetes-worker": True,
-        "kubernetes-e2e": False,
-    }.items():
+async def upgrade_snaps(model: Model, channel, tools):
+    for app_name in [
+        "kubernetes-control-plane",
+        "kubernetes-worker",
+        "kubernetes-e2e",
+    ]:
         app = model.applications.get(app_name)
         # missing applications are simply not upgraded
         if not app:
             continue
 
-        config = await app.get_config()
         # If there is no change in the snaps skipping the upgrade
+        config = await app.get_config()
         current_channel = config["channel"]["value"]
         if channel == current_channel:
             continue
 
         log.info(f"Upgrading {app_name} snaps from {current_channel} to {channel}")
         await app.set_config({"channel": channel})
+        await model.wait_for_idle(apps=[app_name])
 
-        # If the channel change doesn't alter the track, the charms don't block
-        new_track, old_track = channel.split("/")[0], current_channel.split("/")[0]
-        blocking &= new_track != old_track
-
-        if blocking:
-            for unit in app.units:
-                # wait for blocked status
-                deadline = time.time() + 180
-                while time.time() < deadline:
-                    message = "{} [{}] {}: {}".format(
-                        unit.name,
-                        unit.agent_status,
-                        unit.workload_status,
-                        unit.workload_status_message,
-                    )
-                    log.info(message)
-                    if (
-                        unit.workload_status == "blocked"
-                        and "Needs manual upgrade, run the upgrade action"
-                        in unit.workload_status_message
-                    ):
-                        break
-                    await asyncio.sleep(3)
-                else:
-                    raise asyncio.TimeoutError(
-                        "Unable to find blocked status on unit {0} - {1} {2}".format(
-                            unit.name, unit.workload_status, unit.agent_status
-                        )
-                    )
+        for unit in app.units:
+            # Upgrade any application that is blocked due to snap changes
+            message = "{} [{}] {}: {}".format(
+                unit.name,
+                unit.agent_status,
+                unit.workload_status,
+                unit.workload_status_message,
+            )
+            log.info(message)
+            if (
+                unit.workload_status == "blocked"
+                and "Needs manual upgrade, run the upgrade action"
+                in unit.workload_status_message
+            ):
                 # run upgrade action
                 log.info(f"{unit.name} starting upgrade action")
                 await juju_run_action(unit, "upgrade")
@@ -578,60 +557,72 @@ async def wait_for_application_status(model, app_name, status="active"):
         raise AssertionError(f"Application has unexpected status: {app.status.status}")
 
 
-def _supported_series(charmhub_info, channel):
-    return {p["series"] for p in charmhub_info["channel-map"][channel]["platforms"]}
+class UnitMetadata:
+    def __init__(self, unit):
+        self._model = unit.machine.model
+        self._unit = unit
+        self._charm_info = None
+        self._app_info = None
+
+    async def charm_channel(self) -> str:
+        app_info = await self.app_info()
+        channel = "/".join((app_info["track"] or "latest", app_info["risk"]))
+        return channel
+
+    @property
+    def charm_url(self) -> str:
+        app = self._model.applications[self._unit.application]
+        return "-".join(app.data["charm-url"].split("/")[-1].split("-")[:-1])
+
+    async def app_info(self) -> dict:
+        if self._app_info is None:
+            app = self._model.applications[self._unit.application]
+            app_info = await app._facade().GetCharmURLOrigin(application=app.name)
+            self._app_info = app_info.charm_origin
+        return self._app_info
+
+    async def charm_info(self) -> dict:
+        if self._charm_info is None:
+            self._charm_info = await self._model.charmhub.info(self.charm_url)
+        return self._charm_info
+
+    async def supports_series(self, channel: str, series: Series) -> bool:
+        charm_info = await self.charm_info()
+        return series in {
+            Series(p["channel"])
+            for p in charm_info["channel-map"][channel]["revision"]["bases"]
+        }
 
 
-async def refresh_openstack_charms(machine, new_series, tools):
-    """Upgrade openstack charms to a channel that supports new_series
+async def supports_series_upgrade(machine, new_series: Series) -> bool:
+    """Confirm that this machine can be upgraded to the new series.
 
-    The openstack charms (ceph, hacluster, mysql) have to switch to a newer channel
-    before they can do a series upgrade. I.e. hacluster should be deployed on channel
-    2.0.3/stable when running focal. Before upgrading to jammy, you need to switch to
-    2.4/stable.
+    All the units on the machine must exist on a charm that supports the new series.
     """
     for unit in _units(machine):
-        app = unit.machine.model.applications[unit.application]
-        charm_name = "-".join(app.data["charm-url"].split("/")[-1].split("-")[:-1])
-        charm_info = await unit.machine.model.charmhub.info(charm_name)
-        if charm_info["publisher"] != "OpenStack Charmers":
-            continue
-
-        app_info = await app._facade().GetCharmURLOrigin(application=app.name)
-        app_info = app_info.charm_origin
-        current_channel = "/".join((app_info["track"] or "latest", app_info["risk"]))
-        if new_series in _supported_series(charm_info, current_channel):
-            continue
-
-        for channel, channel_info in charm_info["channel-map"].items():
-            if (
-                app_info["risk"] == channel_info["risk"]
-                and new_series in _supported_series(charm_info, channel)
-                and app_info["series"] in _supported_series(charm_info, channel)
-            ):
-                new_channel = channel
-                break
-        else:
-            raise ValueError(
-                f"{app.name} on channel {current_channel} does not support {new_series}"
-                " and no channel is found to upgrade to."
+        metadata = UnitMetadata(unit)
+        current_channel = await metadata.charm_channel()
+        if await metadata.supports_series(current_channel, new_series):
+            log.info(
+                f"{unit.name} supports {new_series.name} upgrade on {current_channel}"
             )
+            continue
+        log.info(f"{unit.name} doesn't support {new_series.name} on {current_channel}")
+        return False
+    return True
 
-        log.info(f"Upgrading {app.name} to {new_channel} to suport {new_series}")
-        await app.refresh(channel=new_channel)
 
-
-async def prep_series_upgrade(machine, new_series, tools):
+async def prep_series_upgrade(machine, new_series: Series, tools):
     log.info(f"preparing series upgrade for machine {machine.id}")
     await tools.run(
         "juju",
-        "upgrade-series",
+        "upgrade-machine",
         "--yes",
         "-m",
         tools.connection,
         machine.id,
         "prepare",
-        new_series,
+        f"ubuntu@{new_series.value}",
     )
     try:
         await wait_for_status("blocked", _units(machine))
@@ -646,16 +637,17 @@ async def prep_series_upgrade(machine, new_series, tools):
 
 
 async def do_series_upgrade(machine):
+    await machine_reboot(machine, block=True)
+    log.info(f"Doing release upgrade for machine {machine.id}")
     file_name = "/etc/apt/apt.conf.d/50unattended-upgrades"
     option = "--force-confdef"
-    log.info(f"doing series upgrade for machine {machine.id}")
     await machine.ssh(
         f"""
-        if ! grep -q -- '{option}' {file_name}; then
-          echo 'DPkg::options {{ "{option}"; }};' | sudo tee -a {file_name}
-        fi
-        sudo DEBIAN_FRONTEND=noninteractive do-release-upgrade -f DistUpgradeViewNonInteractive
-    """
+if ! grep -q -- '{option}' {file_name}; then
+    echo 'DPkg::options {{ "{option}"; }};' | sudo tee -a {file_name}
+fi
+sudo DEBIAN_FRONTEND=noninteractive do-release-upgrade -f DistUpgradeViewNonInteractive
+"""
     )
     await machine_reboot(machine)
 
@@ -671,18 +663,18 @@ async def machine_reboot(machine, block=False):
 
     while block:
         try:
-            await machine.ssh("service jujud-machine-* status")
+            await machine.ssh("service jujud-machine-* status", timeout=30)
             block = False
         except JujuError:
             log.info("Waiting for machine to start up")
             await asyncio.sleep(5)
 
 
-async def finish_series_upgrade(machine, tools, new_series):
+async def finish_series_upgrade(machine, new_series: Series, tools):
     log.info(f"completing series upgrade for machine {machine.id}")
     await tools.run(
         "juju",
-        "upgrade-series",
+        "upgrade-machine",
         "--yes",
         "-m",
         tools.connection,
@@ -692,8 +684,8 @@ async def finish_series_upgrade(machine, tools, new_series):
     if _primary_unit(machine).application == "vault" and tools.vault_unseal_command:
         tools.run(shlex.split(tools.vault_unseal_command))
     await wait_for_status("active", _units(machine))
-    series = await machine.ssh("lsb_release -cs")
-    assert series.strip() == new_series
+    series = await machine.ssh("lsb_release -cs 2>/dev/null")
+    assert Series[series.strip()] == new_series
 
 
 class JujuRunError(AssertionError):

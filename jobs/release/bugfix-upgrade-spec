@@ -41,13 +41,24 @@ function test::execute
 ###############################################################################
 # ENV
 ###############################################################################
+# This job deploys an existing stable charm and snap
+# then upgrades to a candidate channel
+# 
+# using the candidate channel (1.xx/candidate)
+#    derive the deploy charm-channel = 1.xx/stable
+#    derive the deploy snap-channel = 1.(xx-N)/stable  where N=0 or 1
 
-SNAP_VERSION=${1:-1.27/stable}
-SERIES=${2:-focal}
+PRIOR_SNAP_OFFSET=${1}    # Could be 0 or 1
+SERIES=${2}
 CANDIDATE_CHANNEL=${3}
+
+# replace 1.xx/(edge or candidate, or beta) with 1.xx/stable
+JUJU_DEPLOY_CHANNEL=$(echo "$CANDIDATE_CHANNEL" | sed -E 's#/.*#/stable#')
+PRIOR_TRACK=$(python3 $WORKSPACE/jobs/release/prior_track.py $CANDIDATE_CHANNEL $PRIOR_SNAP_OFFSET)
+SNAP_VERSION="$PRIOR_TRACK/stable"
+
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
-JUJU_DEPLOY_CHANNEL=stable
-JUJU_CLOUD=vsphere/Boston
+JUJU_CLOUD=${4}
 JUJU_CONTROLLER=validate-$(identifier::short)
 JUJU_MODEL=validate-bugfix-upgrade
 JUJU_VERSION=$(juju --version | cut -f-2 -d.)
@@ -57,7 +68,7 @@ JOB_ID=$(identifier)
 
 
 # this job deploys with
-#   charm-channel=stable
+#   charm-channel=1.xx/stable
 #   snap-channel  at {K8S_STABLE_VERSION - 1}/stable or {K8S_STABLE_VERSION - 2}/stable
 # then upgrades charm-channel to candidate
 # and  upgrades snap-channel  to candidate

@@ -1,10 +1,24 @@
-import traceback
-
 from cilib import git, version, log
 from drypy.patterns import sham
+from pathlib import Path
+from urllib.parse import urlparse
+
+import retry
+import requests
 
 
-class BaseRepoModel:
+@retry.retry(requests.exceptions.HTTPError, tries=5)
+def _request_get(url: str) -> str:
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.text
+    elif response.status_code == 404:
+        raise FileNotFoundError(f"File not found: {url}")
+    else:
+        response.raise_for_status()
+
+
+class BaseRepoModel(log.DebugMixin):
     """Represents the upstream source to be included in the debian packaging"""
 
     def __init__(self, repo=None, git_user=None, name=None):
@@ -14,6 +28,34 @@ class BaseRepoModel:
 
     def __str__(self):
         return self.repo
+
+    def cat(self, branch: str, path) -> str:
+        """Cat file from a git repo"""
+        parsed = urlparse(self.repo)
+        if "git.launchpad.net" in parsed.netloc:
+            """
+            Launchpad supports viewing files directly from the web interface
+            for example:
+                repo: git+ssh://k8s-team-ci@git.launchpad.net/snap-kube-apiserver
+                branch: v1.28.13
+                file: /snapcraft.yaml
+
+                becomes
+                https://k8s-team-ci@git.launchpad.net/snap-kubectl/plain/snapcraft.yaml?h=v1.28.13
+            """
+            full_path = Path("/") / path
+            url = f"https://{parsed.netloc}{parsed.path}/plain{full_path}?h={branch}"
+        elif "github.com" in parsed.netloc:
+            """
+            Github supports viewing files directly from the web interface
+            https://raw.githubusercontent.com/kubernetes/kubernetes/refs/tags/v1.32.0/.go-version
+            """
+            full_path = Path("/") / path
+            url = f"https://raw.githubusercontent.com{parsed.path}/refs/tags/{branch}{full_path}"
+        else:
+            raise NotImplementedError("Only launchpad.net and github.com supported")
+
+        return _request_get(url)
 
     def clone(self, **subprocess_kwargs):
         """Clone package repo"""
@@ -32,6 +74,10 @@ class BaseRepoModel:
     def add(self, files, **subprocess_kwargs):
         """Add files to git repo"""
         git.add(files, **subprocess_kwargs)
+
+    def status(self, **subprocess_kwargs):
+        """Diff git repo"""
+        return git.status(**subprocess_kwargs)
 
     @sham
     def push(self, origin="origin", ref="master", **subprocess_kwargs):
@@ -131,7 +177,12 @@ class BaseRepoModel:
             try:
                 if version.greater(_semver, starting_semver):
                     _semvers.append(_semver)
+            except ValueError:
+                self.debug(f"Ignoring non-semver branch: {_semver}")
+                continue
             except Exception:
-                traceback.print_exc()
+                self.exception(
+                    f"Unexpected semver error while parsing branch: {_semver}"
+                )
                 continue
         return _semvers

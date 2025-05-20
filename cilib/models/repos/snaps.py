@@ -14,7 +14,6 @@ class SnapBaseRepoModel(DebugMixin):
     name = None
 
     def __init__(self):
-        self.version = None
         self.git_user = "k8s-team-ci"
         self.repo = f"git+ssh://{self.git_user}@git.launchpad.net/snap-{self.name}"
         self.src = f"snap-{self.name}"
@@ -27,10 +26,11 @@ class SnapBaseRepoModel(DebugMixin):
     def base(self):
         return BaseRepoModel(repo=self.repo, git_user=self.git_user, name=self.name)
 
-    @property
-    def tracks(self):
+    def tracks(self, version):
         """Tracks to publish a snap to"""
-        return enums.SNAP_K8S_TRACK_MAP[self.version]
+        all_tracks = enums.SNAP_K8S_TRACK_MAP[version]
+        assert all(version in track for track in all_tracks)
+        return all_tracks
 
     @property
     def revisions(self):

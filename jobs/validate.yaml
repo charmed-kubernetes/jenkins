@@ -21,6 +21,7 @@
     parameters:
       - 'charms-{charm-channel}'
       - lxc-runner-params
+      - etcd-channel
     axes:
       - axis:
           type: slave  # wokeignore:rule=slave
@@ -33,7 +34,6 @@
           description: |-
             specify the juju channel to use
           values:
-            - 3.1/stable
             - 3/stable
       - axis:
           type: user-defined
@@ -59,7 +59,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
           COMMAND: |
-            bash jobs/validate/spec $snap_version $series $channel $arch $cloud
+            bash jobs/validate/spec $snap_version $series $channel $arch $cloud $etcd_channel
 
 - project:
     name: validate-ck
@@ -67,20 +67,20 @@
       - jammy:
           hour: '0' # Midnight
           dow: '1,3,5'  # MWF
-      - focal:
+      - noble:
           hour: '12' # Noon
-          dow: '2,4,6'  # TuThSa
+          dow: '1,3,5'  # MWF
     charm-channel:
       - edge:
           snap_versions:
+            - 1.33/edge
+            - 1.32/edge
             - 1.31/edge
-            - 1.30/edge
-            - 1.29/edge
       - stable:
           snap_versions:
+            - 1.32/stable
+            - 1.31/stable
             - 1.30/stable
-            - 1.29/stable
-            - 1.28/stable
           dow: '0'      # Sunday
     jobs:
       - 'validate-ck-{charm-channel}-{series}'
@@ -105,6 +105,7 @@
         - timed: "@weekly"
     parameters:
       - charms-edge
+      - etcd-channel
       - lxc-runner-params
       - juju-lts
     axes:
@@ -117,15 +118,15 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
+            - 1.32/edge
             - 1.31/edge
-            - 1.30/edge
-            - 1.29/edge
       - axis:
           type: user-defined
           name: series
           values:
-            - focal
             - jammy
+            - noble
       - axis:
           type: user-defined
           name: arch
@@ -142,7 +143,7 @@
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
           COMMAND: |
-            bash jobs/validate/spec $snap_version $series $channel $arch $cloud
+            bash jobs/validate/spec $snap_version $series $channel $arch $cloud $etcd_channel
 
 # UPGRADE --------------------------------------------------------------------------- #
 - job:
@@ -274,8 +275,7 @@
       - block-on-infra
       - build-discarder:
           num-to-keep: 10
-    triggers:
-        - timed: "@weekly"
+    triggers: []
     parameters:
       - charms-edge
       - series-stable
@@ -291,8 +291,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.31/edge
-            - 1.30/edge
+            - 1.33/edge
+            - 1.32/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -333,8 +333,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.31/edge
-            - 1.30/edge
+            - 1.33/edge
+            - 1.32/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -374,8 +374,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.31/edge
-            - 1.30/edge
+            - 1.33/edge
+            - 1.32/edge
       - axis:
           type: user-defined
           name: cloud
@@ -426,8 +426,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.31/edge
-            - 1.30/edge
+            - 1.33/edge
+            - 1.32/edge
       - axis:
           type: user-defined
           name: routing_mode
@@ -469,8 +469,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.31/edge
-            - 1.30/edge
+            - 1.33/edge
+            - 1.32/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -510,8 +510,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.31/edge
-            - 1.30/edge
+            - 1.33/edge
+            - 1.32/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -534,8 +534,7 @@
       - block-on-infra
       - build-discarder:
           num-to-keep: 10
-    triggers:
-        - timed: "@monthly"
+    triggers: []
     parameters:
       - charms-edge
       - series-stable
@@ -551,8 +550,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.31/edge
-            - 1.30/edge
+            - 1.33/edge
+            - 1.32/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -575,8 +574,7 @@
       - block-on-infra
       - build-discarder:
           num-to-keep: 10
-    triggers:
-        - timed: "@monthly"
+    triggers: []
     parameters:
       - charms-edge
       - series-stable
@@ -592,8 +590,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.31/edge
-            - 1.30/edge
+            - 1.33/edge
+            - 1.32/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -633,8 +631,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.31/edge
-            - 1.30/edge
+            - 1.33/edge
+            - 1.32/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -674,9 +672,9 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/edge
+            - 1.32/edge
             - 1.31/edge
-            - 1.30/edge
-            - 1.29/edge
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
