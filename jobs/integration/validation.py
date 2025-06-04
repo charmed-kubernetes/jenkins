@@ -1690,11 +1690,13 @@ async def test_keystone(model, keystone_deployment):
     assert output.code == 0, output.stderr
 
 
-async def get_leader(app: Application):
+async def get_leader(app: Application) -> int:
     is_leader = await asyncio.gather(*(u.is_leader_from_status() for u in app.units))
     for idx, flag in enumerate(is_leader):
         if flag:
             return idx
+    else:
+        raise RuntimeError("No leader found in application {}".format(app.name))
 
 
 @pytest.mark.on_model("validate-vault")
@@ -1803,7 +1805,7 @@ class TestEncryptionAtRest:
         await self.force_update_status(self.vault_app)
         assert await self.vault_ready_status()
 
-    async def test_kubernetes_with_vault(self, model: Model):
+    async def test_encryption_at_rest(self, model: Model):
         # NB: At this point, depending on the version of the Vault charm, its status
         # might either be (a less than informative) "'etcd' incomplete" (cs:vault-44)
         # or "Vault needs to be initialized" (cs:~openstack-charmers-next/vault).
