@@ -293,6 +293,22 @@ to this release `1.xx`. For example, for the 1.29 GA:
 
 - https://github.com/charmed-kubernetes/jenkins/pull/1481
 
+If the snaps are not yet promoted (in the beta channel)
+
+```sh
+CHANNEL=1.xx
+for snap in kube-apiserver kube-controller-manager kube-proxy kube-scheduler kubectl kubeadm kubelet kubernetes-test; do
+  snapcraft promote ${snap} \
+      --from-channel="${CHANNEL}/beta" \
+      --to-channel="${CHANNEL}/stable"
+done
+for CHANNEL in 1.33 1.32 1.31; do
+  snapcraft promote cdk-addons \
+      --from-channel="${CHANNEL}/beta" \
+      --to-channel="${CHANNEL}/stable"
+done
+```
+
 > **Note**: Nightly charm and bundle builds will publish to both `latest/edge`
 and `K8S_STABLE_VERSION/edge` channels.
 

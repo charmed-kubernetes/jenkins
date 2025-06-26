@@ -175,7 +175,7 @@ Otherwise, you would end up promoting charms from the last candidate release
 overwriting the previous stable with an invalid charm.
 
 It can be wise to run first with the `--dry-run` flag to ensure the correct
-promotions are correct specifically for charms that require multiple promotions 
+promotions are correct specifically for charms that require multiple promotions
 because they support multiple arches with potentially different resources.
 
 **Note about `to_channel`**
@@ -259,7 +259,7 @@ Send an email to the `k8s-crew@lists.canonical.com` mailing list with something 
 ---
 
 **Subject: Announcing the Release of Charmed Kubernetes {VERSION}**
- 
+
 
 We are excited to announce the release of Charmed Kubernetes {VERSION} in the {CHANNEL} channel!
 This release includes several notable fixes and improvements across the Kubernetes charms, ensuring better stability, enhanced functionality, and improved security.
