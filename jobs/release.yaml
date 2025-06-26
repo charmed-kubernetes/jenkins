@@ -95,8 +95,8 @@
           type: user-defined
           name: series
           values:
-            - focal
             - jammy
+            - noble
       - axis:
           type: user-defined
           name: arch
