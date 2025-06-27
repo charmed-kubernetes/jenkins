@@ -78,9 +78,9 @@
             - 1.31/edge
       - stable:
           snap_versions:
+            - 1.33/stable
             - 1.32/stable
             - 1.31/stable
-            - 1.30/stable
           dow: '0'      # Sunday
     jobs:
       - 'validate-ck-{charm-channel}-{series}'
@@ -179,8 +179,8 @@
           type: user-defined
           name: snap_version
           values:
-            - 1.28/stable
-            - 1.27/stable
+            - 1.32/stable
+            - 1.31/stable
       - axis:
           type: user-defined
           name: arch
