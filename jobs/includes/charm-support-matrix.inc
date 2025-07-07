@@ -504,6 +504,7 @@
       - k8s
       - charm-openstack-integrator
       - integrator
+      - openstack
     upstream: 'https://github.com/charmed-kubernetes/charm-openstack-integrator.git'
 - vsphere-integrator:
     framework: reactive
