@@ -306,43 +306,43 @@
     upstream: "https://github.com/charmed-kubernetes/charm-lib-interface-tokens.git"
     tags:
         - k8s
-        - layer
         - charm-lib
+    build_cache: no
 - charm-lib:interface-kube-dns:
     downstream: "charmed-kubernetes/charm-lib-interface-kube-dns"
     upstream: "https://github.com/charmed-kubernetes/charm-lib-interface-kube-dns.git"
     tags:
         - k8s
-        - layer
         - charm-lib
+    build_cache: no
 - charm-lib:interface-kubernetes-cni:
     downstream: "charmed-kubernetes/charm-lib-interface-kubernetes-cni"
     upstream: "https://github.com/charmed-kubernetes/charm-lib-interface-kubernetes-cni.git"
     tags:
         - k8s
-        - layer
         - charm-lib
+    build_cache: no
 - charm-lib:interface-external-cloud-provider:
     downstream: "charmed-kubernetes/charm-lib-interface-external-cloud-provider"
     upstream: "https://github.com/charmed-kubernetes/charm-lib-interface-external-cloud-provider.git"
     tags:
         - k8s
-        - layer
         - charm-lib
+    build_cache: no
 - charm-lib:kubernetes-snaps:
     downstream: "charmed-kubernetes/charm-lib-kubernetes-snaps"
     upstream: "https://github.com/charmed-kubernetes/charm-lib-kubernetes-snaps.git"
     tags:
         - k8s
-        - layer
         - charm-lib
+    build_cache: no
 - charm-lib:interface-container-runtime:
     downstream: "charmed-kubernetes/charm-lib-interface-container-runtime"
     upstream: "https://github.com/charmed-kubernetes/charm-lib-interface-container-runtime.git"
     tags:
         - k8s
-        - layer
         - charm-lib
+    build_cache: no
 
 - layer:leadership:
     downstream: "charmed-kubernetes/layer-leadership.git"
