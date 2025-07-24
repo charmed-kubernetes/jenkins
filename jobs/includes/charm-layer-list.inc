@@ -343,7 +343,6 @@
         - k8s
         - charm-lib
     build_cache: no
-
 - layer:leadership:
     downstream: "charmed-kubernetes/layer-leadership.git"
     upstream: "https://git.launchpad.net/layer-leadership"
