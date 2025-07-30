@@ -27,7 +27,7 @@ export PROXY=${PROXY:-}
 export RELEASE_CHANNEL=${RELEASE_CHANNEL:-all}
 
 
-SERIES=focal
+SERIES=jammy
 JUJU_DEPLOY_BUNDLE="${WORKSPACE}/ubuntu.yaml"
 JUJU_DEPLOY_CHANNEL=stable
 JUJU_CLOUD=aws/us-east-1
