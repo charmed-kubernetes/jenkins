@@ -1870,9 +1870,9 @@ class TestEncryptionAtRest:
                 "get /registry/secrets/default/test-secret | strings",
             )
             assert "enc:aescbc:v1" in result.output, "Should see encoded secret"
-            assert (
-                "secret-value" not in result.output
-            ), "Should not see plain-text secret"
+            assert "secret-value" not in result.output, (
+                "Should not see plain-text secret"
+            )
         finally:
             log.info("Deleting secret")
             await kubectl(self.model, "delete secret test-secret")
@@ -2110,9 +2110,9 @@ async def test_cloud_node_labels(cloud, model, tools):
     nodes = json.loads(raw_nodes)["items"]
     labels = [node["metadata"].get("labels", {}).get("juju.io/cloud") for node in nodes]
     all_same_labels = all(item == labels[0] for item in labels)
-    assert (
-        all_same_labels
-    ), f"Unique label juju.io/cloud values found ({','.join(map(str, labels))})"
+    assert all_same_labels, (
+        f"Unique label juju.io/cloud values found ({','.join(map(str, labels))})"
+    )
 
     label = labels[0]
     known_clouds = ["azure", "ec2", "gce", "openstack", "vsphere"]
@@ -2121,9 +2121,9 @@ async def test_cloud_node_labels(cloud, model, tools):
         # if the label is None, expect there's no integrator app in the model
         integrators = [c + "-integrator" for c in known_clouds]
         integrator = set(app for app in integrators if app in model.applications)
-        assert (
-            not integrator
-        ), f"Expect {expected_label} because the model is integrated with {integrator}"
+        assert not integrator, (
+            f"Expect {expected_label} because the model is integrated with {integrator}"
+        )
     else:
         # Otherwise expect the label to match the cloud
         assert f"Node label (juju.io/cloud={label})" == expected_label
@@ -2244,12 +2244,12 @@ async def test_multus(model, tools, addons_model):
                     active_networks[interface] = line.split()[1]
         expected_interfaces = ["eth0", "net1"]
         for ifc in expected_interfaces:
-            assert (
-                ifc in active_networks
-            ), f"Interface {ifc} is missing from ip addr output:\n{output}"
-            assert active_networks[ifc].startswith(
-                "10.166."
-            ), f"Interface {ifc} is on the wrong subnet\n{output}"
+            assert ifc in active_networks, (
+                f"Interface {ifc} is missing from ip addr output:\n{output}"
+            )
+            assert active_networks[ifc].startswith("10.166."), (
+                f"Interface {ifc} is on the wrong subnet\n{output}"
+            )
     finally:
         await cleanup()
 
@@ -2545,6 +2545,12 @@ async def test_nfs(model, tools):
 async def ceph_apps(model, tools):
     # setup
     series = csi_series = os.environ["SERIES"]
+    control_plane_app = model.applications.get("kubernetes-control-plane")
+    if control_plane_app and control_plane_app.units:
+        control_plane_series = control_plane_app.units[0].machine.series
+        series = csi_series = control_plane_series
+    log.info("assigned series: %s", series)
+
     ceph_config = {}
     ceph_charms_channel = "quincy/stable"
     if Series[series] > Series.jammy:
@@ -2701,7 +2707,9 @@ async def test_containerd_to_docker(model, tools):
     # Block until containerd's removed, ignore `blocked` worker.
 
     docker_app = await model.deploy(
-        "docker", num_units=0, channel=tools.charm_channel  # Subordinate.
+        "docker",
+        num_units=0,
+        channel=tools.charm_channel,  # Subordinate.
     )
 
     await docker_app.add_relation("docker", "kubernetes-control-plane")
@@ -2718,7 +2726,9 @@ async def test_containerd_to_docker(model, tools):
     # Block until docker's removed, ignore `blocked` worker.
 
     containerd_app = await model.deploy(
-        "containerd", num_units=0, channel=tools.charm_channel  # Subordinate.
+        "containerd",
+        num_units=0,
+        channel=tools.charm_channel,  # Subordinate.
     )
 
     await containerd_app.add_relation("containerd", "kubernetes-control-plane")
