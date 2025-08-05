@@ -2545,14 +2545,14 @@ async def test_nfs(model, tools):
 async def ceph_apps(model, tools):
     # setup
     control_plane_app = model.applications["kubernetes-control-plane"]
-    control_plane_series = control_plane_app.units[0].machine.series
-    series = csi_series = control_plane_series
+    control_plane_base = control_plane_app.units[0].machine.base
+    series = csi_series = Series.from_base(control_plane_base)
     log.info("assigned series: %s", series)
 
     ceph_config = {}
     ceph_charms_channel = "quincy/stable"
-    if Series[series] > Series.jammy:
-        series = Series.jammy.name
+    if series > Series.jammy:
+        series = Series.jammy
 
     all_apps = ["ceph-mon", "ceph-osd", "ceph-fs", "ceph-csi"]
     if all(a in model.applications for a in all_apps):
@@ -2569,7 +2569,7 @@ async def ceph_apps(model, tools):
     ceph_mon = await model.deploy(
         "ceph-mon",
         num_units=3,
-        series=series,
+        series=series.name,
         config=ceph_config,
         channel=ceph_charms_channel,
     )
@@ -2582,7 +2582,7 @@ async def ceph_apps(model, tools):
         "ceph-osd",
         storage=cs,
         num_units=3,
-        series=series,
+        series=series.name,
         config=ceph_config,
         constraints="root-disk=32G",
         channel=ceph_charms_channel,
@@ -2592,18 +2592,18 @@ async def ceph_apps(model, tools):
     ceph_fs = await model.deploy(
         "ceph-fs",
         num_units=1,
-        series=series,
+        series=series.name,
         config=ceph_config,
         channel=ceph_charms_channel,
     )
 
     log.info("deploying ceph-csi")
     ceph_csi_config = {"cephfs-enable": "true", "namespace": "kube-system"}
-    if Series[csi_series] >= Series.noble:
+    if csi_series >= Series.noble:
         ceph_csi_config["release"] = "v3.13.0"
     ceph_csi = await model.deploy(
         "ceph-csi",
-        series=csi_series,
+        series=csi_series.name,
         num_units=0,
         config=ceph_csi_config,
         channel=tools.charm_channel,

@@ -2,6 +2,7 @@
 
 from enum import Enum
 from functools import total_ordering
+from typing import Tuple
 from pathlib import Path
 import yaml
 
@@ -41,11 +42,34 @@ class Series(Enum):
     def __hash__(self):
         return hash(self.name)
 
-    def _version_tuple(self):
+    @classmethod
+    def from_base(cls, base: str) -> "Series":
+        """Get the Series enum from a base string like 'ubuntu@22.04'."""
         try:
-            return tuple(map(int, self.value.split(".")))
+            distro, version = base.split("@", 1)
+        except ValueError:
+            raise ValueError(
+                f"Invalid base format: '{base}' (expected 'distro@version')"
+            )
+
+        if distro != "ubuntu":
+            raise ValueError(f"Unsupported base '{base}' for Series lookup")
+
+        for member in cls:
+            if member._version_tuple() == cls._to_version_tuple(version):
+                return member
+
+        raise ValueError(f"No Series found for base '{base}'")
+
+    def _version_tuple(self):
+        return self._to_version_tuple(self.value)
+
+    @staticmethod
+    def _to_version_tuple(version: str) -> Tuple[int, ...]:
+        try:
+            return tuple(map(int, version.split(".")))
         except ValueError as e:
-            raise ValueError("Unsupported version format {self.value}") from e
+            raise ValueError(f"Unsupported version format {version}") from e
 
     def __lt__(self, other) -> bool:
         """Compare two Series enums based on their version numbers."""
