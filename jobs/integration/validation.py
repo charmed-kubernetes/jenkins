@@ -2544,11 +2544,9 @@ async def test_nfs(model, tools):
 @pytest.fixture(scope="class")
 async def ceph_apps(model, tools):
     # setup
-    series = csi_series = os.environ["SERIES"]
-    control_plane_app = model.applications.get("kubernetes-control-plane")
-    if control_plane_app and control_plane_app.units:
-        control_plane_series = control_plane_app.units[0].machine.series
-        series = csi_series = control_plane_series
+    control_plane_app = model.applications["kubernetes-control-plane"]
+    control_plane_series = control_plane_app.units[0].machine.series
+    series = csi_series = control_plane_series
     log.info("assigned series: %s", series)
 
     ceph_config = {}
