@@ -2544,7 +2544,11 @@ async def test_nfs(model, tools):
 @pytest.fixture(scope="class")
 async def ceph_apps(model, tools):
     # setup
-    series = csi_series = os.environ["SERIES"]
+    control_plane_app = model.applications["kubernetes-control-plane"]
+    control_plane_series = control_plane_app.units[0].machine.series
+    series = csi_series = control_plane_series
+    log.info("assigned series: %s", series)
+
     ceph_config = {}
     ceph_charms_channel = "quincy/stable"
     if Series[series] > Series.jammy:
@@ -2701,7 +2705,9 @@ async def test_containerd_to_docker(model, tools):
     # Block until containerd's removed, ignore `blocked` worker.
 
     docker_app = await model.deploy(
-        "docker", num_units=0, channel=tools.charm_channel  # Subordinate.
+        "docker",
+        num_units=0,
+        channel=tools.charm_channel,  # Subordinate.
     )
 
     await docker_app.add_relation("docker", "kubernetes-control-plane")
@@ -2718,7 +2724,9 @@ async def test_containerd_to_docker(model, tools):
     # Block until docker's removed, ignore `blocked` worker.
 
     containerd_app = await model.deploy(
-        "containerd", num_units=0, channel=tools.charm_channel  # Subordinate.
+        "containerd",
+        num_units=0,
+        channel=tools.charm_channel,  # Subordinate.
     )
 
     await containerd_app.add_relation("containerd", "kubernetes-control-plane")
