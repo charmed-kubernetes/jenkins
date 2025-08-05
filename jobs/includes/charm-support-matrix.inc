@@ -590,6 +590,8 @@
       - multus
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-multus.git'
+    channel-range:
+      max: '1.32'
 - sriov-cni:
     framework: ops
     builder: launchpad
@@ -604,6 +606,8 @@
       - sriov-cni
       - cni
     upstream: 'https://github.com/charmed-kubernetes/charm-sriov-cni.git'
+    channel-range:
+      max: '1.32'
 - sriov-network-device-plugin:
     framework: ops
     builder: launchpad
@@ -619,6 +623,8 @@
       - cni
     upstream: >-
       https://github.com/charmed-kubernetes/charm-sriov-network-device-plugin.git
+    channel-range:
+      max: '1.32'
 - coredns:
     framework: ops
     builder: launchpad
@@ -646,6 +652,8 @@
       - gatekeeper-controller-manager
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
+    channel-range:
+      max: '1.32'
 - gatekeeper-audit:
     framework: ops
     builder: launchpad
@@ -660,6 +668,8 @@
       - gatekeeper-audit
       - docs-extra
     upstream: 'https://github.com/charmed-kubernetes/opa-gatekeeper-operators.git'
+    channel-range:
+      max: '1.32'
 - bird:
     framework: ops
     builder: launchpad
