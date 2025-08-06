@@ -110,6 +110,60 @@ the relevant git `release_1.xx` branches. For example, for the 1.29 GA:
 > **Note**: Changes to the above repos are required as some of our customers
 do not use our bundles for deployment.
 
+### Pin branch based dependencies
+
+Many charm branches pin python deps or reactive layers in their release branches. Run the following script to find which charms need their pinning updated.
+
+```sh
+./bin/charm_actioner.py pin 1.xx
+```
+
+the output will be similar to:
+```sh
+🚨 Charm keepalived has wrong release_branch='main'
+🚨 Charm docker-registry has wrong release_branch='main'
+🚨 Charm kubeapi-load-balancer (ops) dependency ops.interface_tls_certificates main != release_1.34
+🚨 Charm kubernetes-e2e (ops) dependency ops.interface_tls_certificates main != release_1.34
+🚨 Charm kubernetes-control-plane (ops) dependency charm-lib-interface-kube-dns main != release_1.34
+```
+
+This will indicate which charms need to have their pinning updates.  See below
+
+
+#### Pin reactive charms branch in the release branches
+We need to make sure that reactive charms build from the correct layer branch of charmed-kubernetes.  For each reactive charm we need to adjust the `RELEASE_BRANCH` value in its charmcraft.yaml.
+
+```sh
+set -e
+NEW_BRANCH=release_1.xx
+REPO_URL=https://github.com/charmed-kubernetes/my-charm.git
+git clone "$REPO_URL" my-charm
+pushd my-charm
+git switch $NEW_BRANCH
+sed -i "s/^\(\s*-\s*RELEASE_BRANCH:\s*\)main/\1$NEW_BRANCH/" charmcraft.yaml
+git add charmcraft.yaml
+git commit -m "Pin dependencies to ${NEW_BRANCH} branch"
+git push
+popd
+```
+
+#### Pin ops charms using pinned git revisions
+
+```sh
+set -e
+NEW_BRANCH=release_1.xx
+REPO_URL=https://github.com/charmed-kubernetes/my-charm.git
+git clone "$REPO_URL" my-charm
+pushd my-charm
+git switch $NEW_BRANCH
+edit requirements.txt # replace '@main' with '@$NEW_BRANCH'
+tox -re unit          # to make sure the deps exists
+git add requirements.txt
+git commit -m "Pin dependencies to ${NEW_BRANCH} branch"
+git push
+popd
+```
+
 ### Pin snap channel for bundles in the release branches
 
 We need to make sure that the bundle fragments have `1.xx/stable` set as the
@@ -117,7 +171,7 @@ default snap channel on the `release_1.xx` branch. For example, for the 1.29 GA:
 
 - https://github.com/charmed-kubernetes/bundle/commit/0b12765f61e5cfc17ac1c86731819b3e600e39e1
 
-> **Note**: Dont miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
+> **Note**: Don't miss our [badges](https://github.com/charmed-kubernetes/bundle/pull/868)
 like we've done so many times before!
 
 ### Build charms and bundles from the release branches
