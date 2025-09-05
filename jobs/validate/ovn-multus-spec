@@ -45,10 +45,12 @@ applications:
     charm: ceph-mon
     channel: $CEPH_CHANNEL
     num_units: 3
+    base: ubuntu@22.04
   ceph-osd:
     charm: ceph-osd
     channel: $CEPH_CHANNEL
     constraints: "root-disk=32G"
+    base: ubuntu@22.04
     num_units: 3
     storage:
       osd-devices: 8G,1
