@@ -97,6 +97,7 @@
     upstream: 'https://github.com/charmed-kubernetes/charm-cilium.git'
     channel-range:
       min: '1.27'
+      max: '1.33'  # held until charm-cilium can operate on shared-maas LP#2122426
 - containerd:
     framework: reactive
     builder: launchpad
