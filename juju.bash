@@ -91,6 +91,7 @@ function juju::bootstrap
     if [ "$JUJU_CLOUD" = "vsphere/Boston" ]; then
         extra_args="$extra_args \
             --model-default datastore=vsanDatastore \
+            --model-default disk-provisioning-type=thin \
             --model-default primary-network=VLAN_2763 \
             --model-default force-vm-hardware-version=17 \
             --config caas-image-repo=rocks.canonical.com/cdk/jujusolutions \
