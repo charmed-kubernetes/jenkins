@@ -108,7 +108,31 @@ the relevant git `release_1.xx` branches. For example, for the 1.29 GA:
 - https://github.com/charmed-kubernetes/charm-kubernetes-worker/commit/3ae4edac9632a9c6581bcfcab7fb70087c181add
 
 > **Note**: Changes to the above repos are required as some of our customers
-do not use our bundles for deployment.
+  do not use our bundles for deployment.
+
+### Pin layer branch for reactive charms in the release branches
+
+We need to make sure that the remaining reactive charms have `release_1.xx`
+set as the `RELEASE_BRANCH` in their `charmcrafat.yaml`. This should be done on
+each of the relevant git `release_1.xx` branches. For example, for the 1.34 GA:
+
+- https://github.com/charmed-kubernetes/layer-canal/commit/205d5a20e0bc6eafd25baf1680bd805072ed1a14
+- https://github.com/charmed-kubernetes/layer-easyrsa/commit/9f1f8fe814d128958dd3d6d755c4bb1d38bce9e3
+- https://github.com/charmed-kubernetes/layer-etcd/commit/f2969e636af03f838555bde4acb4f53e1f03905e
+- https://github.com/charmed-kubernetes/charm-aws-integrator/commit/4c1a584d3ff9dba5e6e7940232a73d80bdebd384
+- https://github.com/charmed-kubernetes/charm-azure-integrator/commit/7a1024e302b83e8975912ffe2e0c06470435e5fc
+- https://github.com/charmed-kubernetes/charm-gcp-integrator/commit/b85405aafe9c48bcde643030c92ee344507a0cdb
+- https://github.com/charmed-kubernetes/charm-openstack-integrator/commit/95d2276ea7dc00a92115601e36b21e5b33274a60
+- https://github.com/charmed-kubernetes/charm-vsphere-integrator/commit/e6f183b244888d39374cd5b6baf3a13c4a1aa39f
+- https://github.com/charmed-kubernetes/charm-containerd/commit/023cfff2508ec9440e4a7a7a27c6db1c85700db3
+- https://github.com/charmed-kubernetes/charm-keepalived/commit/614970b344087f43ec0af8a499224072921cb445
+- https://github.com/charmed-kubernetes/charm-flannel/commit/754c537c7b4f6d6af60e40229cc67fc5cb9d731c
+- https://github.com/charmed-kubernetes/docker-registry-charm/commit/991cd35c224d99285d0a3700f63ad4c38333b5b6
+
+
+> **Note**: Changes to the above repos are required for backport builds to ensure the correct
+  reactive layers are used in charmcraft builds.  Consult the `charm-support-matrix` looking for
+  `framework: reactive` charms.
 
 ### Pin snap channel for bundles in the release branches
 
@@ -298,12 +322,12 @@ If the snaps are not yet promoted (in the beta channel)
 ```sh
 CHANNEL=1.xx
 for snap in kube-apiserver kube-controller-manager kube-proxy kube-scheduler kubectl kubeadm kubelet kubernetes-test; do
-  snapcraft promote ${snap} \
+  snapcraft promote ${snap} --yes\
       --from-channel="${CHANNEL}/beta" \
       --to-channel="${CHANNEL}/stable"
 done
-for CHANNEL in 1.33 1.32 1.31; do
-  snapcraft promote cdk-addons \
+for CHANNEL in 1.34 1.33 1.32; do
+  snapcraft promote cdk-addons --yes\
       --from-channel="${CHANNEL}/beta" \
       --to-channel="${CHANNEL}/stable"
 done
