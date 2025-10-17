@@ -65,7 +65,7 @@
       - string:
           name: charm_channel
           description: "The charm channel to validate"
-          default: "1.33/candidate"
+          default: "1.34/candidate"
           trim: true
       - string:
           name: cloud
@@ -85,8 +85,8 @@
             Stable snap channel offset behind the charm candidate channel.
 
             for example)
-            0 with charm_channel is 1.33/candidate, then prior_snap_version is 1.33/stable
-            1 with charm_channel is 1.33/candidate, then prior_snap_version is 1.32/stable
+            0 with charm_channel is 1.34/candidate, then prior_snap_version is 1.34/stable
+            1 with charm_channel is 1.34/candidate, then prior_snap_version is 1.33/stable
           values:
             - 0
             - 1
