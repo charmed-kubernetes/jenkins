@@ -42,7 +42,11 @@ ci_lxc_init_runner()
 
     # Start fresh container
     ci_lxc_delete ${lxc_container} || true
-    ci_lxc_launch ubuntu:22.04 ${lxc_container}
+
+    # Maybe as a VM to avoid cgroup issues
+    supports_vm=$(sudo lxc info|grep 'driver: '|grep -q 'qemu' && echo "--vm")
+
+    ci_lxc_launch ubuntu:22.04 ${lxc_container} ${supports_vm}
 
     # Install runtime dependencies in the container
     # Install debs, replacing semicolons with spaces
@@ -64,7 +68,7 @@ ci_lxc_init_runner()
         # snap_args could contain arguments separated by spaces
         # `juju --channel=2.9/stable` which requires splitting
         # on spaces to extract
-        IFS=' ' read -a args <<< "$snap_args"; 
+        IFS=' ' read -a args <<< "$snap_args";
         ci_lxc_snap_install_retry ${lxc_container} ${args[@]} --classic < /dev/null
     done
 
