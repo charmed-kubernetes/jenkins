@@ -45,12 +45,33 @@ function juju::model::speed-up
     juju model-config -m "$JUJU_CONTROLLER:$JUJU_MODEL" update-status-hook-interval="${JUJU_UPDATE_STATUS_INTERVAL}"
 }
 
-function juju::version
-{
-    # yields the short sem version of juju
+function juju::version {
+    # yields the short semver of juju, retrying with exponential backoff until ready
     # "3.1.0-genericlinux-amd64" becomes "3.1"
-    juju --version|cut -f-2 -d.
+    local ver=""
+    local retries=9
+    local delay=1
+
+    for ((i=1; i<=retries; i++)); do
+        ver=$(juju --version)
+
+        if [[ $ver =~ ^[0-9]+\.[0-9]+(\.[0-9]+)? ]]; then
+            echo "$ver" | cut -f-2 -d.
+            return 0
+        fi
+
+        if (( i < retries )); then
+            echo "juju::version: juju not ready (attempt $i/$retries), retrying in ${delay}s..." >&2
+            sleep "$delay"
+            delay=$((delay * 2))  # exponential backoff
+        else
+            echo "juju::version: failed to get valid version after ${retries} attempts" >&2
+        fi
+    done
+
+    return 1
 }
+
 
 function juju::version_2
 {
