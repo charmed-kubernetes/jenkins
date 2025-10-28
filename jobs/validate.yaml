@@ -179,8 +179,8 @@
           type: user-defined
           name: snap_version
           values:
+            - 1.33/stable
             - 1.32/stable
-            - 1.31/stable
       - axis:
           type: user-defined
           name: arch
