@@ -44,9 +44,9 @@ ci_lxc_init_runner()
     ci_lxc_delete ${lxc_container} || true
 
     # Maybe as a VM to avoid cgroup issues
-    supports_vm=$(sudo lxc info|grep 'driver: '|grep -q 'qemu' && echo "--vm" || echo "")
+    # supports_vm=$(sudo lxc info|grep 'driver: '|grep -q 'qemu' && echo "--vm" || echo "")
 
-    ci_lxc_launch ubuntu:22.04 ${lxc_container} ${supports_vm}
+    ci_lxc_launch ubuntu:22.04 ${lxc_container}
 
     # Install runtime dependencies in the container
     # Install debs, replacing semicolons with spaces
