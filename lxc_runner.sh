@@ -14,9 +14,10 @@ ci_lxc_init_runner()
     # of the bash script unless "notrap" is passed
 
     # Usage:
-    # ci_lxc_init_runner name_of_container [notrap]
+    # ci_lxc_init_runner name_of_container [notrap] [use_vms]
     local  __resultvar=$1
     local  __trap=${2:-trap}
+    local  __use_vms=${3:-false}
 
     # init a container runner on the build host
     local lxc_container=${JOB_NAME%%/*}-$(openssl rand -hex 10)-${BUILD_NUMBER}
@@ -44,9 +45,17 @@ ci_lxc_init_runner()
     ci_lxc_delete ${lxc_container} || true
 
     # Maybe as a VM to avoid cgroup issues
-    # supports_vm=$(sudo lxc info|grep 'driver: '|grep -q 'qemu' && echo "--vm" || echo "")
+    local vm_flag=""
+    if [ "${__use_vms}" = "true" ]; then
+        if sudo lxc info | grep 'driver: ' | grep -q 'qemu'; then
+            vm_flag="--vm"
+        else
+            echo "ERROR: VM mode requested but QEMU driver is not available. LXC does not support VMs on this host."
+            exit 1
+        fi
+    fi
 
-    ci_lxc_launch ubuntu:22.04 ${lxc_container}
+    ci_lxc_launch ubuntu:22.04 ${lxc_container} ${vm_flag}
 
     # Install runtime dependencies in the container
     # Install debs, replacing semicolons with spaces
