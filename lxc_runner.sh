@@ -55,7 +55,7 @@ ci_lxc_init_runner()
         fi
     fi
 
-    ci_lxc_launch ubuntu:22.04 ${lxc_container} ${vm_flag}
+    ci_lxc_launch ubuntu:24.04 ${lxc_container} ${vm_flag}
 
     # Install runtime dependencies in the container
     # Install debs, replacing semicolons with spaces
