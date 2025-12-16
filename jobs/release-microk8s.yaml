@@ -97,7 +97,6 @@
             Proxy endpoint
     builders:
       - run-lxc:
-          USE_VM: true
           COMMAND: |
             bash jobs/microk8s/release.sh
 
