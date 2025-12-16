@@ -55,6 +55,7 @@
         - jenkins
     - name: install apt deps
       shell: |
+        source /etc/os-release
         apt-get update
         apt-get install -qyf \
           build-essential \
@@ -76,6 +77,7 @@
           libssl-dev \
           libuv1 \
           libxml2-dev \
+          linux-image-virtual-hwe-${VERSION_ID} \
           make \
           motd-news-config \
           parallel \
