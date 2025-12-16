@@ -98,7 +98,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
-    "1.35": "go/1.24/stable",
+    "1.35": "go/1.25/stable",
     "1.34": "go/1.24/stable",
     "1.33": "go/1.24/stable",
     "1.32": "go/1.23/stable",
@@ -124,25 +124,26 @@ K8S_GO_MAP = {
 # Allows us to be specific in which tracks should get what major.minor and dictate
 # when a release should be put into the latest track.
 SNAP_K8S_TRACK_LIST = [
-    ("1.16", ["1.16/stable", "1.16/candidate", "1.16/beta", "1.16/edge"]),
-    ("1.17", ["1.17/stable", "1.17/candidate", "1.17/beta", "1.17/edge"]),
-    ("1.18", ["1.18/stable", "1.18/candidate", "1.18/beta", "1.18/edge"]),
-    ("1.19", ["1.19/stable", "1.19/candidate", "1.19/beta", "1.19/edge"]),
-    ("1.20", ["1.20/stable", "1.20/candidate", "1.20/beta", "1.20/edge"]),
-    ("1.21", ["1.21/stable", "1.21/candidate", "1.21/beta", "1.21/edge"]),
-    ("1.22", ["1.22/stable", "1.22/candidate", "1.22/beta", "1.22/edge"]),
-    ("1.23", ["1.23/stable", "1.23/candidate", "1.23/beta", "1.23/edge"]),
-    ("1.24", ["1.24/stable", "1.24/candidate", "1.24/beta", "1.24/edge"]),
-    ("1.25", ["1.25/stable", "1.25/candidate", "1.25/beta", "1.25/edge"]),
-    ("1.26", ["1.26/stable", "1.26/candidate", "1.26/beta", "1.26/edge"]),
-    ("1.27", ["1.27/stable", "1.27/candidate", "1.27/beta", "1.27/edge"]),
-    ("1.28", ["1.28/stable", "1.28/candidate", "1.28/beta", "1.28/edge"]),
-    ("1.29", ["1.29/stable", "1.29/candidate", "1.29/beta", "1.29/edge"]),
+    # ("1.16", ["1.16/stable", "1.16/candidate", "1.16/beta", "1.16/edge"]),
+    # ("1.17", ["1.17/stable", "1.17/candidate", "1.17/beta", "1.17/edge"]),
+    # ("1.18", ["1.18/stable", "1.18/candidate", "1.18/beta", "1.18/edge"]),
+    # ("1.19", ["1.19/stable", "1.19/candidate", "1.19/beta", "1.19/edge"]),
+    # ("1.20", ["1.20/stable", "1.20/candidate", "1.20/beta", "1.20/edge"]),
+    # ("1.21", ["1.21/stable", "1.21/candidate", "1.21/beta", "1.21/edge"]),
+    # ("1.22", ["1.22/stable", "1.22/candidate", "1.22/beta", "1.22/edge"]),
+    # ("1.23", ["1.23/stable", "1.23/candidate", "1.23/beta", "1.23/edge"]),
+    # ("1.24", ["1.24/stable", "1.24/candidate", "1.24/beta", "1.24/edge"]),
+    # ("1.25", ["1.25/stable", "1.25/candidate", "1.25/beta", "1.25/edge"]),
+    # ("1.26", ["1.26/stable", "1.26/candidate", "1.26/beta", "1.26/edge"]),
+    # ("1.27", ["1.27/stable", "1.27/candidate", "1.27/beta", "1.27/edge"]),
+    # ("1.28", ["1.28/stable", "1.28/candidate", "1.28/beta", "1.28/edge"]),
+    # ("1.29", ["1.29/stable", "1.29/candidate", "1.29/beta", "1.29/edge"]),
     ("1.30", ["1.30/stable", "1.30/candidate", "1.30/beta", "1.30/edge"]),
     ("1.31", ["1.31/stable", "1.31/candidate", "1.31/beta", "1.31/edge"]),
     ("1.32", ["1.32/stable", "1.32/candidate", "1.32/beta", "1.32/edge"]),
     ("1.33", ["1.33/stable", "1.33/candidate", "1.33/beta", "1.33/edge"]),
     ("1.34", ["1.34/stable", "1.34/candidate", "1.34/beta", "1.34/edge"]),
+    ("1.35", ["1.35/candidate", "1.35/beta", "1.35/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
