@@ -46,7 +46,7 @@ ci_lxc_init_runner()
 
     # Maybe as a VM to avoid cgroup issues
     local vm_flag=""
-    if [ "${__use_vms}" = "true" ]; then
+    if [[ "${__use_vms,,}" == "true" ]]; then
         if sudo lxc info | grep 'driver: ' | grep -q 'qemu'; then
             vm_flag="--vm"
         else
