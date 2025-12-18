@@ -85,7 +85,7 @@ def create_gh_branch(branch, gh_user, gh_token):
     check_call(cmd)
 
     if "strict" in branch:
-        cmd = "git checkout strict"
+        cmd = "git checkout strict".split()
         check_call(cmd)
 
     cmd = "git checkout -b {}".format(branch).split()
