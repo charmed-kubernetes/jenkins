@@ -81,7 +81,7 @@ function test::execute
         --json-report-summary \
         --json-report-file="report.json" \
         --full-trace \
-        jobs/integration/validation.py::test_encryption_at_rest \
+        jobs/integration/validation.py::TestEncryptionAtRest \
         --cloud "$JUJU_CLOUD" \
         --model "$JUJU_MODEL" \
         --controller "$JUJU_CONTROLLER" \
