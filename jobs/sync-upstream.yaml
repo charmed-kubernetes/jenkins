@@ -301,7 +301,7 @@
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc \
                --ancillary-list jobs/includes/ancillary-list.inc \
-               --stable-release $STABLE_RELEASE \
+               --stable-release "${{STABLE_RELEASE:-}}" \
                --filter-by-tag $FILTER_BY_TAG $IS_DRY_RUN \
                $IS_DRY_RUN
 
