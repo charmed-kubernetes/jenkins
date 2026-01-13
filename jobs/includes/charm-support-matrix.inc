@@ -689,6 +689,7 @@
     upstream: 'https://github.com/charmed-kubernetes/kubernetes-dashboard-operator'
     channel-range:
       min: '1.28'
+      max: '1.34'
 - volcano-admission:
     framework: ops
     builder: launchpad
