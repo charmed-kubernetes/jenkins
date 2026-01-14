@@ -56,7 +56,15 @@ then
 
     echo "Run unit tests"
 
-    sudo snap install go --channel 1.19 || sudo snap refresh go --channel 1.19
+    # Check if Go is installed
+    if ! command -v go &> /dev/null; then
+        echo "Go is not installed. Installing Go..."
+        sudo snap install go --classic --channel 1.21
+    else
+        echo "Go is already installed. Refreshing Go..."
+        sudo snap refresh go --channel 1.21
+    fi
+
     (
         cd bootstrap
         make vet
