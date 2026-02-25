@@ -346,6 +346,10 @@ class _CharmHub(Charmcraft):
         self._echo(
             f"Promoting :: {charm_entity:^35} :: from:{from_channel} to: {to_channels}"
         )
+        if not to_channels:
+            self._echo("No to_channels specified, skipping")
+            return
+
         charm_status = [
             # Get all the releases and associated bases
             (release, mapping.base)
@@ -682,9 +686,10 @@ class Artifact:
 
     @staticmethod
     def _from_run_on_base(run_on_base: str) -> Iterable[Tuple[Arch, CharmSeries]]:
-        if not run_on_base.startswith("ubuntu-"):
+        header = ["ubuntu-", "ubuntu@"]
+        if not any(run_on_base.startswith(h) for h in header):
             return
-        base, *archs = run_on_base.split("-")[1:]
+        base, *archs = re.split(r"[-@]", run_on_base)[1:]
         for arch in archs:
             yield Arch.from_value(arch), CharmSeries.from_value(base)
 
@@ -693,11 +698,18 @@ class Artifact:
         """
         Parsed according to charmcraft file output.
         https://discourse.charmhub.io/t/charmcraft-bases-provider-support/4713
+
+        mycharm_ubuntu-18.04-amd64.charm --> Arch.AMD64, CharmSeries.BIONIC
+        mycharm_ubuntu@22.04-amd64.charm --> Arch.AMD64, CharmSeries.JAMMY
         """
         run_on_bases = charm_file.stem.split("_")[1:]
         base_arches = list(
             pair for each in run_on_bases for pair in Artifact._from_run_on_base(each)
         )
+        if len(base_arches) == 0:
+            raise BuildException(
+                f"Failed to parse charm file {charm_file} for arch and series information."
+            )
         arch, series = base_arches[0]
         if len(base_arches) == 1:
             # single series, single arch     --> Series._specific_, Arch._specific_
