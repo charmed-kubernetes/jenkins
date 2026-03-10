@@ -270,8 +270,8 @@ class Tools:
             raise subprocess.CalledProcessError(
                 return_code,
                 [cmd, *args],
-                output=stdout,
-                stderr=stderr,
+                output=bytes(stdout),
+                stderr=bytes(stderr),
             )
         return str(stdout, "utf8"), str(stderr, "utf8")
 
