@@ -30,6 +30,7 @@ from .utils import (
     upgrade_snaps,
     log_snap_versions,
     juju_run,
+    juju_crashdump,
 )
 
 from .logger import log
@@ -411,9 +412,7 @@ async def k8s_model(k8s_cloud, tools):
         yield _model_created
     finally:
         if _model_created:
-            await tools.run(
-                "juju-crashdump", "-a", "config", "-m", tools.k8s_connection
-            )
+            await juju_crashdump(tools, tools.k8s_connection)
             click.echo("Cleaning up k8s model")
 
             for relation in _model_created.relations:

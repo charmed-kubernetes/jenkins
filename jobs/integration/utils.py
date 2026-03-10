@@ -51,6 +51,11 @@ def tracefunc(frame, event, arg):
     return
 
 
+async def juju_crashdump(tools, model: str, *extra_args):
+    """Run juju-crashdump for the given model and extra arguments."""
+    await tools.run("juju-crashdump", "-a", "config", "-m", model, *extra_args)
+
+
 @contextmanager
 def timeout_for_current_task(timeout):
     """Create a context with a timeout.
