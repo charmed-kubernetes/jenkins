@@ -54,7 +54,7 @@ def tracefunc(frame, event, arg):
     return
 
 
-async def juju_crashdump(tools: Tools, model: str, *extra_args: str, check=True):
+async def juju_crashdump(tools: "Tools", model: str, *extra_args: str, check=True):
     """Run juju-crashdump for the given model and extra arguments."""
     await tools.run("juju-crashdump", "-a", "config", "-m", model, *extra_args, _check=check)
 
