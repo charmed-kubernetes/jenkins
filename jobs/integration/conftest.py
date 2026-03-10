@@ -30,6 +30,7 @@ from .utils import (
     upgrade_snaps,
     log_snap_versions,
     juju_run,
+    juju_crashdump,
 )
 
 from .logger import log
@@ -206,7 +207,9 @@ class Tools:
             return f"--series={series}"
         return f"--base=ubuntu@{Series[series].value}"
 
-    async def run(self, cmd: str, *args: str, stdin=None, _tee=False):
+    async def run(
+        self, cmd: str, *args: str, stdin=None, _tee=False, _check=True
+    ) -> tuple[str, str]:
         """
         asynchronously run a command as a subprocess
 
@@ -218,6 +221,8 @@ class Tools:
             True  -- stdout and stderr are both tee'd
             "out" -- stdout is tee'd to test stdout
             "err" -- stderr is tee'd to test stderr
+        @param _check: if True, raise CalledProcessError if the process exits with a non-zero exit code
+        @returns (stdout, stderr) as strings
         """
         process = await asyncio.create_subprocess_exec(
             cmd,
@@ -263,11 +268,12 @@ class Tools:
             )
         )
         return_code = await process.wait()
-        if return_code != 0:
-            raise Exception(
-                f"Problem with run command {' '.join((cmd, *args))} (exit {return_code}):\n"
-                f"stdout:\n{str(stdout, 'utf8')}\n"
-                f"stderr:\n{str(stderr, 'utf8')}\n"
+        if _check and return_code != 0:
+            raise subprocess.CalledProcessError(
+                return_code,
+                [cmd, *args],
+                output=bytes(stdout),
+                stderr=bytes(stderr),
             )
         return str(stdout, "utf8"), str(stderr, "utf8")
 
@@ -411,9 +417,7 @@ async def k8s_model(k8s_cloud, tools):
         yield _model_created
     finally:
         if _model_created:
-            await tools.run(
-                "juju-crashdump", "-a", "config", "-m", tools.k8s_connection
-            )
+            await juju_crashdump(tools, tools.k8s_connection)
             click.echo("Cleaning up k8s model")
 
             for relation in _model_created.relations:
