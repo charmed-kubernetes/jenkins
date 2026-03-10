@@ -144,8 +144,8 @@
           type: user-defined
           name: deploy_snap
           values:
+            - 1.34/stable
             - 1.33/stable
-            - 1.32/stable
       - axis:
           type: user-defined
           name: series
