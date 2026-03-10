@@ -207,7 +207,9 @@ class Tools:
             return f"--series={series}"
         return f"--base=ubuntu@{Series[series].value}"
 
-    async def run(self, cmd: str, *args: str, stdin=None, _tee=False, _check=True) -> tuple[str, str]:
+    async def run(
+        self, cmd: str, *args: str, stdin=None, _tee=False, _check=True
+    ) -> tuple[str, str]:
         """
         asynchronously run a command as a subprocess
 
