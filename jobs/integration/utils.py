@@ -11,7 +11,7 @@ import traceback
 from pathlib import Path
 
 from contextlib import contextmanager
-from typing import Mapping, Any, Union, Sequence
+from typing import Mapping, Any, Union, Sequence, TYPE_CHECKING
 
 import jinja2
 from juju.unit import Unit
@@ -26,6 +26,9 @@ from typing import List
 from cilib import log
 from cilib.enums import Series
 import click
+
+if TYPE_CHECKING:
+    from .conftest import Tools
 
 
 def tracefunc(frame, event, arg):
@@ -51,9 +54,9 @@ def tracefunc(frame, event, arg):
     return
 
 
-async def juju_crashdump(tools, model: str, *extra_args):
+async def juju_crashdump(tools: Tools, model: str, *extra_args: str, check=True):
     """Run juju-crashdump for the given model and extra arguments."""
-    await tools.run("juju-crashdump", "-a", "config", "-m", model, *extra_args)
+    await tools.run("juju-crashdump", "-a", "config", "-m", model, *extra_args, _check=check)
 
 
 @contextmanager

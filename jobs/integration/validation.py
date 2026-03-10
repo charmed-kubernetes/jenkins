@@ -2623,7 +2623,7 @@ async def ceph_apps(model: Model, tools: Tools):
         yield dict(mon=ceph_mon, osd=ceph_osd, fs=ceph_fs, csi=ceph_csi)
     finally:
         # Capture a crashdump before cleaning applications from the model
-        await juju_crashdump(tools, model.name)
+        await juju_crashdump(tools, tools.connection, _check=False)
 
         # cleanup
         log.info("removing ceph applications")
