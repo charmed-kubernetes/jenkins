@@ -148,7 +148,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("kind", help="type of the entity", choices=["charm", "snap"])
     parser.add_argument("name", help="name of the entity", nargs="+")
-    parser.add_argument("--track", help="track to ensure")
+    parser.add_argument("--track", help="track to ensure", required=True)
     parser.add_argument(
         "-l",
         "--log",
