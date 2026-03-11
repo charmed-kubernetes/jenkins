@@ -32,6 +32,7 @@ from cilib.version import ChannelRange
 class PromoteError(Exception):
     """Exception raised when promotion fails."""
 
+
 class StatusError(Exception):
     """Exception raised when status retrieval fails."""
 
@@ -40,8 +41,9 @@ def write_status(lines: list[str]):
     """Write status output as a plain report rather than structured logs."""
     sys.stdout.write("\n".join(lines) + "\n")
 
+
 @dataclass(frozen=True, kw_only=True)
-class Resource():
+class Resource:
     name: str
     revision: int
     type: str
@@ -50,12 +52,20 @@ class Resource():
     def from_iter(cls, iterable) -> frozenset["Resource"]:
         """Create a Resource from an iterable of dict or Resource."""
         return frozenset(
-            rsc for r in iterable
-            if (rsc := r if isinstance(r, Resource) else (Resource(**r) if isinstance(r, dict) else None))
+            rsc
+            for r in iterable
+            if (
+                rsc := (
+                    r
+                    if isinstance(r, Resource)
+                    else (Resource(**r) if isinstance(r, dict) else None)
+                )
+            )
         )
 
+
 @dataclass(frozen=True, kw_only=True)
-class Base():
+class Base:
     name: str
     channel: str
     architecture: str
@@ -67,13 +77,20 @@ class Base():
     def from_iter(cls, iterable) -> frozenset["Base"]:
         """Create a Base from an iterable of dict or Base."""
         return frozenset(
-            bsc for b in iterable
-            if (bsc := b if isinstance(b, Base) else (Base(**b) if isinstance(b, dict) else None))
+            bsc
+            for b in iterable
+            if (
+                bsc := (
+                    b
+                    if isinstance(b, Base)
+                    else (Base(**b) if isinstance(b, dict) else None)
+                )
+            )
         )
 
 
 @dataclass(frozen=True, kw_only=True)
-class Release():
+class Release:
     revision: int
     resources: frozenset[Resource]
     bases: frozenset[Base]
@@ -82,8 +99,14 @@ class Release():
     def __init__(self, *_, **kwargs):
         """Initializer that ignores extra keyword arguments."""
         object.__setattr__(self, "revision", int(kwargs["revision"]))
-        bases_args = [single_base] if (single_base := kwargs.get("base")) else kwargs.get("bases", [])
-        object.__setattr__(self, "resources", Resource.from_iter(kwargs.get("resources", [])))
+        bases_args = (
+            [single_base]
+            if (single_base := kwargs.get("base"))
+            else kwargs.get("bases", [])
+        )
+        object.__setattr__(
+            self, "resources", Resource.from_iter(kwargs.get("resources", []))
+        )
         object.__setattr__(self, "bases", Base.from_iter(bases_args))
         object.__setattr__(self, "channels", frozenset(kwargs.get("channels", [])))
 
@@ -116,7 +139,9 @@ def status(name: str, options: dict, args: argparse.Namespace):
             revs_with_chans[key] = updated
 
     if not revs_with_chans and args.channel:
-        log.warning("No revisions found for %s %s in channels %s", kind, name, args.channel)
+        log.warning(
+            "No revisions found for %s %s in channels %s", kind, name, args.channel
+        )
         return
     if not revs_with_chans:
         log.warning("No revisions found for %s %s", kind, name)
@@ -147,9 +172,7 @@ def promote(name: str, options: dict, args: argparse.Namespace):
 
     chan_range = ChannelRange.from_dict(options)
     if args.to_channel not in chan_range:
-        raise PromoteError(
-            f"Invalid destination channel '{args.to_channel}'"
-        )
+        raise PromoteError(f"Invalid destination channel '{args.to_channel}'")
 
     chan_map = channel_map(kind, name)
     revisions = defaultdict(set)
@@ -166,14 +189,17 @@ def promote(name: str, options: dict, args: argparse.Namespace):
         ensure_track(kind, name, args.to_channel)
         releases = revisions[args.from_channel]
         for entry in releases:
-            log.info(
-                "Promoting %s %s revision %d resources %s from %s to %s",
-                kind,
-                name,
-                entry.revision,
-                entry.resources,
-                args.from_channel,
-                args.to_channel,
+            write_status(
+                [
+                    "Promoting {kind} {name} revision {revision} resources {resources} from {from_channel} to {to_channel}".format(
+                        kind=kind,
+                        name=name,
+                        revision=entry.revision,
+                        resources=entry.resources,
+                        from_channel=args.from_channel,
+                        to_channel=args.to_channel,
+                    )
+                ]
             )
             cmd = [
                 "charmcraft",
@@ -194,6 +220,7 @@ def promote(name: str, options: dict, args: argparse.Namespace):
         log.info("Status after promotion")
         status(name, options, copy_args)
 
+
 def main():
     FORMAT = "%(name)s:  %(asctime)s %(levelname)8s - %(message)s"
     logging.basicConfig(format=FORMAT)
@@ -207,13 +234,23 @@ def main():
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         help="Set the logging level",
     )
-    parser.add_argument("--dry-run", action="store_true", help="print writable actions rather than executing them")
-    parser.add_argument("--tags", help="only process entities with these tags (comma separated)")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print writable actions rather than executing them",
+    )
+    parser.add_argument(
+        "--tags", help="only process entities with these tags (comma separated)"
+    )
 
     sub = parser.add_subparsers(dest="subcommand", required=False)
     sub_parser = sub.add_parser("promote", help="promote from one channel to another")
-    sub_parser.add_argument("--from-channel", help="source channel to copy from", required=True)
-    sub_parser.add_argument("--to-channel", help="target channel to copy to", required=True)
+    sub_parser.add_argument(
+        "--from-channel", help="source channel to copy from", required=True
+    )
+    sub_parser.add_argument(
+        "--to-channel", help="target channel to copy to", required=True
+    )
 
     sub_parser = sub.add_parser("status", help="print the status of entities")
     sub_parser.add_argument("--channel", help="channel to check for status")
