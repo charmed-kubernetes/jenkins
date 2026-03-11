@@ -91,7 +91,7 @@ function test::execute
         juju ssh -m "${juju_full_model}" --pty=true $JUJU_UNIT -- 'sudo snap install snapcraft --classic'
     fi
     if [ "${ARCH}" == "amd64" ] && [ "${CHANNEL}" == "stable" ]; then
-        juju ssh -m "${juju_full_model}" --pty=true $JUJU_UNIT -- 'sudo apt install nvidia-headless-535-server nvidia-utils-535-server -y'
+        juju ssh -m "${juju_full_model}" --pty=true $JUJU_UNIT -- 'sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt install nvidia-headless-535-server nvidia-utils-535-server -y'
     fi
 
     case $CHANNEL in
