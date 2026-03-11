@@ -22,34 +22,37 @@ from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
 
 from cilib.enums import Series
+
+from .conftest import Tools
 from .utils import (
-    juju_run_retry,
-    timeout_for_current_task,
-    retry_async_with_timeout,
-    scp_to,
     disable_source_dest_check,
-    find_entities,
-    verify_deleted,
-    verify_ready,
-    is_localhost,
-    validate_storage_class,
-    supports_series_upgrade,
-    prep_series_upgrade,
     do_series_upgrade,
+    find_entities,
     finish_series_upgrade,
+    get_ipv6_addr,
+    get_svc_ingress,
+    is_localhost,
+    juju_crashdump,
+    juju_run,
+    juju_run_action,
+    juju_run_retry,
     kubectl,
     kubectl_apply,
     kubectl_delete,
+    machine_reboot,
+    prep_series_upgrade,
     render,
     render_and_apply,
     render_and_delete,
-    juju_run,
-    juju_run_action,
-    machine_reboot,
-    get_ipv6_addr,
+    retry_async_with_timeout,
+    scp_to,
+    supports_series_upgrade,
+    timeout_for_current_task,
+    verify_deleted,
+    verify_ready,
+    validate_storage_class,
     vault,
     vault_status,
-    get_svc_ingress,
 )
 import urllib.request
 from bs4 import BeautifulSoup as bs
@@ -2542,7 +2545,7 @@ async def test_nfs(model, tools):
 
 
 @pytest.fixture(scope="class")
-async def ceph_apps(model, tools):
+async def ceph_apps(model: Model, tools: Tools):
     # setup
     control_plane_app = model.applications["kubernetes-control-plane"]
     control_plane_base = control_plane_app.units[0].machine.base
@@ -2619,6 +2622,9 @@ async def ceph_apps(model, tools):
         await model.wait_for_idle(status="active", timeout=40 * 60)
         yield dict(mon=ceph_mon, osd=ceph_osd, fs=ceph_fs, csi=ceph_csi)
     finally:
+        # Capture a crashdump before cleaning applications from the model
+        await juju_crashdump(tools, tools.connection, check=False)
+
         # cleanup
         log.info("removing ceph applications")
 
