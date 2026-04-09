@@ -50,7 +50,7 @@ class LocalExecutor(ExecutorInterface):
         if not arch:
             arch = configbag.get_arch()
         cmd = "mv microk8s/microk8s_*_{0}.snap microk8s_latest_{0}.snap".format(arch)
-        Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)  # nosec B602 - glob expansion requires shell
+        Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)  # nosec B602
 
     def test_distro(
         self, distro, track_channel_to_upgrade, testing_track_channel, proxy=None
