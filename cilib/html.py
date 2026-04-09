@@ -9,6 +9,6 @@ from jinja2 import Environment, FileSystemLoader
 def template(name):
     """Returns a template from jobs/templates/<name>"""
     files_p = str(Path(os.environ.get("WORKSPACE")) / "jobs/templates")
-    env = Environment(loader=FileSystemLoader(files_p))
+    env = Environment(loader=FileSystemLoader(files_p), autoescape=True)
     _tmpl = env.get_template(name)
     return _tmpl
