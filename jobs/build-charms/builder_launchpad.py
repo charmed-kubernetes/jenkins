@@ -234,7 +234,7 @@ class LPBuildEntity(BuildEntity):
         with urllib.request.urlopen(dl_link) as src:
             buffer = src.read()
 
-        md5sum = hashlib.md5(buffer).hexdigest()
+        md5sum = hashlib.md5(buffer, usedforsecurity=False).hexdigest()
         target = dst_target / charm_file
         with target.open("wb") as dst:
             dst.write(buffer)

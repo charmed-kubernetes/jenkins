@@ -31,7 +31,7 @@ def script(script_data, **kwargs):
     if is_single_command:
         process = subprocess.Popen(
             script_data.strip(),
-            shell=True,
+            shell=True,  # nosec B602 - intentional: runs CI script commands
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
