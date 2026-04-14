@@ -234,12 +234,12 @@ class LPBuildEntity(BuildEntity):
         with urllib.request.urlopen(dl_link) as src:
             buffer = src.read()
 
-        md5sum = hashlib.md5(buffer, usedforsecurity=False).hexdigest()
+        sha256sum = hashlib.sha256(buffer).hexdigest()
         target = dst_target / charm_file
         with target.open("wb") as dst:
             dst.write(buffer)
 
-        self.echo(f"Downloaded {build.title} md5sum={md5sum}")
+        self.echo(f"Downloaded {build.title} sha256sum={sha256sum}")
         return Artifact.from_charm(target)
 
     def _lp_amend_git_version(self):
