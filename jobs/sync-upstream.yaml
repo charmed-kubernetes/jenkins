@@ -55,7 +55,7 @@
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            snapcraft login --with /var/lib/jenkins/snapcraft-creds
+            export SNAPCRAFT_STORE_CREDENTIALS="$(< "$SNAPCRAFTCREDS")"
             cp /var/lib/jenkins/snap/surl/common/production-creds.surl production-creds.surl
             tox -e py38 -- python jobs/sync-upstream/sync.py snaps $IS_DRY_RUN
 
