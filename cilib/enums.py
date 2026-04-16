@@ -11,7 +11,7 @@ JOBS_PATH = Path("jobs")
 # Current supported STABLE K8s MAJOR.MINOR release. This determines what the
 # latest/stable channel is set to. It should be updated whenever a new CK
 # major.minor is GA.
-K8S_STABLE_VERSION = "1.34"
+K8S_STABLE_VERSION = "1.35"
 
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.
@@ -138,12 +138,12 @@ SNAP_K8S_TRACK_LIST = [
     # ("1.27", ["1.27/stable", "1.27/candidate", "1.27/beta", "1.27/edge"]),
     # ("1.28", ["1.28/stable", "1.28/candidate", "1.28/beta", "1.28/edge"]),
     # ("1.29", ["1.29/stable", "1.29/candidate", "1.29/beta", "1.29/edge"]),
-    ("1.30", ["1.30/stable", "1.30/candidate", "1.30/beta", "1.30/edge"]),
+    # ("1.30", ["1.30/stable", "1.30/candidate", "1.30/beta", "1.30/edge"]),
     ("1.31", ["1.31/stable", "1.31/candidate", "1.31/beta", "1.31/edge"]),
     ("1.32", ["1.32/stable", "1.32/candidate", "1.32/beta", "1.32/edge"]),
     ("1.33", ["1.33/stable", "1.33/candidate", "1.33/beta", "1.33/edge"]),
     ("1.34", ["1.34/stable", "1.34/candidate", "1.34/beta", "1.34/edge"]),
-    ("1.35", ["1.35/candidate", "1.35/beta", "1.35/edge"]),
+    ("1.35", ["1.35/stable", "1.35/candidate", "1.35/beta", "1.35/edge"]),
 ]
 SNAP_K8S_TRACK_MAP = dict(SNAP_K8S_TRACK_LIST)
 
@@ -168,6 +168,7 @@ DEB_K8S_TRACK_MAP = {
     "1.32": "ppa:k8s-maintainers/1.32",
     "1.33": "ppa:k8s-maintainers/1.33",
     "1.34": "ppa:k8s-maintainers/1.34",
+    "1.35": "ppa:k8s-maintainers/1.35",
 }
 
 
