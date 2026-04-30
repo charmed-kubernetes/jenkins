@@ -1,5 +1,3 @@
-@Library('juju-pipeline@master') _
-
 def kube_version = params.k8s_tag
 def kube_ersion = kube_version.substring(1)
 def channels = params.channels.tokenize(',').collect { kube_ersion + '/' + it }.join(',')
@@ -24,7 +22,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "${utils.cipaths}"
+        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
         CK_SNAPS = "kubectl kubelet kubernetes-test kube-proxy"
         EKS_SUFFIX = "-eks"
     }

@@ -1,5 +1,3 @@
-@Library('juju-pipeline@master') _
-
 def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
@@ -18,7 +16,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "${utils.cipaths}"
+        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
         ADDONS_ARCHES="amd64 arm64 ppc64le s390x"
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')

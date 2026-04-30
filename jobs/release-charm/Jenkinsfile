@@ -1,7 +1,5 @@
-@Library('juju-pipeline@master') _
-
 def to_channels = params.to_channel.split()
-def charm_sh = "${utils.cipy} build-charms/charms.py"
+def charm_sh = "/var/lib/jenkins/venvs/ci/bin/python3.6 build-charms/charms.py"
 
 pipeline {
     agent {
@@ -11,7 +9,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "${utils.cipaths}"
+        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
     }
     options {
         ansiColor('xterm')

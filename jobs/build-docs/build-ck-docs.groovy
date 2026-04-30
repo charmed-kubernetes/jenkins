@@ -1,6 +1,3 @@
-@Library('juju-pipeline@master') _  // wokeignore:rule=master
-
-
 pipeline {
     agent {
         label "runner-cloud"
