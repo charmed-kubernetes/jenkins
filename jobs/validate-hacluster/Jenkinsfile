@@ -1,7 +1,5 @@
-@Library('juju-pipeline@master') _
-
-def juju_model = String.format("%s-%s", params.model, uuid())
-def mnist_image = String.format("mnist-test-%s", uuid())
+def juju_model = String.format("%s-%s", params.model, UUID.randomUUID().toString().split('-').first())
+def mnist_image = String.format("mnist-test-%s", UUID.randomUUID().toString().split('-').first())
 
 pipeline {
     agent {
@@ -11,7 +9,7 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "${utils.cipaths}"
+        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
     }
     options {
         ansiColor('xterm')
@@ -30,12 +28,14 @@ pipeline {
                 sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-https-proxy=http://squid.internal:3128"
                 sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-no-proxy=127.0.0.1,localhost,::1,10.96.0.0/17"
 
-                deployCDK(controller: params.controller,
-                          cloud: params.cloud,
-                          model: juju_model,
-                          bundle: "${params.bundle}",
-                          version_overlay: params.overlay,
-                          bundle_channel: params.bundle_channel)
+                script {
+                    def bundle_channel = params.bundle_channel ? "--channel ${params.bundle_channel}" : ""
+                    def version_overlay = params.overlay ? "--overlay ${params.overlay}" : ""
+                    sh "juju add-model -c ${params.controller} ${juju_model} ${params.cloud}"
+                    sh "charm pull ${params.bundle} ${bundle_channel} ./bundle-to-test"
+                    sh "juju deploy -m ${params.controller}:${juju_model} ./bundle-to-test/bundle.yaml ${version_overlay}"
+                    sh "juju-wait -e ${params.controller}:${juju_model} -w -r3 -t14400"
+                }
             }
         }
 
@@ -46,14 +46,14 @@ pipeline {
 
             steps {
                 dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} TEST_IPS='${params.test_ips}' ${utils.pytest} --junit-xml=validate.xml integration/test_hacluster.py"
+                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} TEST_IPS='${params.test_ips}' /var/lib/jenkins/venvs/ci/bin/pytest --junit-xml=validate.xml integration/test_hacluster.py"
                 }
             }
         }
     }
     post {
         cleanup {
-            tearDown(params.controller)
+            sh "juju destroy-controller --destroy-all-models --destroy-storage -y ${params.controller} || true"
             sh "juju remove-cloud scapestack"
         }
     }

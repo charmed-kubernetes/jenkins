@@ -1,5 +1,3 @@
-@Library('juju-pipeline@master') _
-
 def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
@@ -19,7 +17,7 @@ pipeline {
         BUNDLE_IMAGE_FILE = "${bundle_image_file}"
         IS_DRY_RUN = "${params.dry_run}"
         LXC_NAME = "${env.JOB_NAME}-${env.BUILD_NUMBER}"
-        PATH = "${utils.cipaths}"
+        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
         DOCKERHUB_CREDS = credentials('cdkbot_dockerhub')
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
