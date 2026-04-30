@@ -23,7 +23,7 @@ pipeline {
      */
     environment {
         PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
-        CK_SNAPS = "kubectl kubelet kubernetes-test kube-proxy"
+        CK_SNAPS = "kubectl kubelet"
         EKS_SUFFIX = "-eks"
     }
     options {
