@@ -34,6 +34,12 @@ def get_tracks(all=False):
         "1.34-strict",
         "1.35",
         "1.35-strict",
+        "1.36",
+        "1.36-strict",
+        "1.37",
+        "1.37-strict",
+        "1.38",
+        "1.38-strict",
     ]
 
 
