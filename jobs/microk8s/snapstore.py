@@ -226,7 +226,7 @@ class Microk8sSnap:
         channel_to_upgrade=None,
         track_to_upgrade=None,
         tests_branch=None,
-        distributions=["ubuntu:20.04"],
+        distributions=["ubuntu:22.04"],
         proxy=None,
     ):
         """
