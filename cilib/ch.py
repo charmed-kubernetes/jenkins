@@ -8,7 +8,9 @@ import os
 import subprocess
 import sys
 import re
+import urllib.parse
 import urllib.request
+
 
 from typing import Optional
 
@@ -23,10 +25,13 @@ def _base64_json(creds: str) -> Optional[str]:
         return None
 
 
-def _request(url: str, authorization: str = None):
+def _request(
+    url: str, authorization: str = "", params: dict | None = None
+) -> urllib.request.Request:
     """Create a request with the appropriate macaroon."""
+    query_params = f"?{urllib.parse.urlencode(params)}" if params else ""
     return urllib.request.Request(
-        url,
+        f"{url}{query_params}",
         method="GET",
         headers={
             "Authorization": authorization,
@@ -36,7 +41,7 @@ def _request(url: str, authorization: str = None):
     )
 
 
-def _track_or_channel(channel: str):
+def _as_track(channel: str):
     """Get the track from a channel."""
     return channel.split("/")[0] if "/" in channel else channel
 
@@ -86,13 +91,25 @@ def info(kind: str, name: str):
         return json.loads(resp.read())
 
 
+def channel_map(kind: str, name: str, **query):
+    """Get the channel map for an entity."""
+    req = _request(
+        f"https://api.charmhub.io/v1/{kind}/{name}/releases",
+        charmhub_auth_header(),
+        params={k: v for k, v in query.items() if v},
+    )
+    with urllib.request.urlopen(req) as resp:
+        log.debug("Received channel map for %s '%s'", kind, name)
+        return json.loads(resp.read())
+
+
 def create_track(kind: str, name: str, track_or_channel: str):
     """Create a track for an entity."""
     req = _request(
         f"https://api.charmhub.io/v1/{kind}/{name}/tracks", charmhub_auth_header()
     )
     req.method = "POST"
-    track = _track_or_channel(track_or_channel)
+    track = _as_track(track_or_channel)
     req.data = json.dumps([{"name": track}]).encode()
     with urllib.request.urlopen(req):
         log.info("Track %-10s created for %5s %s", track, kind, name)
@@ -102,7 +119,7 @@ def create_track(kind: str, name: str, track_or_channel: str):
 def ensure_track(kind: str, name: str, track_or_channel: str):
     """Ensure a track exists for a named entity."""
     entity_info = info(kind, name)
-    track = _track_or_channel(track_or_channel)
+    track = _as_track(track_or_channel)
     tracks = [t["name"] for t in entity_info["metadata"]["tracks"]]
     if track in tracks:
         log.info("Track %-10s exists for %5s %s", track, kind, name)
@@ -130,8 +147,8 @@ def main():
     logging.basicConfig(format=FORMAT)
     parser = argparse.ArgumentParser()
     parser.add_argument("kind", help="type of the entity", choices=["charm", "snap"])
-    parser.add_argument("name", help="name of the entity")
-    parser.add_argument("track", help="track to ensure")
+    parser.add_argument("name", help="name of the entity", nargs="+")
+    parser.add_argument("--track", help="track to ensure", required=True)
     parser.add_argument(
         "-l",
         "--log",
@@ -143,7 +160,8 @@ def main():
     args = parser.parse_args()
     if args.loglevel:
         log.setLevel(level=args.loglevel.upper())
-    ensure_track(args.kind, args.name, args.track)
+    for name in args.name:
+        ensure_track(args.kind, name, args.track)
 
 
 execd = __name__ == "__main__"
