@@ -110,8 +110,6 @@
             #!/bin/bash
             set -eux
 
-            . $WORKSPACE/jobs/build-charms/charmcraft-lib.sh
-            
             sudo chown -R jenkins:jenkins /var/lib/jenkins/.config/ || true
 
             IS_FORCE=""
@@ -125,14 +123,6 @@
             fi 
 
             rm -rf "$WORKSPACE/charms" || true
-
-            # Cleanup old charmcraft containers
-            ci_lxc_delete "$JOB_NAME"
-            
-            # Configure cleanup routine for exit
-            export charmcraft_lxc="$JOB_NAME-$BUILD_NUMBER"
-            trap 'ci_lxc_delete $charmcraft_lxc' EXIT
-            ci_charmcraft_launch $charmcraft_lxc
 
             set +e
 
