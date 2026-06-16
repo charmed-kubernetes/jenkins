@@ -13,6 +13,7 @@ def _find_eks_base(version, override){
 def eks_base_override = params.eks_base_override
 def EKS_BASE = _find_eks_base(kube_version, eks_base_override)
 def GO_VERSION = params.eks_go_override
+def snapcraft_channel = "--channel=8.x/stable"
 
 pipeline {
     agent {
@@ -92,7 +93,7 @@ pipeline {
                     . \${WORKSPACE}/cilib.sh
 
                     ci_lxc_launch ubuntu:20.04 ${lxc_name}
-                    until sudo lxc shell ${lxc_name} -- bash -c "snap install snapcraft --classic"; do
+                    until sudo lxc shell ${lxc_name} -- bash -c "snap install snapcraft ${snapcraft_channel} --classic"; do
                         echo 'retrying snapcraft install in 3s...'
                         sleep 3
                     done
