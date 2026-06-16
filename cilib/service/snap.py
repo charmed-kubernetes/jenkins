@@ -191,7 +191,9 @@ class SnapService(DebugMixin):
                     expected_base = "core20"
                 elif branch_ver.compare("1.19.0") >= 0:
                     expected_base = "core18"
-                base_mismatch = expected_base and f"base: {expected_base}" not in content
+                base_mismatch = (
+                    expected_base and f"base: {expected_base}" not in content
+                )
                 if go_version not in content or base_mismatch:
                     self.log(
                         f"snapcraft.yaml mismatch for {branch} "
