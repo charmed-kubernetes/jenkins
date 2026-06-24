@@ -5,6 +5,7 @@ from retry.api import retry_call
 from lazr.restfulclient.errors import NotFound, PreconditionFailed
 from launchpadlib.launchpad import Launchpad
 from configparser import ConfigParser
+from cilib import enums
 import logging
 import os
 
@@ -114,6 +115,7 @@ class Client:
             snap.auto_build = True
             snap.auto_build_pocket = "Updates"
             snap.auto_build_archive = self.archive()
+            snap.auto_build_channels = {"snapcraft": enums.SNAPCRAFT_LEGACY_CHANNEL}
             snap.store_upload = True
             snap.store_name = name
             snap.store_series = self.snappy_series()
@@ -137,6 +139,7 @@ class Client:
                 auto_build=True,
                 auto_build_pocket="Updates",
                 auto_build_archive=self.archive(),
+                auto_build_channels={"snapcraft": enums.SNAPCRAFT_LEGACY_CHANNEL},
             )
         retry_call(
             snap.lp_save,

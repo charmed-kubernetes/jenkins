@@ -310,4 +310,8 @@ class SnapService(DebugMixin):
         snap_recipe.completeAuthorization(
             discharge_macaroon=discharge_macaroon.serialize()
         )
-        snap_recipe.requestBuilds(archive=_client.archive(), pocket="Updates")
+        snap_recipe.requestBuilds(
+            archive=_client.archive(),
+            pocket="Updates",
+            channels={"snapcraft": enums.SNAPCRAFT_LEGACY_CHANNEL},
+        )
