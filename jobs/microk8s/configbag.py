@@ -45,6 +45,11 @@ def get_tracks(all=False):
 
 snap_name = "microk8s"
 people_name = "microk8s-dev"
+# Snapcraft channel used when triggering Launchpad builds for MicroK8s tracks
+# that still build on core20 (everything prior to 1.34). Snapcraft 9.x dropped
+# core20 support, and API-triggered builds ignore the recipe's pinned channel
+# unless it is passed explicitly.
+legacy_snapcraft_channel = "8.x/stable"
 cachedir = os.getenv("WORKSPACE", default="/var/tmp/") + "/cache"
 creds = os.getenv("LPCREDS")
 github_repo = "github.com/canonical/microk8s"

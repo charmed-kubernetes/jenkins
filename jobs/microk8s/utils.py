@@ -3,6 +3,25 @@ import json
 import semver
 
 
+# Tracks prior to this MAJOR.MINOR build on core20, which is unsupported by
+# snapcraft 9.x, so they must pin to the legacy snapcraft channel.
+LEGACY_SNAPCRAFT_CEILING = (1, 34)
+
+
+def track_needs_legacy_snapcraft(track):
+    """Return True if the MicroK8s track must build with the legacy snapcraft.
+
+    Tracks prior to 1.34 build on core20, which is unsupported by snapcraft
+    9.x, so they must pin to the 8.x channel. The 'latest' track follows the
+    newest k8s release (>= 1.34) and uses the default snapcraft.
+    """
+    if track == "latest":
+        return False
+    major_minor = track.split("-")[0]  # strip '-strict' / '-eksd' suffix
+    major, minor = (int(part) for part in major_minor.split("."))
+    return (major, minor) < LEGACY_SNAPCRAFT_CEILING
+
+
 def upstream_release(release):
     if release.endswith("-eksd"):
         return upstream_eksd_release(release)
