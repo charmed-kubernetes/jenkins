@@ -28,6 +28,12 @@ K8S_STARTING_SEMVER = "1.28.0"
 # Supported arches
 K8S_SUPPORT_ARCHES = ["amd64", "ppc64el", "s390x", "arm64"]
 
+# Snapcraft channel used when building snaps based on legacy bases (e.g. core20).
+# The latest snapcraft (9.x) dropped core20 support, so Launchpad builds that
+# don't pin a snapcraft channel default to latest and fail endlessly. All current
+# CK snap tracks build on core20, so we pin every CK build to this channel.
+SNAPCRAFT_LEGACY_CHANNEL = "8.x/stable"
+
 # Supported charm arches
 K8S_CHARM_SUPPORT_ARCHES = ["amd64", "s390x", "arm64"]
 
