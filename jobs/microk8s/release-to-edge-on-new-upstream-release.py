@@ -6,7 +6,7 @@ from snapstore import Microk8sSnap
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import HTTPError
 from configbag import get_tracks
-from utils import upstream_release
+from utils import upstream_release, track_needs_legacy_snapcraft
 
 
 def trigger_lp_builders(track):
@@ -38,7 +38,12 @@ def trigger_lp_builders(track):
 
     # trigger build
     ubuntu = launchpad.distributions["ubuntu"]
-    request = microk8s.requestBuilds(archive=ubuntu.main_archive, pocket="Updates")
+    build_kwargs = {"archive": ubuntu.main_archive, "pocket": "Updates"}
+    if track_needs_legacy_snapcraft(track):
+        # API-triggered builds ignore the recipe's pinned snapcraft channel
+        # unless it is passed explicitly, so pin it for core20-based tracks.
+        build_kwargs["channels"] = {"snapcraft": configbag.snapcraft_channel}
+    request = microk8s.requestBuilds(**build_kwargs)
     return request
 
 
