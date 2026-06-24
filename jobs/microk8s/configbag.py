@@ -49,7 +49,7 @@ people_name = "microk8s-dev"
 # that still build on core20 (everything prior to 1.34). Snapcraft 9.x dropped
 # core20 support, and API-triggered builds ignore the recipe's pinned channel
 # unless it is passed explicitly.
-snapcraft_channel = "8.x/stable"
+legacy_snapcraft_channel = "8.x/stable"
 cachedir = os.getenv("WORKSPACE", default="/var/tmp/") + "/cache"
 creds = os.getenv("LPCREDS")
 github_repo = "github.com/canonical/microk8s"

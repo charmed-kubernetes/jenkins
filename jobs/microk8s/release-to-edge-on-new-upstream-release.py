@@ -42,7 +42,7 @@ def trigger_lp_builders(track):
     if track_needs_legacy_snapcraft(track):
         # API-triggered builds ignore the recipe's pinned snapcraft channel
         # unless it is passed explicitly, so pin it for core20-based tracks.
-        build_kwargs["channels"] = {"snapcraft": configbag.snapcraft_channel}
+        build_kwargs["channels"] = {"snapcraft": configbag.legacy_snapcraft_channel}
     request = microk8s.requestBuilds(**build_kwargs)
     return request
 
