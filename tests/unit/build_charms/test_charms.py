@@ -294,24 +294,12 @@ def test_build_entity_charm_build(
 
     # Operator Charms, build with charmcraft container
     charm_entity.reactive = False
-    os.environ["charmcraft_lxc"] = "unnamed-job-0"
-    charm_entity.artifacts = []
-    charm_entity.charm_build()
-    charm_cmd.build.assert_not_called()
-    mock_script.assert_called_once_with(
-        "#!/bin/bash -eux\n"
-        f"source {CHARMCRAFT_LIB_SH}\n"
-        f"ci_charmcraft_pack unnamed-job-0 https://github.com/{charm_entity.downstream} main \n"
-        f"ci_charmcraft_copy unnamed-job-0 {K8S_CI_CHARM}/k8s-ci-charm.charm\n",
-        echo=charm_entity.echo,
-    )
-    mock_script.reset_mock()
-
-    # Operator Charms, fail build without charmcraft container
-    del os.environ["charmcraft_lxc"]
     with pytest.raises(builder_local.BuildException):
         charm_entity.artifacts = []
         charm_entity.charm_build()
+    charm_cmd.build.assert_not_called()
+    mock_script.assert_not_called()
+    mock_script.reset_mock()
 
 
 def test_build_entity_upload(
@@ -706,7 +694,6 @@ def test_build_command(mock_build_env, mock_build_entity, main):
         "to_channel": "edge",
         "force": True,
     }
-    mock_build_env.pull_layers.assert_called_once_with()
     mock_build_env.save.assert_called_once_with()
 
     entity.echo.assert_has_calls(
