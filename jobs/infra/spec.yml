@@ -4,16 +4,20 @@ meta:
   long-description: |
     ## Ansible
 
-    Ansible playbook is run nightly to make sure each system is kept updated,
-    reset to a reasonable working state (we aren't immutable yet) and cleaning
-    up any cloud resources.
+    An Ansible playbook runs every 6 hours on each agent to keep it updated,
+    reset to a known-good state, and provision required credentials and tooling.
 
     The playbook used is located in `jobs/infra/playbook-jenkins.yml`.
 
     Credentials used in the playbook are pulled from the Jenkins Credentials
-    store, attempting to run this locally would require that those credential
-    environment variables are met (seen in `jobs/ci-master.yaml` under `-
-    wrapper` section.
+    store via the `ci-creds-infra` wrapper (see `jobs/ci-master.yaml`).
+
+    ## Jobs
+
+    - `infra-maintain-{node}` — one per persistent agent; runs local cleanup
+      and the Ansible playbook on that agent.
+    - `infra-cleanup-clouds` — runs once on any free amd64 large agent;
+      purges stale AWS, GCE, and Azure resources created by CI jobs.
   mkdocs:
     destination:
       - "maintenance/infra.md"
