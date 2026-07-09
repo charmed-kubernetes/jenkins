@@ -2,21 +2,30 @@
 
 - project:
     name: infra
-    arch: ['arm64', 's390x']
+    node:
+      - jenkins-agent-amd64-large-0
+      - jenkins-agent-amd64-large-1
+      - jenkins-agent-amd64-large-2
+      - jenkins-agent-amd64-large-3
+      - jenkins-agent-amd64-large-4
+      - jenkins-agent-amd64-large-5
+      - jenkins-agent-amd64-large-6
+      - jenkins-agent-arm64-large-0
+      - jenkins-agent-s390x-large-0
     jobs:
-      - 'infra-maintain-nodes-{arch}'
+      - 'infra-maintain-{node}'
 
 - job-template:
-    name: 'infra-maintain-nodes-{arch}'
+    name: 'infra-maintain-{node}'
     description: |
-      Keeps jenkins slave {arch} nodes configured properly.
-    node: runner-{arch}
+      Keeps jenkins agent {node} configured properly.
+    node: '{node}'
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
     wrappers:
       - default-job-wrapper
-      - ci-creds
+      - ci-creds-infra
     triggers:
         - timed: "H */6 * * *"
     properties:
@@ -27,8 +36,6 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
       - shell: |
-          rm -rf /var/lib/jenkins/slaves/*/workspace/validate*
-
           # infra job needs exclusive dpkg access to keep pkgs updated; kill
           # and clean up if any dpkg procs/locks are found.
           sudo pkill -9 -e -f ^/usr/bin/dpkg && sleep 5 || true
@@ -37,16 +44,89 @@
 
           sudo apt update
           sudo DEBIAN_FRONTEND=noninteractive apt -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confnew -qy dist-upgrade
-          sudo apt install -qy python3-venv
-      - run-venv:
-          COMMAND: |
-              #!/bin/bash
-              set -eux
-              set -o allexport
-              [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
-              set +o allexport
 
-              bash jobs/infra/fixtures/cleanup-env.sh
+          # show worker characteristics (not fatal)
+          lscpu || true
+          free -h || true
+          df -h -x squashfs -x overlay | grep -vE ' /snap|^tmpfs|^shm' || true
+      - shell: |
+          #!/bin/bash
+          set -eux
+          sudo apt install -qy ansible
 
-              venv/bin/pip install ansible
-              venv/bin/ansible-playbook jobs/infra/playbook-jenkins.yml --limit localhost --tags 'jenkins' -i jobs/infra/hosts
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          bash jobs/infra/fixtures/cleanup-local.sh
+
+          ansible-playbook jobs/infra/playbook-jenkins.yml --limit localhost --tags 'jenkins' -i jobs/infra/hosts
+
+- job:
+    name: 'infra-cleanup-clouds'
+    description: |
+      Purges stale cloud resources (AWS, GCE, Azure) created by CI jobs.
+      Runs once on any free amd64 large agent rather than redundantly on every node.
+    node: 'amd64 && large'
+    project-type: freestyle
+    scm:
+      - k8s-jenkins-jenkaas
+    wrappers:
+      - default-job-wrapper
+      - ci-creds-infra
+    triggers:
+        - timed: "H */6 * * *"
+    properties:
+      - block-on-build-release
+      - build-discarder:
+          num-to-keep: 10
+    builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/infra"
+      - shell: |
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
+          bash jobs/infra/fixtures/cleanup-clouds.sh
+
+- job:
+    name: 'infra-check-proxy'
+    description: |
+      Diagnostic job to verify proxy configuration on an agent.
+      Trigger manually and use "Build on specific node" to target a particular agent.
+    node: 'amd64 && large'
+    project-type: freestyle
+    wrappers:
+      - default-job-wrapper
+    properties:
+      - build-discarder:
+          num-to-keep: 10
+    builders:
+      - shell: |
+          echo "=== Does egress.ps7.internal resolve? ==="
+          getent hosts egress.ps7.internal || echo "DOES NOT RESOLVE"
+
+          echo "=== Direct egress (no proxy) ==="
+          curl -sSI --max-time 10 https://github.com && echo "DIRECT OK" || echo "DIRECT FAILED"
+          curl -sSI --max-time 10 https://api.snapcraft.io && echo "DIRECT OK" || echo "DIRECT FAILED"
+
+          echo "=== Via proxy (if it resolves) ==="
+          curl -sSI --max-time 10 --proxy http://egress.ps7.internal:3128 https://github.com && echo "PROXY OK" || echo "PROXY FAILED"
+
+          echo "=== MTU validation: large download via proxy (GitHub tarball) ==="
+          curl -sS --proxy http://egress.ps7.internal:3128 \
+            -o /dev/null \
+            -w 'size=%{{size_download}} time=%{{time_total}}s speed=%{{speed_download}}bps\n' \
+            --max-time 30 \
+            https://codeload.github.com/charmed-kubernetes/jenkins/tar.gz/refs/heads/main \
+            && echo "MTU LARGE DOWNLOAD OK" || echo "MTU LARGE DOWNLOAD FAILED (possible MTU black-hole)"
+
+          echo "=== Current snap proxy setting ==="
+          snap get system proxy || echo "no snap proxy set"
+
+          echo "=== Current env proxy ==="
+          env | grep -i proxy || echo "no env proxy"
+
+          echo "=== apt proxy config ==="
+          apt-config dump | grep -i proxy || echo "no apt proxy"

@@ -305,13 +305,17 @@
           #!/bin/bash
           set -eux
 
+          export HOME="${{HOME:-/var/lib/jenkins}}"
+
+          export LC_ALL=C.UTF-8
+          export LANG=C.UTF-8
+
           rm -rf /var/lib/jenkins/venvs || true
 
           export INTEGRATION_TEST_PATH=$WORKSPACE/jobs/integration
 
           rm -rf $WORKSPACE/.env || true
 
-          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/cdkbot_rsa -oStrictHostKeyChecking=no"
           export CHARM_BASE_DIR="$WORKSPACE/.cache/charmbuild/$BUILD_TAG"
           export CHARM_BUILD_DIR="$CHARM_BASE_DIR/${{CHARM_BUILD_DIR:-build/charms}}"
           export CHARM_LAYERS_DIR="$CHARM_BASE_DIR/${{CHARM_LAYERS_DIR:-build/layers}}"
@@ -486,12 +490,6 @@
           - file:
               credential-id: cdkbot_ssh_rsa
               variable: CDKBOTSSHCREDS
-          - text:
-              credential-id: NEADER
-              variable: NEADER
-          - text:
-              credential-id: S3LP3
-              variable: S3LP3
           - file:
               credential-id: scapestack_creds
               variable: SCAPESTACKCREDS
@@ -519,3 +517,50 @@
           - text:
               credential-id: charmcraft_creds
               variable: CHARMCRAFT_AUTH
+
+- wrapper:
+    name: ci-creds-infra
+    wrappers:
+      - credentials-binding:
+          - file:
+              credential-id: cdkbot_ssh_rsa
+              variable: CDKBOTSSHCREDS
+          - file:
+              credential-id: aws_creds
+              variable: AWSCREDS
+          - file:
+              credential-id: snapcraft_creds
+              variable: SNAPCRAFTCREDS
+          - file:
+              credential-id: snapcraft_cpc_creds
+              variable: SNAPCRAFTCPCCREDS
+          - file:
+              credential-id: juju_creds
+              variable: JUJUCREDS
+          - file:
+              credential-id: juju_clouds
+              variable: JUJUCLOUDS
+          - file:
+              credential-id: sso_token
+              variable: SSOCREDS
+          - file:
+              credential-id: charm_creds
+              variable: CHARMCREDS
+          - file:
+              credential-id: surl-creds
+              variable: SURLCREDS
+          - file:
+              credential-id: scapestack_creds
+              variable: SCAPESTACKCREDS
+          - file:
+              credential-id: scapestack_cloud
+              variable: SCAPESTACKCLOUD
+          - file:
+              credential-id: openstack-creds
+              variable: OPENSTACK_CREDS
+          - file:
+              credential-id: deb-gpg-public
+              variable: K8STEAMCI_GPG_PUB
+          - file:
+              credential-id: deb-gpg-private
+              variable: K8STEAMCI_GPG_PRIVATE

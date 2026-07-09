@@ -1,0 +1,35 @@
+#!/bin/bash
+set -x
+
+THISDIR="$(dirname "$(realpath "$0")")"
+
+
+function purge::controllers
+{
+    if [ "$1" != "jaas" ]; then
+        echo "$1"
+        if ! timeout 2m juju destroy-controller --no-prompt --destroy-all-models --destroy-storage "$1"; then
+            timeout 5m juju kill-controller -t 2m0s --no-prompt "$1" 2>&1
+        fi
+    fi
+}
+export -f purge::controllers
+
+juju controllers --format json | jq -r '.controllers | keys[]' | parallel --ungroup purge::controllers
+
+sudo apt clean
+docker image prune -a --filter until=24h --force
+docker container prune --filter until=24h --force
+rm -rf /var/lib/jenkins/venvs
+rm -rf /var/lib/jenkins/.tox
+# NOTE: (mateo) tmpreaper removed — /tmp is cleaned by the host's
+# systemd-tmpfiles-clean.timer (daily). Per-build scratch dirs under
+# /tmp/jenkins-* are already wiped at job start by ci-master.yaml set-env.
+
+sudo lxc list --format json | jq -r ".[] | .name" | parallel sudo lxc delete --force {}
+for cntr in $(sudo lxc profile list --format json | jq -r ".[] | .name"); do
+    if [[ $cntr != "default" ]]; then
+        echo "Removing $cntr"
+        sudo lxc profile delete "$cntr"
+    fi
+done

@@ -1,0 +1,4 @@
+[jenkins]
+url=https://jenkins.example.com
+user=your-jenkins-username
+password=your-api-token
