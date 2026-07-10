@@ -23,10 +23,6 @@ pipeline {
         REGISTRY_URL = 'upload.rocks.canonical.com:5000'
         REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/library/ docker.io/ gcr.io/ nvcr.io/ quay.io/ registry.k8s.io/'
     }
-    options {
-        ansiColor('xterm')
-        timestamps()
-    }
     stages {
         stage('Setup User') {
             /* Do this early; we want to fail fast if we don't have valid creds. */
@@ -104,7 +100,7 @@ pipeline {
                 sh """#!/usr/bin/env bash
                     . \${WORKSPACE}/cilib.sh
 
-                    ci_lxc_launch ubuntu:20.04 ${lxc_name}
+                    ci_lxc_launch ubuntu:24.04 ${lxc_name}
                     until sudo lxc shell ${lxc_name} -- bash -c "snap install snapcraft ${snapcraft_channel} --classic"; do
                         echo 'retrying snapcraft install in 3s...'
                         sleep 3
