@@ -5,7 +5,7 @@ def kube_ersion = null
 if (kube_version != "") {
     kube_ersion = kube_version.substring(1)
 }
-def snapcraft_channel = ""
+def snapcraft_channel = "--channel=8.x/stable"
 def lxc_name = env.JOB_NAME.replaceAll('\\.', '-')+"-"+env.BUILD_NUMBER
 
 pipeline {
@@ -16,16 +16,19 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
-        ADDONS_ARCHES="amd64 arm64 ppc64le s390x"
-        GITHUB_CREDS = credentials('cdkbot_github')
-        REGISTRY_CREDS = credentials('canonical_registry')
-        REGISTRY_URL = 'upload.rocks.canonical.com:5000'
+        HOME            = "/var/lib/jenkins"
+        PATH            = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        HTTP_PROXY      = "http://egress.ps7.internal:3128"
+        HTTPS_PROXY     = "http://egress.ps7.internal:3128"
+        http_proxy      = "http://egress.ps7.internal:3128"
+        https_proxy     = "http://egress.ps7.internal:3128"
+        NO_PROXY        = "localhost,127.0.0.1"
+        no_proxy        = "localhost,127.0.0.1"
+        ADDONS_ARCHES   = "amd64 arm64 ppc64le s390x"
+        GITHUB_CREDS    = credentials('cdkbot_github')
+        REGISTRY_CREDS  = credentials('canonical_registry')
+        REGISTRY_URL    = 'upload.rocks.canonical.com:5000'
         REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/library/ docker.io/ gcr.io/ nvcr.io/ quay.io/ registry.k8s.io/'
-    }
-    options {
-        ansiColor('xterm')
-        timestamps()
     }
     stages {
         stage('Setup User') {
@@ -76,7 +79,7 @@ pipeline {
                             then
                                 echo "Dry run; would have pushed: \$ADDONS_BRANCH"
                             else
-                                git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/cdk-addons.git --all
+                                git push "https://\${GITHUB_CREDS_USR}:\${GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/cdk-addons.git" --all
                             fi
                             cd -
                         fi
@@ -104,7 +107,7 @@ pipeline {
                 sh """#!/usr/bin/env bash
                     . \${WORKSPACE}/cilib.sh
 
-                    ci_lxc_launch ubuntu:20.04 ${lxc_name}
+                    ci_lxc_launch ubuntu:24.04 ${lxc_name}
                     until sudo lxc shell ${lxc_name} -- bash -c "snap install snapcraft ${snapcraft_channel} --classic"; do
                         echo 'retrying snapcraft install in 3s...'
                         sleep 3
@@ -121,12 +124,12 @@ pipeline {
                 echo "Setting K8s version: ${kube_version} and K8s ersion: ${kube_ersion}"
                 sh """
                     cd cdk-addons
-                    make KUBE_VERSION=${kube_version} prep 2>/dev/null
+                    make KUBE_VERSION=${kube_version} prep
 
                     for arch in ${env.ADDONS_ARCHES}
                     do
                         echo "Prepping cdk-addons (\${arch}) snap source."
-                        wget -O build/kubectl https://dl.k8s.io/${kube_version}/bin/linux/\${arch}/kubectl
+                        curl -fsSL -o build/kubectl https://dl.k8s.io/${kube_version}/bin/linux/\${arch}/kubectl
                         chmod +x build/kubectl
                         sed 's/KUBE_VERSION/${kube_ersion}/g' cdk-addons.yaml > build/snapcraft.yaml
                         if [ "\${arch}" = "ppc64le" ]
@@ -137,7 +140,7 @@ pipeline {
 
                         echo "Copying cdk-addons (\${arch}) into container."
                         sudo lxc shell ${lxc_name} -- bash -c "rm -rf /cdk-addons"
-                        sudo lxc file push . ${lxc_name}/ -p -r
+                        sudo lxc file push -q build ${lxc_name}/cdk-addons/ -p -r
 
                         echo "Build cdk-addons (\${arch}) snap."
                         sudo lxc shell ${lxc_name} -- bash -c \
@@ -203,11 +206,11 @@ pipeline {
                             echo "Dry run; would have pulled: \${STAGING_IMAGE}"
                         else
                             # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch \${STAGING_IMAGE} --all-platforms --user "\${REGISTRY_CREDS_USR}:\${REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying pull"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr content fetch \${STAGING_IMAGE} --all-platforms --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr content fetch \${STAGING_IMAGE} --all-platforms --user "\${REGISTRY_CREDS_USR}:\${REGISTRY_CREDS_PSW}" >/dev/null
                             fi
                         fi
 
@@ -219,11 +222,11 @@ pipeline {
                         else
                             sudo lxc exec ${lxc_name} -- ctr image tag \${STAGING_IMAGE} \${PROD_IMAGE}
                             # simple retry if initial push fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
+                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${PROD_IMAGE} --user "\${REGISTRY_CREDS_USR}:\${REGISTRY_CREDS_PSW}" >/dev/null
                             then
                                 echo "Retrying push"
                                 sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image push \${PROD_IMAGE} --user "${env.REGISTRY_CREDS_USR}:${env.REGISTRY_CREDS_PSW}" >/dev/null
+                                sudo lxc exec ${lxc_name} -- ctr image push \${PROD_IMAGE} --user "\${REGISTRY_CREDS_USR}:\${REGISTRY_CREDS_PSW}" >/dev/null
                             fi
                         fi
                     done
@@ -243,7 +246,7 @@ pipeline {
                         then
                             echo "Dry run; would have updated \${REPORT_FILE} with: \${REPORT_IMAGES}"
                         else
-                            git push https://${env.GITHUB_CREDS_USR}:${env.GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git
+                            git push "https://\${GITHUB_CREDS_USR}:\${GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git"
                         fi
                     fi
                     cd -

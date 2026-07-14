@@ -51,10 +51,16 @@ ci_lxc_launch()
     local lxc_image=$1
     local lxc_container=$2
     sudo lxc init ${lxc_image} ${lxc_container} ${@:3}
-    printf "uid $(id -u) 1000\ngid $(id -g) 1000" | sudo lxc config set ${lxc_container} raw.idmap -
     sudo lxc start ${lxc_container}
     sleep 10
+
+    # PS7: containers have no transparent egress; route traffic via proxy
+    local proxy="http://egress.ps7.internal:3128"
+    printf 'Acquire::http::Proxy "%s";\nAcquire::https::Proxy "%s";\n' "${proxy}" "${proxy}" \
+        | sudo lxc exec ${lxc_container} -- tee /etc/apt/apt.conf.d/00proxy > /dev/null
+
     ci_lxc_apt_install_retry ${lxc_container} build-essential snapd
+    sudo lxc exec ${lxc_container} -- snap set system proxy.http="${proxy}" proxy.https="${proxy}"
 }
 
 ci_lxc_mount()
@@ -91,6 +97,7 @@ ci_lxc_delete()
     local lxc_container_prefix=$1
     local existing_containers=$(sudo lxc list -c n -f csv "${lxc_container_prefix}" | xargs)
     echo "Removing containers: ${existing_containers}"
+    [ -z "${existing_containers}" ] && return 0
     set +e
     sudo lxc delete --force "${existing_containers}"
     set -e

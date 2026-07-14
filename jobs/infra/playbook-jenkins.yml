@@ -30,7 +30,9 @@
         source /etc/os-release
         apt-get update
         apt-get install -qyf \
-          docker.io
+          docker.io \
+          make \
+          tox
         # --- re-enable progressively as jobs require them ---
         # build-essential \
         # fakeroot \
@@ -366,6 +368,12 @@
         lxc config set core.proxy_http http://egress.ps7.internal:3128
         lxc config set core.proxy_https http://egress.ps7.internal:3128
         lxc config set core.proxy_ignore_hosts localhost
+        lxc profile set default environment.HTTP_PROXY  http://egress.ps7.internal:3128
+        lxc profile set default environment.HTTPS_PROXY http://egress.ps7.internal:3128
+        lxc profile set default environment.http_proxy  http://egress.ps7.internal:3128
+        lxc profile set default environment.https_proxy http://egress.ps7.internal:3128
+        lxc profile set default environment.NO_PROXY    localhost,127.0.0.1
+        lxc profile set default environment.no_proxy    localhost,127.0.0.1
       tags:
         - adhoc
         - jenkins
