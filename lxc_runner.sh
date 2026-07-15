@@ -117,6 +117,15 @@ ci_lxc_job_run()
     # source).
     chmod -R a+rwX "${WORKSPACE}"
 
+    # The host ~jenkins/snap dir is bind-mounted into the container at
+    # /home/ubuntu/snap (via LXC_MOUNT_LIST=snap). Under the unprivileged
+    # container's idmap, container uid 1000 maps to host uid 1001000, so
+    # it cannot write to root-owned snap user-data dirs (juju, snapcraft,
+    # etc.). Widen perms on the host source so the container-side ubuntu
+    # user can create its per-snap dirs. Guarded so it no-ops on agents
+    # without this dir.
+    [ -d /var/lib/jenkins/snap ] && chmod -R a+rwX /var/lib/jenkins/snap
+
     # Run the job script inside the lxc runner
     local lxc_workspace=/home/ubuntu/workspace
     ci_lxc_exec_user --cwd=${lxc_workspace} --env WORKSPACE=${lxc_workspace} $@
