@@ -100,6 +100,19 @@ ci_lxc_init_runner()
 
 ci_lxc_job_run()
 {
+    # Run the job script inside the lxc runner.
+    #
+    # The Jenkins agent runs as host root, so files it creates in $WORKSPACE
+    # (notably the mktemp'd job script and other build artefacts) land as
+    # uid 0/mode 0600 by default. Inside the unprivileged LXC container the
+    # bind-mounted workspace is id-shifted so those files appear owned by
+    # container root, which uid 1000 (ubuntu, the exec user) cannot read.
+    # Grant read + directory-traverse to everyone so the container-side user
+    # can access whatever the job needs. See ci_lxc_init_runner for the
+    # paired .env chmod (kept there since .env is written earlier and this
+    # documents the requirement close to its source).
+    chmod -R a+rX "${WORKSPACE}"
+
     # Run the job script inside the lxc runner
     local lxc_workspace=/home/ubuntu/workspace
     ci_lxc_exec_user --cwd=${lxc_workspace} --env WORKSPACE=${lxc_workspace} $@
