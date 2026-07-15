@@ -374,6 +374,15 @@
 
           {COMMAND}
           EOF
+          # The workspace is bind-mounted into the LXC container and the job
+          # script is executed as uid 1000 (ubuntu). Since the Jenkins agent
+          # runs as host root and mktemp creates files with mode 0600, the
+          # unprivileged container sees them as owned by nobody:nogroup and
+          # bash inside the container gets "Permission denied" when trying to
+          # read the script. Grant read (and dir-exec) to everyone on the
+          # workspace so the container-side user can access whatever the job
+          # needs. See lxc_runner.sh for the paired .env chmod.
+          chmod -R a+rX "$WORKSPACE"
           ci_lxc_job_run $_lxc -- bash $LXC_WORKSPACE/$_job_sh
 
 - builder:

@@ -36,6 +36,13 @@ ci_lxc_init_runner()
     echo "declare -x WORKSPACE_TMP=${LXC_WORKSPACE}@tmp" >> ${WORKSPACE}/.env
     echo "declare -x PYTHONPATH=${LXC_WORKSPACE}:\"${PYTHONPATH:-}\"" >> ${WORKSPACE}/.env
 
+    # The workspace is bind-mounted into the container and accessed as uid 1000
+    # (ubuntu). The Jenkins agent runs as host root, so files it creates land as
+    # uid 0/mode 0600 by default; inside the unprivileged container those appear
+    # as nobody:nogroup and are unreadable to uid 1000. Make .env world-readable
+    # so `source $WORKSPACE/.env` works from within the container.
+    chmod 0644 "${WORKSPACE}/.env"
+
     # ensure the container is torn down at the end of the job
     if [ "${__trap}" != "notrap" ]; then
        trap "ci_lxc_delete ${lxc_container}" EXIT

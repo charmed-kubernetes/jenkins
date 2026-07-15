@@ -51,7 +51,7 @@ ci_lxc_launch()
     local lxc_image=$1
     local lxc_container=$2
     sudo lxc init ${lxc_image} ${lxc_container} ${@:3}
-    printf "uid $(id -u) 1000\ngid $(id -g) 1000" | sudo lxc config set ${lxc_container} raw.idmap -
+    # printf "uid $(id -u) 1000\ngid $(id -g) 1000" | sudo lxc config set ${lxc_container} raw.idmap -
     sudo lxc network set lxdbr0 ipv6.address none
     sudo lxc network set lxdbr0 ipv6.nat false
     sudo lxc start ${lxc_container}
