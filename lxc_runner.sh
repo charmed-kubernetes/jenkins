@@ -106,12 +106,16 @@ ci_lxc_job_run()
     # (notably the mktemp'd job script and other build artefacts) land as
     # uid 0/mode 0600 by default. Inside the unprivileged LXC container the
     # bind-mounted workspace is id-shifted so those files appear owned by
-    # container root, which uid 1000 (ubuntu, the exec user) cannot read.
-    # Grant read + directory-traverse to everyone so the container-side user
-    # can access whatever the job needs. See ci_lxc_init_runner for the
-    # paired .env chmod (kept there since .env is written earlier and this
-    # documents the requirement close to its source).
-    chmod -R a+rX "${WORKSPACE}"
+    # container root, which uid 1000 (ubuntu, the exec user) cannot read
+    # or write. Grant read+write+directory-traverse to everyone so the
+    # container-side user can access and modify whatever the job needs
+    # (e.g. python venv creation, pip installs, build artifacts). The
+    # workspace is an ephemeral per-build directory on a CI agent with no
+    # non-root real users, so the blast radius is negligible. See
+    # ci_lxc_init_runner for the paired .env chmod (kept there since .env
+    # is written earlier and this documents the requirement close to its
+    # source).
+    chmod -R a+rwX "${WORKSPACE}"
 
     # Run the job script inside the lxc runner
     local lxc_workspace=/home/ubuntu/workspace
