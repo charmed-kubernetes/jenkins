@@ -125,6 +125,8 @@ ci_lxc_job_run()
     # user can create its per-snap dirs. Guarded so it no-ops on agents
     # without this dir.
     [ -d /var/lib/jenkins/snap ] && chmod -R a+rwX /var/lib/jenkins/snap
+    [ -d /var/lib/jenkins/.local ] && chmod -R a+rwX /var/lib/jenkins/.local
+    [ -d /var/lib/jenkins/.aws ] && chmod -R a+rwX /var/lib/jenkins/.aws
 
     # Run the job script inside the lxc runner
     local lxc_workspace=/home/ubuntu/workspace
