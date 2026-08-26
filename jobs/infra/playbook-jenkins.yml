@@ -172,7 +172,7 @@
         - "juju-crashdump --classic --edge"
         - "juju-wait --classic"
         - "kubectl --classic"
-        - "lxd"
+        - "lxd --channel=5.0/stable"
         - "multipass"
         - "yq"
         - "snapcraft --classic"
