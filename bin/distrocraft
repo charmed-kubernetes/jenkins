@@ -1,0 +1,299 @@
+#!/usr/bin/env python3
+
+"""
+Wrapper for charmcraft tools with respect to distribution management.
+
+This is intended to be used with a yaml file describing the supported charm
+entities, and to provide a single interface for managing charm releases,
+promoting from one channel to another, as well as checking the status of
+channels for entities.
+"""
+
+
+import argparse
+import logging
+import sys
+import subprocess
+import yaml
+
+from collections import defaultdict
+from dataclasses import dataclass
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).parent.parent
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from cilib.ch import channel_map, ensure_track, log as ch_log
+from cilib.version import ChannelRange
+
+
+class PromoteError(Exception):
+    """Exception raised when promotion fails."""
+
+
+class StatusError(Exception):
+    """Exception raised when status retrieval fails."""
+
+
+def write_status(lines: list[str]):
+    """Write status output as a plain report rather than structured logs."""
+    sys.stdout.write("\n".join(lines) + "\n")
+
+
+@dataclass(frozen=True, kw_only=True)
+class Resource:
+    name: str
+    revision: int
+    type: str
+
+    @classmethod
+    def from_iter(cls, iterable) -> frozenset["Resource"]:
+        """Create a Resource from an iterable of dict or Resource."""
+        return frozenset(
+            rsc
+            for r in iterable
+            if (
+                rsc := (
+                    r
+                    if isinstance(r, Resource)
+                    else (Resource(**r) if isinstance(r, dict) else None)
+                )
+            )
+        )
+
+
+@dataclass(frozen=True, kw_only=True)
+class Base:
+    name: str
+    channel: str
+    architecture: str
+
+    def __str__(self) -> str:
+        return f"{self.name}@{self.channel}-{self.architecture}"
+
+    @classmethod
+    def from_iter(cls, iterable) -> frozenset["Base"]:
+        """Create a Base from an iterable of dict or Base."""
+        return frozenset(
+            bsc
+            for b in iterable
+            if (
+                bsc := (
+                    b
+                    if isinstance(b, Base)
+                    else (Base(**b) if isinstance(b, dict) else None)
+                )
+            )
+        )
+
+
+@dataclass(frozen=True, kw_only=True)
+class Release:
+    revision: int
+    resources: frozenset[Resource]
+    bases: frozenset[Base]
+    channels: frozenset[str] = frozenset()
+
+    def __init__(self, *_, **kwargs):
+        """Initializer that ignores extra keyword arguments."""
+        object.__setattr__(self, "revision", int(kwargs["revision"]))
+        bases_args = (
+            [single_base]
+            if (single_base := kwargs.get("base"))
+            else kwargs.get("bases", [])
+        )
+        object.__setattr__(
+            self, "resources", Resource.from_iter(kwargs.get("resources", []))
+        )
+        object.__setattr__(self, "bases", Base.from_iter(bases_args))
+        object.__setattr__(self, "channels", frozenset(kwargs.get("channels", [])))
+
+
+def status(name: str, options: dict, args: argparse.Namespace):
+    """Print the status of an entity."""
+    if options.get("framework") in ["ops", "reactive"]:
+        kind = "charm"
+    else:
+        raise StatusError(f"Unknown kind for {name}")
+
+    if args.channel:
+        chan_range = ChannelRange.from_dict(options)
+        if args.channel not in chan_range:
+            raise StatusError(
+                f"Invalid channel range '{args.channel}' not in {chan_range}"
+            )
+
+    chan_map = channel_map(kind, name, channel=args.channel)
+    revs_with_chans = defaultdict(Release)
+    for t in chan_map["channel-map"]:
+        if not args.channel or t["channel"] == args.channel:
+            key = t["revision"]
+            channels = {t["channel"]}
+            bases = Base.from_iter([t["base"]])
+            if key in revs_with_chans:
+                channels = frozenset(channels | revs_with_chans[key].channels)
+                bases = frozenset(bases | revs_with_chans[key].bases)
+            updated = Release(**t, bases=bases, channels=channels)
+            revs_with_chans[key] = updated
+
+    if not revs_with_chans and args.channel:
+        log.warning(
+            "No revisions found for %s %s in channels %s", kind, name, args.channel
+        )
+        return
+    if not revs_with_chans:
+        log.warning("No revisions found for %s %s", kind, name)
+        return
+
+    status_lines = []
+    for rev, item in sorted(revs_with_chans.items(), key=lambda x: x[0]):
+        for base_name in sorted(map(str, item.bases)):
+            status_lines.append(
+                "{kind} {name} rev={rev:<4d} base={base:<25} channels={{{channels}}}".format(
+                    kind=kind,
+                    name=name,
+                    rev=rev,
+                    base=base_name,
+                    channels=",".join(sorted(item.channels)),
+                )
+            )
+
+    write_status(status_lines)
+
+
+def promote(name: str, options: dict, args: argparse.Namespace):
+    """Promote from one channel to another for an entity."""
+    if options.get("framework") in ["ops", "reactive"]:
+        kind = "charm"
+    else:
+        raise PromoteError(f"Unknown kind for {name}")
+
+    chan_range = ChannelRange.from_dict(options)
+    if args.to_channel not in chan_range:
+        raise PromoteError(f"Invalid destination channel '{args.to_channel}'")
+
+    chan_map = channel_map(kind, name)
+    revisions = defaultdict(set)
+    for t in chan_map["channel-map"]:
+        if t["channel"] in (args.from_channel, args.to_channel):
+            revisions[t["channel"]].add(Release(**t))
+    if args.to_channel not in revisions and args.from_channel in revisions:
+        copy_args = argparse.Namespace(**vars(args))
+        copy_args.channel = args.from_channel
+        log.info("Status before promotion")
+        status(name, options, copy_args)
+
+        # Promoting to this empty channel
+        ensure_track(kind, name, args.to_channel)
+        releases = revisions[args.from_channel]
+        for entry in releases:
+            write_status(
+                [
+                    "Promoting {kind} {name} revision {revision} resources {resources} from {from_channel} to {to_channel}".format(
+                        kind=kind,
+                        name=name,
+                        revision=entry.revision,
+                        resources=entry.resources,
+                        from_channel=args.from_channel,
+                        to_channel=args.to_channel,
+                    )
+                ]
+            )
+            cmd = [
+                "charmcraft",
+                "release",
+                name,
+                f"--channel={args.to_channel}",
+                f"--revision={entry.revision}",
+            ]
+            for res in entry.resources:
+                cmd += [f"--resource={res.name}:{res.revision}"]
+            if args.dry_run:
+                log.info("Dry run: %s", " ".join(cmd))
+            else:
+                subprocess.run(cmd, check=True)
+
+        copy_args = argparse.Namespace(**vars(args))
+        copy_args.channel = args.to_channel
+        log.info("Status after promotion")
+        status(name, options, copy_args)
+
+
+def main():
+    FORMAT = "%(name)s:  %(asctime)s %(levelname)8s - %(message)s"
+    logging.basicConfig(format=FORMAT)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("entities", help="yaml file with supported entities")
+    parser.add_argument(
+        "-l",
+        "--log",
+        dest="loglevel",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set the logging level",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print writable actions rather than executing them",
+    )
+    parser.add_argument(
+        "--tags", help="only process entities with these tags (comma separated)"
+    )
+
+    sub = parser.add_subparsers(dest="subcommand", required=False)
+    sub_parser = sub.add_parser("promote", help="promote from one channel to another")
+    sub_parser.add_argument(
+        "--from-channel", help="source channel to copy from", required=True
+    )
+    sub_parser.add_argument(
+        "--to-channel", help="target channel to copy to", required=True
+    )
+
+    sub_parser = sub.add_parser("status", help="print the status of entities")
+    sub_parser.add_argument("--channel", help="channel to check for status")
+
+    args = parser.parse_args()
+
+    if args.loglevel:
+        log.setLevel(level=args.loglevel.upper())
+        ch_log.setLevel(level=args.loglevel.upper())
+    with open(args.entities, "r") as f:
+        entities = yaml.safe_load(f)
+
+    if not args.tags:
+        log.error("No tags specified, processing no entities")
+        exit(1)
+
+    for entity in entities:
+        name, options = entity.popitem()
+        if not (tags := options.get("tags")):
+            log.debug("Skipping %s with no tags", name)
+            continue
+
+        if not any(tag in tags for tag in args.tags.split(",")):
+            log.debug("Skipping %s due to tags %s", name, tags)
+            continue
+
+        if args.subcommand == "promote":
+            try:
+                promote(name, options, args)
+            except PromoteError as e:
+                log.error("Failed to promote %s: %s", name, e)
+            args.channel = args.to_channel
+        elif args.subcommand == "status":
+            try:
+                status(name, options, args)
+            except StatusError as e:
+                log.error("Failed collecting status %s: %s", name, e)
+
+
+execd = __name__ == "__main__"
+logger_name = sys.argv[0] if execd else __name__
+log = logging.getLogger(logger_name)
+if execd:
+    main()
+else:
+    log.setLevel(logging.DEBUG)
