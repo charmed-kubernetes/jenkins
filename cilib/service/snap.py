@@ -56,7 +56,9 @@ class SnapService(DebugMixin):
             "go_version": self.go_version(k8s_version),
         }
 
-        if k8s_version.compare("1.27.0-alpha.0") >= 0:
+        if k8s_version.compare("1.31.0-alpha.0") >= 0:
+            snapcraft_yml_context["base"] = "core22"
+        elif k8s_version.compare("1.27.0-alpha.0") >= 0:
             snapcraft_yml_context["base"] = "core20"
         elif k8s_version.compare("1.19.0") >= 0:
             snapcraft_yml_context["base"] = "core18"
@@ -182,9 +184,21 @@ class SnapService(DebugMixin):
             branch_ver = semver.VersionInfo.parse(latest_branch_version)
             if content := self.snap_model.base.cat(branch, "/snapcraft.yaml"):
                 go_version = self.go_version(branch_ver)
-                if go_version not in content:
+                expected_base = None
+                if branch_ver.compare("1.31.0-alpha.0") >= 0:
+                    expected_base = "core22"
+                elif branch_ver.compare("1.27.0-alpha.0") >= 0:
+                    expected_base = "core20"
+                elif branch_ver.compare("1.19.0") >= 0:
+                    expected_base = "core18"
+                base_mismatch = (
+                    expected_base and f"base: {expected_base}" not in content
+                )
+                if go_version not in content or base_mismatch:
                     self.log(
-                        f"Go version mismatch for {branch}, updating snapcraft.yaml"
+                        f"snapcraft.yaml mismatch for {branch} "
+                        f"(go_version={go_version not in content}, base={base_mismatch}), "
+                        f"updating snapcraft.yaml"
                     )
                     with tempfile.TemporaryDirectory() as tmpdir:
                         branch = f"v{latest_branch_version}"
@@ -194,7 +208,7 @@ class SnapService(DebugMixin):
                         self.template_snapcraft_yml(
                             src_path, branch, branch_ver, commit_msg="Update Snapcraft"
                         )
-                    self.log(f"Go version changed to {go_version}, building new snap")
+                    self.log(f"snapcraft.yaml updated, building new snap")
                     self._create_recipe(_version, branch)
                     continue
 
