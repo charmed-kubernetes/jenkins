@@ -13,7 +13,7 @@ Running the tests locally can be accomplished easily with tox. The tests expect
 certain environment variables to be set. These can be found by looking at the
 help output from `pytest` under the **custom options** section.
 
-> **Note**: Required minimum Python version is 3.8.
+> **Note**: Required minimum Python version is 3.10.
 
 ```
 > tox -e py --workdir .tox -- pytest jobs/integration/validation.py --help
