@@ -104,6 +104,8 @@
           zlib1g-dev \
           tmpreaper \
           awscli
+      args:
+        executable: /bin/bash
       tags:
         - jenkins
       ignore_errors: yes
@@ -378,6 +380,12 @@
         append: yes
       tags:
         - jenkins
+    - name: restart lxd snap
+      command: "snap restart lxd"
+      ignore_errors: yes
+      tags:
+        - jenkins
+        - adhoc
     - name: setup lxd network
       command: "/snap/bin/lxd init --auto"
       tags:
