@@ -275,8 +275,8 @@ pipeline {
                                 BUILT_SNAP="cdk-addons_${kube_ersion}_\${arch}.snap"
 
                                 echo "Uploading \${BUILT_SNAP}."
-                                sudo lxc shell ${lxc_name} -- bash -c \\
-                                    'export SNAPCRAFT_STORE_CREDENTIALS=\\\$(< "/snapcraft-creds"); '"snapcraft -v upload /\\\${BUILT_SNAP} --release ${params.channels}"
+                                sudo lxc shell ${lxc_name} -- bash -c \
+                                    'export SNAPCRAFT_STORE_CREDENTIALS=\$(< "/snapcraft-creds"); '"snapcraft -v upload /\${BUILT_SNAP} --release ${params.channels}"
                             done
                         """
                     }
