@@ -148,6 +148,12 @@ pipeline {
                 """
             }
         }
+        /* NOTE: (mateo) Process Images is disabled on PS7. We need to move the
+         * staging -> production image mirroring and the bundle
+         * container-images.txt reporting out to their own job, or just drop
+         * it entirely if nothing consumes the report anymore.
+         */
+        /*
         stage('Process Images'){
             steps {
                 sh """
@@ -252,6 +258,7 @@ pipeline {
                 """
             }
         }
+        */
         stage('Upload Snaps'){
             steps {
                 script {
