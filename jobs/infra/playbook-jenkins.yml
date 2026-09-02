@@ -32,6 +32,7 @@
         apt-get install -qyf \
           docker.io \
           make \
+          python3-venv \
           tox
         # --- re-enable progressively as jobs require them ---
         # build-essential \
