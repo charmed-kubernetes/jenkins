@@ -7,9 +7,10 @@ Provides support tasks for maintaining Jenkins
 
 Runs every 6 hours on each persistent agent. One job per node:
 
-- `jenkins-agent-amd64-large-0` through `jenkins-agent-amd64-large-6`
-- `jenkins-agent-arm64-large-0`
-- `jenkins-agent-s390x-large-0`
+- `jenkins-kubernetes-ps7-amd64-large-agents-jenkins-agent-amd64-large-7`
+  through `...-13` (amd64)
+- `jenkins-kubernetes-ps7-arm64-large-agents-jenkins-agent-arm64-large-0` (arm64)
+- `jenkins-kubernetes-ps7-s390x-large-agents-jenkins-agent-s390x-large-0` (s390x)
 
 Each job self-maintains its own agent via `--limit localhost`. It:
 

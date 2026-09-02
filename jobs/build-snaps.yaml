@@ -25,7 +25,7 @@
     parameters:
       - string:
           name: build_node
-          default: 'runner-{arch}'
+          default: 'amd64 && large'
       - string:
           name: version
           default: '{version}'
@@ -70,7 +70,7 @@
     parameters:
       - string:
           name: build_node
-          default: 'runner-{arch}'
+          default: '{arch} && large'
       - string:
           name: eks_base_override
           default: ''
@@ -118,7 +118,7 @@
 # Builds and releases latest snaps
 - job:
     name: 'build-snap-from-branch'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Builds a certain snap version from branch
     project-type: freestyle
@@ -135,11 +135,11 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-tox:
+      - run-venv:
           COMMAND: |
             #!/bin/bash
             IS_DRY_RUN=""
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            tox -e py38 -- python jobs/sync-upstream/sync.py snap-from-branch --branch $BRANCH $IS_DRY_RUN
+            python jobs/sync-upstream/sync.py snap-from-branch --branch $BRANCH $IS_DRY_RUN

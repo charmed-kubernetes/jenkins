@@ -5,7 +5,7 @@
       - git:
           url: https://github.com/charmed-kubernetes/jenkins.git
           branches:
-            - 'main'
+            - 'ps7/main'
         skip-tag: true
         fastpoll: true
         shallow-clone: true

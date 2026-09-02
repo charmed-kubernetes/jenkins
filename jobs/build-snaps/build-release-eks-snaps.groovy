@@ -5,10 +5,12 @@ def lxc_name = env.JOB_NAME+"-"+env.BUILD_NUMBER
 def _find_eks_base(version, override){
     if (override.length())
         return override
-    
-    // assumes the version looks like r'v\d.\d+.\d+'
-    def f_version = Float.parseFloat(version.substring(1, version.lastIndexOf('.')))
-    return f_version >= 1.99 ? "core22" : "core20";
+
+    // version looks like 'v\d.\d+.\d+'; compare major.minor numerically
+    def parts = version.substring(1).tokenize('.')
+    def major = parts[0].toInteger()
+    def minor = parts[1].toInteger()
+    return (major > 1 || (major == 1 && minor >= 99)) ? "core22" : "core20"
 }
 def eks_base_override = params.eks_base_override
 def EKS_BASE = _find_eks_base(kube_version, eks_base_override)
@@ -23,25 +25,18 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
-        CK_SNAPS = "kubectl kubelet"
-        EKS_SUFFIX = "-eks"
-    }
-    options {
-        ansiColor('xterm')
-        timestamps()
+        HOME        = "/var/lib/jenkins"
+        PATH        = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        HTTP_PROXY  = "http://egress.ps7.internal:3128"
+        HTTPS_PROXY = "http://egress.ps7.internal:3128"
+        http_proxy  = "http://egress.ps7.internal:3128"
+        https_proxy = "http://egress.ps7.internal:3128"
+        NO_PROXY    = "localhost,127.0.0.1"
+        no_proxy    = "localhost,127.0.0.1"
+        CK_SNAPS    = "kubectl kubelet"
+        EKS_SUFFIX  = "-eks"
     }
     stages {
-        stage('Verify User') {
-            /* Do this early; we want to fail fast if we don't have valid creds. */
-            steps {
-                sh """
-                    snapcraft login --with /var/lib/jenkins/.config/snapcraft/snapcraft-cpc.cfg
-                    snapcraft whoami
-                    snapcraft logout
-                """
-            }
-        }
         stage('Setup Source') {
             steps {
                 sh """
@@ -92,7 +87,7 @@ pipeline {
                 sh """#!/usr/bin/env bash
                     . \${WORKSPACE}/cilib.sh
 
-                    ci_lxc_launch ubuntu:20.04 ${lxc_name}
+                    ci_lxc_launch ubuntu:24.04 ${lxc_name}
                     until sudo lxc shell ${lxc_name} -- bash -c "snap install snapcraft ${snapcraft_channel} --classic"; do
                         echo 'retrying snapcraft install in 3s...'
                         sleep 3
@@ -138,7 +133,6 @@ pipeline {
                         sh """
                             BUILD_ARCH=\$(dpkg --print-architecture)
 
-                            sudo lxc shell ${lxc_name} -- bash -c "snapcraft login --with /snapcraft-cpc.cfg"
                             for snap in ${CK_SNAPS}
                             do
                                 EKS_SNAP="\${snap}${EKS_SUFFIX}"
@@ -146,9 +140,8 @@ pipeline {
 
                                 echo "Uploading \${BUILT_SNAP}."
                                 sudo lxc shell ${lxc_name} -- bash -c \
-                                    "snapcraft -v upload /\${EKS_SNAP}/\${BUILT_SNAP} --release ${channels}"
+                                    'export SNAPCRAFT_STORE_CREDENTIALS=\$(< "/snapcraft-cpc.cfg"); '"snapcraft -v upload /\${EKS_SNAP}/\${BUILT_SNAP} --release ${channels}"
                             done
-                            sudo lxc shell ${lxc_name} -- bash -c "snapcraft logout"
                         """
                     }
                 }

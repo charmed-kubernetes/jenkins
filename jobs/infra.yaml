@@ -3,15 +3,15 @@
 - project:
     name: infra
     node:
-      - jenkins-agent-amd64-large-0
-      - jenkins-agent-amd64-large-1
-      - jenkins-agent-amd64-large-2
-      - jenkins-agent-amd64-large-3
-      - jenkins-agent-amd64-large-4
-      - jenkins-agent-amd64-large-5
-      - jenkins-agent-amd64-large-6
-      - jenkins-agent-arm64-large-0
-      - jenkins-agent-s390x-large-0
+      - jenkins-kubernetes-ps7-amd64-large-agents-jenkins-agent-amd64-large-7
+      - jenkins-kubernetes-ps7-amd64-large-agents-jenkins-agent-amd64-large-8
+      - jenkins-kubernetes-ps7-amd64-large-agents-jenkins-agent-amd64-large-9
+      - jenkins-kubernetes-ps7-amd64-large-agents-jenkins-agent-amd64-large-10
+      - jenkins-kubernetes-ps7-amd64-large-agents-jenkins-agent-amd64-large-11
+      - jenkins-kubernetes-ps7-amd64-large-agents-jenkins-agent-amd64-large-12
+      - jenkins-kubernetes-ps7-amd64-large-agents-jenkins-agent-amd64-large-13
+      - jenkins-kubernetes-ps7-arm64-large-agents-jenkins-agent-arm64-large-0
+      - jenkins-kubernetes-ps7-s390x-large-agents-jenkins-agent-s390x-large-0
     jobs:
       - 'infra-maintain-{node}'
 
