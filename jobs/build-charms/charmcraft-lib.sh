@@ -12,7 +12,7 @@ ci_charmcraft_launch()
 {
   # Launch local LXD container to publish to charmcraft
   local charmcraft_lxc=$1
-  ci_lxc_launch ubuntu:20.04 $charmcraft_lxc
+  ci_lxc_launch ubuntu:24.04 $charmcraft_lxc
   until sudo lxc shell $charmcraft_lxc -- bash -c "snap install charmcraft --classic --channel=2.x/stable"; do
     echo 'retrying charmcraft install in 3s...'
     sleep 3
@@ -23,8 +23,8 @@ ci_charmcraft_launch()
     echo "$charmcraft_lxc can clone a repo"
   else
     echo "$charmcraft_lxc can't clone a repo, try setting proxy..."
-    sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add http.proxy http://squid.internal:3128'
-    sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add https.proxy http://squid.internal:3128'
+    sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add http.proxy http://egress.ps7.internal:3128'
+    sudo lxc shell $charmcraft_lxc -- bash -c 'git config --global --add https.proxy http://egress.ps7.internal:3128'
     sudo lxc shell $charmcraft_lxc -- bash -c "$clone_current"
   fi
   sudo lxc shell $charmcraft_lxc -- bash -c 'rm -rf clone-test'

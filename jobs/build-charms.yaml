@@ -4,7 +4,7 @@
     name: 'promote-charms'
     description: |
       Promotes all charms from channel -> to channel
-    node: runner-cloud
+    node: amd64 && large
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -31,7 +31,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"
-      - run-tox:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/build-charms"
           COMMAND: |
             #!/bin/bash
@@ -40,7 +40,7 @@
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            tox -e py38 -- python jobs/build-charms/main.py promote \
+            python jobs/build-charms/main.py promote \
                 --from-channel $FROM_CHANNEL \
                 --to-channel $TO_CHANNEL \
                 --charm-list $CHARM_LIST \
@@ -51,7 +51,7 @@
     name: 'promote-bundles'
     description: |
       Promotes bundles from channel -> to channel
-    node: runner-cloud
+    node: amd64 && large
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -82,7 +82,7 @@
           COMMAND: |
             #!/bin/bash
             set -eux
-            tox -e py38 -- python jobs/build-charms/main.py promote \
+            python jobs/build-charms/main.py promote \
                 --to-channel $TO_CHANNEL \
                 --from-channel $FROM_CHANNEL \
                 --charm-list $BUNDLE_LIST \
@@ -90,7 +90,7 @@
 
 - job:
     name: 'build-charms'
-    node: runner-amd64
+    node: amd64 && large
     project-type: freestyle
     scm:
       - k8s-jenkins-jenkaas
@@ -104,7 +104,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/build-charms"
-      - run-tox:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/build-charms"
           COMMAND: |-
             #!/bin/bash
@@ -137,7 +137,7 @@
             set +e
 
             EXIT_STATUS=0
-            tox -e py38 -- python jobs/build-charms/main.py build \
+            python jobs/build-charms/main.py build \
               --charm-list "$CHARM_LIST" \
               --to-channel "$TO_CHANNEL" \
               --resource-spec "$RESOURCE_SPEC" \
@@ -148,7 +148,7 @@
               $WITH_CHARM_BRANCH \
               $IS_FORCE || EXIT_STATUS=$?
 
-            tox -e py38 -- python jobs/build-charms/main.py build-bundles \
+            python jobs/build-charms/main.py build-bundles \
                 --to-channel "$TO_CHANNEL" \
                 --bundle-list "$BUNDLE_LIST" \
                 --bundle-branch "$BUNDLE_BRANCH" \
