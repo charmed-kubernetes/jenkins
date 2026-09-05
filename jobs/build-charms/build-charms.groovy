@@ -3,8 +3,6 @@ pipeline {
         label 'amd64 && large'
     }
     options {
-        ansiColor('xterm')
-        timestamps()
         disableConcurrentBuilds()
     }
     environment {

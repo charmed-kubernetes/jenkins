@@ -2,10 +2,6 @@ pipeline {
     agent {
         label 'amd64 && large'
     }
-    options {
-        ansiColor('xterm')
-        timestamps()
-    }
     environment {
         HOME                 = "/var/lib/jenkins"
         PATH                 = "/snap/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
