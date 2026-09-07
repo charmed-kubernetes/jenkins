@@ -30,7 +30,6 @@ from enum import Enum, unique
 from sh.contrib import git
 from cilib.git import default_gh_branch
 from cilib.enums import SNAP_K8S_TRACK_MAP, K8S_CHARM_SUPPORT_ARCHES
-from cilib.service.aws import Store
 from cilib.run import script
 from cilib.version import ChannelRange, Release, RISKS
 from dataclasses import dataclass, field
@@ -446,7 +445,6 @@ class BuildEnv:
 
     def __init__(self, build_type):
         """Create a BuildEnv to hold/save build metadata."""
-        self.store = Store("BuildCharms")
         self.now = datetime.utcnow()
         self.build_type = build_type
         self.db = {}
@@ -456,12 +454,10 @@ class BuildEnv:
         (self.base_dir / ".git").touch(0o664, exist_ok=True)
 
         if self.build_type == BuildType.CHARM:
-            self.db_json = Path("buildcharms.json")
             self.repos_dir = None
             self.clean_dirs = (self.layers_dir, self.interfaces_dir, self.charms_dir)
 
         elif self.build_type == BuildType.BUNDLE:
-            self.db_json = Path("buildbundles.json")
             self.repos_dir = self.tmp_dir / "repos"
             self.bundles_dir = self.tmp_dir / "bundles"
             self.default_repo_dir = self.repos_dir / "bundles-kubernetes"
@@ -469,13 +465,6 @@ class BuildEnv:
 
         if not self.db.get("build_datetime", None):
             self.db["build_datetime"] = self.now.strftime("%Y/%m/%d")
-
-        # Reload data from current day
-        response = self.store.get_item(
-            Key={"build_datetime": self.db["build_datetime"]}
-        )
-        if response and "Item" in response:
-            self.db = response["Item"]
 
     def clean(self):
         for each in self.clean_dirs:
@@ -549,11 +538,9 @@ class BuildEnv:
         click.echo(f"[BuildEnv] {msg}", **kwds)
 
     def save(self):
-        """Store build metadata into stateful db."""
+        """Log build metadata."""
         self.echo("Saving build")
         self.echo(dict(self.db))
-        self.db_json.write_text(json.dumps(dict(self.db)))
-        self.store.put_item(Item=dict(self.db))
 
     @property
     def track(self):

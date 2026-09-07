@@ -90,13 +90,6 @@ def test_environment(tmpdir):
 
 
 @pytest.fixture(autouse=True)
-def cilib_store(builder_local):
-    """Create a fixture defining mock for cilib Store."""
-    with patch("builder_local.Store") as store:
-        yield store
-
-
-@pytest.fixture(autouse=True)
 def github_repository(builder_local):
     """Create a fixture defining mock for github api."""
     with patch.object(builder_local, "Repository") as repo:
