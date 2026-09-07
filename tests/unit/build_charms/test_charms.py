@@ -7,7 +7,7 @@ from zipfile import ZipFile
 import yaml
 
 import pytest
-from unittest.mock import patch, call, Mock, MagicMock
+from unittest.mock import patch, call, Mock, MagicMock, PropertyMock
 from functools import partial
 
 from click.testing import CliRunner
@@ -271,7 +271,7 @@ def test_build_entity_charm_build(
     assert len(charm_entity.artifacts) == 1
     artifact = charm_entity.artifacts[0]
     assert artifact.arch.value == "all"
-    assert artifact.arch_docker == "amd64"
+    assert artifact.arch_oci == "amd64"
     assert artifact.charm_or_bundle == K8S_CI_CHARM / "k8s-ci-charm.charm"
     charm_cmd.build.assert_called_once_with(
         "-r",
@@ -416,6 +416,41 @@ def test_build_entity_assemble_resources(
     )
     charm_cmd.assert_not_called()
 
+
+
+@patch("builder_local.Skopeo")
+def test_assemble_resources_upstream_source_uses_skopeo_digest(
+    skopeo, charm_environment, charmcraft_cmd, builder_local
+):
+    """OCI upstream sources upload their remote digest without a local pull."""
+    charms = charm_environment.job_list
+    charm_name, charm_opts = next(iter(charms[0].items()))
+    charm_entity = builder_local.BuildEntity(charm_environment, charm_name, charm_opts)
+    charm_entity._read_metadata_resources = Mock(
+        return_value={
+            "test-image": {
+                "type": "oci-image",
+                "upstream-source": "example.com/foo:1.0",
+            }
+        }
+    )
+    artifact = builder_local.Artifact(
+        K8S_CI_CHARM, arch=builder_local.Arch.AMD64
+    )
+    skopeo.return_value.digest.return_value = "sha256:deadbeef"
+
+    with patch.object(
+        builder_local.BuildEntity,
+        "_resource_spec",
+        new_callable=PropertyMock,
+        return_value={"test-image": "unused"},
+    ):
+        charm_entity.assemble_resources(artifact)
+
+    skopeo.return_value.digest.assert_called_once_with("example.com/foo:1.0", "amd64")
+    charmcraft_cmd.assert_called_once_with(
+        "upload-resource", "k8s-ci-charm", "test-image", image="sha256:deadbeef"
+    )
 
 @pytest.fixture
 def ensure_track(builder_local):

@@ -156,11 +156,21 @@ class _WrappedCmd:
         return getattr(self._command, name)
 
 
-class Docker(_WrappedCmd):
-    """Creates a sh command for docker where the output is tee'd."""
+class Skopeo(_WrappedCmd):
+    """Creates a sh command for skopeo where the output is tee'd."""
 
     def __init__(self, entity):
-        super().__init__(entity, "docker")
+        super().__init__(entity, "skopeo")
+
+    def digest(self, image: str, arch: str) -> str:
+        ref = image if "://" in image else f"docker://{image}"
+        out = self.inspect(
+            ref,
+            override_os="linux",
+            override_arch=arch,
+            format="{{.Digest}}",
+        )
+        return out.strip()
 
 
 class Charm(_WrappedCmd):
@@ -710,8 +720,8 @@ class Artifact:
         return cls(charm_file, Arch.ALL, CharmSeries.ALL)
 
     @property
-    def arch_docker(self) -> str:
-        """manage docker platforms with slightly different identifiers."""
+    def arch_oci(self) -> str:
+        """Return this artifact's architecture in OCI platform format."""
         if self.arch == Arch.PPC64EL:
             return "ppc64le"
         elif self.arch in (Arch.ALL, Arch.UNKNOWN):
@@ -1078,14 +1088,13 @@ class BuildEntity:
                 resource = CharmResource(name, rev=revs[0]["Revision"])
             elif details["type"] == "oci-image":
                 if upstream_source := details.get("upstream-source"):
-                    # Pull any `upstream-image` annotated resources.
                     self.echo(
-                        f"Pulling {upstream_source} for {artifact.series}/{artifact.arch}..."
+                        f"Resolving digest for {upstream_source} "
+                        f"for {artifact.series}/{artifact.arch}..."
                     )
-                    docker = Docker(self)
-                    docker.pull(upstream_source, platform=artifact.arch_docker)
-                    # Use the local image-id from `docker images <upstream-source> -q`
-                    resource_fmt = docker.images(upstream_source, "-q").strip()
+                    resource_fmt = Skopeo(self).digest(
+                        upstream_source, artifact.arch_oci
+                    )
                 resource = CharmResource(name, ResourceKind.IMAGE, resource_fmt)
             elif details["type"] == "file":
                 resource = CharmResource(
