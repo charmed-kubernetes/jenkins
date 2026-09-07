@@ -1,5 +1,6 @@
 """Tests to verify jobs/build-charms/charms."""
 
+import json
 import os
 import shutil
 from pathlib import Path
@@ -450,6 +451,44 @@ def test_assemble_resources_upstream_source_uses_skopeo_digest(
     skopeo.return_value.digest.assert_called_once_with("example.com/foo:1.0", "amd64")
     charmcraft_cmd.assert_called_once_with(
         "upload-resource", "k8s-ci-charm", "test-image", image="sha256:deadbeef"
+    )
+
+
+def test_skopeo_digest_selects_matching_platform_manifest(builder_local):
+    """A multi-architecture image resolves to its requested child manifest."""
+    skopeo = builder_local.Skopeo.__new__(builder_local.Skopeo)
+    skopeo.inspect = Mock(
+        return_value=json.dumps(
+            {
+                "manifests": [
+                    {
+                        "digest": "sha256:amd64",
+                        "platform": {"os": "linux", "architecture": "amd64"},
+                    },
+                    {
+                        "digest": "sha256:arm64",
+                        "platform": {"os": "linux", "architecture": "arm64"},
+                    },
+                    {
+                        "digest": "sha256:armv7",
+                        "platform": {
+                            "os": "linux",
+                            "architecture": "arm",
+                            "variant": "v7",
+                        },
+                    },
+                ]
+            }
+        )
+    )
+
+    assert skopeo.digest("example.com/foo:1.0", "arm64") == "sha256:arm64"
+    assert skopeo.digest("example.com/foo:1.0", "armhf") == "sha256:armv7"
+    skopeo.inspect.assert_has_calls(
+        [
+            call("docker://example.com/foo:1.0", raw=True, _out=None),
+            call("docker://example.com/foo:1.0", raw=True, _out=None),
+        ]
     )
 
 @pytest.fixture

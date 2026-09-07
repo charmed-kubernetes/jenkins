@@ -163,14 +163,23 @@ class Skopeo(_WrappedCmd):
         super().__init__(entity, "skopeo")
 
     def digest(self, image: str, arch: str) -> str:
+        """Return the manifest digest for an image's Linux platform."""
         ref = image if "://" in image else f"docker://{image}"
-        out = self.inspect(
-            ref,
-            override_os="linux",
-            override_arch=arch,
-            format="{{.Digest}}",
-        )
-        return out.strip()
+        manifest = json.loads(self.inspect(ref, raw=True, _out=None))
+        manifests = manifest.get("manifests")
+        if not manifests:
+            return self.inspect(ref, format="{{.Digest}}", _out=None).strip()
+
+        platform_arch, variant = ("arm", "v7") if arch == "armhf" else (arch, None)
+        for descriptor in manifests:
+            platform = descriptor.get("platform", {})
+            if (
+                platform.get("os") == "linux"
+                and platform.get("architecture") == platform_arch
+                and (variant is None or platform.get("variant") == variant)
+            ):
+                return descriptor["digest"]
+        raise BuildException(f"No Linux/{arch} manifest found for {image}")
 
 
 class Charm(_WrappedCmd):
