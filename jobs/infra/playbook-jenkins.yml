@@ -147,7 +147,7 @@
         - "lxd"
         - "charm --classic --channel 3.x/stable"
         - "charmcraft --classic --channel 2.x/stable"
-        # - "go --classic --stable"
+        - "go --classic --stable"
         # - "google-cloud-cli --classic --channel latest/stable"
         # - "juju --channel=3/stable"
         # - "juju-crashdump --classic --edge"
