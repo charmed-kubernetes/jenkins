@@ -31,7 +31,6 @@
         apt-get update
         apt-get install -qyf \
           docker.io \
-          skopeo \
           make \
           python3-venv \
           tox

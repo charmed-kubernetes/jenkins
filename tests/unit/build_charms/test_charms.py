@@ -1,6 +1,5 @@
 """Tests to verify jobs/build-charms/charms."""
 
-import json
 import os
 import shutil
 from pathlib import Path
@@ -272,7 +271,7 @@ def test_build_entity_charm_build(
     assert len(charm_entity.artifacts) == 1
     artifact = charm_entity.artifacts[0]
     assert artifact.arch.value == "all"
-    assert artifact.arch_oci == "amd64"
+    assert artifact.arch_docker == "amd64"
     assert artifact.charm_or_bundle == K8S_CI_CHARM / "k8s-ci-charm.charm"
     charm_cmd.build.assert_called_once_with(
         "-r",
@@ -419,11 +418,11 @@ def test_build_entity_assemble_resources(
 
 
 
-@patch("builder_local.Skopeo")
-def test_assemble_resources_upstream_source_uses_skopeo_digest(
-    skopeo, charm_environment, charmcraft_cmd, builder_local
+@patch("builder_local.Docker")
+def test_assemble_resources_upstream_source_uses_local_docker_image(
+    docker, charm_environment, charmcraft_cmd, builder_local
 ):
-    """OCI upstream sources upload their remote digest without a local pull."""
+    """OCI upstream sources upload the selected local Docker image."""
     charms = charm_environment.job_list
     charm_name, charm_opts = next(iter(charms[0].items()))
     charm_entity = builder_local.BuildEntity(charm_environment, charm_name, charm_opts)
@@ -438,7 +437,7 @@ def test_assemble_resources_upstream_source_uses_skopeo_digest(
     artifact = builder_local.Artifact(
         K8S_CI_CHARM, arch=builder_local.Arch.AMD64
     )
-    skopeo.return_value.digest.return_value = "sha256:deadbeef"
+    docker.return_value.images.return_value = "sha256:deadbeef\n"
 
     with patch.object(
         builder_local.BuildEntity,
@@ -448,47 +447,13 @@ def test_assemble_resources_upstream_source_uses_skopeo_digest(
     ):
         charm_entity.assemble_resources(artifact)
 
-    skopeo.return_value.digest.assert_called_once_with("example.com/foo:1.0", "amd64")
+    docker.assert_called_once_with(charm_entity)
+    docker.return_value.pull.assert_called_once_with(
+        "example.com/foo:1.0", platform="amd64"
+    )
+    docker.return_value.images.assert_called_once_with("example.com/foo:1.0", "-q")
     charmcraft_cmd.assert_called_once_with(
         "upload-resource", "k8s-ci-charm", "test-image", image="sha256:deadbeef"
-    )
-
-
-def test_skopeo_digest_selects_matching_platform_manifest(builder_local):
-    """A multi-architecture image resolves to its requested child manifest."""
-    skopeo = builder_local.Skopeo.__new__(builder_local.Skopeo)
-    skopeo.inspect = Mock(
-        return_value=json.dumps(
-            {
-                "manifests": [
-                    {
-                        "digest": "sha256:amd64",
-                        "platform": {"os": "linux", "architecture": "amd64"},
-                    },
-                    {
-                        "digest": "sha256:arm64",
-                        "platform": {"os": "linux", "architecture": "arm64"},
-                    },
-                    {
-                        "digest": "sha256:armv7",
-                        "platform": {
-                            "os": "linux",
-                            "architecture": "arm",
-                            "variant": "v7",
-                        },
-                    },
-                ]
-            }
-        )
-    )
-
-    assert skopeo.digest("example.com/foo:1.0", "arm64") == "sha256:arm64"
-    assert skopeo.digest("example.com/foo:1.0", "armhf") == "sha256:armv7"
-    skopeo.inspect.assert_has_calls(
-        [
-            call("docker://example.com/foo:1.0", raw=True, _out=None),
-            call("docker://example.com/foo:1.0", raw=True, _out=None),
-        ]
     )
 
 @pytest.fixture

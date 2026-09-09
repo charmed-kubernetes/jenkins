@@ -156,30 +156,11 @@ class _WrappedCmd:
         return getattr(self._command, name)
 
 
-class Skopeo(_WrappedCmd):
-    """Creates a sh command for skopeo where the output is tee'd."""
+class Docker(_WrappedCmd):
+    """Creates a sh command for docker where the output is tee'd."""
 
     def __init__(self, entity):
-        super().__init__(entity, "skopeo")
-
-    def digest(self, image: str, arch: str) -> str:
-        """Return the manifest digest for an image's Linux platform."""
-        ref = image if "://" in image else f"docker://{image}"
-        manifest = json.loads(self.inspect(ref, raw=True, _out=None))
-        manifests = manifest.get("manifests")
-        if not manifests:
-            return self.inspect(ref, format="{{.Digest}}", _out=None).strip()
-
-        platform_arch, variant = ("arm", "v7") if arch == "armhf" else (arch, None)
-        for descriptor in manifests:
-            platform = descriptor.get("platform", {})
-            if (
-                platform.get("os") == "linux"
-                and platform.get("architecture") == platform_arch
-                and (variant is None or platform.get("variant") == variant)
-            ):
-                return descriptor["digest"]
-        raise BuildException(f"No Linux/{arch} manifest found for {image}")
+        super().__init__(entity, "docker")
 
 
 class Charm(_WrappedCmd):
@@ -729,8 +710,8 @@ class Artifact:
         return cls(charm_file, Arch.ALL, CharmSeries.ALL)
 
     @property
-    def arch_oci(self) -> str:
-        """Return this artifact's architecture in OCI platform format."""
+    def arch_docker(self) -> str:
+        """Manage Docker platforms with slightly different identifiers."""
         if self.arch == Arch.PPC64EL:
             return "ppc64le"
         elif self.arch in (Arch.ALL, Arch.UNKNOWN):
@@ -1098,12 +1079,12 @@ class BuildEntity:
             elif details["type"] == "oci-image":
                 if upstream_source := details.get("upstream-source"):
                     self.echo(
-                        f"Resolving digest for {upstream_source} "
+                        f"Pulling {upstream_source} "
                         f"for {artifact.series}/{artifact.arch}..."
                     )
-                    resource_fmt = Skopeo(self).digest(
-                        upstream_source, artifact.arch_oci
-                    )
+                    docker = Docker(self)
+                    docker.pull(upstream_source, platform=artifact.arch_docker)
+                    resource_fmt = docker.images(upstream_source, "-q").strip()
                 resource = CharmResource(name, ResourceKind.IMAGE, resource_fmt)
             elif details["type"] == "file":
                 resource = CharmResource(
