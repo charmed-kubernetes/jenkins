@@ -1,3 +1,8 @@
 {
-    "iptables": false
+    "iptables": false,
+    "proxies": {
+        "http-proxy": "http://egress.ps7.internal:3128",
+        "https-proxy": "http://egress.ps7.internal:3128",
+        "no-proxy": "localhost,127.0.0.1"
+    }
 }
