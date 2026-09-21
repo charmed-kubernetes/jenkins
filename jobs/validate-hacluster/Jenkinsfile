@@ -3,58 +3,99 @@ def mnist_image = String.format("mnist-test-%s", UUID.randomUUID().toString().sp
 
 pipeline {
     agent {
-        label 'runner-amd64'
-    }
-    /* XXX: Global $PATH setting doesn't translate properly in pipelines
-     https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
-     */
-    environment {
-        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        label 'amd64 && large'
     }
     options {
-        ansiColor('xterm')
-        timestamps()
+        disableConcurrentBuilds()
+    }
+    environment {
+        HOME             = "/var/lib/jenkins"
+        PATH             = "/snap/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        LC_ALL           = "C.UTF-8"
+        LANG             = "C.UTF-8"
+        HTTP_PROXY       = "http://egress.ps7.internal:3128"
+        HTTPS_PROXY      = "http://egress.ps7.internal:3128"
+        http_proxy       = "http://egress.ps7.internal:3128"
+        https_proxy      = "http://egress.ps7.internal:3128"
+        NO_PROXY         = "localhost,127.0.0.1"
+        no_proxy         = "localhost,127.0.0.1"
+        SCAPESTACKCREDS  = credentials('scapestack_creds')
+        SCAPESTACKCLOUD  = credentials('scapestack_cloud')
     }
     stages {
+        stage('Prepare Python') {
+            steps {
+                sh '''#!/bin/bash
+                set -eux
+                python3 -m venv venv
+                venv/bin/python -m pip install tox
+                venv/bin/tox --recreate -e py --notest
+                '''
+            }
+        }
         stage('Deploy: K8s') {
             options {
                 timeout(time: 2, unit: 'HOURS')
             }
             steps {
-                sh "juju add-cloud --client scapestack /var/lib/jenkins/.scapestack/scapestack-cloud || true"
-                sh "juju add-credential --client scapestack -f /var/lib/jenkins/.scapestack/scapestack-creds || true"
-                sh "juju bootstrap scapestack ${params.controller}"
-                sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-http-proxy=http://squid.internal:3128"
-                sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-https-proxy=http://squid.internal:3128"
-                sh "juju model-defaults -c ${params.controller} ${params.cloud} juju-no-proxy=127.0.0.1,localhost,::1,10.96.0.0/17"
+                withEnv([
+                    "CONTROLLER=${params.controller}",
+                    "MODEL=${juju_model}",
+                    "CLOUD=${params.cloud}",
+                    "BUNDLE=${params.bundle}",
+                    "BUNDLE_CHANNEL=${params.bundle_channel}",
+                    "OVERLAY=${params.overlay}",
+                ]) {
+                    sh '''#!/bin/bash
+                    set -eux
+                    juju add-cloud --client scapestack "$SCAPESTACKCLOUD" || true
+                    juju add-credential --client scapestack -f "$SCAPESTACKCREDS" || true
+                    juju bootstrap scapestack "$CONTROLLER"
+                    juju model-defaults -c "$CONTROLLER" "$CLOUD" juju-http-proxy="$HTTP_PROXY"
+                    juju model-defaults -c "$CONTROLLER" "$CLOUD" juju-https-proxy="$HTTPS_PROXY"
+                    juju model-defaults -c "$CONTROLLER" "$CLOUD" juju-no-proxy="$NO_PROXY,::1,10.96.0.0/17"
 
-                script {
-                    def bundle_channel = params.bundle_channel ? "--channel ${params.bundle_channel}" : ""
-                    def version_overlay = params.overlay ? "--overlay ${params.overlay}" : ""
-                    sh "juju add-model -c ${params.controller} ${juju_model} ${params.cloud}"
-                    sh "charm pull ${params.bundle} ${bundle_channel} ./bundle-to-test"
-                    sh "juju deploy -m ${params.controller}:${juju_model} ./bundle-to-test/bundle.yaml ${version_overlay}"
-                    sh "juju-wait -e ${params.controller}:${juju_model} -w -r3 -t14400"
+                    bundle_channel=""
+                    [[ -n "$BUNDLE_CHANNEL" ]] && bundle_channel="--channel $BUNDLE_CHANNEL"
+                    version_overlay=""
+                    [[ -n "$OVERLAY" ]] && version_overlay="--overlay $OVERLAY"
+                    juju add-model -c "$CONTROLLER" "$MODEL" "$CLOUD"
+                    charm pull "$BUNDLE" $bundle_channel ./bundle-to-test
+                    juju deploy -m "$CONTROLLER:$MODEL" ./bundle-to-test/bundle.yaml $version_overlay
+                    juju-wait -e "$CONTROLLER:$MODEL" -w -r3 -t14400
+                    '''
                 }
             }
         }
-
         stage('Validate') {
             options {
                 timeout(time: 1, unit: 'HOURS')
             }
-
             steps {
-                dir('jobs') {
-                    sh "CONTROLLER=${params.controller} MODEL=${juju_model} TEST_IPS='${params.test_ips}' /var/lib/jenkins/venvs/ci/bin/pytest --junit-xml=validate.xml integration/test_hacluster.py"
+                withEnv([
+                    "CONTROLLER=${params.controller}",
+                    "MODEL=${juju_model}",
+                    "TEST_IPS=${params.test_ips}",
+                ]) {
+                    sh '''#!/bin/bash
+                    set -eux
+                    cd jobs
+                    CONTROLLER="$CONTROLLER" MODEL="$MODEL" TEST_IPS="$TEST_IPS" \
+                        "$WORKSPACE/.tox/py/bin/pytest" --junit-xml=validate.xml integration/test_hacluster.py
+                    '''
                 }
             }
         }
     }
     post {
         cleanup {
-            sh "juju destroy-controller --destroy-all-models --destroy-storage -y ${params.controller} || true"
-            sh "juju remove-cloud scapestack"
+            withEnv(["CONTROLLER=${params.controller}"]) {
+                sh '''#!/bin/bash
+                set -eux
+                juju destroy-controller --destroy-all-models --destroy-storage -y "$CONTROLLER" || true
+                juju remove-cloud scapestack || true
+                '''
+            }
         }
     }
 }

@@ -3,7 +3,7 @@
 # BASE ------------------------------------------------------------------------------ #
 - job-template:
     name: 'validate-ck-{charm-channel}-{series}'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Validates CK {charm-channel} for n-2 releases.
     project-type: matrix
@@ -27,7 +27,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-cloud
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: juju_channel
@@ -88,7 +88,7 @@
 
 - job:
     name: 'validate-ck-cloud'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Validates CK edge for n-2 releases on AWS.
     project-type: matrix
@@ -113,7 +113,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-cloud
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -148,7 +148,7 @@
 # UPGRADE --------------------------------------------------------------------------- #
 - job:
     name: 'validate-ck-upgrade'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Validates CK upgrades from charms-stable charm to edge
       Snap upgrade from previous 2 stable to current stable
@@ -174,7 +174,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-cloud
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -201,7 +201,7 @@
 
 - job:
     name: 'validate-ck-snapd-upgrade'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Validates latest CK stable release using beta core/snapd snaps.
     project-type: freestyle
@@ -231,7 +231,7 @@
 
 - job:
     name: 'validate-ck-series-upgrade'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Validates latest CK edge release with machine series upgrades.
     project-type: freestyle
@@ -262,7 +262,7 @@
 # ADDONS ---------------------------------------------------------------------------- #
 - job:
     name: 'validate-ck-localhost'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK edge for n-1 releases on localhost.
     project-type: matrix
@@ -286,7 +286,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -302,7 +302,7 @@
 
 - job:
     name: 'validate-ck-s390x'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK edge for n-1 releases on s390x localhost.
     disabled: true
@@ -328,7 +328,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -346,7 +346,7 @@
     name: 'validate-ck-integrator'
     description: |
       Validates CK edge with cloud integrators on n-1 releases.
-    node: runner-validate
+    node: 'amd64 && large'
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -369,7 +369,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -395,7 +395,7 @@
     name: 'validate-ck-calico'
     description: |
       Validates CK edge with calico for n-1 releases.
-    node: runner-validate
+    node: 'amd64 && large'
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -421,7 +421,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -446,7 +446,7 @@
     name: 'validate-ck-tigera-secure-ee'
     description: |
       Validates CK edge with tigera for n-1 releases.
-    node: runner-validate
+    node: 'amd64 && large'
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -480,7 +480,7 @@
 
 - job:
     name: 'validate-ck-vault'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK edge with vault for n-1 releases.
     project-type: matrix
@@ -505,7 +505,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -521,7 +521,7 @@
 
 - job:
     name: 'validate-ck-nvidia'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK edge with NVidia for n-1 releases.
     project-type: matrix
@@ -545,7 +545,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -563,7 +563,7 @@
     name: 'validate-ck-aws-iam'
     description: |
       Validates CK edge with AWS IAM for n-1 releases.
-    node: runner-validate
+    node: 'amd64 && large'
     project-type: matrix
     scm:
       - k8s-jenkins-jenkaas
@@ -585,7 +585,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -601,7 +601,7 @@
 
 - job:
     name: 'validate-ck-ovn-multus'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK edge with OVN and Multus for n-1 releases.
     project-type: matrix
@@ -626,7 +626,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -642,7 +642,7 @@
 
 - job:
     name: 'validate-ck-sriov'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK edge with SR-IOV for n-1 releases.
     project-type: matrix
@@ -667,7 +667,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -683,7 +683,7 @@
 
 - job:
     name: 'validate-ck-cilium'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK edge with Cilium for n-1 releases.
     project-type: matrix
@@ -709,7 +709,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -719,7 +719,7 @@
 
 - job:
     name: 'validate-ck-autoscaler'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK edge with Kubernetes autoscaler for n-1 releases.
     project-type: matrix
@@ -757,7 +757,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"

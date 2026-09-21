@@ -5,7 +5,7 @@
 
 - job:
     name: 'validate-charm-bugfix'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates candidate charms with stable snaps in order to release a
       bug/hotfix to stable.
@@ -32,7 +32,7 @@
           type: slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: series
@@ -47,7 +47,7 @@
 
 - job:
     name: 'validate-charm-bugfix-upgrade'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK upgrades from current stable, and previous 2 stables to latest candidate
     project-type: matrix
@@ -77,7 +77,7 @@
           type: slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           type: user-defined
           name: prior_snap_offset
@@ -111,7 +111,7 @@
 
 - job:
     name: 'validate-charm-release-upgrade'
-    node: runner-validate
+    node: 'amd64 && large'
     description: |
       Validates CK upgrades from latest/stable charms to latest/beta charms.
       Also validates CK upgrades from previous 2 stable snaps to $snap_version.
@@ -138,7 +138,7 @@
           type: slave  # wokeignore:rule=slave
           name: node
           values:
-            - runner-validate
+            - 'amd64 && large'
       - axis:
           # each value represents the snap channel before the upgrade
           type: user-defined
