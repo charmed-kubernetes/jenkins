@@ -123,6 +123,11 @@ class SnapService(DebugMixin):
             max_stable_rev = self.snap_model.latest_revision(
                 track=f"latest/stable", arch=arch
             )
+            if max_track_rev is None:
+                self.log(
+                    f"No revision in {enums.K8S_STABLE_VERSION}/stable; skipping promotion."
+                )
+                continue
             if max_stable_rev != max_track_rev:
                 self.log(
                     f"Track revisions do not match {max_track_rev} != {max_stable_rev}, syncing stable snaps to latest track"
@@ -251,9 +256,11 @@ class SnapService(DebugMixin):
     # private
     @sham
     def _release(self, max_track_rev, track):
-        """Runs snapcraft release"""
+        """Promote the stable Kubernetes track with Snapcraft 7."""
+        source_track = f"{enums.K8S_STABLE_VERSION}/stable"
         ret = cmd_ok(
-            f"snapcraft release {self.snap_model.name} {max_track_rev} {track}",
+            f"snapcraft promote --yes --from-channel {source_track} "
+            f"--to-channel {track} {self.snap_model.name}",
             echo=self.log,
         )
         if not ret.ok:
@@ -296,10 +303,12 @@ class SnapService(DebugMixin):
         snap_recipe_password = os.environ.get("K8STEAMCI_PSW")
 
         _client = lp.Client(stage="production")
+        self.log("> Authenticating with Launchpad for recipe creation")
         _client.login()
-
+        self.log("> Creating or updating the Launchpad recipe")
         snap_recipe = _client.create_or_update_snap_recipe(**params)
         caveat_id = snap_recipe.beginAuthorization()
+        self.log("> Authorizing the Launchpad recipe")
         cip = idm.CanonicalIdentityProvider(
             email=snap_recipe_email, password=snap_recipe_password
         )

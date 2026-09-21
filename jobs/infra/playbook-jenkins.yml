@@ -129,7 +129,7 @@
         - jenkins
         - adhoc
     - name: upgrade snapcraft
-      command: "snap refresh snapcraft --channel 6.x/stable"
+      command: "snap refresh snapcraft --channel 7.x/stable"
       ignore_errors: yes
       tags:
         - jenkins

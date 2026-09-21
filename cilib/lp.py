@@ -150,5 +150,6 @@ class Client:
                 Exception,
                 PreconditionFailed,
             ),
+            logger=log,
         )
         return snap
