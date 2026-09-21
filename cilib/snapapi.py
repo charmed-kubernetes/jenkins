@@ -14,11 +14,23 @@ class SnapStore:
 
     @cached_property
     def channel_map(self):
-        """Gets the channel map for a snap"""
-        output = capture(
+        """Gets the channel map for a snap."""
+        result = capture(
             ["surl_cli.py", "-a", self.creds, "-X", "GET", f"{self.api}/channel-map"]
-        ).stdout.decode()
-        return json.loads(output)
+        )
+        output = result.stdout.decode()
+        if not result.ok:
+            error = result.stderr.decode(errors="replace").strip()
+            raise RuntimeError(
+                f"Failed to retrieve the channel map for {self.snap}: "
+                f"surl_cli.py exited {result.returncode}: {error or 'no error output'}"
+            )
+        try:
+            return json.loads(output)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                f"Invalid channel map response for {self.snap}: {output!r}"
+            ) from exc
 
     def max_rev(self, arch, track):
         """Returns max revision for snap by arch/track"""

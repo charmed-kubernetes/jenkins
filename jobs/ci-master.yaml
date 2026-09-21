@@ -339,6 +339,12 @@
           export TMPDIR="/tmp/$BUILD_TAG"
           export PATH=venv/bin:$PATH
           export PYTHONPATH=$WORKSPACE:"${{PYTHONPATH:-}}"
+          export HTTP_PROXY=http://egress.ps7.internal:3128
+          export HTTPS_PROXY=http://egress.ps7.internal:3128
+          export http_proxy=http://egress.ps7.internal:3128
+          export https_proxy=http://egress.ps7.internal:3128
+          export NO_PROXY=localhost,127.0.0.1
+          export no_proxy=localhost,127.0.0.1
 
           rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
 

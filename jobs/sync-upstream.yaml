@@ -2,7 +2,7 @@
 
 - job:
     name: 'sync-snaps'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Sync all release tags from upstream.
 
@@ -49,15 +49,21 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-tox:
+      - shell: |-
+          cat >> "$WORKSPACE/.env" <<'EOF'
+          export GIT_SSH_COMMAND='ssh -i "$CDKBOTSSHCREDS" -o StrictHostKeyChecking=no -o ProxyCommand="nc -X connect -x egress.ps7.internal:3128 %h %p"'
+          EOF
+      - run-venv:
           COMMAND: |
             IS_DRY_RUN=""
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
+            set +x
             export SNAPCRAFT_STORE_CREDENTIALS="$(< "$SNAPCRAFTCREDS")"
-            cp /var/lib/jenkins/snap/surl/common/production-creds.surl production-creds.surl
-            tox -e py38 -- python jobs/sync-upstream/sync.py snaps $IS_DRY_RUN
+            set -x
+            cp "$SURLCREDS" production-creds.surl
+            python jobs/sync-upstream/sync.py snaps $IS_DRY_RUN
 
 - job:
     name: 'sync-debs'
