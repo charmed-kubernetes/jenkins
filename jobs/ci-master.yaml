@@ -384,6 +384,7 @@
 
           {COMMAND}
           EOF
+          chmod a+r $WORKSPACE/$_job_sh
           ci_lxc_job_run $_lxc -- bash $LXC_WORKSPACE/$_job_sh
 
 - builder:

@@ -5,57 +5,39 @@
 
 - job:
     name: 'validate-charm-bugfix'
-    node: 'amd64 && large'
     description: |
       Validates candidate charms with stable snaps in order to release a
       bug/hotfix to stable.
-    project-type: matrix
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release/validate-charms.groovy
     properties:
       - build-discarder:
           num-to-keep: 10
     parameters:
       - snap-stable
-      - lxc-runner-params
       - juju-lts
       - string:
           name: charm_channel
           description: "The charm channel to validate"
           default: "candidate"
           trim: true
-    axes:
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/release"
-      - run-lxc:
-          COMMAND: |
-            bash jobs/release/bugfix-spec $snap_version $series $charm_channel
 
 - job:
     name: 'validate-charm-bugfix-upgrade'
-    node: 'amd64 && large'
     description: |
       Validates CK upgrades from current stable, and previous 2 stables to latest candidate
-    project-type: matrix
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release/validate-charms.groovy
     properties:
       - build-discarder:
           num-to-keep: 10
     parameters:
-      - lxc-runner-params
       - juju-lts
       - string:
           name: charm_channel
@@ -67,83 +49,25 @@
           description: "The cloud to use in validation"
           default: "vsphere/Boston"
           trim: true
-    axes:
-      - axis:
-          type: user-defined
-          name: prior_snap_offset
-          description: |
-            Stable snap channel offset behind the charm candidate channel.
-
-            for example)
-            0 with charm_channel is 1.34/candidate, then prior_snap_version is 1.34/stable
-            1 with charm_channel is 1.34/candidate, then prior_snap_version is 1.33/stable
-          values:
-            - 0
-            - 1
-            - 2
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
-            - noble
-      - axis:
-          type: user-defined
-          name: arch
-          values:
-            - amd64
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/release"
-      - run-lxc:
-          COMMAND: |
-           bash jobs/release/bugfix-upgrade-spec $prior_snap_offset $series $charm_channel $cloud
 
 - job:
     name: 'validate-charm-release-upgrade'
-    node: 'amd64 && large'
     description: |
       Validates CK upgrades from latest/stable charms to latest/beta charms.
       Also validates CK upgrades from previous 2 stable snaps to $snap_version.
-    project-type: matrix
-    scm:
-      - k8s-jenkins-jenkaas
-    wrappers:
-      - default-job-wrapper
-      - ci-creds
+    project-type: pipeline
+    pipeline-scm:
+      scm:
+        - k8s-jenkins-jenkaas
+      script-path: jobs/release/validate-charms.groovy
     properties:
       - build-discarder:
           num-to-keep: 10
     parameters:
       - snap-beta  # this value represents the snap channel after the upgrade
-      - lxc-runner-params
       - juju-lts
       - string:
           name: cloud
           description: "The cloud to use in validation"
           default: "vsphere/Boston"
           trim: true
-    axes:
-      - axis:
-          # each value represents the snap channel before the upgrade
-          type: user-defined
-          name: deploy_snap
-          values:
-            - 1.34/stable
-            - 1.33/stable
-      - axis:
-          type: user-defined
-          name: series
-          values:
-            - jammy
-      - axis:
-          type: user-defined
-          name: arch
-          values:
-            - amd64
-    builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/release"
-      - run-lxc:
-          COMMAND: |
-            bash jobs/release/release-upgrade-spec $snap_version $deploy_snap $series $cloud

@@ -54,12 +54,12 @@ CANDIDATE_CHANNEL=${3}
 
 # replace 1.xx/(edge or candidate, or beta) with 1.xx/stable
 JUJU_DEPLOY_CHANNEL=$(echo "$CANDIDATE_CHANNEL" | sed -E 's#/.*#/stable#')
-PRIOR_TRACK=$(python3 $WORKSPACE/jobs/release/prior_track.py $CANDIDATE_CHANNEL $PRIOR_SNAP_OFFSET)
+PRIOR_TRACK=$(python3 "$WORKSPACE/jobs/release/prior_track.py" "$CANDIDATE_CHANNEL" "$PRIOR_SNAP_OFFSET")
 SNAP_VERSION="$PRIOR_TRACK/stable"
 
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes
 JUJU_CLOUD=${4}
-JUJU_CONTROLLER=validate-$(identifier::short)
+JUJU_CONTROLLER=${JUJU_CONTROLLER:-validate-$(identifier::short)}
 JUJU_MODEL=validate-bugfix-upgrade
 JUJU_VERSION=$(juju --version | cut -f-2 -d.)
 ARCH=amd64

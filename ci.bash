@@ -229,6 +229,8 @@ function ci::run
 
     local log_name_custom=$(echo "$JOB_NAME_CUSTOM" | tr '/' '-')
     {
+        local result="False"
+
         kv::set "build_starttime" "$(timestamp)"
 
         juju::bootstrap::before
@@ -248,7 +250,21 @@ function ci::run
 
         test::report "$result"
 
+        case "$result" in
+            True) exit 0 ;;
+            Timeout) exit 124 ;;
+            *) exit 1 ;;
+        esac
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
+    local pipeline_status=("${PIPESTATUS[@]}")
+
+    if (( pipeline_status[0] != 0 )); then
+        return "${pipeline_status[0]}"
+    fi
+    if (( pipeline_status[1] != 0 )); then
+        return "${pipeline_status[1]}"
+    fi
+    return "${pipeline_status[2]}"
 }
 
 # injects random sleep
@@ -286,5 +302,14 @@ function ci::cleanup
         ci::cleanup::after || true
     } 2>&1 | sed -u -e "s/^/[$log_name_custom] /" | tee -a "ci.log"
 }
-trap ci::cleanup EXIT
+
+function ci::on_exit
+{
+    local status=$?
+    trap - EXIT
+    ci::cleanup || true
+    exit "$status"
+}
+
+trap ci::on_exit EXIT
 
