@@ -29,11 +29,6 @@
           trim: true
     axes:
       - axis:
-          type: slave
-          name: node
-          values:
-            - 'amd64 && large'
-      - axis:
           type: user-defined
           name: series
           values:
@@ -73,11 +68,6 @@
           default: "vsphere/Boston"
           trim: true
     axes:
-      - axis:
-          type: slave
-          name: node
-          values:
-            - 'amd64 && large'
       - axis:
           type: user-defined
           name: prior_snap_offset
@@ -134,11 +124,6 @@
           default: "vsphere/Boston"
           trim: true
     axes:
-      - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
       - axis:
           # each value represents the snap channel before the upgrade
           type: user-defined

@@ -75,7 +75,7 @@
           name: LXC_PUSH_LIST
           description: |-
             comma-separated list of bin paths to push into the container
-          default: /usr/local/bin/columbo
+          default: ''
       - string:
           name: LXC_MOUNT_LIST
           description: |-
@@ -356,6 +356,10 @@
     builders:
       - shell: |-
           #!/usr/bin/env bash
+          set -o allexport
+          [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
+          set +o allexport
+
           . $WORKSPACE/lxc_runner.sh
 
           ci_lxc_init_runner _lxc trap "{USE_VM|false}"

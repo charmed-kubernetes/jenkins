@@ -720,8 +720,8 @@ def pytest_metadata(metadata):
         metadata["ARTIFACTS"] = (
             f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/artifacts.tar.gz'>Download Artifacts</a>"
         )
-        metadata["ANALYTICS"] = (
-            f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/columbo.html'>View Report</a>"
+        metadata["REPORT"] = (
+            f"<a href='http://jenkaas.s3-website-us-east-1.amazonaws.com/{os.environ['JOB_ID']}/index.html'>View Report</a>"
         )
 
 

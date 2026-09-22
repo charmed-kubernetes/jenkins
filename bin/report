@@ -166,7 +166,6 @@ def _gen_metadata(numdays=None):
 
         obj["artifacts"] = f"{REPORT_HOST}/{prefix_id}/artifacts.tar.gz"
         obj["index"] = f"{REPORT_HOST}/{prefix_id}/index.html"
-        obj["columbo_results"] = f"{REPORT_HOST}/{prefix_id}/columbo.html"
 
         if job_name not in db:
             db[job_name] = {}
@@ -251,11 +250,9 @@ def cli():
 @cli.command()
 @click.option("--job-id", help="ID of Job to parse")
 @click.option("--metadata-db", help="Database of job metadata")
-@click.option("--columbo-json", help="JSON report of Columbo results")
-def job_result(job_id, metadata_db, columbo_json):
+def job_result(job_id, metadata_db):
     """Creates a report file of the finished job"""
     db = KV(metadata_db)
-    columbo_data = json.loads(Path(columbo_json).read_text())
     if Path("report.html").exists():
         db["pytest_report"] = f"{REPORT_HOST}/{job_id}/report.html"
 
@@ -263,13 +260,12 @@ def job_result(job_id, metadata_db, columbo_json):
 
     log.info(f"{job_id} :: processing report")
 
-    tmpl = html.template("columbo.html")
-    context = {"obj": db, "columbo_results": columbo_data}
-    rendered = tmpl.render(context)
-    html_p = Path(f"{job_id}-columbo.html")
+    tmpl = html.template("job-report.html")
+    rendered = tmpl.render(obj=db)
+    html_p = Path(f"{job_id}-report.html")
     html_p.write_text(rendered)
     run.cmd_ok(
-        f"python bin/s3 cp {job_id}-columbo.html index.html",
+        f"python bin/s3 cp {html_p} index.html",
         shell=True,
     )
     run.cmd_ok(f"rm -rf {html_p}")
@@ -303,7 +299,7 @@ def sync_missing_reports(max_days):
     """syncs reports that are missing"""
     obj = Storage(numdays=int(max_days))
     table = PrettyTable()
-    table.field_names = ["ID", "Index HTML", "Metadata JSON", "Columbo JSON"]
+    table.field_names = ["ID", "Index HTML", "Metadata JSON"]
     table.align = "l"
 
     for prefix_id, files in obj.reports.items():
@@ -316,26 +312,22 @@ def sync_missing_reports(max_days):
 
         os.environ["JOB_ID"] = str(prefix_id)
         has_metadata_json = has_file("metadata.json", files)
-        has_columbo_json = has_file("columbo-report.json", files)
-        if has_metadata_json and has_columbo_json:
+        if has_metadata_json:
             log.info(f"{prefix_id} :: writing report and storing it")
             has_metadata = requests.get(f"{REPORT_HOST}/{prefix_id}/metadata.json")
             metadata = has_metadata.json()
-            has_columbo = requests.get(f"{REPORT_HOST}/{prefix_id}/columbo-report.json")
-            columbo = has_columbo.json()
-            tmpl = html.template("columbo.html")
-            context = {"obj": metadata, "columbo_results": columbo}
-            rendered = tmpl.render(context)
-            html_p = Path(f"{prefix_id}-columbo.html")
+            tmpl = html.template("job-report.html")
+            rendered = tmpl.render(obj=metadata)
+            html_p = Path(f"{prefix_id}-report.html")
             html_p.write_text(rendered)
             run.cmd_ok(
-                f"python bin/s3 cp {prefix_id}-columbo.html index.html",
+                f"python bin/s3 cp {html_p} index.html",
                 shell=True,
             )
             run.cmd_ok(f"rm -rf {html_p}")
         try:
             table.add_row(
-                [prefix_id, has_index_html, has_metadata_json, has_columbo_json]
+                [prefix_id, has_index_html, has_metadata_json]
             )
         except KeyError as e:
             click.echo(e)

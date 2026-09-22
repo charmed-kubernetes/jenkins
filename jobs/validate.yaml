@@ -24,11 +24,6 @@
       - etcd-channel
     axes:
       - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
-      - axis:
           type: user-defined
           name: juju_channel
           description: |-
@@ -110,11 +105,6 @@
       - juju-lts
     axes:
       - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
-      - axis:
           type: user-defined
           name: snap_version
           values:
@@ -170,11 +160,6 @@
       - series-stable
       - juju-lts
     axes:
-      - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -283,11 +268,6 @@
       - juju-lts
     axes:
       - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
-      - axis:
           type: user-defined
           name: snap_version
           values:
@@ -325,11 +305,6 @@
       - juju-lts
     axes:
       - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
-      - axis:
           type: user-defined
           name: snap_version
           values:
@@ -365,11 +340,6 @@
       - lxc-runner-params
       - juju-lts
     axes:
-      - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -417,11 +387,6 @@
       - juju-lts
 
     axes:
-      - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -502,11 +467,6 @@
       - juju-lts
     axes:
       - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
-      - axis:
           type: user-defined
           name: snap_version
           values:
@@ -542,11 +502,6 @@
       - juju-lts
     axes:
       - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
-      - axis:
           type: user-defined
           name: snap_version
           values:
@@ -581,11 +536,6 @@
       - lxc-runner-params
       - juju-lts
     axes:
-      - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
       - axis:
           type: user-defined
           name: snap_version
@@ -623,11 +573,6 @@
       - juju-lts
     axes:
       - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
-      - axis:
           type: user-defined
           name: snap_version
           values:
@@ -664,11 +609,6 @@
       - juju-lts
     axes:
       - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
-      - axis:
           type: user-defined
           name: snap_version
           values:
@@ -704,12 +644,6 @@
       - series-stable
       - lxc-runner-params
       - juju-lts
-    axes:
-      - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -752,12 +686,6 @@
             comma-separated list of snaps to install into the container
             if the snap requires multiple arguments
           default: kubectl,jq,juju-wait,juju-crashdump,juju --channel=$juju_channel
-    axes:
-      - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
-          values:
-            - 'amd64 && large'
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"

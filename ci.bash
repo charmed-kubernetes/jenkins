@@ -203,8 +203,6 @@ function test::capture
             -m "$JUJU_CONTROLLER:$JUJU_MODEL"
     fi
     tar -cvzf artifacts.tar.gz ci.log _out meta juju-crashdump* report.* failures* logs/ || true
-    /usr/local/bin/columbo -r columbo.yaml -o "_out" "artifacts.tar.gz" || true
-    python bin/s3 cp "columbo-report.json" columbo-report.json || true
 
     python -c "import json; import kv; print(json.dumps(dict(kv.KV('metadata.db'))))" | tee "metadata.json"
     python bin/s3 cp "metadata.json" metadata.json || true
@@ -214,7 +212,7 @@ function test::capture
     python bin/s3 cp "artifacts.tar.gz" artifacts.tar.gz || true
 
     # Generate job report
-    python bin/report job-result --job-id "$JOB_ID" --metadata-db metadata.db --columbo-json columbo-report.json
+    python bin/report job-result --job-id "$JOB_ID" --metadata-db metadata.db
 
     echo "@@@ CAPTURE RESULTS @@@"
     echo "@"
