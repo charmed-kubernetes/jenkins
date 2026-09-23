@@ -25,6 +25,36 @@
         reload: yes
       tags:
         - jenkins
+    - name: create jenkins-agent service drop-in directory
+      file:
+        path: /etc/systemd/system/jenkins-agent.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+      tags:
+        - jenkins
+    - name: keep build processes alive across jenkins-agent restarts
+      copy:
+        # The charm owns jenkins-agent.service and override.conf in this
+        # directory; drop-ins apply in name order, so zz- sorts after it.
+        dest: /etc/systemd/system/jenkins-agent.service.d/zz-killmode.conf
+        content: |
+          # The jenkins-agent charm restarts this service to refresh its
+          # credentials. Kill only the agent JVM so running build steps
+          # (durable sh tasks and their lxc exec clients) survive and reattach.
+          [Service]
+          KillMode=process
+        owner: root
+        group: root
+        mode: 0644
+      tags:
+        - jenkins
+    - name: reload systemd units without restarting jenkins-agent
+      systemd:
+        daemon_reload: yes
+      tags:
+        - jenkins
     - name: install apt deps
       shell: |
         source /etc/os-release
