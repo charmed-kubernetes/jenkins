@@ -65,7 +65,6 @@ def runCell(Map cell) {
         String lxcName = "release-${token}"
         String controller = "validate-${token}"
         int primaryStatus = 0
-        int collectStatus = 0
         int cleanupStatus = 0
 
         withEnv([
@@ -115,24 +114,18 @@ def runCell(Map cell) {
                     }
                 }
             } finally {
-                stage("${cell.name}: Collect") {
-                    collectStatus = sh(returnStatus: true, script: '''#!/bin/bash
-                        bash jobs/release/runner.sh collect
-                    ''')
-                }
                 stage("${cell.name}: Cleanup") {
                     cleanupStatus = sh(returnStatus: true, script: '''#!/bin/bash
                         bash jobs/release/runner.sh cleanup
                     ''')
                 }
-                archiveArtifacts artifacts: "results/${cell.name}/**", allowEmptyArchive: true
             }
         }
         if (primaryStatus != 0) {
             error("${cell.name} validation failed with status ${primaryStatus}")
         }
-        if (collectStatus != 0 || cleanupStatus != 0) {
-            error("${cell.name} teardown failed: collect=${collectStatus}, cleanup=${cleanupStatus}")
+        if (cleanupStatus != 0) {
+            error("${cell.name} cleanup failed: ${cleanupStatus}")
         }
         }
     }

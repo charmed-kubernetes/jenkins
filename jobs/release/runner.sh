@@ -187,7 +187,6 @@ cleanup() {
     fi
     if sudo lxc exec "$LXC_NAME" -- test -f /root/workspace/jobs/release/container.sh; then
         container_action cleanup || status=$?
-        collect || status=$?
     fi
     sudo lxc delete --force "$LXC_NAME" || status=$?
     return "$status"
