@@ -109,6 +109,11 @@ prepare() {
     sudo lxc file push "$WORKSPACE/jobs/infra/fixtures/ssh_config" "$LXC_NAME/root/.ssh/config"
     sudo lxc exec "$LXC_NAME" -- chown root:root /root/.aws/credentials /root/.local/share/juju/store-usso-token /root/.ssh/config
     sudo lxc exec "$LXC_NAME" -- chmod 600 /root/.aws/credentials /root/.local/share/juju/store-usso-token /root/.ssh/config
+    sudo lxc exec "$LXC_NAME" -- test -s /root/.local/share/juju/credentials.yaml || { echo "credential extraction failed: JUJUCREDS" >&2; exit 1; }
+    sudo lxc exec "$LXC_NAME" -- test -s /root/.local/share/juju/clouds.yaml || { echo "credential extraction failed: JUJUCLOUDS" >&2; exit 1; }
+    sudo lxc exec "$LXC_NAME" -- chown root:root /root/.local/share/juju/credentials.yaml /root/.local/share/juju/clouds.yaml
+    sudo lxc exec "$LXC_NAME" -- chmod 600 /root/.local/share/juju/credentials.yaml /root/.local/share/juju/clouds.yaml
+    sudo lxc exec "$LXC_NAME" -- chmod 700 /root/.local/share/juju /root/.aws
 
     sudo lxc exec "$LXC_NAME" -- test -s /root/.local/share/juju/credentials.yaml || { echo "credential extraction failed: JUJUCREDS" >&2; exit 1; }
     sudo lxc exec "$LXC_NAME" -- test -s /root/.local/share/juju/clouds.yaml || { echo "credential extraction failed: JUJUCLOUDS" >&2; exit 1; }
@@ -139,7 +144,14 @@ validate() {
 }
 
 collect() {
-    require_our_container || return $?
+    if lxc_exists; then
+        :
+    else
+        local status=$?
+        (( status == 1 )) && return 0
+        return "$status"
+    fi
+    require_our_container
     local destination="$WORKSPACE/results/$CELL_NAME" item source
     mkdir -p "$destination"
     for item in ci.log metadata.json metadata.db report.html report.json report.xml artifacts.tar.gz meta failures logs _out; do
@@ -169,7 +181,7 @@ cleanup() {
     require_our_container
     local status=0
     local state
-    state=$(sudo lxc info "$LXC_NAME" --format json | jq -r '.status') || status=$?
+    state=$(sudo lxc list --format json "name=$LXC_NAME" | jq -r '.[0].status') || status=$?
     if [[ $state == Stopped ]]; then
         sudo lxc start "$LXC_NAME" || status=$?
     fi
@@ -185,6 +197,7 @@ case ${1:-} in
     prepare) [[ $# == 1 ]] || usage; prepare ;;
     python) [[ $# == 1 ]] || usage; require_our_container; container_action python ;;
     validate) shift; validate "$@" ;;
+    collect) [[ $# == 1 ]] || usage; collect ;;
     cleanup) [[ $# == 1 ]] || usage; cleanup ;;
     *) usage ;;
 esac

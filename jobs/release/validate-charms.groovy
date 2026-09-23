@@ -50,8 +50,16 @@ def runValidation(String scenario) {
 
 def runCell(Map cell) {
     node('amd64 && large') {
-        deleteDir()
-        checkout scm
+        withEnv([
+            'HTTP_PROXY=http://egress.ps7.internal:3128',
+            'HTTPS_PROXY=http://egress.ps7.internal:3128',
+            'http_proxy=http://egress.ps7.internal:3128',
+            'https_proxy=http://egress.ps7.internal:3128',
+            'NO_PROXY=localhost,127.0.0.1',
+            'no_proxy=localhost,127.0.0.1'
+        ]) {
+            deleteDir()
+            checkout scm
 
         String token = UUID.randomUUID().toString()
         String lxcName = "release-${token}"
@@ -76,12 +84,6 @@ def runCell(Map cell) {
             'PATH=/snap/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
             'LC_ALL=C.UTF-8',
             'LANG=C.UTF-8',
-            'HTTP_PROXY=http://egress.ps7.internal:3128',
-            'HTTPS_PROXY=http://egress.ps7.internal:3128',
-            'http_proxy=http://egress.ps7.internal:3128',
-            'https_proxy=http://egress.ps7.internal:3128',
-            'NO_PROXY=localhost,127.0.0.1',
-            'no_proxy=localhost,127.0.0.1'
         ]) {
             validateCellParameters(cell)
             try {
@@ -131,6 +133,7 @@ def runCell(Map cell) {
         }
         if (collectStatus != 0 || cleanupStatus != 0) {
             error("${cell.name} teardown failed: collect=${collectStatus}, cleanup=${cleanupStatus}")
+        }
         }
     }
 }
