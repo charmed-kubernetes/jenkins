@@ -4,17 +4,17 @@ def requireParameter(String name, Object value) {
     }
 }
 
-def validateCellParameters(Map cell) {
-    requireParameter('juju_channel', params.juju_channel)
+def validateCellParameters(Map cell, Map jobParameters) {
+    requireParameter('juju_channel', jobParameters.jujuChannel)
     if (cell.scenario == 'bugfix') {
-        requireParameter('snap_version', params.snap_version)
-        requireParameter('charm_channel', params.charm_channel)
+        requireParameter('snap_version', jobParameters.snapVersion)
+        requireParameter('charm_channel', jobParameters.charmChannel)
     } else if (cell.scenario == 'bugfix-upgrade') {
-        requireParameter('charm_channel', params.charm_channel)
-        requireParameter('cloud', params.cloud)
+        requireParameter('charm_channel', jobParameters.charmChannel)
+        requireParameter('cloud', jobParameters.cloud)
     } else if (cell.scenario == 'release-upgrade') {
-        requireParameter('snap_version', params.snap_version)
-        requireParameter('cloud', params.cloud)
+        requireParameter('snap_version', jobParameters.snapVersion)
+        requireParameter('cloud', jobParameters.cloud)
     } else {
         error("unsupported release validation scenario: ${cell.scenario}")
     }
@@ -66,16 +66,22 @@ def runCell(Map cell) {
         String controller = "validate-${token}"
         int primaryStatus = 0
         int cleanupStatus = 0
+        Map jobParameters = [
+            jujuChannel: env.juju_channel ?: '',
+            snapVersion: env.snap_version ?: '',
+            charmChannel: env.charm_channel ?: '',
+            cloud: env.cloud ?: ''
+        ]
 
         withEnv([
             "WORKSPACE=${pwd()}",
             "LXC_NAME=${lxcName}",
             "JUJU_CONTROLLER=${controller}",
-            "JUJU_CHANNEL=${params.juju_channel ?: ''}",
+            "JUJU_CHANNEL=${jobParameters.jujuChannel}",
             "CELL_NAME=${cell.name}",
-            "snap_version=${params.snap_version ?: ''}",
-            "charm_channel=${params.charm_channel ?: ''}",
-            "cloud=${params.cloud ?: ''}",
+            "snap_version=${jobParameters.snapVersion}",
+            "charm_channel=${jobParameters.charmChannel}",
+            "cloud=${jobParameters.cloud}",
             "offset=${cell.offset ?: ''}",
             "series=${cell.series ?: ''}",
             "deploy_snap=${cell.deploySnap ?: ''}",
@@ -84,7 +90,7 @@ def runCell(Map cell) {
             'LC_ALL=C.UTF-8',
             'LANG=C.UTF-8',
         ]) {
-            validateCellParameters(cell)
+            validateCellParameters(cell, jobParameters)
             try {
                 stage("${cell.name}: Prepare container") {
                     withCredentials([
