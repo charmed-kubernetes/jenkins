@@ -26,7 +26,7 @@ def runValidation(String scenario) {
             set -e
             : "${snap_version:?snap_version is required}"
             : "${charm_channel:?charm_channel is required}"
-            bash jobs/release/runner.sh validate bugfix "$snap_version" jammy "$charm_channel"
+            JUJU_CHANNEL="${RELEASE_JUJU_CHANNEL:?juju_channel is required}" bash jobs/release/runner.sh validate bugfix "$snap_version" jammy "$charm_channel"
         ''')
     } else if (scenario == 'bugfix-upgrade') {
         sh(returnStatus: true, script: '''#!/bin/bash
@@ -35,7 +35,7 @@ def runValidation(String scenario) {
             : "${series:?series is required}"
             : "${charm_channel:?charm_channel is required}"
             : "${cloud:?cloud is required}"
-            bash jobs/release/runner.sh validate bugfix-upgrade "$offset" "$series" "$charm_channel" "$cloud"
+            JUJU_CHANNEL="${RELEASE_JUJU_CHANNEL:?juju_channel is required}" bash jobs/release/runner.sh validate bugfix-upgrade "$offset" "$series" "$charm_channel" "$cloud"
         ''')
     } else {
         sh(returnStatus: true, script: '''#!/bin/bash
@@ -43,7 +43,7 @@ def runValidation(String scenario) {
             : "${snap_version:?snap_version is required}"
             : "${deploy_snap:?deploy_snap is required}"
             : "${cloud:?cloud is required}"
-            bash jobs/release/runner.sh validate release-upgrade "$snap_version" "$deploy_snap" jammy "$cloud"
+            JUJU_CHANNEL="${RELEASE_JUJU_CHANNEL:?juju_channel is required}" bash jobs/release/runner.sh validate release-upgrade "$snap_version" "$deploy_snap" jammy "$cloud"
         ''')
     }
 }
@@ -67,17 +67,19 @@ def runCell(Map cell) {
         int primaryStatus = 0
         int cleanupStatus = 0
         Map jobParameters = [
-            jujuChannel: env.juju_channel ?: '',
-            snapVersion: env.snap_version ?: '',
-            charmChannel: env.charm_channel ?: '',
-            cloud: env.cloud ?: ''
+            jujuChannel: params.juju_channel ?: '',
+            snapVersion: params.snap_version ?: '',
+            charmChannel: params.charm_channel ?: '',
+            cloud: params.cloud ?: ''
         ]
 
+        // Jenkins EnvVars folds case: JUJU_CHANNEL would retain the juju_channel key.
+        // Use a distinct key here; each shell sets the runner's uppercase variable.
         withEnv([
             "WORKSPACE=${pwd()}",
             "LXC_NAME=${lxcName}",
             "JUJU_CONTROLLER=${controller}",
-            "JUJU_CHANNEL=${jobParameters.jujuChannel}",
+            "RELEASE_JUJU_CHANNEL=${jobParameters.jujuChannel}",
             "CELL_NAME=${cell.name}",
             "snap_version=${jobParameters.snapVersion}",
             "charm_channel=${jobParameters.charmChannel}",
@@ -101,8 +103,7 @@ def runCell(Map cell) {
                     ]) {
                         primaryStatus = sh(returnStatus: true, script: '''#!/bin/bash
                             set -e
-                            : "${JUJU_CHANNEL:?juju_channel is required}"
-                            bash jobs/release/runner.sh prepare
+                            JUJU_CHANNEL="${RELEASE_JUJU_CHANNEL:?juju_channel is required}" bash jobs/release/runner.sh prepare
                         ''')
                     }
                 }
@@ -110,7 +111,7 @@ def runCell(Map cell) {
                     stage("${cell.name}: Prepare Python") {
                         primaryStatus = sh(returnStatus: true, script: '''#!/bin/bash
                             set -e
-                            bash jobs/release/runner.sh python
+                            JUJU_CHANNEL="${RELEASE_JUJU_CHANNEL:?juju_channel is required}" bash jobs/release/runner.sh python
                         ''')
                     }
                 }
@@ -122,7 +123,7 @@ def runCell(Map cell) {
             } finally {
                 stage("${cell.name}: Cleanup") {
                     cleanupStatus = sh(returnStatus: true, script: '''#!/bin/bash
-                        bash jobs/release/runner.sh cleanup
+                        JUJU_CHANNEL="${RELEASE_JUJU_CHANNEL:?juju_channel is required}" bash jobs/release/runner.sh cleanup
                     ''')
                 }
             }
