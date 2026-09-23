@@ -188,7 +188,7 @@ function juju::deploy
 function juju::wait
 {
     echo "Waiting for deployment to settle..."
-    timeout 60m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
+    timeout 90m juju-wait -e "$JUJU_CONTROLLER:$JUJU_MODEL" -w
 
     juju::deploy-report $? "model-wait"
 }
