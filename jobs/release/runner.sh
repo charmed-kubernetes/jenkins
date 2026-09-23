@@ -83,7 +83,7 @@ prepare() {
     source "$WORKSPACE/cilib.sh"
     set +x
     ci_lxc_launch ubuntu:24.04 "$LXC_NAME" "--config=user.release-validation-id=$LXC_NAME"
-    ci_lxc_apt_install_retry "$LXC_NAME" python3-pip python3-venv python3-dev libffi-dev git curl openssh-client uuid-runtime jq libarchive-tools procps
+    ci_lxc_apt_install_retry "$LXC_NAME" python3-pip python3-venv python3-dev libffi-dev git curl openssh-client netcat-openbsd uuid-runtime jq libarchive-tools procps
     ci_lxc_snap_install_retry "$LXC_NAME" kubectl --classic
     ci_lxc_snap_install_retry "$LXC_NAME" juju-wait --classic
     ci_lxc_snap_install_retry "$LXC_NAME" juju-crashdump --classic
@@ -106,7 +106,7 @@ prepare() {
     done
     sudo lxc file push "$AWSCREDS" "$LXC_NAME/root/.aws/credentials"
     sudo lxc file push "$SSOCREDS" "$LXC_NAME/root/.local/share/juju/store-usso-token"
-    sudo lxc file push "$WORKSPACE/jobs/infra/fixtures/ssh_config" "$LXC_NAME/root/.ssh/config"
+    sudo lxc file push "$WORKSPACE/jobs/release/ssh_config" "$LXC_NAME/root/.ssh/config"
     sudo lxc exec "$LXC_NAME" -- chown root:root /root/.aws/credentials /root/.local/share/juju/store-usso-token /root/.ssh/config
     sudo lxc exec "$LXC_NAME" -- chmod 600 /root/.aws/credentials /root/.local/share/juju/store-usso-token /root/.ssh/config
     sudo lxc exec "$LXC_NAME" -- test -s /root/.local/share/juju/credentials.yaml || { echo "credential extraction failed: JUJUCREDS" >&2; exit 1; }
