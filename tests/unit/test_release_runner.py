@@ -109,13 +109,3 @@ def test_container_dispatcher_requires_prepared_venv(tmp_path):
 
     assert completed.returncode != 0
     assert "missing prepared Python environment" in completed.stderr
-
-def test_release_ssh_config_routes_connections_through_egress_proxy():
-    completed = subprocess.run(
-        ["ssh", "-G", "-F", str(ROOT / "jobs/release/ssh_config"), "10.246.153.40"],
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-
-    assert "proxycommand nc -X connect -x egress.ps7.internal:3128 %h %p" in completed.stdout

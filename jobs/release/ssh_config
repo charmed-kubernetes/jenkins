@@ -1,4 +1,0 @@
-Host *
-    StrictHostKeyChecking no
-    UserKnownHostsFile=/dev/null
-    ProxyCommand nc -X connect -x egress.ps7.internal:3128 %h %p

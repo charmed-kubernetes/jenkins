@@ -3,7 +3,7 @@
 set -euo pipefail
 
 usage() {
-    echo "usage: $0 {python|validate SCENARIO ARG...|cleanup}" >&2
+    echo "usage: $0 {egress|python|validate SCENARIO ARG...|cleanup}" >&2
     exit 2
 }
 
@@ -19,6 +19,46 @@ scenario_spec() {
         release-upgrade) [[ $# == 5 ]] || usage; printf '%s\n' "$WORKSPACE/jobs/release/release-upgrade-spec" ;;
         *) usage ;;
     esac
+}
+
+# PS7 has no direct route to the vSphere network, but the egress proxy lets
+# the Kubernetes Jenkins agents CONNECT to it on ports 22, 443 and 17070
+# (acl kubernetes_vsphere_ip in canonical-is-internal-proxy-configs/ps7.conf).
+# python-libjuju and SSH dial VM addresses directly and ignore HTTP proxy
+# settings, so redirect that network through redsocks.
+readonly VSPHERE_CIDR=10.246.152.0/21
+readonly EGRESS_PROXY_HOST=egress.ps7.internal
+readonly EGRESS_PROXY_PORT=3128
+readonly REDSOCKS_PORT=12345
+
+setup_egress() {
+    local proxy_ip
+    proxy_ip=$(getent ahostsv4 "$EGRESS_PROXY_HOST" | awk 'NR == 1 {print $1}')
+    [[ -n $proxy_ip ]] || { echo "cannot resolve $EGRESS_PROXY_HOST" >&2; return 1; }
+
+    systemctl disable --now redsocks.service
+    cat > /etc/redsocks.conf <<EOF
+base { log_info = on; log = stderr; daemon = off; redirector = iptables; }
+redsocks { local_ip = 127.0.0.1; local_port = $REDSOCKS_PORT; ip = $proxy_ip; port = $EGRESS_PROXY_PORT; type = http-connect; }
+EOF
+    systemd-run --unit=release-egress --property=Restart=on-failure /usr/sbin/redsocks -c /etc/redsocks.conf
+
+    nft -f - <<EOF
+table ip release_egress {
+    chain output {
+        type nat hook output priority dstnat; policy accept;
+        ip daddr $VSPHERE_CIDR meta l4proto tcp redirect to :$REDSOCKS_PORT
+    }
+}
+EOF
+
+    local attempt
+    for attempt in 1 2 3 4 5; do
+        ss -Hltn "sport = :$REDSOCKS_PORT" | grep -q . && return 0
+        sleep 1
+    done
+    echo "redsocks is not listening on port $REDSOCKS_PORT" >&2
+    return 1
 }
 
 prepare_python() {
@@ -93,6 +133,7 @@ cleanup() {
 }
 
 case ${1:-} in
+    egress) [[ $# == 1 ]] || usage; setup_egress ;;
     python) [[ $# == 1 ]] || usage; prepare_python ;;
     validate) shift; validate "$@" ;;
     cleanup) [[ $# == 1 ]] || usage; cleanup ;;
