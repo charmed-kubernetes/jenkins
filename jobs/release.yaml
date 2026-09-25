@@ -11,7 +11,8 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-jenkaas
+        - k8s-jenkins-jenkaas:
+            wipe-workspace: false
       script-path: jobs/release/validate-charms.groovy
     properties:
       - build-discarder:
@@ -32,7 +33,8 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-jenkaas
+        - k8s-jenkins-jenkaas:
+            wipe-workspace: false
       script-path: jobs/release/validate-charms.groovy
     properties:
       - build-discarder:
@@ -42,7 +44,7 @@
       - string:
           name: charm_channel
           description: "The charm channel to validate"
-          default: "1.34/candidate"
+          default: "1.35/candidate"
           trim: true
       - string:
           name: cloud
@@ -58,7 +60,8 @@
     project-type: pipeline
     pipeline-scm:
       scm:
-        - k8s-jenkins-jenkaas
+        - k8s-jenkins-jenkaas:
+            wipe-workspace: false
       script-path: jobs/release/validate-charms.groovy
     properties:
       - build-discarder:

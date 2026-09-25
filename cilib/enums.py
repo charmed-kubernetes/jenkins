@@ -11,7 +11,7 @@ JOBS_PATH = Path("jobs")
 # Current supported STABLE K8s MAJOR.MINOR release. This determines what the
 # latest/stable channel is set to. It should be updated whenever a new CK
 # major.minor is GA.
-K8S_STABLE_VERSION = "1.36"
+K8S_STABLE_VERSION = "1.35"
 
 # Next MAJOR.MINOR
 # This controls whether or not we publish pre-release snaps in our channels.

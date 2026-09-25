@@ -166,8 +166,8 @@ pipeline {
                             break
                         case 'validate-charm-release-upgrade':
                             cells = [
-                                'release-upgrade-1-34-stable-jammy-amd64': [name: 'release-upgrade-1-34-stable-jammy-amd64', scenario: 'release-upgrade', deploySnap: '1.34/stable'],
-                                'release-upgrade-1-33-stable-jammy-amd64': [name: 'release-upgrade-1-33-stable-jammy-amd64', scenario: 'release-upgrade', deploySnap: '1.33/stable']
+                                'release-upgrade-1-35-stable-jammy-amd64': [name: 'release-upgrade-1-35-stable-jammy-amd64', scenario: 'release-upgrade', deploySnap: '1.35/stable'],
+                                'release-upgrade-1-34-stable-jammy-amd64': [name: 'release-upgrade-1-34-stable-jammy-amd64', scenario: 'release-upgrade', deploySnap: '1.34/stable']
                             ]
                             break
                         default:
