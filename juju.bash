@@ -110,12 +110,11 @@ function juju::bootstrap
         extra_args=''
     fi
     if [ "$JUJU_CLOUD" = "vsphere/Boston" ]; then
-        # --model-default force-vm-hardware-version=17
         extra_args="$extra_args \
-            --model-default datastore=iSCSI-Datastore-A \
+            --model-default datastore=iSCSI-Datastore-B \
             --model-default disk-provisioning-type=thin \
             --model-default primary-network=VLAN_2763 \
-            --config caas-image-repo=ghcr.io/canonical/cdk/jujusolutions \
+            --model-default force-vm-hardware-version=17 \
             --bootstrap-image=juju-ci-root/templates/$SERIES-test-template"
     fi
     if juju::version_2; then

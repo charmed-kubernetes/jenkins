@@ -7,7 +7,6 @@ import backoff
 import ipaddress
 import json
 import os
-import requests
 import yaml
 import random
 import pytest
@@ -54,6 +53,7 @@ from .utils import (
     vault,
     vault_status,
 )
+import urllib.parse
 import urllib.request
 from bs4 import BeautifulSoup as bs
 from bs4.element import ResultSet as bs_ResultSet
@@ -408,29 +408,26 @@ async def setup_microbot(model, microbot_deployment):
 
 
 @pytest.mark.clouds(["azure", "ec2", "vsphere"])
-async def test_microbot(model, tools, setup_microbot):
+async def test_microbot(model, setup_microbot):
     """Validate the microbot action"""
     kw = model.applications["kubernetes-worker"].units[0]
     url = setup_microbot.format(public_address=kw.public_address)
-    _times, _sleep = 5, 60
-    for _ in range(_times):  # 5 min should be enough time
-        try:
-            resp = await tools.requests_get(
-                url,
-                proxies={"http": None, "https": None},
-            )
-            if resp.status_code == 200:
-                break
-        except requests.exceptions.ConnectionError as e:
-            log.info(
-                f"Caught connection error attempting to hit {url}, "
-                f"retrying. Error follows: {e}"
-            )
-        await asyncio.sleep(_sleep)
-    else:
-        pytest.fail(f"Failed to connect to microbot after {_times * _sleep} sec")
+    host = urllib.parse.urlsplit(url).hostname
+    # Probe from inside the cloud: CI runners may only reach cloud VMs through an
+    # egress proxy that does not forward plain HTTP to them.
+    probe = model.applications["kubernetes-control-plane"].units[0]
+    cmd = (
+        f"curl -sf --noproxy '*' --max-time 10 --resolve {host}:80:{kw.public_address}"
+        f" -o /dev/null -w '%{{http_code}}' {url}"
+    )
+    result = await juju_run_retry(probe, cmd, tries=5, delay=60)
+    assert (
+        result.success and result.stdout == "200"
+    ), f"Failed to reach microbot at {url} from {probe.name}: {result.output}"
 
 
+# cdk-addons dropped the kubernetes-dashboard addon in CK 1.36 (cdk-addons #239)
+@pytest.mark.skip_if_version(lambda v: v >= (1, 36))
 @pytest.mark.clouds(["azure", "ec2", "vsphere"])
 @pytest.mark.usefixtures("log_dir")
 @backoff.on_exception(backoff.expo, TypeError, max_tries=5)
@@ -484,48 +481,38 @@ async def test_dashboard(model, kubeconfig, tools):
     )
 
 
-async def test_kubelet_anonymous_auth_disabled(model, tools):
+async def test_kubelet_anonymous_auth_disabled(model):
     """Validate that kubelet has anonymous auth disabled"""
+    # Probe from inside the cloud: CI runners may only reach cloud VMs through an
+    # egress proxy that does not forward the kubelet port.
+    probe = model.applications["kubernetes-control-plane"].units[0]
 
     async def validate_unit(unit):
-        await juju_run(unit, "open-port 10250")
-        address = unit.public_address
-        url = "https://%s:10250/pods/" % address
-        for attempt in range(0, 120):  # 2 minutes
-            try:
-                response = await tools.requests_get(
-                    url, verify=False, proxies={"http": None, "https": None}
+        url = f"https://{unit.public_address}:10250/pods/"
+        cmd = f"curl -sk --noproxy '*' --max-time 10 -o /dev/null -w '%{{http_code}}' {url}"
+        result = await juju_run_retry(probe, cmd, tries=12, delay=10)
+        if result.success:
+            assert (
+                result.stdout == "401"
+            ), f"kubelet on {unit.name} answered HTTP {result.stdout}, expected 401"
+            return
+
+        output = await juju_run(
+            unit, "systemctl status --no-pager snap.kubelet.daemon", check=False
+        )
+        if "active (running)" not in output.stdout:
+            raise AssertionError(
+                "kubelet not running on {}: {}".format(
+                    unit.name, output.stdout or output.stderr
                 )
-                assert response.status_code == 401  # Unauthorized
-                break
-            except requests.exceptions.ConnectionError:
-                log.info(
-                    "Failed to connect to kubelet on {}; retrying in 10s".format(
-                        unit.name
-                    )
-                )
-                await asyncio.sleep(10)
-        else:
-            output = await juju_run(
-                unit, "systemctl status --no-pager snap.kubelet.daemon", check=False
             )
-            if "active (running)" not in output.stdout:
-                raise AssertionError(
-                    "kubelet not running on {}: {}".format(
-                        unit.name, output.stdout or output.stderr
-                    )
-                )
-            else:
-                await juju_run(
-                    unit, "which netstat || apt install net-tools", check=False
-                )
-                output = await juju_run(unit, "netstat -tnlp", check=False)
-                raise AssertionError(
-                    "Unable to connect to kubelet on {}: {}".format(
-                        unit.name,
-                        output.stdout or output.stderr,
-                    )
-                )
+        await juju_run(unit, "which netstat || apt install net-tools", check=False)
+        output = await juju_run(unit, "netstat -tnlp", check=False)
+        raise AssertionError(
+            "Unable to connect to kubelet on {} from {}: {}".format(
+                unit.name, probe.name, output.stdout or output.stderr
+            )
+        )
 
     units = model.applications["kubernetes-worker"].units
     await asyncio.gather(*(validate_unit(unit) for unit in units))

@@ -36,6 +36,8 @@ def _promote_snaps(snap_list, arch, from_track, to_track, exclude_pre, dry_run):
         rev, uploaded, arch, version, channels = _snap[_snap_name]
         for track in to_track.split(" "):
             click.echo(f"Promoting ({rev}) {_snap} {version} -> {track}")
+            if dry_run:
+                continue
             try:
                 str(sh.snapcraft.release(_snap_name, rev, track))
             except sh.ErrorReturnCode as error:

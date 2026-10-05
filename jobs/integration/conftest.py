@@ -669,7 +669,7 @@ def skip_if_version(request, k8s_version):
         pytest.skip("Couldn't determine k8s version yet.")
     version_predicate, *_ = skip_marker.args
     if version_predicate(k8s_version):
-        pytest.skip(f"k8s version v{'.'.join(k8s_version)}")
+        pytest.skip(f"k8s version v{'.'.join(map(str, k8s_version))}")
 
 
 # def pytest_itemcollected(item):
