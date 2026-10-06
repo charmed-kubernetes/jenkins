@@ -1,5 +1,8 @@
 {
     "iptables": false,
+    "features": {
+        "containerd-snapshotter": false
+    },
     "proxies": {
         "http-proxy": "http://egress.ps7.internal:3128",
         "https-proxy": "http://egress.ps7.internal:3128",
