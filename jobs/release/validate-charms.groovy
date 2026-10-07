@@ -4,20 +4,45 @@ def requireParameter(String name, Object value) {
     }
 }
 
+// <track>/<risk>, e.g. 1.36/beta. prior_track.py and the snap install need it.
+def requireTrackChannel(String name, Object value) {
+    requireParameter(name, value)
+    if (!(value.toString().trim() ==~ /^\d+\.\d+\/(edge|beta|candidate|stable)$/)) {
+        error("${name} must look like 1.36/beta, got '${value}'")
+    }
+}
+
 def validateCellParameters(Map cell, Map jobParameters) {
     requireParameter('juju_channel', jobParameters.jujuChannel)
     if (cell.scenario == 'bugfix') {
-        requireParameter('snap_version', jobParameters.snapVersion)
+        requireTrackChannel('snap_version', jobParameters.snapVersion)
         requireParameter('charm_channel', jobParameters.charmChannel)
     } else if (cell.scenario == 'bugfix-upgrade') {
-        requireParameter('charm_channel', jobParameters.charmChannel)
+        requireTrackChannel('charm_channel', jobParameters.charmChannel)
         requireParameter('cloud', jobParameters.cloud)
     } else if (cell.scenario == 'release-upgrade') {
-        requireParameter('snap_version', jobParameters.snapVersion)
+        requireTrackChannel('snap_version', jobParameters.snapVersion)
         requireParameter('cloud', jobParameters.cloud)
     } else {
         error("unsupported release validation scenario: ${cell.scenario}")
     }
+}
+
+// Blank selection runs every cell; otherwise only the named cells, so a rerun
+// after a single failed cell does not repeat the cells that already passed.
+def selectCells(Map cells, String requested) {
+    String selection = requested?.trim()
+    if (!selection) {
+        return cells
+    }
+    Map selected = [:]
+    for (String name : selection.split(/[\s,]+/)) {
+        if (!cells.containsKey(name)) {
+            error("unknown cell '${name}'; available: ${cells.keySet().join(' ')}")
+        }
+        selected[name] = cells[name]
+    }
+    return selected
 }
 
 def runValidation(String scenario) {
@@ -41,9 +66,9 @@ def runValidation(String scenario) {
         sh(returnStatus: true, script: '''#!/bin/bash
             set -e
             : "${snap_version:?snap_version is required}"
-            : "${deploy_snap:?deploy_snap is required}"
+            : "${offset:?offset is required}"
             : "${cloud:?cloud is required}"
-            JUJU_CHANNEL="${RELEASE_JUJU_CHANNEL:?juju_channel is required}" bash jobs/release/runner.sh validate release-upgrade "$snap_version" "$deploy_snap" jammy "$cloud"
+            JUJU_CHANNEL="${RELEASE_JUJU_CHANNEL:?juju_channel is required}" bash jobs/release/runner.sh validate release-upgrade "$snap_version" "$offset" jammy "$cloud"
         ''')
     }
 }
@@ -165,14 +190,17 @@ pipeline {
                             }
                             break
                         case 'validate-charm-release-upgrade':
-                            cells = [
-                                'release-upgrade-1-35-stable-jammy-amd64': [name: 'release-upgrade-1-35-stable-jammy-amd64', scenario: 'release-upgrade', deploySnap: '1.35/stable'],
-                                'release-upgrade-1-34-stable-jammy-amd64': [name: 'release-upgrade-1-34-stable-jammy-amd64', scenario: 'release-upgrade', deploySnap: '1.34/stable']
-                            ]
+                            cells = [:]
+                            // offset N deploys the stable snap N tracks before snap_version
+                            [1, 2].each { offset ->
+                                String name = "release-upgrade-offset-${offset}-jammy-amd64"
+                                cells[name] = [name: name, scenario: 'release-upgrade', offset: "${offset}"]
+                            }
                             break
                         default:
                             error("unsupported release validation job: ${env.JOB_BASE_NAME}")
                     }
+                    cells = selectCells(cells, params.cells as String)
                     Map branches = [:]
                     cells.each { name, cell ->
                         branches[name] = {

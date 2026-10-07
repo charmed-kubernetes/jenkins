@@ -45,7 +45,10 @@ function test::execute
 export CHARM_CHANNEL_UPGRADE_TO=beta
 export SNAP_CHANNEL_UPGRADE_TO=${1:-1.27/beta}
 
-SNAP_VERSION=${2:-1.26/stable}
+# 2nd argument: how many tracks before the upgrade target the deployed snap is
+PRIOR_SNAP_OFFSET=${2:-1}
+PRIOR_TRACK=$(python3 "$WORKSPACE/jobs/release/prior_track.py" "$SNAP_CHANNEL_UPGRADE_TO" "$PRIOR_SNAP_OFFSET")
+SNAP_VERSION="$PRIOR_TRACK/stable"
 SERIES=${3:-jammy}
 JUJU_CLOUD=${4:-vsphere/Boston}
 JUJU_DEPLOY_BUNDLE=charmed-kubernetes

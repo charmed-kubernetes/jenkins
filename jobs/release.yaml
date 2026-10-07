@@ -25,6 +25,13 @@
           description: "The charm channel to validate"
           default: "candidate"
           trim: true
+      - string:
+          name: cells
+          description: |
+            Space-separated cells to run; blank runs all.
+            Available: bugfix-jammy-amd64
+          default: ""
+          trim: true
 
 - job:
     name: 'validate-charm-bugfix-upgrade'
@@ -51,6 +58,15 @@
           description: "The cloud to use in validation"
           default: "vsphere/Boston"
           trim: true
+      - string:
+          name: cells
+          description: |
+            Space-separated cells to run; blank runs all. Use it to rerun only failed cells.
+            Available: bugfix-upgrade-offset-0-jammy-amd64 bugfix-upgrade-offset-0-noble-amd64
+            bugfix-upgrade-offset-1-jammy-amd64 bugfix-upgrade-offset-1-noble-amd64
+            bugfix-upgrade-offset-2-jammy-amd64 bugfix-upgrade-offset-2-noble-amd64
+          default: ""
+          trim: true
 
 - job:
     name: 'validate-charm-release-upgrade'
@@ -73,4 +89,11 @@
           name: cloud
           description: "The cloud to use in validation"
           default: "vsphere/Boston"
+          trim: true
+      - string:
+          name: cells
+          description: |
+            Space-separated cells to run; blank runs all. Use it to rerun only failed cells.
+            Available: release-upgrade-offset-1-jammy-amd64 release-upgrade-offset-2-jammy-amd64
+          default: ""
           trim: true

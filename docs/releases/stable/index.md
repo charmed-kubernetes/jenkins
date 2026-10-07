@@ -200,6 +200,18 @@ run on multiple series and with multiple snap channels.
 Before running this job, confirm that the `snap_version` job parameter is set to the
 appropriate channel for this release (e.g. 1.29/beta).
 
+Also confirm that `cdk-addons` has a revision in `1.xx/stable`. During the charm
+upgrade the new `kubernetes-control-plane` charm installs `cdk-addons` from its own
+track (`1.xx`) with the risk of the deployed snap channel (`stable`), before the test
+switches the snaps to `1.xx/beta`; without `1.xx/stable` the `upgrade-charm` hook fails.
+`cdk-addons` builds only publish to edge, beta and candidate, so promote it first:
+
+```sh
+snapcraft promote cdk-addons --yes \
+    --from-channel="1.xx/beta" \
+    --to-channel="1.xx/stable"
+```
+
 A successful Jenkins job run only confirms that the tests were started, **not** that they passed.
 Check [Jenkaas](http://jenkaas.s3-website-us-east-1.amazonaws.com/) to ensure all tests completed successfully.
 Each column represents a day. Look for the day you triggered the release tests and check if all validation tests passed in that column.
@@ -326,7 +338,9 @@ for snap in kube-apiserver kube-controller-manager kube-proxy kube-scheduler kub
       --from-channel="${CHANNEL}/beta" \
       --to-channel="${CHANNEL}/stable"
 done
-for CHANNEL in 1.34 1.33 1.32; do
+# The new release and the two previous supported tracks, e.g. for 1.36: 1.36 1.35 1.34.
+# The new release's track was already promoted before Internal verification.
+for CHANNEL in 1.xx 1.xx-1 1.xx-2; do
   snapcraft promote cdk-addons --yes\
       --from-channel="${CHANNEL}/beta" \
       --to-channel="${CHANNEL}/stable"
