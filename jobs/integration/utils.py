@@ -292,6 +292,22 @@ async def is_localhost(controller_name):
     return cloud == "localhost"
 
 
+async def check_call_with_retry(cmd, tries=4, delay=15):
+    """Run a juju CLI command, retrying when the client loses its API connection.
+
+    `juju scp` fails with "connection is shut down" when the controller
+    connection drops mid-command; the next attempt opens a fresh one.
+    """
+    for attempt in range(1, tries + 1):
+        try:
+            return await asyncify(subprocess.check_call)(cmd)
+        except subprocess.CalledProcessError as e:
+            if attempt == tries:
+                raise
+            log.info(f"{cmd[:2]} failed ({e}); retry {attempt}/{tries - 1} in {delay}s")
+            await asyncio.sleep(delay)
+
+
 async def scp_from(
     unit, remote_path, local_path, controller_name, connection_name, proxy=False
 ):
@@ -309,7 +325,7 @@ async def scp_from(
             "{}:{}".format(unit.name, remote_path),
             temp_path,
         ]
-        await asyncify(subprocess.check_call)(cmd)
+        await check_call_with_retry(cmd)
         shutil.copy(temp_path, local_path)
 
 
@@ -331,7 +347,7 @@ async def scp_to(
             temp_path,
             "{}:{}".format(unit.name, remote_path),
         ]
-        await asyncify(subprocess.check_call)(cmd)
+        await check_call_with_retry(cmd)
 
 
 async def retry_async_with_timeout(
