@@ -190,8 +190,11 @@ function test::capture
         # -a config              included config addon
         # -j snap.kube*          included logs from all kube* daemons
         # -j snap.cdk-addons*    included logs from cdk-addons*
+        # --max-file-size        crashdump drops files of 5MB or more, which silently
+        #                        removed the kube-apiserver journal; allow up to 100MB
         juju-crashdump \
             -s \
+            --max-file-size 100000000 \
             -a debug-layer \
             -a config \
             -j snap.kube-apiserver.daemon \

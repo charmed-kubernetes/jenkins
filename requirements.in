@@ -24,6 +24,7 @@ pytest-asyncio<0.22
 pytest-json-report
 pytest-html
 pytest-mock
+pytest-timeout
 flaky
 pytest<8
 python-dotenv

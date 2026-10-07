@@ -14,11 +14,12 @@ from contextlib import contextmanager
 from typing import Mapping, Any, Union, Sequence, TYPE_CHECKING
 
 import jinja2
+import websockets
 from juju.unit import Unit
 from juju.model import Model
 from juju.controller import Controller
 from juju.machine import Machine
-from juju.errors import JujuError
+from juju.errors import JujuConnectionError, JujuError
 from juju.utils import block_until_with_coroutine
 from tempfile import TemporaryDirectory
 from subprocess import check_output, check_call
@@ -52,6 +53,109 @@ def tracefunc(frame, event, arg):
             name = frame.f_code.co_varnames[i]
             log.debug(f"    Argument {name} is {frame.f_locals[name]}")
     return
+
+
+# Upper bound in seconds for a single juju-wait that was given no max_wait.
+JUJU_WAIT_TIMEOUT = 60 * 60
+
+MANUAL_UPGRADE_MESSAGE = "Needs manual upgrade, run the upgrade action"
+
+# websockets closes a connection with 1011 "keepalive ping timeout" when the
+# controller misses a pong for 20s, which slow controllers do routinely.
+WS_PING_TIMEOUT = 120
+# Upper bound for model waits that were given no timeout of their own.
+MODEL_WAIT_TIMEOUT = 30 * 60
+# How often a running model wait checks that its model watcher is still alive.
+MODEL_HEALTH_INTERVAL = 30
+
+
+def tolerate_slow_controller():
+    """Raise the websocket keepalive ping timeout used by python-libjuju.
+
+    libjuju does not expose the setting, so default it on `websockets.connect`.
+    """
+    if getattr(websockets.connect, "tolerates_slow_controller", False):
+        return
+    connect = websockets.connect
+
+    def patient_connect(*args, **kwargs):
+        kwargs.setdefault("ping_timeout", WS_PING_TIMEOUT)
+        return connect(*args, **kwargs)
+
+    patient_connect.tolerates_slow_controller = True
+    websockets.connect = patient_connect
+
+
+class ResilientModel(Model):
+    """A Model whose waits survive losing the controller connection.
+
+    libjuju reconnects the websocket itself but gives up on the model watcher
+    when that fails. The model then stops updating while `block_until` and
+    `wait_for_idle` keep polling stale state until their timeout, which is
+    unbounded for `block_until`. Here a wait notices a dead watcher, reconnects
+    the model and resumes within the original deadline.
+    """
+
+    _connect_call = ((), {})
+
+    async def connect(self, *args, **kwargs):
+        if "debug_log_conn" not in kwargs:
+            self._connect_call = (args, dict(kwargs))
+        await super().connect(*args, **kwargs)
+
+    def _watcher_dead(self):
+        task = getattr(self, "_watcher_task", None)
+        return not self.is_connected() or (task is not None and task.done())
+
+    async def reconnect(self):
+        """Drop the connection and watcher, then connect the model again."""
+        await self.disconnect()
+        args, kwargs = self._connect_call
+        await super().connect(*args, **dict(kwargs))
+
+    async def _wait_resiliently(self, operation, timeout):
+        """Run `operation(remaining_seconds)` until it finishes or `timeout` expires."""
+        loop = asyncio.get_running_loop()
+        total = MODEL_WAIT_TIMEOUT if timeout is None else timeout
+        deadline = loop.time() + total
+        while True:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise asyncio.TimeoutError(f"Timed out after {total}s")
+            task = asyncio.ensure_future(operation(remaining))
+            try:
+                while not task.done():
+                    await asyncio.wait({task}, timeout=MODEL_HEALTH_INTERVAL)
+                    if not task.done() and self._watcher_dead():
+                        break
+                if task.done():
+                    try:
+                        return task.result()
+                    except (websockets.ConnectionClosed, JujuConnectionError) as e:
+                        log.info(f"Model connection lost during wait: {e!r}")
+                else:
+                    log.info("Model watcher stopped during wait")
+            finally:
+                if not task.done():
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
+            await self.reconnect()
+
+    async def block_until(self, *conditions, timeout=None, wait_period=0.5):
+        await self._wait_resiliently(
+            lambda remaining: super(ResilientModel, self).block_until(
+                *conditions, timeout=remaining, wait_period=wait_period
+            ),
+            timeout,
+        )
+
+    async def wait_for_idle(self, *args, timeout=10 * 60, **kwargs):
+        await self._wait_resiliently(
+            lambda remaining: super(ResilientModel, self).wait_for_idle(
+                *args, timeout=remaining, **kwargs
+            ),
+            timeout,
+        )
 
 
 async def juju_crashdump(tools: "Tools", model: str, *extra_args: str, check=True):
@@ -146,6 +250,20 @@ async def upgrade_snaps(model: Model, channel, tools):
         await app.set_config({"channel": channel})
         await model.wait_for_idle(apps=[app_name])
 
+        # A unit that stays blocked after the app settled will not recover by
+        # waiting; only "needs manual upgrade" is resolved below.
+        failed = [
+            f"{unit.name}: {unit.workload_status_message}"
+            for unit in app.units
+            if unit.workload_status == "blocked"
+            and MANUAL_UPGRADE_MESSAGE not in unit.workload_status_message
+        ]
+        if failed:
+            raise RuntimeError(
+                f"{app_name} blocked after changing snap channel to {channel}: "
+                + "; ".join(failed)
+            )
+
         for unit in app.units:
             # Upgrade any application that is blocked due to snap changes
             message = "{} [{}] {}: {}".format(
@@ -157,8 +275,7 @@ async def upgrade_snaps(model: Model, channel, tools):
             log.info(message)
             if (
                 unit.workload_status == "blocked"
-                and "Needs manual upgrade, run the upgrade action"
-                in unit.workload_status_message
+                and MANUAL_UPGRADE_MESSAGE in unit.workload_status_message
             ):
                 # run upgrade action
                 log.info(f"{unit.name} starting upgrade action")

@@ -25,7 +25,10 @@ from pathlib import Path
 from py.xml import html
 from tempfile import NamedTemporaryFile
 from .utils import (
+    JUJU_WAIT_TIMEOUT,
+    ResilientModel,
     asyncify,
+    tolerate_slow_controller,
     upgrade_charms,
     upgrade_snaps,
     log_snap_versions,
@@ -34,6 +37,8 @@ from .utils import (
 )
 
 from .logger import log
+
+tolerate_slow_controller()
 
 
 # Quiet the noise
@@ -287,6 +292,10 @@ class Tools:
         if "m" not in kwargs:
             kwargs["m"] = self.connection
 
+        # juju-wait without a limit can block a cell until the job timeout
+        if not kwargs.get("max_wait"):
+            kwargs["max_wait"] = JUJU_WAIT_TIMEOUT
+
         # max_wait and retry_errors are special
         # kwargs that shouldn't be hyphenated when calling `juju-wait`
         # swap the long form arg for its shortened version
@@ -328,7 +337,7 @@ async def tools(request):
 
 @pytest.fixture(scope="module")
 async def model(request, tools):
-    model = Model()
+    model = ResilientModel()
     await model.connect(tools.connection)
     if request.config.getoption("--is-upgrade"):
         await tools.juju_wait()
@@ -412,7 +421,7 @@ async def k8s_model(k8s_cloud, tools):
             "--no-switch",
         )
 
-        _model_created = Model()
+        _model_created = ResilientModel()
         await _model_created.connect(tools.k8s_connection)
         yield _model_created
     finally:
@@ -566,7 +575,7 @@ async def deploy(request, tools):
         "test-mode=true",
     )
 
-    _model_obj = Model()
+    _model_obj = ResilientModel()
     await _model_obj.connect(f"{tools.controller_name}:{nonce_model}")
     yield (tools.controller_name, _model_obj)
     await _model_obj.disconnect()
@@ -579,7 +588,7 @@ async def addons_model(request):
     model_name = request.config.getoption("--addons-model")
     if not model_name:
         pytest.skip("--addons-model not specified")
-    model = Model()
+    model = ResilientModel()
     await model.connect(controller_name + ":" + model_name)
     yield model
     await model.disconnect()

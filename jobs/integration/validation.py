@@ -407,6 +407,8 @@ async def setup_microbot(model, microbot_deployment):
     )
 
 
+# CK 1.36 no longer ships the nginx ingress controller the microbot ingress needs
+@pytest.mark.skip_if_version(lambda v: v >= (1, 36))
 @pytest.mark.clouds(["azure", "ec2", "vsphere"])
 async def test_microbot(model, setup_microbot):
     """Validate the microbot action"""
