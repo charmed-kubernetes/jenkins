@@ -47,6 +47,7 @@
         apt-get update
         apt-get install -qyf \
           docker.io \
+          docker-buildx \
           make \
           netcat-openbsd \
           python3-venv \
