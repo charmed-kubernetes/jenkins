@@ -59,14 +59,15 @@ function compile::env
     kv::set "juju_channel" "$(juju::version)"
 }
 
+# read the kernel uuid directly: avoids depending on uuidgen (uuid-runtime) in the container
 function identifier
 {
-    uuidgen | tr '[:upper:]' '[:lower:]'
+    cat /proc/sys/kernel/random/uuid
 }
 
 function identifier::short
 {
-    uuidgen | tr '[:upper:]' '[:lower:]' | cut -f1 -d-
+    identifier | cut -f1 -d-
 }
 
 # Generate a isoformat timetsamp

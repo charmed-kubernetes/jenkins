@@ -74,6 +74,30 @@ ci_lxc_mount()
     sudo lxc config device add ${lxc_container} ${name} disk source=${source} path=${dest}
 }
 
+ci_lxc_push_tree()
+{
+    # copy a host directory tree into the container, owned by the ubuntu user
+    # (uid/gid 1000), preserving modes. The agents run as root and the container
+    # is unprivileged without raw.idmap, so bind-mounting a root-owned directory
+    # would leave it unreadable/unwritable for the ubuntu user.
+    #
+    # Arguments:
+    # $1: container name
+    # $2: host root directory
+    # $3: path relative to the host root (and to $4)
+    # $4: destination root directory inside the container
+    local lxc_container=$1
+    local source_root=$2
+    local path=$3
+    local dest_root=$4
+    ci_lxc_exec ${lxc_container} -- install -d -o 1000 -g 1000 ${dest_root}
+    (
+        set -o pipefail
+        tar -C ${source_root} -cf - ${path} | \
+            ci_lxc_exec --user=1000 --group=1000 ${lxc_container} -- tar -xf - -C ${dest_root}
+    )
+}
+
 ci_lxc_push()
 {
     # copy a file from the host into the container

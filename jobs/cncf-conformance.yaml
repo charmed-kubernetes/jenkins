@@ -4,7 +4,7 @@
 
 - job:
     name: 'conformance-cncf-ck'
-    node: runner-amd64
+    node: 'amd64 && large'
     description: |
       CNCF Conformance testing for Kubernetes.
 

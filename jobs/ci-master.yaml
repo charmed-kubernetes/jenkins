@@ -81,7 +81,7 @@
       - string:
           name: LXC_MOUNT_LIST
           description: |-
-            comma-separated list of paths to mount in the container from $HOME to $LXC_HOME
+            comma-separated list of paths to copy in the container from $HOME to $LXC_HOME
           default: .local,.ssh,.aws,.azure
 
 - parameter:
@@ -307,7 +307,9 @@
           #!/bin/bash
           set -eux
 
-          export HOME="${{HOME:-/var/lib/jenkins}}"
+          # PS7 agents run as root but credentials are provisioned under
+          # /var/lib/jenkins by the infra playbook
+          export HOME=/var/lib/jenkins
 
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
@@ -364,7 +366,7 @@
 
           . $WORKSPACE/lxc_runner.sh
 
-          ci_lxc_init_runner _lxc trap "{USE_VM|false}"
+          ci_lxc_init_runner _lxc trap "{USE_VM|false}" "{VSPHERE_EGRESS|false}"
           _job_sh=$(basename $(mktemp -p $WORKSPACE --suffix=.sh))
 
           # push job script into workspace and run
@@ -375,6 +377,8 @@
           set -o allexport
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
+
+          mkdir -p "$TMPDIR"
 
           python3 -m venv venv
           venv/bin/python -m pip install tox

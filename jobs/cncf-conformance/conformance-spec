@@ -18,7 +18,7 @@ function juju::bootstrap::before
 {
     rm -rf sonobuoy*
     SB_FILE="sonobuoy_${SONOBUOY_VERSION}_linux_${ARCH}.tar.gz"
-    wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERSION}/${SB_FILE}
+    curl -fsSL -o "${SB_FILE}" "https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERSION}/${SB_FILE}"
     tar xvf ${SB_FILE}
     rm -f ${SB_FILE}
     ./sonobuoy version || exit 1
