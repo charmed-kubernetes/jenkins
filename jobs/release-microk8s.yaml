@@ -4,10 +4,10 @@
     name: 'release-microk8s-arch-{arch}'
     axes:
       - axis:
-          type: slave  # wokeignore:rule=slave
-          name: node
+          type: label-expression
+          name: label
           values:
-            - runner-cloud
+            - '{arch} && large'
     description: |
       Tests and releases microk8s. Affects all tracks on {arch}.
     project-type: matrix
@@ -36,7 +36,7 @@
             comma-separated list of snaps to install into the container
             if the snap requires multiple arguments
           choices:
-            - snapcraft --channel=6.x/stable,juju-wait,juju-crashdump,juju --channel=$juju_channel
+            - snapcraft --channel=8.x/stable,juju-wait,juju-crashdump,juju --channel=$juju_channel
       - choice:
           name: LXC_PUSH_LIST
           description: |-
@@ -96,6 +96,8 @@
           description: |
             Proxy endpoint
     builders:
+      - set-env:
+          JOB_SPEC_DIR: "jobs/release-microk8s"
       - run-lxc:
           COMMAND: |
             bash jobs/microk8s/release.sh
@@ -110,7 +112,7 @@
 
 - job:
     name: 'release-microk8s-edge'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Builds, releases and promotes microk8s to the snapstore on the edge channel.
     project-type: freestyle
@@ -127,16 +129,15 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-      - run-tox:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/release-microk8s"
           COMMAND: |
-            timeout 2h snapcraft login --with /var/lib/jenkins/snapcraft-creds
-            timeout 2h tox -e py38 -- python jobs/microk8s/release-to-edge-on-new-upstream-release.py
+            timeout 2h python jobs/microk8s/release-to-edge-on-new-upstream-release.py
 
 
 - job:
     name: 'update-microk8s-gh-branches-and-lp-builders'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       On new upstream releases creates code branches and LP builders.
     project-type: freestyle
@@ -153,8 +154,7 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/release-microk8s"
-      - run-tox:
+      - run-venv:
           JOB_SPEC_DIR: "jobs/release-microk8s"
           COMMAND: |
-            timeout 2h snapcraft login --with /var/lib/jenkins/snapcraft-creds
-            timeout 2h tox -e py38 -- python jobs/microk8s/update-gh-branches-and-lp-builders.py
+            timeout 2h python jobs/microk8s/update-gh-branches-and-lp-builders.py

@@ -39,9 +39,14 @@ SNAP_VERSION=stable
 JOB_ID=$(identifier)
 JOB_REPORTING=no
 
-function snapcraft::login
+function snapcraft::credentials
 {
-    snapcraft login --with "${SNAPCRAFTCREDS}"
+    # Credentials are consumed by every snapcraft invocation via the environment.
+    # SNAPCRAFTCREDS is the file pushed into the container (LXC_PUSH_LIST).
+    set +x
+    SNAPCRAFT_STORE_CREDENTIALS="$(< "${SNAPCRAFTCREDS}")"
+    export SNAPCRAFT_STORE_CREDENTIALS
+    set -x
 }
 
 function gather::channels
@@ -123,7 +128,7 @@ function test::execute
 # START
 ###############################################################################
 
-snapcraft::login
+snapcraft::credentials
 gather::channels
 for CHANNEL in "${CHANNELS[@]}"; do
     export "CHANNEL"

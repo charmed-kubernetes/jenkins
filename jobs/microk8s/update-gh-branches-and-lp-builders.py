@@ -11,8 +11,10 @@ from subprocess import check_call, CalledProcessError
 from utils import upstream_release
 
 
-gh_user = os.environ.get("GH_USER")
-gh_token = os.environ.get("GH_TOKEN")
+# GH_USER/GH_TOKEN may be set explicitly; otherwise use the cdkbot credentials
+# bound by the ci-creds wrapper.
+gh_user = os.environ.get("GH_USER") or os.environ.get("CDKBOT_GH_USR")
+gh_token = os.environ.get("GH_TOKEN") or os.environ.get("CDKBOT_GH_PSW")
 
 
 def is_latest(release):
