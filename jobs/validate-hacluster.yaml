@@ -1,6 +1,7 @@
 # Validates hacluster on a deployed CDK and kubernetes-core
 - job-template:
     name: 'validate-hacluster-{target}'
+    disabled: true  # scapestack cloud was removed
     description: |
       Validates HACluster support on {target}
     project-type: pipeline
