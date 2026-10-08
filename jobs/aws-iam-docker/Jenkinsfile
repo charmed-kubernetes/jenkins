@@ -2,13 +2,20 @@ tag = "${params.GIT_TAG}"
 
 pipeline {
     agent {
-        label "runner-amd64"
+        label 'amd64 && large'
     }
     /* XXX: Global $PATH setting doesn't translate properly in pipelines
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        HOME = "/var/lib/jenkins"
+        PATH = "/snap/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        HTTP_PROXY = "http://egress.ps7.internal:3128"
+        HTTPS_PROXY = "http://egress.ps7.internal:3128"
+        http_proxy = "http://egress.ps7.internal:3128"
+        https_proxy = "http://egress.ps7.internal:3128"
+        NO_PROXY = "localhost,127.0.0.1"
+        no_proxy = "localhost,127.0.0.1"
         GOPATH = "$WORKSPACE"
         REGISTRY_CREDS = credentials('canonical_registry')
     }
@@ -20,8 +27,6 @@ pipeline {
         string(name: 'DRY_RUN', defaultValue: 'no', description: 'Set to build OCI image, but not push')
     }
     options {
-        ansiColor('xterm')
-        timestamps()
         timeout(time: 30, unit: 'MINUTES')
     }
 
@@ -31,7 +36,7 @@ pipeline {
                 script {
                     if (params.GIT_TAG == "latest") {
                         tag = sh (script: "curl --silent 'https://api.github.com/repos/kubernetes-sigs/aws-iam-authenticator/releases/latest' | jq -r .tag_name",
-                                returnStdout: true)
+                                returnStdout: true).trim()
                     }
                     sh "mkdir -p src/sigs.k8s.io/aws-iam-authenticator"
                     dir('src/sigs.k8s.io/aws-iam-authenticator') {
@@ -71,7 +76,7 @@ pipeline {
                     } else {
                         retry(3) {
                             echo "pushing ${params.REGISTRY_URL}/cdk/aws-iam-authenticator:${tag}"
-                            sh "docker login -u ${env.REGISTRY_CREDS_USR} -p ${env.REGISTRY_CREDS_PSW} ${params.REGISTRY_URL}"
+                            sh "echo \"\${REGISTRY_CREDS_PSW}\" | docker login -u \"\${REGISTRY_CREDS_USR}\" --password-stdin ${params.REGISTRY_URL}"
                             sh "docker push ${params.REGISTRY_URL}/cdk/aws-iam-authenticator:${tag}"
                         }
                     }

@@ -19,6 +19,9 @@
           name: 'DOCKER_TAG'
           default: 'source'
       - string:
+          name: 'REGISTRY_URL'
+          default: 'upload.rocks.canonical.com:5000'
+      - string:
           name: 'DRY_RUN'
           default: 'no'
     properties:

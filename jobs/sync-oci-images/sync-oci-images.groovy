@@ -17,16 +17,19 @@ pipeline {
         BUNDLE_IMAGE_FILE = "${bundle_image_file}"
         IS_DRY_RUN = "${params.dry_run}"
         LXC_NAME = "${env.JOB_NAME}-${env.BUILD_NUMBER}"
-        PATH = "/var/lib/jenkins/venvs/ci/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
+        HOME = "/var/lib/jenkins"
+        PATH = "/snap/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        HTTP_PROXY = "http://egress.ps7.internal:3128"
+        HTTPS_PROXY = "http://egress.ps7.internal:3128"
+        http_proxy = "http://egress.ps7.internal:3128"
+        https_proxy = "http://egress.ps7.internal:3128"
+        NO_PROXY = "localhost,127.0.0.1"
+        no_proxy = "localhost,127.0.0.1"
         DOCKERHUB_CREDS = credentials('cdkbot_dockerhub')
         GITHUB_CREDS = credentials('cdkbot_github')
         REGISTRY_CREDS = credentials('canonical_registry')
         REGISTRY_URL = 'upload.rocks.canonical.com:5000'
         REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/library/ docker.io/ gcr.io/ nvcr.io/ quay.io/ registry.k8s.io/'
-    }
-    options {
-        ansiColor('xterm')
-        timestamps()
     }
     stages {
         stage('Setup User') {
@@ -106,7 +109,7 @@ pipeline {
                 sh '''#!/usr/bin/env bash
                     . ${WORKSPACE}/cilib.sh
 
-                    ci_lxc_launch ubuntu:20.04 $LXC_NAME
+                    ci_lxc_launch ubuntu:24.04 $LXC_NAME
                     sudo lxc shell $LXC_NAME -- bash -c "apt-get install containerd -y"
                    '''
             }
@@ -121,7 +124,7 @@ pipeline {
                 sh '''
                     echo "Processing upstream images."
                     UPSTREAM_KEY=$KUBE_VERSION-upstream:
-                    UPSTREAM_LINE=$(cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION upstream-images 2>/dev/null | grep ^${UPSTREAM_KEY})
+                    UPSTREAM_LINE=$(cd cdk-addons && make KUBE_VERSION=$KUBE_VERSION upstream-images | grep ^${UPSTREAM_KEY})
 
                     echo "Updating bundle with upstream images."
                     if grep -q ^${UPSTREAM_KEY} $BUNDLE_IMAGE_FILE
@@ -181,10 +184,12 @@ pipeline {
                     PUSH_CREDS="-u $REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW"
 
                     pull_ctr () {
-                        PULL_PROXY="http://squid.internal:3128"
+                        PULL_PROXY="http://egress.ps7.internal:3128"
                         sudo lxc exec $LXC_NAME \
                         --env HTTP_PROXY="${PULL_PROXY}" \
                         --env HTTPS_PROXY="${PULL_PROXY}" \
+                        --env http_proxy="${PULL_PROXY}" \
+                        --env https_proxy="${PULL_PROXY}" \
                         -- ctr content fetch ${PULL_CREDS} ${1} --all-platforms >/dev/null; 
                     }
 
@@ -282,10 +287,12 @@ pipeline {
                     PUSH_CREDS="-u $REGISTRY_CREDS_USR:$REGISTRY_CREDS_PSW"
 
                     pull_ctr () {
-                        PULL_PROXY="http://squid.internal:3128"
+                        PULL_PROXY="http://egress.ps7.internal:3128"
                         sudo lxc exec $LXC_NAME \
                         --env HTTP_PROXY="${PULL_PROXY}" \
                         --env HTTPS_PROXY="${PULL_PROXY}" \
+                        --env http_proxy="${PULL_PROXY}" \
+                        --env https_proxy="${PULL_PROXY}" \
                         -- ctr content fetch ${PULL_CREDS} ${1} --all-platforms >/dev/null; 
                     }
 

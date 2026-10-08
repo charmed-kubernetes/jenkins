@@ -2,7 +2,7 @@
 
 - job:
     name: 'sync-oci-images'
-    node: runner-amd64
+    node: 'amd64 && large'
     description: |
       Tags and pushes container images needed by Charmed Kubernetes to the rocks staging area.
     project-type: pipeline
@@ -13,7 +13,7 @@
     parameters:
       - string:
           name: build_node
-          default: 'runner-amd64'
+          default: 'amd64 && large'
       - string:
           name: version
           default: '1.36'
