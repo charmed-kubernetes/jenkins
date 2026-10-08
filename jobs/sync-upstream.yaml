@@ -96,7 +96,7 @@
 
 - job:
     name: 'sync-internal-tags'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Syncs all internal k8s tags
     project-type: freestyle
@@ -115,13 +115,17 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-tox:
+      - shell: |-
+          cat >> "$WORKSPACE/.env" <<'EOF'
+          export GIT_SSH_COMMAND='ssh -i "$CDKBOTSSHCREDS" -o StrictHostKeyChecking=no -o ProxyCommand="nc -X connect -x egress.ps7.internal:3128 %h %p"'
+          EOF
+      - run-venv:
           COMMAND: |
             IS_DRY_RUN=""
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            tox -e py38 -- python jobs/sync-upstream/sync.py sync-internal-tags $IS_DRY_RUN
+            python jobs/sync-upstream/sync.py sync-internal-tags $IS_DRY_RUN
 
 - job:
     name: 'sync-ppas'
@@ -155,7 +159,7 @@
 
 - job:
     name: 'sync-upstream'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       Syncs the upstream components into a controlled organization
       (github/charmed-kubernetes). This allows more control over release
@@ -176,20 +180,27 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-tox:
+      - shell: |-
+          cat >> "$WORKSPACE/.env" <<'EOF'
+          export GIT_AUTHOR_NAME='cdkbot'
+          export GIT_AUTHOR_EMAIL='cdkbot@gmail.com'
+          export GIT_COMMITTER_NAME='cdkbot'
+          export GIT_COMMITTER_EMAIL='cdkbot@gmail.com'
+          EOF
+      - run-venv:
           COMMAND: |
             IS_DRY_RUN=""
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            tox -e py38 -- python jobs/sync-upstream/sync.py forks $IS_DRY_RUN
+            python jobs/sync-upstream/sync.py forks $IS_DRY_RUN
 
 - job:
     name: 'sync-stable-tag-bundle-rev'
     description: |
       Tags all downstream stable branches with bundle revision
     project-type: freestyle
-    node: runner-cloud
+    node: 'amd64 && large'
     scm:
       - k8s-jenkins-jenkaas
     properties:
@@ -212,13 +223,13 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-tox:
+      - run-venv:
           COMMAND: |
             IS_DRY_RUN=""
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            tox -e py38 -- python jobs/sync-upstream/sync.py tag-stable \
+            python jobs/sync-upstream/sync.py tag-stable \
                      --layer-list jobs/includes/charm-layer-list.inc \
                      --charm-list jobs/includes/charm-support-matrix.inc \
                      --bundle-revision $BUNDLE_REV \
@@ -231,7 +242,7 @@
     description: |
       Tags all downstream stable branches with bugfix revision
     project-type: freestyle
-    node: runner-amd64
+    node: 'amd64 && large'
     scm:
       - k8s-jenkins-jenkaas
     properties:
@@ -254,13 +265,13 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-tox:
+      - run-venv:
           COMMAND: |
             IS_DRY_RUN=""
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            tox -e py38 -- python jobs/sync-upstream/sync.py tag-stable \
+            python jobs/sync-upstream/sync.py tag-stable \
               --layer-list jobs/includes/charm-layer-list.inc \
               --charm-list jobs/includes/charm-support-matrix.inc \
               --bundle-revision $BUGFIX_REV \
@@ -274,7 +285,7 @@
     description: |
       Resets all layer stable branches from default branches.
     project-type: freestyle
-    node: runner-cloud
+    node: 'amd64 && large'
     scm:
       - k8s-jenkins-jenkaas
     properties:
@@ -297,13 +308,13 @@
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/sync-upstream"
-      - run-tox:
+      - run-venv:
           COMMAND: |
             IS_DRY_RUN=""
             if [[ $DRY_RUN = "true" ]]; then
               IS_DRY_RUN="--dry-run"
             fi
-            tox -e py38 -- python jobs/sync-upstream/sync.py cut-stable-release \
+            python jobs/sync-upstream/sync.py cut-stable-release \
                --layer-list jobs/includes/charm-layer-list.inc \
                --charm-list jobs/includes/charm-support-matrix.inc \
                --ancillary-list jobs/includes/ancillary-list.inc \

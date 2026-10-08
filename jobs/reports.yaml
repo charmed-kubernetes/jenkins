@@ -2,7 +2,7 @@
 
 - job:
     name: 'generate-reports-overview'
-    node: runner-cloud
+    node: 'amd64 && large'
     description: |
       generates a report overview
     project-type: freestyle
@@ -17,8 +17,10 @@
       - default-job-wrapper
       - ci-creds
     builders:
-      - set-env:
-          JOB_SPEC_DIR: "jobs/reports"
+      - set-env
       - run-venv:
           COMMAND: |
+            # read the bound aws_creds file directly rather than relying on
+            # ~/.aws/credentials having been provisioned on the agent
+            export AWS_SHARED_CREDENTIALS_FILE="$AWSCREDS"
             python bin/report build
