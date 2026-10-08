@@ -17,6 +17,7 @@ pipeline {
         NO_PROXY = "localhost,127.0.0.1"
         no_proxy = "localhost,127.0.0.1"
         GOPATH = "$WORKSPACE"
+        DOCKER_CONFIG = "$WORKSPACE/.docker"
         REGISTRY_CREDS = credentials('canonical_registry')
     }
     parameters {
@@ -49,6 +50,9 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh "sudo snap install --classic goreleaser"
+                // The Dockerfile runs `go build` with GOPROXY=direct inside the build.
+                // The docker client injects the proxy into the build only from its config.
+                writeFile file: "${env.DOCKER_CONFIG}/config.json", text: """{"proxies": {"default": {"httpProxy": "${env.HTTP_PROXY}", "httpsProxy": "${env.HTTPS_PROXY}", "noProxy": "${env.NO_PROXY}"}}}"""
                 dir("src/sigs.k8s.io/aws-iam-authenticator") {
                     sh "make image"
                 }
