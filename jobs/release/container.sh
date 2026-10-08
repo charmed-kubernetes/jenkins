@@ -26,10 +26,19 @@ scenario_spec() {
 # (acl kubernetes_vsphere_ip in canonical-is-internal-proxy-configs/ps7.conf).
 # python-libjuju and SSH dial VM addresses directly and ignore HTTP proxy
 # settings, so redirect that network through redsocks.
+#
+# Instances on AWS get public addresses that cannot be listed. The proxy lets
+# the same agents CONNECT on SSH, 17070 and 6443 to any host with an EC2 public
+# DNS name (acl ec2_instance_public_dns), so redirect those ports for every
+# non-private destination. Private ranges stay direct and fail as before.
+# HTTPS-aware clients (kubectl, curl) already use the proxy through the
+# environment, so 443 is not redirected.
 readonly VSPHERE_CIDR=10.246.152.0/21
 readonly EGRESS_PROXY_HOST=egress.ps7.internal
 readonly EGRESS_PROXY_PORT=3128
 readonly REDSOCKS_PORT=12345
+readonly CLOUD_PORTS="22, 6443, 17070"
+readonly PRIVATE_RANGES="10.0.0.0/8, 127.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16"
 
 setup_egress() {
     local proxy_ip
@@ -48,6 +57,7 @@ table ip release_egress {
     chain output {
         type nat hook output priority dstnat; policy accept;
         ip daddr $VSPHERE_CIDR meta l4proto tcp redirect to :$REDSOCKS_PORT
+        ip daddr != { $PRIVATE_RANGES } tcp dport { $CLOUD_PORTS } redirect to :$REDSOCKS_PORT
     }
 }
 EOF

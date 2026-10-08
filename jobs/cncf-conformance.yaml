@@ -41,5 +41,6 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/cncf-conformance"
       - run-lxc:
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/cncf-conformance/conformance-spec

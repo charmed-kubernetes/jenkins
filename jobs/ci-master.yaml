@@ -366,7 +366,7 @@
 
           . $WORKSPACE/lxc_runner.sh
 
-          ci_lxc_init_runner _lxc trap "{USE_VM|false}" "{VSPHERE_EGRESS|false}"
+          ci_lxc_init_runner _lxc trap "{USE_VM|false}" "{CLOUD_EGRESS|false}"
           _job_sh=$(basename $(mktemp -p $WORKSPACE --suffix=.sh))
 
           # push job script into workspace and run

@@ -53,7 +53,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
-          VSPHERE_EGRESS: true
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/spec $snap_version $series $channel $arch $cloud $etcd_channel
 
@@ -133,6 +133,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/spec $snap_version $series $channel $arch $cloud $etcd_channel
 
@@ -182,6 +183,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/upgrade-spec $snap_version $series $channel $arch $cloud
 
@@ -212,7 +214,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
-          VSPHERE_EGRESS: true
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/snapd-upgrade-spec $snap_version $series $channel
 
@@ -243,7 +245,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
-          VSPHERE_EGRESS: true
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/series-upgrade-spec $snap_version $series $channel
 
@@ -361,7 +363,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
-          VSPHERE_EGRESS: true
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/integrator-spec $snap_version $series $channel amd64 $cloud
 
@@ -408,6 +410,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/calico-spec $snap_version $series $channel amd64 $routing_mode
 
@@ -480,7 +483,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
-          VSPHERE_EGRESS: true
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/vault-spec $snap_version $series $channel
 
@@ -587,7 +590,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
-          VSPHERE_EGRESS: true
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/ovn-multus-spec $snap_version $series $channel
 
@@ -624,6 +627,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/sriov-spec $snap_version $series $channel
 
@@ -654,7 +658,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
-          VSPHERE_EGRESS: true
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/cilium-spec $snap_version $series $channel
 
@@ -697,6 +701,6 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
       - run-lxc:
-          VSPHERE_EGRESS: true
+          CLOUD_EGRESS: true
           COMMAND: |
             bash jobs/validate/autoscaler-spec $snap_version $series $channel

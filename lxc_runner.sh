@@ -14,11 +14,11 @@ ci_lxc_init_runner()
     # of the bash script unless "notrap" is passed
 
     # Usage:
-    # ci_lxc_init_runner name_of_container [notrap] [use_vms] [vsphere_egress]
+    # ci_lxc_init_runner name_of_container [notrap] [use_vms] [cloud_egress]
     local  __resultvar=$1
     local  __trap=${2:-trap}
     local  __use_vms=${3:-false}
-    local  __vsphere_egress=${4:-false}
+    local  __cloud_egress=${4:-false}
 
     # init a container runner on the build host
     local lxc_container=${JOB_NAME%%/*}-$(openssl rand -hex 10)-${BUILD_NUMBER}
@@ -96,21 +96,21 @@ ci_lxc_init_runner()
     done
     IFS=${_IFS} # restore IFS
 
-    if [[ "${__vsphere_egress,,}" == "true" ]]; then
-        ci_lxc_vsphere_egress ${lxc_container}
+    if [[ "${__cloud_egress,,}" == "true" ]]; then
+        ci_lxc_cloud_egress ${lxc_container}
     fi
 
     eval $__resultvar="'$lxc_container'"
 }
 
 
-ci_lxc_vsphere_egress()
+ci_lxc_cloud_egress()
 {
-    # PS7 has no route to the vSphere network. The egress proxy only lets
-    # CONNECT through to it on ports 22, 443 and 17070, and juju/ssh dial the
-    # VM addresses directly, ignoring HTTP proxy settings. Redirect that
-    # network through redsocks inside the container, reusing the release
-    # validation container helper.
+    # PS7 has no direct route to the cloud networks. The egress proxy only lets
+    # CONNECT through on a few ports (22, 443, 17070, 6443), and juju/ssh dial
+    # the instances directly, ignoring HTTP proxy settings. Redirect vSphere and
+    # the SSH/Juju/Kubernetes API ports of public cloud instances through
+    # redsocks inside the container, reusing the release validation helper.
     local lxc_container=$1
     ci_lxc_apt_install_retry ${lxc_container} redsocks nftables
     ci_lxc_exec ${lxc_container} -- bash ${LXC_WORKSPACE}/jobs/release/container.sh egress
