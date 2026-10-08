@@ -1338,9 +1338,24 @@ async def test_audit_webhook(model, tools):
     await reset_audit_config(app, tools)
 
     async def get_webhook_server_entry_count():
-        result = await kubectl(model, "logs test-audit-webhook")
-        lines = result.stdout.splitlines()
-        return len(lines)
+        # The audit config change restarts every kube-apiserver at once, and
+        # kubeapi-load-balancer keeps answering 502 for a while after juju-wait
+        # reports idle. `kubectl logs` fails meanwhile: the kubelet authorizes the
+        # apiserver's request through the load balancer. Retry until it recovers.
+        result = None
+
+        async def fetch_logs():
+            nonlocal result
+            result = await kubectl(model, "logs test-audit-webhook", check=False)
+            return result.success
+
+        try:
+            await retry_async_with_timeout(fetch_logs, timeout_insec=5 * 60)
+        except asyncio.TimeoutError:
+            pytest.fail(
+                f"kubectl logs test-audit-webhook kept failing: {result.output}"
+            )
+        return len(result.stdout.splitlines())
 
     # Deploy an nginx target for webhook
     local_path = Path(__file__).parent / "templates/test-audit-webhook.yaml"
