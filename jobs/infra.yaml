@@ -65,7 +65,7 @@
 - job:
     name: 'infra-cleanup-clouds'
     description: |
-      Purges stale cloud resources (AWS, GCE, Azure) created by CI jobs.
+      Purges stale cloud resources (AWS, GCE) created by CI jobs.
       Runs once on any free amd64 large agent rather than redundantly on every node.
     node: 'amd64 && large'
     project-type: freestyle

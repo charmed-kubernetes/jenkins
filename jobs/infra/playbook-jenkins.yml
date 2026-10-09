@@ -48,8 +48,10 @@
         apt-get install -qyf \
           docker.io \
           docker-buildx \
+          jq \
           make \
           netcat-openbsd \
+          parallel \
           python3-venv \
           tox
         # --- re-enable progressively as jobs require them ---
@@ -64,7 +66,6 @@
         # file \
         # flake8 \
         # gcc \
-        # jq \
         # language-pack-en-base \
         # libffi-dev \
         # libffi7 \           # invalid on noble (ships libffi8)
@@ -73,7 +74,6 @@
         # libxml2-dev \
         # make \
         # motd-news-config \
-        # parallel \
         # python3-dev \
         # python3-pip \
         # python3-venv \
@@ -93,8 +93,8 @@
         # virtualenv \
         # wget \
         # zlib1g-dev \
-        # tmpreaper \
-        # awscli
+        # tmpreaper
+        # awscli              # not in noble; the aws-cli snap is installed below
       tags:
         - jenkins
       ignore_errors: yes
@@ -166,7 +166,8 @@
         - "charm --classic --channel 3.x/stable"
         - "charmcraft --classic --channel 2.x/stable"
         - "go --classic --stable"
-        # - "google-cloud-cli --classic --channel latest/stable"
+        - "aws-cli --classic"
+        - "google-cloud-cli --classic"
         # - "juju --channel=3/stable"
         # - "juju-crashdump --classic --edge"
         # - "juju-wait --classic"

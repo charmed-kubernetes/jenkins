@@ -23,8 +23,11 @@ Each job self-maintains its own agent via `--limit localhost`. It:
 ### `infra-cleanup-clouds`
 
 Runs every 6 hours on any free `amd64 && large` agent. Purges stale cloud
-resources across AWS, GCE, and Azure that were created by CI jobs. Runs once
-globally rather than redundantly on every agent.
+resources across AWS and GCE that were created by CI jobs. Runs once
+globally rather than redundantly on every agent. Fails if the agent lacks
+`aws`, `jq`, `parallel`, or `gcloud` (provisioned by the playbook). Azure
+purge is shelved until an Azure job runs on PS7; see the `NOTE:` in
+`jobs/infra/fixtures/cleanup-clouds.sh`.
 
 ## Ansible
 
@@ -39,5 +42,5 @@ wrapper must be set.
 
 - `jobs/infra/fixtures/cleanup-local.sh` — local agent cleanup (Juju
   controllers, docker, lxd, apt, tmp). Called by each maintain job.
-- `jobs/infra/fixtures/cleanup-clouds.sh` — AWS/GCE/Azure account-wide
-  purge. Called by `infra-cleanup-clouds` only.
+- `jobs/infra/fixtures/cleanup-clouds.sh` — AWS/GCE account-wide purge
+  (Azure shelved). Called by `infra-cleanup-clouds` only.

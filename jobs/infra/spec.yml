@@ -17,7 +17,10 @@ meta:
     - `infra-maintain-{node}` — one per persistent agent; runs local cleanup
       and the Ansible playbook on that agent.
     - `infra-cleanup-clouds` — runs once on any free amd64 large agent;
-      purges stale AWS, GCE, and Azure resources created by CI jobs.
+      purges stale AWS and GCE resources created by CI jobs. Fails if the
+      agent lacks `aws`, `jq`, `parallel`, or `gcloud`. Azure purge is
+      shelved until an Azure job runs on PS7 (see `NOTE:` in
+      `jobs/infra/fixtures/cleanup-clouds.sh`).
   mkdocs:
     destination:
       - "maintenance/infra.md"
