@@ -104,6 +104,7 @@ K8S_CRI_TOOLS_SEMVER = "1.19"
 
 # Kubernetes build source to go version map
 K8S_GO_MAP = {
+    "1.37": "go/1.26/stable",
     "1.36": "go/1.26/stable",
     "1.35": "go/1.25/stable",
     "1.34": "go/1.24/stable",
