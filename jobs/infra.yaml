@@ -84,6 +84,7 @@
       - set-env:
           JOB_SPEC_DIR: "jobs/infra"
       - shell: |
+          #!/bin/bash
           set -o allexport
           [[ -f $WORKSPACE/.env ]] && source $WORKSPACE/.env
           set +o allexport
