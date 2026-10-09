@@ -25,7 +25,8 @@ Each job self-maintains its own agent via `--limit localhost`. It:
 Runs every 6 hours on any free `amd64 && large` agent. Purges stale cloud
 resources across AWS and GCE that were created by CI jobs. Runs once
 globally rather than redundantly on every agent. Fails if the agent lacks
-`aws`, `jq`, `parallel`, or `gcloud` (provisioned by the playbook). Azure
+`aws`, `jq`, `parallel`, or `gcloud` (provisioned by the playbook), or if
+either cloud rejects its credentials (AWS reads the bound `AWSCREDS` file). Azure
 purge is shelved until an Azure job runs on PS7; see the `NOTE:` in
 `jobs/infra/fixtures/cleanup-clouds.sh`.
 

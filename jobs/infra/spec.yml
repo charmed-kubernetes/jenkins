@@ -18,7 +18,8 @@ meta:
       and the Ansible playbook on that agent.
     - `infra-cleanup-clouds` — runs once on any free amd64 large agent;
       purges stale AWS and GCE resources created by CI jobs. Fails if the
-      agent lacks `aws`, `jq`, `parallel`, or `gcloud`. Azure purge is
+      agent lacks `aws`, `jq`, `parallel`, or `gcloud`, or if either cloud
+      rejects its credentials (AWS reads the bound `AWSCREDS` file). Azure purge is
       shelved until an Azure job runs on PS7 (see `NOTE:` in
       `jobs/infra/fixtures/cleanup-clouds.sh`).
   mkdocs:

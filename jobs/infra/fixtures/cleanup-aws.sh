@@ -11,7 +11,14 @@ function purge::aws
 {
     default_region=us-east-1
 
-    for region in $(aws --region $default_region ec2 describe-regions | jq -r '.Regions[].RegionName'); do
+    # pipefail: an auth failure in `aws` must not look like "no regions".
+    local regions
+    regions=$(set -o pipefail; aws --region $default_region ec2 describe-regions | jq -r '.Regions[].RegionName') || {
+        echo "ERROR: cannot list AWS regions; check AWS credentials" >&2
+        return 1
+    }
+
+    for region in $regions; do
         echo "Purging AWS $region"
         aws --region "$region" ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner"} ]}) | not)' | jq -r '.InstanceId' | parallel aws --region "$region" ec2 terminate-instances --instance-ids {}
         aws --region "$region" ec2 describe-instances | jq '.Reservations[].Instances[] | select(contains({Tags: [{Key: "owner", Value: "k8sci"} ]}))' | jq -r '.InstanceId' | parallel aws --region "$region" ec2 terminate-instances --instance-ids {}

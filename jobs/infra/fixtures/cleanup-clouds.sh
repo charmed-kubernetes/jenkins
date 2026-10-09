@@ -16,8 +16,14 @@ if (( ${#missing[@]} )); then
     exit 1
 fi
 
-purge::aws
-purge::gce
+# Read the bound aws_creds file directly rather than relying on
+# ~/.aws/credentials having been provisioned on the agent (as reports.yaml).
+export AWS_SHARED_CREDENTIALS_FILE="${AWSCREDS:?AWSCREDS not bound; job needs the ci-creds-infra wrapper}"
+
+# Run every cloud even if one fails, then fail the build.
+rc=0
+purge::aws || rc=1
+purge::gce || rc=1
 
 # NOTE: (azure) purge::az is shelved on PS7. The agents have no az CLI (not in
 # noble; needs Microsoft's apt repo) and no `az login` session, and no PS7 job
@@ -25,3 +31,5 @@ purge::gce
 # allowing EC2 hosts. Follow-up: once arc runs, install az and log in with the
 # service principal from $HOME/.local/share/juju/azure-arc.sh, then restore
 # `. "$THISDIR/cleanup-az.sh"` and `purge::az` here.
+
+exit $rc
