@@ -394,6 +394,12 @@ async def teardown_microbot(model, microbot_deployment):
 @pytest.fixture
 async def setup_microbot(model, microbot_deployment):
     """Setup the microbot on ingress"""
+    # The 1.36 kubernetes-worker charm dropped the nginx ingress controller (and its
+    # `ingress` option) the microbot ingress needs. Check the charm, not the k8s
+    # version: upgrade runs pair latest/edge charms with an older snap.
+    worker_config = await model.applications["kubernetes-worker"].get_config()
+    if "ingress" not in worker_config:
+        pytest.skip("kubernetes-worker charm does not provide an ingress controller")
     await kubectl_apply(microbot_deployment, model, namespace="default")
     unit = model.applications["kubernetes-worker"].units[0]
     await retry_async_with_timeout(
@@ -407,8 +413,6 @@ async def setup_microbot(model, microbot_deployment):
     )
 
 
-# CK 1.36 no longer ships the nginx ingress controller the microbot ingress needs
-@pytest.mark.skip_if_version(lambda v: v >= (1, 36))
 @pytest.mark.clouds(["azure", "ec2", "vsphere"])
 async def test_microbot(model, setup_microbot):
     """Validate the microbot action"""
@@ -486,11 +490,13 @@ async def test_dashboard(model, kubeconfig, tools):
 async def test_kubelet_anonymous_auth_disabled(model):
     """Validate that kubelet has anonymous auth disabled"""
     # Probe from inside the cloud: CI runners may only reach cloud VMs through an
-    # egress proxy that does not forward the kubelet port.
+    # egress proxy that does not forward the kubelet port. Use the private address:
+    # the worker charm does not open 10250, and Juju's intra-model firewall rule only
+    # matches traffic between private addresses.
     probe = model.applications["kubernetes-control-plane"].units[0]
 
     async def validate_unit(unit):
-        url = f"https://{unit.public_address}:10250/pods/"
+        url = f"https://{unit.safe_data['private-address']}:10250/pods/"
         cmd = f"curl -sk --noproxy '*' --max-time 10 -o /dev/null -w '%{{http_code}}' {url}"
         result = await juju_run_retry(probe, cmd, tries=12, delay=10)
         if result.success:
