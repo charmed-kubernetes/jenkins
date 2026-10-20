@@ -63,6 +63,10 @@ MANUAL_UPGRADE_MESSAGE = "Needs manual upgrade, run the upgrade action"
 # websockets closes a connection with 1011 "keepalive ping timeout" when the
 # controller misses a pong for 20s, which slow controllers do routinely.
 WS_PING_TIMEOUT = 120
+# websockets gives up opening a connection after 10s. On PS7 the controller is
+# dialed through the egress proxy, whose CONNECT to an EC2 address takes ~8s on
+# its own, so the TLS and websocket handshakes that follow often miss that limit.
+WS_OPEN_TIMEOUT = 60
 # Upper bound for model waits that were given no timeout of their own.
 MODEL_WAIT_TIMEOUT = 30 * 60
 # How often a running model wait checks that its model watcher is still alive.
@@ -70,15 +74,16 @@ MODEL_HEALTH_INTERVAL = 30
 
 
 def tolerate_slow_controller():
-    """Raise the websocket keepalive ping timeout used by python-libjuju.
+    """Raise the websocket open and keepalive ping timeouts used by python-libjuju.
 
-    libjuju does not expose the setting, so default it on `websockets.connect`.
+    libjuju does not expose the settings, so default them on `websockets.connect`.
     """
     if getattr(websockets.connect, "tolerates_slow_controller", False):
         return
     connect = websockets.connect
 
     def patient_connect(*args, **kwargs):
+        kwargs.setdefault("open_timeout", WS_OPEN_TIMEOUT)
         kwargs.setdefault("ping_timeout", WS_PING_TIMEOUT)
         return connect(*args, **kwargs)
 
