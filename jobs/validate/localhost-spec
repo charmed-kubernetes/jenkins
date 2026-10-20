@@ -31,6 +31,13 @@ function juju::deploy
 
 function juju::deploy::after
 {
+    # The kubernetes-worker charm dropped its nginx ingress controller, and the
+    # `ingress` option with it, in 1.36; juju rejects options a charm lacks.
+    local worker_ingress=""
+    if [[ ${JUJU_DEPLOY_CHANNEL%%/*} =~ ^1\.([0-9]+)$ ]] && (( BASH_REMATCH[1] < 36 )); then
+        worker_ingress="ingress: false"
+    fi
+
     tee overlay.yaml <<EOF > /dev/null
 series: null
 default-base: $(juju::base::from_series $SERIES)
@@ -42,7 +49,7 @@ applications:
       enable-dashboard-addons: false
   kubernetes-worker:
     options:
-      ingress: false
+      $worker_ingress
       channel: $SNAP_VERSION
   calico:
     options:
