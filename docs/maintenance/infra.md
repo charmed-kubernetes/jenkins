@@ -12,7 +12,9 @@ Runs every 6 hours on each persistent agent. One job per node:
 - `jenkins-kubernetes-ps7-arm64-large-agents-jenkins-agent-arm64-large-0` (arm64)
 - `jenkins-kubernetes-ps7-s390x-large-agents-jenkins-agent-s390x-large-0` (s390x)
 
-Each job self-maintains its own agent via `--limit localhost`. It:
+Each job self-maintains its own agent via `--limit localhost`. It starts only
+once no other job runs on that agent; this needs the Build Blocker plugin
+(`build-blocker-plugin`) on the controller. It:
 
 1. Breaks any stale dpkg locks and runs `apt dist-upgrade`.
 2. Runs `jobs/infra/fixtures/cleanup-local.sh` — destroys leftover Juju

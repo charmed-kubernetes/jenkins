@@ -29,7 +29,13 @@
     triggers:
         - timed: "H */6 * * *"
     properties:
-      - block-on-build-release
+      # Maintenance kills dpkg, deletes every LXC container and reprovisions
+      # LXD/Docker, so wait until no other job runs on this agent.
+      - build-blocker:
+          use-build-blocker: true
+          blocking-jobs:
+            - "(?!infra-).*"
+          block-level: 'NODE'
       - build-discarder:
           num-to-keep: 10
     builders:
