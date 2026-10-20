@@ -142,7 +142,12 @@ def get_instance_id(machine_id):
         if machine["instance-id"] == "pending":
             time.sleep(1)
             continue
-        return machine["instance-id"]
+        instance_id = machine["instance-id"]
+        # Juju reports the ID as soon as RunInstances returns, but EC2 reads are
+        # eventually consistent: DescribeInstances can still answer
+        # InvalidInstanceID.NotFound for a few seconds.
+        ec2.get_waiter("instance_exists").wait(InstanceIds=[instance_id])
+        return instance_id
 
 
 @def_command("create-vpc")
