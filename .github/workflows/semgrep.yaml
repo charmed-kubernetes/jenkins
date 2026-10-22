@@ -2,15 +2,11 @@ name: Semgrep SAST
 
 on:
     push:
-        paths-ignore:
-            - "docs/**"
         branches:
             - main
             - "release-[0-9]+.[0-9]+"
 
     pull_request:
-        paths-ignore:
-            - "docs/**"
 
 permissions:
     contents: read

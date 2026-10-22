@@ -334,5 +334,3 @@ script from `ps7/main` at build time. YAML changes do.
 7. Base images on `ubuntu:24.04`.
 8. `jenkins-jobs test jobs/` exits 0 and the rendered XML shows the expected
    label and `scriptPath`.
-9. Docs updated when job topology changes (`jobs/<job>/spec.yml` is the source
-   for `docs/`; `mkdocs` destination is declared there).

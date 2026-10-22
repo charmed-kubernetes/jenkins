@@ -4,15 +4,11 @@ on:
     schedule:
         - cron: "0 9 * * 1" # Weekly on Monday at 09:00 UTC
     push:
-        paths-ignore:
-            - "docs/**"
         branches:
             - main
             - "release-[0-9]+.[0-9]+"
 
     pull_request:
-        paths-ignore:
-            - "docs/**"
 
 permissions:
     contents: read

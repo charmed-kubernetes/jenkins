@@ -15,8 +15,6 @@ jinja2
 juju
 kv
 loguru
-mkdocs-material>=5.3.0
-mkdocs
 requests
 pymacaroons
 pyyaml>=5.1.2

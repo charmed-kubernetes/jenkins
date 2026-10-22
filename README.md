@@ -141,21 +141,3 @@ validate.yaml:        - timed: "@weekly"
 
 After updating a job timer, be sure to run `jenkins-jobs` as described in the
 *Updating jobs* section above.
-
-## Documentation
-
-### Build
-
-To build the docs do the following:
-
-```
-> tox --workdir .tox -e py3 -- inv build-docs
-```
-
-To build and deploy documentation (requires AWS credentials):
-
-```
-> tox --workdir .tox -e docs
-```
-
-

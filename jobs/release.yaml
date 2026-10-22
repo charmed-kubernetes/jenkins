@@ -1,6 +1,4 @@
 # Release Job for k8s
-#
-# Doc: http://jenkaas.s3-website-us-east-1.amazonaws.com/docs/releases/stable/
 
 
 - job:
