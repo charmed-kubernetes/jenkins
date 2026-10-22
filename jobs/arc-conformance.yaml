@@ -5,6 +5,8 @@
 - job:
     name: 'conformance-arc-ck'
     node: 'amd64 && large'
+    # Azure testing is disabled on PS7.
+    disabled: true
     description: |
       Azure Arc Conformance testing for Kubernetes.
 

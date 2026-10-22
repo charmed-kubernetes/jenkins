@@ -357,8 +357,8 @@
           values:
             - vsphere/Boston
             - aws/us-east-1
-            - azure/centralus
-            - google/us-east1
+            # Azure and GCP testing are disabled; re-add azure/centralus and
+            # google/us-east1 to re-enable them.
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
