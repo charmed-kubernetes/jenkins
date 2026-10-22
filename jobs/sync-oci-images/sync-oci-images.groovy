@@ -6,8 +6,9 @@ pipeline {
      https://stackoverflow.com/questions/43987005/jenkins-does-not-recognize-command-sh
      */
     environment {
-        VERSIONS = "${params.versions}"
-        DRY_RUN = "${params.dry_run}"
+        // Jenkins env names are case-insensitive; avoid the versions/dry_run parameter names.
+        CK_VERSIONS = "${params.versions}"
+        IS_DRY_RUN = "${params.dry_run}"
         HOME = "/var/lib/jenkins"
         PATH = "/snap/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         HTTP_PROXY = "http://egress.ps7.internal:3128"
@@ -36,7 +37,7 @@ pipeline {
                     # The line we care about should look like this:
                     #   ratelimit-remaining: 191;w=21600
                     LIMIT=$(echo "${STATUS}" | grep -i remaining | grep -o '[0-9]*' | head -n1)
-                    if [ "$DRY_RUN" = true ] ; then
+                    if [ "$IS_DRY_RUN" = true ] ; then
                         echo "We are not really going to pull"
                     elif [[ -n ${LIMIT} && ${LIMIT} -le 50 ]]; then
                         echo Docker Hub rate limit is too low

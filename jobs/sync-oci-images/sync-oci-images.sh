@@ -29,7 +29,7 @@ require_env() {
 }
 
 is_dry_run() {
-    [[ ${DRY_RUN:-false} == true ]]
+    [[ ${IS_DRY_RUN:?IS_DRY_RUN must be true or false} == true ]]
 }
 
 # Latest patch tag for a minor release, e.g. 1.36 -> v1.36.5.
@@ -109,13 +109,13 @@ bundle_commit() {
 }
 
 prepare() {
-    require_env VERSIONS
+    require_env CK_VERSIONS
     local minor kube_version addons_branch addons_dir upstream_line
     rm -rf "$BUNDLE_DIR" "$STATE_DIR" cdk-addons-*
     mkdir -p "$STATE_DIR"
     git clone -q --depth 1 --branch main https://github.com/charmed-kubernetes/bundle.git "$BUNDLE_DIR"
 
-    for minor in $VERSIONS; do
+    for minor in $CK_VERSIONS; do
         kube_version=$(resolve_kube_version "$minor")
         echo "$minor $kube_version" >> "$KUBE_VERSIONS_FILE"
 
