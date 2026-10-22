@@ -94,8 +94,9 @@ In [build-snaps.yaml](../../../jobs/build-snaps.yaml) update the `build-release-
 ### Add release images to containers-image sync list
 
 In the [bundle](https://github.com/charmed-kubernetes/bundle) repository, add a new line for the static container list similar to [this PR](https://github.com/charmed-kubernetes/bundle/commit/fcdcc54177f2514216d5aa8fb6fa3cb1ef13ebfe).
-This is required for [this job](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/build-snaps/build-release-cdk-addons.groovy#L158) to build the cdk-addons and [this job](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/sync-oci-images/sync-oci-images.groovy#L266) to copy images from upstream to rocks.cc.
-This `-static` field gives these to jobs an indication of some base set of static images we wish to copy from upstream to rocks.cc and to reference when building cdk-addons.
+This is required for [sync-oci-images](https://github.com/charmed-kubernetes/jenkins/blob/main/jobs/sync-oci-images/sync-oci-images.sh) to mirror images from upstream to `ghcr.io/canonical/cdk`.
+The `-static` line lists the base set of static images to mirror for that release; the job adds the matching `<k8s-version>-upstream` line from cdk-addons.
+Add the new version to the `versions` default in `jobs/sync-oci-images.yaml` (and drop releases that are no longer supported).
 
 ### Pin snap channel for charms in the release branches
 
