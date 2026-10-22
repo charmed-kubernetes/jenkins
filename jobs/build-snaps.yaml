@@ -4,8 +4,6 @@
     name: 'build-release-cdk-addons-{version}'
     description: |
       Builds and uploads cdk-addons for supported k8s versions to the snapstore.
-      Container images required by CK are known during the build, so this job
-      also tags and pushes those to the Canonical image registry.
 
       The full version of the cdk-addons snap is tied to the upstream k8s tag
       used during the build. Explicitly set this with the `k8s_tag` parameter,
@@ -47,7 +45,7 @@
       - bool:
           name: dry_run
           default: false
-          description: only report what would be pushed to github / snapstore / image registry
+          description: only report what would be pushed to github / snapstore
     properties:
       - build-discarder:
           num-to-keep: 10

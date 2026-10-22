@@ -1,4 +1,3 @@
-def bundle_image_file = "./bundle/container-images.txt"
 def kube_status = "stable"
 def kube_version = params.k8s_tag
 def kube_ersion = null
@@ -26,9 +25,6 @@ pipeline {
         no_proxy        = "localhost,127.0.0.1"
         ADDONS_ARCHES   = "amd64 arm64 ppc64le s390x"
         GITHUB_CREDS    = credentials('cdkbot_github')
-        REGISTRY_CREDS  = credentials('canonical_registry')
-        REGISTRY_URL    = 'upload.rocks.canonical.com:5000'
-        REGISTRY_REPLACE = 'k8s.gcr.io/ us.gcr.io/ docker.io/library/ docker.io/ gcr.io/ nvcr.io/ quay.io/ registry.k8s.io/'
     }
     stages {
         stage('Setup User') {
@@ -81,7 +77,6 @@ pipeline {
                         fi
                     fi
                 """
-                sh "git clone https://github.com/charmed-kubernetes/bundle.git"
             }
         }
         stage('Setup Build Container'){
@@ -148,117 +143,6 @@ pipeline {
                 """
             }
         }
-        /* NOTE: (mateo) Process Images is disabled on PS7. We need to move the
-         * staging -> production image mirroring and the bundle
-         * container-images.txt reporting out to their own job, or just drop
-         * it entirely if nothing consumes the report anymore.
-         */
-        /*
-        stage('Process Images'){
-            steps {
-                sh """
-                    # Keys from the bundle_image_file used to identify images per release
-                    STATIC_KEY=v${params.version}-static:
-                    UPSTREAM_KEY=${kube_version}-upstream:
-
-                    # Keep track of images we need to massage as well what we report
-                    ALL_IMAGES=""
-                    REPORT_IMAGES=""
-
-                    for arch in ${env.ADDONS_ARCHES}
-                    do
-                        ARCH_IMAGES=\$(grep -e \${STATIC_KEY} -e \${UPSTREAM_KEY} ${bundle_image_file} | sed -e "s|\${STATIC_KEY}||g" -e "s|\${UPSTREAM_KEY}||g" -e "s|{{ arch }}|\${arch}|g" -e "s|{{ multiarch_workaround }}||g")
-                        ALL_IMAGES="\${ALL_IMAGES} \${ARCH_IMAGES}"
-                    done
-
-                    # Clean up dupes by making a sortable list, uniq it, and turn it back to a string
-                    ALL_IMAGES=\$(echo "\${ALL_IMAGES}" | xargs -n1 | sort -u | xargs)
-
-                    # We pull images from staging and push to our production location
-                    PROD_PREFIX=${env.REGISTRY_URL}/cdk
-                    STAGING_PREFIX=${env.REGISTRY_URL}/staging/cdk
-
-                    for i in \${ALL_IMAGES}
-                    do
-                        # Set appropriate production/staging image name
-                        RAW_IMAGE=\${i}
-                        for repl in ${env.REGISTRY_REPLACE}
-                        do
-                            if echo \${RAW_IMAGE} | grep -qi \${repl}
-                            then
-                                RAW_IMAGE=\$(echo \${RAW_IMAGE} | sed -e "s|\${repl}||g")
-                                break
-                            fi
-                        done
-                        PROD_IMAGE=\${PROD_PREFIX}/\${RAW_IMAGE}
-                        STAGING_IMAGE=\${STAGING_PREFIX}/\${RAW_IMAGE}
-
-                        # Report yet skip pull/tag/push images that we already host in rocks.
-                        if echo \${RAW_IMAGE} | grep -qi -e 'rocks.canonical.com' -e 'image-registry.canonical.com'
-                        then
-                            REPORT_IMAGES="\${REPORT_IMAGES} \${RAW_IMAGE}"
-                            continue
-                        else
-                            # Add rocks/cdk prefix (cant use PROD_IMAGE because that would be upload.rocks.c.c)
-                            REPORT_IMAGES="\${REPORT_IMAGES} rocks.canonical.com/cdk/\${RAW_IMAGE}"
-                        fi
-
-                        if ${params.dry_run}
-                        then
-                            echo "Dry run; would have pulled: \${STAGING_IMAGE}"
-                        else
-                            # simple retry if initial pull fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr content fetch \${STAGING_IMAGE} --all-platforms --user "\${REGISTRY_CREDS_USR}:\${REGISTRY_CREDS_PSW}" >/dev/null
-                            then
-                                echo "Retrying pull"
-                                sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr content fetch \${STAGING_IMAGE} --all-platforms --user "\${REGISTRY_CREDS_USR}:\${REGISTRY_CREDS_PSW}" >/dev/null
-                            fi
-                        fi
-
-                        # Tag and push
-                        if ${params.dry_run}
-                        then
-                            echo "Dry run; would have tagged: \${STAGING_IMAGE}"
-                            echo "Dry run; would have pushed: \${PROD_IMAGE}"
-                        else
-                            sudo lxc exec ${lxc_name} -- ctr image tag \${STAGING_IMAGE} \${PROD_IMAGE}
-                            # simple retry if initial push fails
-                            if ! sudo lxc exec ${lxc_name} -- ctr image push \${PROD_IMAGE} --user "\${REGISTRY_CREDS_USR}:\${REGISTRY_CREDS_PSW}" >/dev/null
-                            then
-                                echo "Retrying push"
-                                sleep 5
-                                sudo lxc exec ${lxc_name} -- ctr image push \${PROD_IMAGE} --user "\${REGISTRY_CREDS_USR}:\${REGISTRY_CREDS_PSW}" >/dev/null
-                            fi
-                        fi
-                    done
-
-                    # Commit what we know about our images
-                    cd bundle
-                    REPORT_FILE=container-images/${kube_version}.txt
-                    echo \${REPORT_IMAGES} | xargs -n1 | sort -u > \${REPORT_FILE}
-                    git pull origin main
-                    git add \${REPORT_FILE}
-                    if git status | grep -qi "nothing to commit"
-                    then
-                        echo "No image changes; nothing to commit"
-                    else
-                        git commit -am "Updating \${REPORT_FILE}"
-                        if ${params.dry_run}
-                        then
-                            echo "Dry run; would have updated \${REPORT_FILE} with: \${REPORT_IMAGES}"
-                        else
-                            git push "https://\${GITHUB_CREDS_USR}:\${GITHUB_CREDS_PSW}@github.com/charmed-kubernetes/bundle.git"
-                        fi
-                    fi
-                    cd -
-
-                    echo "All images known to this builder:"
-                    sudo lxc exec ${lxc_name} -- ctr image ls
-                """
-            }
-        }
-        */
         stage('Upload Snaps'){
             steps {
                 script {
