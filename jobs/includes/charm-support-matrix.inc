@@ -101,6 +101,7 @@
     framework: reactive
     builder: launchpad
     bugs: 'https://bugs.launchpad.net/charm-containerd'
+    build-resources: 'cd {out_path}; bash {src_path}/build-resources.sh'
     docs: 'https://charmhub.io/containerd/docs'
     downstream: charmed-kubernetes/charm-containerd.git
     store: 'https://charmhub.io/containerd'

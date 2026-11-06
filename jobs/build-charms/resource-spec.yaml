@@ -10,6 +10,8 @@
 'cilium':
   cilium: '{out_path}/cilium.tar.gz'
   hubble: '{out_path}/hubble.tar.gz'
+'containerd':
+  containerd: '{out_path}/containerd-multiarch.tgz'
 'coredns':
   coredns-image: 'localhost/placeholder'  # value replaced by metadata.yaml upstream-source
 'flannel':
