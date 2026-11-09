@@ -2563,9 +2563,7 @@ async def ceph_apps(model: Model, tools: Tools):
     log.info("assigned series: %s", series)
 
     ceph_config = {}
-    ceph_charms_channel = "quincy/stable"
-    if series > Series.jammy:
-        series = Series.jammy
+    ceph_charms_channel = "squid/stable"
 
     all_apps = ["ceph-mon", "ceph-osd", "ceph-fs", "ceph-csi"]
     if all(a in model.applications for a in all_apps):
