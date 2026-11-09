@@ -139,6 +139,19 @@ function juju::bootstrap
          $extra_args
 
     juju::deploy-report $? "bootstrap"
+
+    if [ "$JUJU_CLOUD" = "vsphere/Boston" ] && ! juju::version_2; then
+        # --bootstrap-image only registers the bootstrap base. Register every
+        # template so other bases resolve to a template instead of an OVA import,
+        # which vCenter rejects. The stream must match the model image-stream.
+        local pair
+        for pair in jammy:22.04 noble:24.04; do
+            juju metadata add-image -m "$JUJU_CONTROLLER:$JUJU_MODEL" \
+                "juju-ci-root/templates/${pair%%:*}-test-template" \
+                --base "ubuntu@${pair##*:}" --region Boston --stream daily \
+                || juju::deploy-report $? "image-metadata"
+        done
+    fi
 }
 
 function juju::deploy::before
