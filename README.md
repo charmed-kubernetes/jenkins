@@ -93,6 +93,12 @@ Most `build-*` jobs run daily, while `validate-` jobs are spread out throughout
 the week. The `infra-*` jobs run 4 times a day and ensure any old packages
 and deployments are cleaned up.
 
+Jobs that run on `vsphere/Boston` share one cluster and vCenter. Keep them
+between 02:00 and 12:00 UTC (outside Americas working hours), pin the trigger
+with `TZ=UTC`, and avoid starting more than one 3-cell matrix at a time; a
+vSphere run can take ~5h. See the `validate-ck` project in `jobs/validate.yaml`
+for the current slots.
+
 The `sync-internal-tags` job is used as part of our snap build process. Once a
 new tag is seen upstream, launchpad builders will automatically sync our
 repositories and build new snaps. This job should run at least twice a day to

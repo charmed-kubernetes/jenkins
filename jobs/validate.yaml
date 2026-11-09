@@ -17,7 +17,7 @@
       - build-discarder:
           num-to-keep: 10
     triggers:
-        - timed: 'H {hour} * * {dow}'
+        - timed: "TZ=UTC\nH(0-30) {hour} * * {dow}"
     parameters:
       - 'charms-{charm-channel}'
       - lxc-runner-params
@@ -59,19 +59,20 @@
 
 - project:
     name: validate-ck
+    # vSphere runs are kept off Americas working hours (02:00-12:00 UTC) and to
+    # at most one 3-cell matrix at a time; a run can take ~5h.
     series:
       - jammy:
-          hour: '0' # Midnight
-          dow: '1,3,5'  # MWF
+          hour: '2'
       - noble:
-          hour: '12' # Noon
-          dow: '1,3,5'  # MWF
+          hour: '7'
     charm-channel:
       - edge:
           snap_versions:
             - 1.36/edge
             - 1.35/edge
             - 1.34/edge
+          dow: '1,3,5'  # MWF
       - stable:
           snap_versions:
             - 1.35/stable
@@ -209,7 +210,7 @@
       - series-stable
       - juju-lts
     triggers:
-        - timed: "@daily"
+        - timed: "TZ=UTC\nH(0-30) 10 * * *"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -240,7 +241,7 @@
       - lxc-runner-params
       - juju-lts
     triggers:
-        - timed: "@weekly"
+        - timed: "TZ=UTC\nH(0-30) 7 * * 2"
     builders:
       - set-env:
           JOB_SPEC_DIR: "jobs/validate"
@@ -338,7 +339,7 @@
       - build-discarder:
           num-to-keep: 10
     triggers:
-        - timed: "@weekly"
+        - timed: "TZ=UTC\nH(0-30) 2 * * 2"
     parameters:
       - charms-edge
       - series-stable
@@ -466,7 +467,7 @@
       - build-discarder:
           num-to-keep: 10
     triggers:
-        - timed: "@weekly"
+        - timed: "TZ=UTC\nH(0-30) 2 * * 4"
     parameters:
       - charms-edge
       - series-stable
@@ -573,7 +574,7 @@
       - build-discarder:
           num-to-keep: 10
     triggers:
-        - timed: "@weekly"
+        - timed: "TZ=UTC\nH(0-30) 7 * * 4"
     parameters:
       - charms-edge
       - series-stable
@@ -647,7 +648,7 @@
       - build-discarder:
           num-to-keep: 10
     triggers:
-        - timed: "@weekly"
+        - timed: "TZ=UTC\nH(0-30) 2 * * 6"
     parameters:
       - charms-edge
       - snap-edge
@@ -678,7 +679,7 @@
       - build-discarder:
           num-to-keep: 10
     triggers:
-        - timed: "@weekly"
+        - timed: "TZ=UTC\nH(0-30) 7 * * 6"
     parameters:
       - charms-edge
       - snap-edge
