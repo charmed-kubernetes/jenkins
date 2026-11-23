@@ -40,13 +40,11 @@ pipeline {
                 rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
                 rm -rf "$WORKSPACE/.cache/charmbuild" || true
                 mkdir -p "$CHARM_BUILD_DIR" "$CHARM_LAYERS_DIR" "$CHARM_INTERFACES_DIR"
-                mkdir -p "$DOCKER_CONFIG"
-                printf '{"proxies":{"default":{"httpProxy":"%s","httpsProxy":"%s","noProxy":"%s"}}}\n' \
-                  "$HTTP_PROXY" "$HTTPS_PROXY" "$NO_PROXY" > "$DOCKER_CONFIG/config.json"
                 python3 -m venv venv
                 venv/bin/python -m pip install tox
                 venv/bin/tox --recreate -e py --notest
                 '''
+                writeFile file: "${env.DOCKER_CONFIG}/config.json", text: """{"proxies": {"default": {"httpProxy": "${env.HTTP_PROXY ?: env.http_proxy}", "httpsProxy": "${env.HTTPS_PROXY ?: env.https_proxy}", "noProxy": "${env.NO_PROXY ?: env.no_proxy}"}}}"""
             }
         }
         stage('Prepare Charmcraft Container') {
