@@ -16,6 +16,7 @@ pipeline {
         https_proxy          = "http://egress.ps7.internal:3128"
         NO_PROXY             = "localhost,127.0.0.1"
         no_proxy             = "localhost,127.0.0.1"
+        DOCKER_CONFIG        = "$WORKSPACE/.docker"
         PYTHONPATH           = "$WORKSPACE"
         TMPDIR               = "/tmp/$BUILD_TAG"
         CHARM_BASE_DIR       = "$WORKSPACE/.cache/charmbuild/$BUILD_TAG"
@@ -39,6 +40,9 @@ pipeline {
                 rm -rf "$TMPDIR" && mkdir -p "$TMPDIR"
                 rm -rf "$WORKSPACE/.cache/charmbuild" || true
                 mkdir -p "$CHARM_BUILD_DIR" "$CHARM_LAYERS_DIR" "$CHARM_INTERFACES_DIR"
+                mkdir -p "$DOCKER_CONFIG"
+                printf '{"proxies":{"default":{"httpProxy":"%s","httpsProxy":"%s","noProxy":"%s"}}}\n' \
+                  "$HTTP_PROXY" "$HTTPS_PROXY" "$NO_PROXY" > "$DOCKER_CONFIG/config.json"
                 python3 -m venv venv
                 venv/bin/python -m pip install tox
                 venv/bin/tox --recreate -e py --notest

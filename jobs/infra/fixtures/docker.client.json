@@ -1,0 +1,9 @@
+{
+    "proxies": {
+        "default": {
+            "httpProxy": "http://egress.ps7.internal:3128",
+            "httpsProxy": "http://egress.ps7.internal:3128",
+            "noProxy": "localhost,127.0.0.1"
+        }
+    }
+}

@@ -1,5 +1,4 @@
 {
-    "iptables": false,
     "features": {
         "containerd-snapshotter": false
     },

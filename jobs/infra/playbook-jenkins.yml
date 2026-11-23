@@ -413,6 +413,40 @@
       tags:
         - adhoc
         - jenkins
+    - name: allow lxdbr0 traffic through docker forward chain
+      shell: |
+        iptables -C DOCKER-USER -i lxdbr0 -j ACCEPT 2>/dev/null || iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
+        iptables -C DOCKER-USER -o lxdbr0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -I DOCKER-USER -o lxdbr0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+      tags:
+        - adhoc
+        - jenkins
+    - name: create docker client config dirs
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+      loop:
+        - /root/.docker
+        - /var/lib/jenkins/.docker
+      tags:
+        - adhoc
+        - jenkins
+    - name: set docker client proxy config
+      copy:
+        src: "fixtures/docker.client.json"
+        dest: "{{ item }}/config.json"
+        force: yes
+        owner: root
+        group: root
+        mode: 0644
+      loop:
+        - /root/.docker
+        - /var/lib/jenkins/.docker
+      tags:
+        - adhoc
+        - jenkins
     - name: create scapestack dir
       file:
         path: /var/lib/jenkins/.scapestack
