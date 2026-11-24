@@ -1,10 +1,80 @@
 import click
 import traceback
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from time import sleep
 from sh.contrib import git
 
 from builder_local import BundleBuildEntity, BuildEnv, BuildEntity, BuildType
 from builder_launchpad import LPBuildEntity
 from cilib.version import RISKS
+
+LAUNCHPAD_SUBMIT_WORKERS = 4
+LAUNCHPAD_POLL_SECONDS = 30
+
+
+def _prepare_build(entity, force, to_channels):
+    entity.echo("Starting")
+    if not entity.within_channel_bounds(to_channels=to_channels):
+        entity.echo("Skipped due to channel boundaries")
+        return False
+    entity.setup()
+    entity.echo(f"Details: {entity}")
+    if force:
+        entity.echo("Build forced.")
+        return True
+    return entity.charm_changes
+
+
+def _publish_build(entity, to_channels):
+    entity.resource_build()
+    for artifact in entity.artifacts:
+        entity.push(artifact)
+        entity.assemble_resources(artifact, to_channels=to_channels)
+        entity.release(artifact, to_channels=to_channels)
+
+
+def _submit_launchpad_build(entity, force, to_channels):
+    if not _prepare_build(entity, force, to_channels):
+        return False
+    entity.submit_build()
+    return True
+
+
+def _collect_launchpad_builds(submissions, to_channels, failures):
+    pending = []
+    while submissions or pending:
+        if submissions:
+            # A slow source sync must not stop us collecting other recipes.
+            done, _ = wait(
+                submissions,
+                timeout=LAUNCHPAD_POLL_SECONDS if pending else None,
+                return_when=FIRST_COMPLETED,
+            )
+            for future in done:
+                entity = submissions.pop(future)
+                try:
+                    if future.result():
+                        pending.append(entity)
+                        continue
+                except Exception:
+                    entity.echo(traceback.format_exc())
+                    failures.append(entity)
+                entity.echo("Stopping")
+        else:
+            sleep(LAUNCHPAD_POLL_SECONDS)
+
+        still_pending = []
+        for entity in pending:
+            try:
+                if not entity.collect_build():
+                    still_pending.append(entity)
+                    continue
+                _publish_build(entity, to_channels)
+            except Exception:
+                entity.echo(traceback.format_exc())
+                failures.append(entity)
+            entity.echo("Stopping")
+        pending = still_pending
 
 
 @click.group()
@@ -97,32 +167,31 @@ def build(
         for chan in build_env.to_channels
     ]
 
-    for entity in entities:
-        entity.echo("Starting")
-        try:
-            if not entity.within_channel_bounds(to_channels=to_channels):
-                entity.echo("Skipped due to channel boundaries")
-                continue
-            entity.setup()
-            entity.echo(f"Details: {entity}")
-
-            if not build_env.force:
-                if not entity.charm_changes:
-                    continue
+    with ThreadPoolExecutor(max_workers=LAUNCHPAD_SUBMIT_WORKERS) as executor:
+        submissions = {}
+        local_entities = []
+        for entity in entities:
+            if isinstance(entity, LPBuildEntity):
+                future = executor.submit(
+                    _submit_launchpad_build, entity, build_env.force, to_channels
+                )
+                submissions[future] = entity
             else:
-                entity.echo("Build forced.")
+                local_entities.append(entity)
 
-            entity.charm_build()
-            entity.resource_build()
-            for each in entity.artifacts:
-                entity.push(each)
-                entity.assemble_resources(each, to_channels=to_channels)
-                entity.release(each, to_channels=to_channels)
-        except Exception:
-            entity.echo(traceback.format_exc())
-            failed_entities.append(entity)
-        finally:
-            entity.echo("Stopping")
+        # Local builds and uploads share this Jenkins worker; keep them serial.
+        for entity in local_entities:
+            try:
+                if _prepare_build(entity, build_env.force, to_channels):
+                    entity.charm_build()
+                    _publish_build(entity, to_channels)
+            except Exception:
+                entity.echo(traceback.format_exc())
+                failed_entities.append(entity)
+            finally:
+                entity.echo("Stopping")
+
+        _collect_launchpad_builds(submissions, to_channels, failed_entities)
 
     if any(failed_entities):
         count = len(failed_entities)

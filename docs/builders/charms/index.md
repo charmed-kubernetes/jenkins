@@ -32,6 +32,11 @@ it contains a `layer.yaml` file. If a charm cannot be built directly with
 either of these tools, you can use the `override-build` field to specify how
 the charm should be built, but this should be avoided if possible.
 
+The job submits up to four Launchpad charm requests concurrently. It does not
+wait for one charm to leave the Launchpad queue before submitting the next.
+Completed charms are published one at a time with their resources; a failed
+charm does not prevent other charms from building and publishing.
+
 ## Handling Resources
 
 The build job will also automatically handle any `oci-image` type resource
