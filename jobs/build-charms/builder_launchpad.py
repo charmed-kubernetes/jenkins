@@ -13,7 +13,7 @@ from configparser import ConfigParser
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import List
+from time import monotonic
 
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import NotFound
@@ -52,6 +52,9 @@ class LPBuildEntity(BuildEntity):
         self._lp_project_name = self._lp_bugs.rsplit("/")[-1]
         self._lp_recipe_name = self._lp_recipe_from_branch(self._lp_branch)
         self._lp_build_log_cache = {}
+        self._lp_build_request = None
+        self._lp_request_deadline = None
+        self._lp_builds = None
 
         assert self.type == "Charm", "Only supports charm builds"
         assert "launchpad.net" in self._lp_bugs, "No associated with launchpad"
@@ -89,7 +92,7 @@ class LPBuildEntity(BuildEntity):
 
     @cached_property
     def _lp_channels(self):
-        channels = self.SNAP_CHANNEL
+        channels = self.SNAP_CHANNEL.copy()
         charmcraft_channel_file = Path(self.src_path) / ".charmcraft-channel"
         if charmcraft_channel_file.exists():
             channels["charmcraft"] = charmcraft_channel_file.read_text().strip()
@@ -141,61 +144,36 @@ class LPBuildEntity(BuildEntity):
         self._lp_build_log_cache[build.self_link] = c_str = contents.decode()
         return c_str
 
-    def _lp_request_builds(self) -> List[Resource]:
-        """Request a charm build for this charm."""
-        req = self._lp_recipe.requestBuilds(channels=self._lp_channels)
-        self.echo("Waiting for charm recipe request")
-        timeout = 5 * 60
-        for _ in range(timeout):
-            status = req.status
-            if status == "Failed":
-                err_msg = f"Failed requesting launchpad build {self.entity}, aborting"
-                raise BuildException(err_msg)
-            if status == "Completed":
-                self.echo(f"Build recipe started @ {self._lp_recipe.web_link}")
-                break
-            time.sleep(1.0)
-            req.lp_refresh()
-        return [build for build in req.builds]
+    def _lp_builds_ready(self):
+        """Check the builds once; cancel siblings if a build failed."""
+        pending = []
+        failed = None
+        for build in self._lp_builds:
+            if build.buildstate in self.BUILD_STATES_SUCCESS:
+                continue
+            build.lp_refresh()
+            state = build.buildstate
+            if state in self.BUILD_STATES_PENDING:
+                pending.append(build)
+                self.echo(f"Waiting for {build.title} status='{state}'")
+            else:
+                self.echo(f"Completed {build.title} status='{state}'")
+                if state not in self.BUILD_STATES_SUCCESS and failed is None:
+                    failed = build
 
-    def _lp_complete_builds(self, builds: List[Resource]):
-        """Ensure that all the builds of a specified charm are completed."""
-        pending_builds = {_.self_link for _ in builds}
-        failed_builds = set()
-        start_time = datetime.now()
-        while pending_builds and not failed_builds:
-            for build in builds:
-                if build.self_link not in pending_builds:
-                    continue
-                build.lp_refresh()
-                dt = datetime.now() - start_time
-                if (state := build.buildstate) in self.BUILD_STATES_PENDING:
-                    status = f"Waiting for {build.title} status='{state}' elapsed={dt}"
-                else:
-                    status = f"Completed {build.title} status='{state}' elapsed={dt}"
-                    pending_builds.remove(build.self_link)
-                    if state not in self.BUILD_STATES_SUCCESS:
-                        failed_builds.add(build.self_link)
-                self.echo(status)
+        if failed is not None:
+            for build in pending:
+                if build.can_be_cancelled:
+                    self.echo(f"Cancelling {build.title}...")
+                    build.cancel()
+            message = (
+                f"Failed launchpad build {self.entity} due to "
+                f"unsuccessful build state '{failed.buildstate}'."
+            )
+            self.echo(message + "\n" + self._lp_build_log(failed))
+            raise BuildException(message)
 
-            if pending_builds and not failed_builds:
-                time.sleep(30.0)
-        for build_link in pending_builds:
-            # If one build fails, cancel the others first
-            build = next(_ for _ in builds if _.self_link == build_link)
-            if build.can_be_cancelled:
-                self.echo(f"Cancelling {build.title}...")
-                build.cancel()
-        for build in builds:
-            if build.buildstate not in self.BUILD_STATES_SUCCESS:
-                err_msg = (
-                    f"Failed launchpad build {self.entity} due to "
-                    f"unsuccessful build state '{build.buildstate}'."
-                )
-
-                self.echo(err_msg + "\n" + self._lp_build_log(build))
-                raise BuildException(err_msg)
-        return builds
+        return not pending
 
     def _lp_charm_filename_from_build(self, build) -> str:
         """Determine the charm file name of a particular build.
@@ -274,14 +252,40 @@ class LPBuildEntity(BuildEntity):
             self.echo(status)
             time.sleep(30.0)
 
-    def charm_build(self):
-        """Perform a build using a launchpad charm recipe."""
+    def submit_build(self):
+        """Sync the checkout and submit a build without waiting for the result."""
         self.echo(f"Starting a build of {self.name} on launchpad")
         self._lp_request_sync()
-        request = self._lp_request_builds()
-        builds = self._lp_complete_builds(request)
+        recipe = self._lp_recipe
+        self._lp_build_request = recipe.requestBuilds(channels=self._lp_channels)
+        self._lp_request_deadline = monotonic() + 5 * 60
+        self.echo(f"Submitted build request @ {self._lp_build_request.web_link}")
+
+    def collect_build(self):
+        """Download a finished build, or return False if it is still pending."""
+        if self._lp_builds is None:
+            request = self._lp_build_request
+            request.lp_refresh()
+            if request.status == "Completed":
+                self._lp_builds = list(request.builds)
+                if not self._lp_builds:
+                    raise BuildException(
+                        f"No Launchpad builds created for {self.entity}"
+                    )
+            elif request.status == "Failed":
+                raise BuildException(f"Failed requesting Launchpad build {self.entity}")
+            elif monotonic() >= self._lp_request_deadline:
+                raise BuildException(
+                    f"Timed out requesting Launchpad build {self.entity}"
+                )
+            else:
+                return False
+
+        if not self._lp_builds_ready():
+            return False
         download_path = Path(self.src_path)
         self.artifacts = [
-            self._lp_build_download(build, download_path) for build in builds
+            self._lp_build_download(build, download_path) for build in self._lp_builds
         ]
         self._lp_amend_git_version()
+        return True

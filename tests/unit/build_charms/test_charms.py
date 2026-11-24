@@ -9,6 +9,9 @@ import yaml
 import pytest
 from unittest.mock import patch, call, Mock, MagicMock
 from functools import partial
+from threading import Event
+from time import monotonic
+from types import SimpleNamespace
 
 from click.testing import CliRunner
 
@@ -727,6 +730,110 @@ def test_build_command(mock_build_env, mock_build_entity, main):
     entity.release.assert_called_once_with(
         artifact, to_channels=["latest/edge", "1.18/edge"]
     )
+
+
+def test_launchpad_builds_publish_while_another_build_is_queued(
+    main, mock_build_env, monkeypatch, tmp_path
+):
+    mock_build_env.build_type = main.BuildType.CHARM
+    mock_build_env.charms_dir = tmp_path
+    mock_build_env.track = "1.36"
+    mock_build_env.to_channels = ["edge"]
+    mock_build_env.filter_by_tag = ["release"]
+    mock_build_env.force = True
+    mock_build_env.job_list = [
+        {
+            name: dict(
+                builder="launchpad",
+                tags=["release"],
+                bugs=f"https://bugs.launchpad.net/{name}",
+            )
+        }
+        for name in ("etcd", "aws-integrator")
+    ]
+
+    cls = main.LPBuildEntity
+    fast_submitted = Event()
+    submitted = {}
+    published = []
+    deadline = monotonic() + 5
+    slow = SimpleNamespace(title="etcd", buildstate="Needs building")
+    fast = SimpleNamespace(title="aws-integrator", buildstate="Needs building")
+
+    def refresh_slow():
+        if published or monotonic() >= deadline:
+            slow.buildstate = "Failed to build"
+
+    def refresh_fast():
+        if "etcd" in submitted:
+            fast.buildstate = "Successfully built"
+
+    slow.lp_refresh = refresh_slow
+    fast.lp_refresh = refresh_fast
+
+    def setup(entity):
+        if entity.name == "aws-integrator":
+            path = Path(entity.src_path)
+            path.mkdir()
+            (path / ".charmcraft-channel").write_text("3.x/stable")
+
+    def sync(entity):
+        if entity.name == "etcd":
+            assert fast_submitted.wait(5), "etcd blocked the second submission"
+
+    def recipe(entity):
+        def requestBuilds(channels):
+            submitted[entity.name] = channels.copy()
+            if entity.name == "aws-integrator":
+                fast_submitted.set()
+            return SimpleNamespace(
+                web_link=f"https://launchpad.net/{entity.name}/request",
+                status="Completed",
+                lp_refresh=lambda: None,
+                builds=[slow if entity.name == "etcd" else fast],
+            )
+
+        return SimpleNamespace(requestBuilds=requestBuilds)
+
+    def release(entity, artifact, to_channels):
+        assert slow.buildstate == "Needs building"
+        published.append((entity.name, artifact, to_channels))
+
+    monkeypatch.setattr(main, "LAUNCHPAD_POLL_SECONDS", 0.01)
+    monkeypatch.setattr(cls, "setup", setup)
+    monkeypatch.setattr(cls, "_lp_request_sync", sync)
+    monkeypatch.setattr(cls, "_lp_recipe", property(recipe))
+    monkeypatch.setattr(cls, "_lp_build_log", lambda *_: "test build log")
+    monkeypatch.setattr(cls, "_lp_build_download", lambda _, build, path: build.title)
+    for method in (
+        "_lp_amend_git_version",
+        "resource_build",
+        "push",
+        "assemble_resources",
+    ):
+        monkeypatch.setattr(cls, method, lambda *args, **kwargs: None)
+    monkeypatch.setattr(cls, "release", release)
+
+    result = CliRunner().invoke(
+        main.build,
+        [
+            "--charm-list=tests/data/ci-testing-charms.inc",
+            "--resource-spec=jobs/build-charms/resource-spec.yaml",
+            "--filter-by-tag=release",
+            "--layer-index=https://charmed-kubernetes.github.io/layer-index/",
+            "--layer-list=jobs/includes/charm-layer-list.inc",
+            "--force",
+        ],
+    )
+
+    assert published == [("aws-integrator", "aws-integrator", ["1.36/edge"])]
+    assert submitted == {
+        "etcd": {"charmcraft": "2.x/stable"},
+        "aws-integrator": {"charmcraft": "3.x/stable"},
+    }
+    assert result.exit_code == 1
+    assert "Failed launchpad build etcd" in result.output
+    assert "Encountered 1 Charm Build Failure:\n\tetcd" in result.output
 
 
 @patch("main.git")
