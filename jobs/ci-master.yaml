@@ -247,7 +247,7 @@
           default: ''
           description: |
             The charm git branch to checkout prior to building.
-            If empty, numeric edge selects release_&lt;track&gt;; other channels use the default repo branch.
+            If empty, numeric edge uses the matching release branch (e.g. release_1.36 for 1.36/edge). Other channels use the repo's default branch.
       - string:
           name: CHARM_LIST
           default: "jobs/includes/charm-support-matrix.inc"
@@ -258,7 +258,7 @@
           name: BUNDLE_BRANCH
           default: ''
           description: |
-            The bundle source branch. If empty, numeric edge selects release_&lt;track&gt;; other channels use main.
+            The bundle source branch. If empty, numeric edge uses the matching release branch (e.g. release_1.36 for 1.36/edge). Other channels use main.
       - string:
           name: BUNDLE_REPO
           default: "https://github.com/charmed-kubernetes/bundle.git"
