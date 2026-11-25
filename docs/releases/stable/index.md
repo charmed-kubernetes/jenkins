@@ -148,6 +148,12 @@ like we've done so many times before!
 
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/build-charms/
 
+The daily job defaults to `TO_CHANNEL=all-edges`. It builds the default branches
+for `latest/edge`, and `release_1.xx` for each `1.xx/edge` in the active track map.
+To rebuild one release track, set `TO_CHANNEL=1.xx/edge` and leave `CHARM_BRANCH`
+and `BUNDLE_BRANCH` blank; the job selects `release_1.xx` for both. Do not promote
+from `latest/edge` into a numeric edge channel.
+
 This job clones the `release_1.xx` branch for each of our repos. It then builds
 each charm/bundle using those local repos. After building, they will be
 published to the `1.xx/beta` channel in Charmhub based on the job options.

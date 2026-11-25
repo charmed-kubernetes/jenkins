@@ -247,7 +247,7 @@
           default: ''
           description: |
             The charm git branch to checkout prior to building.
-            If empty, the default repo branch will be used.
+            If empty, numeric edge selects release_&lt;track&gt;; other channels use the default repo branch.
       - string:
           name: CHARM_LIST
           default: "jobs/includes/charm-support-matrix.inc"
@@ -256,9 +256,9 @@
           default: "jobs/includes/charm-bundles-list.inc"
       - string:
           name: BUNDLE_BRANCH
-          default: "main"
+          default: ''
           description: |
-            The bundle branch to build k8s from.
+            The bundle source branch. If empty, numeric edge selects release_&lt;track&gt;; other channels use main.
       - string:
           name: BUNDLE_REPO
           default: "https://github.com/charmed-kubernetes/bundle.git"
@@ -267,12 +267,12 @@
           default: "jobs/build-charms/resource-spec.yaml"
       - string:
           name: TO_CHANNEL
-          default: 'edge'
+          default: 'all-edges'
           description: |
-            Destination charmhub channel for this build.<br>
-
-            If the value is edge, candidate, beta, or stable; releases to both latest/&lt;risk&gt; and &lt;track&gt;/&lt;risk&gt;<br>
-            &lt;track&gt; is determined based on the SNAP_K8S_TRACK_MAP and the newest &lt;track&gt; in which &lt;track&gt;/&lt;risk&gt; exists.
+            Destination Charmhub channel for this build.<br>
+            all-edges builds latest/edge and every active numeric edge from their own branches.<br>
+            Use 1.xx/edge to build only release_1.xx, or latest/edge to build only the default branch.<br>
+            Bare candidate, beta, or stable also publish to the newest numeric track configured for that risk.
       - string:
           name: FROM_CHANNEL
           default: 'edge'

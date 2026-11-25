@@ -530,7 +530,9 @@ class BuildEnv:
         """
         chans: List[str] = self.db["build_args"].get("to_channel", None).split(",")
         numerical = [
-            matched_numerical_channel(chan, SNAP_K8S_TRACK_MAP) for chan in chans
+            matched_numerical_channel(chan, SNAP_K8S_TRACK_MAP)
+            for chan in chans
+            if chan.lower() != "edge"
         ]
         return list(filter(None, {*chans, *numerical}))
 
@@ -868,6 +870,20 @@ class BuildEntity:
     @property
     def charm_changes(self):
         """Determine if any charm|layers commits have changed since last publish."""
+        if re.fullmatch(r"\d+\.\d+/edge(?:/[^/]+)?", self.channel):
+            info = _CharmHub.info(
+                self.name,
+                fields="channel-map.channel.name,channel-map.revision.version",
+            )
+            published = {
+                entry["revision"]["version"]
+                for entry in info.get("channel-map", [])
+                if entry["channel"]["name"] == self.channel
+            }
+            if published != {self.commit(short=True)}:
+                return True
+            if not self.reactive:
+                return False
         locals = self.version_identification("local")
         remotes = self.version_identification("remote")
 

@@ -1,15 +1,63 @@
-import click
+import re
 import traceback
+
+import click
 from sh.contrib import git
 
 from builder_local import BundleBuildEntity, BuildEnv, BuildEntity, BuildType
 from builder_launchpad import LPBuildEntity
+from cilib.enums import SNAP_K8S_TRACK_MAP
 from cilib.version import RISKS
 
 
 @click.group()
 def cli():
     """Define click group."""
+
+
+def _release_edge_channels(track, to_channel):
+    channels = (
+        f"{track}/edge" if channel.lower() == "edge" else channel
+        for channel in to_channel.split(",")
+    )
+    return {
+        channel: f"release_{channel.split('/')[0]}"
+        for channel in channels
+        if re.fullmatch(r"\d+\.\d+/edge(?:/[^/]+)?", channel)
+    }
+
+
+def _build_channels(builder, track, to_channel, branch, **options):
+    if to_channel == "all-edges":
+        if branch or track != "latest":
+            raise click.UsageError("all-edges selects its own branches and tracks")
+        targets = {"latest/edge": ""}
+        targets.update(
+            (f"{version}/edge", f"release_{version}")
+            for version, channels in SNAP_K8S_TRACK_MAP.items()
+            if f"{version}/edge" in channels
+        )
+        failed = []
+        for channel, source in targets.items():
+            click.echo(f"Building {channel}")
+            try:
+                builder(track=track, to_channel=channel, branch=source, **options)
+            except Exception:
+                click.echo(traceback.format_exc(), err=True)
+                failed.append(channel)
+        if failed:
+            raise click.ClickException(f"Build failed for {', '.join(failed)}")
+        return
+
+    release_edges = _release_edge_channels(track, to_channel)
+    if release_edges:
+        if "," in to_channel:
+            raise click.UsageError("Build one numeric edge channel at a time")
+        to_channel, expected = next(iter(release_edges.items()))
+        if branch and branch != expected:
+            raise click.UsageError(f"{to_channel} must be built from {expected}")
+        branch = expected
+    builder(track=track, to_channel=to_channel, branch=branch, **options)
 
 
 @cli.command()
@@ -42,14 +90,22 @@ def cli():
     "--track", required=True, help="track to promote charm to", default="latest"
 )
 @click.option(
-    "--to-channel", required=True, help="channel to promote charm to", default="edge"
+    "--to-channel",
+    required=True,
+    help="Destination channel or all-edges",
+    default="edge",
 )
 @click.option("--force", is_flag=True)
-def build(
+def build(track, to_channel, charm_branch, **options):
+    """Build a set of charms and publish with their resources."""
+    _build_channels(_build_charms, track, to_channel, charm_branch, **options)
+
+
+def _build_charms(
     charm_list,
     layer_list,
     layer_index,
-    charm_branch,
+    branch,
     layer_branch,
     resource_spec,
     filter_by_tag,
@@ -57,17 +113,12 @@ def build(
     to_channel,
     force,
 ):
-    """Build a set of charms and publish with their resources."""
-    # sh.which.charm(_tee=True, _out=lambda m: click.echo(f"charm -> {m}"))
-    # sh.which.charmcraft(_tee=True, _out=lambda m: click.echo(f"charmcraft -> {m}"))
-    # sh.snap.list(_tee=True, _out=lambda m: click.echo(f"snap list -> {m}"))
-
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
         "job_list": charm_list,
         "layer_list": layer_list,
         "layer_index": layer_index,
-        "branch": charm_branch,
+        "branch": branch,
         "layer_branch": layer_branch,
         "resource_spec": resource_spec,
         "filter_by_tag": filter_by_tag.split(","),
@@ -127,7 +178,7 @@ def build(
     if any(failed_entities):
         count = len(failed_entities)
         plural = "s" if count > 1 else ""
-        raise SystemExit(
+        raise click.ClickException(
             f"Encountered {count} Charm Build Failure{plural}:\n\t"
             + ", ".join(ch.name for ch in failed_entities)
         )
@@ -139,7 +190,7 @@ def build(
 @click.option("--bundle-list", required=True, help="list of bundles in YAML format")
 @click.option(
     "--bundle-branch",
-    default="main",
+    default="",
     required=True,
     help="Upstream branch to build bundles from",
 )
@@ -158,17 +209,25 @@ def build(
     "--track", required=True, help="track to promote charm to", default="latest"
 )
 @click.option(
-    "--to-channel", required=True, help="channels to promote bundle to", default="edge"
+    "--to-channel",
+    required=True,
+    help="Destination channel or all-edges",
+    default="edge",
 )
 @click.option("--force", is_flag=True)
-def build_bundles(
-    bundle_list, bundle_branch, filter_by_tag, bundle_repo, track, to_channel, force
-):
+def build_bundles(track, to_channel, bundle_branch, **options):
     """Build list of bundles from a specific branch according to filters."""
+    _build_channels(_build_bundles, track, to_channel, bundle_branch, **options)
+
+
+def _build_bundles(
+    bundle_list, branch, filter_by_tag, bundle_repo, track, to_channel, force
+):
+    branch = branch or "main"
     build_env = BuildEnv(build_type=BuildType.BUNDLE)
     build_env.db["build_args"] = {
         "job_list": bundle_list,
-        "branch": bundle_branch,
+        "branch": branch,
         "filter_by_tag": filter_by_tag.split(","),
         "track": track,
         "to_channel": to_channel,
@@ -177,7 +236,7 @@ def build_bundles(
 
     build_env.clean()
     default_repo_dir = build_env.default_repo_dir
-    git("clone", bundle_repo, default_repo_dir, branch=bundle_branch)
+    git("clone", bundle_repo, default_repo_dir, branch=branch)
 
     entities = []
     for bundle_map in build_env.job_list:
@@ -247,6 +306,8 @@ def promote(charm_list, filter_by_tag, track, from_channel, to_channel, dry_run)
     """
     Promote channel for a set of charms filtered by tag.
     """
+    if to_channel == "all-edges" or _release_edge_channels(track, to_channel):
+        raise click.UsageError("Numeric edge channels must be built, not promoted")
     build_env = BuildEnv(build_type=BuildType.CHARM)
     build_env.db["build_args"] = {
         "job_list": charm_list,

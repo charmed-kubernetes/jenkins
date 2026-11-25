@@ -183,6 +183,10 @@ def charm_environment(test_environment, builder_local):
     yield charm_env
 
 
+def test_bare_edge_does_not_expand_to_numeric_track(charm_environment):
+    assert set(charm_environment.to_channels) == {"edge"}
+
+
 def test_build_env_promote_all_charmhub(charm_environment, charmcraft_cmd):
     """Tests promote_all to charmhub."""
     charm_environment.promote_all(
@@ -240,6 +244,28 @@ def test_build_entity_charm_changes(charm_environment, charm_cmd, builder_local)
         # Test legacy charms by comparing charmstore .build.manifest
         charm_entity.reactive = True
         assert charm_entity.charm_changes is True
+
+
+@pytest.mark.parametrize(
+    "published, rebuild",
+    [([], True), (["old", "new"], True), (["new", "new"], False)],
+)
+def test_release_edge_rebuilds_stale_platforms(
+    charm_environment, builder_local, charmhub_info, published, rebuild
+):
+    charm_environment.db["build_args"]["to_channel"] = "1.36/edge"
+    name, opts = next(iter(charm_environment.job_list[0].items()))
+    entity = builder_local.BuildEntity(charm_environment, name, opts)
+    entries = [("edge", "new"), *(("1.36/edge", sha) for sha in published)]
+    charmhub_info.side_effect = None
+    charmhub_info.return_value = {
+        "channel-map": [
+            {"channel": {"name": channel}, "revision": {"version": sha}}
+            for channel, sha in entries
+        ]
+    }
+    with patch.object(entity, "commit", return_value="new"):
+        assert entity.charm_changes is rebuild
 
 
 @patch("builder_local.script")
@@ -660,6 +686,61 @@ def test_promote_command(mock_build_env, main):
     )
 
 
+def test_numeric_edge_cannot_be_promoted_from_main(main):
+    result = CliRunner().invoke(
+        main.promote,
+        [
+            "--charm-list=test-charm",
+            "--filter-by-tag=k8s",
+            "--from-channel=latest/edge",
+            "--to-channel=1.36/edge",
+        ],
+    )
+    assert result.exit_code == 2
+    assert "must be built, not promoted" in result.output
+
+
+def test_daily_edges_are_built_from_distinct_sources(main):
+    with patch.object(main, "_build_charms") as build:
+        result = CliRunner().invoke(
+            main.build,
+            [
+                "--charm-list=test-charms",
+                "--resource-spec=test-resources",
+                "--filter-by-tag=k8s",
+                "--layer-index=test-index",
+                "--layer-list=test-layers",
+                "--to-channel=all-edges",
+            ],
+        )
+    assert result.exit_code == 0, result.output
+    assert [
+        (args.kwargs["to_channel"], args.kwargs["branch"])
+        for args in build.call_args_list
+    ] == [
+        ("latest/edge", ""),
+        *[
+            (f"{version}/edge", f"release_{version}")
+            for version, channels in main.SNAP_K8S_TRACK_MAP.items()
+            if f"{version}/edge" in channels
+        ],
+    ]
+
+
+def test_numeric_edge_rejects_mismatched_bundle_branch(main):
+    result = CliRunner().invoke(
+        main.build_bundles,
+        [
+            "--bundle-list=test-bundles",
+            "--filter-by-tag=k8s",
+            "--bundle-branch=main",
+            "--to-channel=1.35/edge",
+        ],
+    )
+    assert result.exit_code == 2
+    assert "1.35/edge must be built from release_1.35" in result.output
+
+
 @patch("builder_local.sh", MagicMock())
 def test_build_command(mock_build_env, mock_build_entity, main):
     """Tests cli build command which is run by jenkins job."""
@@ -676,7 +757,7 @@ def test_build_command(mock_build_env, mock_build_entity, main):
     ]
     mock_build_env.track = "latest"
     mock_build_env.filter_by_tag = ["tag1", "tag2"]
-    mock_build_env.to_channels = ["edge", "1.18/edge"]
+    mock_build_env.to_channels = ["edge"]
     artifact = MagicMock()
     entity = mock_build_entity.return_value
     entity.artifacts = [artifact]
@@ -722,11 +803,9 @@ def test_build_command(mock_build_env, mock_build_entity, main):
     entity.charm_build.assert_called_once_with()
     entity.push.assert_called_once_with(artifact)
     entity.assemble_resources.assert_called_once_with(
-        artifact, to_channels=["latest/edge", "1.18/edge"]
+        artifact, to_channels=["latest/edge"]
     )
-    entity.release.assert_called_once_with(
-        artifact, to_channels=["latest/edge", "1.18/edge"]
-    )
+    entity.release.assert_called_once_with(artifact, to_channels=["latest/edge"])
 
 
 @patch("main.git")
@@ -755,7 +834,7 @@ def test_bundle_build_command(
     mock_build_env.repos_dir = mock_build_env.tmp_dir / "repos"
     mock_build_env.bundles_dir = mock_build_env.tmp_dir / "bundles"
     mock_build_env.default_repo_dir = mock_build_env.repos_dir / "bundles-kubernetes"
-    mock_build_env.to_channels = ("edge", "0.15/edge")
+    mock_build_env.to_channels = ("edge",)
     mock_build_env.track = "latest"
     mock_build_env.filter_by_tag = ["k8s"]
     mock_build_env.force = False
@@ -794,7 +873,6 @@ def test_bundle_build_command(
                 call("Starting"),
                 call(f"Details: {entity}"),
                 call("Pushing built bundle for channel=latest/edge (forced=False)."),
-                call("Pushing built bundle for channel=0.15/edge (forced=False)."),
                 call("Stopping"),
             ],
             any_order=False,
@@ -802,12 +880,7 @@ def test_bundle_build_command(
         if "downstream" in entity.opts:
             entity.setup.assert_called_once_with()
 
-        assert entity.bundle_build.mock_calls == [
-            call(channel) for channel in ["latest/edge", "0.15/edge"]
-        ]
-        assert entity.push.mock_calls == [call(artifact), call(artifact)]
-        assert entity.release.mock_calls == [
-            call(artifact, to_channels=[channel])
-            for channel in ["latest/edge", "0.15/edge"]
-        ]
-        assert entity.reset_artifacts.mock_calls == [call(), call()]
+        entity.bundle_build.assert_called_once_with("latest/edge")
+        entity.push.assert_called_once_with(artifact)
+        entity.release.assert_called_once_with(artifact, to_channels=["latest/edge"])
+        entity.reset_artifacts.assert_called_once_with()
