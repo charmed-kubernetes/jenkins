@@ -152,6 +152,9 @@ The daily job defaults to `TO_CHANNEL=all-edges`. It builds the default branches
 for `latest/edge`, and `release_1.xx` for each `1.xx/edge` in the active track map.
 Local reactive builds pull layers and interfaces from `main` for `latest/edge`
 and from the matching release branch for numeric edge.
+Launchpad uses the `.charmcraft-channel` pin from each charm checkout, or
+`2.x/stable` when the checkout has no pin.
+
 To rebuild one release track, set `TO_CHANNEL=1.xx/edge` and leave `CHARM_BRANCH`,
 `LAYER_BRANCH`, and `BUNDLE_BRANCH` blank; the job selects `release_1.xx` for all
 three. Do not promote from `latest/edge` into a numeric edge channel.

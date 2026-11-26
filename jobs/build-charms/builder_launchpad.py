@@ -89,7 +89,7 @@ class LPBuildEntity(BuildEntity):
 
     @cached_property
     def _lp_channels(self):
-        channels = self.SNAP_CHANNEL
+        channels = self.SNAP_CHANNEL.copy()
         charmcraft_channel_file = Path(self.src_path) / ".charmcraft-channel"
         if charmcraft_channel_file.exists():
             channels["charmcraft"] = charmcraft_channel_file.read_text().strip()

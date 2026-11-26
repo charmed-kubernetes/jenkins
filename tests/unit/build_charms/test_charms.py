@@ -319,6 +319,27 @@ def test_release_edge_rebuilds_stale_or_missing_platforms(
         assert entity.charm_changes is rebuild
 
 
+def test_launchpad_charmcraft_pin_does_not_leak_between_builds(
+    main, charm_environment, tmp_path
+):
+    opts = {
+        "bugs": "https://bugs.launchpad.net/test-charm",
+        "downstream": "charmed-kubernetes/jenkins.git",
+        "branch": "main",
+    }
+    main_build = main.LPBuildEntity(charm_environment, "test-charm", opts)
+    main_build.src_path = str(tmp_path)
+    (tmp_path / ".charmcraft-channel").write_text("3.x/stable\n")
+    assert main_build._lp_channels["charmcraft"] == "3.x/stable"
+
+    charm_environment.db["build_args"].update(
+        branch="release_1.32", to_channel="1.32/edge"
+    )
+    release_build = main.LPBuildEntity(charm_environment, "test-charm", opts)
+    release_build.src_path = str(tmp_path / "release")
+    assert release_build._lp_channels["charmcraft"] == "2.x/stable"
+
+
 @patch("builder_local.script")
 def test_build_entity_charm_build(
     mock_script, charm_environment, charm_cmd, charmcraft_cmd, tmpdir, builder_local
