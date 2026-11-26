@@ -247,21 +247,72 @@ def test_build_entity_charm_changes(charm_environment, charm_cmd, builder_local)
 
 
 @pytest.mark.parametrize(
-    "published, rebuild",
-    [([], True), (["old", "new"], True), (["new", "new"], False)],
+    "config",
+    [
+        "bases:\n"
+        '  - build-on: [{name: ubuntu, channel: "22.04", architectures: [amd64]}]\n'
+        "    run-on:\n"
+        '      - {name: ubuntu, channel: "22.04", architectures: [amd64, arm64]}\n'
+        '      - {name: ubuntu, channel: "24.04", architectures: [amd64]}\n',
+        "platforms:\n"
+        '  "ubuntu@22.04:amd64":\n'
+        '  cross: {build-on: "ubuntu@22.04:amd64", build-for: "ubuntu@22.04:arm64"}\n'
+        '  "ubuntu@24.04:amd64":\n',
+    ],
 )
-def test_release_edge_rebuilds_stale_platforms(
-    charm_environment, builder_local, charmhub_info, published, rebuild
+@pytest.mark.parametrize(
+    "published, rebuild",
+    [
+        ([], True),
+        ([("22.04", "amd64", "new"), ("24.04", "amd64", "new")], True),  # missing arch
+        ([("22.04", "amd64", "new"), ("22.04", "arm64", "new")], True),  # missing base
+        (
+            [
+                ("22.04", "amd64", "new"),
+                ("22.04", "arm64", "new"),
+                ("24.04", "amd64", "old"),
+            ],
+            True,
+        ),
+        (
+            [
+                ("22.04", "amd64", "new"),
+                ("22.04", "arm64", "new"),
+                ("24.04", "amd64", "new"),
+            ],
+            False,
+        ),
+    ],
+)
+def test_release_edge_rebuilds_stale_or_missing_platforms(
+    charm_environment,
+    builder_local,
+    charmhub_info,
+    tmp_path,
+    config,
+    published,
+    rebuild,
 ):
     charm_environment.db["build_args"]["to_channel"] = "1.36/edge"
     name, opts = next(iter(charm_environment.job_list[0].items()))
     entity = builder_local.BuildEntity(charm_environment, name, opts)
-    entries = [("edge", "new"), *(("1.36/edge", sha) for sha in published)]
+    entity.src_path = str(tmp_path)
+    (tmp_path / "charmcraft.yaml").write_text(config)
+
+    def row(channel, base, arch, version):
+        return {
+            "channel": {
+                "name": channel,
+                "base": {"name": "ubuntu", "channel": base, "architecture": arch},
+            },
+            "revision": {"version": version},
+        }
+
     charmhub_info.side_effect = None
     charmhub_info.return_value = {
         "channel-map": [
-            {"channel": {"name": channel}, "revision": {"version": sha}}
-            for channel, sha in entries
+            row("latest/edge", "22.04", "arm64", "new"),
+            *(row("1.36/edge", *release) for release in published),
         ]
     }
     with patch.object(entity, "commit", return_value="new"):
@@ -715,16 +766,49 @@ def test_daily_edges_are_built_from_distinct_sources(main):
         )
     assert result.exit_code == 0, result.output
     assert [
-        (args.kwargs["to_channel"], args.kwargs["branch"])
+        (args.kwargs["to_channel"], args.kwargs["branch"], args.kwargs["layer_branch"])
         for args in build.call_args_list
     ] == [
-        ("latest/edge", ""),
+        ("latest/edge", "", "main"),
         *[
-            (f"{version}/edge", f"release_{version}")
+            (f"{version}/edge", f"release_{version}", f"release_{version}")
             for version, channels in main.SNAP_K8S_TRACK_MAP.items()
             if f"{version}/edge" in channels
         ],
     ]
+
+
+@pytest.mark.parametrize(
+    "channel, branch_options, expected",
+    [
+        ("1.32/edge", [], "release_1.32"),
+        ("1.32/edge", ["--layer-branch=release_1.32"], "release_1.32"),
+        ("1.32/edge", ["--layer-branch=main"], None),
+        ("all-edges", ["--layer-branch=main"], None),
+        ("1.32/beta", ["--charm-branch=release_1.32"], "main"),
+        ("1.32/beta", ["--layer-branch=release_1.32"], "release_1.32"),
+    ],
+)
+def test_charm_build_layer_branch(main, channel, branch_options, expected):
+    with patch.object(main, "_build_charms") as build:
+        result = CliRunner().invoke(
+            main.build,
+            [
+                "--charm-list=test-charms",
+                "--resource-spec=test-resources",
+                "--filter-by-tag=k8s",
+                "--layer-index=test-index",
+                "--layer-list=test-layers",
+                f"--to-channel={channel}",
+                *branch_options,
+            ],
+        )
+    if expected is None:
+        assert result.exit_code == 2, result.output
+        build.assert_not_called()
+    else:
+        assert result.exit_code == 0, result.output
+        assert build.call_args.kwargs["layer_branch"] == expected
 
 
 def test_numeric_edge_rejects_mismatched_bundle_branch(main):

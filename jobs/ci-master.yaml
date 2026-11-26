@@ -239,9 +239,9 @@
           default: "jobs/includes/charm-layer-list.inc"
       - string:
           name: LAYER_BRANCH
-          default: 'main'
+          default: ''
           description: |
-            The layer git branch to checkout prior to building
+            The layer and interface source branch. If empty, numeric edge uses the matching release branch. Other channels use main.
       - string:
           name: CHARM_BRANCH
           default: ''

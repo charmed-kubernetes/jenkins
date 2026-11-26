@@ -150,9 +150,12 @@ like we've done so many times before!
 
 The daily job defaults to `TO_CHANNEL=all-edges`. It builds the default branches
 for `latest/edge`, and `release_1.xx` for each `1.xx/edge` in the active track map.
-To rebuild one release track, set `TO_CHANNEL=1.xx/edge` and leave `CHARM_BRANCH`
-and `BUNDLE_BRANCH` blank; the job selects `release_1.xx` for both. Do not promote
-from `latest/edge` into a numeric edge channel.
+Local reactive builds pull layers and interfaces from `main` for `latest/edge`
+and from the matching release branch for numeric edge.
+To rebuild one release track, set `TO_CHANNEL=1.xx/edge` and leave `CHARM_BRANCH`,
+`LAYER_BRANCH`, and `BUNDLE_BRANCH` blank; the job selects `release_1.xx` for all
+three. Do not promote from `latest/edge` into a numeric edge channel.
+Plain `edge` is shorthand for `latest/edge`; it no longer updates numeric edge.
 
 This job clones the `release_1.xx` branch for each of our repos. It then builds
 each charm/bundle using those local repos. After building, they will be

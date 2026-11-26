@@ -27,9 +27,16 @@ def _release_edge_channels(track, to_channel):
     }
 
 
-def _build_channels(builder, track, to_channel, branch, **options):
+def _build_channels(
+    builder, track, to_channel, branch, *, layer_branch=None, **options
+):
+    def build_target(channel, source, layers="main"):
+        if layer_branch is not None:
+            options["layer_branch"] = layer_branch or layers
+        builder(track=track, to_channel=channel, branch=source, **options)
+
     if to_channel == "all-edges":
-        if branch or track != "latest":
+        if branch or layer_branch or track != "latest":
             raise click.UsageError("all-edges selects its own branches and tracks")
         targets = {"latest/edge": ""}
         targets.update(
@@ -41,7 +48,7 @@ def _build_channels(builder, track, to_channel, branch, **options):
         for channel, source in targets.items():
             click.echo(f"Building {channel}")
             try:
-                builder(track=track, to_channel=channel, branch=source, **options)
+                build_target(channel, source, source or "main")
             except Exception:
                 click.echo(traceback.format_exc(), err=True)
                 failed.append(channel)
@@ -56,8 +63,11 @@ def _build_channels(builder, track, to_channel, branch, **options):
         to_channel, expected = next(iter(release_edges.items()))
         if branch and branch != expected:
             raise click.UsageError(f"{to_channel} must be built from {expected}")
-        branch = expected
-    builder(track=track, to_channel=to_channel, branch=branch, **options)
+        if layer_branch and layer_branch != expected:
+            raise click.UsageError(f"{to_channel} requires --layer-branch={expected}")
+        build_target(to_channel, expected, expected)
+        return
+    build_target(to_channel, branch)
 
 
 @cli.command()
@@ -76,7 +86,7 @@ def _build_channels(builder, track, to_channel, branch, **options):
     "--layer-branch",
     required=True,
     help="Git branch to pull layers/interfaces from",
-    default="main",
+    default="",
 )
 @click.option(
     "--resource-spec", required=True, help="YAML Spec of resource keys and filenames"

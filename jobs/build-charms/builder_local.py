@@ -867,20 +867,82 @@ class BuildEntity:
             self.echo(f"Unexpected source={source} for determining version")
         return version_id
 
+    @staticmethod
+    def _base_platforms(bases):
+        platforms = set()
+        for base in bases:
+            arches = base.get("architectures")
+            if not arches:
+                return set()
+            name, channel = base["name"], base["channel"].split("/")[0]
+            platforms.update((name, channel, arch) for arch in arches)
+        return platforms
+
+    def _expected_platforms(self):
+        """Return the (OS, base, architecture) tuples this checkout publishes."""
+        source = Path(self.src_path)
+        craft = source / "charmcraft.yaml"
+        if craft.is_file():
+            config = yaml.safe_load(craft.read_text())
+            if "bases" in config:
+                return self._base_platforms(
+                    base
+                    for entry in config["bases"]
+                    for base in entry.get("run-on", [entry])
+                )
+
+            platforms = set()
+            for label, platform in config.get("platforms", {}).items():
+                # The build-for target can carry its own base in a multi-base charm.
+                targets = (platform or {}).get("build-for", label)
+                if isinstance(targets, str):
+                    targets = [targets]
+                for target in targets:
+                    base, _, arch = target.rpartition(":")
+                    if not base:
+                        base = label.rpartition(":")[0] or config.get("base", "")
+                    os_name, _, channel = base.partition("@")
+                    if not channel:
+                        return set()
+                    platforms.add((os_name, channel, arch))
+            return platforms
+
+        if self.reactive:
+            manifest = source / "manifest.yaml"
+            if manifest.is_file():
+                return self._base_platforms(
+                    yaml.safe_load(manifest.read_text())["bases"]
+                )
+            metadata = yaml.safe_load((source / "metadata.yaml").read_text())
+            return {
+                ("ubuntu", CharmSeries[series.upper()].value, arch)
+                for series in metadata["series"]
+                for arch in (self.opts.get("architectures") or K8S_CHARM_SUPPORT_ARCHES)
+            }
+        return set()
+
     @property
     def charm_changes(self):
         """Determine if any charm|layers commits have changed since last publish."""
         if re.fullmatch(r"\d+\.\d+/edge(?:/[^/]+)?", self.channel):
+            expected = self._expected_platforms()
+            if not expected:
+                # Do not infer the intended platforms from a partial release.
+                return True
             info = _CharmHub.info(
                 self.name,
-                fields="channel-map.channel.name,channel-map.revision.version",
+                fields="channel-map.channel.name,channel-map.channel.base,"
+                "channel-map.revision.version",
             )
-            published = {
-                entry["revision"]["version"]
+            commit = self.commit(short=True)
+            current = {
+                (base["name"], base["channel"], base["architecture"])
                 for entry in info.get("channel-map", [])
                 if entry["channel"]["name"] == self.channel
+                and entry["revision"]["version"] == commit
+                if (base := entry["channel"].get("base"))
             }
-            if published != {self.commit(short=True)}:
+            if not expected <= current:
                 return True
             if not self.reactive:
                 return False
