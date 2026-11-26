@@ -148,6 +148,19 @@ like we've done so many times before!
 
 **Job**: https://jenkins.canonical.com/k8s-ps5/job/build-charms/
 
+The daily job defaults to `TO_CHANNEL=all-edges`. It builds the default branches
+for `latest/edge`, and `release_1.xx` for each `1.xx/edge` in the active track map.
+Local reactive builds pull layers and interfaces from `main` for `latest/edge`
+and from the matching release branch for numeric edge.
+Launchpad uses the `.charmcraft-channel` pin from each charm checkout, or
+`2.x/stable` when the checkout has no pin.
+
+To rebuild one release track, set `TO_CHANNEL=1.xx/edge` and leave `CHARM_BRANCH`,
+`LAYER_BRANCH`, and `BUNDLE_BRANCH` blank; the job selects `release_1.xx` for all
+three. Build numeric edge separately rather than including it in a comma-separated
+`TO_CHANNEL` list. Do not promote from `latest/edge` into a numeric edge channel.
+Plain `edge` is shorthand for `latest/edge`; it no longer updates numeric edge.
+
 This job clones the `release_1.xx` branch for each of our repos. It then builds
 each charm/bundle using those local repos. After building, they will be
 published to the `1.xx/beta` channel in Charmhub based on the job options.
