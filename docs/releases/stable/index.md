@@ -157,7 +157,8 @@ Launchpad uses the `.charmcraft-channel` pin from each charm checkout, or
 
 To rebuild one release track, set `TO_CHANNEL=1.xx/edge` and leave `CHARM_BRANCH`,
 `LAYER_BRANCH`, and `BUNDLE_BRANCH` blank; the job selects `release_1.xx` for all
-three. Do not promote from `latest/edge` into a numeric edge channel.
+three. Build numeric edge separately rather than including it in a comma-separated
+`TO_CHANNEL` list. Do not promote from `latest/edge` into a numeric edge channel.
 Plain `edge` is shorthand for `latest/edge`; it no longer updates numeric edge.
 
 This job clones the `release_1.xx` branch for each of our repos. It then builds
